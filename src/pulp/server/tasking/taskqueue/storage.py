@@ -25,6 +25,7 @@ from pymongo.errors import DuplicateKeyError
 from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
 from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
 from pulp.server.tasking.exception import DuplicateSnapshotError
+from pulp.server.tasking.scheduler import AtScheduler, ImmediateScheduler
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
@@ -45,15 +46,20 @@ class Storage(object):
     def complete_tasks(self):
         raise NotImplementedError(_('Base Storage class method called'))
 
-    def all_tasks(self):
-        return itertools.chain(self.waiting_tasks(),
-                               self.running_tasks(),
-                               self.complete_tasks())
+    def incomplete_tasks(self):
+        return itertools.chain(self.waiting_tasks(), self.running_tasks())
 
-    def find(self, criteria):
+    def all_tasks(self):
+        return itertools.chain(self.incomplete_tasks(), self.complete_tasks())
+
+    def find(self, criteria, ignore_complete=False):
         num_criteria = len(criteria)
         tasks = []
-        for task in self.all_tasks():
+        if ignore_complete:
+            search_tasks = self.incomplete_tasks()
+        else:
+            search_tasks = self.all_tasks()
+        for task in search_tasks:
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
@@ -132,32 +138,32 @@ class VolatileStorage(Storage):
         return heapq.heappop(self.__waiting_tasks)
 
     def peek_waiting(self):
-        assert self.__waiting_tasks
+        assert self.__waiting_tasks, 'Peek called on empty waiting queue'
         return self.__waiting_tasks[0]
 
     # storage methods
 
     def remove_waiting(self, task):
-        assert task in self.__waiting_tasks
+        assert task in self.__waiting_tasks, 'Task [%s] not in waiting tasks' % task.id
         self.__waiting_tasks.remove(task)
         heapq.heapify(self.__waiting_tasks)
 
     def store_running(self, task):
-        assert task not in self.__waiting_tasks
-        assert task not in self.__complete_tasks
+        assert task not in self.__waiting_tasks, 'Task [%s] in waiting tasks' % task.id
+        assert task not in self.__complete_tasks, 'Task [%s] in complete tasks' % task.id
         self.__running_tasks.append(task)
 
     def remove_running(self, task):
-        assert task in self.__running_tasks
+        assert task in self.__running_tasks, 'Task [%s] not in running tasks' % task.id
         self.__running_tasks.remove(task)
 
     def store_complete(self, task):
-        assert task not in self.__waiting_tasks
-        assert task not in self.__running_tasks
+        assert task not in self.__waiting_tasks, 'Task [%s] in waiting tasks' % task.id
+        assert task not in self.__running_tasks, 'Task [%s] in running tasks' % task.id
         self.__complete_tasks.append(task)
 
     def remove_complete(self, task):
-        assert task in self.__complete_tasks
+        assert task in self.__complete_tasks, 'Task [%s] not in complete tasks' % task.id
         self.__complete_tasks.remove(task)
 
 # custom pickle and unpickle methods -------------------------------------------
@@ -179,146 +185,21 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
-# storage class for database-stored tasks --------------------------------------
+# snapshot storage class -------------------------------------------------------
 
-class PersistentStorage(Storage):
-
-    __metaclass__ = Singleton
-
-    def __init__(self):
-        super(PersistentStorage, self).__init__()
-        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
-
-    # database methods
-
-    @property
-    def collection(self):
-        return self.__dict__.setdefault('_collection', TaskSnapshot.get_collection())
-
-    def __store_task(self, task):
-        self.collection.save(task.snapshot(), safe=True)
-
-    def __tasks_with_states(self, states):
-        return self.collection.find({'state': {'$in': list(states)}})
-
-    def __cursor_to_tasks(self, cursor):
-        return [TaskSnapshot(s).to_task() for s in cursor]
-
-    def __waiting_tasks(self):
-        return self.__tasks_with_states(task_ready_states)
-
-    def __running_tasks(self):
-        return self.__tasks_with_states((task_running))
-
-    def __complete_tasks(self):
-        return self.__tasks_with_states(task_complete_states)
-
-    def __all_tasks(self):
-        return self.__tasks_with_states(task_states)
-
-    # query methods
-
-    def waiting_tasks(self):
-        return self.__cursor_to_tasks(self.__waiting_tasks())
-
-    def running_tasks(self):
-        return self.__cursor_to_tasks(self.__running_tasks())
-
-    def complete_tasks(self):
-        return self.__cursor_to_tasks(self.__complete_tasks())
-
-    def all_tasks(self):
-        return self.__cursor_to_tasks(self.__all_tasks())
-
-    def find(self, criteria):
-        # provided here in case we want to override this
-        return super(PersistentStorage, self).find(criteria)
-
-    # wait queue methods
-
-    def num_waiting(self):
-        return self.__waiting_tasks().count()
-
-    def enqueue_waiting(self, task):
-        assert task.state == task_waiting, \
-               'task %s enqueued with state %s' % (task, task.state)
-        assert task.scheduled_time is not None, \
-               'task %s enqueued with None scheduld_time' % task
-        self.__store_task(task)
-
-    def dequeue_waiting(self):
-        snapshots = self.__waiting_tasks().sort('scheduled_time').limit(1)
-        if snapshots.count() == 0:
-            return None
-        snapshot = snapshots[0]
-        task = TaskSnapshot(snapshot).to_task()
-        self.remove_waiting(task)
-        return task
-
-    def peek_waiting(self):
-        snapshots = self.__waiting_tasks().sort('scheduled_time').limit(1)
-        if snapshots.count() == 0:
-            return None
-        return TaskSnapshot(snapshots[0]).to_task()
-
-    # storage methods
-
-    def remove_waiting(self, task):
-        self.collection.remove({'id': task.id, 'state': task_waiting})
-
-    def store_running(self, task):
-        # because we are storing snapshots and the task is no longer stored in
-        # volatile memory, there is a disconnect between when a task sets itself
-        # as running and when it gets recorded in the db as running
-        # so we accept tasks that are still in a ready state and set them to the
-        # running state, this is a little bit wrong, but unavoidable given the
-        # current control flow
-        assert str(task.state) in (task_waiting, task_running), \
-               'task %s with state %s stored as running' % (task, task.state)
-        if task.state == task_waiting:
-            task.state = task_running
-        self.__store_task(task)
-
-    def remove_running(self, task):
-        self.collection.remove({'id': task.id, 'state': task_running})
-
-    def store_complete(self, task):
-        assert str(task.state) in task_complete_states, \
-               'task %s with state %s stored as complete' % (task, task.state)
-        self.__store_task(task)
-
-    def remove_complete(self, task):
-        # as we're storing multiple copies of each task in the complete state,
-        # this method is now a noop because there's not enough information
-        # provided to decided on which copy to delete
-        pass
-
-# hybrid storage class ---------------------------------------------------------
-
-class HybridStorage(VolatileStorage):
+class SnapshotStorage(VolatileStorage):
     """
-    Hybrid storage class that uses volatile memory for storage and correctness
+    Snapshot storage class that uses volatile memory for storage and correctness
     and uses the database to persiste waiting and running tasks across reboots
     and to keep completed tasks around indefinitely for history and auditing
     purposes.
     """
 
     def  __init__(self):
-        super(HybridStorage, self).__init__()
+        super(SnapshotStorage, self).__init__()
         # set custom pickling functions for snapshots
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
-        # load existing incomplete tasks from the database on initialization
-        self._load_existing_tasks_from_db()
-
-    def _load_existing_tasks_from_db(self):
-        log = logging.getLogger('pulp')
-        for snapshot in self.snapshot_collection.find():
-            task = TaskSnapshot(snapshot).to_task()
-            # tasks are already in the database, so just enqueue them in memory
-            super(HybridStorage, self).enqueue_waiting(task)
-            log.info(_('Loaded Task from database: %s') % str(task))
 
     # database methods
 
@@ -334,24 +215,28 @@ class HybridStorage(VolatileStorage):
 
     # wait queueue methods
 
-    def enqueue_waiting(self, task):
-        # create and keep a snapshot of the task that can be loaded from the
-        # database and executed across reboots, server restarts, etc.
+    def _snapshot_task(self, task):
         snapshot = task.snapshot()
         try:
             self.snapshot_collection.insert(snapshot, safe=True)
         except DuplicateKeyError:
             raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
-        super(HybridStorage, self).enqueue_waiting(task)
+
+    def enqueue_waiting(self, task):
+        # create and keep a snapshot of the task that can be loaded from the
+        # database and executed across reboots, server restarts, etc.
+        if isinstance(task.scheduler, (AtScheduler, ImmediateScheduler)):
+            self._snapshot_task(task)
+        super(SnapshotStorage, self).enqueue_waiting(task)
 
     # storage methods
 
     def remove_running(self, task):
-        super(HybridStorage, self).remove_running(task)
         # the task has completed, so remove the snapshot
-        self.snapshot_collection.remove({'_id': task.snapshot_id})
+        self.snapshot_collection.remove({'_id': task.snapshot_id}, safe=True)
+        super(SnapshotStorage, self).remove_running(task)
 
     def store_complete(self, task):
-        super(HybridStorage, self).store_complete(task)
         history = TaskHistory(task)
         self.history_collection.insert(history)
+        super(SnapshotStorage, self).store_complete(task)

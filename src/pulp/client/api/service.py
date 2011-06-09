@@ -97,16 +97,19 @@ class ServiceAPI(PulpAPI):
         path = '/services/disable_global_repo_auth/'
         return self.server.POST(path)
 
-    def repo_discovery(self, url, type):
+    def repo_discovery(self, url, type, cert_data={}):
         """
         Will try to perform discovery on specified url and tye string
         @param url: url to perform discovery.
         @type url: string
         @param type: content type to discovery, eg:yum
         @type type: string
+        @param cert_data: certificate info format: dict(ca=ca, cert=cert)
+        @type type: dictionary
         @return: task id for the scheduled discovery task
         """
         params = {'url' : url,
-                  'type' : type}
+                  'type' : type,
+                  'cert_data' : cert_data}
         path = '/services/discovery/repo/'
         return self.server.POST(path, params)[1]

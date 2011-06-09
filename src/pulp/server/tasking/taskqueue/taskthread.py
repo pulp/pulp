@@ -33,42 +33,6 @@ _thread_tree = weakref.WeakKeyDictionary()
 
 _log = logging.getLogger('pulp')
 
-# debugging re-entrant lock ---------------------------------------------------
-
-class DRLock(object):
-    """
-    Re-entrant lock that logs when it is acquired and when it is released at the
-    debug log level.
-    """
-    def __init__(self):
-        self.__lock = threading.RLock()
-        # inherit some of the lock's api methods
-        self._is_owned = self.__lock._is_owned
-        self._acquire_restore = self.__lock._acquire_restore
-        self._release_save = self.__lock._release_save
-
-    def __repr__(self):
-        return repr(self.__lock)
-
-    def acquire(self, blocking=1):
-        _log.debug('Thread %s called acquire' % threading.currentThread())
-        if not self.__lock.acquire(blocking):
-            return False
-        _log.debug('Lock %s ACQUIRED' % repr(self))
-        return True
-
-    def release(self):
-        _log.debug('Thread %s called release' % threading.currentThread())
-        self.__lock.release()
-        _log.debug('Lock %s RELEASED' % repr(self))
-
-    # magic methods used with 'with' block
-
-    __enter__ = acquire
-
-    def __exit__(self, *args, **kwargs):
-        self.release()
-
 # descendant thread tracking api ----------------------------------------------
 
 class TrackedThread(_Thread):
@@ -192,7 +156,7 @@ class TaskThread(TrackedThread):
     def raise_exception(self, exc_type):
         """
         Raise an exception in this thread.
-        
+
         NOTE this is executed in the context of the calling thread and blocks
         until the exception has been delivered to this thread and this thread
         exits.
@@ -221,7 +185,6 @@ class TaskThread(TrackedThread):
         for thread in get_descendants(self):
             deliver_exception(thread, thread.isAlive, time.sleep)
         # then kill and wait for the task thread
-        #deliver_exception(self, self.isAlive, time.sleep)
         deliver_exception(self, test_exception_event, self.__exception_event.wait)
 
     def timeout(self):

@@ -62,20 +62,25 @@ class Create(UserAction):
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
                                help=_("new username to create (required)"))
+        self.parser.add_option("--password", dest="password", default=None,
+                               help=_("password for new user, if you do not want to be prompted for one"))
         self.parser.add_option("--name", dest="name", default=None,
                                help=_("name of user for display purposes"))
 
     def run(self):
         newusername = self.get_required_option('username')
-        while True:
-            newpassword = getpass.getpass("Enter password for user %s: " % newusername)
-            newpassword_confirm = getpass.getpass("Re-enter password for user %s: " % newusername)
-            if newpassword == "" or newpassword_confirm == "":
-                print _("\nUser password cannot be empty\n")
-            elif newpassword == newpassword_confirm:
-                break
-            else:
-                print _("\nPasswords do not match\n")
+        if self.opts.password:
+            newpassword = self.opts.password
+        else:     
+            while True:
+                newpassword = getpass.getpass("Enter password for user %s: " % newusername)
+                newpassword_confirm = getpass.getpass("Re-enter password for user %s: " % newusername)
+                if newpassword == "" or newpassword_confirm == "":
+                    print _("\nUser password cannot be empty\n")
+                elif newpassword == newpassword_confirm:
+                    break
+                else:
+                    print _("\nPasswords do not match\n")
         name = self.opts.name
         user = self.user_api.create(newusername, newpassword, name)
         print _("Successfully created user [ %s ] with name [ %s ]") % \
@@ -89,18 +94,21 @@ class Update(UserAction):
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
                                help=_("username of user you wish to edit. Not editable (required)"))
-        self.parser.add_option("-P", "--password", dest="password", action='store_true', default=False,
-                               help=_('change user password'))
+        self.parser.add_option("--password", dest="password", default=None,
+                               help=_("updated password for user; use -P if you do not wish to specify password on command line"))
+        self.parser.add_option("-P", dest="passwd", action='store_true', default=False,
+                               help=_("prompt for updated user password"))
         self.parser.add_option("--name", dest="name", default=None,
                                help=_("updated name of user for display purposes"))
 
     def run(self):
         username = self.get_required_option('username')
-        name = self.opts.name
         delta = {}
-        if name is not None:
-            delta['name'] = name
+        if self.opts.name:
+            delta['name'] = self.opts.name
         if self.opts.password:
+            delta['password'] = self.opts.password
+        elif self.opts.passwd:
             while True:
                 newpassword = getpass.getpass("Enter new password for user %s: " % username)
                 newpassword_confirm = getpass.getpass("Re-enter new password for user %s: " % username)

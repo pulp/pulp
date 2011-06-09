@@ -11,7 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import itertools
 import logging
+import pickle
 
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
@@ -21,6 +23,7 @@ from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.task import Task
 from pulp.server.agent import PulpAgent
 
 log = logging.getLogger(__name__)
@@ -406,6 +409,27 @@ class InstallPackages(AgentTask):
         self.__succeeded = []
         self.__failed = []
         AgentTask.__init__(self, self.install)
+
+    # snapshot fields: used by task persistence
+    _copy_fields = itertools.chain(('items', 'errata', 'serials'),
+                                   Task._copy_fields)
+
+    def snapshot(self):
+        # since the callable is set, we do not need to pickle it
+        self.callable = None
+        task = super(InstallPackages, self).snapshot()
+        self.callable = self.install
+        return task
+
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        task = cls(snapshot['items'])
+        for field in task._copy_fields:
+            setattr(task, field, snapshot[field])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        task.snapshot_id = snapshot['_id']
+        return task
 
     def install(self):
         """

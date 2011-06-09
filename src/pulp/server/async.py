@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import traceback
+from gettext import gettext as _
 from logging import getLogger
 
 from gofer.messaging import Queue
@@ -19,11 +20,12 @@ from gofer.messaging.async import ReplyConsumer, Listener
 
 from pulp.server import config
 from pulp.server.agent import Agent
+from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import (
     NonUniqueTaskException, DuplicateSnapshotError)
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
-from pulp.server.tasking.taskqueue.storage import HybridStorage
+from pulp.server.tasking.taskqueue.storage import SnapshotStorage
 
 
 log = getLogger(__name__)
@@ -49,6 +51,7 @@ def enqueue(task, unique=True):
         return None
     except DuplicateSnapshotError, e:
         log.error(traceback.format_exc())
+        return None
     return task
 
 
@@ -92,6 +95,24 @@ def _configured_schedule_threshold():
     return config.parse_time_delta(value)
 
 
+def _load_persisted_tasks():
+    assert _queue is not None
+    collection = TaskSnapshot.get_collection()
+    tasks = []
+    snapshot_ids = []
+    for snapshot in collection.find():
+        snapshot_ids.append(snapshot['_id'])
+        task = TaskSnapshot(snapshot).to_task()
+        tasks.append(task)
+        log.info(_('Loaded Task from database: %s') % str(task))
+    for id in snapshot_ids:
+        last_error = collection.remove({'_id': id}, safe=True)
+        if not last_error.get('ok', False):
+            raise Exception(repr(last_error))
+    for task in tasks:
+        enqueue(task)
+
+
 def initialize():
     """
     Explicitly start-up the asynchronous sub-system
@@ -103,8 +124,9 @@ def initialize():
     _queue = TaskQueue(max_running=max_concurrent,
                        failure_threshold=failure_threshold,
                        schedule_threshold=schedule_threshold,
-                       storage=HybridStorage(),
+                       storage=SnapshotStorage(),
                        dispatch_interval=5)
+    _load_persisted_tasks()
 
 
 def finalize():
@@ -126,6 +148,7 @@ class AsyncAgent:
     @ivar __secret: The shared secret.
     @type __secret: str
     """
+
     def __init__(self, id, secret):
         """
         @param id: The agent ID.
@@ -161,6 +184,7 @@ class RemoteClass:
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
     """
+
     def __init__(self, id, secret, name):
         """
         @param id: The agent (consumer) id.
@@ -272,6 +296,7 @@ class ReplyHandler(Listener):
     @ivar consumer: The reply consumer.
     @type consumer: L{ReplyConsumer}
     """
+
     def __init__(self, url):
         ctag = RemoteMethod.CTAG
         queue = Queue(ctag)
@@ -312,6 +337,7 @@ class AgentTask(AsyncTask):
     """
     Task represents an async task involving an RMI to the agent.
     """
+
     def succeeded(self, sn, result):
         """
         The RMI succeeded.

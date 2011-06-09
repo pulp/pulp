@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
 import datetime
 import logging
 import pickle
@@ -23,10 +22,10 @@ from gettext import gettext as _
 
 from pulp.common import dateutils
 from pulp.server.db import model
-from pulp.server.tasking.exception import TimeoutException, CancelException, \
-    UnscheduledTaskException
+from pulp.server.tasking.exception import (
+    TimeoutException, CancelException, UnscheduledTaskException)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.pexceptions import PulpException
+
 
 _log = logging.getLogger(__name__)
 
@@ -34,43 +33,27 @@ _log = logging.getLogger(__name__)
 
 task_waiting = 'waiting'
 task_running = 'running'
+task_suspended = 'suspended'
 task_finished = 'finished'
 task_error = 'error'
 task_timed_out = 'timed out'
 task_canceled = 'canceled'
-task_suspended = 'suspended'
 
-task_states = (
-    task_waiting,
-    task_running,
-    task_finished,
-    task_error,
-    task_timed_out,
-    task_canceled,
-    task_suspended,
-)
+task_states = (task_waiting,
+               task_running,
+               task_suspended,
+               task_finished,
+               task_error,
+               task_timed_out,
+               task_canceled)
 
-task_ready_states = (
-    task_waiting,
-)
+task_ready_states = (task_waiting,)
 
-task_incomplete_states = (
-    task_waiting,
-    task_running,
-)
+task_incomplete_states = (task_waiting, task_running, task_suspended)
 
-task_complete_states = (
-    task_finished,
-    task_error,
-    task_timed_out,
-    task_canceled,
-)
+task_complete_states = (task_finished, task_error, task_timed_out, task_canceled)
 
-
-class TaskPicklingError(PulpException):
-    pass
-
-# task ------------------------------------------------------------------------
+# task -------------------------------------------------------------------------
 
 class Task(object):
     """
@@ -81,37 +64,10 @@ class Task(object):
     timeout and the ability to cancel the call.
     """
 
-    # field categories for task snapshots
-
-    _copied_fields = (
-        'id',
-        'class_name',
-        'method_name',
-        'timeout',
-        'cancel_attempts',
-        'state',
-        'exception',
-        'traceback',
-        'consecutive_failures',
-    )
-
-    _pickled_fields = (
-        'callable',
-        'args',
-        'kwargs',
-        'scheduler',
-        'scheduled_time',
-        'start_time',
-        'finish_time',
-        '_progress_callback',
-        'progress',
-        'result',
-    )
-
     def __init__(self,
                  callable,
-                 args=[],
-                 kwargs={},
+                 args=None,
+                 kwargs=None,
                  scheduler=None,
                  timeout=None):
         """
@@ -139,11 +95,10 @@ class Task(object):
 
         # task resources
         self.callable = callable
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args or []
+        self.kwargs = kwargs or {}
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout = timeout
-        self.cancel_attempts = 0
         self._progress_callback = None
 
         # resources managed by the task queue to deliver events
@@ -164,6 +119,7 @@ class Task(object):
         self.exception = None
         self.traceback = None
         self.consecutive_failures = 0
+        self.cancel_attempts = 0
 
     def __cmp__(self, other):
         """
@@ -200,104 +156,24 @@ class Task(object):
         return self.id == other.id
 
     def __str__(self):
-
+        """
+        Build  a string representation of the task.
+        """
+        # task name
         def _name():
             if self.class_name is None:
                 return self.method_name
             return '.'.join((self.class_name, self.method_name))
-
+        # task arguments
         def _args():
             return ', '.join([str(a) for a in self.args])
-
+        # task keyword arguments
         def _kwargs():
             return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])
-
+        # put it all together
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
-    # -------------------------------------------------------------------------
-
-    def _get_task_snapshots_collection(self):
-        return model.TaskSnapshot.get_collection()
-
-    def snapshot(self):
-        """
-        Serialize the task into snapshot and store it in db
-        """
-        snapshot = {}
-        snapshot['task_class'] = pickle.dumps(self.__class__)
-        for attr in self._copied_fields:
-            snapshot[attr] = getattr(self, attr, None)
-        for attr in self._pickled_fields:
-            try:
-                if attr == "kwargs":
-                    kwargs = getattr(self, attr, None)
-                    kwargs.pop('progress_callback', None) # self-referential
-                    snapshot[attr] = pickle.dumps(kwargs) # ascii pickle
-                else:
-                    snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
-
-            except:
-                msg = _("Error pickling attribute %s: %s")
-                raise TaskPicklingError(msg % (attr, getattr(self, attr, None))), None, sys.exc_info()[2]
-        s = model.TaskSnapshot(snapshot)
-        self.snapshot_id = s.id
-        return s
-
-    @classmethod
-    def from_snapshot(cls, snapshot):
-        """
-        Retrieve task from a snapshot
-        """
-        #task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
-        task = cls(dir) # dir is being used as a placeholder
-        for attr in cls._copied_fields:
-            setattr(task, attr, snapshot.get(attr, None))
-        pickled_none = pickle.dumps(None) # pickled None, used as default value
-        for attr in cls._pickled_fields:
-            setattr(task, attr, pickle.loads(snapshot.get(attr, pickled_none)))
-        # reset the progress callback
-        if task._progress_callback is not None:
-            task.set_progress('progress_callback', task._progress_callback)
-        # record the current snapshot id
-        task.snapshot_id = snapshot.id
-        return task
-
-    # -------------------------------------------------------------------------
-
-    def reset(self):
-        """
-        Reset this task to run again.
-        """
-        self.snapshot_id = None
-        self.state = task_waiting
-        self.start_time = None
-        self.finish_time = None
-        self.progress = None
-        self.result = None
-        self.exception = None
-        self.traceback = None
-
-
-    def schedule(self):
-        """
-        Schedule the task's next run time.
-        @raise UnscheduledTaskException: if the task scheduler does not return
-                                         a next scheduled_time
-        """
-        if self.failure_threshold is not None:
-            if self.consecutive_failures == self.failure_threshold:
-                _log.warn(_('%s has had %d failures and will not be scheduled again') %
-                          (str(self), self.consecutive_failures))
-                return False
-        adjustments, scheduled_time = self.scheduler.schedule(self.scheduled_time)
-        if scheduled_time is None:
-            self.scheduled_time = None
-            raise UnscheduledTaskException()
-        if adjustments > 1:
-            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
-        self.scheduled_time = scheduled_time
-
-    # -------------------------------------------------------------------------
+    # attribute setters ------------------------------------------------------
 
     def set_progress(self, arg, callback):
         """
@@ -324,7 +200,92 @@ class Task(object):
                        (repr(e), self.id, self._progress_callback.__name__))
             raise
 
-    # -------------------------------------------------------------------------
+    # snapshot methods ---------------------------------------------------------
+
+    _copy_fields = ('id', 'class_name', 'method_name', 'failure_threshold',
+                    'state', 'progress', 'consecutive_failures',
+                    'cancel_attempts')
+
+    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout',
+                      'schedule_threshold', '_progress_callback', 'start_time',
+                      'finish_time', 'result', 'exception', 'traceback')
+
+    def snapshot(self):
+        """
+        Serialize the task into snapshot and store it in db
+        """
+        # start recording pertinent data
+        data = {}
+        data['task_class'] = pickle.dumps(self.__class__)
+        # self-grooming
+        callback = self.kwargs.pop('progress_callback', None) # self-referential
+        # store the attributes of the task
+        for field in self._copy_fields:
+            data[field] = getattr(self, field)
+        for field in self._pickle_fields:
+            data[field] = pickle.dumps(getattr(self, field))
+        # restore groomed state
+        if callback is not None:
+            self.progress_callback(callback)
+        # build the snapshot
+        snapshot = model.TaskSnapshot(data)
+        self.snapshot_id = snapshot._id
+        return snapshot
+
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        """
+        Retrieve task from a snapshot
+        """
+        def _dummy_callable():
+            pass
+        task = cls(_dummy_callable)
+        for field in task._copy_fields:
+            setattr(task, field, snapshot[field])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        # reset the progress callback
+        if task._progress_callback is not None:
+            task.set_progress('progress_callback', task._progress_callback)
+        # record the current snapshot id
+        task.snapshot_id = snapshot._id
+        return task
+
+    # scheduling methods -------------------------------------------------------
+
+    def reset(self):
+        """
+        Reset this task to run again.
+        """
+        self.snapshot_id = None
+        self.state = task_waiting
+        self.start_time = None
+        self.finish_time = None
+        self.progress = None
+        self.result = None
+        self.exception = None
+        self.traceback = None
+
+    def schedule(self):
+        """
+        Schedule the task's next run time.
+        @raise UnscheduledTaskException: if the task scheduler does not return
+                                         a next scheduled_time
+        """
+        if self.failure_threshold is not None:
+            if self.consecutive_failures == self.failure_threshold:
+                _log.warn(_('%s has had %d failures and will not be scheduled again') %
+                          (str(self), self.consecutive_failures))
+                raise UnscheduledTaskException(_('Too many consecutive failures for task: %s') % str(self))
+        adjustments, scheduled_time = self.scheduler.schedule(self.scheduled_time)
+        if scheduled_time is None:
+            self.scheduled_time = None
+            raise UnscheduledTaskException(_('No more scheduled runs for task: %s') % str(self))
+        if adjustments > 1:
+            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
+        self.scheduled_time = scheduled_time
+
+    # run the task -------------------------------------------------------------
 
     def _exception_delivered(self):
         """
@@ -363,24 +324,19 @@ class Task(object):
             result = self.callable(*self.args, **self.kwargs)
             self.invoked(result)
         except TimeoutException, e:
-            _log.info('Task id:%s, method_name:%s: TIMED OUT' %
-                       (self.id, self.method_name))
+            _log.info(_('Task timed out: %s') % str(self))
             self.state = task_timed_out
             self._exception_delivered()
-            self.failed(e)
+            self._complete()
         except CancelException, e:
-            _log.info("Task id:%s, method_name:%s CancelException" %
-                      (self.id, self.method_name))
+            _log.info(_('Task canceled: %s') % str(self))
             self.state = task_canceled
             self._exception_delivered()
-            self.failed(e)
+            self._complete()
         except Exception, e:
-            _log.info("Task id:%s, method_name:%s Exception: %s" %
-                      (self.id, self.method_name, e))
-            self._exception_delivered()
             self.failed(e)
 
-    # -------------------------------------------------------------------------
+    # state methods ------------------------------------------------------------
 
     def invoked(self, result):
         """
@@ -398,10 +354,10 @@ class Task(object):
         @param result: The object returned by the I{method}.
         @type result: object.
         """
-        self.consecutive_failures = 0
-        self.result = result
         self.state = task_finished
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
+        self.result = result
+        self.consecutive_failures = 0
+        _log.info(_('Task succeeded: %s') % str(self))
         self._complete()
 
     def failed(self, exception, tb=None):
@@ -412,14 +368,11 @@ class Task(object):
         @param tb: The formatted traceback.
         @type tb: str
         """
-        self.consecutive_failures += 1
+        self.state = task_error
         self.exception = repr(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
-        _log.error('Task id:%s, method_name:%s:\n%s' % (self.id,
-                                                        self.method_name,
-                                                        ''.join(self.traceback)))
-        self.state = task_error
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
+        self.consecutive_failures += 1
+        _log.error(_('Task failed: %s\n%s') % (str(self), ''.join(self.traceback)))
         self._complete()
 
     def _complete(self):
@@ -427,6 +380,7 @@ class Task(object):
         Safely call the complete callback
         """
         assert self.state in task_complete_states
+        self.finish_time = datetime.datetime.now(dateutils.local_tz())
         if self.complete_callback is None:
             return
         try:
@@ -434,23 +388,39 @@ class Task(object):
         except Exception, e:
             _log.exception(e)
 
-    # -------------------------------------------------------------------------
+    # premature termination ----------------------------------------------------
 
     def cancel(self):
         """
         Cancel a running task.
         NOTE: this is a noop if the task is already complete.
         """
+        _log.warn(_('Deprecated base class Task.cancel() called for [%s]') % str(self))
         if self.state in task_complete_states:
             return
         if hasattr(self.thread, 'cancel'):
             self.thread.cancel()
-        self.state = task_canceled
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
-        # Intentionally not calling _complete().  This will be handled after
-        # exception has been delivered and the Exception is caught.
+        else:
+            self.state = task_canceled
+            _log.info(_('Task canceled: %s') % str(self))
+            self._complete()
 
-# asynchronous task -----------------------------------------------------------
+    def timeout(self):
+        """
+        Timeout a running task.
+        NOTE: this is a noop if the task is already comlete.
+        """
+        _log.warn(_('Deprecated base class Task.timeout() called for [%s]') % str(self))
+        if self.state in task_complete_states:
+            return
+        if hasattr(self.thread, 'timeout'):
+            self.thread.timeout()
+        else:
+            self.state = task_timed_out
+            _log.info(_('Task timed out: %s') % str(self))
+            self._complete()
+
+# asynchronous task ------------------------------------------------------------
 
 class AsyncTask(Task):
     """
@@ -461,6 +431,7 @@ class AsyncTask(Task):
     transition to a finished state.  Rather, the Task state is advanced
     by external processing.
     """
+
     def invoked(self, result):
         """
         The I{method} has been successfully invoked.

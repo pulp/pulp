@@ -97,15 +97,21 @@ class ErrataApi(BaseApi):
         repo = collection.find_one({query:id}, fields=["id"])
         return (repo is not None)
 
-    def erratum(self, id):
+    def erratum(self, id, fields=None):
         """
         Return a single Errata object based on the id
         """
-        return self.collection.find_one({'id': id})
+        return self.collection.find_one({'id': id}, fields=fields)
+
+    def search_errata(self, spec=None):
+        """
+        Return errata according to given spec
+        """
+        return list(self.collection.find(spec, ['id', 'title', 'type']))
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,
-            pushcount=None, from_str=None, reboot_suggested=None, severity=None):
+            pushcount=None, from_str=None, reboot_suggested=None, severity=None, repo_defined=None):
         """
         Return a list of all errata objects matching search terms
         """
@@ -136,6 +142,9 @@ class ErrataApi(BaseApi):
             searchDict['reboot_suggested'] = reboot_suggested
         if severity:
             searchDict['severity'] = severity
+        if repo_defined is not None:
+            searchDict['repo_defined'] = False
+        
         if (len(searchDict.keys()) == 0):
             return list(self.collection.find())
         else:

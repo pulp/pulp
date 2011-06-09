@@ -51,21 +51,21 @@ For many entities in Pulp, an ID is used to uniquely identify one instance from 
 </li></ul><hr />
 <h2 id="timeunits">Time Units</h2>
 <p>
-Time units, like those used in timeout arguments, allow for the following units:
+Time units, like those used in timeout arguments, are in the <a class="ext-link" href="http://en.wikipedia.org/wiki/ISO_8601#Durations"><span class="icon">ISO8601 duration format</span></a> and allow for the following units:
 </p>
-<ul><li>weeks
-</li><li>days
-</li><li>hours
-</li><li>minutes
-</li><li>seconds
+<ul><li>weeks [W]
+</li><li>days [D]
+</li><li>hours [H]
+</li><li>minutes [M]
+</li><li>seconds [S]
 </li></ul><p>
-The values are specified in the format <tt>units:length</tt>, where <tt>units</tt> is one of the above time units (case insensitive) and length is an integer greater than 1. For example:
+The general format is <tt>PnWnDTnHnMnS</tt> where <tt>n</tt> are positive integer values. The required <tt>P</tt> designates the duration, also known as a <i>period</i> and the <tt>T</tt> is required only if hour, minute, and/or second fields are supplied to deliminate the date portion from the time portion. 
 </p>
-<pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64 --timeout minutes:20
+<pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64 --timeout P1DT12H
 </pre><hr />
 <h2 id="dateunits">Date Units</h2>
 <p>
-Dates are specified to both <tt>pulp-admin</tt> and <tt>pulp-client</tt> using a <tt>yyyy-mm-dd</tt> format. For example:
+Dates are specified to both <tt>pulp-admin</tt> and <tt>pulp-client</tt> using the <a class="ext-link" href="http://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations"><span class="icon">ISO8601 combined date and time format</span></a>. Pulp can parse both the basic and extended formats. It is not required to provide the time portion when only a date if required. For example:
 </p>
 <pre class="wiki">$ pulp-client consumer history --start_date 2010-01-01
 </pre></div>

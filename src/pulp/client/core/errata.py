@@ -15,6 +15,7 @@
 #
 
 import os
+import string
 import sys
 import time
 from gettext import gettext as _
@@ -52,6 +53,8 @@ class List(ErrataAction):
     def __init__(self, is_consumer_client=False):
         super(List, self).__init__()
         self.is_consumer_client = is_consumer_client
+        self.id_field_size = 20
+        self.type_field_size = 15
 
     def setup_parser(self):
         default = None
@@ -65,18 +68,22 @@ class List(ErrataAction):
         self.parser.add_option("--consumerid",
                                dest="consumerid",
                                default=default,
-                               help=_('this option is required if a consumer doesn\'t exist locally'))
+                               help=_('consumer id if a consumer doesn\'t exist locally'))
         self.parser.add_option("--repoid", dest="repoid",
                                help=_("repository id"))
-        self.parser.add_option("--type", dest="type", action="append", default=[],
+        self.parser.add_option("--type", dest="type", default=None,
                                help=_("type of errata to lookup; supported types: security, bugfix, enhancement"))
+
 
     def run(self):
         consumerid = self.opts.consumerid
         repoid = self.opts.repoid
 
+        # List all errata if no consumerid or repoid is specified
         if not (consumerid or repoid):
-            system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
+            errata = self.errata_api.errata(self.opts.type)
+            if errata:
+                print_header(_("Errata Information"))
 
         # Only do the double argument check when not running the consumer client
         if not self.is_consumer_client and (consumerid and repoid):
@@ -97,7 +104,19 @@ class List(ErrataAction):
         
         if not errata:
             system_exit(os.EX_OK, _("No errata available to list"))
-        print(" , ".join(errata))
+
+        print _("\n%s\t%s\t%s\n" % (self.form_item_string("Id", self.id_field_size),
+                self.form_item_string("Type", self.type_field_size),
+                "Title"))
+        for erratum in errata:
+            print "%s\t%s\t%s" % \
+                (self.form_item_string(erratum["id"], self.id_field_size),
+                 self.form_item_string(erratum["type"], self.type_field_size),
+                 erratum["title"])
+
+
+    def form_item_string(self, msg, field_size):
+        return string.ljust(msg, field_size)
 
 
 class Info(ErrataAction):
@@ -125,6 +144,45 @@ class Info(ErrataAction):
                                        errata['version'], errata['release'],
                                        errata['status'], ",\n\t\t\t".join(effected_pkgs),
                                        errata['reboot_suggested'], ref)
+
+
+class Search(ErrataAction):
+
+    description = _('search for a specific errata')
+
+    def __init__(self):
+        super(Search, self).__init__()
+        self.id_field_size = 20
+        self.type_field_size = 15
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id", help=_("errata id"))
+        self.parser.add_option("--title", dest="title", help=_("errata title"))
+        self.parser.add_option("--type", dest="type",
+                               help=_("type of errata to search; supported types: security, bugfix, enhancement"))
+        self.parser.add_option("--orphaned", action="store_false", dest="orphaned", default=True,
+                               help=_("search only orphaned packages"))
+
+    def run(self):
+        orphaned = getattr(self.opts, 'orphaned', True)
+        if orphaned:
+            orphaned_value = True
+        else:
+            orphaned_value = False
+        
+        errata = self.errata_api.errata(id=self.opts.id, title=self.opts.title, types=self.opts.type, repo_defined=orphaned_value)
+
+        print _("\n%s\t%s\t%s\n" % (self.form_item_string("Id", self.id_field_size),
+                self.form_item_string("Type", self.type_field_size),
+                "Title"))
+        for erratum in errata:
+            print "%s\t%s\t%s" % \
+                (self.form_item_string(erratum["id"], self.id_field_size),
+                 self.form_item_string(erratum["type"], self.type_field_size),
+                 erratum['title'])
+
+    def form_item_string(self, msg, field_size):
+        return string.ljust(msg, field_size)
 
 
 class Install(ErrataAction):

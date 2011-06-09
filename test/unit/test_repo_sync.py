@@ -92,16 +92,25 @@ class TestRepoSync(unittest.TestCase):
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
-
+        sync_tasks = []
         for r in repos:
             self.assertTrue(r)
-        sync_tasks = [repo_sync.sync(r["id"]) for r in repos]
-
+            t = repo_sync.sync(r["id"])
+            self.assertTrue(t)
+            sync_tasks.append(t)
         # Poll tasks and wait for sync to finish
-        for r in repos:
-            while self.rapi.find_if_running_sync(r["id"]):
-                time.sleep(2)
-
+        waiting_tasks = [t.id for t in sync_tasks]
+        while len(waiting_tasks) > 0:
+            time.sleep(1)
+            for t_id in waiting_tasks:
+                found_tasks = async.find_async(id=t_id)
+                self.assertEquals(len(found_tasks), 1)
+                updated_task = found_tasks[0]
+                if updated_task.state in task.task_complete_states:
+                    self.assertEquals(updated_task.state, task.task_finished)
+                    waiting_tasks.remove(t_id)
+                    #print "Task <%s> result = <%s>, exception = <%s>, traceback = <%s>, progress = <%s>" % \
+                    #      (t_id, updated_task.result, updated_task.exception, updated_task.traceback, updated_task.progress)
         # Refresh repo objects and verify packages were synced.
         for r in repos:
             synced_repo = self.rapi.repository(r["id"])

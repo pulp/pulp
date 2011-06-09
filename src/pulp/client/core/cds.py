@@ -367,7 +367,11 @@ class Status(CDSAction):
             else:
                 finish_time = _('In Progress')
 
-            print(_(constants.CDS_SYNC_DETAILS % (sync_list[counter]['state'], start_time, finish_time)))
+            # Capitalize the first letter of the state for consistency
+            state = sync_list[counter]['state']
+            state = state[0].upper() + state[1:]
+
+            print(_(constants.CDS_SYNC_DETAILS % (state, start_time, finish_time)))
 
             if sync_list[counter]['exception'] is not None:
                 msg = _(constants.CDS_HISTORY_ENTRY_ERROR % sync_list[counter]['exception'])

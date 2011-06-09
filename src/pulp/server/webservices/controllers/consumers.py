@@ -487,7 +487,7 @@ class ConsumerActions(AsyncController):
 
     def listerrata(self, id):
         """
-        list applicable errata for a given repo.
+        list applicable errata for a given consumer.
         filter by errata type if any
         @type id: str
         @param id: consumer id

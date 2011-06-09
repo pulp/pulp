@@ -12,7 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import hashlib
+import itertools
 import logging
+import pickle
 
 # Pulp
 import pulp.server.auth.cert_generator as cert_generator
@@ -29,6 +31,7 @@ from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.task import Task
 from pulp.server.util import chunks, compare_packages
 from pulp.server.agent import PulpAgent
 
@@ -248,8 +251,8 @@ class ConsumerApi(BaseApi):
     @audit()
     def certificate(self, id):
         """
-        Create a X509 Consumer Identity Certificate to associate with the 
-        given Consumer 
+        Create a X509 Consumer Identity Certificate to associate with the
+        given Consumer
         """
         consumer = self.consumer(id)
         if not consumer:
@@ -345,7 +348,7 @@ class ConsumerApi(BaseApi):
         if repoid in repoids:
             return None
 
-        # Update the consumer with the new repo, adding an entry to its history 
+        # Update the consumer with the new repo, adding an entry to its history
         repoids.append(repoid)
         self.collection.save(consumer, safe=True)
         self.consumer_history_api.repo_bound(id, repoid)
@@ -507,7 +510,10 @@ class ConsumerApi(BaseApi):
         List applicable errata for a given consumer id
         """
         consumer = self.consumer(id)
-        return self._applicable_errata(consumer, types).keys()
+        consumer_errata = []
+        for errataid in self._applicable_errata(consumer, types).keys():
+            consumer_errata.append( self.errataapi.erratum(errataid, fields=['id', 'title', 'type']))
+        return consumer_errata
 
     def list_package_updates(self, id, types=()):
         """
@@ -537,7 +543,7 @@ class ConsumerApi(BaseApi):
         return reboot_suggested
 
     def _applicable_errata(self, consumer, types=()):
-        """ 
+        """
         Logic to filter applicable errata for a consumer
         """
         applicable_errata = {}
@@ -546,10 +552,11 @@ class ConsumerApi(BaseApi):
         pkg_profile_dict = [dict(pkg) for pkg in pkg_profile]
         pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
         #Compute applicable errata by subscribed repos
+
         errataids = [eid for repoid in consumer["repoids"] \
                      for eid in self.repoapi.errata(repoid, types) ]
         for erratumid in errataids:
-            # compare errata packages to consumer package profile and 
+            # compare errata packages to consumer package profile and
             # extract applicable errata
             erratum = self.errataapi.erratum(erratumid)
             for epkg in erratum["pkglist"]:
@@ -615,6 +622,28 @@ class InstallPackages(AgentTask):
         self.assumeyes = assumeyes
         AgentTask.__init__(self, self.install)
 
+    # snapshot fields: used for task persistence
+    _copy_fields = itertools.chain(('consumerid', 'secret', 'packages',
+                                    'errata', 'reboot_suggested', 'assumeyes'),
+                                   Task._copy_fields)
+
+    def snapshot(self):
+        # since the callable is set, we do not need to pickle it
+        self.callable = None
+        task = super(InstallPackages, self).snapshot()
+        self.callable = self.install
+        return task
+
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['packages'])
+        for field in task._copy_fields:
+            setattr(task, field, snapshot[field])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        task.snapshot_id = snapshot['_id']
+        return task
+
     def install(self):
         """
         Perform the RMI to the agent to install packages.
@@ -667,6 +696,27 @@ class InstallPackageGroups(AgentTask):
         self.secret = secret
         self.groups = groups
         AgentTask.__init__(self, self.install)
+
+    # snapshot fields: used for task persistence
+    _copy_fields = itertools.chain(('consumerid', 'secret', 'groups'),
+                                   Task._copy_fields)
+
+    def snapshot(self):
+        # since the callable is set, we do not need to pickle it
+        self.callable = None
+        task = super(InstallPackages, self).snapshot()
+        self.callable = self.install
+        return task
+
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['groups'])
+        for field in task._copy_fields:
+            setattr(task, field, snapshot['field'])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        task.snapshot_id = snapshot['_id']
+        return task
 
     def install(self):
         """
