@@ -224,7 +224,7 @@ Finish Time      \t%-25s
 SELECTION_QUERY="""
   'a'   \t : select all
   'x:y' \t : select a range eg:1:3
-  <sel> \t : select value between 1 and %s
+  <sel> \t : select value in range (1-%s) to toggle selection
   'y'   \t : confirm selection
   'c'   \t : clear selections
   'q'   \t : abort the repo creation
