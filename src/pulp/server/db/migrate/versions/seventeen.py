@@ -18,7 +18,7 @@ from pulp.server.db.model import Consumer, Repo
 _log = logging.getLogger('pulp')
 
 
-version = 16
+version = 17
 
 def migrate():
     _log.info('migration to data model version %d started' % version)
