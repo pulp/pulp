@@ -124,7 +124,13 @@ class CdsInstance(JSONController):
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)
     def DELETE(self, id):
-        cds_api.unregister(id)
+        data = self.params()
+
+        force = False
+        if 'force' in data:
+            force = bool(data['force'])
+
+        cds_api.unregister(id, force=force)
         return self.ok(True)
 
 
