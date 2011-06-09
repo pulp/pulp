@@ -49,7 +49,7 @@ class Login(Action):
         # Write the certificate data
         bundle = LoginBundle()
         bundle.write(crt)
-        print _('User credentials successfully stored at [%s]') % bundle.root()
+        print _('User credentials successfully stored at [%s]') % bundle.crtpath()
 
 
 class Logout(Action):
@@ -60,7 +60,7 @@ class Logout(Action):
         # Remove the certificate and private key files
         bundle = LoginBundle()
         bundle.delete()
-        print _('User credentials removed from [%s]') % bundle.root()
+        print _('User credentials removed from [%s]') % bundle.crtpath()
 
 # repo auth actions------------------------------------------------------------
 

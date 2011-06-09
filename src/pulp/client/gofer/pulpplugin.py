@@ -207,7 +207,8 @@ class Repo:
         cert_dir = cfg.client.cert_dir
 
         repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, cert_dir, repo_id,
-                     bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
+                     bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'],
+                     bind_data['cacert'], bind_data['clientcert'])
 
     @remote(secret=getsecret)
     def unbind(self, repo_id):

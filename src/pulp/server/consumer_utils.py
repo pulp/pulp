@@ -76,11 +76,27 @@ def build_bind_data(repo, hostnames, key_list):
     for host in hostnames:
         repo_url = 'https://%s%s/%s' % (host, repo_hosted_url, repo_relative_path)
         repo_urls.append(repo_url)
+        
+    # add certificates
+    cacert = None
+    clientcert = None
+    path = repo.get('consumer_ca')
+    if path:
+        f = open(path)
+        cacert = f.read()
+        f.close()
+    path = repo.get('consumer_cert')
+    if path:
+        f = open(path)
+        clientcert = f.read()
+        f.close()
 
     bind_data = {
         'repo' : repo,
         'host_urls' : repo_urls,
         'gpg_keys' : key_list,
+        'cacert' : cacert,
+        'clientcert' : clientcert,
     }
 
     return bind_data

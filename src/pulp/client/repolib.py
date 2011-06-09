@@ -29,7 +29,17 @@ log = getLogger(__name__)
 
 # -- public ----------------------------------------------------------------
 
-def bind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, repo_id, repo_data, url_list, gpg_keys, lock=None):
+def bind(repo_filename, 
+         mirror_list_filename,
+         keys_root_dir,
+         cert_root_dir,
+         repo_id,
+         repo_data,
+         url_list,
+         gpg_keys,
+         cacert,
+         clientcert,
+         lock=None):
     '''
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
@@ -72,6 +82,12 @@ def bind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, repo
     @param gpg_keys: mapping of key name to contents for GPG keys to be used when
                      verifying packages from this repo
     @type  gpg_keys: dict {string: string}
+    
+    @param cacert: The CA certificate (PEM).
+    @type cacert: str
+    
+    @param clientcert: The client certificate (PEM).
+    @type clientcert: str
 
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
@@ -98,8 +114,8 @@ def bind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, repo
 
         if gpg_keys is not None:
             _handle_gpg_keys(repo, gpg_keys, keys_root_dir)
-            
-        _handle_certs(repo, cert_root_dir)
+
+        _handle_certs(repo, cert_root_dir, cacert, clientcert)
 
         if url_list is not None:
             _handle_host_urls(repo, url_list, mirror_list_filename)
@@ -215,8 +231,6 @@ def _convert_repo(repo_id, repo_data):
     else:
         enabled = '0'
     repo['enabled'] = enabled
-    repo['sslcacert'] = repo_data['consumer_ca']
-    repo['sslclientcert'] = repo_data['consumer_cert']
 
     return repo
 
@@ -244,7 +258,7 @@ def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
     # Call this in either case to make sure any existing keys were deleted
     repo_keys.update_filesystem()
     
-def _handle_certs(repo, rootdir):
+def _handle_certs(repo, rootdir, cacert, clientcert):
     '''
     Handle x.509 certificates that were specified with the repo.
     The cert files will be written to disk, deleting any existing
@@ -252,8 +266,6 @@ def _handle_certs(repo, rootdir):
     values related to the stored certificates.
     '''
     certificates = CertFiles(rootdir, repo.id)
-    cacert = repo['sslcacert']
-    clientcert = repo['sslclientcert']
     certificates.update(cacert, clientcert)
     capath, clientpath = certificates.apply()
     # CA certificate
