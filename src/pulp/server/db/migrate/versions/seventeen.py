@@ -44,7 +44,7 @@ def _migrate_package_model():
 
 
 def migrate():
-    _log.info('migration to data model version 3 started')
+    _log.info('migration to data model version 17 started')
     _migrate_errata_model()
     _migrate_package_model()
-    _log.info('migration to data model version 3 complete')
+    _log.info('migration to data model version 17 complete')
