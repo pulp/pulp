@@ -139,10 +139,12 @@ class RepoApi(BaseApi):
         @param data: cert dict (ca|cert|key)
         @type data: dict
         """
+        KEY = 'key'
+        CRT = 'cert'
         if data is None:
             return
-        key = data.get('key', '')
-        cert = data.get('cert', '')
+        key = data.get(KEY, '')
+        cert = data.get(CERT, '')
         if key:
             if not Bundle.haskey(key):
                 raise Exception, 'key (PEM) not valid'
@@ -150,12 +152,13 @@ class RepoApi(BaseApi):
                 if not Bundle.hascrt(cert):
                     raise Exception, 'certificate (PEM) not valid'
                 data['cert'] = Bundle.join(key, cert)
-                del data['key']
             else:
                 raise Exception, 'certificate must be specified'
         else:
             if cert and (not Bundle.hasboth(cert)):
                 raise Exception, 'key and certificate (PEM) expected'
+        if KEY in data:
+            del data[KEY]
 
     @audit()
     def clean(self):
@@ -616,6 +619,7 @@ class RepoApi(BaseApi):
                 for item in written_files:
                     repo['consumer_' + item] = written_files[item]
                 consumer_cert_updated = True
+                update_consumers = True
                 continue
             # feed changed
             if key == 'feed':

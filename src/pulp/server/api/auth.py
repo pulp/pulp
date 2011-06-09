@@ -15,6 +15,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.auditing import audit
 from pulp.server.auth import cert_generator, principal
+from pulp.common.bundle import Bundle
 from pulp.server import config
 
 
@@ -68,7 +69,11 @@ class AuthApi(BaseApi):
         @type  cert_bundle: dict {str, str}
         '''
         repo_cert_utils = RepoCertUtils(config.config)
-
+        key = cert_bundle.get('key', '')
+        cert = cert_bundle.get('cert', '')
+        if key:
+            cert = Bundle.join(key, cert)
+        del cert_bundle['key']
         repo_cert_utils.validate_cert_bundle(cert_bundle)
         repo_cert_utils.write_global_repo_cert_bundle(cert_bundle)
 

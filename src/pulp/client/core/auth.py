@@ -82,13 +82,17 @@ class EnableGlobalRepoAuth(Action):
 
     def run(self):
 
-        ca_filename = self.get_required_option('ca')
-        cert_filename = self.get_required_option('cert')
-        key_filename = self.get_required_option('key')
+        ca = self.get_required_option('ca')
+        ca = utils.readFile(ca)
+        cert = self.get_required_option('cert')
+        cert = utils.readFile(cert)
+        key = self.opts.key # key is optional
+        if key:
+            key = utils.readFile(key)
 
-        bundle = {'ca'   : utils.readFile(ca_filename),
-                  'cert' : utils.readFile(cert_filename),
-                  'key'  : utils.readFile(key_filename),
+        bundle = {'ca'   : ca,
+                  'cert' : cert,
+                  'key'  : key,
                   }
 
         self.services_api.enable_global_repo_auth(bundle)

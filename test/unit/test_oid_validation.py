@@ -93,7 +93,7 @@ class TestOidValidation(unittest.TestCase):
         # Setup
         self.auth_api.disable_global_repo_auth()
 
-        repo_x_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -125,7 +125,7 @@ class TestOidValidation(unittest.TestCase):
         # Setup
         self.auth_api.disable_global_repo_auth()
 
-        repo_x_bundle = {'ca' : INVALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -157,7 +157,7 @@ class TestOidValidation(unittest.TestCase):
         # Setup
         self.auth_api.disable_global_repo_auth()
 
-        repo_y_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        repo_y_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch', consumer_cert_data=repo_y_bundle,
@@ -187,7 +187,7 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT,}
+        global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT,}
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
@@ -219,7 +219,7 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
@@ -251,7 +251,7 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : INVALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
@@ -284,10 +284,10 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
-        repo_x_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -318,10 +318,10 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : INVALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
-        repo_x_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -352,10 +352,10 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
-        repo_x_bundle = {'ca' : INVALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -387,7 +387,7 @@ class TestOidValidation(unittest.TestCase):
         # Setup
         self.auth_api.disable_global_repo_auth()
 
-        repo_x_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -417,7 +417,7 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : INVALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
@@ -450,10 +450,10 @@ class TestOidValidation(unittest.TestCase):
         '''
 
         # Setup
-        global_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.auth_api.enable_global_repo_auth(global_bundle)
 
-        repo_x_bundle = {'ca' : VALID_CA, 'cert' : ANYCERT, }
+        repo_x_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
@@ -474,6 +474,27 @@ class TestOidValidation(unittest.TestCase):
 # -- test data ---------------------------------------------------------------------
 
 ANYCERT = """
+-----BEGIN CERTIFICATE-----
+MIIC9zCCAd8CAmlJMA0GCSqGSIb3DQEBBQUAMG4xCzAJBgNVBAYTAlVTMRAwDgYD
+VQQIEwdBbGFiYW1hMRMwEQYDVQQHEwpIdW50c3ZpbGxlMRYwFAYDVQQKEw1SZWQg
+SGF0LCBJbmMuMSAwHgYJKoZIhvcNAQkBFhFqb3J0ZWxAcmVkaGF0LmNvbTAeFw0x
+MTA2MDMyMDQ5MjdaFw0yMTA1MzEyMDQ5MjdaMBQxEjAQBgNVBAMTCWxvY2FsaG9z
+dDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMRkjseAow6eH/IgWb5z
+D47QRA0No9jNqGL6onRSYaMjCTKcu3T1nPbBTVlxSQw9cah2anXoJaFZzIcc7c0R
+PGMpJR3wVe/0sOBMTeD0CFHwdhin2lo75AMLldc/7qenuMT9bxaQKZ3MDRbalz+E
+SIXFZPx/Oy2cp5vWwq3OEQAcRwMhdYZfRjoKZ+xQ+kHhdJD4Baakee8vyP2o3T+x
+LY2ZOBBLtuhypB96QrCESozL8u2YS3Dqbq1X0ge0eub/lk+QMDjrtF5kTC45jgJE
+ykdRFhgKznO5IAwnHt5NvZ1wQxF/lAvt6lBG5t9XuFV1cQOLiE7BzklDjOX97Oy9
+JxMCAwEAATANBgkqhkiG9w0BAQUFAAOCAQEAZwck2cMAT/bOv9Xnyjx8qzko2xEm
+RlHtMDMHpzBGLRAaj9Pk5ckZKJLeGNnGUXTEA2xLfN5Q7B9R9Cd/+G3NE2Fq1KfF
+XXPux/tB+QiSzzrE2U4iOKDtnVEHAdsVI8fvFZUOQCr8ivGjdWyFPvaRKI0wA3+s
+XQcarTMvR4adQxUp0pbf8Ybg2TVIRqQSUc7gjYcD+7+ThuyWLlCHMuzIboUR+NRa
+kdEiOVJc9jJOzj/4NljtFggxR8BV5QbCt3w2rRhmnhk5bN6OdqxbJjH8Wmm6ae0H
+rwlofisIJvB0JQxaoQgprDem4CChLqEAnMmCpybfSLLqXTieTPr116nQ9A==
+-----END CERTIFICATE-----
+"""
+
+ANYKEY = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAxGSOx4CjDp4f8iBZvnMPjtBEDQ2j2M2oYvqidFJhoyMJMpy7
 dPWc9sFNWXFJDD1xqHZqdegloVnMhxztzRE8YyklHfBV7/Sw4ExN4PQIUfB2GKfa
@@ -501,24 +522,6 @@ bi/FfgLH60Vmkn5lwWGCmDE6IvpzkSo1O0yFA9GiDdfiZlkLcdAvUCkHjCsY11Qf
 0mkVJrA0vycI+lP94eEcAjhFZFjCKgflZL9z5GLPv+vANbzOHyIw+BLzX3SybBeW
 NgH6CEPkQzXt83c+B8nECNWxheP1UkerWfe/gmwQmc0Ntt4JvKeOuw==
 -----END RSA PRIVATE KEY-----
------BEGIN CERTIFICATE-----
-MIIC9zCCAd8CAmlJMA0GCSqGSIb3DQEBBQUAMG4xCzAJBgNVBAYTAlVTMRAwDgYD
-VQQIEwdBbGFiYW1hMRMwEQYDVQQHEwpIdW50c3ZpbGxlMRYwFAYDVQQKEw1SZWQg
-SGF0LCBJbmMuMSAwHgYJKoZIhvcNAQkBFhFqb3J0ZWxAcmVkaGF0LmNvbTAeFw0x
-MTA2MDMyMDQ5MjdaFw0yMTA1MzEyMDQ5MjdaMBQxEjAQBgNVBAMTCWxvY2FsaG9z
-dDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMRkjseAow6eH/IgWb5z
-D47QRA0No9jNqGL6onRSYaMjCTKcu3T1nPbBTVlxSQw9cah2anXoJaFZzIcc7c0R
-PGMpJR3wVe/0sOBMTeD0CFHwdhin2lo75AMLldc/7qenuMT9bxaQKZ3MDRbalz+E
-SIXFZPx/Oy2cp5vWwq3OEQAcRwMhdYZfRjoKZ+xQ+kHhdJD4Baakee8vyP2o3T+x
-LY2ZOBBLtuhypB96QrCESozL8u2YS3Dqbq1X0ge0eub/lk+QMDjrtF5kTC45jgJE
-ykdRFhgKznO5IAwnHt5NvZ1wQxF/lAvt6lBG5t9XuFV1cQOLiE7BzklDjOX97Oy9
-JxMCAwEAATANBgkqhkiG9w0BAQUFAAOCAQEAZwck2cMAT/bOv9Xnyjx8qzko2xEm
-RlHtMDMHpzBGLRAaj9Pk5ckZKJLeGNnGUXTEA2xLfN5Q7B9R9Cd/+G3NE2Fq1KfF
-XXPux/tB+QiSzzrE2U4iOKDtnVEHAdsVI8fvFZUOQCr8ivGjdWyFPvaRKI0wA3+s
-XQcarTMvR4adQxUp0pbf8Ybg2TVIRqQSUc7gjYcD+7+ThuyWLlCHMuzIboUR+NRa
-kdEiOVJc9jJOzj/4NljtFggxR8BV5QbCt3w2rRhmnhk5bN6OdqxbJjH8Wmm6ae0H
-rwlofisIJvB0JQxaoQgprDem4CChLqEAnMmCpybfSLLqXTieTPr116nQ9A==
------END CERTIFICATE-----
 """
 
 # Entitlements for:
