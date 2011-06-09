@@ -159,7 +159,7 @@ class Search(ErrataAction):
         self.parser.add_option("--id", dest="id", help=_("errata id"))
         self.parser.add_option("--title", dest="title", help=_("errata title"))
         self.parser.add_option("--type", dest="type",
-                               help=_("type of errata to search; supported types: security, bugfix, enhancement"))
+                               help=_("type of errata to search"))
         self.parser.add_option("--orphaned", action="store_false", dest="orphaned", default=True,
                                help=_("search only orphaned packages"))
 
