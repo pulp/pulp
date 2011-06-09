@@ -118,10 +118,12 @@ class Unregister(CDSAction):
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
                                help=_('CDS hostname (required)'))
+        self.parser.add_option('--force', dest='force', action='store_true', default=False,
+                               help=_('if specified, the CDS will be removed from the server regardless of whether or not the CDS receives the release call'))
 
     def run(self):
         hostname = self.get_required_option('hostname')
-        self.cds_api.unregister(hostname)
+        self.cds_api.unregister(hostname, self.opts.force)
         print(_('Successfully unregistered CDS [%s]' % hostname))
 
 class Update(CDSAction):

@@ -32,8 +32,7 @@ def _migrate_errata_model():
         if modified:
             collection.save(erratum, safe=True)
 
-
 def migrate():
-    _log.info('migration to data model version 3 started')
+    _log.info('migration to data model version 17 started')
     _migrate_errata_model()
-    _log.info('migration to data model version 3 complete')
+    _log.info('migration to data model version 17 complete')

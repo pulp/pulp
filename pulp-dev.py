@@ -25,6 +25,7 @@ DIRS = (
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
+    '/etc/pki/content',
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',

@@ -107,7 +107,7 @@ class Server(object):
 
     # request methods ---------------------------------------------------------
 
-    def DELETE(self, path):
+    def DELETE(self, path, body=None):
         """
         Send a DELETE request to the pulp server.
         @type path: str
@@ -288,8 +288,8 @@ class PulpServer(Server):
 
     # request methods ---------------------------------------------------------
 
-    def DELETE(self, path):
-        return self._request('DELETE', path)
+    def DELETE(self, path, body=None):
+        return self._request('DELETE', path, body=body)
 
     def GET(self, path, queries=()):
         return self._request('GET', path, queries)

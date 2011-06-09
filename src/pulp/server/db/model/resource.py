@@ -136,7 +136,7 @@ class Package(Model):
         Model.__init__(self)
         # ID is initialized in Model.__init__()
         self.name = name
-        self.epoch = epoch or 0 #epoch can be "", None; default to 0 as yum
+        self.epoch = str(epoch)
         self.version = version
         self.release = release
         self.arch = arch
