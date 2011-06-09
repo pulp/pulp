@@ -144,7 +144,7 @@ class RepoApi(BaseApi):
         if data is None:
             return
         key = data.get(KEY, '')
-        cert = data.get(CERT, '')
+        cert = data.get(CRT, '')
         if key:
             if not Bundle.haskey(key):
                 raise Exception, 'key (PEM) not valid'
