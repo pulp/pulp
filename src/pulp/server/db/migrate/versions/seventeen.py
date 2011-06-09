@@ -13,7 +13,7 @@
 
 import logging
 
-from pulp.server.db.model.resource import Errata, Package
+from pulp.server.db.model.resource import Errata
 
 
 _log = logging.getLogger('pulp')
@@ -32,19 +32,7 @@ def _migrate_errata_model():
         if modified:
             collection.save(erratum, safe=True)
 
-def _migrate_package_model():
-    collection = Package.get_collection()
-    for pkg in collection.find():
-        modified = False
-        if 'epoch' in pkg and pkg['epoch'] == u"":
-            pkg['epoch'] = 0
-            modified = True
-        if modified:
-            collection.save(pkg, safe=True)
-
-
 def migrate():
     _log.info('migration to data model version 17 started')
     _migrate_errata_model()
-    _migrate_package_model()
     _log.info('migration to data model version 17 complete')
