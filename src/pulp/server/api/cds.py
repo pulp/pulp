@@ -157,13 +157,19 @@ class CdsApi(BaseApi):
         return cds
 
     @audit()
-    def unregister(self, hostname):
+    def unregister(self, hostname, force=False):
         '''
         Unassociates an existing CDS from this pulp server.
 
         @param hostname: fully-qualified hostname of the CDS instance; a CDS instance must
                          exist with the given hostname
         @type  hostname: string; cannot be None
+
+        @param force: if True, the CDS will be removed from the database regardless
+                      of whether or not it could successfully be contacted with
+                      the release call; if False, an exception will be thrown if it
+                      cannot be contacted
+        @type  force: bool
 
         @raise PulpException: if a CDS with the given hostname doesn't exist
         '''
@@ -175,20 +181,29 @@ class CdsApi(BaseApi):
         try:
             self.dispatcher.release_cds(doomed)
         except CdsTimeoutException:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise PulpException('Timeout occurred attempting to release CDS [%s]' % hostname), None, exc_traceback
+            log.exception('Timeout occurred attempting to release CDS [%s]; force was enabled and the CDS will be removed anyway' % hostname)
+
+            if not force:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                raise PulpException('Timeout occurred attempting to release CDS [%s]' % hostname), None, exc_traceback
         except CdsCommunicationsException:
             log.exception('Communications exception occurred releasing CDS [%s]' % hostname)
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise PulpException('Communications error while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+
+            if not force:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                raise PulpException('Communications error while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
         except CdsAuthException:
             log.exception('Authorization exception occurred releasing CDS [%s]' % hostname)
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise PulpException('Communications error while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+
+            if not force:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                raise PulpException('Communications error while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
         except CdsMethodException:
             log.exception('CDS error encountered while attempting to releasing CDS [%s]' % hostname)
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise PulpException('CDS error encountered while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+
+            if not force:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                raise PulpException('CDS error encountered while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
 
         self.cds_history_api.cds_unregistered(hostname)
 
