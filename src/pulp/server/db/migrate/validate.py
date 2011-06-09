@@ -171,7 +171,7 @@ def _validate_package():
     @return: number of errors found during validation
     """
     objectdb = Package.get_collection()
-    reference = model.Package(u'', u'', u'', u'', u'', u'', u'', u'', u'')
+    reference = model.Package(u'', 0, u'', u'', u'', u'', u'', u'', u'')
     _base_id(reference)
     return _validate_model(model.Package.__name__, objectdb, reference)
 
