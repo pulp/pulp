@@ -77,6 +77,14 @@ def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
     return enqueue(task, unique)
 
 
+def cancel_async(task):
+    return _queue.cancel(task)
+
+
+def reschedule_async(task, scheduler):
+    return _queue.reschedule(task, scheduler)
+
+
 def find_async(**kwargs):
     return _queue.find(**kwargs)
 
@@ -85,12 +93,24 @@ def remove_async(task):
     return _queue.remove(task)
 
 
-def cancel_async(task):
-    return _queue.cancel(task)
+def waiting_async():
+    return _queue.waiting()
 
 
-def reschedule_async(task, scheduler):
-    return _queue.reschedule(task, scheduler)
+def running_async():
+    return _queue.running()
+
+
+def incomplete_async():
+    return _queue.incomplete()
+
+
+def complete_async():
+    return _queue.complete()
+
+
+def all_async():
+    return _queue.all()
 
 # async system initialization/finalization ------------------------------------
 
