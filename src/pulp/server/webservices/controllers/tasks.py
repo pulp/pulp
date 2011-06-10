@@ -132,3 +132,5 @@ _urls = (
     'snapshots/$', Snapshots,
     '(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/snapshot/$', Snapshot,
 )
+
+application = web.application(_urls, globals())

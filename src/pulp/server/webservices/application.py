@@ -37,7 +37,7 @@ from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
     filters, orphaned, packages, permissions, repositories, roles, services,
-    users)
+    tasks, users)
 
 
 urls = (# alphabetical order, please
@@ -55,6 +55,7 @@ urls = (# alphabetical order, please
     '/repositories', repositories.application,
     '/roles', roles.application,
     '/services', services.application,
+    '/tasks', tasks.application,
     '/users', users.application,
 )
 
