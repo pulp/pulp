@@ -26,12 +26,12 @@ import web
 from gettext import gettext as _
 
 from pulp.server import async
-from pulp.server.db.model.persistence import TaskHistory, TaskSnapshot
+from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 
 # tasks controller -------------------------------------------------------------
 
-class Tasks(AsyncController):
+class Tasks(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
@@ -88,4 +88,47 @@ class Task(AsyncController):
         if not tasks:
             return self.not_found(_('Task not found: %s') % id)
         async.remove_async(tasks[0])
-        return self.accepted(_('Task set to be canceled: %s') % id)
+        return self.accepted(_('Task set to be removed: %s') % id)
+
+# snapshots controller ---------------------------------------------------------
+
+class Snapshots(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(super_user_only=True)
+    def GET(self):
+        collection = TaskSnapshot.get_collection()
+        snapshots = list(collection.find())
+        return self.ok(snapshots)
+
+# snapshot controller ----------------------------------------------------------
+
+class Snapshot(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(super_user_only=True)
+    def GET(self, id):
+        collection = TaskSnapshot.get_collection()
+        snapshot = collection.find_one({'id': id})
+        if snapshot is None:
+            return self.not_found(_('Snapshot for task not found: %s') % id)
+        return self.ok(snapshot)
+
+    @JSONController.error_handler
+    @JSONController.auth_required(super_user_only=True)
+    def DELETE(self, id):
+        collection = TaskSnapshot.get_collection()
+        snapshot = collection.find_one({'id': id})
+        if snapshot is None:
+            return self.not_found(_('Snapshot for task not found: %s') % id)
+        collection.remove({'id': id}, safe=True)
+        return self.ok(snapshot)
+
+# web.py application -----------------------------------------------------------
+
+_urls = (
+    '/$', Tasks,
+    '(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', Task,
+    'snapshots/$', Snapshots,
+    '(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/snapshot/$', Snapshot,
+)
