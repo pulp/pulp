@@ -122,8 +122,11 @@ class Bundle:
         @return: True if exists & valid.
         @rtype: bool
         """
-        s = self.read()
-        return self.hasboth(s)
+        if os.path.exists(self.crtpath()):
+            s = self.read()
+            return self.hasboth(s)
+        else:
+            return False
 
     def read(self):
         """
