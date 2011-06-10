@@ -85,5 +85,5 @@ class Task(AsyncController):
         tasks = async.find_async(id=id)
         if not tasks:
             return self.not_found(_('Task not found: %s') % id)
-        async.cancel_async(tasks[0])
+        async.remove_async(tasks[0])
         return self.accepted(_('Task set to be canceled: %s') % id)
