@@ -220,6 +220,15 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %post cds
 setfacl -m u:apache:rwx /etc/pki/content/
 
+# Create the cluster related files and give them Apache ownership;
+# both httpd (apache) and gofer (root) will write to them, so to prevent
+# permissions issues put them under apache
+touch /var/lib/pulp-cds/.cluster-members-lock
+touch /var/lib/pulp-cds/.cluster-members
+
+chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
+chown apache:apache /var/lib/pulp-cds/.cluster-members
+
 # For Fedora, enable the mod_python handler in the httpd config
 %if 0%{?fedora} || 0%{?rhel} > 5
 # Remove the comment flags for the auth handler lines (special format on those is #-)
