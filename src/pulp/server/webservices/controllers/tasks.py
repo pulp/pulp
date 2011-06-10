@@ -45,11 +45,15 @@ class Tasks(JSONController):
             return d
 
         valid_filters = ('state',)
-        valid_states = ('waiting', 'running', 'complete', 'incomplete')
+        valid_states = ('waiting', 'running', 'complete', 'incomplete', 'all')
         filters = self.filters(valid_filters)
         states = [s.lower() for s in filters.pop('state', [])]
+        for s in states:
+            if s in valid_states:
+                continue
+            return self.bad_request(_('Unknown state: %s') % s)
         tasks = set()
-        if not states:
+        if not states or 'all' in states:
             tasks.add(async.all_async())
         if 'waiting' in states:
             tasks.add(async.waiting_async())
