@@ -102,13 +102,11 @@ def _add_repo_scheduled_sync_task(repo):
     """
     # hack to avoid circular imports
     import repo_sync
-    from pulp.server.api.repo import RepoApi
-    api = RepoApi()
     task = RepoSyncTask(repo_sync._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     source_type = repo['source']['type']
     synchronizer = repo_sync.get_synchronizer(source_type)
-    task.set_synchronizer(api, repo['id'], synchronizer)
+    task.set_synchronizer(synchronizer)
     if source_type == 'remote':
         task.set_progress('progress_callback', repo_sync.yum_rhn_progress_callback)
     elif source_type == 'local':
