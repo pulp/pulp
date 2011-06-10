@@ -245,7 +245,9 @@ class Bind(ConsumerAction):
                     repoid,
                     bind_data['repo'],
                     bind_data['host_urls'],
-                    bind_data['gpg_keys'])
+                    bind_data['gpg_keys'],
+                    bind_data['cacert'],
+                    bind_data['clientcert'])
 
             print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                   (consumerid, repoid)
