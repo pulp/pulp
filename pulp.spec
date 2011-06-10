@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.188
+Version:        0.0.189
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -313,6 +313,44 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jun 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.189-1
+- removing errata type constraint from help (skarmark@redhat.com)
+- 704194 - Add path component of sync URL to event. (jortel@redhat.com)
+- Allow for ---PRIVATE KEY----- without (RSA|DSA) (jortel@redhat.com)
+- Fix pulp-client consumer bind to pass certificates to repolib.
+  (jortel@redhat.com)
+- Fix bundle.validate(). (jortel@redhat.com)
+- 704599 - rephrase the select help menu (pkilambi@redhat.com)
+- Fix global auth for cert consolidation. (jortel@redhat.com)
+- 697206 - Added force option to CDS unregister to be able to remove it even if
+  the CDS is offline. (jason.dobies@redhat.com)
+- changing the epoch to a string; and if an non string is passed force it to be
+  a str (pkilambi@redhat.com)
+- migrate epoch if previously empty string  and set to int
+  (pkilambi@redhat.com)
+- Pass certificate PEM instead of paths on bind. (jortel@redhat.com)
+- Fix merge weirdness. (jortel@redhat.com)
+- Seventeen taken on master. (jortel@redhat.com)
+- Adding a verbose option to yum plugin(on by default) (pkilambi@redhat.com)
+- Merge branch 'master' into key-cert-consolidation (jortel@redhat.com)
+- Migration chnages to convert pushcount from string to an integer value of 1
+  (pkilambi@redhat.com)
+- removing constraint for errata type (skarmark@redhat.com)
+- 701830 - race condition fixed by pushing new scheduler assignment into the
+  task queue (jconnor@redhat.com)
+- removed re-raising of exceptions in task dispatcher thread to keep the
+  dispatcher from exiting (jconnor@redhat.com)
+- added docstring (jconnor@redhat.com)
+- added more information on pickling errors for better debugging
+  (jconnor@redhat.com)
+- Add nss DB script to playpen. (jortel@redhat.com)
+- Go back to making --key optional. (jortel@redhat.com)
+- Move Bundle class to common. (jortel@redhat.com)
+- Support CA, client key/cert in pulp.repo. (jortel@redhat.com)
+- stop referencing feed_key option. (jortel@redhat.com)
+- consolidate key/cert for repo auth certs. (jortel@redhat.com)
+- consolidate key/cert for login & consumer certs. (jortel@redhat.com)
+
 * Wed Jun 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.188-1
 - 709703 - set the right defaults for pushcount and epoch (pkilambi@redhat.com)
 - removed callable from pickling in derived tasks that only can have one
