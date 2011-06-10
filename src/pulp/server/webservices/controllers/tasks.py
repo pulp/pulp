@@ -74,7 +74,9 @@ class Task(AsyncController):
         tasks = async.find_async(id=id)
         if not tasks:
             return self.not_found(_('Task not found: %s') % id)
-        return self.ok(self._task_to_dict(tasks[0]))
+        task_dict = self._task_to_dict(tasks[0])
+        task_dict['snapshot_id'] = task.snapshot_id
+        return self.ok(task_dict)
 
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
