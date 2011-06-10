@@ -18,8 +18,8 @@ class Bundle:
     Represents x509, pem encoded key & certificate bundles.
     """
 
-    KEY_BEGIN = re.compile(r'[\n]*[\-]{5}BEGIN (RSA|DSA) PRIVATE KEY[\-]{5}')
-    KEY_END = re.compile(r'[\-]{5}END (RSA|DSA) PRIVATE KEY[\-]{5}')
+    KEY_BEGIN = re.compile(r'[\n]*[\-]{5}BEGIN( RSA| DSA)? PRIVATE KEY[\-]{5}')
+    KEY_END = re.compile(r'[\-]{5}END( RSA| DSA)? PRIVATE KEY[\-]{5}')
     CRT_BEGIN = re.compile(r'[\n]*[\-]{5}BEGIN CERTIFICATE[\-]{5}')
     CRT_END = re.compile(r'[\-]{5}END CERTIFICATE[\-]{5}')
     
