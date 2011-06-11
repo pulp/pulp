@@ -16,11 +16,14 @@
 #
 
 from pulp.client.cli.admin import AdminCLI
+from pulp.client.config import Config
 from pulp.client.core import (
     auth, cds, consumer, consumergroup, errata, package, packagegroup, repo,
     user, distribution, permission, role, content, filter, task)
 
 def setup_admin(admin):
+    config = Config()
+
     auth_cmd = auth.Auth()
     auth_cmd.add_action('login', auth.Login())
     auth_cmd.add_action('logout', auth.Logout())
@@ -169,7 +172,7 @@ def setup_admin(admin):
     content_cmd.add_action('delete', content.Delete())
     admin.add_command('content', content_cmd)
 
-    if True:
+    if config.admin.expose_task_command.lower() == 'true':
         task_cmd = task.Task()
         task_cmd.add_action('list', task.List())
         task_cmd.add_action('info', task.Info())
