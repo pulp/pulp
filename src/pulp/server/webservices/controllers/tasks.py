@@ -132,9 +132,9 @@ class Snapshot(JSONController):
 
 _urls = (
     '/$', Tasks,
-    '(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', Task,
-    'snapshots/$', Snapshots,
-    '(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/snapshot/$', Snapshot,
+    '/(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', Task,
+    '/snapshots/$', Snapshots,
+    '/(?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/snapshot/$', Snapshot,
 )
 
 application = web.application(_urls, globals())
