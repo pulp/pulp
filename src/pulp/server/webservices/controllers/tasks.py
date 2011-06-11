@@ -54,15 +54,15 @@ class Tasks(AsyncController):
             return self.bad_request(_('Unknown state: %s') % s)
         tasks = set()
         if not states or 'all' in states:
-            tasks.add(async.all_async())
+            tasks.update(async.all_async())
         if 'waiting' in states:
-            tasks.add(async.waiting_async())
+            tasks.update(async.waiting_async())
         if 'running' in states:
-            tasks.add(async.running_async())
+            tasks.update(async.running_async())
         if 'complete' in states:
-            tasks.add(async.complete_async())
+            tasks.update(async.complete_async())
         if 'incomplete' in states:
-            tasks.add(async.incomplete_async())
+            tasks.update(async.incomplete_async())
         return self.ok([_serialize(t) for t in tasks])
 
 # task controller --------------------------------------------------------------
