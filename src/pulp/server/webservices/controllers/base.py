@@ -340,8 +340,8 @@ class AsyncController(JSONController):
         @param task: task to convert
         @return dict representing task
         """
-        fields = ('id', 'method_name', 'state', 'result', 'exception',
-                  'traceback', 'progress')
+        fields = ('id', 'class_name', 'method_name', 'state', 'result',
+                  'exception', 'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
         # convert the exception into a string as it cannot be json encoded
         if isinstance(task.exception, Exception):
