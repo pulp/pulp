@@ -31,7 +31,7 @@ from pulp.server.webservices.controllers.base import JSONController, AsyncContro
 
 # tasks controller -------------------------------------------------------------
 
-class Tasks(JSONController):
+class Tasks(AsyncController):
 
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
