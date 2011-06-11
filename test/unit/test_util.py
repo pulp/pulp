@@ -192,8 +192,11 @@ class TestUtil(unittest.TestCase):
 
         # Poll tasks and wait for sync to finish
         waiting_tasks = [t.id for t in sync_tasks]
-        while len(waiting_tasks) > 0:
+        count = 0
+        wait_count = 180 # 3 minutes
+        while len(waiting_tasks) > 0 and count < wait_count:
             time.sleep(1)
+            count += 1
             for t_id in waiting_tasks:
                 found_tasks = async.find_async(id=t_id)
                 self.assertEquals(len(found_tasks), 1)
@@ -201,7 +204,7 @@ class TestUtil(unittest.TestCase):
                 if updated_task.state in task.task_complete_states:
                     self.assertEquals(updated_task.state, task.task_finished)
                     waiting_tasks.remove(t_id)
-
+        self.assertTrue(count < wait_count)
 
 
 if __name__ == '__main__':
