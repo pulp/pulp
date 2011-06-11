@@ -26,6 +26,24 @@ class Task(Command):
 
 # task actions -----------------------------------------------------------------
 
+_task_template = _('''Task: %s
+    Scheduler: %s
+    Call: %s
+    State: %s
+    Start time: %s
+    Finish time: %s
+    Scheduled time: %s
+    Result: %s
+    Exception: %s
+    Traceback: %s
+''')
+
+
+_snapshot_template = _('''Snapshot for task: %s
+    Snapshot id: %s
+''')
+
+
 class TaskAction(Action):
 
     def __init__(self):
@@ -34,6 +52,26 @@ class TaskAction(Action):
 
     def setup_parser(self):
         self.parser.add_option('--id', dest='id', help=_('task id'))
+
+    def format_task(self, task):
+        def _call(task):
+            if task['class_name'] is None:
+                return task['methond_name']
+            return '.'.join((task['class_name'], task['method_name']))
+
+        return _task_template % (task['id'],
+                                 task['scheduler'],
+                                 _call(task),
+                                 task['state'],
+                                 task['start_time'],
+                                 task['finish_time'],
+                                 task['scheduled_time'],
+                                 task['result'],
+                                 task['exception'],
+                                 task['traceback'])
+
+    def format_snapshot(self, snapshot):
+        return _snapshot_template % (snapshot['id'], snapshot['_id'])
 
 
 class List(TaskAction):
@@ -49,7 +87,7 @@ class List(TaskAction):
         tasks = self.api.list(self.opts.state)
         if not tasks:
             system_exit(os.EX_OK, _('No tasks found'))
-        # TODO format and list tasks
+        print '\n'.join(self.format_task(t) for t in tasks)
 
 
 class Info(TaskAction):
@@ -61,7 +99,7 @@ class Info(TaskAction):
         task = self.api.info(id)
         if not task:
             system_exit(os.EX_OK)
-        # TODO format task and print out
+        print self.format_task(task)
 
 
 class Remove(TaskAction):
@@ -88,7 +126,7 @@ class Snapshots(TaskAction):
         snapshots = self.api.list_snapshots()
         if not snapshots:
             system_exit(os.EX_OK, _('No snapshots found'))
-        # TODO format and list snapshots
+        print '\n'.join(self.format_snapshot(s) for s in snapshots)
 
 
 class Snapshot(TaskAction):
@@ -100,7 +138,7 @@ class Snapshot(TaskAction):
         snapshot = self.api.info_snapshot(id)
         if not snapshot:
             system_exit(os.EX_OK)
-        # TODO format and show snapshot
+        print self.format_snapshot(snapshot)
 
 
 class DeleteSnapshot(TaskAction):
