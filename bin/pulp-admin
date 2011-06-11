@@ -180,7 +180,7 @@ def setup_admin(admin):
         task_cmd.add_action('snapshots', task.Snapshots())
         task_cmd.add_action('snapshot', task.Snapshot())
         task_cmd.add_action('delete_snapshot', task.DeleteSnapshot())
-
+        admin.add_command('task', task_cmd)
 
 
 if __name__ == "__main__":
