@@ -56,6 +56,6 @@ def _migrate_repos():
             CERT = '%s_cert' % type
             key = repo.get(KEY)
             crt = repo.get(CERT)
-            if key and cert:
+            if key and crt:
                 repo[CERT] = ''.join((key, crt))
             del repo[KEY]

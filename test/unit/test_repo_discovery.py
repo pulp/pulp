@@ -36,6 +36,7 @@ qpid.setLevel(logging.ERROR)
 class TestRepoDiscoveryApi(unittest.TestCase):
 
     def setUp(self):
+        testutil.load_test_config()
         self.rapi = RepoApi()
 
     def tearDown(self):
