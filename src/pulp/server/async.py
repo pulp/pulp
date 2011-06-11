@@ -94,23 +94,23 @@ def remove_async(task):
 
 
 def waiting_async():
-    return _queue.waiting()
+    return _queue.waiting_tasks()
 
 
 def running_async():
-    return _queue.running()
+    return _queue.running_tasks()
 
 
 def incomplete_async():
-    return _queue.incomplete()
+    return _queue.incomplete_tasks()
 
 
 def complete_async():
-    return _queue.complete()
+    return _queue.complete_tasks()
 
 
 def all_async():
-    return _queue.all()
+    return _queue.all_tasks()
 
 # async system initialization/finalization ------------------------------------
 
