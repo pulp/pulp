@@ -56,7 +56,7 @@ class TaskAction(Action):
     def format_task(self, task):
         def _call(task):
             if task['class_name'] is None:
-                return task['methond_name']
+                return task['method_name']
             return '.'.join((task['class_name'], task['method_name']))
 
         return _task_template % (task['id'],
