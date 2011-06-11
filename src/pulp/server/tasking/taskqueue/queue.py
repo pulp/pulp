@@ -397,34 +397,34 @@ class TaskQueue(object):
     def waiting_tasks(self):
         self.__lock.acquire()
         try:
-            return self.__storage.waiting_tasks()
+            return tuple(self.__storage.waiting_tasks())
         finally:
             self.__lock.release()
 
     def running_tasks(self):
         self.__lock.acquire()
         try:
-            return self.__storage.running_tasks()
+            return tuple(self.__storage.running_tasks())
         finally:
             self.__lock.release()
 
     def incomplete_tasks(self):
         self.__lock.acquire()
         try:
-            return self.__storage.incomplete_tasks()
+            return tuple(self.__storage.incomplete_tasks())
         finally:
             self.__lock.release()
 
     def complete_tasks(self):
         self.__lock.acquire()
         try:
-            return self.__storage.complete_tasks()
+            return tuple(self.__storage.complete_tasks())
         finally:
             self.__lock.release()
 
     def all_tasks(self):
         self.__lock.acquire()
         try:
-            return self.__storage.all_tasks()
+            return tuple(self.__storage.all_tasks())
         finally:
             self.__lock.release()
