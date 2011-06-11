@@ -147,7 +147,7 @@ class DeleteSnapshot(TaskAction):
 
     def run(self):
         id = self.get_required_option('id')
-        snapshot = self.api.delete_snapshot('id')
+        snapshot = self.api.delete_snapshot(id)
         if not snapshot:
             system_exit(os.EX_OK)
         print _('Snapshot for task [%s] deleted') % id
