@@ -17,9 +17,38 @@ title: Tasking RESTful Interface
 description: RESTful interface providing an administrative and debugging api for
              pulp's tasking system.
 Task object fields:
- *
+ * id, str, unique id (usually a uuid) for the task
+ * class_name, str, name of the class, if the task's method is an instance method
+ * method_name, str, name of the pulp library method that was called
+ * state, str, one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended
+ * start_time, str or nil, time the task started running in iso8601 format, nil if the task has not yet started
+ * finish_time,  or nil, time the task finished running in iso8601 format, nil if the task has not yet finished
+ * result, object or nil, the result of the pulp library method upon return, usually nil
+ * exception, str or nil, a string representation of an error in the pulp librry call, if any
+ * traceback, str or nil, a string print out of the trace back for the exception, if any
+ * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
+ * scheduled_time, str or nil, time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks
+ * status_path, str, complete uri path to poll for the task's progress using http GET
+ * snapshot_id, str, id of task's snapshot, if it has one
 TaskSnapshot object fields:
- *
+ * id, str, unique task id
+ * class_name, str, name of the class, if the task's method is an instance method
+ * method_name, str, name of the pulp library method that was called
+ * state, str, one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended
+ * failure_threshold, int, number of failures allowed this task before it is no longer scheduled
+ * cancel_attempts, int, the number of times cancel was called on this task
+ * callable, str, pickled task method
+ * args, str, pickled arguments for the task method
+ * kwargs, str, picked keyword arguments for the task method
+ * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
+ * timeout, str, pickled timedelta representing the time limit for the task's run
+ * schedule_threshold, str, pickled timedelta representing a max difference between the scheduled_time and start_time before an error is logged
+ * _progress_callback, str, pickled method allowing progress information to be recorded by the task
+ * start_time, str, pickled datetime showing the start time of the task
+ * finish_time, str, pickled datetime showing the finish time of the task
+ * result, str, pickled result of the task call
+ * exception, str, pickled error, if one occurred
+ * traceback, str, pickled traceback, if one occured
 """
 
 import web
@@ -38,6 +67,16 @@ class Tasks(AsyncController):
     def GET(self):
         """
         [[wiki]]
+        title: Get All Tasks
+        description: Get a list of all tasks currently in the tasking system
+        method: GET
+        path: /tasks/
+        permission: Super User Only
+        success response: 200 OK
+        failure response: None
+        return: list of task objects
+        filters:
+         * state, str, tasking system task state: waiting, running, complete, incomplete, all
         """
         def _serialize(t):
             d = self._task_to_dict(t)
@@ -74,6 +113,14 @@ class Task(AsyncController):
     def GET(self, id):
         """
         [[wiki]]
+        title: Get A Task
+        description: Get a Task object for a specific task
+        method: GET
+        path: /tasks/<id>/
+        permission: Super User Only
+        success response: 200 OK
+        failure response: 404 Not Found if no such task
+        return: Task object
         """
         tasks = async.find_async(id=id)
         if not tasks:
@@ -88,6 +135,14 @@ class Task(AsyncController):
     def DELETE(self, id):
         """
         [[wiki]]
+        title: Remove A Task
+        description: Remove a task from the tasking sub-system. This does not interrupt the task if it is running
+        method: DELETE
+        path: /tasks/<id>/
+        permission: Super User Only
+        success response: 202 Accepted
+        failure response: 404 Not Found if no such task
+        return: Task object
         """
         tasks = async.find_async(id=id)
         if not tasks:
@@ -103,6 +158,17 @@ class Snapshots(JSONController):
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
     def GET(self):
+        """
+        [[wiki]]
+        title: Get All Task Snapshots
+        description: Get a list of all task snapshots currently in the system
+        method: GET
+        path: /tasks/snapshots/
+        permission: Super User Only
+        success response: 200 OK
+        failure response: None
+        return: a list of !TaskSnapshot objects
+        """
         collection = TaskSnapshot.get_collection()
         snapshots = list(collection.find())
         return self.ok(snapshots)
@@ -114,6 +180,17 @@ class Snapshot(JSONController):
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
     def GET(self, id):
+        """
+        [[wiki]]
+        title: Get A Task Snapshot
+        description: Get a !TaskSnapshot object for the give task
+        method: GET
+        path: /tasks/<id>/snapshot/
+        permission: Super User Only
+        success response: 200 OK
+        failure response: 404 Not Found if no snapshot exists for the given task
+        return: !TaskSnapshot object
+        """
         collection = TaskSnapshot.get_collection()
         snapshot = collection.find_one({'id': id})
         if snapshot is None:
@@ -123,6 +200,17 @@ class Snapshot(JSONController):
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
     def DELETE(self, id):
+        """
+        [[wiki]]
+        title: Delete A Task Snapshot
+        description: Delete the snapshot for a given task
+        method: DELETE
+        path: /tasks/<id>/snapshot/
+        permission: Super User Only
+        success response: 200 OK
+        failure response: 404 Not Found if no snapshot exists for the given task
+        return: !TaskSnapshot object
+        """
         collection = TaskSnapshot.get_collection()
         snapshot = collection.find_one({'id': id})
         if snapshot is None:
