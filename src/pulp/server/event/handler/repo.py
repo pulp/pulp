@@ -21,6 +21,7 @@ import os
 from pulp.server.event.dispatcher import *
 from pulp.server.event.producer import EventProducer
 from pulp.server.api.repo import RepoApi
+from pulp.server.config import config
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -42,14 +43,13 @@ class RepoEvent(EventHandler):
         """
         Raise events when a repo is created.
         Called when RepoApi.create() is called.
-        @param args: The arguments passed to RepoApi.create()
-        @type args: list
-        @param kwargs: The keyword arguments passed to RepoApi.create()
-        @type kwargs: list
+        @param repo: The created repo domain object.
+        @type repo: Repo
         """
-        event = dict(
-            id=args[1],
-            name=args[2],)
+        repo = args[1]
+        baseurl = config.get('server', 'relative_url')
+        path = '/'.join((baseurl, repo.relative_path))
+        event = dict(id=repo.id, name=repo.name, path=path)
         self.producer.send('repo.created', event)
 
     @outbound(action='updated')

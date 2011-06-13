@@ -393,3 +393,38 @@ class TaskQueue(object):
         if not tasks or include_finished:
             return tasks
         return [t for t in tasks if t.state not in task_complete_states]
+
+    def waiting_tasks(self):
+        self.__lock.acquire()
+        try:
+            return tuple(self.__storage.waiting_tasks())
+        finally:
+            self.__lock.release()
+
+    def running_tasks(self):
+        self.__lock.acquire()
+        try:
+            return tuple(self.__storage.running_tasks())
+        finally:
+            self.__lock.release()
+
+    def incomplete_tasks(self):
+        self.__lock.acquire()
+        try:
+            return tuple(self.__storage.incomplete_tasks())
+        finally:
+            self.__lock.release()
+
+    def complete_tasks(self):
+        self.__lock.acquire()
+        try:
+            return tuple(self.__storage.complete_tasks())
+        finally:
+            self.__lock.release()
+
+    def all_tasks(self):
+        self.__lock.acquire()
+        try:
+            return tuple(self.__storage.all_tasks())
+        finally:
+            self.__lock.release()

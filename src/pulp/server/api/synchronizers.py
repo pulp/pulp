@@ -409,7 +409,7 @@ class YumSynchronizer(BaseSynchronizer):
         if limit_in_KB < 0:
             log.error("Invalid value [%s] for bandwidth limit in KB.  Negative values not allowed." % (limit_in_KB))
             limit_in_KB = 0
-        if not limit_in_KB:
+        if limit_in_KB:
             log.info("Limiting download speed to %s KB/sec per thread. [%s] threads will be used" % \
                     (limit_in_KB, num_threads))
         if self.stopped:
@@ -427,11 +427,9 @@ class YumSynchronizer(BaseSynchronizer):
         else:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
         report = self.yum_repo_grinder.fetchYumRepo(store_path, callback=progress_callback)
+        if self.stopped:
+            raise CancelException()
         self.progress = yum_rhn_progress_callback(report.last_progress)
-        if progress_callback is not None:
-            self.progress["step"] = "Running Createrepo"
-            progress_callback(self.progress)
-        log.info("Running createrepo, this may take a few minutes to complete.")
         start = time.time()
         groups_xml_path = None
         repomd_xml = os.path.join(store_path, "repodata/repomd.xml")
@@ -443,6 +441,10 @@ class YumSynchronizer(BaseSynchronizer):
                 groups_xml_path = os.path.join(store_path, g)
         if self.stopped:
             raise CancelException()
+        log.info("Running createrepo, this may take a few minutes to complete.")
+        if progress_callback is not None:
+            self.progress["step"] = "Running Createrepo"
+            progress_callback(self.progress)
         pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
         end = time.time()
         log.info("Createrepo finished in %s seconds" % (end - start))
@@ -452,10 +454,9 @@ class YumSynchronizer(BaseSynchronizer):
 
     def stop(self):
         super(YumSynchronizer, self).stop()
-        log.debug("YumSynchronizer attempting to stop grinder threads")
         if self.yum_repo_grinder:
-            self.yum_repo_grinder.stop()
-        log.debug("YumSynchronizer grinder threads have been stopped.")
+            log.info("Stop sync is being issued")
+            self.yum_repo_grinder.stop(block=False)
 
 
 class LocalSynchronizer(BaseSynchronizer):

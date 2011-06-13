@@ -168,7 +168,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
         elif source_type in ('local'):
             task.set_progress('progress_callback', local_progress_callback)
         synchronizer = get_synchronizer(source_type)
-        task.set_synchronizer(repo_api, repo['id'], synchronizer)
+        task.set_synchronizer(synchronizer)
     return task
 
 def get_synchronizer(source_type):

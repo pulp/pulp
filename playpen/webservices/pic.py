@@ -13,8 +13,8 @@
 
 """
 Pulp Interactive Client
-This module is meant to be imported to talk to pulp webservices interactively 
-from an interpreter. It provides convenience methods for connecting to pulp as 
+This module is meant to be imported to talk to pulp webservices interactively
+from an interpreter. It provides convenience methods for connecting to pulp as
 well as performing many common pulp tasks.
 """
 
@@ -58,7 +58,7 @@ def _request(method, path, body=None):
         body = json.dumps(body)
     _connection.request(method,
                         _path_prefix + path,
-                        body=body, 
+                        body=body,
                         headers=_auth_header())
     response = _connection.getresponse()
     response_body = response.read()
@@ -67,7 +67,7 @@ def _request(method, path, body=None):
     except:
         pass
     if response.status > 299:
-        raise RequestError('Server response: %d\n%s' % 
+        raise RequestError('Server response: %d\n%s' %
                            (response.status, response_body))
     return (response.status, response_body)
 
@@ -123,6 +123,10 @@ def schedules():
     List the sync schedules for all the repositories.
     """
     return GET('/repositories/schedules/')
+
+
+def sync_history(id):
+    return GET('/repositories/%s/history/sync/' % id)
 
 # -----------------------------------------------------------------------------
 

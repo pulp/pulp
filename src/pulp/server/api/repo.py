@@ -257,8 +257,16 @@ class RepoApi(BaseApi):
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
-        r = self.repository(r["id"])
-        return r
+        created = self.repository(r["id"])
+        self.__created(r)
+        return created
+    
+    @event(subject='repo.created')
+    def __created(self, repo):
+        """
+        Event placeholder.
+        """
+        pass
 
     @audit(params=['id', 'state'])
     def publish(self, id, state):

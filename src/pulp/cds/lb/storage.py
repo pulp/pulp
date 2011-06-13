@@ -99,11 +99,6 @@ class FilePermutationStore:
         fp_write.write('\n'.join(self.permutation))
         fp_write.close()
 
-        # Update the permissions so apache can write to it. This is an issue because
-        # gofer (running as root) initially lays down the file but the load balancer
-        # web app (running as apache) will need to edit it.
-        os.chmod(self.store_filename, 0664)
-
     def close(self):
         """
         Releases all locks without writing any changes to the file.

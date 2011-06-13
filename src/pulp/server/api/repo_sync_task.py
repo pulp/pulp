@@ -32,30 +32,26 @@ class RepoSyncTask(Task):
     """
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
         super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
-        self.repo_api = None
         self.repo_id = None
+        if len(args) > 0:
+            # Assuming that args first parameter is always the repo_id
+            self.repo_id = args[0]
         self.synchronizer = None
 
-    def set_synchronizer(self, repo_api, repo_id, sync_obj):
+    def set_synchronizer(self, sync_obj):
         """
-        @param repo_api: instance of a repository api
-        @type repo_api: pulp.server.api.repo.RepoApi
-        @param repo_id: repository id
-        @type repo_id: str
         @param sync_obj
         @type sync_obj: instance of pulp.sever.api.repo_sync.BaseSynchronizer
         """
-        # To avoid a circular reference we require an instance of repo_api to be passed in
-        self.repo_api = repo_api
-        self.repo_id = repo_id
         self.synchronizer = sync_obj
         self.kwargs['synchronizer'] = self.synchronizer
 
     def cancel(self):
-        log.info("RepoSyncTask cancel invoked")
+        log.info("RepoSyncTask cancel invoked. Will cancel synchronizer <%s>" % (self.synchronizer))
         # Tell Grinder to stop syncing
         if self.synchronizer:
             self.synchronizer.stop()
+        log.info("RepoSyncTask has been canceled")
         # Related to bz700508 - fast sync/cancel_sync locks up task subsystem
         # Removed injecting a CancelException into thread
         # Allow thread to stop on it's own when it reaches a safe stopping point
@@ -68,9 +64,11 @@ class RepoSyncTask(Task):
         snapshot['repo_id'] = self.repo_id
         snapshot['synchronizer_class'] = pickle.dumps(None)
         if self.synchronizer is not None:
-            snapshot['synchronizer_class'] = pickle.dumps(synchronizer.__class__)
+            #Note: snapshot() is likely called prior to us having set a synchronizer object
+            #for most runs this self.synchronizer will be None
+            snapshot['synchronizer_class'] = pickle.dumps(self.synchronizer.__class__)
             # restore the grooming
-            self.set_synchronizer(self.repo_api, self.repo_id, synchronizer)
+            self.set_synchronizer(self.synchronizer)
         return snapshot
 
     @classmethod
@@ -80,7 +78,16 @@ class RepoSyncTask(Task):
         task.repo_id = snapshot['repo_id']
         # restore synchronizer, if applicable
         synchronizer_class = pickle.loads(snapshot['synchronizer_class'])
-        if synchronizer_class is not None:
+        if synchronizer_class is None:
+            # Most likely this task has been snapshotted before we set a synchronizer object
+            # it's our responsibility to ensure the synchronizer object is set, failure to do this
+            # will break ability to cancel a sync.
             from pulp.server.api.repo import RepoApi # avoid circular import
-            task.set_synchronizer(RepoApi(), task.repo_id, synchronizer_class())
+            r = RepoApi().repository(task.repo_id, fields=["source"])
+            if r and r.has_key("source") and r["source"].has_key("type"):
+                repo_source_type = r["source"]["type"]
+                from pulp.server.api.repo_sync import get_synchronizer # avoid circular import
+                synchronizer_class = get_synchronizer(repo_source_type).__class__
+        if synchronizer_class is not None:
+            task.set_synchronizer(synchronizer_class())
         return task

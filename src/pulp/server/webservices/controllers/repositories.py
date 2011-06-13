@@ -74,6 +74,21 @@ Progress object fields:
 Details object fields:
  * num_success, int, the number of items successfully processed
  * total_count, int, the number of items that were attempted to be processed
+!TaskHistory object fields:
+ * id, str, uuid of task
+ * class_name, str, name of the task was a instance method
+ * method_name, str, namd of the task callable
+ * args, list, list of arguments passed to the task callable
+ * kwargs, dict, dictionary of arguments passed to the task callable
+ * state, str, final state of the task
+ * progress, object, Progress object for the progress at the end of the task
+ * result, object, result returned by the task, most likely null
+ * exception, str, error, if one occurred
+ * traceback, str, traceback if error occurred
+ * consecutive_failures, int, number of failures since last success
+ * scheduled_time, str, iso8601 combined date time when task was scheduler to run
+ * start_time, str, iso8601 combined date time when task actually ran
+ * finished_time, str, iso8601 combined date time when task completed
 """
 
 import itertools
