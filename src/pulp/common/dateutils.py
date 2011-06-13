@@ -241,3 +241,17 @@ def format_iso8601_interval(interval, start_time=None, recurrences=None):
         parts.append(format_iso8601_datetime(start_time))
     parts.append(isodate.strftime(interval, isodate.D_DEFAULT))
     return '/'.join(parts)
+
+
+# parsing string to datetime functions ------------------------------------------------------------
+
+def parse_datetime(datetime_str):
+    """
+    Parse a datetime string that uses the format string '%Y-%m-%d-%H-%M-%S'.
+    Example: 2011-06-10-00-00-00
+    @type datetime_str: str
+    @param datetime_str: datetime string using format string
+           '%Y-%m-%d-%H-%M-%S' to parse.
+    @rtype: datetime.datetime instance
+    """
+    return datetime.datetime.strptime(datetime_str, '%Y-%m-%d-%H-%M-%S')

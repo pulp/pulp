@@ -519,14 +519,12 @@ class ConsumerActions(AsyncController):
         # step isn't taken (see BZ 638715).
 
         if start_date:
+            start_date = dateutils.parse_datetime(start_date + '-00-00-00')
             start_date = dateutils.to_local_datetime(start_date)
-            start_date = dateutils.format_iso8601_datetime(start_date)
-            #start_date = datetime.strptime(start_date + '-00-00-00', '%Y-%m-%d-%H-%M-%S')
 
         if end_date:
-            start_date = dateutils.to_local_datetime(start_date)
-            end_date = dateutils.format_iso8601_datetime(end_date)
-            #end_date = datetime.strptime(end_date + '-23-59-59', '%Y-%m-%d-%H-%M-%S')
+            end_date = dateutils.parse_datetime(end_date + '-23-59-59')
+            end_date = dateutils.to_local_datetime(end_date)
 
         results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
                                     sort=sort, start_date=start_date, end_date=end_date)
