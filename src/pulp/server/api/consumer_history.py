@@ -306,7 +306,7 @@ class ConsumerHistoryApi(BaseApi):
         @type  lifetime: L{datetime.timedelta}
         '''
         now = datetime.datetime.now(dateutils.local_tz())
-        limit = (now - lifetime).strftime('%s')
+        limit = dateutils.format_iso8601_datetime(now - lifetime)
         spec = {'timestamp': {'$lt': limit}}
         self.collection.remove(spec, safe=False)
 
