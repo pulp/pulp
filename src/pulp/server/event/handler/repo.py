@@ -22,6 +22,7 @@ from pulp.server.event.dispatcher import *
 from pulp.server.event.producer import EventProducer
 from pulp.server.api.repo import RepoApi
 from pulp.server.config import config
+from pulp.server import util
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -47,8 +48,7 @@ class RepoEvent(EventHandler):
         @type repo: Repo
         """
         repo = args[1]
-        baseurl = config.get('server', 'relative_url')
-        path = '/'.join((baseurl, repo.relative_path))
+        path = os.path.join(util.top_repos_location(), repo.relative_path)
         event = dict(id=repo.id, name=repo.name, path=path)
         self.producer.send('repo.created', event)
 

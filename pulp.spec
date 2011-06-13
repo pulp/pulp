@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.189
+Version:        0.0.190
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -322,6 +322,51 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jun 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.190-1
+- 707295 - updated to provide absolute path. (jortel@redhat.com)
+- added tasks module to restapi doc generation (jconnor@redhat.com)
+- added wiki docs for tasks collection (jconnor@redhat.com)
+- added task history object details (jconnor@redhat.com)
+- changing default exposure of tasking command to false (jconnor@redhat.com)
+- added sync history to pic (jconnor@redhat.com)
+- Disabling part of test_get_repo_packages_multi_repo that is causing test to
+  take an excessive amount of time (jmatthews@redhat.com)
+- Adding a 3 min timeout for test_get_repo_packages_multi_repo
+  (jmatthews@redhat.com)
+- 712366 - Canceling a restored sync task does not work (jmatthews@redhat.com)
+- 701736 - currently syncing field shows 100% if you run repo status on a
+  resync as soon as you run repo sync (jmatthews@redhat.com)
+- Renamed group to cluster in CLI output (jason.dobies@redhat.com)
+- Enhace incremental feedback to always show progress (pkilambi@redhat.com)
+- changed return of delete to task instead of message (jconnor@redhat.com)
+- fixed type in delete action (jconnor@redhat.com)
+- removed superfluous ?s in regexes (jconnor@redhat.com)
+- forgot leading /s (jconnor@redhat.com)
+- fixed wrong set call to add elements in buld (jconnor@redhat.com)
+- convert all iterable to tuples from task queries (jconnor@redhat.com)
+- resolved name collision in query methods and complete callback
+  (jconnor@redhat.com)
+- changed inheritence to get right methods (jconnor@redhat.com)
+- forgot to actually add the command to the script (jconnor@redhat.com)
+- tied new task command into client.conf (jconnor@redhat.com)
+- tied in new task command (jconnor@redhat.com)
+- added task and snapshot formatting and output (jconnor@redhat.com)
+- added class_name field to task summary (jconnor@redhat.com)
+- first pass at implementing tasks command and associated actions
+  (jconnor@redhat.com)
+- Need to have the RPM create the cluster files and give them apache ownership;
+  if root owns it apache won't be able to chmod them, and this is easier than
+  jumping through those hoops. (jason.dobies@redhat.com)
+- Trimmed out the old changelog again (jason.dobies@redhat.com)
+- add all state and state validation (jconnor@redhat.com)
+- added tasks web application (jconnor@redhat.com)
+- added snapshot controllers (jconnor@redhat.com)
+- added snapshot id to individual task (jconnor@redhat.com)
+- changed task delete to remove the task instead of cancel it
+  (jconnor@redhat.com)
+- start of task admin web services (jconnor@redhat.com)
+- added query methods to async and queue (jconnor@redhat.com)
+
 * Fri Jun 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.189-1
 - removing errata type constraint from help (skarmark@redhat.com)
 - 704194 - Add path component of sync URL to event. (jortel@redhat.com)
