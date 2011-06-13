@@ -164,13 +164,13 @@ class TestUtil(unittest.TestCase):
                                 'pulp_f14_background_sync', 'x86_64',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo_a is not None)
-        background_sync_task_a = repo_sync.sync(repo_a['id'])
+        #background_sync_task_a = repo_sync.sync(repo_a['id'])
 
         repo_b = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_B',
                                 'pulp_f14_background_sync', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386/')
         self.assertTrue(repo_b is not None)
-        background_sync_task_b = repo_sync.sync(repo_b['id'])
+        #background_sync_task_b = repo_sync.sync(repo_b['id'])
         my_dir = os.path.abspath(os.path.dirname(__file__))
         data_dir = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"
         test_threads = [TestMultiGetRepoPkgsThreads(data_dir) for x in range(0,5)]
@@ -187,8 +187,8 @@ class TestUtil(unittest.TestCase):
         self.assertFalse(caught)
 
         sync_tasks = []
-        sync_tasks.append(background_sync_task_a)
-        sync_tasks.append(background_sync_task_b)
+        #sync_tasks.append(background_sync_task_a)
+        #sync_tasks.append(background_sync_task_b)
 
         # Poll tasks and wait for sync to finish
         waiting_tasks = [t.id for t in sync_tasks]
