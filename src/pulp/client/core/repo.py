@@ -1396,12 +1396,10 @@ class Discovery(RepoProgressAction):
     def print_discovery_progress(self, progress):
         current = ""
         if progress and progress.has_key("num_of_urls"):
-            current += _("Number of Urls Discovered: %s\n") % (progress['num_of_urls'])
-            if not progress["num_of_urls"]:
-                current += "Waiting %s\n" % (self.get_wait_symbol())
-                self._previous_step = progress["num_of_urls"]
+            current += _("Number of Urls Discovered (%s): %s\n") % (self.get_wait_symbol(), progress['num_of_urls'])
+            self._previous_step = progress["num_of_urls"]
         else:
-            current += "Waiting %s\n" % (self.get_wait_symbol())
+            current +=  _("Number of Urls Discovered (%s): %s\n") % (self.get_wait_symbol(),0)
             self._previous_step = None
         self.write(current, self._previous_progress)
         self._previous_progress = current
