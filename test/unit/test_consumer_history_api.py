@@ -28,6 +28,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import mocks
+from pulp.common import dateutils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 import pulp.server.api.consumer_history as consumer_history
@@ -517,10 +518,10 @@ class TestConsumerHistoryApi(unittest.TestCase):
         e3 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_REPO_BOUND, None)
         e4 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_REPO_UNBOUND, None)
 
-        e1.timestamp = datetime.datetime(2000, 2, 1).strftime('%s')
-        e2.timestamp = datetime.datetime(2000, 4, 1).strftime('%s')
-        e3.timestamp = datetime.datetime(2000, 6, 1).strftime('%s')
-        e4.timestamp = datetime.datetime(2000, 10, 1).strftime('%s')
+        e1.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 2, 1))
+        e2.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 4, 1))
+        e3.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 6, 1))
+        e4.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 10, 1))
 
         self.consumer_history_api.collection.insert(e1)
         self.consumer_history_api.collection.insert(e2)
@@ -545,11 +546,11 @@ class TestConsumerHistoryApi(unittest.TestCase):
         days_ago_90 = datetime.timedelta(days=90)
         days_ago_120 = datetime.timedelta(days=120)
 
-        e1.timestamp = now.strftime('%s')
-        e2.timestamp = (now - days_ago_30).strftime('%s')
-        e3.timestamp = (now - days_ago_60).strftime('%s')
-        e4.timestamp = (now - days_ago_90).strftime('%s')
-        e5.timestamp = (now - days_ago_120).strftime('%s')
+        e1.timestamp = dateutils.format_iso8601_datetime(now)
+        e2.timestamp = dateutils.format_iso8601_datetime((now - days_ago_30))
+        e3.timestamp = dateutils.format_iso8601_datetime((now - days_ago_60))
+        e4.timestamp = dateutils.format_iso8601_datetime((now - days_ago_90))
+        e5.timestamp = dateutils.format_iso8601_datetime((now - days_ago_120))
 
         self.consumer_history_api.collection.insert(e1)
         self.consumer_history_api.collection.insert(e2)
