@@ -126,7 +126,7 @@ def schedules():
 
 
 def sync_history(id):
-    return GET('/repositories/%s/history/sync/')
+    return GET('/repositories/%s/history/sync/' % id)
 
 # -----------------------------------------------------------------------------
 
