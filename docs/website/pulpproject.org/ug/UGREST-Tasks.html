@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><p>
+<div class='wiki-toc'>
+<h4>Table of Contents</h4>
+<ol><li class="active"><a href="UGREST-Tasks.html#DeleteATaskSnapshot">Delete A Task Snapshot</a></li><li class="active">
+<a href="UGREST-Tasks.html#GetATaskSnapshot">Get A Task Snapshot</a></li><li class="active">
+<a href="UGREST-Tasks.html#GetAllTaskSnapshots">Get All Task Snapshots</a></li><li class="active">
+<a href="UGREST-Tasks.html#RemoveATask">Remove A Task</a></li><li class="active">
+<a href="UGREST-Tasks.html#GetATask">Get A Task</a></li><li class="active">
+<a href="UGREST-Tasks.html#GetAllTasks">Get All Tasks</a></li></ol></li></ol></div>
+
+</p>
+<h1 id="top">Tasking RESTful Interface</h1>
+<p>
+<i>RESTful interface providing an administrative and debugging api for</i> <br />
+<i>pulp's tasking system.</i> <br />
+<br />
+<strong>Task object fields</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <i>unique id (usually a uuid) for the task</i>
+</li><li><strong>class_name</strong> &lt;str&gt; <i>name of the class, if the task's method is an instance method</i>
+</li><li><strong>method_name</strong> &lt;str&gt; <i>name of the pulp library method that was called</i>
+</li><li><strong>state</strong> &lt;str&gt; <i>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</i>
+</li><li><strong>start_time</strong> &lt;str or nil&gt; <i>time the task started running in iso8601 format, nil if the task has not yet started</i>
+</li><li><strong>finish_time</strong> &lt;or nil&gt; <i>time the task finished running in iso8601 format, nil if the task has not yet finished</i>
+</li><li><strong>result</strong> &lt;object or nil&gt; <i>the result of the pulp library method upon return, usually nil</i>
+</li><li><strong>exception</strong> &lt;str or nil&gt; <i>a string representation of an error in the pulp librry call, if any</i>
+</li><li><strong>traceback</strong> &lt;str or nil&gt; <i>a string print out of the trace back for the exception, if any</i>
+</li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
+</li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <i>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</i>
+</li><li><strong>status_path</strong> &lt;str&gt; <i>complete uri path to poll for the task's progress using http GET</i>
+</li><li><strong>snapshot_id</strong> &lt;str&gt; <i>id of task's snapshot, if it has one</i>
+</li></ul><p>
+<strong>TaskSnapshot object fields</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <i>unique task id</i>
+</li><li><strong>class_name</strong> &lt;str&gt; <i>name of the class, if the task's method is an instance method</i>
+</li><li><strong>method_name</strong> &lt;str&gt; <i>name of the pulp library method that was called</i>
+</li><li><strong>state</strong> &lt;str&gt; <i>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</i>
+</li><li><strong>failure_threshold</strong> &lt;int&gt; <i>number of failures allowed this task before it is no longer scheduled</i>
+</li><li><strong>cancel_attempts</strong> &lt;int&gt; <i>the number of times cancel was called on this task</i>
+</li><li><strong>callable</strong> &lt;str&gt; <i>pickled task method</i>
+</li><li><strong>args</strong> &lt;str&gt; <i>pickled arguments for the task method</i>
+</li><li><strong>kwargs</strong> &lt;str&gt; <i>picked keyword arguments for the task method</i>
+</li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
+</li><li><strong>timeout</strong> &lt;str&gt; <i>pickled timedelta representing the time limit for the task's run</i>
+</li><li><strong>schedule_threshold</strong> &lt;str&gt; <i>pickled timedelta representing a max difference between the scheduled_time and start_time before an error is logged</i>
+</li><li><strong>_progress_callback</strong> &lt;str&gt; <i>pickled method allowing progress information to be recorded by the task</i>
+</li><li><strong>start_time</strong> &lt;str&gt; <i>pickled datetime showing the start time of the task</i>
+</li><li><strong>finish_time</strong> &lt;str&gt; <i>pickled datetime showing the finish time of the task</i>
+</li><li><strong>result</strong> &lt;str&gt; <i>pickled result of the task call</i>
+</li><li><strong>exception</strong> &lt;str&gt; <i>pickled error, if one occurred</i>
+</li><li><strong>traceback</strong> &lt;str&gt; <i>pickled traceback, if one occured</i>
+</li></ul><hr />
+<h2 id="DeleteATaskSnapshot">Delete A Task Snapshot</h2>
+<p>
+<i>Delete the snapshot for a given task</i> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /tasks/&lt;id&gt;/snapshot/ <br />
+<br />
+<strong>permission</strong>: Super User Only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if no snapshot exists for the given task <br />
+<br />
+<strong>return</strong>: TaskSnapshot object <br />
+<br />
+</p>
+<h2 id="GetATaskSnapshot">Get A Task Snapshot</h2>
+<p>
+<i>Get a TaskSnapshot object for the give task</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /tasks/&lt;id&gt;/snapshot/ <br />
+<br />
+<strong>permission</strong>: Super User Only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if no snapshot exists for the given task <br />
+<br />
+<strong>return</strong>: TaskSnapshot object <br />
+<br />
+</p>
+<hr />
+<h2 id="GetAllTaskSnapshots">Get All Task Snapshots</h2>
+<p>
+<i>Get a list of all task snapshots currently in the system</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /tasks/snapshots/ <br />
+<br />
+<strong>permission</strong>: Super User Only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: a list of TaskSnapshot objects <br />
+<br />
+</p>
+<hr />
+<h2 id="RemoveATask">Remove A Task</h2>
+<p>
+<i>Remove a task from the tasking sub-system. This does not interrupt the task if it is running</i> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /tasks/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: Super User Only <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if no such task <br />
+<br />
+<strong>return</strong>: Task object <br />
+<br />
+</p>
+<h2 id="GetATask">Get A Task</h2>
+<p>
+<i>Get a Task object for a specific task</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /tasks/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: Super User Only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if no such task <br />
+<br />
+<strong>return</strong>: Task object <br />
+<br />
+</p>
+<hr />
+<h2 id="GetAllTasks">Get All Tasks</h2>
+<p>
+<i>Get a list of all tasks currently in the tasking system</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /tasks/ <br />
+<br />
+<strong>permission</strong>: Super User Only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of task objects <br />
+<br />
+<strong>filters</strong>: 
+</p>
+<ul><li><strong>state</strong> &lt;str&gt; <i>tasking system task state: waiting, running, complete, incomplete, all</i>
+</li></ul><p>
+<br />
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

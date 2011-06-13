@@ -159,6 +159,23 @@
 </p>
 <ul><li><strong>num_success</strong> &lt;int&gt; <i>the number of items successfully processed</i>
 </li><li><strong>total_count</strong> &lt;int&gt; <i>the number of items that were attempted to be processed</i>
+</li></ul><p>
+<strong>TaskHistory object fields</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <i>uuid of task</i>
+</li><li><strong>class_name</strong> &lt;str&gt; <i>name of the task was a instance method</i>
+</li><li><strong>method_name</strong> &lt;str&gt; <i>namd of the task callable</i>
+</li><li><strong>args</strong> &lt;list&gt; <i>list of arguments passed to the task callable</i>
+</li><li><strong>kwargs</strong> &lt;dict&gt; <i>dictionary of arguments passed to the task callable</i>
+</li><li><strong>state</strong> &lt;str&gt; <i>final state of the task</i>
+</li><li><strong>progress</strong> &lt;object&gt; <i>Progress object for the progress at the end of the task</i>
+</li><li><strong>result</strong> &lt;object&gt; <i>result returned by the task, most likely null</i>
+</li><li><strong>exception</strong> &lt;str&gt; <i>error, if one occurred</i>
+</li><li><strong>traceback</strong> &lt;str&gt; <i>traceback if error occurred</i>
+</li><li><strong>consecutive_failures</strong> &lt;int&gt; <i>number of failures since last success</i>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <i>iso8601 combined date time when task was scheduler to run</i>
+</li><li><strong>start_time</strong> &lt;str&gt; <i>iso8601 combined date time when task actually ran</i>
+</li><li><strong>finished_time</strong> &lt;str&gt; <i>iso8601 combined date time when task completed</i>
 </li></ul><hr />
 <h2 id="DeleteAllRepositories">Delete All Repositories</h2>
 <p>
@@ -252,16 +269,7 @@
 <br />
 <strong>failure response</strong>: None <br />
 <br />
-<strong>return</strong>: 
-</p>
-<blockquote>
-<p>
-Two lists: <br />
-A list of CDS hostnames unassociated with the deleted repo. <br />
-A list of CDS hostnames that failed during unassociation. <br />
-</p>
-</blockquote>
-<p>
+<strong>return</strong>: Unspecified <br />
 <br />
 </p>
 <h2 id="GetARepository">Get A Repository</h2>

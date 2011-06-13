@@ -68,11 +68,11 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr><tr><td> Schedule Start </td><td> <tt>--start</tt> </td><td> Date and time of first scheduled sync in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format (optional: not specified means to run immediately) 
 </td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
-</td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository.  The file may contain both the private key as well as the certificate in which case the --feed_key should not be specified. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
 </td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> The path to a file containing a certificate.  The file may contain both the private key as well as the certificate in which case the --consumer_key should not be specified.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td>  The path to file containing the certificate's associated private key.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
 </td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> If specified, the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
@@ -104,7 +104,7 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
 </td></tr><tr><td> Delete Schedule </td><td> <tt>--delete-schedule</tt> </td><td> Delete an existing schedule 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
-</td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository.  The file may contain both the private key as well as the certificate in which case the --feed_key is not necessary. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
 </td></tr><tr><td> Remove Feed Entitlement Certificate </td><td> <tt>--remove_feed_cert</tt> </td><td> Removes any feed HTTPS data, including the CA certificate, entitlement certificate and its private key. This cannot be specified at the same time as any of the <tt>--feed_*</tt> attributes. 
 </td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
@@ -496,6 +496,8 @@ The <tt>repo discovery</tt> command takes following arguments:
 </td></tr><tr><td> TYPE </td><td> <tt>-t</tt> or <tt>--type</tt> </td><td>  Content type to look for during discovery (required); supported types: 'yum' 
 </td></tr><tr><td> ASSUMEYES </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically create Pulp repositories for discovered repositories (optional). 
 </td></tr><tr><td> GROUPID   </td><td> <tt>-g</tt> or <tt>--groupid</tt>   </td><td> Group IDs (one or more) to associate the discovered repos (optional). 
+</td></tr><tr><td> CA Certificate </td><td> <tt>--ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Entitlement Certificate </td><td> <tt>--cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate and key combined to use. The certificate pem will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr></table>
 <h4 id="Example:performarepodiscoveryinteractively">Example: perform a repo discovery interactively</h4>
 <pre class="wiki">$ sudo pulp-admin repo discovery -u http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/ -t yum
@@ -537,6 +539,19 @@ Creating candidate repos for selected urls..
 Successfully created repo [repos-pulp-pulp-demo_repos-test_bandwidth_repo_smaller]
 Successfully created repo [repos-pulp-pulp-demo_repos-test_bandwidth_repo]
 
+</pre><h4 id="Example:performrepodiscoveryonauthenticatedrepos">Example: perform repo discovery on authenticated repos</h4>
+<pre class="wiki">sudo pulp-admin repo discovery --url=https://&lt;hostname&gt;/content/dist/rhel/rhui/server-6/releases/6Server/x86_64/ --ca=/certs/ca.crt --cert=/certs/cert.pem --type=yum
+Discovering urls with yum metadata, This could take some time...
+Number of Urls Discovered: 4
++------------------------------------------+
+ Repository Urls discovered @ [https://&lt;hostname&gt;/content/dist/rhel/rhui/server-6/releases/6Server/x86_64/]
++------------------------------------------+
+(-)  [1] https://&lt;hostname&gt;/dist/rhel/rhui/server-6/releases/6Server/x86_64/source/SRPMS
+(-)  [2] https://&lt;hostname&gt;/content/dist/rhel/rhui/server-6/releases/6Server/x86_64/scalablefilesystem/os
+(-)  [3] https://&lt;hostname&gt;/content/dist/rhel/rhui/server-6/releases/6Server/x86_64/resilientstorage/os
+(-)  [4] https://&lt;hostname&gt;/content/dist/rhel/rhui/server-6/releases/6Server/x86_64/os/Server
+
+Select urls for which candidate repos should be created (h for help):
 </pre></div>
    </div>
    

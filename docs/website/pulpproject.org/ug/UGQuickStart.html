@@ -131,7 +131,7 @@ The first step is to pick a repository to synchronize:
 <p>
 3. Create a repo in the Pulp server using the <tt>pulp-admin</tt> script. Note the <tt>--feed</tt> parameter denotes the type of repository to be synchronized. The type helps Pulp figure out what synchronization strategy to use when copying the content.
 </p>
-<pre class="wiki">$ pulp-admin repo create --id f14-x86_64 --feed yum:http://mirror.uoregon.edu/fedora/linux/releases/14/Fedora/x86_64/os/
+<pre class="wiki">$ pulp-admin repo create --id f14-x86_64 --feed http://mirror.uoregon.edu/fedora/linux/releases/14/Fedora/x86_64/os/
 Successfully created repository [ f14-x86_64 ]
 </pre><p>
 4. Now we can sync the newly created repository. You can watch this progress or CTRL+C and come back later to see its progress.

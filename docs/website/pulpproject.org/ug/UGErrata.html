@@ -39,10 +39,93 @@
    <div class="wikipage">
     <div id="searchable"><h1 id="Errata">Errata</h1>
 <p>
-By default, repositories synchronize any errata in the feed. Errata information is available for review and installation on consumers.
+By default, repositories synchronize any errata in the feed. You can choose to skip errata sync by providing "--no-errata" option when syncing a repository. Errata information is available for review and installation on consumers.
 </p>
 <hr />
 <h2 id="display">Display</h2>
+<h3 id="List">List</h3>
+<p>
+All errata, including custom/orphaned errata (not defined by a repository) can be listed using 'errata list' command. 
+</p>
+<pre class="wiki">$ pulp-admin errata list
++------------------------------------------+
+             Errata Information
++------------------------------------------+
+
+Id                      Type            Title
+
+custom1                 bugfix          customerrata1
+custom2                 security        customerrata2
+FEDORA-2010-7013        bugfix          python-migrate-0.5.4-1.fc13
+FEDORA-2011-0096        security        Django-1.2.4-1.fc13
+.....
+
+# Output trimmed for user guide
+
+</pre><p>
+All errata in a given repository can be found by passing <tt>--repoid</tt> to the <tt>errata list</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin errata list --repoid=foo
++------------------------------------------+
+       Available Errata in Repo [foo]
++------------------------------------------+
+
+Id                  	Type           	Title
+
+custom3             	bugfix         	customerrata3
+custom_4            	enhancement    	customerrata4
+custom4             	enhancement    	customerrata4
+</pre><p>
+The errata applicable to a particular consumer, as determined by the consumer's package profile and repository bindings, can be viewed using the 
+</p>
+<pre class="wiki">$ pulp-admin errata list --consumerid=consumer1
++------------------------------------------+
+ Applicable Errata for consumer [consumer1]
++------------------------------------------+
+
+Id                  	Type           	Title
+
+custom3             	bugfix         	customerrata3
+
+</pre><p>
+In addition you can pass "--type" option to all above list commands to restrict results to a particular errata type. 
+</p>
+<pre class="wiki">$ pulp-admin errata list --repoid=foo --type=enhancement
++------------------------------------------+
+       Available Errata in Repo [foo]
++------------------------------------------+
+
+Id                  	Type           	Title
+
+custom_4            	enhancement    	customerrata4
+custom4             	enhancement    	customerrata4
+
+</pre><h3 id="Search">Search</h3>
+<p>
+In addition, you can search errata using one or more of following search options. Errata satisfying all given parameters will be returned. 
+</p>
+<pre class="wiki">$ pulp-admin errata search --help
+Usage: pulp-admin &lt;options&gt; errata search &lt;options&gt;
+
+Options:
+  -h, --help     show this help message and exit
+  --id=ID        errata id
+  --title=TITLE  errata title
+  --type=TYPE    type of errata to search
+  --orphaned     search only orphaned packages
+</pre><pre class="wiki">$ pulp-admin errata search --type=bugfix --orphaned 
+
+Id                  	Type           	Title
+
+custom1             	bugfix         	customerrata1
+custom3             	bugfix         	customerrata3
+
+$ pulp-admin errata search --title=httpd-2.2.16-1.fc13 --type=security
+
+Id                  	Type           	Title
+
+FEDORA-2010-12478   	security       	httpd-2.2.16-1.fc13
+</pre><h3 id="Info">Info</h3>
 <p>
 An individual erratum's details are displayed using the <tt>errata info</tt> command:
 </p>
@@ -59,24 +142,6 @@ Release               	Fedora 13
 Status                	stable                   
 Packages Effected     	['fedora-packager-0.5.1.0-1.fc13.noarch.rpm', 'fedora-packager-0.5.1.0-1.fc13.src.rpm']
 References            	[]              
-</pre><p>
-All errata in a given repository can be found by passing <tt>--repoid</tt> to the <tt>errata list</tt> command:
-</p>
-<pre class="wiki">$ pulp-admin errata list --repoid rhntest
-+------------------------------------------+
-     Available Errata in Repo [rhntest]
-+------------------------------------------+
-RHBA-2010:0826 , RHBA-2010:0254 , RHBA-2009:1653 , RHBA-2009:1652 , RHBA-2009:1655
-
-# Output trimmed for user guide
-</pre><p>
-The errata applicable to a particular consumer, as determined by the consumer's package profile and repository bindings, can be viewed using the 
-</p>
-<pre class="wiki">$ pulp-admin errata list --consumerid test-consumer
-+------------------------------------------+
-     Available Errata in Repo [rhntest]
-+------------------------------------------+
-RHBA-2010:0826 , RHBA-2010:0254
 </pre><hr />
 <h2 id="install">Installation</h2>
 <p>
