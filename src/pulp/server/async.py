@@ -55,7 +55,7 @@ def enqueue(task, unique=True):
     return task
 
 
-def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
+def run_async(method, args=None, kwargs=None, timeout=None, unique=True, task_type=None):
     """
     Make a python call asynchronously.
     @type method: callable
@@ -71,6 +71,8 @@ def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
     @rtype: L{Task} instance or None
     @return: L{Task} instance on success, None otherwise
     """
+    args = args or []
+    kwargs = kwargs or {}
     if not task_type:
         task_type = Task
     task = task_type(method, args, kwargs, timeout)
