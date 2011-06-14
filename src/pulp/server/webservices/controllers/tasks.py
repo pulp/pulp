@@ -56,11 +56,11 @@ from gettext import gettext as _
 
 from pulp.server import async
 from pulp.server.db.model.persistence import TaskSnapshot
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 
 # tasks controller -------------------------------------------------------------
 
-class Tasks(AsyncController):
+class Tasks(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
@@ -106,7 +106,7 @@ class Tasks(AsyncController):
 
 # task controller --------------------------------------------------------------
 
-class Task(AsyncController):
+class Task(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)

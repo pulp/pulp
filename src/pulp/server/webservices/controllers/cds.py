@@ -21,16 +21,16 @@ import web
 
 # Pulp
 from pulp.common import dateutils
+from pulp.server import async
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
 from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
-from pulp.server.async import find_async
 from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDATE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.agent import CdsAgent
 
 
@@ -134,7 +134,7 @@ class CdsInstance(JSONController):
         return self.ok(True)
 
 
-class CdsActions(AsyncController):
+class CdsActions(JSONController):
 
     exposed_actions = (
         'associate',
@@ -148,7 +148,7 @@ class CdsActions(AsyncController):
         cds_api.associate_repo(id, repo_id)
 
         # Kick off the async task
-        task = self.start_task(cds_api.redistribute, [repo_id], unique=True)
+        task = async.run_async(cds_api.redistribute, [repo_id], unique=True)
 
         # If no task was returned, the uniqueness check was tripped which means
         # there's already a redistribute running for the given repo
@@ -166,7 +166,7 @@ class CdsActions(AsyncController):
         cds_api.unassociate_repo(id, repo_id)
 
         # Kick off the async task
-        task = self.start_task(cds_api.redistribute, [repo_id], unique=True)
+        task = async.run_async(cds_api.redistribute, [repo_id], unique=True)
 
         # If no task was returned, the uniqueness check was tripped which means
         # there's already a redistribute running for the given repo
@@ -229,7 +229,7 @@ class CdsActions(AsyncController):
             return self.internal_server_error('No implementation for [%s] found' % action_name)
         return action(id)
 
-class CdsSyncActions(AsyncController):
+class CdsSyncActions(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
@@ -240,10 +240,12 @@ class CdsSyncActions(AsyncController):
 
         # Check to see if a timeout was specified
         params = self.params()
-        timeout = self.timeout(params)
+        timeout = None
+        if 'timeout' in self.params:
+            timeout = dateutils.parse_iso8601_duration(params['timeout'])
 
         # Kick off the async task
-        task = self.start_task(cds_api.cds_sync, [id], timeout=timeout, unique=True)
+        task = async.run_async(cds_api.cds_sync, [id], timeout=timeout, unique=True)
 
         # If no task was returned, the uniqueness check was tripped which means
         # there's already a sync running for this CDS.
@@ -263,7 +265,7 @@ class CdsSyncActions(AsyncController):
         '''
 
         # Find all sync tasks associated with the given CDS
-        tasks = [t for t in find_async(method_name='cds_sync')
+        tasks = [t for t in async.find_async(method_name='cds_sync')
                  if id in t.args]
 
         if len(tasks) == 0:
@@ -278,7 +280,7 @@ class CdsSyncActions(AsyncController):
         return self.ok(all_task_infos)
 
 
-class CdsSyncTaskStatus(AsyncController):
+class CdsSyncTaskStatus(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)

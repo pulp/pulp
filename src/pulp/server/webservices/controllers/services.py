@@ -17,6 +17,7 @@ import time
 import web
 import urllib
 
+from pulp.server import async
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.package import PackageApi
@@ -27,12 +28,11 @@ from pulp.server.api.upload import ImportUploadContent
 from pulp.server.api.discovery import get_discovery, \
     discovery_progress_callback, InvalidDiscoveryInput
 from pulp.server.agent import Agent
-from pulp.server.async import find_async
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 
 # globals ---------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ class PackageSearch(JSONController):
     @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
-        Search for matching packages 
+        Search for matching packages
         expects passed in regex search strings from POST data
         @return: package meta data on successful creation of package
         """
@@ -185,7 +185,7 @@ class FileSearch(JSONController):
     @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
-        Search for matching files 
+        Search for matching files
         expects passed in regex search strings from POST data
         @return: matching file object
         """
@@ -232,15 +232,15 @@ class StatusService(JSONController):
           "status_count": status['count'],
           "status_duration_ms": str(round((time.time() - start_time) * 1000, 2)),
         })
-        
+
 class PackagesChecksumSearch(JSONController):
-    
+
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching rpms to get all available checksums
-        @return: {"rpmname1": [<checksums1>,<checksum2>,..],...} 
+        @return: {"rpmname1": [<checksums1>,<checksum2>,..],...}
         """
         #NOTE: This call could be done with PackageSearch call.
         # need to efficiently rewrite the search to handle multiple queries.
@@ -248,19 +248,19 @@ class PackagesChecksumSearch(JSONController):
         return self.ok(papi.get_package_checksums(pkgnames))
 
 class FilesChecksumSearch(JSONController):
-    
+
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching files to get all available checksums
-        @return: {"filename1": [<checksums1>,<checksum2>,..],...} 
+        @return: {"filename1": [<checksums1>,<checksum2>,..],...}
         """
         filenames = self.params()
         return self.ok(fapi.get_file_checksums(filenames))
 
 
-class CdsRedistribute(AsyncController):
+class CdsRedistribute(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
@@ -271,7 +271,7 @@ class CdsRedistribute(AsyncController):
         '''
 
         # Kick off the async task
-        task = self.start_task(cds_api.redistribute, [repo_id], unique=True)
+        task = async.run_async(cds_api.redistribute, [repo_id], unique=True)
 
         # If no task was returned, the uniqueness check was tripped which means
         # there's already a redistribute running for the given repo
@@ -288,7 +288,7 @@ class AssociatePackages(JSONController):
     @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
-        Associate a collection of filename,checksum tuples to 
+        Associate a collection of filename,checksum tuples to
         multiple repositories.
         Returns an empty list on success or a dictionary of items
         which could not be associated
@@ -382,7 +382,7 @@ class DisableGlobalRepoAuth(JSONController):
 
         self.ok({})
 
-class RepoDiscovery(AsyncController):
+class RepoDiscovery(JSONController):
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
     def POST(self):
@@ -416,7 +416,7 @@ class RepoDiscovery(AsyncController):
 
         log.info('Discovering compatible repo urls @ [%s]' % data['url'])
         # Kick off the async task
-        task = self.start_task(discovery_obj.discover)
+        task = async.run_async(discovery_obj.discover)
         task.set_progress('progress_callback', discovery_progress_callback)
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
@@ -424,7 +424,7 @@ class RepoDiscovery(AsyncController):
 
         return self.accepted(task_info)
 
-class DiscoveryStatus(AsyncController):
+class DiscoveryStatus(JSONController):
 
     def GET(self, id):
         """
@@ -444,7 +444,7 @@ class DiscoveryStatus(AsyncController):
         if task is None:
             return self.not_found('No task with id %s found' % id)
         return self.ok(task)
-    
+
 # web.py application ----------------------------------------------------------
 
 URLS = (

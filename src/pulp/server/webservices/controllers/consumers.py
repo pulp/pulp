@@ -33,7 +33,7 @@ from pulp.server.auth.authorization import (
 from pulp.server.tasking.scheduler import AtScheduler
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.agent import PulpAgent
 
 # globals ---------------------------------------------------------------------
@@ -280,7 +280,7 @@ class ConsumerDeferredFields(JSONController):
         return field(id)
 
 
-class ConsumerActions(AsyncController):
+class ConsumerActions(JSONController):
 
     # See pulp.webservices.repositories.RepositoryActions for design
 
@@ -550,7 +550,7 @@ class ConsumerActions(AsyncController):
         return action(id)
 
 
-class ConsumerActionStatus(AsyncController):
+class ConsumerActionStatus(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)

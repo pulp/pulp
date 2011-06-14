@@ -166,6 +166,62 @@ class JSONController(object):
 
     # result methods ----------------------------------------------------------
 
+    def _task_to_dict(self, task):
+        """
+        Convert a task to a dictionary (non-destructive) while retaining the
+        pertinent information for a status check but in a more convenient form
+        for JSON serialization.
+        @type task: Task instance
+        @param task: task to convert
+        @return dict representing task
+        """
+        fields = ('id', 'class_name', 'method_name', 'state', 'result',
+                  'exception', 'traceback', 'progress')
+        d = dict((f, getattr(task, f)) for f in fields)
+        # convert the exception into a string as it cannot be json encoded
+        if isinstance(task.exception, Exception):
+            d['exception'] = str(task.exception)
+        # time fields must be in iso8601 format
+        fields = ('start_time', 'finish_time', 'scheduled_time')
+        for f in fields:
+            t = getattr(task, f, None)
+            d[f] = t and dateutils.format_iso8601_datetime(t)
+        # add scheduler information so we can differentiate between recurring
+        # and non-recurring tasks
+        d['scheduler'] = None
+        if isinstance(task.scheduler, ImmediateScheduler):
+            d['scheduler'] = 'immediate'
+        elif isinstance(task.scheduler, AtScheduler):
+            d['scheduler'] = 'at'
+        elif isinstance(task.scheduler, IntervalScheduler):
+            d['scheduler'] = 'interval'
+        return d
+
+    def _status_path(self, id):
+        """
+        Construct a URL path that can be used to poll a task's status
+        A status path is constructed as follows:
+        /<collection>/<object id>/<action>/<action id>/
+        A GET request sent to this path will get a JSON encoded status object
+        """
+        parts = web.ctx.path.split('/')
+        if parts[-2] == id:
+            return http.uri_path()
+        return http.extend_uri_path(id)
+
+    def task_status(self, id):
+        """
+        Get the current status of an asynchronous task.
+        @param id: task id
+        @return: TaskModel instance
+        """
+        task = self.find_task(id)
+        if task is None:
+            return None
+        status = self._task_to_dict(task)
+        status.update({'status_path': self._status_path(id)})
+        return status
+
     def filter_results(self, results, filters):
         """
         @deprecated: use mongo.filters_to_re_spec and pass the result into
@@ -232,6 +288,15 @@ class JSONController(object):
         http.status_created()
         http.header('Location', location)
         return self._output(data)
+
+    def accepted(self, status):
+        """
+        Return an accepted response with status information in the body.
+        @return: JSON encoded response
+        """
+        http.status_accepted()
+        status.update({'status_path': self._status_path(status['id'])})
+        return self._output(status)
 
     def no_content(self):
         """
@@ -321,159 +386,3 @@ class JSONController(object):
         """
         http.status_internal_server_error()
         return self._output(msg)
-
-
-class AsyncController(JSONController):
-    """
-    Base controller class with convenience methods for executing asynchronous
-    tasks.
-    """
-
-    # result methods ----------------------------------------------------------
-
-    def _task_to_dict(self, task):
-        """
-        Convert a task to a dictionary (non-destructive) while retaining the
-        pertinent information for a status check but in a more convenient form
-        for JSON serialization.
-        @type task: Task instance
-        @param task: task to convert
-        @return dict representing task
-        """
-        fields = ('id', 'class_name', 'method_name', 'state', 'result',
-                  'exception', 'traceback', 'progress')
-        d = dict((f, getattr(task, f)) for f in fields)
-        # convert the exception into a string as it cannot be json encoded
-        if isinstance(task.exception, Exception):
-            d['exception'] = str(task.exception)
-        # time fields must be in iso8601 format
-        fields = ('start_time', 'finish_time', 'scheduled_time')
-        for f in fields:
-            t = getattr(task, f, None)
-            d[f] = t and dateutils.format_iso8601_datetime(t)
-        # add scheduler information so we can differentiate between recurring
-        # and non-recurring tasks
-        d['scheduler'] = None
-        if isinstance(task.scheduler, ImmediateScheduler):
-            d['scheduler'] = 'immediate'
-        elif isinstance(task.scheduler, AtScheduler):
-            d['scheduler'] = 'at'
-        elif isinstance(task.scheduler, IntervalScheduler):
-            d['scheduler'] = 'interval'
-        return d
-
-    def _status_path(self, id):
-        """
-        Construct a URL path that can be used to poll a task's status
-        A status path is constructed as follows:
-        /<collection>/<object id>/<action>/<action id>/
-        A GET request sent to this path will get a JSON encoded status object
-        """
-        parts = web.ctx.path.split('/')
-        if parts[-2] == id:
-            return http.uri_path()
-        return http.extend_uri_path(id)
-
-    # sync task methods -------------------------------------------------------
-
-    def start_task(self,
-                   func,
-                   args=[],
-                   kwargs={},
-                   timeout=None,
-                   unique=False,
-                   task_type=None):
-        """
-        Execute the function and its arguments as an asynchronous task.
-        @deprecated: this method's functionality is usually implemented in the
-                     api's themselves
-        @param func: python callable
-        @param args: positional arguments for func
-        @param kwargs: key word arguments for func
-        @param task_type: optional parm to allow a specific Task class
-                          instance to be used
-        @return: dict representing the task
-        """
-        return async.run_async(func, args, kwargs, timeout, unique, task_type)
-
-    def cancel_task(self, task):
-        """
-        Cancel the passed in task
-        @type task: Task instance
-        @param task: task to cancel
-        @return: True if the task was successfully canceled, False otherwise
-        """
-        if task is None or task.state in task_complete_states:
-            return False
-        async.cancel_async(task)
-        return True
-
-    def task_status(self, id):
-        """
-        Get the current status of an asynchronous task.
-        @param id: task id
-        @return: TaskModel instance
-        """
-        task = self.find_task(id)
-        if task is None:
-            return None
-        status = self._task_to_dict(task)
-        status.update({'status_path': self._status_path(id)})
-        return status
-
-    def find_task(self, id):
-        """
-        Find and return a task with the given id
-        @type id: str
-        @param id: id of task to find
-        @return: Task instance if a task with the id exists, None otherwise
-        """
-        tasks = async.find_async(id=id)
-        if not tasks:
-            return None
-        return tasks[0]
-
-    def timeout(self, data):
-        """
-        Parse any timeout values out of the passed in data
-        @type data: dict
-        @param data: values passed in via a request body
-        @return: datetime.timedelta instance corresponding to a properly
-                 formatted timeout value if found in data, None otherwise
-        """
-        # XXX this is actually wrong, timeout should, itself, be a dictionary
-        # of 'unit': length. I hate it when I get "clever"
-        timeout = data.get('timeout', None)
-        if timeout is None:
-            return None
-        timeouts = {
-            'days': lambda x: timedelta(days=x),
-            'seconds': lambda x: timedelta(seconds=x),
-            'microseconds': lambda x: timedelta(microseconds=x),
-            'milliseconds': lambda x: timedelta(milliseconds=x),
-            'minutes': lambda x: timedelta(minutes=x),
-            'hours': lambda x: timedelta(hours=x),
-            'weeks': lambda x: timedelta(weeks=x)
-        }
-        if timeout.find(':') < 0:
-            return None
-        units, length = timeout.split(':', 1)
-        units = units.strip().lower()
-        if units not in timeouts:
-            return None
-        try:
-            length = int(length.strip())
-        except ValueError:
-            return None
-        return timeouts[units](length)
-
-    # http response methods ---------------------------------------------------
-
-    def accepted(self, status):
-        """
-        Return an accepted response with status information in the body.
-        @return: JSON encoded response
-        """
-        http.status_accepted()
-        status.update({'status_path': self._status_path(status['id'])})
-        return self._output(status)

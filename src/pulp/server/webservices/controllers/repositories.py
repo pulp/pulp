@@ -97,20 +97,20 @@ from gettext import gettext as _
 
 import web
 
-from pulp.common.dateutils import format_iso8601_datetime
+from pulp.common.dateutils import format_iso8601_datetime, parse_iso8601_duration
+from pulp.server import async
 from pulp.server.api import repo_sync
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.async import find_async
 from pulp.server.auth.authorization import grant_automatic_permissions_for_created_resource
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 
 # globals ---------------------------------------------------------------------
 
@@ -520,7 +520,7 @@ class RepositoryDeferredFields(JSONController):
         return field(id)
 
 
-class RepositoryActions(AsyncController):
+class RepositoryActions(JSONController):
 
     # All actions have been gathered here into one controller class for both
     # convenience and automatically generate the regular expression that will
@@ -597,7 +597,7 @@ class RepositoryActions(AsyncController):
 
         # Check for valid timeout values
         if timeout:
-            timeout = self.timeout(repo_params)
+            timeout = parse_iso8601_duration(timeout)
             if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
         limit = repo_params.get('limit', None)
@@ -1287,7 +1287,7 @@ class RepositoryActions(AsyncController):
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %
                                  (action_name, id))
-        tasks = [t for t in find_async(method_name=action_methods[action_name])
+        tasks = [t for t in async.find_async(method_name=action_methods[action_name])
                  if (t.args and id in t.args) or
                  (t.kwargs and id in t.kwargs.values())]
         if not tasks:
@@ -1301,7 +1301,7 @@ class RepositoryActions(AsyncController):
         return self.ok(task_infos)
 
 
-class RepositoryActionStatus(AsyncController):
+class RepositoryActionStatus(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE) # this is checking an execute, not reading a resource
@@ -1338,15 +1338,12 @@ class RepositoryActionStatus(AsyncController):
         failure response: 404 Not Found if the task id does nat match a task for the repository
         return: Task object on 202
         """
-        task = self.find_task(action_id)
-        if task is None:
+        tasks = async.find_async(id=action_id)
+        if not tasks:
             return self.not_found('No %s with id %s found' % (action_name, action_id))
-        if self.cancel_task(task):
-            return self.accepted(self._task_to_dict(task))
-        # action is complete and, therefore, not canceled
-        # a no-content return means the client should *not* adjust its view of
-        # the resource
-        return self.no_content()
+        task = tasks[0]
+        async.cancel_async(task)
+        return self.accepted(self._task_to_dict(task))
 
 
 class Schedules(JSONController):

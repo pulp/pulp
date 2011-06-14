@@ -22,8 +22,7 @@ from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
     EXECUTE, grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import (JSONController,
-    AsyncController)
+from pulp.server.webservices.controllers.base import JSONController
 
 # globals ---------------------------------------------------------------------
 
@@ -77,7 +76,7 @@ class Errata(JSONController):
         @return: errata that was created
         """
         errata_data = self.params()
-        
+
         if not errata_data.has_key('version') or not isinstance(errata_data['version'], str):
             return self.bad_request('Invalid version [%s]; should be a string' % errata_data['version'])
 
@@ -150,7 +149,7 @@ class Erratum(JSONController):
         api.delete(id=id)
         return self.ok(True)
 
-class ErrataActions(AsyncController):
+class ErrataActions(JSONController):
 
     # All actions have been gathered here into one controller class for both
     # convenience and automatically generate the regular expression that will

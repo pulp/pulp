@@ -23,7 +23,7 @@ from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
     EXECUTE, grant_automatic_permissions_for_created_resource)
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.http import extend_uri_path, resource_path
 from pulp.server.tasking.scheduler import AtScheduler
 
@@ -108,7 +108,7 @@ class ConsumerGroup(JSONController):
         api.delete(id=id)
         return self.ok(True)
 
-class ConsumerGroupActions(AsyncController):
+class ConsumerGroupActions(JSONController):
 
     # See pulp.webservices.repositories.RepositoryActions for design
 
@@ -221,7 +221,7 @@ class ConsumerGroupActions(AsyncController):
     def installerrata(self, id):
         """
          Install applicable errata
-         Body contains a list of consumer groups 
+         Body contains a list of consumer groups
         """
         data = self.params()
         errataids = data.get('errataids', [])
@@ -258,7 +258,7 @@ class ConsumerGroupActions(AsyncController):
         return action(id)
 
 
-class ConsumerGroupActionStatus(AsyncController):
+class ConsumerGroupActionStatus(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE) # this is checking an execute, not reading a resource

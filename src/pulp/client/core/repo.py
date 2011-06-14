@@ -31,7 +31,7 @@ from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import (
     print_header, parse_interval_schedule, system_exit)
 from pulp.client.logutil import getLogger
-from pulp.common.dateutils import parse_iso8601_datetime
+from pulp.common.dateutils import parse_iso8601_datetime, parse_iso8601_duration
 
 log = getLogger(__name__)
 
@@ -747,8 +747,7 @@ class Sync(RepoProgressAction):
     def setup_parser(self):
         super(Sync, self).setup_parser()
         self.parser.add_option("--timeout", dest="timeout",
-                               help=_("sync timeout in <units>:<value> format (e.g. hours:2 " +
-                                      "valid units: seconds, minutes, hours, days, weeks"))
+                               help=_('timeout specified in iso8601 duration format (HH:MM:SS)'))
         self.parser.add_option("--no-packages", action="store_true", dest="nopackages",
                                help=_("skip packages from the sync process"))
         self.parser.add_option("--no-errata", action="store_true", dest="noerrata",
@@ -821,6 +820,8 @@ class Sync(RepoProgressAction):
         if self.opts.nodistro:
             skip['distribution'] = 1
         timeout = self.opts.timeout
+        if timeout is not None:
+            parse_iso8601_duration(timeout)
         limit = self.opts.limit
         threads = self.opts.threads
         task = self.repository_api.sync(id, skip, timeout, limit=limit, threads=threads)

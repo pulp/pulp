@@ -18,7 +18,7 @@ import web
 from pulp.server.api.filter import FilterApi
 from pulp.server.auth.authorization import (
     grant_automatic_permissions_for_created_resource, CREATE, READ, DELETE, EXECUTE)
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.http import extend_uri_path, resource_path
 
 # filters api ---------------------------------------------------------------
@@ -81,7 +81,7 @@ class Filter(JSONController):
         return self.ok(api.filter(id))
 
 
-class FilterActions(AsyncController):
+class FilterActions(JSONController):
 
     exposed_actions = (
         'add_packages',
