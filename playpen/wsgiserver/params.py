@@ -28,7 +28,7 @@ class ParamsServer(srv.Server):
         self.ok()
         return pformat(params)
 
-urls = ('/(.*)', 'ParamServer')
+urls = ('/(.*)', 'ParamsServer')
 application = web.application(urls, globals())
 srv.start_server(application.wsgifunc())
 
@@ -42,4 +42,10 @@ def request(d={}):
             continue
         params.append('%s=%s' % (k, v))
     status, body = srv.GET('/?' + '&'.join(params))
+    print body
+
+
+def raw(s):
+    assert s
+    status, body = srv.GET('/?' + s)
     print body
