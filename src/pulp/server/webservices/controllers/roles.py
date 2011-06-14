@@ -19,6 +19,8 @@ import web
 from pulp.server.api.role import RoleAPI
 from pulp.server.auth import authorization
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 
 _log = logging.getLogger('pulp')
@@ -28,14 +30,14 @@ _role_api = RoleAPI()
 
 class Roles(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def GET(self):
         roles = [r['name'] for r in _role_api.roles(fields=['name'])]
         return self.ok(roles)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def POST(self):
         try:
             role_name = self.params()['rolename']
@@ -56,8 +58,8 @@ class Roles(JSONController):
 
 class Role(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def GET(self, role_name):
         role = _role_api.role(role_name)
         if role is None:
@@ -69,8 +71,8 @@ class Role(JSONController):
                                              for o in operations]
         return self.ok(role)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def DELETE(self, role_name):
         role = _role_api.role(role_name)
         if role is None:
@@ -113,8 +115,8 @@ class RoleActions(JSONController):
         else:
             return self.ok(val)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def POST(self, role_name, action_name):
         role = _role_api.role(role_name)
         if role is None:

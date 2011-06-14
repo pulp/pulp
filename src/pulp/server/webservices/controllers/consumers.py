@@ -34,6 +34,8 @@ from pulp.server.tasking.scheduler import AtScheduler
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 from pulp.server.agent import PulpAgent
 
 # globals ---------------------------------------------------------------------
@@ -51,8 +53,8 @@ default_fields = ['id', 'description', 'key_value_pairs']
 
 class Consumers(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List all available consumers.
@@ -79,8 +81,8 @@ class Consumers(JSONController):
                 c[f] = http.extend_uri_path('/'.join((c['id'], f)))
         return self.ok(consumers)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         """
         Create a new consumer.
@@ -111,8 +113,8 @@ class Consumers(JSONController):
         log.debug('deprecated Consumers.PUT method called')
         return self.POST()
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self):
         """
         Delete all consumers.
@@ -124,8 +126,8 @@ class Consumers(JSONController):
 
 class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         consumer_api.bulkcreate(self.params())
         return self.ok(True)
@@ -133,8 +135,8 @@ class Bulk(JSONController):
 
 class Consumer(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -152,8 +154,8 @@ class Consumer(JSONController):
         consumer['heartbeat'] = heartbeat.values()[0]
         return self.ok(consumer)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(UPDATE)
+    @error_handler
+    @auth_required(UPDATE)
     def PUT(self, id):
         """
         Update consumer
@@ -171,8 +173,8 @@ class Consumer(JSONController):
         consumer_api.update(id, delta)
         return self.ok(True)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete a consumer.
@@ -268,8 +270,8 @@ class ConsumerDeferredFields(JSONController):
         """
         return self.ok(consumer_api.list_errata_package(id))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id, field_name):
         """
         Deferred field dispatcher.
@@ -530,8 +532,8 @@ class ConsumerActions(JSONController):
                                     sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Consumer action dispatcher
@@ -552,8 +554,8 @@ class ConsumerActions(JSONController):
 
 class ConsumerActionStatus(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id, action_name, action_id):
         """
         Check the status of a package install operation.

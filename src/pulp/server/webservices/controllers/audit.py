@@ -34,13 +34,15 @@ from pulp.server.auditing import events
 from pulp.server.auth.authorization import READ
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # audit events controller -----------------------------------------------------
 
 class Events(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         [[wiki]]

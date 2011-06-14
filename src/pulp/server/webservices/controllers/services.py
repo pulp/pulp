@@ -33,6 +33,8 @@ from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # globals ---------------------------------------------------------------------
 
@@ -47,8 +49,8 @@ log = logging.getLogger(__name__)
 
 class DependencyActions(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         list of available dependencies required \
@@ -72,8 +74,8 @@ class DependencyActions(JSONController):
 
 class PackageSearch(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List available packages.
@@ -86,8 +88,8 @@ class PackageSearch(JSONController):
         return self.ok(papi.package_descriptions(spec))
 
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching packages
@@ -141,7 +143,7 @@ class PackageSearch(JSONController):
 
 class StartUpload(JSONController):
 
-    @JSONController.error_handler
+    @error_handler
     def POST(self):
         request = self.params()
         name = request['name']
@@ -156,7 +158,7 @@ class StartUpload(JSONController):
 
 class AppendUpload(JSONController):
 
-    @JSONController.error_handler
+    @error_handler
     def PUT(self, uuid):
         f = File(uuid)
         content = self.data()
@@ -165,8 +167,8 @@ class AppendUpload(JSONController):
 
 class ImportUpload(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         finalize the uploaded file(s)/package(s) on pulp server and
@@ -181,8 +183,8 @@ class ImportUpload(JSONController):
 
 class FileSearch(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching files
@@ -211,7 +213,7 @@ class FileSearch(JSONController):
 
 class StatusService(JSONController):
 
-    @JSONController.error_handler
+    @error_handler
     def GET(self):
         """
         Dummy call that just prints time.
@@ -235,8 +237,8 @@ class StatusService(JSONController):
 
 class PackagesChecksumSearch(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching rpms to get all available checksums
@@ -249,8 +251,8 @@ class PackagesChecksumSearch(JSONController):
 
 class FilesChecksumSearch(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching files to get all available checksums
@@ -262,8 +264,8 @@ class FilesChecksumSearch(JSONController):
 
 class CdsRedistribute(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, repo_id):
         '''
         Triggers a redistribution of consumers across all CDS instances for the
@@ -284,8 +286,8 @@ class CdsRedistribute(JSONController):
         return self.accepted(task_info)
 
 class AssociatePackages(JSONController):
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         Associate a collection of filename,checksum tuples to
@@ -300,8 +302,8 @@ class AssociatePackages(JSONController):
         return self.ok(rapi.associate_packages(pkg_info))
 
 class DisassociatePackages(JSONController):
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         """
         [[wiki]]
@@ -324,8 +326,8 @@ class DisassociatePackages(JSONController):
 
 class AgentStatus(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def POST(self):
         """
         Get the availabiliy of an agent.
@@ -338,8 +340,8 @@ class AgentStatus(JSONController):
 
 class EnableGlobalRepoAuth(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         '''
         [[wiki]]
@@ -362,8 +364,8 @@ class EnableGlobalRepoAuth(JSONController):
 
 class DisableGlobalRepoAuth(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         '''
         [[wiki]]
@@ -383,8 +385,8 @@ class DisableGlobalRepoAuth(JSONController):
         self.ok({})
 
 class RepoDiscovery(JSONController):
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self):
         '''
         [[wiki]]

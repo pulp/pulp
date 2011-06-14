@@ -111,6 +111,8 @@ from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # globals ---------------------------------------------------------------------
 
@@ -150,8 +152,8 @@ default_fields = [
 
 class Repositories(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         [[wiki]]
@@ -186,8 +188,8 @@ class Repositories(JSONController):
 
         return self.ok(repositories)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         """
         [[wiki]]
@@ -243,8 +245,8 @@ class Repositories(JSONController):
         _log.debug('deprecated Repositories.PUT method called')
         return self.POST()
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self):
         """
         [[wiki]]
@@ -263,8 +265,8 @@ class Repositories(JSONController):
 
 class Repository(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         """
         [[wiki]]
@@ -294,8 +296,8 @@ class Repository(JSONController):
             repo['next_scheduled_sync'] = format_iso8601_datetime(task.scheduled_time)
         return self.ok(repo)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(UPDATE)
+    @error_handler
+    @auth_required(UPDATE)
     def PUT(self, id):
         """
         [[wiki]]
@@ -321,8 +323,8 @@ class Repository(JSONController):
         repo = api.update(id, delta)
         return self.ok(repo)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self, id):
         """
         [[wiki]]
@@ -511,8 +513,8 @@ class RepositoryDeferredFields(JSONController):
         """
         return self.ok(repo_sync.export_comps(id))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:
@@ -1242,8 +1244,8 @@ class RepositoryActions(JSONController):
         data = self.params()
         return self.ok(api.publish(id, bool(data['state'])))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,
@@ -1263,8 +1265,8 @@ class RepositoryActions(JSONController):
             return self.internal_server_error('No implementation for %s found' % action_name)
         return action(id)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id, action_name):
         """
         [[wiki]]
@@ -1303,8 +1305,8 @@ class RepositoryActions(JSONController):
 
 class RepositoryActionStatus(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE) # this is checking an execute, not reading a resource
+    @error_handler
+    @auth_required(EXECUTE) # this is checking an execute, not reading a resource
     def GET(self, id, action_name, action_id):
         """
         [[wiki]]
@@ -1323,8 +1325,8 @@ class RepositoryActionStatus(JSONController):
             return self.not_found('No %s with id %s found' % (action_name, action_id))
         return self.ok(task_info)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE) # this is stopping an execute, not deleting a resource
+    @error_handler
+    @auth_required(EXECUTE) # this is stopping an execute, not deleting a resource
     def DELETE(self, id, action_name, action_id):
         """
         [[wiki]]
@@ -1348,8 +1350,8 @@ class RepositoryActionStatus(JSONController):
 
 class Schedules(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         [[wiki]]
@@ -1377,8 +1379,8 @@ class RepositoryTaskHistory(JSONController):
     def sync(self, id):
         return self.ok(task_history.repo_sync(id))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id, action):
         """
         [wiki]

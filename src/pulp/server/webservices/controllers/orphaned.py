@@ -20,32 +20,35 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.file import FileApi
 from pulp.server.auth.authorization import READ
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
+
 
 papi = PackageApi()
 fapi = FileApi()
 
 class Packages(JSONController):
-    
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List orphaned packages.
         @return: a list of packages
         """
         return self.ok(papi.orphaned_packages())
-    
+
 class Files(JSONController):
-    
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List orphaned packages.
         @return: a list of packages
         """
         return self.ok(fapi.orphaned_files())
-    
+
 # web.py application ----------------------------------------------------------
 
 URLS = (

@@ -19,6 +19,8 @@ import web
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.auth.authorization import CREATE, READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 from pulp.server.webservices.http import extend_uri_path
 
 # globals ---------------------------------------------------------------------
@@ -30,8 +32,8 @@ log = logging.getLogger('pulp')
 
 class Distributions(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List all available distributions.
@@ -40,8 +42,8 @@ class Distributions(JSONController):
         distributions = api.distributions()
         return self.ok(distributions)
 
-#    @JSONController.error_handler
-#    @JSONController.auth_required(CREATE)
+#    @error_handler
+#    @auth_required(CREATE)
 #    def POST(self):
 #        """
 #        Create a new errata
@@ -58,8 +60,8 @@ class Distributions(JSONController):
 
 class Distribution(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         """
         Look up distribution by id.
@@ -69,8 +71,8 @@ class Distribution(JSONController):
         # implement filters
         return self.ok(api.distribution(id))
 
-#    @JSONController.error_handler
-#    @JSONController.auth_required(DELETE)
+#    @error_handler
+#    @auth_required(DELETE)
 #    def DELETE(self, id):
 #        """
 #        @return: True on successful deletion of distribution

@@ -21,6 +21,8 @@ from pulp.server.auth.authorization import (
     is_last_super_user, revoke_all_permissions_from_user,
     grant_automatic_permissions_for_created_resource, CREATE, READ, UPDATE, DELETE)
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 from pulp.server.webservices.http import extend_uri_path, resource_path
 
 # users api ---------------------------------------------------------------
@@ -33,8 +35,8 @@ log = logging.getLogger('pulp')
 
 class Users(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List all available users.
@@ -43,8 +45,8 @@ class Users(JSONController):
         # implement filters
         return self.ok(api.users())
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         """
         Create a new user
@@ -66,8 +68,8 @@ class Users(JSONController):
         log.debug('deprecated Users.PUT method called')
         return self.POST()
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self):
         """
         @return: True on successful deletion of all users
@@ -78,8 +80,8 @@ class Users(JSONController):
 
 class User(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, login):
         """
         Get a users information
@@ -88,8 +90,8 @@ class User(JSONController):
         """
         return self.ok(api.user(login))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(UPDATE)
+    @error_handler
+    @auth_required(UPDATE)
     def PUT(self, login):
         """
         Update user
@@ -99,8 +101,8 @@ class User(JSONController):
         user = api.update(login, delta)
         return self.ok(True)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self, login):
         """
         Delete a user
@@ -122,8 +124,8 @@ class User(JSONController):
 
 class AdminAuthCertificates(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         '''
         Creates and returns an authentication certificate for the currently

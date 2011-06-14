@@ -31,6 +31,8 @@ from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDAT
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 from pulp.server.agent import CdsAgent
 
 
@@ -44,8 +46,8 @@ log = logging.getLogger(__name__)
 
 class CdsInstances(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         cds_instances = cds_api.list()
         # inject heartbeat info
@@ -55,8 +57,8 @@ class CdsInstances(JSONController):
             cds['heartbeat'] = heartbeat.values()[0]
         return self.ok(cds_instances)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         repo_data = self.params()
         hostname = repo_data['hostname']
@@ -83,8 +85,8 @@ class CdsInstances(JSONController):
 
 class CdsInstance(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         cds = cds_api.cds(id)
         if cds is None:
@@ -103,8 +105,8 @@ class CdsInstance(JSONController):
 
         return self.ok(cds)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(UPDATE)
+    @error_handler
+    @auth_required(UPDATE)
     def PUT(self, id):
         """
         [[wiki]]
@@ -121,8 +123,8 @@ class CdsInstance(JSONController):
         updated = cds_api.update(id, delta)
         return self.ok(updated)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self, id):
         data = self.params()
 
@@ -205,8 +207,8 @@ class CdsActions(JSONController):
                                         sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, id, action_name):
         '''
         Action dispatcher. This method checks to see if the action is exposed,
@@ -231,8 +233,8 @@ class CdsActions(JSONController):
 
 class CdsSyncActions(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, id):
         '''
         Triggers a sync against the CDS identified by id.
@@ -257,8 +259,8 @@ class CdsSyncActions(JSONController):
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         '''
         Returns a list of tasks associated with the CDS identified by id.
@@ -282,8 +284,8 @@ class CdsSyncActions(JSONController):
 
 class CdsSyncTaskStatus(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id, task_id):
         '''
         Returns the state of an individual CDS sync task.

@@ -23,6 +23,8 @@ from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # globals ---------------------------------------------------------------------
 
@@ -39,8 +41,8 @@ default_fields = [
 
 class Errata(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List all available errata.
@@ -68,8 +70,8 @@ class Errata(JSONController):
         errata = api.errata(id=id, title=title, type=types, repo_defined=repo_defined)
         return self.ok(errata)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         """
         Create a new errata
@@ -117,8 +119,8 @@ class Errata(JSONController):
 
 class Erratum(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         """
         Get a erratum information
@@ -127,8 +129,8 @@ class Erratum(JSONController):
         """
         return self.ok(api.erratum(id))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(UPDATE)
+    @error_handler
+    @auth_required(UPDATE)
     def PUT(self, id):
         """
         Update errata
@@ -138,8 +140,8 @@ class Erratum(JSONController):
         erratum = api.update(id, delta)
         return self.ok(True)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete an errata
@@ -177,8 +179,8 @@ class ErrataActions(JSONController):
         return self.ok(rapi.find_repos_by_errataid(id))
 
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,

@@ -18,13 +18,15 @@ import web
 from pulp.server.auth import authorization
 from pulp.server.db.model import Permission
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # permissions controller ------------------------------------------------------
 
 class Permissions(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def POST(self):
         try:
             resource = self.params()['resource']
@@ -93,8 +95,8 @@ class PermissionActions(JSONController):
         val = authorization.revoke_permission_from_role(resource, role, ops)
         return self.ok(val)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def POST(self, target, action):
         try:
             return {

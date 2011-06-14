@@ -19,6 +19,8 @@ from pulp.server.api.filter import FilterApi
 from pulp.server.auth.authorization import (
     grant_automatic_permissions_for_created_resource, CREATE, READ, DELETE, EXECUTE)
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 from pulp.server.webservices.http import extend_uri_path, resource_path
 
 # filters api ---------------------------------------------------------------
@@ -30,8 +32,8 @@ _log = logging.getLogger('pulp')
 
 class Filters(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self):
         """
         List all available filters
@@ -39,8 +41,8 @@ class Filters(JSONController):
         """
         return self.ok(api.filters())
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
+    @error_handler
+    @auth_required(CREATE)
     def POST(self):
         """
         Create a new filter
@@ -58,8 +60,8 @@ class Filters(JSONController):
         return self.created(filter['id'], filter)
 
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self):
         """
         @return: True on successful deletion of all filters
@@ -70,8 +72,8 @@ class Filters(JSONController):
 
 class Filter(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         """
         Get a filter's information
@@ -120,8 +122,8 @@ class FilterActions(JSONController):
         api.delete(id, force)
         return self.ok(True)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
+    @error_handler
+    @auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,

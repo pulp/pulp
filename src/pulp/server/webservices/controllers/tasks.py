@@ -57,13 +57,15 @@ from gettext import gettext as _
 from pulp.server import async
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # tasks controller -------------------------------------------------------------
 
 class Tasks(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def GET(self):
         """
         [[wiki]]
@@ -108,8 +110,8 @@ class Tasks(JSONController):
 
 class Task(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def GET(self, id):
         """
         [[wiki]]
@@ -130,8 +132,8 @@ class Task(JSONController):
         task_dict['snapshot_id'] = task.snapshot_id
         return self.ok(task_dict)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def DELETE(self, id):
         """
         [[wiki]]
@@ -155,8 +157,8 @@ class Task(JSONController):
 
 class Snapshots(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def GET(self):
         """
         [[wiki]]
@@ -177,8 +179,8 @@ class Snapshots(JSONController):
 
 class Snapshot(JSONController):
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def GET(self, id):
         """
         [[wiki]]
@@ -197,8 +199,8 @@ class Snapshot(JSONController):
             return self.not_found(_('Snapshot for task not found: %s') % id)
         return self.ok(snapshot)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(super_user_only=True)
+    @error_handler
+    @auth_required(super_user_only=True)
     def DELETE(self, id):
         """
         [[wiki]]

@@ -19,6 +19,8 @@ import web
 from pulp.server.api.file import FileApi
 from pulp.server.auth.authorization import READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import (
+    auth_required, error_handler)
 
 # globals ---------------------------------------------------------------------
 
@@ -26,9 +28,9 @@ api = FileApi()
 log = logging.getLogger('pulp')
 
 class File(JSONController):
-    
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
+
+    @error_handler
+    @auth_required(READ)
     def GET(self, id):
         """
         Get a file
@@ -37,8 +39,8 @@ class File(JSONController):
         """
         return self.ok(api.file(id))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @error_handler
+    @auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete an file
