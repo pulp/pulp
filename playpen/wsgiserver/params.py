@@ -30,15 +30,16 @@ class ParamsServer(srv.Server):
 
 urls = ('/(.*)', 'ParamServer')
 application = web.application(urls, globals())
-srv.start_server(application)
+srv.start_server(application.wsgifunc())
 
 
 def request(d={}):
     assert d
     params = []
-    for k, v in params.items():
+    for k, v in d.items():
         if isinstance(v, (list, tuple)):
             params.extend('%s=%s' % (k, _) for _ in v)
             continue
         params.append('%s=%s' % (k, v))
-    return srv.GET('?' + '&'.join(params))
+    status, body = srv.GET('/?' + '&'.join(params))
+    print body
