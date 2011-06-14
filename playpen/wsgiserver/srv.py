@@ -68,6 +68,7 @@ class Server(object):
 def start_server(app, port=8888):
     global _server_port
     assert _server_port is None
+    web.config.debug = False
     server = simple_server.make_server('', port, app)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.setDaemon(True)
