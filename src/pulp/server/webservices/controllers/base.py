@@ -113,9 +113,10 @@ class JSONController(object):
         @param id: task id
         @return: TaskModel instance
         """
-        task = self.find_task(id)
-        if task is None:
+        tasks = async.find_async(id=id)
+        if not tasks:
             return None
+        task = tasks[0]
         status = self._task_to_dict(task)
         status.update({'status_path': self._status_path(id)})
         return status
