@@ -476,7 +476,7 @@ def compile_regular_expression(reg_exp):
     except sre_constants.error, e:
         raise RegularExpressionError(
             "The regular expression '%s' is not valid: %s"
-            % (reg_exp, e.message))
+            % (reg_exp, str(e)))
 
 class Singleton(type):
     """
