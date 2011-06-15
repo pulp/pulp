@@ -13,10 +13,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
-import sys
-import os
 import fcntl
-from M2Crypto import X509, EVP, RSA, ASN1, util
+from M2Crypto import X509, EVP, RSA, util
 from threading import RLock
 import subprocess
 
@@ -46,8 +44,7 @@ class SerialNumber:
         try:
             fp = open(self.PATH, 'a+')
             try:
-                sn = int(fp.read())
-                sn = sn + 1
+                sn = int(fp.read()) + 1
             except:
                 sn = 1
             fp.seek(0)
@@ -81,10 +78,10 @@ def make_admin_user_cert(user):
     @return: PEM encoded string
     @rtype:  string
     '''
+    expiration = config.config.getint('security', 'user_cert_expiration')
+    return make_cert(encode_admin_user(user), expiration)
 
-    return make_cert(encode_admin_user(user))
-
-def make_cert(uid):
+def make_cert(uid, expiration):
     """
     Generate an x509 certificate with the Subject set to the uid passed into this method:
     Subject: CN=someconsumer.example.com
@@ -110,23 +107,24 @@ def make_cert(uid):
     
     # Make the Cert Request
     req, pub_key = _make_cert_request(uid, rsa)
+
     # Sign it with the Pulp server CA
     # We can't do this in m2crypto either so we have to shell out
-    # TODO: We technically should be incrementing these serial numbers
-
+    
     ca_cert = config.config.get('security', 'cacert')
     ca_key = config.config.get('security', 'cakey')
 
     sn = SerialNumber()
     serial = sn.next()
-    cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days 3650' % \
-          (ca_cert, ca_key, serial)
+
+    cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
+          (ca_cert, ca_key, serial, expiration)
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.communicate(input=req.as_pem())[0]
     p.wait()
     exit_code = p.returncode
-    if (exit_code != 0):
+    if exit_code != 0:
         raise Exception("error signing cert request: %s" % output)
     cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
     return private_key_pem, cert_pem_string
@@ -219,7 +217,7 @@ def _make_priv_key():
     p.wait()
     exit_code = p.returncode
     error = p.stderr.read()
-    if (exit_code != 0):
+    if exit_code != 0:
         raise Exception("error generating private key: %s" % error)
     output = p.stdout.read()
     pem_str = output[output.index("-----BEGIN RSA PRIVATE KEY-----"):]

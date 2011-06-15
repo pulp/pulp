@@ -250,7 +250,10 @@ class PulpServer(Server):
         self._log.debug('sending %s request to %s' % (method, url))
         #print >> sys.stderr, 'sending %s request to %s' % (method, url)
         connection.request(method, url, body=body, headers=self.headers)
-        response = connection.getresponse()
+        try:
+            response = connection.getresponse()
+        except SSL.SSLError, err:
+            raise ServerRequestError(None, str(err), None)
         response_body = response.read()
         try:
             response_body = json.loads(response_body)

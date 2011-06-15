@@ -108,7 +108,7 @@ class TestCertGeneration(unittest.TestCase):
         cid = "foobarbaz"
 
         # Test
-        pk, x509_pem = cert_generator.make_cert(cid)
+        pk, x509_pem = cert_generator.make_cert(cid, 7)
 
         # Verify
         self.assertTrue(pk is not None)
