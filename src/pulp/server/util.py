@@ -17,7 +17,9 @@ import hashlib # 3rd party on RHEL 5
 import logging
 import os
 import random
+import re
 import shutil
+import sre_constants
 import string
 import tempfile
 import threading
@@ -51,6 +53,8 @@ class CreateRepoError(PulpException):
 class ModifyRepoError(CreateRepoError):
     pass
 
+class RegularExpressionError(PulpException):
+    pass
 
 def top_repos_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "repos")
@@ -456,6 +460,23 @@ def translate_to_utf8(data, encoding=None):
             translated_value = unicode(data[key], encoding)
             data[key] = translated_value
     return data
+
+def compile_regular_expression(reg_exp):
+    """
+    This method will handle a sre_constants.error resulting from an invalid
+    value for reg_exp.
+    @param reg_exp: regular expression to validate
+    @type reg_exp: str
+    @return: the compiled regular expression
+    @rtype: regular expression object
+    @raise: L{RegularExpressionError} if reg_exp fails to validate.
+    """
+    try:
+        return re.compile(reg_exp)
+    except sre_constants.error, e:
+        raise RegularExpressionError(
+            "The regular expression '%s' is not valid: %s"
+            % (reg_exp, e.message))
 
 class Singleton(type):
     """

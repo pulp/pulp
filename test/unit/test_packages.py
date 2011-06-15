@@ -39,6 +39,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
+from pulp.server.util import RegularExpressionError
 import testutil
 
 logging.root.setLevel(logging.ERROR)
@@ -90,7 +91,7 @@ class TestApi(unittest.TestCase):
         self.assertTrue(result[0]["name"] == "vim-enhanced")
 
     def test_package_regexes(self):
-                # Create multiple packages
+        # Create multiple packages
         pkgs = []
         pkgs.append(testutil.create_package(self.papi, name="xwindows", version="1.2.3", arch="x86_64"))
         pkgs.append(testutil.create_package(self.papi, name="emacs", version="1.2.3", epoch='2', arch="x86_64"))
@@ -128,6 +129,13 @@ class TestApi(unittest.TestCase):
         # checksum
         result = self.papi.packages(checksum_type="sha256", checksum="^9d05cc3dbdc94", regex=True)
         self.assertTrue(len(result) == 4)
+
+    def test_package_invalid_regex(self):
+
+        pkgs = []
+        pkgs.append(testutil.create_package(self.papi, name="xwindows", version="1.2.3", arch="x86_64"))
+        self.assertRaises(RegularExpressionError, 
+            self.papi.packages, version="*.2.3", regex=True)
 
 
     def test_package_dependency(self):
