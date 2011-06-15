@@ -19,6 +19,7 @@ import pickle
 # Pulp
 import pulp.server.auth.cert_generator as cert_generator
 import pulp.server.cds.round_robin as round_robin
+from pulp.server import config
 import pulp.server.consumer_utils as consumer_utils
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
@@ -259,7 +260,8 @@ class ConsumerApi(BaseApi):
             raise PulpException('Consumer [%s] not found', id)
         bundle = consumer.get('certificate')
         if not bundle:
-            bundle = cert_generator.make_cert(id)
+            expiration_date = config.config.getint('security', 'consumer_cert_expiration')
+            bundle = cert_generator.make_cert(id, expiration_date)
             bundle = ''.join(bundle)
             consumer['certificate'] = bundle
             self.collection.save(consumer, safe=True)
