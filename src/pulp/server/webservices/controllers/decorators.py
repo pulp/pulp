@@ -13,6 +13,10 @@
 
 """
 This module contains decorators for web.py class methods.
+
+It is important that these decorators only be used on methods of
+pulp.server.webservices.controllers.base.JSONController classes, it is assumed
+that certain other methods will exist.
 """
 
 import logging
