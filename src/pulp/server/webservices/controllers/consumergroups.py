@@ -231,7 +231,7 @@ class ConsumerGroupActions(JSONController):
         assumeyes = data.get('assumeyes', False)
         task = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
         if not task:
-            return self.not_found('Errata %s you requested is not applicable for your system' % id)
+            return self.not_found('Errata %s you requested are not applicable for this consumergroup' % errataids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
             scheduled_time = datetime.fromtimestamp(float(scheduled_time))

@@ -372,7 +372,7 @@ class ConsumerGroupApi(BaseApi):
                 for pobj in pkgobjs:
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
-            log.error("Foe consumer id %s Packages to install %s" % (consumerid, pkgs))
+            log.error("For consumer id %s Packages to install %s" % (consumerid, pkgs))
             install_data = {"consumerid" : consumerid,
                             "secret" : PulpAgent.getsecret(consumer),
                             "packages"   : pkgs,
