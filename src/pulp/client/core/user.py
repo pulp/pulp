@@ -64,6 +64,9 @@ class Create(UserAction):
                                help=_("new username to create (required)"))
         self.parser.add_option("--password", dest="password", default=None,
                                help=_("password for new user, if you do not want to be prompted for one"))
+        self.parser.add_option("--ldap", dest="ldap", action="store_true",
+                               default=False,
+                               help=_("Create a passwordless local record for an LDAP user"))
         self.parser.add_option("--name", dest="name", default=None,
                                help=_("name of user for display purposes"))
 
@@ -71,7 +74,9 @@ class Create(UserAction):
         newusername = self.get_required_option('username')
         if self.opts.password:
             newpassword = self.opts.password
-        else:     
+        elif self.opts.ldap:
+            newpassword = None
+        else:
             while True:
                 newpassword = getpass.getpass("Enter password for user %s: " % newusername)
                 newpassword_confirm = getpass.getpass("Re-enter password for user %s: " % newusername)
