@@ -47,11 +47,11 @@ class RepoSyncTask(Task):
         self.kwargs['synchronizer'] = self.synchronizer
 
     def cancel(self):
-        log.info("RepoSyncTask cancel invoked. Will cancel synchronizer <%s>" % (self.synchronizer))
+        log.info("RepoSyncTask cancel invoked repo <%s>. Will cancel synchronizer <%s>" % (self.repo_id, self.synchronizer))
         # Tell Grinder to stop syncing
         if self.synchronizer:
             self.synchronizer.stop()
-        log.info("RepoSyncTask has been canceled")
+        log.info("RepoSyncTask repo <%s> has been canceled" % (self.repo_id))
         # Related to bz700508 - fast sync/cancel_sync locks up task subsystem
         # Removed injecting a CancelException into thread
         # Allow thread to stop on it's own when it reaches a safe stopping point

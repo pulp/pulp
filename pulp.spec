@@ -141,7 +141,7 @@ popd
 
 # Pulp Configuration
 mkdir -p %{buildroot}/etc/pulp
-cp etc/pulp/* %{buildroot}/etc/pulp
+cp -R etc/pulp/* %{buildroot}/etc/pulp
 
 # Pulp Log
 mkdir -p %{buildroot}/var/log/pulp
@@ -260,6 +260,7 @@ fi
 %{python_sitelib}/pulp/repo_auth/
 %config %{_sysconfdir}/pulp/pulp.conf
 %config %{_sysconfdir}/pulp/repo_auth.conf
+%config %{_sysconfdir}/pulp/logging
 %config %{_sysconfdir}/httpd/conf.d/pulp.conf
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(775, apache, apache) %{_sysconfdir}/pulp
