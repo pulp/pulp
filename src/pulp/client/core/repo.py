@@ -1478,7 +1478,7 @@ class Discovery(RepoProgressAction):
         print _("\nCreating candidate repos for selected urls..")
         for repourl in self.selected:
             try:
-                url_str = urlparse.urlparse(repourl).path.split('/')
+                url_str = urlparse.urlparse(repourl)[2].split('/')
                 id = '-'.join([s for s in url_str if len(s)]) or None
                 if not id:
                     #no valid id formed, continue
