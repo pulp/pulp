@@ -53,6 +53,7 @@ Requires: python-uuid
 Requires: python-ssl
 Requires: python-ctypes
 Requires: python-hashlib
+Requires: createrepo = 0.9.8-3
 %endif
 %if 0%{?el6}
 # RHEL-6
