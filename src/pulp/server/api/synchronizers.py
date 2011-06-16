@@ -585,17 +585,20 @@ class LocalSynchronizer(BaseSynchronizer):
                     w = re.compile(whitelist_package)
                     if w.match(os.path.basename(pkg)):
                         pkglist.append(pkg)
-                        exit
+                        break
         else:
             pkglist = unfiltered_pkglist
 
         if blacklist_packages:
+            to_remove = []
             for pkg in pkglist:
                 for blacklist_package in blacklist_packages:
                     b = re.compile(blacklist_package)
                     if b.match(os.path.basename(pkg)):
-                        pkglist.remove(pkg)
-                        exit
+                        to_remove.append(pkg)
+                        break
+            for pkg in to_remove:
+                pkglist.remove(pkg)
 
         return pkglist
 
