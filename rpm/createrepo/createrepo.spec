@@ -48,6 +48,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
+* Thu Jun 16 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.9.8-3
+- new package built with tito
+
 * Mon Jan  3 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-3
 - add another drpm patch to fix up drpms being passed to wrong process :(
 
