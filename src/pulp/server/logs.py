@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import logging.config
 import os
 import sys
 from logging import handlers
@@ -55,6 +56,20 @@ def check_log_file(file_path):
         raise RuntimeError('Cannot write to log directory: %s' % dir_path)
     return 'Yeah!'
 
+def _enable_all_loggers():
+    """
+    This is a workaround needed for python 2.4
+    python 2.4 will disable all existing loggers if the 'qualname' does not match
+    exactly to the logger name.  This means that pulp.server.api.repo_sync will be disabled
+    for the common case of only have a logger configured for 'pulp'
+
+    Newer versions of python address this issue when this patch is present;
+    http://bugs.python.org/issue3136
+    we could just pass in a 'disable_existing_loggers=False'
+    """
+    keys = logging.root.manager.loggerDict.keys()
+    for key in keys:
+        logging.root.manager.loggerDict[key].disabled = 0
 
 def configure_pulp_logging():
     """
@@ -64,6 +79,7 @@ def configure_pulp_logging():
     if not os.access(log_config_filename, os.R_OK):
         raise RuntimeError("Unable to read log configuration file: %s" % (log_config_filename))
     logging.config.fileConfig(log_config_filename)
+    _enable_all_loggers() # Hack needed for RHEL-5
 
 def configure_audit_logging():
     """
