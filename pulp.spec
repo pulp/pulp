@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.190
+Version:        0.0.191
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -327,6 +327,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jun 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.191-1
+- Tell systemctl to ignore deps so that our init script works correctly on
+  Fedora 15 (jslagle@redhat.com)
+- Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
+
 * Mon Jun 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.190-1
 - 707295 - updated to provide absolute path. (jortel@redhat.com)
 - added tasks module to restapi doc generation (jconnor@redhat.com)
