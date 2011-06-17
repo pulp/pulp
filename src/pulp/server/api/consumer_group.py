@@ -411,8 +411,8 @@ class InstallPackages(AgentTask):
         AgentTask.__init__(self, self.install)
 
     # snapshot fields: used by task persistence
-    _copy_fields = itertools.chain(('items', 'errata', 'serials'),
-                                   Task._copy_fields)
+    _copy_fields = tuple(itertools.chain(('items', 'errata', 'serials'),
+                                   Task._copy_fields))
 
     def snapshot(self):
         # since the callable is set, we do not need to pickle it

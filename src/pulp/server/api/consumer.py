@@ -625,9 +625,9 @@ class InstallPackages(AgentTask):
         AgentTask.__init__(self, self.install)
 
     # snapshot fields: used for task persistence
-    _copy_fields = itertools.chain(('consumerid', 'secret', 'packages',
+    _copy_fields = tuple(itertools.chain(('consumerid', 'secret', 'packages',
                                     'errata', 'reboot_suggested', 'assumeyes'),
-                                   Task._copy_fields)
+                                   Task._copy_fields))
 
     def snapshot(self):
         # since the callable is set, we do not need to pickle it
@@ -700,8 +700,8 @@ class InstallPackageGroups(AgentTask):
         AgentTask.__init__(self, self.install)
 
     # snapshot fields: used for task persistence
-    _copy_fields = itertools.chain(('consumerid', 'secret', 'groups'),
-                                   Task._copy_fields)
+    _copy_fields = tuple(itertools.chain(('consumerid', 'secret', 'groups'),
+                                   Task._copy_fields))
 
     def snapshot(self):
         # since the callable is set, we do not need to pickle it
