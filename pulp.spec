@@ -40,8 +40,13 @@ Requires: python-ldap
 Requires: python-gofer >= 0.37
 Requires: crontabs
 Requires: acl
+%if 0%{?fedora} > 14 
+Requires: mongodb = 1.7.5
+Requires: mongodb-server = 1.7.5
+%else
 Requires: mongodb
 Requires: mongodb-server
+%endif
 Requires: qpid-cpp-server
 %if 0%{?fedora} || 0%{?rhel} > 5
 # Fedora or RHEL-6 and beyond
