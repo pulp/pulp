@@ -576,31 +576,18 @@ class TestRepoApi(unittest.TestCase):
         relativepath = 'f11/i386'
         feed = 'http://abc.com/%s' % relativepath
         repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
-        d = dict(feed='http://xyz.com')
-        repo = self.rapi.update(id, d)
-        root = top_repos_location()
-        # add some phony content and try again
-        path = os.path.join(root, repo['relative_path'])
-        if not os.path.exists(path):
-            os.makedirs(path)
-        f = open(os.path.join(path, 'package'), 'w')
-        f.close()
+
         try:
             d = dict(feed='http://xyz.com/my/new/path')
             repo = self.rapi.update(id, d)
             self.assertTrue(False, 'should fail')
         except:
             pass
+
         try:
-            d = dict(use_symlinks=False)
+            d = dict(relative_path='/f11/i386')
             repo = self.rapi.update(id, d)
-            self.assertTrue(False, 'should fail')
-        except:
-            pass
-        try:
-            d = dict(relative_path='/bla/bla')
-            repo = self.rapi.update(id, d)
-            self.assertTrue(False, 'should fail')
+            self.assertTrue(True, 'should Pass')
         except:
             pass
 

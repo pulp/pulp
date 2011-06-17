@@ -640,8 +640,6 @@ class Update(RepoAction):
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
-        self.parser.add_option("--relativepath", dest="relative_path",
-                               help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified (repository must be empty)"))
         self.parser.add_option("--addgroup", dest="addgroup",
                                help=_("group id to be added to the repository"))
         self.parser.add_option("--rmgroup", dest="rmgroup",
