@@ -236,6 +236,7 @@ class TaskQueue(object):
         try:
             self._test_uniqueness(task, unique) # NonUniqueTaskException
             task.schedule() # UncheduledTaskException
+            task.reset()
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
             if task.failure_threshold is None:

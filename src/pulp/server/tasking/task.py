@@ -321,8 +321,7 @@ class Task(object):
         """
         Run this task and record the result or exception.
         """
-        if self.state is not task_waiting:
-            self.reset()
+        assert self.state in task_ready_states
         self.state = task_running
         self.start_time = datetime.datetime.now(dateutils.local_tz())
         self._check_threshold()
