@@ -465,7 +465,7 @@ class RepoApi(BaseApi):
 
         # find if sync in progress
         if self.find_if_running_sync(id):
-            raise PulpException("Repo cannot be deleted because of sync in progress.")
+            raise PulpException("Repo [%s] cannot be deleted because of sync in progress." % id)
 
         # unassociate from CDS(s)
         self.cdsapi.unassociate_all_from_repo(id, True)
