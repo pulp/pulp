@@ -301,3 +301,7 @@ class RepositoryAPI(PulpAPI):
     def metadata_status(self, repoid):
         path = '/repositories/%s/metadata/' % repoid
         return self.server.GET(path)[1]
+
+    def sync_history(self, repoid):
+        path = "/repositories/%s/history/sync/" % repoid
+        return self.server.GET(path)[1]
