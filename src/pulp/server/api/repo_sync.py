@@ -61,6 +61,8 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     return task
 
+
+
 def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None,
             filters=(), progress_callback=None):
     repo = repo_api.repository(id)
@@ -89,12 +91,15 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
     if repo['consumer_ca'] and repo['consumer_cert']:
         consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
                         'cert' : read_cert_file(repo['consumer_cert'])}
-
-    log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
+    
+    if relative_path is None:
+        relative_path = clone_id
+    
+    log.info("Creating [%s] feed repo [%s] cloned from [%s] with relative_path [%s]" % (feed, clone_id, id, relative_path))
     if feed == 'origin':
         origin_feed = repo['source']['url']
         repo_api.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
-                relative_path=clone_id, feed_cert_data=feed_cert_data,
+                relative_path=relative_path, feed_cert_data=feed_cert_data,
                 consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
     else:
         repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
@@ -138,7 +143,9 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
         keylist.append((fn, content))
         f.close()
     repo_api.addkeys(clone_id, keylist)
-
+    
+    # Add files to cloned repo
+    repo_api.add_file(repoid=clone_id, fileids=repo["files"])
 
 
 @audit()
