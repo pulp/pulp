@@ -243,7 +243,7 @@ class CdsSyncActions(JSONController):
         # Check to see if a timeout was specified
         params = self.params()
         timeout = None
-        if 'timeout' in self.params:
+        if 'timeout' in params:
             timeout = dateutils.parse_iso8601_duration(params['timeout'])
 
         # Kick off the async task
