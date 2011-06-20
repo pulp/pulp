@@ -453,10 +453,8 @@ def translate_to_utf8(data, encoding=None):
             value = data[key]
             if isinstance(value, basestring):
                 # Attempt to encode to utf-8
-                #log.info("Attempt to convert <%s> %s" % (value, type(value)))
                 attempt = value.encode('utf-8')
         except Exception, e:
-            log.error(e)
             translated_value = unicode(data[key], encoding)
             data[key] = translated_value
     return data
