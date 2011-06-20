@@ -538,7 +538,9 @@ class Clone(RepoProgressAction):
         self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--timeout", dest="timeout",
-                               help=_("repository clone timeout"))
+                               help=_("repository clone timeout specified "
+                               "in iso8601 duration format "
+                               "(P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
                                help=_('clone repository in the foreground'))
@@ -745,7 +747,9 @@ class Sync(RepoProgressAction):
     def setup_parser(self):
         super(Sync, self).setup_parser()
         self.parser.add_option("--timeout", dest="timeout",
-                               help=_('timeout specified in iso8601 duration format (HH:MM:SS)'))
+                               help=_("repository sync timeout specified "
+                               "in iso8601 duration format "
+                               "(P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
         self.parser.add_option("--no-packages", action="store_true", dest="nopackages",
                                help=_("skip packages from the sync process"))
         self.parser.add_option("--no-errata", action="store_true", dest="noerrata",

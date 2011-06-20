@@ -31,7 +31,7 @@ class RepoSyncTask(Task):
     repository synchronization
     """
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
-        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
+        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout=timeout)
         self.repo_id = None
         if len(args) > 0:
             # Assuming that args first parameter is always the repo_id
