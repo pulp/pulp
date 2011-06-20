@@ -196,10 +196,12 @@ class CdsActions(JSONController):
             limit = int(limit)
 
         if start_date:
+            start_date = dateutils.parse_iso8601_datetime(start_date)
             start_date = dateutils.to_local_datetime(start_date)
             start_date = dateutils.format_iso8601_datetime(start_date)
 
         if end_date:
+            end_date = dateutils.parse_iso8601_datetime(end_date)
             end_date = dateutils.to_local_datetime(end_date)
             end_date = dateutils.format_iso8601_datetime(end_date)
 
