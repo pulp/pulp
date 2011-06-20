@@ -1,0 +1,11 @@
+--- createrepo/__init__.py~	2008-10-28 17:19:58.000000000 -0400
++++ createrepo/__init__.py	2008-10-28 17:19:58.000000000 -0400
+@@ -81,7 +81,7 @@
+         self.mdtimestamp = 0
+         self.directory = None
+         self.directories = []
+-        self.changelog_limit = None # needs to be an int or None
++        self.changelog_limit = 10 # needs to be an int or None
+         self.unique_md_filenames = False
+         self.additional_metadata = {} # dict of 'type':'filename'
+         self.revision = str(int(time.time()))

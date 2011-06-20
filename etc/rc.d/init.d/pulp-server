@@ -9,6 +9,9 @@
 # Required-Stop: $httpd $qpidd $mongod
 # Short-Description: start and stop the Pulp webservices
 # Description: Pulp is comprehensive content repository and consumer management 
+### END INIT INFO
+
+export SYSTEMCTL_IGNORE_DEPENDENCIES=1
 
 . /etc/rc.d/init.d/functions
 RETVAL=0

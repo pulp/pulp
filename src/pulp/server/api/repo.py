@@ -593,7 +593,6 @@ class RepoApi(BaseApi):
         delta.pop('id', None)
         repo = self._get_existing_repo(id)
         prevpath = repo.get('relative_path')
-        newpath = delta.pop('relative_path', None)
         hascontent = self._hascontent(repo)
         repo_cert_utils = RepoCertUtils(config.config)
         protected_repo_utils = ProtectedRepoUtils(config.config)
@@ -633,10 +632,12 @@ class RepoApi(BaseApi):
             if key == 'feed':
                 repo[key] = value
                 if value:
+                    newpath = urlparse(value)[2].strip('/')
+                    if prevpath != newpath:
+                        log.error("MisMatch %s != %s" % (prevpath, newpath))
+                        raise PulpException("Relativepath of the new feed [%s] does not match existing feed [%s]; cannot perform update" % (newpath, prevpath))
                     ds = model.RepoSource(value)
                     repo['source'] = ds
-                    if not newpath:
-                        newpath = urlparse(ds.url)[2]
                 continue
             # sync_schedule changed
             if key == 'sync_schedule':
@@ -653,35 +654,6 @@ class RepoApi(BaseApi):
                 continue
             raise Exception, \
                 'update keyword "%s", not-supported' % key
-        # make sure path is relative.
-        if newpath:
-            newpath = newpath.strip('/')
-        else:
-            newpath = prevpath
-        pathchanged = (prevpath != newpath)
-        #
-        # After the repo contains content, the relative path may
-        # not be changed indirectly (feed) or directly (relativepath)
-        #
-        if pathchanged:
-            update_consumers = True
-            if not hascontent:
-                rootdir = pulp.server.util.top_repos_location()
-                path = os.path.join(rootdir, prevpath)
-                if os.path.exists(path):
-                    os.rmdir(path)
-                repo['relative_path'] = newpath
-                path = os.path.join(rootdir, newpath)
-                if not os.path.exists(path):
-                    os.makedirs(path)
-
-                # In case the old path had repo protection in place, try to
-                # remove it (this call won't fail if it wasn't in place)
-                protected_repo_utils.delete_protected_repo(prevpath)
-
-            else:
-                raise PulpException(
-                    "Repository has content, relative path cannot be changed")
 
         # If the consumer certs were updated, update the protected repo listings.
         # This has to be done down here in case the relative path has changed as well.

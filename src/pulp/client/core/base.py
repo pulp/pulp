@@ -67,7 +67,7 @@ class Command(object):
         """
         Return a string showing the command's usage
         """
-        lines = ['Usage: %s <options> %s <action> <options>' %
+        lines = ['%s <options> %s <action> <options>' %
                  (self.cli.name, self.name),
                  'Supported Actions:']
         for name in self._action_order:

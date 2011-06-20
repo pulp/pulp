@@ -96,7 +96,8 @@ class Install(PackageAction):
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
         self.parser.add_option("--when", dest="when", default=None,
-                               help=_("Format: 'Year-Month-Day Hour:Min' specifies when to execute task"))
+                               help=_("specifies when to execute the install.  "
+                               "Format: iso8601, YYYY-MM-DDThh:mm"))
 
     def run(self):
         consumerid = self.opts.consumerid
@@ -119,8 +120,8 @@ class Install(PackageAction):
             wait = self.getwait([consumerid,])
             task = self.consumer_api.installpackages(consumerid, pnames, when=when)
         print _('Created task id: %s') % task['id']
-        print _('Task is scheduled for: %s') % \
-                time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
+        print _('Task is scheduled for: %s') % when
+
         if not wait:
             system_exit(0)
         state = None

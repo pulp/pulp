@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.190
+Version:        0.0.192
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -40,8 +40,13 @@ Requires: python-ldap
 Requires: python-gofer >= 0.37
 Requires: crontabs
 Requires: acl
+%if 0%{?fedora} > 14 
+Requires: mongodb = 1.7.5
+Requires: mongodb-server = 1.7.5
+%else
 Requires: mongodb
 Requires: mongodb-server
+%endif
 Requires: qpid-cpp-server
 %if 0%{?fedora} || 0%{?rhel} > 5
 # Fedora or RHEL-6 and beyond
@@ -53,6 +58,7 @@ Requires: python-uuid
 Requires: python-ssl
 Requires: python-ctypes
 Requires: python-hashlib
+Requires: createrepo = 0.9.8-3
 %endif
 %if 0%{?el6}
 # RHEL-6
@@ -140,7 +146,7 @@ popd
 
 # Pulp Configuration
 mkdir -p %{buildroot}/etc/pulp
-cp etc/pulp/* %{buildroot}/etc/pulp
+cp -R etc/pulp/* %{buildroot}/etc/pulp
 
 # Pulp Log
 mkdir -p %{buildroot}/var/log/pulp
@@ -259,6 +265,7 @@ fi
 %{python_sitelib}/pulp/repo_auth/
 %config %{_sysconfdir}/pulp/pulp.conf
 %config %{_sysconfdir}/pulp/repo_auth.conf
+%config %{_sysconfdir}/pulp/logging
 %config %{_sysconfdir}/httpd/conf.d/pulp.conf
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(775, apache, apache) %{_sysconfdir}/pulp
@@ -322,6 +329,63 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jun 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.192-1
+- 713493 - fixed auth login to relogin new credentials; will just replace
+  existing user certs with new ones (pkilambi@redhat.com)
+- Bump website to CR13. (jortel@redhat.com)
+- Automatic commit of package [pulp] release [0.0.191-1]. (jortel@redhat.com)
+- Changed unit test logfile to /tmp/pulp_unittests.log, avoid log file being
+  deleted when unit tests run (jmatthews@redhat.com)
+- Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
+- 707295 - removed relativepath from repo update; updated feed update logic to
+  check if relative path matches before allowing update (pkilambi@redhat.com)
+- In a consumer case, password can be none, let it return the user
+  (pkilambi@redhat.com)
+- updated log config for rhel5, remove spaces from 'handlers'
+  (jmatthews@redhat.com)
+- Disable console logging for unit tests (jmatthews@redhat.com)
+- Fix to work around http://bugs.python.org/issue3136 in python 2.4
+  (jmatthews@redhat.com)
+- Updates for Python 2.4 logging configuration file (jmatthews@redhat.com)
+- Pulp logging now uses configuration file from /etc/pulp/logging
+  (jmatthews@redhat.com)
+- adding new createrepo as a dependency for el5 builds (pkilambi@redhat.com)
+- 709514 - error message for failed errata install for consumer and
+  consumergroup corrected (skarmark@redhat.com)
+- Automatic commit of package [createrepo] minor release [0.9.8-3].
+  (pkilambi@redhat.com)
+- Adding newer version of createrepo for pulp on el5 (pkilambi@redhat.com)
+- Tell systemctl to ignore deps so that our init script works correctly on
+  Fedora 15 (jslagle@redhat.com)
+- 713183 - python 2.4 compat patch (pkilambi@redhat.com)
+- Patch from Chris St. Pierre <chris.a.st.pierre@gmail.com> :
+  (pkilambi@redhat.com)
+- 713580 - fixing wrong list.remove in blacklist filter application logic in
+  repo sync (skarmark@redhat.com)
+- 669520 python 2.4 compat fix (jslagle@redhat.com)
+- 713176 - Changed user certificate expirations to 1 week. Consumer certificate
+  expirations, while configurable, remain at the default of 10 years.
+  (jason.dobies@redhat.com)
+- 669520 - handle exception during compilation of invalid regular expression
+  so that we can show the user a helpful message (jslagle@redhat.com)
+- Refactored auth_required and error_handler decorators out of JSONController
+  base class and into their own module (jconnor@redhat.com)
+- Eliminated AsyncController class (jconnor@redhat.com)
+- Fixed bug in server class name and added raw request method
+  (jconnor@redhat.com)
+- Default to no debug in web.py (jconnor@redhat.com)
+- Updated for CR 13 (jason.dobies@redhat.com)
+- 709395 - Fix cull_history api to convert to iso8601 format
+  (jslagle@redhat.com)
+- 709395 - Update tests for consumer history events to populate test data in
+  iso8601 format (jslagle@redhat.com)
+- 709395 - Fix bug in parsing of start_date/end_date when querying for
+  consumer history (jslagle@redhat.com)
+* Fri Jun 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.191-1
+- Tell systemctl to ignore deps so that our init script works correctly on
+  Fedora 15 (jslagle@redhat.com)
+- Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
+
 * Mon Jun 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.190-1
 - 707295 - updated to provide absolute path. (jortel@redhat.com)
 - added tasks module to restapi doc generation (jconnor@redhat.com)

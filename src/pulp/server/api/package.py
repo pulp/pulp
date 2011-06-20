@@ -16,7 +16,7 @@ import os
 import re
 
 # Pulp
-import pulp.server.util
+from pulp.server import util
 from pulp.server.api.base import BaseApi
 from pulp.server.api.depsolver import DepSolver
 from pulp.server.auditing import audit
@@ -95,14 +95,14 @@ class PackageApi(BaseApi):
             raise PackageHasReferences(id)
         if not keep_files:
             pkg = self.package(id)
-            pkg_packages_path = pulp.server.util.get_shared_package_path(
+            pkg_packages_path = util.get_shared_package_path(
                                            pkg["name"], pkg["version"], pkg["release"], pkg["arch"],
                                            pkg["filename"], pkg["checksum"])
             if os.path.exists(pkg_packages_path):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
                 os.remove(pkg_packages_path)
                 self.__pkgdeleted(id, pkg_packages_path)
-                pulp.server.util.delete_empty_directories(os.path.dirname(pkg_packages_path))
+                util.delete_empty_directories(os.path.dirname(pkg_packages_path))
         self.collection.remove({'_id':id})
 
     def package(self, id):
@@ -120,38 +120,44 @@ class PackageApi(BaseApi):
         searchDict = {}
         if name:
             if regex:
-                searchDict['name'] = {"$regex":re.compile(name)}
+                searchDict['name'] = {
+                    "$regex":util.compile_regular_expression(name)}
             else:
                 searchDict['name'] = name
         if epoch:
             if regex:
-                searchDict['epoch'] = {"$regex":re.compile(epoch)}
+                searchDict['epoch'] = {
+                    "$regex":util.compile_regular_expression(epoch)}
             else:
                 searchDict['epoch'] = epoch
         if version:
             if regex:
-                searchDict['version'] = {"$regex":re.compile(version)}
+                searchDict['version'] = {
+                    "$regex":util.compile_regular_expression(version)}
             else:
                 searchDict['version'] = version
         if release:
             if regex:
-                searchDict['release'] = {"$regex":re.compile(release)}
+                searchDict['release'] = {
+                    "$regex":util.compile_regular_expression(release)}
             else:
                 searchDict['release'] = release
         if arch:
             if regex:
-                searchDict['arch'] = {"$regex":re.compile(arch)}
+                searchDict['arch'] = {
+                    "$regex":util.compile_regular_expression(arch)}
             else:
                 searchDict['arch'] = arch
         if filename:
             if regex:
-                searchDict['filename'] = {"$regex":re.compile(filename)}
+                searchDict['filename'] = {
+                    "$regex":util.compile_regular_expression(filename)}
             else:
                 searchDict['filename'] = filename
         if checksum_type and checksum:
             if regex:
                 searchDict['checksum.%s' % checksum_type] = \
-                    {"$regex":re.compile(checksum)}
+                    {"$regex":util.compile_regular_expression(checksum)}
             else:
                 searchDict['checksum.%s' % checksum_type] = checksum
         if (len(searchDict.keys()) == 0):

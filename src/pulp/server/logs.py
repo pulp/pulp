@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import logging.config
 import os
 import sys
 from logging import handlers
@@ -55,57 +56,30 @@ def check_log_file(file_path):
         raise RuntimeError('Cannot write to log directory: %s' % dir_path)
     return 'Yeah!'
 
-
-def configure_pulp_grinder_logging():
+def _enable_all_loggers():
     """
-    Pull the log file configurations from the global config and/or default
-    config and initialize the top-level logging for both pulp and grinder.
+    This is a workaround needed for python 2.4
+    python 2.4 will disable all existing loggers if the 'qualname' does not match
+    exactly to the logger name.  This means that pulp.server.api.repo_sync will be disabled
+    for the common case of only have a logger configured for 'pulp'
+
+    Newer versions of python address this issue when this patch is present;
+    http://bugs.python.org/issue3136
+    we could just pass in a 'disable_existing_loggers=False'
     """
-    level_name = config.config.get('logs', 'level').upper()
-    level = getattr(logging, level_name, logging.INFO)
-    max_size = config.config.getint('logs', 'max_size')
-    backups = config.config.getint('logs', 'backups')
-    formatter = logging.Formatter(FMT)
+    keys = logging.root.manager.loggerDict.keys()
+    for key in keys:
+        logging.root.manager.loggerDict[key].disabled = 0
 
-    #
-    # Pulp (pulp, qpid, gopher)
-    #
-    pulp_file = config.config.get('logs', 'pulp_file')
-    check_log_file(pulp_file)
-    pulp_handler = handlers.RotatingFileHandler(pulp_file,
-                                                maxBytes=max_size,
-                                                backupCount=backups)
-    pulp_handler.setFormatter(formatter)
-    
-
-    for pkg in ('pulp', 'gofer'):
-        logger = logging.getLogger(pkg)
-        logger.setLevel(level)
-        logger.addHandler(pulp_handler)
-
-    #
-    # Qpid - qpid debug is very verbose, so break this out so we
-    # we can enable pulp in debug and not be forced to have qpid in debug
-    #
-    qpid_level_name = config.config.get('logs', 'qpid_log_level').upper()
-    qpid_level = getattr(logging, qpid_level_name, logging.INFO)
-    logger = logging.getLogger('qpid')
-    logger.setLevel(qpid_level)
-    logger.addHandler(pulp_handler)
-
-    #
-    # Grinder
-    #
-    grinder_file = config.config.get('logs', 'grinder_file')
-    check_log_file(grinder_file)
-    grinder_logger = logging.getLogger('grinder')
-    grinder_logger.setLevel(level)
-    grinder_handler = handlers.RotatingFileHandler(grinder_file,
-                                                   maxBytes=max_size,
-                                                   backupCount=backups)
-    grinder_handler.setFormatter(formatter)
-    grinder_logger.addHandler(grinder_handler)
-
+def configure_pulp_logging():
+    """
+    Configures logging from config file specified in pulp.conf
+    """
+    log_config_filename = config.config.get('logs', 'config')
+    if not os.access(log_config_filename, os.R_OK):
+        raise RuntimeError("Unable to read log configuration file: %s" % (log_config_filename))
+    logging.config.fileConfig(log_config_filename)
+    _enable_all_loggers() # Hack needed for RHEL-5
 
 def configure_audit_logging():
     """
@@ -128,6 +102,7 @@ def configure_audit_logging():
     # removing the handler to no avail...
     logger = logging.getLogger('auditing')
     logger.setLevel(logging.INFO)
+    logger.propagate = 0 # Disables auditing going to regular log output
     handler = handlers.TimedRotatingFileHandler(file,
                                                 when=units,
                                                 interval=lifetime,
@@ -146,7 +121,7 @@ def start_logging():
     global started
     if started:
         return
-    configure_pulp_grinder_logging()
+    configure_pulp_logging()
     configure_audit_logging()
     started = True
 
