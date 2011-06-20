@@ -88,3 +88,7 @@ class CDSAPI(PulpAPI):
     def sync_list(self, hostname):
         path = '/cds/%s/sync/' % hostname
         return self.server.GET(path)[1]
+
+    def sync_history(self, repoid):
+        path = "/cds/%s/history/sync/" % repoid
+        return self.server.GET(path)[1]
