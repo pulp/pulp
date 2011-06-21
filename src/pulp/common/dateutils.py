@@ -230,7 +230,10 @@ def format_iso8601_duration(dur):
     @rtype: str
     @return: iso8601 representation of the passed in timedelta instance
     """
-    return isodate.strftime(dur, isodate.D_ALT_EXT)
+    # adding a timedelta to a zero length Duration instance will effectively
+    # convert the timedelta into a Duration, which is required by the api
+    zero = isodate.Duration()
+    return isodate.strftime(zero + dur, isodate.D_ALT_EXT)
 
 
 def format_iso8601_interval(interval, start_time=None, recurrences=None):
