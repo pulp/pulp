@@ -31,7 +31,9 @@ from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import (
     print_header, parse_interval_schedule, system_exit)
 from pulp.client.logutil import getLogger
-from pulp.common.dateutils import parse_iso8601_datetime, parse_iso8601_duration
+from pulp.common.dateutils import (
+    parse_iso8601_datetime, parse_iso8601_duration, parse_iso8601_interval,
+    format_iso8601_datetime, format_iso8601_duration)
 
 log = getLogger(__name__)
 
@@ -709,11 +711,21 @@ class Update(RepoAction):
                 consumer_cert_bundle = consumer_cert_bundle or {}
                 consumer_cert_bundle[k[9:]] = v
                 continue
-            if k == 'schedule_interval':
+            if k in ('schedule_interval', 'schedule_start', 'schedule_runs'):
                 k = 'sync_schedule'
-                v = parse_interval_schedule(v, self.opts.schedule_start, self.opts.schedule_runs)
-            if k in ('schedule_start', 'schedule_runs'):
-                continue
+                if k in  delta:
+                    continue
+                repo = self.repository_api.repository(id, fields=(k,))
+                interval = start = runs = None
+                if repo[k] is not None:
+                    interval, start, runs = parse_iso8601_interval(repo[k])
+                    interval = interval and format_iso8601_duration(interval)
+                    start = start and format_iso8601_datetime(start)
+                    runs = runs and str(runs)
+                interval = self.opts.schedule_interval or interval
+                start = self.opts.schedule_start or start
+                runs = self.opts.schedule_runs or runs
+                v = parse_interval_schedule(interval, start, runs)
             if k == 'delete_schedule':
                 k = 'sync_schedule'
                 v = None
