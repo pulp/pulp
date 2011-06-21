@@ -294,7 +294,7 @@ class CdsLib(object):
 
         url = '%s/%s' % (base_url, repo['relative_path'])
         log.info('Synchronizing repo at [%s]' % url)
-        repo_path = os.path.join(content_base, repo['relative_path'])
+        repo_path = os.path.join(content_base, 'repos', repo['relative_path'])
 
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
