@@ -39,11 +39,12 @@ class Login(Action):
                                help=_('pulp account password'))
 
     def run(self):
-        # first take into account the new credentials
-        if not server.active_server.has_credentials_set():
-            username = self.get_required_option('username')
-            password = self.get_required_option('password')
-            server.active_server.set_basic_auth_credentials(username, password)
+        username = self.get_required_option('username')
+        if self.opts.password:
+            password = self.opts.password
+        else:
+            password = getpass.getpass("Enter password: ")
+        server.active_server.set_basic_auth_credentials(username, password)
         # Retrieve the certificate information from the server
         crt = self.user_api.admin_certificate()
         # Write the certificate data
