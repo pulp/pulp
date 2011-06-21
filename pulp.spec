@@ -192,7 +192,8 @@ touch %{buildroot}/etc/yum.repos.d/pulp.repo
 
 # Pulp CDS
 # This should match what's in gofer_cds_plugin.conf and pulp-cds.conf
-mkdir -p %{buildroot}/var/lib/pulp-cds
+mkdir -p %{buildroot}/var/lib/pulp-cds/repos
+mkdir -p %{buildroot}/var/lib/pulp-cds/packages
 
 # Pulp CDS Logging
 mkdir -p %{buildroot}/var/log/pulp-cds
@@ -318,6 +319,8 @@ fi
 %attr(3775, root, root) %{_sysconfdir}/pki/content
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
+%attr(3775, apache, apache) /var/lib/pulp-cds/repos
+%attr(3775, apache, apache) /var/lib/pulp-cds/packages
 %attr(3775, apache, apache) /var/log/pulp-cds
 
 # -- changelog ---------------------------------------------------------------
