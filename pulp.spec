@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.193
+Version:        0.0.194
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -332,6 +332,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Jun 21 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.194-1
+- Move repos under /var/lib/pulp-cds/repos so we don't serve packages straight
+  up (jason.dobies@redhat.com)
+
 * Tue Jun 21 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.193-1
 - 707295 - removed relativepath from repo update; updated feed update logic to
   check if relative path matches before allowing update (pkilambi@redhat.com)
