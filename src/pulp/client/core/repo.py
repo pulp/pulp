@@ -715,7 +715,7 @@ class Update(RepoAction):
                 k = 'sync_schedule'
                 if k in  delta:
                     continue
-                repo = self.repository_api.repository(id, fields=(k,))
+                repo = self.repository_api.repository(id)
                 interval = start = runs = None
                 if repo[k] is not None:
                     interval, start, runs = parse_iso8601_interval(repo[k])
