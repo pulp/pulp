@@ -222,6 +222,17 @@ def format_iso8601_datetime(dt):
     return isodate.strftime(dt, isodate.DT_EXT_COMPLETE)
 
 
+def format_iso8601_duration(dur):
+    """
+    Format a timedelta instance as an iso8601 string.
+    @type dur: datetime.timedelta instance
+    @param dur: duration instance to format
+    @rtype: str
+    @return: iso8601 representation of the passed in timedelta instance
+    """
+    return isodate.strftime(dur, isodate.D_ALT_EXT)
+
+
 def format_iso8601_interval(interval, start_time=None, recurrences=None):
     """
     Format a time interval as an iso8601 string.
