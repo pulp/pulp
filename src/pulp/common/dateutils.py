@@ -232,8 +232,7 @@ def format_iso8601_duration(dur):
     """
     # adding a timedelta to a zero length Duration instance will effectively
     # convert the timedelta into a Duration, which is required by the api
-    zero = isodate.Duration()
-    return isodate.strftime(zero + dur, isodate.D_ALT_EXT)
+    return isodate.duration_isoformat(dur)
 
 
 def format_iso8601_interval(interval, start_time=None, recurrences=None):
