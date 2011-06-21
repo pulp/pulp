@@ -319,9 +319,9 @@ class CDSTaskHistory(JSONController):
         failure response: 404 Not Found if the CDS instance does not exist or no action information is available
         return: list of task history object
         """
-        cds = cds_api.cds(id)
+        cds = cds_api.cds(hostname)
         if not cds:
-            return self.not_found('No CDS with hostname [%s] found' % id)
+            return self.not_found('No CDS with hostname [%s] found' % hostname)
         method = getattr(self, action, None)
         if method is None:
             return self.not_found(_('No history available for %s on %s') %
