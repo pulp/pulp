@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.194
+Version:        0.0.195
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -332,6 +332,78 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.195-1
+- errata enhancement api and cli changes for bugzilla and cve search
+  (skarmark@redhat.com)
+- 713742 - patch by Chris St. Pierre fixed improper rlock instance detection in
+  get state for pickling (jconnor@redhat.com)
+- 714046 - added login to string substitution (jconnor@redhat.com)
+- added new controller for generic task cancelation (jconnor@redhat.com)
+- Automatic commit of package [pulp] release [0.0.194-1].
+  (jason.dobies@redhat.com)
+- Move repos under /var/lib/pulp-cds/repos so we don't serve packages straight
+  up (jason.dobies@redhat.com)
+- Merged in rhui version (jason.dobies@redhat.com)
+- Tell grinder to use a single location for package storage.
+  (jason.dobies@redhat.com)
+- converting timedelta to duration in order to properly format it
+  (jconnor@redhat.com)
+- 706953, 707986 - allow updates to modify existing schedule instead of having
+  to re-specify the schedule in its entirety (jconnor@redhat.com)
+- 709488 - Use keyword arg for timeout value, and fix help messages for timeout
+  values (jslagle@redhat.com)
+- Added CDS sync history to CDS CLI API (jason.dobies@redhat.com)
+- Remove unneeded log.error for translate_to_utf8 (jmatthews@redhat.com)
+- Added CLI API call for repo sync history (jason.dobies@redhat.com)
+- changed scheduled task behavior to reset task states on enqueue instead of on
+  run (jconnor@redhat.com)
+- 691962 - repo clone should not clone files along with packages and errata
+  (skarmark@redhat.com)
+- adding id to repo delete error message to find culprit repo
+  (skarmark@redhat.com)
+- 714745 - added initial parsing call for start and end dates of cds history so
+  that we convert a datetime object to local tz instead of a string
+  (jconnor@redhat.com)
+- 714691 - fixed type that caused params to resolve to an instance method
+  instead of a local variable (jconnor@redhat.com)
+- Cast itertools.chain to tuple so that it can be iterated more than once, it
+  happens in both from_snapshot and to_snapshot (jslagle@redhat.com)
+- Automatic commit of package [pulp] release [0.0.192-1]. (jortel@redhat.com)
+- 713493 - fixed auth login to relogin new credentials; will just replace
+  existing user certs with new ones (pkilambi@redhat.com)
+- Bump website to CR13. (jortel@redhat.com)
+- 709500 Fix scheduling of package install using --when parameter
+  (jslagle@redhat.com)
+- Automatic commit of package [pulp] release [0.0.191-1]. (jortel@redhat.com)
+- Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
+- 707295 - removed relativepath from repo update; updated feed update logic to
+  check if relative path matches before allowing update (pkilambi@redhat.com)
+- updated log config for rhel5, remove spaces from 'handlers'
+  (jmatthews@redhat.com)
+- Fix to work around http://bugs.python.org/issue3136 in python 2.4
+  (jmatthews@redhat.com)
+- Pulp logging now uses configuration file from /etc/pulp/logging
+  (jmatthews@redhat.com)
+- adding new createrepo as a dependency for el5 builds (pkilambi@redhat.com)
+- 709514 - error message for failed errata install for consumer and
+  consumergroup corrected (skarmark@redhat.com)
+- Automatic commit of package [createrepo] minor release [0.9.8-3].
+  (pkilambi@redhat.com)
+- Adding newer version of createrepo for pulp on el5 (pkilambi@redhat.com)
+- Tell systemctl to ignore deps so that our init script works correctly on
+  Fedora 15 (jslagle@redhat.com)
+- 713183 - python 2.4 compat patch (pkilambi@redhat.com)
+-  Patch from Chris St. Pierre <chris.a.st.pierre@gmail.com> :
+  (pkilambi@redhat.com)
+- 713580 - fixing wrong list.remove in blacklist filter application logic in
+  repo sync (skarmark@redhat.com)
+- 669520 python 2.4 compat fix (jslagle@redhat.com)
+- 713176 - Changed user certificate expirations to 1 week. Consumer certificate
+  expirations, while configurable, remain at the default of 10 years.
+  (jason.dobies@redhat.com)
+- 669520 - handle exception during compilation of invalid regular expression
+  so that we can show the user a helpful message (jslagle@redhat.com)
+
 * Tue Jun 21 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.194-1
 - Move repos under /var/lib/pulp-cds/repos so we don't serve packages straight
   up (jason.dobies@redhat.com)
