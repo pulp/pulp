@@ -538,7 +538,7 @@ class TestErrata(unittest.TestCase):
         r = self.rapi.repository(r['id'])
         found = self.eapi.query_by_cve("CVE-2007-3919")
         self.assertTrue(len(found) == 1)
-        self.assertTrue(found[0] == 'RHSA-2008:0194')
+        self.assertTrue(found[0]['id'] == 'RHSA-2008:0194')
 
     def test_errata_query_by_bz(self):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
@@ -549,7 +549,7 @@ class TestErrata(unittest.TestCase):
         r = self.rapi.repository(r['id'])
         found = self.eapi.query_by_bz("433560")
         self.assertTrue(len(found) == 1)
-        self.assertTrue(found[0] == 'RHSA-2008:0194')
+        self.assertTrue(found[0]['id'] == 'RHSA-2008:0194')
 
     def test_find_repos_by_errata(self):
         # Goal is to search by errata id and discover the repos
