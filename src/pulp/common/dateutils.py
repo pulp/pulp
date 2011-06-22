@@ -143,6 +143,16 @@ def unpickle_datetime(s):
 
 # iso8601 functions ------------------------------------------------------------
 
+def parse_iso8601_date(date_str):
+    """
+    Parse and iso8601 date string.
+    @type date_str: str
+    @param date_str: iso8601 date string to parse
+    @rtype: datetime.date instance
+    """
+    return isodate.parse_date(date_str)
+
+
 def parse_iso8601_datetime(datetime_str):
     """
     Parse an iso8601 datetime string.
@@ -209,6 +219,17 @@ def parse_iso8601_interval(interval_str):
             raise isodate.ISO8601Error('Intervals with year and month values are not valid without a start time')
         interval = interval.todatetime(start=start_time)
     return (interval, start_time, recurrences)
+
+
+def format_iso8601_date(d):
+    """
+    Fomate a date instance as an iso8601 string.
+    @type d: datetime.date instance
+    @param d: date instance to format
+    @rtype: str
+    @return: iso8601 representation of the passed in date instance
+    """
+    return isodate.strftime(d, isodate.DATE_EXT_COMPLETE)
 
 
 def format_iso8601_datetime(dt):
