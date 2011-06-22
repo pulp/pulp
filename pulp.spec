@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.195
+Version:        0.0.196
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -332,6 +332,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.196-1
+- Bump to gofer 0.42 (just to keep projects aligned). (jortel@redhat.com)
+- Added some ghetto date format validation (jconnor@redhat.com)
+- Converting expected iso8601 date string to datetime instance
+  (jconnor@redhat.com)
+- added iso8601 parsing and formating methods for date (only) instances
+  (jconnor@redhat.com)
+
 * Wed Jun 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.195-1
 - errata enhancement api and cli changes for bugzilla and cve search
   (skarmark@redhat.com)
