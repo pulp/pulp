@@ -14,6 +14,7 @@
 
 # Python
 import logging
+from datetime import datetime
 from gettext import gettext as _
 
 # 3rd Party
@@ -196,14 +197,14 @@ class CdsActions(JSONController):
             limit = int(limit)
 
         if start_date:
-            start_date = dateutils.parse_iso8601_datetime(start_date)
-            start_date = dateutils.to_local_datetime(start_date)
-            start_date = dateutils.format_iso8601_datetime(start_date)
+            d = dateutils.parse_iso8601_date(start_date)
+            start_date = datetime(year=d.year, month=d.month, day=d.day,
+                                  hour=0, minute=0, second=0)
 
         if end_date:
-            end_date = dateutils.parse_iso8601_datetime(end_date)
-            end_date = dateutils.to_local_datetime(end_date)
-            end_date = dateutils.format_iso8601_datetime(end_date)
+            d = dateutils.parse_iso8601_date(end_date)
+            end_date = datetime(year=d.year, month=d.month, day=d.day,
+                                hour=23, minute=59, second=59)
 
         results = cds_history_api.query(cds_hostname=id, event_type=event_type, limit=limit,
                                         sort=sort, start_date=start_date, end_date=end_date)
