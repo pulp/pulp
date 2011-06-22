@@ -153,6 +153,22 @@ class Task(JSONController):
         async.remove_async(task)
         return self.accepted(self._task_to_dict(task))
 
+# task cancelation controller --------------------------------------------------
+
+class CancelTask(JSONController):
+
+    @error_handler
+    @auth_required(super_user_only=True)
+    def POST(self, id):
+        """
+        """
+        tasks = async.find_async(id=id)
+        if not tasks:
+            return self.not_found(_('Task not found: %s') % id)
+        task = tasks[0]
+        async.cancel_async(task)
+        return self.accepted(self._task_to_dict(task))
+
 # snapshots controller ---------------------------------------------------------
 
 class Snapshots(JSONController):
