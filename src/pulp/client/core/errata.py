@@ -160,6 +160,8 @@ class Search(ErrataAction):
         self.parser.add_option("--title", dest="title", help=_("errata title"))
         self.parser.add_option("--type", dest="type",
                                help=_("type of errata to search; eg. security, bugfix etc."))
+        self.parser.add_option("--bzid", dest="bzid", help=_("reference bugzilla id"))
+        self.parser.add_option("--cve", dest="cve", help=_("reference CVE"))
         self.parser.add_option("--orphaned", action="store_false", dest="orphaned", default=True,
                                help=_("search only orphaned packages"))
 
@@ -170,8 +172,8 @@ class Search(ErrataAction):
         else:
             orphaned_value = False
         
-        errata = self.errata_api.errata(id=self.opts.id, title=self.opts.title, types=self.opts.type, repo_defined=orphaned_value)
-
+        errata = self.errata_api.errata(id=self.opts.id, title=self.opts.title, types=self.opts.type,
+                                        repo_defined=orphaned_value, bzid=self.opts.bzid, cve=self.opts.cve)
         print _("\n%s\t%s\t%s\n" % (self.form_item_string("Id", self.id_field_size),
                 self.form_item_string("Type", self.type_field_size),
                 "Title"))

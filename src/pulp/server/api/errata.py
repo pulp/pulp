@@ -111,7 +111,8 @@ class ErrataApi(BaseApi):
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,
-            pushcount=None, from_str=None, reboot_suggested=None, severity=None, repo_defined=None):
+            pushcount=None, from_str=None, reboot_suggested=None, severity=None,
+            repo_defined=None, bzid=None, cve=None):
         """
         Return a list of all errata objects matching search terms
         """
@@ -146,9 +147,15 @@ class ErrataApi(BaseApi):
             searchDict['repo_defined'] = False
         
         if (len(searchDict.keys()) == 0):
-            return list(self.collection.find())
+            errata_list = list(self.collection.find())
         else:
-            return list(self.collection.find(searchDict))
+            errata_list = list(self.collection.find(searchDict))
+
+        if bzid:
+            errata_list = self.query_by_bz(bzid=bzid, errata_list=errata_list)
+        if cve:
+            errata_list = self.query_by_cve(cve=cve, errata_list=errata_list)
+        return errata_list
 
     def search_by_packages(self):
         """
@@ -159,13 +166,13 @@ class ErrataApi(BaseApi):
     def search_by_issued_date_range(self):
         pass
 
-    def query_by_bz(self, bzid):
-        return self.query_by_reference('bugzilla', bzid)
+    def query_by_bz(self, bzid, errata_list=None):
+        return self.query_by_reference('bugzilla', bzid, errata_list)
 
-    def query_by_cve(self, cveid):
-        return self.query_by_reference('cve', cveid)
+    def query_by_cve(self, cveid, errata_list=None):
+        return self.query_by_reference('cve', cveid, errata_list)
 
-    def query_by_reference(self, type, refid):
+    def query_by_reference(self, type, refid, errata_list=None):
         """
         Search Errata for all matches of this reference with id 'refid'
         @param type: reference type to search, example 'bugzilla', 'cve'
@@ -174,12 +181,15 @@ class ErrataApi(BaseApi):
         # Will prob want to chunk the query to mongo and limit the data returned
         # to be only 'references' and 'id'.
         # OR...look into a better way to search inside errata through mongo
-        all_errata = self.errata()
+
+        # If errata_list is not passed to the function, assume whole errata list
+        if not errata_list:
+            errata_list = list(self.collection.find())
         matches = []
-        for e in all_errata:
+        for e in errata_list:
             for ref in e["references"]:
                 if ref["type"] == type and ref["id"] == refid:
-                    matches.append(e["id"])
+                    matches.append(e)
                     continue
         return matches
 
