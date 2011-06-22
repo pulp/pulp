@@ -536,7 +536,7 @@ class TestErrata(unittest.TestCase):
 
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
-        found = self.eapi.query_by_cve("CVE-2007-3919")
+        found = self.eapi.errata(cve="CVE-2007-3919")
         self.assertTrue(len(found) == 1)
         self.assertTrue(found[0]['id'] == 'RHSA-2008:0194')
 
@@ -547,7 +547,7 @@ class TestErrata(unittest.TestCase):
         repo_sync._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
-        found = self.eapi.query_by_bz("433560")
+        found = self.eapi.errata(bzid="433560")
         self.assertTrue(len(found) == 1)
         self.assertTrue(found[0]['id'] == 'RHSA-2008:0194')
 

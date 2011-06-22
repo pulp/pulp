@@ -145,17 +145,17 @@ class ErrataApi(BaseApi):
             searchDict['severity'] = severity
         if repo_defined is not None:
             searchDict['repo_defined'] = False
+        if bzid:
+            searchDict['references.id'] = bzid
+            searchDict['references.type'] = "bugzilla"
+        if cve:
+            searchDict['references.id'] = cve
+            searchDict['references.type'] = "cve"
         
         if (len(searchDict.keys()) == 0):
-            errata_list = list(self.collection.find())
+            return list(self.collection.find())
         else:
-            errata_list = list(self.collection.find(searchDict))
-
-        if bzid:
-            errata_list = self.query_by_bz(bzid=bzid, errata_list=errata_list)
-        if cve:
-            errata_list = self.query_by_cve(cve=cve, errata_list=errata_list)
-        return errata_list
+            return list(self.collection.find(searchDict))
 
     def search_by_packages(self):
         """
@@ -165,31 +165,4 @@ class ErrataApi(BaseApi):
 
     def search_by_issued_date_range(self):
         pass
-
-    def query_by_bz(self, bzid, errata_list=None):
-        return self.query_by_reference('bugzilla', bzid, errata_list)
-
-    def query_by_cve(self, cveid, errata_list=None):
-        return self.query_by_reference('cve', cveid, errata_list)
-
-    def query_by_reference(self, type, refid, errata_list=None):
-        """
-        Search Errata for all matches of this reference with id 'refid'
-        @param type: reference type to search, example 'bugzilla', 'cve'
-        @param refid: id to match on
-        """
-        # Will prob want to chunk the query to mongo and limit the data returned
-        # to be only 'references' and 'id'.
-        # OR...look into a better way to search inside errata through mongo
-
-        # If errata_list is not passed to the function, assume whole errata list
-        if not errata_list:
-            errata_list = list(self.collection.find())
-        matches = []
-        for e in errata_list:
-            for ref in e["references"]:
-                if ref["type"] == type and ref["id"] == refid:
-                    matches.append(e)
-                    continue
-        return matches
 
