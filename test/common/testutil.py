@@ -13,14 +13,21 @@
 
 import os
 import random
+import unittest
 from datetime import timedelta
+
+import mocks
 
 from pulp.server import async
 from pulp.repo_auth import repo_cert_utils
 from pulp.server import auditing
 from pulp.server import config
+from pulp.server.api.cds import CdsApi
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.db import connection
 from pulp.server.db.model import Delta
+from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.util import random_string
 from pulp.server.auth.cert_generator import SerialNumber
@@ -32,10 +39,9 @@ constants.CACHE_DIR = "/tmp/pulp/cache"
 
 def initialize():
     connection.initialize()
-    async.initialize()
+    return config
 
 def load_test_config():
-
     if not os.path.exists('/tmp/pulp'):
         os.makedirs('/tmp/pulp')
 
@@ -48,8 +54,6 @@ def load_test_config():
     except RuntimeError:
         pass
     start_logging()
-    # Re-init the database connection so we can pick up settings for the test database
-    initialize()
 
     # The repo_auth stuff, which runs outside of the server codebase, needs to know
     # where to look for its config as well
@@ -57,10 +61,8 @@ def load_test_config():
 
     return config.config
 
-
 def common_cleanup():
     auditing.cull_events(timedelta())
-
 
 def create_package(api, name, version="1.2.3", release="1.el5", epoch="1",
         arch="x86_64", description="test description text",
@@ -125,4 +127,40 @@ def create_random_package(api):
 
 
 #implicit initialize
-initialize()
+# initialize()
+
+class PulpTest(unittest.TestCase):
+    def clean(self):
+        '''
+        Removes any entities written to the database in all used APIs.
+        '''
+        self.cds_api.clean()
+        self.repo_api.clean()
+        self.consumer_api.clean()
+
+        # Flush the assignment algorithm cache
+        CDSRepoRoundRobin.get_collection().remove(safe=True)
+
+        auditing.cull_events(timedelta())
+        mocks.reset()
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        mocks.install()
+        self.config = load_test_config()
+        connection.initialize()
+
+        self.repo_api = RepoApi()
+        self.consumer_api = ConsumerApi()
+        self.cds_api = CdsApi()
+
+    def tearDown(self):
+        self.clean()
+
+
+class PulpAsyncTest(PulpTest):
+
+    def setUp(self):
+        PulpTest.setUp(self)
+        async.config.config = self.config
+        async.initialize()

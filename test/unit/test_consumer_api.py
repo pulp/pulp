@@ -15,7 +15,6 @@
 # Python
 import sys
 import os
-import unittest
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
@@ -24,44 +23,14 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import mocks
-import testutil
+from testutil import PulpAsyncTest
 from pulp.server.agent import Agent
-from pulp.server.api.cds import CdsApi
-from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.repo import RepoApi
-from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
 
 # -- test cases ---------------------------------------------------------------------------
 
-class TestConsumerApi(unittest.TestCase):
-
-    def clean(self):
-        '''
-        Removes any entities written to the database in all used APIs.
-        '''
-        self.cds_api.clean()
-        self.repo_api.clean()
-        self.consumer_api.clean()
-
-        # Flush the assignment algorithm cache
-        CDSRepoRoundRobin.get_collection().remove(safe=True)
-
-        testutil.common_cleanup()
-        mocks.reset()
-
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.repo_api = RepoApi()
-        self.consumer_api = ConsumerApi()
-        self.cds_api = CdsApi()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+class TestConsumerApi(PulpAsyncTest):
 
     # -- bind test cases -----------------------------------------------------------------
 
