@@ -98,7 +98,7 @@ class RepoApi(BaseApi):
     def __getstate__(self):
         odict = self.__dict__.copy()
         for k, v in odict.items():
-            if not isinstance(v, threading.RLock):
+            if not isinstance(v, threading._RLock):
                 continue
             odict.pop(k)
         return odict
