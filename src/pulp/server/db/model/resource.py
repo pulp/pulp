@@ -280,6 +280,7 @@ class Repo(Model):
         if not notes:
             self.notes = {}
         self.notes = notes
+        self.preserve_metadata = False
 
 #        self.size = None
 
