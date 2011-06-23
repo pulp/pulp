@@ -89,7 +89,14 @@ class TaskQueue(object):
 
     def __del__(self):
         """
-        Cleanly shutdown the dispatcher thread
+        Destroy the TaskQueue.
+        All that is needed is to cleanly shutdown the dispatcher thread
+        """
+        self._cancel_dispatcher()
+
+    def _cancel_dispatcher(self):
+        """
+        Shutdown the dispatcher thread.
         """
         self.__lock.acquire()
         self.__exit = True
