@@ -91,6 +91,7 @@ Requires: gofer >= 0.42
 # RHEL
 Requires: python-hashlib
 %endif
+Requires: python-rhsm >= 0.96.4
 
 %description client
 A collection of tools to interact and perform content specific operations such as repo management, 

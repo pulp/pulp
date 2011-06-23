@@ -21,7 +21,7 @@ from hashlib import sha256
 from pulp.client import repolib
 from pulp.client.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
-from pulp.client.package_profile import get_profile
+from rhsm.profile import get_profile
 from pulp.client.config import Config
 from pulp.client.repo_file import RepoFile
 from pulp.client.credentials import Consumer as ConsumerBundle
