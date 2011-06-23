@@ -161,6 +161,15 @@ class CancelTask(JSONController):
     @auth_required(super_user_only=True)
     def POST(self, id):
         """
+        [[wiki]]
+        title: Cancel A Task
+        description: Cancel a waiting or running task.
+        method: POST
+        path: /tasks/<id>/cancel/
+        permission: Super User Only
+        success response: 202 Accepted
+        failure response: 404 Not Found
+        return: Task object
         """
         tasks = async.find_async(id=id)
         if not tasks:
@@ -241,6 +250,7 @@ class Snapshot(JSONController):
 _urls = (
     '/$', Tasks,
     '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', Task,
+    '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/cancel/$', CancelTask,
     '/snapshots/$', Snapshots,
     '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/snapshot/$', Snapshot,
 )
