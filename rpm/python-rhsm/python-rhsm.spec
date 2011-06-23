@@ -57,6 +57,9 @@ rm -rf %{buildroot}
 %{python_sitelib}/rhsm-*.egg-info
 
 %changelog
+* Thu Jun 23 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.96.4-1
+- new package built with tito
+
 * Wed Jun 08 2011 Bryan Kearney <bkearney@redhat.com> 0.96.4-1
 - Adding profile module and updating spec (pkilambi@redhat.com)
 - Added stacking Id to the certificate (wottop@dhcp231-152.rdu.redhat.com)
