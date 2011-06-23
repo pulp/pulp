@@ -827,20 +827,20 @@ class RepoApi(BaseApi):
         for pkg_id in packageids:
             if not pkg_objects.has_key(pkg_id):
                 # Detect if any packageids passed in could not be located
-                log.error("No Package with id: %s found" % pkg_id)
+                log.warn("No Package with id: %s found" % pkg_id)
                 errors.append((pkg_id, (None, None, None, None, None), None, None))
                 continue
             pkg = pkg_objects[pkg_id]
             pkg_tup = get_pkg_tup(pkg)
             if nevras.has_key(pkg_tup):
-                log.error("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
+                log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
                         % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
                         % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
-                log.error(error_msg)
+                log.warn(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
             nevras[pkg_tup] = pkg["id"]
@@ -865,7 +865,7 @@ class RepoApi(BaseApi):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
                 continue
             error_message = "Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id'])
-            log.error(error_message)
+            log.warn(error_message)
             errors.append(form_error_tup(pkg, error_message))
             if packages.has_key(nevras[pkg_tup]):
                 del packages[nevras[pkg_tup]]
@@ -879,7 +879,7 @@ class RepoApi(BaseApi):
                 continue
             error_message = "Package with same filename [%s] already exists in repo [%s]" \
                     % (pkg["filename"], repo['id'])
-            log.error(error_message)
+            log.warn(error_message)
             errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):
