@@ -15,6 +15,7 @@
 import pymongo
 
 # Pulp
+from pulp.common import dateutils
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent
@@ -94,16 +95,6 @@ class CdsHistoryApi(BaseApi):
         if event_type:
             search_params['type_name'] = event_type
 
-        # Add in date range limits if specified
-        date_range = {}
-        if start_date:
-            date_range['$gte'] = start_date
-        if end_date:
-            date_range['$lte'] = end_date
-
-        if len(date_range) > 0:
-            search_params['timestamp'] = date_range
-
         # Determine the correct mongo cursor to retrieve
         if len(search_params) == 0:
             cursor = self.collection.find()
@@ -111,15 +102,31 @@ class CdsHistoryApi(BaseApi):
             cursor = self.collection.find(search_params)
 
         # Sort by most recent entry first
-        cursor.sort([ ('timestamp', SORT_DIRECTION[sort]),
-                       ('id', pymongo.DESCENDING) ])
+        cursor.sort([('id', pymongo.DESCENDING)])
+
+        def _within_start_end(h):
+            timestamp = dateutils.parse_iso8601_datetime(h['timestamp'])
+            if start_date is not None and timestamp < start_date:
+                return False
+            if end_date is not None and timestamp > end_date:
+                return False
+            return True
+
+        history = [h for h in cursor if _within_start_end(h)]
+
+        def _cmp_history(h1, h2):
+            t1 = dateutils.parse_iso8601_datetime(h1['timestamp'])
+            t2 = dateutils.parse_iso8601_datetime(h2['timestamp'])
+            return cmp(t1, t2)
+
+        reverse = sort == SORT_DESCENDING
+        history = sorted(history, cmp=_cmp_history, reverse=reverse)
 
         # If a limit was specified, add it to the cursor
         if limit:
-            cursor.limit(limit)
+            history = history[:limit]
 
-        # Finally convert to a list before returning
-        return list(cursor)
+        return history
 
 # -- internal only api ---------------------------------------------------------------------
 
