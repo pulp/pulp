@@ -199,12 +199,12 @@ class CdsActions(JSONController):
         if start_date:
             d = dateutils.parse_iso8601_date(start_date)
             start_date = datetime(year=d.year, month=d.month, day=d.day,
-                                  hour=0, minute=0, second=0)
+                                  tzinfo=dateutils.local_tz())
 
         if end_date:
             d = dateutils.parse_iso8601_date(end_date)
             end_date = datetime(year=d.year, month=d.month, day=d.day,
-                                hour=23, minute=59, second=59)
+                                tzinfo=dateutils.local_tz())
 
         results = cds_history_api.query(cds_hostname=id, event_type=event_type, limit=limit,
                                         sort=sort, start_date=start_date, end_date=end_date)
