@@ -14,6 +14,7 @@
 import os
 import random
 import unittest
+import time
 from datetime import timedelta
 
 import mocks
@@ -31,15 +32,12 @@ from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.util import random_string
 from pulp.server.auth.cert_generator import SerialNumber
+from pulp.server.tasking.taskqueue import queue
 from pulp.server import constants
 
 SerialNumber.PATH = '/tmp/sn.dat'
 constants.LOCAL_STORAGE = "/tmp/pulp/"
 constants.CACHE_DIR = "/tmp/pulp/cache"
-
-def initialize():
-    connection.initialize()
-    return config
 
 def load_test_config():
     if not os.path.exists('/tmp/pulp'):
@@ -60,9 +58,6 @@ def load_test_config():
     repo_cert_utils.CONFIG_FILENAME = override_file
 
     return config.config
-
-def common_cleanup():
-    auditing.cull_events(timedelta())
 
 def create_package(api, name, version="1.2.3", release="1.el5", epoch="1",
         arch="x86_64", description="test description text",
@@ -125,11 +120,24 @@ def create_random_package(api):
     api.update(p.id, d)
     return p
 
-
-#implicit initialize
-# initialize()
-
 class PulpTest(unittest.TestCase):
+
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        self.mox = mox.Mox()
+        mocks.install()
+        self.config = load_test_config()
+        connection.initialize()
+        self.mock_async()
+
+        self.repo_api = RepoApi()
+        self.consumer_api = ConsumerApi()
+        self.cds_api = CdsApi()
+
+    def tearDown(self):
+        unittest.TestCase.tearDown(self)
+        self.clean()
+
     def clean(self):
         '''
         Removes any entities written to the database in all used APIs.
@@ -144,18 +152,8 @@ class PulpTest(unittest.TestCase):
         auditing.cull_events(timedelta())
         mocks.reset()
 
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        mocks.install()
-        self.config = load_test_config()
-        connection.initialize()
-
-        self.repo_api = RepoApi()
-        self.consumer_api = ConsumerApi()
-        self.cds_api = CdsApi()
-
-    def tearDown(self):
-        self.clean()
+    def mock_async(self):
+        pass
 
 
 class PulpAsyncTest(PulpTest):
@@ -164,3 +162,11 @@ class PulpAsyncTest(PulpTest):
         PulpTest.setUp(self)
         async.config.config = self.config
         async.initialize()
+
+    def tearDown(self):
+        PulpTest.tearDown(self)
+        async._queue._cancel_dispatcher()
+        async.finalize()
+
+    def mock_async(self):
+        pass
