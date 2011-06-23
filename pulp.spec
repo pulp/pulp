@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.196
+Version:        0.0.197
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -326,6 +326,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jun 23 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.197-1
+- Upped version to match master builds (jason.dobies@redhat.com)
+- Adding a preserve metadata as an option at repo creation time. More info
+  about feature  can be found at
+  https://fedorahosted.org/pulp/wiki/PreserveMetadata (pkilambi@redhat.com)
+- 715504 - Apache's error_log also generating pulp log messages
+  (jmatthews@redhat.com)
+
 * Tue Jun 21 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.194-1
 - Move repos under /var/lib/pulp-cds/repos so we don't serve packages straight
   up (jason.dobies@redhat.com)
