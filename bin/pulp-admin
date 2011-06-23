@@ -177,6 +177,7 @@ def setup_admin(admin):
         task_cmd.add_action('list', task.List())
         task_cmd.add_action('info', task.Info())
         task_cmd.add_action('remove', task.Remove())
+        task_cmd.add_action('cancel', task.Cancel())
         task_cmd.add_action('snapshots', task.Snapshots())
         task_cmd.add_action('snapshot', task.Snapshot())
         task_cmd.add_action('delete_snapshot', task.DeleteSnapshot())

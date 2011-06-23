@@ -37,6 +37,14 @@ class TaskAPI(PulpAPI):
             print e.args[1]
         return None
 
+    def cancel(self, task_id):
+        path = '/tasks/%s/cancel/' % task_id
+        try:
+            return self.server.POST(path)[1]
+        except ServerRequestError, e:
+            print e.args[1]
+        return None
+
     def list_snapshots(self):
         path = '/tasks/snapshots/'
         try:

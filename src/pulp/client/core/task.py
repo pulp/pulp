@@ -114,6 +114,18 @@ class Remove(TaskAction):
         print _('Task [%s] set for removal') % id
 
 
+class Cancel(TaskAction):
+
+    description = _('cancel a running task')
+
+    def run(self):
+        id = self.get_required_option('id')
+        task = self.api.cancel(id)
+        if not task:
+            system_exit(os.EX_OK)
+        print _('Task [%s] canceled') % id
+
+
 class Snapshots(TaskAction):
 
     description = _('list current task snapshots')
