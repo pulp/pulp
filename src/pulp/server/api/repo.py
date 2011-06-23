@@ -174,7 +174,8 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
-               relative_path=None, gpgkeys=(), checksum_type="sha256", notes={}):
+               relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
+               preserve_metadata=False):
         """
         Create a new Repository object and return it
         """
@@ -244,6 +245,11 @@ class RepoApi(BaseApi):
             path = r['relative_path']
             ks = KeyStore(path)
             added = ks.add(gpgkeys)
+        #set if the repo can be a mirror;a sync operation
+        # can override this at runtime for specific sync.
+        if feed:
+            # only preserve metadata if its a feed repo
+            r['preserve_metadata'] = preserve_metadata
         self.collection.insert(r, safe=True)
         if sync_schedule:
             update_repo_schedule(r, sync_schedule)

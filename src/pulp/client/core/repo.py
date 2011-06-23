@@ -449,7 +449,8 @@ class Create(RepoAction):
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
         self.parser.add_option("--notes", dest="notes",
                                help=_("additional information about repo in a dictionary form inside a string"))
-
+        self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
+                               help=_("Preserves the original metadata; only works with feed repos"))
         schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
                             help=_('length of time between each run in iso8601 duration format'))
@@ -464,6 +465,11 @@ class Create(RepoAction):
         name = self.opts.name or id
         arch = self.opts.arch or 'noarch'
         feed = self.opts.feed
+        if self.opts.preserve_metadata and not feed:
+            system_exit(os.EX_USAGE, _('Cannot use `preserve_metadata` option for feedless repos'))
+        preserve_metadata = False
+        if self.opts.preserve_metadata:
+            preserve_metadata = self.opts.preserve_metadata
         symlinks = self.opts.symlinks or False
         schedule = parse_interval_schedule(self.opts.schedule_interval,
                                            self.opts.schedule_start,
@@ -514,6 +520,7 @@ class Create(RepoAction):
         if keylist:
             reader = KeyReader()
             keylist = reader.expand(keylist)
+
         repo = self.repository_api.create(id, name, arch, feed, symlinks,
                                           sync_schedule=schedule,
                                           feed_cert_data=feed_cert_data,
@@ -522,7 +529,7 @@ class Create(RepoAction):
                                           groupid=groupid,
                                           gpgkeys=keylist,
                                           checksum_type=self.opts.checksum_type,
-                                          notes=notes)
+                                          notes=notes, preserve_metadata=preserve_metadata)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 class Clone(RepoProgressAction):

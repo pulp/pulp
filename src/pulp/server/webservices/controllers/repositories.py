@@ -215,6 +215,7 @@ class Repositories(JSONController):
          * gpgkeys?, list of str, list of gpg keys used for signing content
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * notes?, dict, additional information in the form of key-value pairs
+         * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
         """
         repo_data = self.params()
 
@@ -234,7 +235,8 @@ class Repositories(JSONController):
                           groupid=repo_data.get('groupid', None),
                           gpgkeys=repo_data.get('gpgkeys', None),
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
-                          notes=repo_data.get('notes', None))
+                          notes=repo_data.get('notes', None),
+                          preserve_metadata=repo_data.get('preserve_metadata', False))
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
