@@ -73,7 +73,7 @@ class JSONController(object):
         @param task: task to convert
         @return dict representing task
         """
-        fields = ('id', 'class_name', 'method_name', 'state', 'result',
+        fields = ('id', 'class_name', 'method_name', 'args', 'state', 'result',
                   'exception', 'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
         # convert the exception into a string as it cannot be json encoded
