@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.197
+Version:        0.0.198
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -333,6 +333,28 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jun 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.198-1
+- added args to returned serialized task (jconnor@redhat.com)
+- converted timestamp to utc (jconnor@redhat.com)
+- Pulp now uses profile module from python-rhsm and requires it
+  (pkilambi@redhat.com)
+- removed test that fails due to bug in timezone support, 716243
+  (jconnor@redhat.com)
+- changed tests to insert iso8601 strings as time stamps (jconnor@redhat.com)
+- added task cancel command (jconnor@redhat.com)
+- added wiki comments and tied cancel task to a url (jconnor@redhat.com)
+- changed cds history query to properly deal with iso8601 timestamps
+  (jconnor@redhat.com)
+- 712083 - changing the error message to warnings (pkilambi@redhat.com)
+- Incremented to pass RHUI build (jason.dobies@redhat.com)
+- Adding a preserve metadata as an option at repo creation time. More info
+  about feature  can be found at
+  https://fedorahosted.org/pulp/wiki/PreserveMetadata (pkilambi@redhat.com)
+- 715504 - Apache's error_log also generating pulp log messages
+  (jmatthews@redhat.com)
+- replacing query_by_bz and query_by_cve functions by advanced mongo queries
+  for better performance and cleaner implementation (skarmark@redhat.com)
+
 * Wed Jun 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.196-1
 - Bump to gofer 0.42 (just to keep projects aligned). (jortel@redhat.com)
 - Added some ghetto date format validation (jconnor@redhat.com)
