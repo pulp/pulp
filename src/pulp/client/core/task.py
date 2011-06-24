@@ -29,6 +29,7 @@ class Task(Command):
 _task_template = _('''Task: %s
     Scheduler: %s
     Call: %s
+    Arguments: %s
     State: %s
     Start time: %s
     Finish time: %s
@@ -62,6 +63,7 @@ class TaskAction(Action):
         return _task_template % (task['id'],
                                  task['scheduler'],
                                  _call(task),
+                                 ', '.join([str(a) for a in task['args']]),
                                  task['state'],
                                  task['start_time'],
                                  task['finish_time'],
