@@ -58,7 +58,7 @@ class CDSHistoryEvent(Model):
         self.originator = originator
         self.type_name = type_name
         self.details = details
-        now = datetime.datetime.now(dateutils.local_tz())
+        now = datetime.datetime.now(dateutils.utc_tz())
         self.timestamp = dateutils.format_iso8601_datetime(now)
 
 
