@@ -17,6 +17,8 @@ import unittest
 import time
 from datetime import timedelta
 
+import dingus
+
 import mocks
 
 from pulp.server import async
@@ -124,15 +126,17 @@ class PulpTest(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.mox = mox.Mox()
         mocks.install()
         self.config = load_test_config()
         connection.initialize()
+
         self.mock_async()
 
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
         self.cds_api = CdsApi()
+
+        self.clean()
 
     def tearDown(self):
         unittest.TestCase.tearDown(self)
@@ -153,8 +157,7 @@ class PulpTest(unittest.TestCase):
         mocks.reset()
 
     def mock_async(self):
-        pass
-
+        async._queue = dingus.Dingus()
 
 class PulpAsyncTest(PulpTest):
 
