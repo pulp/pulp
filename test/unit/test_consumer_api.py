@@ -23,14 +23,14 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from testutil import PulpAsyncTest
+from testutil import PulpTest
 from pulp.server.agent import Agent
 from pulp.server.pexceptions import PulpException
 
 
 # -- test cases ---------------------------------------------------------------------------
 
-class TestConsumerApi(PulpAsyncTest):
+class TestConsumerApi(PulpTest):
 
     # -- bind test cases -----------------------------------------------------------------
 
