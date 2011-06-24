@@ -470,10 +470,10 @@ class TestCDSHistoryApi(unittest.TestCase):
         e3 = CDSHistoryEvent('cds3.example.com', 'admin', CDSHistoryEventType.REPO_UNASSOCIATED)
         e4 = CDSHistoryEvent('cds4.example.com', 'admin', CDSHistoryEventType.UNREGISTERED)
 
-        e1.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 2, 1, tzinfo=dateutils.local_tz()))
-        e2.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 4, 1, tzinfo=dateutils.local_tz()))
-        e3.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 6, 1, tzinfo=dateutils.local_tz()))
-        e4.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 10, 1, tzinfo=dateutils.local_tz()))
+        e1.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 2, 1, tzinfo=dateutils.utc_tz()))
+        e2.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 4, 1, tzinfo=dateutils.utc_tz()))
+        e3.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 6, 1, tzinfo=dateutils.utc_tz()))
+        e4.timestamp = dateutils.format_iso8601_datetime(datetime.datetime(2000, 10, 1, tzinfo=dateutils.utc_tz()))
 
         self.cds_history_api.collection.insert(e1)
         self.cds_history_api.collection.insert(e2)
