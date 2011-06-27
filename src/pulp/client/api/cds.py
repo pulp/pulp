@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.client.api.base import PulpAPI
+from pulp.common import dateutils
 
 
 class CDSAPI(PulpAPI):
@@ -43,7 +44,7 @@ class CDSAPI(PulpAPI):
     def update(self, hostname, delta):
         path = '/cds/%s/' % hostname
         return self.server.PUT(path, delta)[1]
-    
+
     def list(self):
         path = '/cds/'
         return self.server.GET(path)[1]
@@ -63,8 +64,12 @@ class CDSAPI(PulpAPI):
         if sort:
             data['sort'] = sort
         if start_date:
+            # ghetto input validation
+            dateutils.parse_iso8601_date(start_date)
             data['start_date'] = start_date
         if end_date:
+            # again, ghetto input validation
+            dateutils.parse_iso8601_date(end_date)
             data['end_date'] = end_date
 
         path = '/cds/%s/history/' % hostname

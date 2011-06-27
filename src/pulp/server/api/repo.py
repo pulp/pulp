@@ -98,7 +98,7 @@ class RepoApi(BaseApi):
     def __getstate__(self):
         odict = self.__dict__.copy()
         for k, v in odict.items():
-            if not isinstance(v, threading.RLock):
+            if not isinstance(v, threading._RLock):
                 continue
             odict.pop(k)
         return odict
@@ -174,7 +174,8 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
-               relative_path=None, gpgkeys=(), checksum_type="sha256", notes={}):
+               relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
+               preserve_metadata=False):
         """
         Create a new Repository object and return it
         """
@@ -244,6 +245,11 @@ class RepoApi(BaseApi):
             path = r['relative_path']
             ks = KeyStore(path)
             added = ks.add(gpgkeys)
+        #set if the repo can be a mirror;a sync operation
+        # can override this at runtime for specific sync.
+        if feed:
+            # only preserve metadata if its a feed repo
+            r['preserve_metadata'] = preserve_metadata
         self.collection.insert(r, safe=True)
         if sync_schedule:
             update_repo_schedule(r, sync_schedule)
@@ -821,20 +827,20 @@ class RepoApi(BaseApi):
         for pkg_id in packageids:
             if not pkg_objects.has_key(pkg_id):
                 # Detect if any packageids passed in could not be located
-                log.error("No Package with id: %s found" % pkg_id)
+                log.warn("No Package with id: %s found" % pkg_id)
                 errors.append((pkg_id, (None, None, None, None, None), None, None))
                 continue
             pkg = pkg_objects[pkg_id]
             pkg_tup = get_pkg_tup(pkg)
             if nevras.has_key(pkg_tup):
-                log.error("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
+                log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
                         % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
                         % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
-                log.error(error_msg)
+                log.warn(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
             nevras[pkg_tup] = pkg["id"]
@@ -859,7 +865,7 @@ class RepoApi(BaseApi):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
                 continue
             error_message = "Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id'])
-            log.error(error_message)
+            log.warn(error_message)
             errors.append(form_error_tup(pkg, error_message))
             if packages.has_key(nevras[pkg_tup]):
                 del packages[nevras[pkg_tup]]
@@ -873,7 +879,7 @@ class RepoApi(BaseApi):
                 continue
             error_message = "Package with same filename [%s] already exists in repo [%s]" \
                     % (pkg["filename"], repo['id'])
-            log.error(error_message)
+            log.warn(error_message)
             errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):

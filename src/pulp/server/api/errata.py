@@ -111,7 +111,8 @@ class ErrataApi(BaseApi):
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,
-            pushcount=None, from_str=None, reboot_suggested=None, severity=None, repo_defined=None):
+            pushcount=None, from_str=None, reboot_suggested=None, severity=None,
+            repo_defined=None, bzid=None, cve=None):
         """
         Return a list of all errata objects matching search terms
         """
@@ -144,6 +145,12 @@ class ErrataApi(BaseApi):
             searchDict['severity'] = severity
         if repo_defined is not None:
             searchDict['repo_defined'] = False
+        if bzid:
+            searchDict['references.id'] = bzid
+            searchDict['references.type'] = "bugzilla"
+        if cve:
+            searchDict['references.id'] = cve
+            searchDict['references.type'] = "cve"
         
         if (len(searchDict.keys()) == 0):
             return list(self.collection.find())
@@ -158,28 +165,4 @@ class ErrataApi(BaseApi):
 
     def search_by_issued_date_range(self):
         pass
-
-    def query_by_bz(self, bzid):
-        return self.query_by_reference('bugzilla', bzid)
-
-    def query_by_cve(self, cveid):
-        return self.query_by_reference('cve', cveid)
-
-    def query_by_reference(self, type, refid):
-        """
-        Search Errata for all matches of this reference with id 'refid'
-        @param type: reference type to search, example 'bugzilla', 'cve'
-        @param refid: id to match on
-        """
-        # Will prob want to chunk the query to mongo and limit the data returned
-        # to be only 'references' and 'id'.
-        # OR...look into a better way to search inside errata through mongo
-        all_errata = self.errata()
-        matches = []
-        for e in all_errata:
-            for ref in e["references"]:
-                if ref["type"] == type and ref["id"] == refid:
-                    matches.append(e["id"])
-                    continue
-        return matches
 

@@ -14,6 +14,7 @@
 
 # Python
 import logging
+from datetime import datetime
 from gettext import gettext as _
 
 # 3rd Party
@@ -196,14 +197,14 @@ class CdsActions(JSONController):
             limit = int(limit)
 
         if start_date:
-            start_date = dateutils.parse_iso8601_datetime(start_date)
-            start_date = dateutils.to_local_datetime(start_date)
-            start_date = dateutils.format_iso8601_datetime(start_date)
+            d = dateutils.parse_iso8601_date(start_date)
+            start_date = datetime(year=d.year, month=d.month, day=d.day,
+                                  tzinfo=dateutils.local_tz())
 
         if end_date:
-            end_date = dateutils.parse_iso8601_datetime(end_date)
-            end_date = dateutils.to_local_datetime(end_date)
-            end_date = dateutils.format_iso8601_datetime(end_date)
+            d = dateutils.parse_iso8601_date(end_date)
+            end_date = datetime(year=d.year, month=d.month, day=d.day,
+                                tzinfo=dateutils.local_tz())
 
         results = cds_history_api.query(cds_hostname=id, event_type=event_type, limit=limit,
                                         sort=sort, start_date=start_date, end_date=end_date)
@@ -319,9 +320,9 @@ class CDSTaskHistory(JSONController):
         failure response: 404 Not Found if the CDS instance does not exist or no action information is available
         return: list of task history object
         """
-        cds = cds_api.cds(id)
+        cds = cds_api.cds(hostname)
         if not cds:
-            return self.not_found('No CDS with hostname [%s] found' % id)
+            return self.not_found('No CDS with hostname [%s] found' % hostname)
         method = getattr(self, action, None)
         if method is None:
             return self.not_found(_('No history available for %s on %s') %

@@ -14,7 +14,7 @@ import os
 from yum.plugins import TYPE_CORE
 from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.api.consumer import ConsumerAPI
-from pulp.client.package_profile import get_profile
+from rhsm.profile import get_profile
 from pulp.client.server import PulpServer, set_active_server
 from pulp.client.config import Config
 

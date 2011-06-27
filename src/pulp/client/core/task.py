@@ -29,6 +29,7 @@ class Task(Command):
 _task_template = _('''Task: %s
     Scheduler: %s
     Call: %s
+    Arguments: %s
     State: %s
     Start time: %s
     Finish time: %s
@@ -62,6 +63,7 @@ class TaskAction(Action):
         return _task_template % (task['id'],
                                  task['scheduler'],
                                  _call(task),
+                                 ', '.join([str(a) for a in task['args']]),
                                  task['state'],
                                  task['start_time'],
                                  task['finish_time'],
@@ -112,6 +114,18 @@ class Remove(TaskAction):
         if not task:
             system_exit(os.EX_OK)
         print _('Task [%s] set for removal') % id
+
+
+class Cancel(TaskAction):
+
+    description = _('cancel a running task')
+
+    def run(self):
+        id = self.get_required_option('id')
+        task = self.api.cancel(id)
+        if not task:
+            system_exit(os.EX_OK)
+        print _('Task [%s] canceled') % id
 
 
 class Snapshots(TaskAction):

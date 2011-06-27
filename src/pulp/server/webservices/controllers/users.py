@@ -116,7 +116,7 @@ class User(JSONController):
         # and logic is mashed together, it causes cyclic dependencies
         if is_last_super_user(user):
             return self.bad_request(
-                'Cannot delete %s, they are the last super user')
+                'Cannot delete %s, they are the last super user' % login)
         revoke_all_permissions_from_user(login)
         api.delete(login=login)
         return self.ok(True)

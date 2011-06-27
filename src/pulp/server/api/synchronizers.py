@@ -441,13 +441,15 @@ class YumSynchronizer(BaseSynchronizer):
                 groups_xml_path = os.path.join(store_path, g)
         if self.stopped:
             raise CancelException()
-        log.info("Running createrepo, this may take a few minutes to complete.")
-        if progress_callback is not None:
-            self.progress["step"] = "Running Createrepo"
-            progress_callback(self.progress)
-        pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
-        end = time.time()
-        log.info("Createrepo finished in %s seconds" % (end - start))
+        if not repo['preserve_metadata']:
+            # re-generate metadata for the repository
+            log.info("Running createrepo, this may take a few minutes to complete.")
+            if progress_callback is not None:
+                self.progress["step"] = "Running Createrepo"
+                progress_callback(self.progress)
+            pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
+            end = time.time()
+            log.info("Createrepo finished in %s seconds" % (end - start))
         log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
                 % (report.successes, report.downloads, report.errors))
         return store_path
@@ -847,28 +849,29 @@ class LocalSynchronizer(BaseSynchronizer):
                                 os.path.join(dst_repo_dir, "prestodelta.xml"), "wt"))
                             log.debug("Copied %s to %s" % (src_presto_path, dst_repo_dir))
                             prestodelta_path = os.path.join(dst_repo_dir, "prestodelta.xml")
-                if progress_callback is not None:
-                    self.progress["step"] = "Running Createrepo"
-                    progress_callback(self.progress)
-                log.info("Running createrepo, this may take a few minutes to complete.")
-                start = time.time()
-                pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path, checksum_type=repo['checksum_type'])
-                end = time.time()
-                log.info("Createrepo finished in %s seconds" % (end - start))
-                if prestodelta_path:
-                    log.debug("Modifying repo for prestodelta")
+                if not repo['preserve_metadata']:
                     if progress_callback is not None:
-                        self.progress["step"] = "Running Modifyrepo for prestodelta metadata"
+                        self.progress["step"] = "Running Createrepo"
                         progress_callback(self.progress)
-                    pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
-                            prestodelta_path)
-                if updateinfo_path:
-                    log.debug("Modifying repo for updateinfo")
-                    if progress_callback is not None:
-                        self.progress["step"] = "Running Modifyrepo for updateinfo metadata"
-                        progress_callback(self.progress)
-                    pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
-                            updateinfo_path)
+                    log.info("Running createrepo, this may take a few minutes to complete.")
+                    start = time.time()
+                    pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path, checksum_type=repo['checksum_type'])
+                    end = time.time()
+                    log.info("Createrepo finished in %s seconds" % (end - start))
+                    if prestodelta_path:
+                        log.debug("Modifying repo for prestodelta")
+                        if progress_callback is not None:
+                            self.progress["step"] = "Running Modifyrepo for prestodelta metadata"
+                            progress_callback(self.progress)
+                        pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
+                                prestodelta_path)
+                    if updateinfo_path:
+                        log.debug("Modifying repo for updateinfo")
+                        if progress_callback is not None:
+                            self.progress["step"] = "Running Modifyrepo for updateinfo metadata"
+                            progress_callback(self.progress)
+                        pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
+                                updateinfo_path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))
             raise

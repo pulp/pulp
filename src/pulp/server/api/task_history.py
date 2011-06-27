@@ -42,7 +42,7 @@ def repo_sync(id):
         if id not in itertools.chain(task['args'], task['kwargs'].values()):
             continue
         history.append(task)
-    return sorted(history, cmp=_finish_time_cmp)
+    return sorted(history, cmp=_finish_time_cmp, reverse=True)
 
 
 def cds_sync(hostname):
@@ -61,4 +61,4 @@ def cds_sync(hostname):
         if hostname not in task['args']:
             continue
         history.append(task)
-    return sorted(history, cmp=_finish_time_cmp)
+    return sorted(history, cmp=_finish_time_cmp, reverse=True)

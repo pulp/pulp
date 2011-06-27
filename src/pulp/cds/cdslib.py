@@ -289,11 +289,12 @@ class CdsLib(object):
         '''
 
         num_threads = self.config.get('cds', 'sync_threads')
-        packages_location = self.config.get('cds', 'packages_dir')
+        content_base = self.config.get('cds', 'packages_dir')
+        packages_dir = os.path.join(content_base, 'packages')
 
         url = '%s/%s' % (base_url, repo['relative_path'])
         log.info('Synchronizing repo at [%s]' % url)
-        repo_path = os.path.join(packages_location, repo['relative_path'])
+        repo_path = os.path.join(content_base, 'repos', repo['relative_path'])
 
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
@@ -327,7 +328,7 @@ class CdsLib(object):
                 feed_cert = bundle['cert'].encode('utf8')
                 ssl_verify = 1
 
-        fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert)
+        fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, packages_location=packages_dir)
         fetch.fetchYumRepo(repo_path)
 
         log.info('Successfully finished synccing [%s]' % url)

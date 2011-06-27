@@ -194,7 +194,8 @@ def get_synchronizer(source_type):
     return synchronizer
 
 
-def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
+def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
+          max_speed=None, threads=None):
     """
     Sync a repo from the URL contained in the feed
     @param repo_id repository id
