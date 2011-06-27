@@ -1,5 +1,4 @@
-
-  #!/usr/bin/python
+#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -19,7 +18,6 @@ import stat
 import sys
 import os
 import time
-import unittest
 import shutil
 
 try:
@@ -27,40 +25,29 @@ try:
 except ImportError:
     import simplejson as json
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server import async
 from pulp.server.api import repo_sync
-from pulp.server.api.package import PackageApi
-from pulp.server.api.repo import RepoApi
 from pulp.server.db.model import persistence
 from pulp.server.tasking import task
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server import constants
-import testutil
 
 logging.root.setLevel(logging.ERROR)
 CERTS_DIR = '/tmp/test_repo_api/repos'
 
-class TestRepoSync(unittest.TestCase):
+class TestRepoSync(testutil.PulpAsyncTest):
 
     def clean(self):
-        self.rapi.clean()
-        self.papi.clean()
+        testutil.PulpAsyncTest.clean(self)
         if os.path.exists(CERTS_DIR):
             shutil.rmtree(CERTS_DIR)
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         if os.path.exists(protected_repo_listings_file):
             os.remove(protected_repo_listings_file)
-        testutil.common_cleanup()
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
         sn = SerialNumber()
         sn.reset()
@@ -68,20 +55,10 @@ class TestRepoSync(unittest.TestCase):
         persistence.TaskHistory.get_collection().remove()
 
     def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
         self.config.set('repos', 'cert_location', CERTS_DIR)
-        self.data_path = \
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.rapi = RepoApi()
-        self.papi = PackageApi()
         self.repo_cert_utils = RepoCertUtils(self.config)
         self.protected_repo_utils = ProtectedRepoUtils(self.config)
-        async.initialize()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
 
     def test_sync_multiple_repos(self):
         feeds = {"f14_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/x86_64/", "x86_64"),
@@ -91,7 +68,7 @@ class TestRepoSync(unittest.TestCase):
             "el6_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/i386/", "i386"),
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
-        repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
+        repos = [self.repo_api.create(key, key, value[1], value[0]) for key, value in feeds.items()]
         sync_tasks = []
         for r in repos:
             self.assertTrue(r)
@@ -113,7 +90,7 @@ class TestRepoSync(unittest.TestCase):
                     #      (t_id, updated_task.result, updated_task.exception, updated_task.traceback, updated_task.progress)
         # Refresh repo objects and verify packages were synced.
         for r in repos:
-            synced_repo = self.rapi.repository(r["id"])
+            synced_repo = self.repo_api.repository(r["id"])
             self.assertTrue(synced_repo)
             print r["id"], len(synced_repo["packages"])
             self.assertTrue(len(synced_repo["packages"]) > 0)
@@ -126,10 +103,10 @@ class TestRepoSync(unittest.TestCase):
             global report
             report = r
 
-        repo = self.rapi.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://jmatthews.fedorapeople.org/repo_with_bad_read_perms/')
         repo_sync._sync(repo['id'], progress_callback=callback)
-        found = self.rapi.repository(repo['id'])
+        found = self.repo_api.repository(repo['id'])
         packages = found['packages']
         self.assertTrue(packages is not None)
         self.assertEquals(len(packages),0)
@@ -175,10 +152,10 @@ class TestRepoSync(unittest.TestCase):
         try:
             self.assertFalse(os.access(bad_rpm_path, os.R_OK))
             self.assertFalse(os.access(bad_tree_path, os.R_OK))
-            repo = self.rapi.create('some-id', 'some name', 'i386',
+            repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'file://%s' % datadir)
             repo_sync._sync(repo['id'], progress_callback=callback)
-            found = self.rapi.repository(repo['id'])
+            found = self.repo_api.repository(repo['id'])
             packages = found['packages']
             self.assertTrue(packages is not None)
             self.assertTrue(len(packages) == 2)

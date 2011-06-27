@@ -16,17 +16,10 @@
 import shutil
 import sys
 import os
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+import testutil
 
 from pulp.repo_auth import repo_cert_utils
-import testutil
 
 # -- constants -----------------------------------------------------------------------
 
@@ -41,10 +34,10 @@ CERT = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/
 
 # -- test cases ----------------------------------------------------------------------
 
-class TestValidateCertBundle(unittest.TestCase):
+class TestValidateCertBundle(testutil.PulpAsyncTest):
 
     def setUp(self):
-        self.config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
         self.utils = repo_cert_utils.RepoCertUtils(self.config)
 
     def test_validate_cert_bundle_valid(self):
@@ -97,9 +90,10 @@ class TestValidateCertBundle(unittest.TestCase):
         self.assertRaises(ValueError, self.utils.validate_cert_bundle, bundle)
 
 
-class TestCertStorage(unittest.TestCase):
+class TestCertStorage(testutil.PulpAsyncTest):
 
     def clean(self):
+        testutil.PulpAsyncTest.clean(self)
         if os.path.exists(self.config.get('repos', 'cert_location')):
             shutil.rmtree(self.config.get('repos', 'cert_location'))
 
@@ -109,11 +103,7 @@ class TestCertStorage(unittest.TestCase):
     def setUp(self):
         self.config = testutil.load_test_config()
         self.utils = repo_cert_utils.RepoCertUtils(self.config)
-
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+        testutil.PulpAsyncTest.setUp(self)
 
     def test_write_feed_certs(self):
         '''
@@ -351,10 +341,10 @@ class TestCertStorage(unittest.TestCase):
 
         self.assertEqual(read_contents, contents)
 
-class TestCertVerify(unittest.TestCase):
+class TestCertVerify(testutil.PulpAsyncTest):
 
     def setUp(self):
-        self.config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
         self.utils = repo_cert_utils.RepoCertUtils(self.config)
         
     def test_valid(self):

@@ -16,31 +16,17 @@
 import logging
 import sys
 import os
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+import testutil
 
 from pulp.server.api.discovery import get_discovery
 from pulp.server.api.repo import RepoApi
-import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-class TestRepoDiscoveryApi(unittest.TestCase):
-
-    def setUp(self):
-        testutil.load_test_config()
-        self.rapi = RepoApi()
-
-    def tearDown(self):
-        self.rapi.clean()
+class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
 
     def test_get_discovery(self):
         d = get_discovery("yum")
@@ -77,12 +63,12 @@ class TestRepoDiscoveryApi(unittest.TestCase):
         repourls = d.discover()
         self.assertTrue(len(repourls) != 0)
         repourl = repourls[0]
-        repo = self.rapi.create('discover_test_repo', 'discovery_test_repo', 'noarch', feed='%s' % repourl, groupid=[groupid])
-        r = self.rapi.repository(repo['id'])
+        repo = self.repo_api.create('discover_test_repo', 'discovery_test_repo', 'noarch', feed='%s' % repourl, groupid=[groupid])
+        r = self.repo_api.repository(repo['id'])
         assert(r is not None)
         assert(r['groupid'] == [groupid])
-        self.rapi.delete('discover_test_repo')
-        r = self.rapi.repository('discover_test_repo')
+        self.repo_api.delete('discover_test_repo')
+        r = self.repo_api.repository('discover_test_repo')
         assert(r is None)
 
 

@@ -15,17 +15,11 @@
 import os
 import sys
 import shutil
-import unittest
 from time import sleep
 from random import random
 from threading import Thread
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+import testutil
 
 from pulp.client.lock import Lock
 
@@ -64,17 +58,11 @@ class TestThread(Thread):
         print '(%d/%s) RELEASED' % \
             (os.getpid(), self.getName())
 
-class TestLock(unittest.TestCase):
+class TestLock(testutil.PulpAsyncTest):
 
     def clean(self):
         shutil.rmtree(ROOTDIR, True)
 
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-    
     def spawn(self):
         pid = os.fork()
         if pid == 0:

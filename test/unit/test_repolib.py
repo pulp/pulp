@@ -13,14 +13,8 @@
 import os
 import shutil
 import sys
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+import testutil
 
 from pulp.client.lock import Lock
 import pulp.client.repolib as repolib
@@ -48,9 +42,10 @@ LOCK = Lock('/tmp/test_repolib_lock.pid')
 
 # -- test classes ---------------------------------------------------------------------
 
-class TestRepolib(unittest.TestCase):
+class TestRepolib(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_REPO_FILENAME):
             os.remove(TEST_REPO_FILENAME)
@@ -66,6 +61,7 @@ class TestRepolib(unittest.TestCase):
 
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_REPO_FILENAME):
             os.remove(TEST_REPO_FILENAME)

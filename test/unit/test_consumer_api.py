@@ -16,21 +16,15 @@
 import sys
 import os
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-from testutil import PulpTest
 from pulp.server.agent import Agent
 from pulp.server.pexceptions import PulpException
 
 
 # -- test cases ---------------------------------------------------------------------------
 
-class TestConsumerApi(PulpTest):
+class TestConsumerApi(testutil.PulpAsyncTest):
 
     # -- bind test cases -----------------------------------------------------------------
 

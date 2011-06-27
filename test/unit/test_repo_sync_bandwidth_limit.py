@@ -18,7 +18,6 @@ import stat
 import sys
 import os
 import time
-import unittest
 import shutil
 
 try:
@@ -26,14 +25,8 @@ try:
 except ImportError:
     import simplejson as json
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
 import pymongo.json_util
 
 from pulp.server.api import repo_sync
@@ -48,36 +41,19 @@ from pulp.server.util import get_rpm_information
 from pulp.server.util import top_repos_location
 from pulp.server import constants
 from pulp.server.pexceptions import PulpException
-import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-class TestRepoSyncBandwidthLimit(unittest.TestCase):
-
-    def clean(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
-        shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
-
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.data_path = \
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.rapi = RepoApi()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+class TestRepoSyncBandwidthLimit(testutil.PulpAsyncTest):
 
     def test_config_only(self):
         threads = 2
         limit = 50 # KB/sec
         self.config.set('yum','threads', str(threads))
         self.config.set('yum','limit_in_KB', str(limit))
-        repo = self.rapi.create('some-id', 'some name',
+        repo = self.repo_api.create('some-id', 'some name',
             'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         repo_size_kb = 200 # Test repo has 2 100kb packages
         # Test repo has 2 packages, so 2 threads is the maximum
@@ -85,14 +61,14 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         start = time.time()
         repo_sync._sync(repo['id'])
         end = time.time()
-        found = self.rapi.repository(repo['id'], )
+        found = self.repo_api.repository(repo['id'], )
         self.assertEquals(len(found['packages']), 2)
         self.assertTrue(end-start > (float(repo_size_kb)/(limit*threads)))
 
     def test_override_config(self):
         self.config.set('yum','threads', '20')
         self.config.set('yum','limit_in_KB', '5000')
-        repo = self.rapi.create('some-id', 'some name',
+        repo = self.repo_api.create('some-id', 'some name',
             'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo/')
         repo_size_kb = 5000 # Test repo has 2 100kb packages
         threads = 2
@@ -100,7 +76,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         start = time.time()
         repo_sync._sync(repo['id'], max_speed=limit, threads=threads)
         end = time.time()
-        found = self.rapi.repository(repo['id'], )
+        found = self.repo_api.repository(repo['id'], )
         assumed_time = (float(repo_size_kb)/(limit*threads))
         self.assertEquals(len(found['packages']), 5)
         self.assertTrue(end-start > assumed_time)
@@ -108,7 +84,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
     def test_override_config_to_unlimited(self):
         self.config.set('yum','threads', '1')
         self.config.set('yum','limit_in_KB', '1')
-        repo = self.rapi.create('some-id', 'some name',
+        repo = self.repo_api.create('some-id', 'some name',
             'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         repo_size_kb = 200 # Test repo has 2 100kb packages
         # Test repo has 2 packages, so 2 threads is the maximum
@@ -118,7 +94,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         start = time.time()
         repo_sync._sync(repo['id'], max_speed=limit)
         end = time.time()
-        found = self.rapi.repository(repo['id'], )
+        found = self.repo_api.repository(repo['id'], )
         self.assertEquals(len(found['packages']), 2)
         # We initially set a limit of 1 KB/sec in config file and are overriding it
         # Will check that that the sync completed within at least 30 seconds.

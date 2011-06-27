@@ -19,38 +19,17 @@ import string
 import sys
 import unittest
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
 import testutil
 
-testutil.load_test_config()
-
-from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.permission import PermissionAPI
-from pulp.server.api.role import RoleAPI
-from pulp.server.api.user import UserApi
 from pulp.server.auth import authorization
 
 
-class TestAuthorization(unittest.TestCase):
+class TestAuthorization(testutil.PulpAsyncTest):
 
     def setUp(self):
-        mocks.install()
+        testutil.PulpAsyncTest.setUp(self)
         authorization.ensure_builtin_roles()
-        self.perm_api = PermissionAPI()
-        self.role_api = RoleAPI()
-        self.user_api = UserApi()
         self.alhpa_num = string.letters + string.digits
-
-    def tearDown(self):
-        self.perm_api.clean()
-        self.role_api.clean()
-        self.user_api.clean()
-        testutil.common_cleanup()
 
     # test data generation
 

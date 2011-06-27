@@ -22,18 +22,9 @@ import types
 import unittest
 from datetime import datetime, timedelta
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
 import testutil
 
-testutil.load_test_config()
-
 from pulp.common import dateutils
-from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import NonUniqueTaskException
@@ -76,14 +67,7 @@ class Class(object):
 
 # unittest classes ------------------------------------------------------------
 
-class TaskTester(unittest.TestCase):
-
-    def setUp(self):
-        self.rapi = RepoApi()
-
-    def tearDown(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
+class TaskTester(testutil.PulpAsyncTest):
 
     def test_task_create(self):
         task = Task(noop)
@@ -133,11 +117,11 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(restored_task.traceback is not None)
 
     def __test_sync_task(self):
-        repo = self.rapi.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
 
-        task = self.rapi.sync(repo['id'])
+        task = self.repo_api.sync(repo['id'])
         snapshot = task.snapshot()
         restored_task = Task.from_snapshot(snapshot)
         print "restored sync task: %s" % restored_task.__dict__
@@ -146,7 +130,7 @@ class TaskTester(unittest.TestCase):
         restored_task.cancel()
 
 
-class QueueTester(unittest.TestCase):
+class QueueTester(testutil.PulpAsyncTest):
 
     def _wait_for_task(self, task, timeout=timedelta(seconds=20)):
         start = datetime.now()
@@ -162,9 +146,12 @@ class QueueTester(unittest.TestCase):
 class TaskQueueTester(QueueTester):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        self.queue._cancel_dispatcher()
         del self.queue
 
     def test_task_enqueue(self):
@@ -417,9 +404,12 @@ class TaskQueueTester(QueueTester):
 class InterruptQueueTester(QueueTester):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        self.queue._cancel_dispatcher()
         del self.queue
 
     def disable_task_timeout(self):
@@ -449,12 +439,14 @@ class InterruptQueueTester(QueueTester):
         self.assertTrue(task2.state == task_canceled, 'state is %s' % task.state)
 
 
-class PriorityQueueTester(unittest.TestCase):
+class PriorityQueueTester(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.storage = VolatileStorage()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         del self.storage
 
     def _enqueue_three_tasks(self):
@@ -492,9 +484,12 @@ class PriorityQueueTester(unittest.TestCase):
 class ScheduledTaskTester(QueueTester):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        self.queue._cancel_dispatcher()
         del self.queue
 
     def test_immediate(self):
@@ -578,14 +573,16 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.scheduled_time is None)
 
 
-class PersistentTaskTester(unittest.TestCase):
+class PersistentTaskTester(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         TaskSnapshot.get_collection().remove()
         self.same_type_fields = ('scheduler',)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         TaskSnapshot.get_collection().remove()
 
     def test_task_serialization(self):

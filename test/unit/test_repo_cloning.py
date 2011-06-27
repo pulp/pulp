@@ -15,44 +15,22 @@
 # Python
 import os
 import sys
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
 import pulp.server.api.repo
 import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
-import testutil
 from pulp.server import constants
 from pulp.server.api import repo_sync
 
 constants.LOCAL_STORAGE="/tmp/pulp/"
 
-class TestRepoSyncSchedule(unittest.TestCase):
-
-    def clean(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
-
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.rapi = pulp.server.api.repo.RepoApi()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
     def test_clone(self):
 
-        repo = self.rapi.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         try:
@@ -73,7 +51,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-parent')
         assert(len(dirList) > 0)
-        found = self.rapi.repository('clone-some-id-parent')
+        found = self.repo_api.repository('clone-some-id-parent')
         packages = found['packages']
         assert(packages is not None)
         assert(len(packages) > 0)
@@ -86,7 +64,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-origin')
         assert(len(dirList) > 0)
-        found = self.rapi.repository('clone-some-id-origin')
+        found = self.repo_api.repository('clone-some-id-origin')
         packages = found['packages']
         assert(packages is not None)
         assert(len(packages) > 0)
@@ -99,7 +77,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-none')
         assert(len(dirList) > 0)
-        found = self.rapi.repository('clone-some-id-none')
+        found = self.repo_api.repository('clone-some-id-none')
         packages = found['packages']
         assert(packages is not None)
         assert(len(packages) > 0)
@@ -116,9 +94,9 @@ class TestRepoSyncSchedule(unittest.TestCase):
     def test_clone_repo_with_same_id(self):
         # negative case where repo with clone_id exists
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        repo = self.rapi.create('some-id', 'some name', 'x86_64', 'file://%s' % (repo_path))
+        repo = self.repo_api.create('some-id', 'some name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(repo is not None)
-        repo1 = self.rapi.create('some-id-1', 'some name', 'x86_64', 'file://%s' % (repo_path))
+        repo1 = self.repo_api.create('some-id-1', 'some name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(repo1 is not None)
 
         try:

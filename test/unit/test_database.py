@@ -15,20 +15,13 @@
 
 import os
 import sys
-import unittest
 import logging
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.append(srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+import testutil
 
 import pulp.server.util
 from pulp.server.db import connection
 from pulp.server.pexceptions import PulpException
-
-import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
@@ -36,20 +29,11 @@ qpid.setLevel(logging.ERROR)
 
 log = logging.getLogger('pulp.test.testdatabase')
 
-class TestDatabase(unittest.TestCase):
-
-    def clean(self):
-        testutil.common_cleanup()
+class TestDatabase(testutil.PulpAsyncTest):
 
     def setUp(self):
-        self.config = testutil.load_test_config()
-
-        self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        testutil.PulpAsyncTest.setUp(self)
         logging.root.setLevel(logging.ERROR)
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
 
     def test_database_name(self):
         self.assertEquals(connection._database.name, self.config.get("database", "name"))

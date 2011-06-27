@@ -20,36 +20,11 @@ import time
 import unittest
 import uuid
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
-from pulp.server.api import repo_sync
-from pulp.server.api.filter import FilterApi
-from pulp.server.api.repo import RepoApi
 import testutil
 
+from pulp.server.api import repo_sync
 
-class TestRepoFilters(unittest.TestCase):
-
-    def clean(self):
-        self.filter_api.clean()
-        self.rapi.clean()
-
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.filter_api = FilterApi()
-        self.rapi = RepoApi()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
-        testutil.common_cleanup()
+class TestRepoFilters(testutil.PulpAsyncTest):
 
     def test_create(self):
         filter = self.filter_api.create('filter-test', type="blacklist", description="test filter",
@@ -87,7 +62,7 @@ class TestRepoFilters(unittest.TestCase):
 
     def test_add_filters_to_repo(self):
         repoid = 'clone-some-id'
-        parent_repo = self.rapi.create('some-id', 'some name', 'i386',
+        parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
@@ -95,7 +70,7 @@ class TestRepoFilters(unittest.TestCase):
         filter_ids = ["filter-test1", "filter-test2"]
         # Try without creating filters
         try:
-            self.rapi.add_filters(repoid, filter_ids)
+            self.repo_api.add_filters(repoid, filter_ids)
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
@@ -104,13 +79,13 @@ class TestRepoFilters(unittest.TestCase):
         self.filter_api.create('filter-test1', type="blacklist")
         self.filter_api.create('filter-test2', type="whitelist")
         try:
-            self.rapi.add_filters(repoid, filter_ids)
+            self.repo_api.add_filters(repoid, filter_ids)
         except Exception:
             self.assertTrue(False)
 
     def test_remove_filters_from_repo(self):
         repoid = 'clone-some-id'
-        parent_repo = self.rapi.create('some-id', 'some name', 'i386',
+        parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
@@ -119,30 +94,30 @@ class TestRepoFilters(unittest.TestCase):
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = ["filter-test1", "filter-test2"]
         try:
-            self.rapi.add_filters(repoid, filter_ids)
+            self.repo_api.add_filters(repoid, filter_ids)
         except Exception:
             self.assertTrue(False)
         # Remove added filters
         try:
-            self.rapi.remove_filters(repoid, filter_ids)
+            self.repo_api.remove_filters(repoid, filter_ids)
         except Exception:
             self.assertTrue(False)
 
     def test_list_repo_filters(self):
         repoid = 'clone-some-id'
-        parent_repo = self.rapi.create('some-id', 'some name', 'i386',
+        parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
         repo_sync._clone('some-id', repoid, repoid)
-        filters = self.rapi.list_filters(repoid)
+        filters = self.repo_api.list_filters(repoid)
         self.assertTrue(len(filters) == 0)
 
         self.filter_api.create('filter-test1', type="blacklist")
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = ["filter-test1", "filter-test2"]
-        self.rapi.add_filters(repoid, filter_ids)
-        filters = self.rapi.list_filters(repoid)
+        self.repo_api.add_filters(repoid, filter_ids)
+        filters = self.repo_api.list_filters(repoid)
         self.assertTrue(len(filters) == 2)
         
     def test_nonexistent_filter_delete(self):
@@ -153,11 +128,11 @@ class TestRepoFilters(unittest.TestCase):
             pass
         
     def test_repo_associated_filter_delete(self):
-        repo = self.rapi.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'file://test')
         self.assertTrue(repo is not None)
         self.filter_api.create('filter-test1', type="blacklist")
-        self.rapi.add_filters('some-id', ['filter-test1'])
+        self.repo_api.add_filters('some-id', ['filter-test1'])
         try:
             self.filter_api.delete("filter-test1")
             self.assertTrue(False)
@@ -165,7 +140,7 @@ class TestRepoFilters(unittest.TestCase):
             pass
         
         self.filter_api.delete("filter-test1", force=True)
-        filters = self.rapi.list_filters('some-id')
+        filters = self.repo_api.list_filters('some-id')
         self.assertTrue(len(filters) == 0)
         
     def test_add_packages_to_filter(self):
@@ -193,22 +168,22 @@ class TestRepoFilters(unittest.TestCase):
                                         package_list=['abc',"^python","xyz*"])
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = ["filter-test1", "filter-test2"]
-        yum_repo = self.rapi.create('some-id', 'some name', 'i386',
+        yum_repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         try:
-            self.rapi.add_filters('some-id', filter_ids)
+            self.repo_api.add_filters('some-id', filter_ids)
             self.assertTrue(False)
         except:
             pass
         
-        local_repo = self.rapi.create('some-id1', 'some name1', 'i386',
+        local_repo = self.repo_api.create('some-id1', 'some name1', 'i386',
                                       'file://test')
-        self.rapi.add_filters('some-id1', filter_ids)
-        filters = self.rapi.list_filters('some-id1')
+        self.repo_api.add_filters('some-id1', filter_ids)
+        filters = self.repo_api.list_filters('some-id1')
         self.assertTrue(len(filters) == 2)
         
-        self.rapi.remove_filters('some-id1', filter_ids)
-        filters = self.rapi.list_filters('some-id1')
+        self.repo_api.remove_filters('some-id1', filter_ids)
+        filters = self.repo_api.list_filters('some-id1')
         self.assertTrue(len(filters) == 0)
         
 

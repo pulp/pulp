@@ -17,17 +17,9 @@ import datetime
 import os
 import sys
 import time
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+import testutil
 
-sys.path.insert(0, srcdir)
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-
-sys.path.insert(0, commondir)
-
-import mocks
 from pulp.common import dateutils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
@@ -35,27 +27,13 @@ import pulp.server.api.consumer_history as consumer_history
 from pulp.server.auth import principal
 from pulp.server.db.model import ConsumerHistoryEvent, User
 from pulp.server.pexceptions import PulpException
-import testutil
 
-class TestConsumerHistoryApi(unittest.TestCase):
-
-    def clean(self):
-        self.consumer_history_api.clean()
-        self.consumer_api.clean()
+class TestConsumerHistoryApi(testutil.PulpAsyncTest):
 
     def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.consumer_history_api = ConsumerHistoryApi()
-        self.consumer_api = ConsumerApi()
-        self.clean()
-
+        testutil.PulpAsyncTest.setUp(self)
         self.user = User('admin', '12345', 'admin', 'Admin')
         principal.set_principal(self.user)
-
-    def tearDown(self):
-        self.clean()
-        testutil.common_cleanup()
 
     def test_consumer_created(self):
         # Test

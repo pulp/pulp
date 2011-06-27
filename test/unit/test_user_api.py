@@ -20,80 +20,57 @@ import time
 import unittest
 import uuid
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
-from pulp.server.api.user import UserApi
 import testutil
 
-
-class TestUsers(unittest.TestCase):
-
-    def clean(self):
-        self.uapi.clean()
-
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.uapi = UserApi()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
-        testutil.common_cleanup()
+class TestUsers(testutil.PulpAsyncTest):
 
     def test_create(self):
         clear_txt_pass = 'some password'
-        user = self.uapi.create('login-test', id=str(uuid.uuid4()),
+        user = self.user_api.create('login-test', id=str(uuid.uuid4()),
                                 password=clear_txt_pass,
                                 name='Fred Franklin')
         self.assertTrue(user is not None)
-        user = self.uapi.user('login-test')
+        user = self.user_api.user('login-test')
         self.assertTrue(user is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
     def test_duplicate(self):
         id = uuid.uuid4()
         login = 'dupe-test'
-        user = self.uapi.create(login=login, id=id)
+        user = self.user_api.create(login=login, id=id)
         try:
-            user = self.uapi.create(login=login, id=id)
+            user = self.user_api.create(login=login, id=id)
             raise Exception, 'Duplicate allowed'
         except:
             pass
 
     def test_user_list(self):
-        user = self.uapi.create('login-test')
-        users = self.uapi.users()
+        user = self.user_api.create('login-test')
+        users = self.user_api.users()
         assert(len(users) == 1)
 
     def test_clean(self):
-        user = self.uapi.create('login-test')
-        self.uapi.clean()
-        users = self.uapi.users()
+        user = self.user_api.create('login-test')
+        self.user_api.clean()
+        users = self.user_api.users()
         assert(len(users) == 0)
 
     def test_delete(self):
         login = 'some-login'
-        user = self.uapi.create(login)
-        self.uapi.delete(login=login)
-        user = self.uapi.user(login)
+        user = self.user_api.create(login)
+        self.user_api.delete(login=login)
+        user = self.user_api.user(login)
         assert(user is None)
 
     def test_update_password(self):
         login = 'some-login'
         clear_txt_pass = 'some password'
-        user = self.uapi.create(login)
+        user = self.user_api.create(login)
         d = dict(password=clear_txt_pass)
-        user = self.uapi.update(login, d)
+        user = self.user_api.update(login, d)
 
         # Lookup user again and verify password is hashed
-        user = self.uapi.user(login)
+        user = self.user_api.user(login)
         self.assertTrue(user is not None)
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])

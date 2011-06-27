@@ -14,6 +14,7 @@
 import os
 import random
 import unittest
+import sys
 import time
 from datetime import timedelta
 
@@ -21,13 +22,31 @@ import dingus
 
 import mocks
 
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+sys.path.insert(0, srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
+
 from pulp.server import async
 from pulp.repo_auth import repo_cert_utils
 from pulp.server import auditing
 from pulp.server import config
 from pulp.server.api.cds import CdsApi
+from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.consumer_group import ConsumerGroupApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.auth import AuthApi
+from pulp.server.api.user import UserApi
+from pulp.server.api.permission import PermissionAPI
+from pulp.server.api.role import RoleAPI
+from pulp.server.api.filter import FilterApi
+from pulp.server.api.package import PackageApi
+from pulp.server.api.file import FileApi
+from pulp.server.api.errata import ErrataApi
 from pulp.server.db import connection
 from pulp.server.db.model import Delta
 from pulp.server.db.model.cds import CDSRepoRoundRobin
@@ -126,15 +145,34 @@ class PulpTest(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        mocks.install()
+
+        self.data_path = \
+            os.path.join(
+                os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)), 
+                    "../unit"),
+                "data")
         self.config = load_test_config()
         connection.initialize()
 
-        self.mock_async()
+        mocks.install()
+        self.setup_async()
 
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
+        self.consumer_group_api = ConsumerGroupApi()
         self.cds_api = CdsApi()
+        self.user_api = UserApi()
+        self.auth_api = AuthApi()
+        self.perm_api = PermissionAPI()
+        self.role_api = RoleAPI()
+        self.cds_history_api = CdsHistoryApi()
+        self.consumer_history_api = ConsumerHistoryApi()
+        self.distribution_api = DistributionApi()
+        self.filter_api = FilterApi()
+        self.package_api = PackageApi()
+        self.file_api = FileApi()
+        self.errata_api = ErrataApi()
 
         self.clean()
 
@@ -149,6 +187,17 @@ class PulpTest(unittest.TestCase):
         self.cds_api.clean()
         self.repo_api.clean()
         self.consumer_api.clean()
+        self.consumer_group_api.clean()
+        self.user_api.clean()
+        self.perm_api.clean()
+        self.role_api.clean()
+        self.cds_history_api.clean()
+        self.consumer_history_api.clean()
+        self.distribution_api.clean()
+        self.filter_api.clean()
+        self.package_api.clean()
+        self.file_api.clean()
+        self.errata_api.clean()
 
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove(safe=True)
@@ -156,20 +205,16 @@ class PulpTest(unittest.TestCase):
         auditing.cull_events(timedelta())
         mocks.reset()
 
-    def mock_async(self):
+    def setup_async(self):
         async._queue = dingus.Dingus()
 
 class PulpAsyncTest(PulpTest):
-
-    def setUp(self):
-        PulpTest.setUp(self)
-        async.config.config = self.config
-        async.initialize()
 
     def tearDown(self):
         PulpTest.tearDown(self)
         async._queue._cancel_dispatcher()
         async.finalize()
 
-    def mock_async(self):
-        pass
+    def setup_async(self):
+        async.config.config = self.config
+        async.initialize()
