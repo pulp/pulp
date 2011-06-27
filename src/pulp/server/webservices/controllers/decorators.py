@@ -143,7 +143,7 @@ def collection_query(valid_filters=()):
     @param valid_filters: tuple of additional valid query parameters
     """
     def _collection_query(method):
-        common_filters = ('intersection', 'union', 'start', 'limit')
+        common_filters = ('_intersection', '_union', '_start', '_limit')
 
         @wraps(method)
         def _query_decortator(self, *args, **kwargs):
