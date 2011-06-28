@@ -24,14 +24,14 @@ from pulp.server.api.synchronizers import (YumSynchronizer,
     yum_rhn_progress_callback, local_progress_callback, LocalSynchronizer)
 
 
-class TestRepoSync(testutil.PulpAsyncTest):
+class TestRepoSync(testutil.PulpTest):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        testutil.PulpTest.setUp(self)
         repo_sync.run_async = dingus.Dingus()
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        testutil.PulpTest.tearDown(self)
         repo_sync.run_async.reset()
 
     def test_sync_remote(self):
