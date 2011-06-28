@@ -35,7 +35,6 @@ class TestCdsPlugin(testutil.PulpAsyncTest):
 
     def clean(self):
         testutil.PulpAsyncTest.clean(self)
-        shutil.rmtree(ROOTDIR, True)
 
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
@@ -60,6 +59,7 @@ class TestCdsPlugin(testutil.PulpAsyncTest):
         
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
+        shutil.rmtree(ROOTDIR, True)
         storage.DEFAULT_FILE_STORE = self.storage_default_file
         storage.DEFAULT_FILE_LOCK = self.storage_default_lock
 
