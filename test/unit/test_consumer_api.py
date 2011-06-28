@@ -16,6 +16,7 @@
 import sys
 import os
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server.agent import Agent

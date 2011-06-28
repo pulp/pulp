@@ -18,6 +18,7 @@ import sys
 import time
 import types
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.common import dateutils

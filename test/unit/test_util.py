@@ -20,6 +20,7 @@ import traceback
 import unittest
 from threading import Thread
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server import async

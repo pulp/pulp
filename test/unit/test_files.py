@@ -18,6 +18,7 @@ import sys
 
 from pymongo.errors import DuplicateKeyError
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pulp

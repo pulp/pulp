@@ -18,6 +18,7 @@ import sys
 import os
 import unittest
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server.api.consumer import ConsumerApi

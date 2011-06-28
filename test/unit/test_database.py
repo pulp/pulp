@@ -17,6 +17,7 @@ import os
 import sys
 import logging
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pulp.server.util

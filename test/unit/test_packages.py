@@ -25,6 +25,7 @@ try:
 except ImportError:
     import simplejson as json
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pymongo.json_util

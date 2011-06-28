@@ -16,6 +16,7 @@
 import sys
 import os
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pulp.server.cds.round_robin as round_robin

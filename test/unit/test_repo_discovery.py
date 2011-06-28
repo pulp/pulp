@@ -17,6 +17,7 @@ import logging
 import sys
 import os
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server.api.discovery import get_discovery

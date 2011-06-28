@@ -20,6 +20,7 @@ import time
 import unittest
 import uuid
 
+sys.path.insert(0, "../common")
 import testutil
 
 class TestUsers(testutil.PulpAsyncTest):

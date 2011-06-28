@@ -19,6 +19,7 @@ import os
 import time
 import uuid
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server.api.consumer import ConsumerApi

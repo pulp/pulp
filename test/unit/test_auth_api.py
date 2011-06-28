@@ -18,6 +18,7 @@ import shutil
 import sys
 import unittest
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils

@@ -19,6 +19,7 @@ import string
 import sys
 import unittest
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server.auth import authorization

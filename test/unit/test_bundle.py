@@ -18,6 +18,7 @@ import sys
 import shutil
 import unittest
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.common.bundle import Bundle

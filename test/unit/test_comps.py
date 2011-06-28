@@ -23,6 +23,7 @@ import time
 import random
 from tempfile import gettempdir
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pulp.server.comps_util

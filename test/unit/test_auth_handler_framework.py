@@ -15,6 +15,7 @@ import os
 import sys
 import unittest
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pulp.repo_auth.auth_handler_framework as auth_framework

@@ -16,6 +16,7 @@ import fcntl
 import os
 import sys
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.cds.lb import storage

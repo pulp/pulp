@@ -18,6 +18,7 @@ import os
 import sys
 import unittest
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.server.auth.password_util import hash_password, check_password

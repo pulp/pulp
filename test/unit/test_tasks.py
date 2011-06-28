@@ -22,6 +22,7 @@ import types
 import unittest
 from datetime import datetime, timedelta
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.common import dateutils

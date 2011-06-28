@@ -16,6 +16,7 @@ import os
 import sys
 import shutil
 
+sys.path.insert(0, "../common")
 import testutil
 
 import mocks

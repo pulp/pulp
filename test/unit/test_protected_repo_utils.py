@@ -17,6 +17,7 @@ import shutil
 import sys
 import os
 
+sys.path.insert(0, "../common")
 import testutil
 
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoListingFile, ProtectedRepoUtils

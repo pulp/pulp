@@ -13,6 +13,7 @@
 import os
 import sys
 
+sys.path.insert(0, "../common")
 import testutil
 
 class TestImporter(testutil.PulpAsyncTest):

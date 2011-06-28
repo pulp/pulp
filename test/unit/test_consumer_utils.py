@@ -16,6 +16,7 @@
 import sys
 import os
 
+sys.path.insert(0, "../common")
 import testutil
 
 import pulp.server.consumer_utils as utils
