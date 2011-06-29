@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.198
+Version:        0.0.199
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
