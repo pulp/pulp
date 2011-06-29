@@ -300,8 +300,8 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/generate_metadata/" % repoid
         return self.server.POST(path)[1]
 
-    def metadata_status(self, repoid):
-        path = '/repositories/%s/metadata/' % repoid
+    def generate_metadata_status(self, repoid):
+        path = '/repositories/%s/generate_metadata/' % repoid
         return self.server.GET(path)[1]
 
     def sync_history(self, repoid):

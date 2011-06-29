@@ -876,12 +876,12 @@ class CancelSync(RepoAction):
         print _("Sync for repository %s is being canceled") % id
 
 
-class Metadata(RepoAction):
+class GenerateMetadata(RepoAction):
 
     description =  _('schedule metadata generation for a repository')
 
     def setup_parser(self):
-        super(Metadata, self).setup_parser()
+        super(GenerateMetadata, self).setup_parser()
         self.parser.add_option("--status", action="store_true", dest="status",
                 help=_("Check metadata status for a repository (optional)."))
 
@@ -889,7 +889,7 @@ class Metadata(RepoAction):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
         if self.opts.status:
-            task = self.repository_api.metadata_status(id)[0]
+            task = self.repository_api.generate_metadata_status(id)[0]
             start_time = None
             if task['start_time']:
                 start_time = str(parse_iso8601_datetime(task['start_time']))
