@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.198
+Version:        0.0.199
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -326,6 +326,43 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 29 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.199-1
+- Incremented to match master. (jason.dobies@redhat.com)
+- added args to returned serialized task (jconnor@redhat.com)
+- converted timestamp to utc (jconnor@redhat.com)
+- removed test that fails due to bug in timezone support, 716243
+  (jconnor@redhat.com)
+- changed tests to insert iso8601 strings as time stamps (jconnor@redhat.com)
+- added tzinfo to start and end dates (jconnor@redhat.com)
+- added task cancel command (jconnor@redhat.com)
+- added wiki comments and tied cancel task to a url (jconnor@redhat.com)
+- changed cds history query to properly deal with iso8601 timestamps
+  (jconnor@redhat.com)
+- added some ghetto date format validation (jconnor@redhat.com)
+- converting expected iso8601 date string to datetime instance
+  (jconnor@redhat.com)
+- added iso8601 parsing and formating methods for date (only) instances
+  (jconnor@redhat.com)
+- 713742 - patch by Chris St. Pierre fixed improper rlock instance detection in
+  get state for pickling (jconnor@redhat.com)
+- 714046 - added login to string substitution (jconnor@redhat.com)
+- forgot we want the histories to be descending... (jconnor@redhat.com)
+- added new controller for generic task cancelation (jconnor@redhat.com)
+- discoverd much easier to use convenience method (jconnor@redhat.com)
+- converting timedelta to duration in order to properly format it
+  (jconnor@redhat.com)
+- fields didnt do what I thought it did (jconnor@redhat.com)
+- 706953, 707986 - allow updates to modify existing schedule instead of having
+  to re-specify the schedule in its entirety (jconnor@redhat.com)
+- added conditional to avoid calling release on garbage collected lock
+  (jconnor@redhat.com)
+- only release the lock in the dispatcher on exit as we are no longer killing
+  the thread on errors (jconnor@redhat.com)
+- 714745 - added initial parsing call for start and end dates of cds history so
+  that we convert a datetime object to local tz instead of a string
+  (jconnor@redhat.com)
+- 712083 - changing the error message to warnings (pkilambi@redhat.com)
+
 * Thu Jun 23 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.197-1
 - Upped version to match master builds (jason.dobies@redhat.com)
 - Adding a preserve metadata as an option at repo creation time. More info
