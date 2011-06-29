@@ -1895,7 +1895,7 @@ class RepoApi(BaseApi):
             log.info("repo.disassociate_packages(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
 
-    def metadata(self, id):
+    def generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
@@ -1904,10 +1904,10 @@ class RepoApi(BaseApi):
         if self.list_metadata_task(id):
             # repo generation task already pending; task not created
             return None
-        task = run_async(self._metadata, [id], {})
+        task = run_async(self._generate_metadata, [id], {})
         return task
 
-    def _metadata(self, id):
+    def _generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
@@ -1925,7 +1925,7 @@ class RepoApi(BaseApi):
         List all the metadata tasks for a given repository.
         """
         return [task
-                for task in find_async(method='_metadata')
+                for task in find_async(method='_generate_metadata')
                 if id in task.args]
 
     def set_sync_in_progress(self, id, state):
@@ -2006,7 +2006,7 @@ class RepoApi(BaseApi):
             sync_history_list = [task.__dict__ for task in tasks]
         return sync_history_list
 
-    def add_metadata(self, id, metadata={}):
+    def add_metadata(self, id, metadata):
         '''
         Add custom metadata to a repo
         @param id: repo id
@@ -2030,13 +2030,13 @@ class RepoApi(BaseApi):
             log.info(msg)
             raise PulpException(msg)
         # write the metadata to a file
-        custom_path = "%s/%s" % (repo_path, metadata['name'])
+        custom_path = "%s/%s" % (repo_path, metadata['filetype'])
         if os.path.exists(custom_path):
             # if there is an older file, nuke it and start fresh
             os.remove(custom_path)
         try:
             custom_obj = open(custom_path, 'wb')
-            custom_obj.write(metadata['data'])
+            custom_obj.write(metadata['filedata'])
             custom_obj.close()
         except:
             msg = "Unable to write custom metadata for repo [%s]" % id
@@ -2061,7 +2061,7 @@ class RepoApi(BaseApi):
         dump = pulp.server.util.get_repomd_filetype_dump(repodata_file)
         return dump
 
-    def get_metadata(self, id, filetype=None):
+    def get_metadata(self, id, filetype):
         '''
         get an xml dump of the matched filetype from a repo
         @param id: repo id
@@ -2075,6 +2075,17 @@ class RepoApi(BaseApi):
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
-        return pulp.server.util.get_repomd_filetype_xml(repo_repomd_path, filetype)
-
+        #return pulp.server.util.get_repomd_filetype_xml(repo_repomd_path, filetype)
+        file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
+        if not file_path:
+            return None
+        metadata_file = os.path.join(repo_path, file_path)
+        try:
+            f = metadata_file.endswith('.gz') and gzip.open(metadata_file) \
+                                        or open(metadata_file, 'rt')
+            return f.read()
+        except:
+            msg = "Error reading the metadata file for type [%s] at location [%s]" % (filetype, file_path)
+            log.info(msg)
+            raise PulpException(msg)
 

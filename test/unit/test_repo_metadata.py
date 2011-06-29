@@ -47,8 +47,8 @@ class TestRepoMetadataApi(unittest.TestCase):
         repo = self.rapi.create('test-custom-id', 'custom name', 'noarch')
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'r').read()
-        metadata_dict = {'name' : 'product',
-                         'data' : custom_data}
+        metadata_dict = {'filetype' : 'product',
+                         'filedata' : custom_data}
         self.rapi.add_metadata(repo['id'], metadata_dict)
         repodata_file = "%s/%s/%s/%s" % (top_repos_location(),
                                          repo['relative_path'],
@@ -61,8 +61,8 @@ class TestRepoMetadataApi(unittest.TestCase):
         repo = self.rapi.create('test-custom-id-preserve', 'custom preserve', 'noarch', preserve_metadata=True)
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'r').read()
-        metadata_dict = {'name' : 'product',
-                         'data' : custom_data}
+        metadata_dict = {'filetype' : 'product',
+                         'filedata' : custom_data}
         failure = False
         try:
             self.rapi.add_metadata(repo['id'], metadata_dict)
@@ -71,13 +71,12 @@ class TestRepoMetadataApi(unittest.TestCase):
             failure =  True
         self.assertFalse(failure)
 
-    def _test_repo_metadata_get(self):
-        #TODO: enable this once I figure out rhel5 alternative to dump_xml
+    def test_repo_metadata_get(self):
         repo = self.rapi.create('test-get-custom-id', 'custom name', 'noarch')
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'rb').read()
-        metadata_dict = {'name' : 'product',
-                         'data' : custom_data}
+        metadata_dict = {'filetype' : 'product',
+                         'filedata' : custom_data}
         self.rapi.add_metadata(repo['id'], metadata_dict)
         found_custom_xml = self.rapi.get_metadata(repo['id'], filetype='product')
         print "DEBUG: ",found_custom_xml
@@ -89,8 +88,8 @@ class TestRepoMetadataApi(unittest.TestCase):
         repo = self.rapi.create('test-list-custom-id', 'custom name', 'noarch')
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'rb').read()
-        metadata_dict = {'name' : 'product',
-                         'data' : custom_data}
+        metadata_dict = {'filetype' : 'product',
+                         'filedata' : custom_data}
         self.rapi.add_metadata(repo['id'], metadata_dict)
         list_of_metadata_info = self.rapi.list_metadata(repo['id'])
         print list_of_metadata_info

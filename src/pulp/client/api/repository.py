@@ -296,8 +296,8 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/remove_group/" % repoid
         return self.server.POST(path, rminfo)[1]
 
-    def metadata(self, repoid):
-        path = "/repositories/%s/metadata/" % repoid
+    def generate_metadata(self, repoid):
+        path = "/repositories/%s/generate_metadata/" % repoid
         return self.server.POST(path)[1]
 
     def metadata_status(self, repoid):
@@ -307,3 +307,43 @@ class RepositoryAPI(PulpAPI):
     def sync_history(self, repoid):
         path = "/repositories/%s/history/sync/" % repoid
         return self.server.GET(path)[1]
+
+    def add_metadata(self, repoid, filetype, filedata):
+        """
+        add a custom metadata filetype to existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @param filetype: file type info to identify metadata with eg: primary
+        @type filetype: str
+        @param filedata: filetype data stream read eg: open(<file-path>, 'r').read()
+        @type filedata: str
+        @return: True
+        """
+        path = "/repositories/%s/add_metadata/" % repoid
+        fileinfo = {'filetype' : filetype,
+                    'filedata' : filedata}
+        return self.server.POST(path, fileinfo)[1]
+
+    def download_metadata(self, repoid, filetype):
+        """
+        download metadata filetype xml from existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @param filetype: file type info to identify metadata with eg: primary
+        @type filetype: str
+        @return: xml stream if metadata found or None
+        """
+        path = "/repositories/%s/download_metadata/" % repoid
+        fileinfo = {'filetype' : filetype}
+        return self.server.POST(path, fileinfo)[1]
+
+    def list_metadata(self, repoid):
+        """
+        download metadata filetype xml from existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @return: filetype information
+        @rtype: dict
+        """
+        path = "/repositories/%s/list_metadata/" % repoid
+        return self.server.POST(path)[1]

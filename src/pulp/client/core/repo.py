@@ -899,8 +899,97 @@ class Metadata(RepoAction):
             status = constants.METADATA_STATUS % (task['id'], task['state'], start_time, finish_time)
             system_exit(os.EX_OK, _(status))
         else:
-            task = self.repository_api.metadata(id)
+            task = self.repository_api.generate_metadata(id)
             system_exit(os.EX_OK, _('Metadata generation has been successfully scheduled for repo id [%s]. Use --status to check the status.') % id)
+
+class AddMetadata(RepoAction):
+
+    description =  _('Add a filetype to existing metadata for a repository')
+
+    def setup_parser(self):
+        super(AddMetadata, self).setup_parser()
+        self.parser.add_option("--filetype", dest="filetype",
+                help=_("filetype to add to the repository metadata"))
+        self.parser.add_option("--filepath", dest="filepath",
+                help=_("path to the metadata file to be added"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        repo = self.get_repo(id)
+        if not self.opts.filetype:
+            system_exit(os.EX_USAGE, _("Error: filetype is a required option"))
+        else:
+            filetype = self.opts.filetype
+        if not self.opts.filepath:
+            system_exit(os.EX_USAGE, _("Error: filepath is a required option"))
+        else:
+            filepath = self.opts.filepath
+        filedata = None
+        try:
+            filedata = open(filepath, 'r').read()
+        except Exception, e:
+            system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.filepath))
+        self.repository_api.add_metadata(id, self.opts.filetype, filedata)
+        system_exit(os.EX_OK, _("Successfully added filetype [%s] to repo [%s]" % (filetype, filepath)))
+
+class DownloadMetadata(RepoAction):
+
+    description =  _('Download a filetype if available from existing repository metadata')
+
+    def setup_parser(self):
+        super(DownloadMetadata, self).setup_parser()
+        self.parser.add_option("--filetype", dest="filetype",
+                help=_("filetype to add to the repository metadata"))
+        self.parser.add_option("-o", "--out", dest="out",
+                help=_("output file to store the exported metadata file (optional); default is stdout"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        repo = self.get_repo(id)
+        if not self.opts.filetype:
+            system_exit(os.EX_USAGE, _("Error: filetype is a required option"))
+        else:
+            filetype = self.opts.filetype
+        try:
+            file_stream = self.repository_api.download_metadata(repo['id'], filetype)
+        except Exception, e:
+            log.error(e)
+            system_exit(os.EX_DATAERR, _("Error:%s") % e[1])
+        else:
+            if self.opts.out:
+                try:
+                    f = open(self.opts.out, 'w')
+                    f.write(file_stream.encode("utf8"))
+                    f.close()
+                except Exception,e:
+                    system_exit(os.EX_DATAERR, _("Error occurred while storing the file data %s" % e))
+                system_exit(os.EX_OK, _("Successfully exported the filetype data to [%s]" % self.opts.out))
+            else:
+                print file_stream.encode("utf8")
+
+class ListMetadata(RepoAction):
+
+    description =  _('List filetype information assicated to existing repository metadata')
+
+    def setup_parser(self):
+        super(ListMetadata, self).setup_parser()
+
+    def run(self):
+        id = self.get_required_option('id')
+        repo = self.get_repo(id)
+        filetype_info_dict = self.repository_api.list_metadata(repo['id'])
+        if not filetype_info_dict:
+            system_exit(os.EX_DATAERR, _('No metadata filetypes to list'))
+        print_header(_('File Type information for Respoitory [%s]' % id))
+        for filetype, value in filetype_info_dict.items():
+            print '  datatype: %s' % filetype
+            print '    location     : %s' % value['location']
+            print '    timestamp    : %s' % value['timestamp']
+            print '    size         : %s' % value['size']
+            print '    checksum     : %s - %s' % tuple(value['checksum'])
+            print '    dbversion    : %s' % value['dbversion']
+            print ''
+
 
 
 class Schedules(RepoAction):
