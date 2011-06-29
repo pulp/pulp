@@ -188,9 +188,14 @@ def get_repomd_filetype_dump(repomd_path):
     if rmd:
         for ft in rmd.fileTypes():
             ft_obj = rmd.repoData[ft]
+            try:
+                size = ft_obj.has_attr['size']
+            except:
+                size = None
+
             ft_data[ft_obj.type] = {'location'  : ft_obj.location[1],
                                     'timestamp' : ft_obj.timestamp,
-                                    'size'      : ft_obj.size,
+                                    'size'      : size,
                                     'checksum'  : ft_obj.checksum,
                                     'dbversion' : ft_obj.dbversion}
     return ft_data
