@@ -178,6 +178,23 @@ def get_repomd_filetypes(repomd_path):
     if rmd:
         return rmd.fileTypes()
 
+def get_repomd_filetype_dump(repomd_path):
+    """
+    @param repomd_path: path to repomd.xml
+    @return: dump of metadata information
+    """
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
+    ft_data = {}
+    if rmd:
+        for ft in rmd.fileTypes():
+            ft_obj = rmd.repoData[ft]
+            ft_data[ft_obj.type] = {'location'  : ft_obj.location[1],
+                                    'timestamp' : ft_obj.timestamp,
+                                    'size'      : ft_obj.size,
+                                    'checksum'  : ft_obj.checksum,
+                                    'dbversion' : ft_obj.dbversion}
+    return ft_data
+
 
 def _get_yum_repomd(path, temp_path=None):
     """
@@ -250,6 +267,20 @@ def get_repomd_filetype_path(path, filetype):
         data = rmd.getData(filetype)
         return data.location[1]
     return None
+
+def get_repomd_filetype_xml(repomd_path, filetype):
+    """
+    @param repomd_path: path to repomd.xml
+    @param filetype: metadata type to query, example "group", "primary", etc
+    @return: xml for filetype, or None
+    """
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
+    if rmd:
+        try:
+            data = rmd.getData(filetype)
+            return data.dump_xml()
+        except:
+            return None
 
 def listdir(directory):
     """
