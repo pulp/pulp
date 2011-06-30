@@ -28,3 +28,23 @@ def filters_to_re_spec(filters):
     if not filters:
         return None
     return dict((k, re.compile('(%s)' % '|'.join(v))) for k,v in filters.items())
+
+union_of_field_values = filters_to_re_spec
+
+
+def union_of_list_values(filters):
+    """
+    """
+    pass
+
+
+def intersection_of_field_values(filters):
+    """
+    """
+    pass
+
+
+def intersecion_of_list_values(filters):
+    """
+    """
+    pass
