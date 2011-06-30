@@ -16,7 +16,7 @@ import shutil
 import sys
 import os
 
-sys.path.insert(0, "../common")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 import pulp.repo_auth.oid_validation as oid_validation

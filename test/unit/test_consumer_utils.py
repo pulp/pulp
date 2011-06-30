@@ -16,7 +16,7 @@
 import sys
 import os
 
-sys.path.insert(0, "../common")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 import pulp.server.consumer_utils as utils

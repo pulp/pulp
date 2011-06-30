@@ -15,7 +15,7 @@ import shutil
 import sys
 from logging import basicConfig
 
-sys.path.insert(0, "../common")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.api.keystore import KeyStore
