@@ -47,6 +47,7 @@ from pulp.server.api.filter import FilterApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.errata import ErrataApi
+from pulp.server.api.role import RoleAPI
 from pulp.server.db import connection
 from pulp.server.db.model import Delta
 from pulp.server.db.model.cds import CDSRepoRoundRobin
@@ -173,6 +174,7 @@ class PulpTest(unittest.TestCase):
         self.package_api = PackageApi()
         self.file_api = FileApi()
         self.errata_api = ErrataApi()
+        self.role_api = RoleAPI()
 
         self.clean()
 
@@ -198,6 +200,7 @@ class PulpTest(unittest.TestCase):
         self.package_api.clean()
         self.file_api.clean()
         self.errata_api.clean()
+        self.role_api.clean()
 
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove(safe=True)
