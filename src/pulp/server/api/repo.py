@@ -1895,7 +1895,7 @@ class RepoApi(BaseApi):
             log.info("repo.disassociate_packages(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
 
-    def metadata(self, id):
+    def generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
@@ -1904,10 +1904,10 @@ class RepoApi(BaseApi):
         if self.list_metadata_task(id):
             # repo generation task already pending; task not created
             return None
-        task = run_async(self._metadata, [id], {})
+        task = run_async(self._generate_metadata, [id], {})
         return task
 
-    def _metadata(self, id):
+    def _generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
@@ -1925,7 +1925,7 @@ class RepoApi(BaseApi):
         List all the metadata tasks for a given repository.
         """
         return [task
-                for task in find_async(method='_metadata')
+                for task in find_async(method='_generate_metadata')
                 if id in task.args]
 
     def set_sync_in_progress(self, id, state):
@@ -2005,4 +2005,87 @@ class RepoApi(BaseApi):
         else:
             sync_history_list = [task.__dict__ for task in tasks]
         return sync_history_list
+
+    def add_metadata(self, id, metadata):
+        '''
+        Add custom metadata to a repo
+        @param id: repo id
+        @type  id: string
+        @param metadata: custom metadata dict; eg: {'filetype' : 'productid', 'filedata' : data_stream}
+        @type metadata: dictionary
+        @raise PulpException: if any of the input values are invalid
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        repo_metdata_dir = "%s/%s" % (repo_path, "repodata")
+        # if there is no repodata dir, then its probably not a yum repo; exit now
+        if not os.path.exists(repo_metdata_dir):
+            msg = "No repodata found for repo [%s]; Cannot perform add metadata on a non yum repo" % id
+            log.info(msg)
+            raise PulpException(msg)
+
+        if repo['preserve_metadata']:
+            msg = "Metadata for repo [%s] is set to be preserved. Cannot add custom metadata" % id
+            log.info(msg)
+            raise PulpException(msg)
+        # write the metadata to a file
+        custom_path = "%s/%s" % (repo_path, metadata['filetype'])
+        if os.path.exists(custom_path):
+            # if there is an older file, nuke it and start fresh
+            os.remove(custom_path)
+        try:
+            custom_obj = open(custom_path, 'wb')
+            custom_obj.write(metadata['filedata'])
+            custom_obj.close()
+        except:
+            msg = "Unable to write custom metadata for repo [%s]" % id
+            log.info(msg)
+            raise PulpException(msg)
+        # now run modify repo and add the metadata to yum
+        pulp.server.util.modify_repo(repo_metdata_dir, custom_path)
+
+    def list_metadata(self, id):
+        '''
+        list metadata filetype information from a repo
+        @param id: repo id
+        @type  id: string
+        @raise PulpException: if any of the input values are invalid
+        @return: dump of all the filetypes in repo metadata
+        @rtype: dict
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        repodata_file = "%s/%s" % (repo_path, "repodata/repomd.xml")
+        dump = pulp.server.util.get_repomd_filetype_dump(repodata_file)
+        return dump
+
+    def get_metadata(self, id, filetype):
+        '''
+        get an xml dump of the matched filetype from a repo
+        @param id: repo id
+        @type  id: string
+        @param filetype: file type to look up in metadata
+        @type  filetype: string
+        @return: metadata stream if found or None if no match
+        @rtype: string
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
+        #return pulp.server.util.get_repomd_filetype_xml(repo_repomd_path, filetype)
+        file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
+        if not file_path:
+            return None
+        metadata_file = os.path.join(repo_path, file_path)
+        try:
+            f = metadata_file.endswith('.gz') and gzip.open(metadata_file) \
+                                        or open(metadata_file, 'rt')
+            return f.read()
+        except Exception, e:
+            msg = "Error [%s] reading the metadata file for type [%s] at location [%s]" % (str(e), filetype, file_path)
+            log.info(msg)
+            raise PulpException(msg)
 

@@ -126,8 +126,12 @@ def setup_admin(admin):
     repo_cmd.add_action('remove_file', repo.RemoveFiles())
     repo_cmd.add_action('add_filters', repo.AddFilters())
     repo_cmd.add_action('remove_filters', repo.RemoveFilters())
-    repo_cmd.add_action('metadata', repo.Metadata())
+    repo_cmd.add_action('generate_metadata', repo.GenerateMetadata())
+    repo_cmd.add_action('add_metadata', repo.AddMetadata())
+    repo_cmd.add_action('list_metadata', repo.ListMetadata())
+    repo_cmd.add_action('download_metadata', repo.DownloadMetadata())
     repo_cmd.add_action('discovery', repo.Discovery())
+
     admin.add_command('repo', repo_cmd)
 
     filter_cmd = filter.Filter()

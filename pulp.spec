@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.198
+Version:        0.0.200
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -333,6 +333,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 29 2011 Jeff Ortel <jortel@redhat.com> 0.0.200-1
+- Custom Metadata Support (Continued): (pkilambi@redhat.com)
+- fixing rhel5 issues in unit tests, disabled get test until I figure out an
+  alternative to dump_xml on el5 (pkilambi@redhat.com)
+- Custom Metadata support: (pkilambi@redhat.com)
+- Temporarily remove the quick commands section until we decide how to best
+  maintain it (jason.dobies@redhat.com)
+
 * Fri Jun 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.198-1
 - added args to returned serialized task (jconnor@redhat.com)
 - converted timestamp to utc (jconnor@redhat.com)

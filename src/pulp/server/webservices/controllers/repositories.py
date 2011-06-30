@@ -569,8 +569,11 @@ class RepositoryActions(JSONController):
         'remove_filters',
         'add_group',
         'remove_group',
-        'metadata',
+        'generate_metadata',
         'sync_history',
+        'add_metadata',
+        'download_metadata',
+        'list_metadata'
     )
 
     def sync(self, id):
@@ -631,13 +634,13 @@ class RepositoryActions(JSONController):
     # XXX hack to make the web services unit tests work
     _sync = sync
 
-    def metadata(self, id):
+    def generate_metadata(self, id):
         """
         [[wiki]]
         title: Repository Metadata generation
         description: spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create
         method: POST
-        path: /repositories/<id>/metadata/
+        path: /repositories/<id>/generate_metadata/
         permission: EXECUTE
         success response: 202 Accepted
         failure response: 404 Not Found if the id does not match a repository
@@ -648,12 +651,76 @@ class RepositoryActions(JSONController):
         repo = api.repository(id)
         repo_params = self.params()
 
-        task = api.metadata(id)
+        task = api.generate_metadata(id)
         if not task:
             return self.conflict('Metadata generation already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
+
+    def add_metadata(self, id):
+        """
+        [[wiki]]
+        title: add a custom metadata filetype to Repository Metadata
+        description: adds a metadata filetype to existing repository metadata(this runs modifyrepo underneath).
+        method: POST
+        path: /repositories/<id>/add_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: True
+	parameters:
+         * filetype, str, filetype name to lookup in the metadata
+         * filedata, str, file data to be stored
+
+        """
+        if api.repository(id, default_fields) is None:
+           return self.not_found('A repository with the id, %s, does not exist' % id)
+        metadata_params = self.params()
+        if "filetype" not in metadata_params:
+            return self.bad_request('No file type specified')
+        if "filedata" not in metadata_params:
+            return self.bad_request('No file data specified')
+        return self.ok(api.add_metadata(id, metadata=metadata_params))
+
+    def download_metadata(self, id):
+        """
+        [[wiki]]
+        title: download custom metadata filetype from Repository Metadata
+        description: download an xml file for the filetype specified
+                     if exists in a repository metadata; else None.
+        method: POST
+        path: /repositories/<id>/download_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: True
+	parameters:
+         * filetype, str, filetype name to lookup in the metadata
+        """
+        if api.repository(id, default_fields) is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        params = self.params()
+        if "filetype" not in params:
+            return self.bad_request('No filetype specified')
+        return self.ok(api.get_metadata(id, filetype=params['filetype']))
+
+    def list_metadata(self, id):
+        """
+        [[wiki]]
+        title: list metadata filetype information from a Repository
+        description: lists information about all the filetypes present in metadata
+                    and their info such as size, checksum, path etc.
+        method: POST
+        path: /repositories/<id>/list_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: dict or None
+        """
+        if api.repository(id, default_fields) is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        return self.ok(api.list_metadata(id))
 
     def sync_history(self, id):
         """
@@ -1286,7 +1353,7 @@ class RepositoryActions(JSONController):
         action_methods = {
             'sync': '_sync',
             '_sync': '_sync',
-            'metadata' : '_metadata',
+            'generate_metadata' : '_generate_metadata',
         }
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %

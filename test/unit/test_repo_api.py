@@ -1402,7 +1402,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertTrue(p2["id"] in pkgs)
         success = True
         try:
-            self.repo_api._metadata(repo['id'])
+            self.repo_api._generate_metadata(repo['id'])
         except:
             success = False
         assert(success)
