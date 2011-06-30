@@ -112,7 +112,7 @@ from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
-    auth_required, error_handler)
+    auth_required, error_handler, collection_query)
 
 # globals ---------------------------------------------------------------------
 
@@ -154,6 +154,7 @@ class Repositories(JSONController):
 
     @error_handler
     @auth_required(READ)
+    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path')
     def GET(self):
         """
         [[wiki]]
