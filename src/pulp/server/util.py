@@ -416,21 +416,19 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
     #check if presto metadata exist in the backup
     repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
     ftypes = get_repomd_filetypes(repodata_file)
-    prestodelta_path = ""
-    if "prestodelta" in ftypes:
-        prestodelta_file = get_repomd_filetype_path(repodata_file, "prestodelta")
-        prestodelta_path = os.path.join(backup_repo_dir, os.path.basename(prestodelta_file))
-    if os.path.isfile(prestodelta_path):
-        log.info("Modifying repo for prestodelta metadata")
-        modify_repo(current_repo_dir, prestodelta_path)
-    #check if updateinfo metadata exist in the backup
-    updateinfo_path = ""
-    if "updateinfo" in ftypes:
-        updateinfo_file = get_repomd_filetype_path(repodata_file, "updateinfo")
-        updateinfo_path = os.path.join(backup_repo_dir, os.path.basename(updateinfo_file))
-    if os.path.exists(updateinfo_path):
-        log.info("Modifying repo for updateinfo metadata")
-        modify_repo(current_repo_dir, updateinfo_path)
+    base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db']
+    for ftype in ftypes:
+        if ftype in base_ftypes:
+            # no need to process these again
+            continue
+        filetype_path = os.path.join(backup_repo_dir, os.path.basename(get_repomd_filetype_path(repodata_file, ftype)))
+        # modifyrepo uses filename as mdtype, rename to type.<ext>
+        renamed_filetype_path = os.path.join(os.path.dirname(filetype_path), \
+                                         ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
+        os.rename(filetype_path,  renamed_filetype_path)
+        if os.path.isfile(renamed_filetype_path):
+            log.info("Modifying repo for %s metadata" % ftype)
+            modify_repo(current_repo_dir, renamed_filetype_path)
     shutil.rmtree(backup_repo_dir)
         
 def modify_repo(dir, new_file):
