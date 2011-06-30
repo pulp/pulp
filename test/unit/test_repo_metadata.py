@@ -16,14 +16,10 @@
 import logging
 import sys
 import os
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, "../common")
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
 from pulp.server.util import top_repos_location, get_repomd_filetype_path
 from pulp.server.api.repo import RepoApi
 import testutil
@@ -32,24 +28,15 @@ logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-class TestRepoMetadataApi(unittest.TestCase):
-
-    def setUp(self):
-        testutil.load_test_config()
-        self.rapi = RepoApi()
-        self.data_path = \
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-
-    def tearDown(self):
-        self.rapi.clean()
+class TestRepoMetadataApi(testutil.PulpAsyncTest):
 
     def test_repo_metadata_add(self):
-        repo = self.rapi.create('test-custom-id', 'custom name', 'noarch')
+        repo = self.repo_api.create('test-custom-id', 'custom name', 'noarch')
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'r').read()
         metadata_dict = {'filetype' : 'product',
                          'filedata' : custom_data}
-        self.rapi.add_metadata(repo['id'], metadata_dict)
+        self.repo_api.add_metadata(repo['id'], metadata_dict)
         repodata_file = "%s/%s/%s/%s" % (top_repos_location(),
                                          repo['relative_path'],
                                          'repodata', 'repomd.xml')
@@ -58,40 +45,40 @@ class TestRepoMetadataApi(unittest.TestCase):
         self.assertTrue(product_file_path is not None)
 
     def test_repo_metadata_add_preserved(self):
-        repo = self.rapi.create('test-custom-id-preserve', 'custom preserve', 'noarch', preserve_metadata=True)
+        repo = self.repo_api.create('test-custom-id-preserve', 'custom preserve', 'noarch', preserve_metadata=True)
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'r').read()
         metadata_dict = {'filetype' : 'product',
                          'filedata' : custom_data}
         failure = False
         try:
-            self.rapi.add_metadata(repo['id'], metadata_dict)
+            self.repo_api.add_metadata(repo['id'], metadata_dict)
         except:
             # cannot add custom data to preserved repo
             failure =  True
         self.assertFalse(failure)
 
     def test_repo_metadata_get(self):
-        repo = self.rapi.create('test-get-custom-id', 'custom name', 'noarch')
+        repo = self.repo_api.create('test-get-custom-id', 'custom name', 'noarch')
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'rb').read()
         metadata_dict = {'filetype' : 'product',
                          'filedata' : custom_data}
-        self.rapi.add_metadata(repo['id'], metadata_dict)
-        found_custom_xml = self.rapi.get_metadata(repo['id'], filetype='product')
+        self.repo_api.add_metadata(repo['id'], metadata_dict)
+        found_custom_xml = self.repo_api.get_metadata(repo['id'], filetype='product')
         print "DEBUG: ",found_custom_xml
         self.assertTrue(found_custom_xml is not None)
-        not_found_custom_xml = self.rapi.get_metadata(repo['id'], filetype='comps')
+        not_found_custom_xml = self.repo_api.get_metadata(repo['id'], filetype='comps')
         self.assertTrue(not_found_custom_xml is None)
 
     def test_repo_metadata_list(self):
-        repo = self.rapi.create('test-list-custom-id', 'custom name', 'noarch')
+        repo = self.repo_api.create('test-list-custom-id', 'custom name', 'noarch')
         custom_metadata_file = "%s/%s" % (self.data_path, "product")
         custom_data = open(custom_metadata_file, 'rb').read()
         metadata_dict = {'filetype' : 'product',
                          'filedata' : custom_data}
-        self.rapi.add_metadata(repo['id'], metadata_dict)
-        list_of_metadata_info = self.rapi.list_metadata(repo['id'])
+        self.repo_api.add_metadata(repo['id'], metadata_dict)
+        list_of_metadata_info = self.repo_api.list_metadata(repo['id'])
         print list_of_metadata_info
         self.assertTrue(list_of_metadata_info is not None)
 
