@@ -2084,8 +2084,8 @@ class RepoApi(BaseApi):
             f = metadata_file.endswith('.gz') and gzip.open(metadata_file) \
                                         or open(metadata_file, 'rt')
             return f.read()
-        except:
-            msg = "Error reading the metadata file for type [%s] at location [%s]" % (filetype, file_path)
+        except Exception, e:
+            msg = "Error [%s] reading the metadata file for type [%s] at location [%s]" % (str(e), filetype, file_path)
             log.info(msg)
             raise PulpException(msg)
 

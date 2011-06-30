@@ -930,7 +930,7 @@ class AddMetadata(RepoAction):
         except Exception, e:
             system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.filepath))
         self.repository_api.add_metadata(id, self.opts.filetype, filedata)
-        system_exit(os.EX_OK, _("Successfully added filetype [%s] to repo [%s]" % (filetype, filepath)))
+        system_exit(os.EX_OK, _("Successfully added filetype [%s] to repo [%s]" % (filetype, id)))
 
 class DownloadMetadata(RepoAction):
 
@@ -955,17 +955,18 @@ class DownloadMetadata(RepoAction):
         except Exception, e:
             log.error(e)
             system_exit(os.EX_DATAERR, _("Error:%s") % e[1])
+        if not file_stream:
+            system_exit(os.EX_DATAERR, _("Error:No file data found for file type [%s]") % filetype)
+        if self.opts.out:
+            try:
+                f = open(self.opts.out, 'w')
+                f.write(file_stream.encode("utf8"))
+                f.close()
+            except Exception,e:
+                system_exit(os.EX_DATAERR, _("Error occurred while storing the file data %s" % e))
+            system_exit(os.EX_OK, _("Successfully exported the filetype data to [%s]" % self.opts.out))
         else:
-            if self.opts.out:
-                try:
-                    f = open(self.opts.out, 'w')
-                    f.write(file_stream.encode("utf8"))
-                    f.close()
-                except Exception,e:
-                    system_exit(os.EX_DATAERR, _("Error occurred while storing the file data %s" % e))
-                system_exit(os.EX_OK, _("Successfully exported the filetype data to [%s]" % self.opts.out))
-            else:
-                print file_stream.encode("utf8")
+            print file_stream.encode("utf8")
 
 class ListMetadata(RepoAction):
 
