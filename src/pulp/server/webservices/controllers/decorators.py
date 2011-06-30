@@ -131,29 +131,20 @@ def auth_required(operation=None, super_user_only=False):
     return _auth_required
 
 
-def collection_query(valid_filters=()):
+def collection_query(*valid_filters):
     """
-    Parse out common parameters and build mongodb spec documents from them.
-    NOTE: this decorator requires the decorated method to have the following
-    keyword arguments: spec, start, and limit. Where spec is a dictionary
-    representing a mongodb query spec document, start is an integer giving
-    which element of the results to start with, and limit in an integer or None
-    giving the maximum length of the results.
-    @type valid_filters: tuple of str's
-    @param valid_filters: tuple of additional valid query parameters
+    Parse out common query parameters as filters in addition to any custom
+    filters needed by the controller.
+    @type valid_filters: str's
+    @param valid_filters: additional valid query parameters
     """
     def _collection_query(method):
         common_filters = ('_intersection', '_union', '_start', '_limit')
 
         @wraps(method)
         def _query_decortator(self, *args, **kwargs):
-            query_kwargs = {
-                'spec': None,
-                'start': 0,
-                'limit': None}
             filters = self.filters(itertools.chain(common_filters, valid_filters))
-            # TODO build the spec and parse out start and limit
-            kwargs.update(query_kwargs)
+            kwargs.update({'filters': filters})
             return method(self, *args, **kwargs)
 
         return _query_decortator
