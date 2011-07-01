@@ -142,13 +142,10 @@ class OidValidator:
         repo_id = None
         for relative_url in prot_repos.keys():
 
-            # I haven't found consistency in the relative URL setting on a repo, so make sure
-            # it starts with a / to match what was ripped from the request URI
-            test_pattern = relative_url
-            if not test_pattern.startswith('/'):
-                test_pattern = '/' + relative_url
-
-            if repo_url.startswith(test_pattern):
+            # Relative URL is inconsistent in Pulp, so a simple "startswith" tends to
+            # break. Changing this to a find helps remove issues where the leading /
+            # is missing, present, or duplicated.
+            if repo_url.find(relative_url) != -1:
                 repo_id = prot_repos[relative_url]
                 break
 
