@@ -147,6 +147,8 @@ class PulpTest(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
 
+        self._mocks = {}
+
         self.data_path = \
             os.path.join(
                 os.path.join(
@@ -180,6 +182,7 @@ class PulpTest(unittest.TestCase):
 
     def tearDown(self):
         unittest.TestCase.tearDown(self)
+        self.unmock_all()
         self.clean()
 
     def clean(self):
@@ -210,6 +213,16 @@ class PulpTest(unittest.TestCase):
 
     def setup_async(self):
         async._queue = mock.Mock()
+
+    def mock(self, parent, attribute):
+        self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
+        setattr(parent, attribute, mock.Mock())
+
+    def unmock_all(self):
+        for parent in self._mocks:
+            for mocked_attr, original_attr in self._mocks[parent].items():
+                setattr(parent, mocked_attr, original_attr)
+        
 
 class PulpAsyncTest(PulpTest):
 

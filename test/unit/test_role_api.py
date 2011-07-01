@@ -33,8 +33,8 @@ class TestRoleApi(testutil.PulpTest):
         self.assertEquals("testrole", roles[0]["name"])
 
     def test_create_mock_db(self):
-        self.role_api._getcollection = mock.Mock()
-        self.role_api.role = mock.Mock()
+        self.mock(self.role_api, "_getcollection")
+        self.mock(self.role_api, "role")
         self.role_api.role.return_value = None
         role_name = "testrole"
         self.role_api.create(role_name)
