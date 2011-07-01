@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.200
+Version:        0.0.201
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -326,6 +326,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jul 01 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.201-1
+- Bringing in line with latest Pulp build version (jason.dobies@redhat.com)
+- 718287 - Pulp is inconsistent with what it stores in relative URL, so
+  changing from a startswith to a find for the protected repo retrieval.
+  (jason.dobies@redhat.com)
+- 715071 - lowering the log level during repo delete to debug
+  (pkilambi@redhat.com)
+
 * Wed Jun 29 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.199-1
 - Incremented to match master. (jason.dobies@redhat.com)
 - added args to returned serialized task (jconnor@redhat.com)
