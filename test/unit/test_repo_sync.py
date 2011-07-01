@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
-import dingus
+import mock
 
 from pulp.server import async
 from pulp.server.api import repo_sync
@@ -25,15 +25,15 @@ from pulp.server.api.synchronizers import (YumSynchronizer,
     yum_rhn_progress_callback, local_progress_callback, LocalSynchronizer)
 
 
-class TestRepoSync(testutil.PulpTest):
+class TestRepoSync(testutil.PulpAsyncTest):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
-        repo_sync.run_async = dingus.Dingus()
+        testutil.PulpAsyncTest.setUp(self)
+        repo_sync.run_async = mock.Mock()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
-        repo_sync.run_async.reset()
+        testutil.PulpAsyncTest.tearDown(self)
+        repo_sync.run_async.reset_mock()
 
     def test_sync_remote(self):
         # create a remote repo
@@ -44,21 +44,21 @@ class TestRepoSync(testutil.PulpTest):
         repo_sync.sync(remote_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, len(repo_sync.run_async.calls))
-        task = repo_sync.run_async.calls[0].return_value
+        self.assertEquals(1, repo_sync.run_async.call_count)
+        task = repo_sync.run_async.return_value
 
         # task.set_progress called
-        self.assertEquals(1, len(task.set_progress.calls))
-        callArgs = task.set_progress.calls[0].args
-        self.assertEquals(2, len(callArgs))
-        self.assertEquals("progress_callback", callArgs[0])
-        self.assertEquals(yum_rhn_progress_callback, callArgs[1])
+        self.assertEquals(1, task.set_progress.call_count)
+        call_args = task.set_progress.call_args[0]
+        self.assertEquals(2, len(call_args))
+        self.assertEquals("progress_callback", call_args[0])
+        self.assertEquals(yum_rhn_progress_callback, call_args[1])
 
         # task.set_synchronizer called
-        self.assertEquals(1, len(task.set_synchronizer.calls))
-        callArgs = task.set_synchronizer.calls[0].args
-        self.assertEquals(1, len(callArgs))
-        self.assertTrue(isinstance(callArgs[0], YumSynchronizer))
+        self.assertEquals(1, task.set_synchronizer.call_count)
+        call_args = task.set_synchronizer.call_args[0]
+        self.assertEquals(1, len(call_args))
+        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
 
     def test_sync_local(self):
         # create a local_repo
@@ -69,18 +69,18 @@ class TestRepoSync(testutil.PulpTest):
         repo_sync.sync(local_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, len(repo_sync.run_async.calls))
-        task = repo_sync.run_async.calls[0].return_value
+        self.assertEquals(1, repo_sync.run_async.call_count)
+        task = repo_sync.run_async.return_value
 
         # task.set_progress called
-        self.assertEquals(1, len(task.set_progress.calls))
-        callArgs = task.set_progress.calls[0].args
-        self.assertEquals(2, len(callArgs))
-        self.assertEquals("progress_callback", callArgs[0])
-        self.assertEquals(local_progress_callback, callArgs[1])
+        self.assertEquals(1, task.set_progress.call_count)
+        call_args = task.set_progress.call_args[0]
+        self.assertEquals(2, len(call_args))
+        self.assertEquals("progress_callback", call_args[0])
+        self.assertEquals(local_progress_callback, call_args[1])
 
         # task.set_synchronizer called
-        self.assertEquals(1, len(task.set_synchronizer.calls))
-        callArgs = task.set_synchronizer.calls[0].args
-        self.assertEquals(1, len(callArgs))
-        self.assertTrue(isinstance(callArgs[0], LocalSynchronizer))
+        self.assertEquals(1, task.set_synchronizer.call_count)
+        call_args = task.set_synchronizer.call_args[0]
+        self.assertEquals(1, len(call_args))
+        self.assertTrue(isinstance(call_args[0], LocalSynchronizer))

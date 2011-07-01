@@ -16,7 +16,7 @@
 import sys
 import os
 
-import dingus
+import mock
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
@@ -33,12 +33,12 @@ class TestRoleApi(testutil.PulpTest):
         self.assertEquals("testrole", roles[0]["name"])
 
     def test_create_mock_db(self):
-        self.role_api._getcollection = dingus.Dingus()
-        self.role_api.role = dingus.Dingus()
+        self.role_api._getcollection = mock.Mock()
+        self.role_api.role = mock.Mock()
         self.role_api.role.return_value = None
         role_name = "testrole"
         self.role_api.create(role_name)
-        self.assertTrue(1, len(self.role_api.collection.insert.calls))
-        callArgs = self.role_api.collection.insert.calls[0][1]
-        self.assertTrue(isinstance(callArgs[0], Role))
-        self.assertTrue("testrole", callArgs[0]["name"])
+        self.assertTrue(1, self.role_api.collection.insert.call_count)
+        call_args = self.role_api.collection.insert.call_args[0]
+        self.assertTrue(isinstance(call_args[0], Role))
+        self.assertTrue("testrole", call_args[0]["name"])

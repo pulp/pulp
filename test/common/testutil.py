@@ -18,7 +18,7 @@ import sys
 import time
 from datetime import timedelta
 
-import dingus
+import mock
 
 import mocks
 
@@ -209,7 +209,7 @@ class PulpTest(unittest.TestCase):
         mocks.reset()
 
     def setup_async(self):
-        async._queue = dingus.Dingus()
+        async._queue = mock.Mock()
 
 class PulpAsyncTest(PulpTest):
 
