@@ -29,11 +29,13 @@ class TestRepoSync(testutil.PulpAsyncTest):
 
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
+        self.old_run_async = repo_sync.run_async
         repo_sync.run_async = mock.Mock()
 
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
         repo_sync.run_async.reset_mock()
+        repo_sync.run_async = self.old_run_async
 
     def test_sync_remote(self):
         # create a remote repo
