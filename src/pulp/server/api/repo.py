@@ -509,7 +509,7 @@ class RepoApi(BaseApi):
             try:
                 self.packageapi.delete(pkgid, keep_files)
             except PackageHasReferences:
-                log.info(
+                log.debug(
                     'package "%s" has references, not deleted',
                     pkgid)
             except Exception, ex:
@@ -522,7 +522,7 @@ class RepoApi(BaseApi):
             try:
                 self.errataapi.delete(eid)
             except ErrataHasReferences:
-                log.info(
+                log.debug(
                     'errata "%s" has references, not deleted',
                     eid)
             except Exception, ex:
@@ -538,7 +538,7 @@ class RepoApi(BaseApi):
             if repo["id"] in repos and len(repos) == 1:
                 self.fileapi.delete(fileid, keep_files)
             else:
-                log.info("Not deleting %s since it is referenced by these repos: %s" % (fileid, repos))
+                log.debug("Not deleting %s since it is referenced by these repos: %s" % (fileid, repos))
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi
