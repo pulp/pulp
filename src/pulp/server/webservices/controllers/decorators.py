@@ -24,6 +24,7 @@ import logging
 import sys
 import traceback
 from gettext import gettext as _
+from pprint import pformat
 
 from pulp.server.auth.authentication import (
     check_username_password, check_user_cert, check_consumer_cert, check_oauth)
@@ -149,9 +150,11 @@ def collection_query(*valid_filters):
             filters = self.filters(itertools.chain(common_filters, valid_filters))
             intersect = filters.pop('_intersect', ())
             union = filters.pop('_union', ())
+            _log.debug(pformat(spec))
             spec = mongo.filters_to_set_spec(filters, intersect, union)
             kwargs.update({'spec': spec})
             return method(self, *args, **kwargs)
 
         return _query_decortator
     return _collection_query
+
