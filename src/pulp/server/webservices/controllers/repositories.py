@@ -155,7 +155,7 @@ class Repositories(JSONController):
     @error_handler
     @auth_required(READ)
     @collection_query('id', 'name', 'arch', 'groupid', 'relative_path')
-    def GET(self):
+    def GET(self, spec=None):
         """
         [[wiki]]
         title: List Available Repositories
@@ -173,11 +173,6 @@ class Repositories(JSONController):
          * groupid, str, repository group id
          * relative_path, str, repository's on disk path
         """
-        valid_filters = ['id', 'name', 'arch', 'groupid', 'relative_path']
-
-        filters = self.filters(valid_filters)
-        spec = mongo.filters_to_re_spec(filters)
-
         repositories = api.repositories(spec, default_fields)
 
         for repo in repositories:

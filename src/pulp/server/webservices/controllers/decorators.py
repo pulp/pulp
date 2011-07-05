@@ -30,7 +30,7 @@ from pulp.server.auth.authentication import (
 from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps
-from pulp.server.webservices import http
+from pulp.server.webservices import http, mongo
 
 
 _log = logging.getLogger(__name__)
@@ -134,17 +134,23 @@ def auth_required(operation=None, super_user_only=False):
 def collection_query(*valid_filters):
     """
     Parse out common query parameters as filters in addition to any custom
-    filters needed by the controller.
+    filters needed by the controller and build a mongo db spec document.
+    NOTE: this decorator requires the decorated method to accept a keyword
+    argument, spec, that is a mongo db spec document for passing to the find
+    collection method.
     @type valid_filters: str's
     @param valid_filters: additional valid query parameters
     """
     def _collection_query(method):
-        common_filters = ('_intersection', '_union', '_start', '_limit')
+        common_filters = ('_intersect', '_union')
 
         @wraps(method)
         def _query_decortator(self, *args, **kwargs):
             filters = self.filters(itertools.chain(common_filters, valid_filters))
-            kwargs.update({'filters': filters})
+            intersect = filters.pop('_intersect', ())
+            union = filters.pop('_union', ())
+            spec = mongo.filters_to_set_spec(filters, intersect, union)
+            kwargs.update({'spec': spec})
             return method(self, *args, **kwargs)
 
         return _query_decortator

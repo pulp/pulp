@@ -18,6 +18,12 @@ Mongo utility module to help pulp web services deal with the mongo db.
 
 import re
 
+from pulp.server.pexceptions import PulpException
+
+
+class MalformedFilters(PulpException):
+    pass
+
 
 def filters_to_re_spec(filters):
     """
@@ -29,22 +35,29 @@ def filters_to_re_spec(filters):
         return None
     return dict((k, re.compile('(%s)' % '|'.join(v))) for k,v in filters.items())
 
-union_of_field_values = filters_to_re_spec
 
-
-def union_of_list_values(filters):
+def filters_to_set_spec(filters, intersect=(), union=()):
     """
+    Build a find spec document based on the filters and intersect and union
+    operation specifiers passed in.
+    @type filters: dict
+    @param filters: dictionary of query paramaters and associated list of values
+    @type intersect: tuple or list
+    @param intersect: list of parameters that are using the intersection operation
+    @type union: tuple or list
+    @param union: list of parameters that are usiong the union operation
+    @rtype: dict
+    @return: mongo spec document
     """
-    pass
-
-
-def intersection_of_field_values(filters):
-    """
-    """
-    pass
-
-
-def intersecion_of_list_values(filters):
-    """
-    """
-    pass
+    spec = {}
+    for param, values in filters.items():
+        if len(values) == 1:
+            spec[param] = values[0]
+        else:
+            if param in intersect:
+                spec[param] = {'$all': values}
+            elif param in union:
+                spec[param] = {'$in': values}
+            else:
+                raise MalformedFilters('Multiple values specified for %s, but _intersect or _union operation not specified' % param)
+    return spec
