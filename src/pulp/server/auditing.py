@@ -331,7 +331,7 @@ def events_since_delta(delta, fields=None, limit=None, errors_only=False):
     @return: list of events in the given length of time containing fields
     """
     assert isinstance(delta, datetime.timedelta)
-    now = datetime.datetime.now(dateutils.local_tz())
+    now = datetime.datetime.now(dateutils.utc_tz())
     lower_bound = now - delta
     return events({'timestamp': {'$gt': lower_bound}}, fields, limit, errors_only)
 
@@ -348,7 +348,7 @@ def cull_events(delta):
     """
     spec = None
     if delta is not None:
-        now = datetime.datetime.now(dateutils.local_tz())
+        now = datetime.datetime.now(dateutils.utc_tz())
         spec = {'timestamp': {'$lt': now - delta}}
     count = Event.get_collection().find(spec).count()
     Event.get_collection().remove(spec, safe=False)
@@ -372,7 +372,7 @@ def cull_audited_events():
 
 def init_culling_task():
     interval = datetime.timedelta(hours=12)
-    tz = dateutils.local_tz()
+    tz = dateutils.utc_tz()
     now = datetime.datetime.now(tz)
     start_time = datetime.datetime(now.year, now.month, now.day, 13, tzinfo=tz)
     scheduler = IntervalScheduler(interval, start_time)
