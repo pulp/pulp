@@ -2083,7 +2083,7 @@ class RepoApi(BaseApi):
         try:
             f = metadata_file.endswith('.gz') and gzip.open(metadata_file) \
                                         or open(metadata_file, 'rt')
-            return f.read()
+            return f.read().decode("utf-8", "replace")
         except Exception, e:
             msg = "Error [%s] reading the metadata file for type [%s] at location [%s]" % (str(e), filetype, file_path)
             log.info(msg)
