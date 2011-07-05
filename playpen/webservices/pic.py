@@ -72,7 +72,16 @@ def _request(method, path, body=None):
     return (response.status, response_body)
 
 
-def GET(path):
+def _query_params(params):
+    for k, v in params:
+        if isinstance(v, basestring):
+            params[k] = [v]
+    return '&'.join('%s=%s' % (k, v) for k in params for v in params[k])
+
+
+def GET(path, **params):
+    path = '?'.join((path, _query_params(params)))
+    print path
     return _request('GET', path)
 
 
