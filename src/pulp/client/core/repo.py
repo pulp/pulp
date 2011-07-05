@@ -939,7 +939,7 @@ class DownloadMetadata(RepoAction):
     def setup_parser(self):
         super(DownloadMetadata, self).setup_parser()
         self.parser.add_option("--filetype", dest="filetype",
-                help=_("filetype to add to the repository metadata"))
+                help=_("filetype to download from the repository metadata"))
         self.parser.add_option("-o", "--out", dest="out",
                 help=_("output file to store the exported metadata file (optional); default is stdout"))
 
