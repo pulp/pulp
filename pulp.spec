@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.201
+Version:        0.0.202
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -333,6 +333,66 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jul 06 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.202-1
+- 669759 - typo, missing word "is" in schedule time is in past message
+  (jmatthews@redhat.com)
+- converted all auditing events to use utc (jconnor@redhat.com)
+- wrong line (jconnor@redhat.com)
+- added debugging log output (jconnor@redhat.com)
+- bug in query params generation (jconnor@redhat.com)
+- added query parametes to GET method (jconnor@redhat.com)
+- using $in for union and $all for intersection operations (jconnor@redhat.com)
+- stubbed out spec doc building calls (jconnor@redhat.com)
+- added collectio query decorator (jconnor@redhat.com)
+- gutted decorator to simply parse the query parameter and pass in a keyword
+  filters argument (jconnor@redhat.com)
+- added _ prefix to common query parameters (jconnor@redhat.com)
+- fix issue downloading sqlite db metadata files (pkilambi@redhat.com)
+- fixing help for download metadata (pkilambi@redhat.com)
+- Add a helper mock function to testutil, also keeps track of all mocks to make
+  sure everything is unmocked in tearDown (jslagle@redhat.com)
+- make sure run_async gets unmocked (jslagle@redhat.com)
+- Incremented to match latest rhui version (jason.dobies@redhat.com)
+- 718287 - Pulp is inconsistent with what it stores in relative URL, so
+  changing from a startswith to a find for the protected repo retrieval.
+  (jason.dobies@redhat.com)
+- Move towards using mock library for now since dingus has many python 2.4
+  incompatibilities (jslagle@redhat.com)
+- Merge branch 'master' into test-refactor (jslagle@redhat.com)
+- 715071 - lowering the log level during repo delete to debug
+  (pkilambi@redhat.com)
+- Merge branch 'master' into test-refactor (jslagle@redhat.com)
+- Add missing import (jslagle@redhat.com)
+- Make import path asbsolute, so tests can be run from any directory
+  (jslagle@redhat.com)
+- Move needed dir from data into functional test dir (jslagle@redhat.com)
+- update for testutil changes (jslagle@redhat.com)
+- Update createrepo login in pulp to account for custom metadata; also rename
+  the backup file before running modifyrepo to preserve the mdtype
+  (pkilambi@redhat.com)
+- Merge with master (jslagle@redhat.com)
+- Add a test for role api (jslagle@redhat.com)
+- tweaks to error handling around the client (pkilambi@redhat.com)
+- Use PulpTest as base class here (jslagle@redhat.com)
+- Example unit test using dingus for repo_sync.py (jslagle@redhat.com)
+- Move these 2 test modules to functional tests dir (jslagle@redhat.com)
+- Make each test set path to the common dir (jslagle@redhat.com)
+- Move test dir cleanup to tearDown instead of clean since clean also gets
+  called from setUp (jslagle@redhat.com)
+- Merge with master (jslagle@redhat.com)
+- Refactor all tests to use common PulpAsyncTest base class
+  (jslagle@redhat.com)
+- Use dingus for mocking instead of mox (jslagle@redhat.com)
+- Use PulpTest instead of PulpAsyncTest for this test (jslagle@redhat.com)
+- More base class refactorings, make sure tests that use PulpAsyncTest,
+  shutdown the task queue correctly, this should solve our threading exception
+  problems (jslagle@redhat.com)
+- Refactor __del__ into a cancel_dispatcher method that is meant to be called
+  (jslagle@redhat.com)
+- Refactoring some of the testutil setup into a common base class to avoid
+  repetition in each test module (also fixes erroneous connection to
+  pulp_database) (jslagle@redhat.com)
+
 * Wed Jun 29 2011 Jeff Ortel <jortel@redhat.com> 0.0.200-1
 - Custom Metadata Support (Continued): (pkilambi@redhat.com)
 - fixing rhel5 issues in unit tests, disabled get test until I figure out an
