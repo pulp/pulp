@@ -328,6 +328,7 @@ fi
 %changelog
 * Fri Jul 01 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.201-1
 - Bringing in line with latest Pulp build version (jason.dobies@redhat.com)
+
 - 718287 - Pulp is inconsistent with what it stores in relative URL, so
   changing from a startswith to a find for the protected repo retrieval.
   (jason.dobies@redhat.com)
