@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.202
+Version:        0.0.203
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -333,6 +333,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 07 2011 James Slagle <jslagle@redhat.com> 0.0.203-1
+- Add mod_wsgi rpm build to pulp (jslagle@redhat.com)
+
 * Wed Jul 06 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.202-1
 - 669759 - typo, missing word "is" in schedule time is in past message
   (jmatthews@redhat.com)
