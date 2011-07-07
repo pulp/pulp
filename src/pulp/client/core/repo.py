@@ -904,52 +904,52 @@ class GenerateMetadata(RepoAction):
 
 class AddMetadata(RepoAction):
 
-    description =  _('Add a filetype to existing metadata for a repository')
+    description =  _('Add a metadata type to existing repository')
 
     def setup_parser(self):
         super(AddMetadata, self).setup_parser()
-        self.parser.add_option("--filetype", dest="filetype",
-                help=_("filetype to add to the repository metadata"))
-        self.parser.add_option("--filepath", dest="filepath",
+        self.parser.add_option("--mdtype", dest="mdtype",
+                help=_("metadata type to add to the repository metadata"))
+        self.parser.add_option("--path", dest="path",
                 help=_("path to the metadata file to be added"))
 
     def run(self):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
-        if not self.opts.filetype:
-            system_exit(os.EX_USAGE, _("Error: filetype is a required option"))
+        if not self.opts.mdtype:
+            system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
         else:
-            filetype = self.opts.filetype
-        if not self.opts.filepath:
-            system_exit(os.EX_USAGE, _("Error: filepath is a required option"))
+            filetype = self.opts.mdtype
+        if not self.opts.path:
+            system_exit(os.EX_USAGE, _("Error: path is a required option"))
         else:
-            filepath = self.opts.filepath
+            filepath = self.opts.path
         filedata = None
         try:
             filedata = open(filepath, 'r').read()
         except Exception, e:
-            system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.filepath))
-        self.repository_api.add_metadata(id, self.opts.filetype, filedata)
+            system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.path))
+        self.repository_api.add_metadata(id, self.opts.mdtype, filedata)
         system_exit(os.EX_OK, _("Successfully added filetype [%s] to repo [%s]" % (filetype, id)))
 
 class DownloadMetadata(RepoAction):
 
-    description =  _('Download a filetype if available from existing repository metadata')
+    description =  _('Download a metadata type if available from existing repository')
 
     def setup_parser(self):
         super(DownloadMetadata, self).setup_parser()
-        self.parser.add_option("--filetype", dest="filetype",
-                help=_("filetype to download from the repository metadata"))
+        self.parser.add_option("--mdtype", dest="mdtype",
+                help=_("metadata type to add to the repository metadata"))
         self.parser.add_option("-o", "--out", dest="out",
                 help=_("output file to store the exported metadata file (optional); default is stdout"))
 
     def run(self):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
-        if not self.opts.filetype:
-            system_exit(os.EX_USAGE, _("Error: filetype is a required option"))
+        if not self.opts.mdtype:
+            system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
         else:
-            filetype = self.opts.filetype
+            filetype = self.opts.mdtype
         try:
             file_stream = self.repository_api.download_metadata(repo['id'], filetype)
         except Exception, e:
@@ -970,7 +970,7 @@ class DownloadMetadata(RepoAction):
 
 class ListMetadata(RepoAction):
 
-    description =  _('List filetype information assicated to existing repository metadata')
+    description =  _('List metadata type information associated to existing repository')
 
     def setup_parser(self):
         super(ListMetadata, self).setup_parser()
@@ -980,7 +980,7 @@ class ListMetadata(RepoAction):
         repo = self.get_repo(id)
         filetype_info_dict = self.repository_api.list_metadata(repo['id'])
         if not filetype_info_dict:
-            system_exit(os.EX_DATAERR, _('No metadata filetypes to list'))
+            system_exit(os.EX_DATAERR, _('No metadata types to list'))
         print_header(_('File Type information for Respoitory [%s]' % id))
         for filetype, value in filetype_info_dict.items():
             print '  datatype: %s' % filetype
