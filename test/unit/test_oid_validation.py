@@ -36,17 +36,17 @@ CERT_TEST_DIR = '/tmp/test_oid_validation/'
 
 # -- mocks ----------------------------------------------------------------------
 
-class MockRequest:
+def mock_environ(client_cert_pem, uri):
+    environ = {}
+    environ["mod_ssl.var_lookup"] = lambda *args: client_cert_pem
+    environ["REQUEST_URI"] = uri
+    
+    class Errors:
+        def write(self, *args, **kwargs):
+            pass
 
-    def __init__(self, client_cert_pem, uri):
-        self.client_cert_pem = client_cert_pem
-        self.uri = uri
-
-    def ssl_var_lookup(self, lookup_var_name):
-        return self.client_cert_pem
-
-    def log_error(self, message):
-        pass
+    environ["wsgi.errors"] = Errors()
+    return environ
 
 # -- test cases -----------------------------------------------------------------
 
@@ -100,8 +100,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -132,8 +132,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -164,8 +164,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -196,8 +196,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -228,8 +228,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -260,8 +260,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -294,8 +294,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -328,8 +328,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -362,8 +362,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -394,8 +394,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -426,8 +426,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
@@ -460,8 +460,8 @@ class TestOidValidation(unittest.TestCase):
                              feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
-        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
-        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        request_x = mock_environ('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = mock_environ('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
         response_x = oid_validation.authenticate(request_x, config=self.config)
         response_y = oid_validation.authenticate(request_y, config=self.config)
