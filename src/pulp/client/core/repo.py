@@ -930,7 +930,7 @@ class AddMetadata(RepoAction):
         except Exception, e:
             system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.path))
         self.repository_api.add_metadata(id, self.opts.mdtype, filedata)
-        system_exit(os.EX_OK, _("Successfully added filetype [%s] to repo [%s]" % (filetype, id)))
+        system_exit(os.EX_OK, _("Successfully added metadata type [%s] to repo [%s]" % (filetype, id)))
 
 class DownloadMetadata(RepoAction):
 
@@ -964,7 +964,7 @@ class DownloadMetadata(RepoAction):
                 f.close()
             except Exception,e:
                 system_exit(os.EX_DATAERR, _("Error occurred while storing the file data %s" % e))
-            system_exit(os.EX_OK, _("Successfully exported the filetype data to [%s]" % self.opts.out))
+            system_exit(os.EX_OK, _("Successfully exported the metadata type data to [%s]" % self.opts.out))
         else:
             print file_stream.encode("utf8")
 
@@ -981,7 +981,7 @@ class ListMetadata(RepoAction):
         filetype_info_dict = self.repository_api.list_metadata(repo['id'])
         if not filetype_info_dict:
             system_exit(os.EX_DATAERR, _('No metadata types to list'))
-        print_header(_('File Type information for Respoitory [%s]' % id))
+        print_header(_('Metadata Type information for Respoitory [%s]' % id))
         for filetype, value in filetype_info_dict.items():
             print '  datatype: %s' % filetype
             print '    location     : %s' % value['location']
