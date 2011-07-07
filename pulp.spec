@@ -48,10 +48,6 @@ Requires: mongodb
 Requires: mongodb-server
 %endif
 Requires: qpid-cpp-server
-%if 0%{?fedora} || 0%{?rhel} > 5
-# Fedora or RHEL-6 and beyond
-Requires: mod_python
-%endif
 %if 0%{?el5}
 # RHEL-5
 Requires: python-uuid
@@ -120,10 +116,6 @@ Requires:       httpd
 Requires:       mod_wsgi
 Requires:       mod_ssl
 Requires:       m2crypto
-%if 0%{?fedora} || 0%{?rhel} > 5
-# Fedora
-Requires: mod_python
-%endif
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
@@ -230,12 +222,6 @@ touch /var/lib/pulp-cds/.cluster-members
 
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
-
-# For Fedora, enable the mod_python handler in the httpd config
-%if 0%{?fedora} || 0%{?rhel} > 5
-# Remove the comment flags for the auth handler lines (special format on those is #-)
-sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
-%endif
 
 # -- post - pulp client ------------------------------------------------------
 
