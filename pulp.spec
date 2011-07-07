@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.203
+Version:        0.0.204
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -307,6 +307,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 07 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.204-1
+- Update pulp.spec to install repo_auth.wsgi correctly and no longer need to
+  uncomment lines for mod_python (jslagle@redhat.com)
+- Move repo_auth.wsgi to /srv (jslagle@redhat.com)
+- 696669 fix unit tests for oid validation updates (jslagle@redhat.com)
+- 696669 move repo auth to mod_wsgi access script handler and eliminate dep on
+  mod_python (jslagle@redhat.com)
+
 * Fri Jul 01 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.201-1
 - Bringing in line with latest Pulp build version (jason.dobies@redhat.com)
 
