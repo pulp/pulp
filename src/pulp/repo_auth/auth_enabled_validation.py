@@ -27,7 +27,7 @@ CONFIG_FILENAME = '/etc/pulp/repo_auth.conf'
 
 # -- framework------------------------------------------------------------------
 
-def authenticate(request):
+def authenticate(environ):
     '''
     Framework hook method.
     '''
