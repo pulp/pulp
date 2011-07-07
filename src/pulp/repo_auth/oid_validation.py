@@ -48,17 +48,18 @@ RELATIVE_URL = '/pulp/repos' # no trailing backslash; we take care of normalizin
 
 # -- framework -----------------------------------------------------------------
 
-def authenticate(request, config=None):
+def authenticate(environ, config=None):
     '''
     Framework hook method.
     '''
-    cert_pem = request.ssl_var_lookup('SSL_CLIENT_CERT')
+    cert_pem = environ["mod_ssl.var_lookup"]("SSL_CLIENT_CERT")
 
     if config is None:
         config = _config()
 
     validator = OidValidator(config)
-    valid = validator.is_valid(request.uri, cert_pem, request.log_error)
+    valid = validator.is_valid(environ["REQUEST_URI"], cert_pem,
+        environ["wsgi.errors"].write)
     return valid
 
 def _config():

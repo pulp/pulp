@@ -29,11 +29,11 @@ IDENTITY_CN = 'pulp-identity'
 
 # -- framework -----------------------------------------------------------------
 
-def authenticate(request):
+def authenticate(environ):
     '''
     Framework hook method.
     '''
-    cert_pem = request.ssl_var_lookup('SSL_CLIENT_CERT')
+    cert_pem = environ["mod_ssl.var_lookup"]("SSL_CLIENT_CERT")
 
     return _is_valid(cert_pem)
 
