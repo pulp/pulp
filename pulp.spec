@@ -210,12 +210,6 @@ rm -rf %{buildroot}
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
 
-# For Fedora, enable the mod_python handler in the httpd config
-%if 0%{?fedora} || 0%{?rhel} > 5
-# Remove the comment flags for the auth handler lines (special format on those is #-)
-sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
-%endif
-
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
@@ -267,6 +261,7 @@ fi
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/webservices.wsgi
 %attr(750, apache, apache) /srv/pulp/bootstrap.wsgi
+%attr(750, apache, apache) /srv/pulp/repo_auth.wsgi
 %attr(3775, apache, apache) /var/lib/pulp
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
