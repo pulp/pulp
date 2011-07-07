@@ -1,6 +1,6 @@
 Name:           mod_wsgi
 Version:        3.2
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        A WSGI interface for Python web applications in Apache
 
 Group:          System Environment/Libraries
@@ -52,6 +52,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jul 07 2011 James Slagle <jslagle@redhat.com> 3.2-5
+- Add missing wsgi.conf file (jslagle@redhat.com)
+
 * Thu Jul 07 2011 James Slagle <jslagle@redhat.com> 3.2-4
 - new package built with tito
 
