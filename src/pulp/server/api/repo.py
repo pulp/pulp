@@ -464,7 +464,7 @@ class RepoApi(BaseApi):
     @audit()
     def delete(self, id, keep_files=False):
         repo = self._get_existing_repo(id)
-        log.info("Delete API call invoked %s" % repo)
+        log.info("Delete API call invoked %s" % repo['id'])
 
         # delete scheduled syncs, if any
         delete_repo_schedule(repo)
