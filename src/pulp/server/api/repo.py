@@ -1913,6 +1913,10 @@ class RepoApi(BaseApi):
          @param id: repository id
         """
         repo = self._get_existing_repo(id)
+        if repo['preserve_metadata']:
+            msg = "Metadata for repo [%s] is set to be preserved. Cannot re-generate metadata" % id
+            log.info(msg)
+            raise PulpException(msg) 
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):

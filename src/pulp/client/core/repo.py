@@ -896,7 +896,7 @@ class GenerateMetadata(RepoAction):
             finish_time = None
             if task['finish_time']:
                 finish_time = str(parse_iso8601_datetime(task['finish_time']))
-            status = constants.METADATA_STATUS % (task['id'], task['state'], start_time, finish_time)
+            status = constants.METADATA_STATUS % (task['id'], task['state'], task['exception'], start_time, finish_time)
             system_exit(os.EX_OK, _(status))
         else:
             task = self.repository_api.generate_metadata(id)
