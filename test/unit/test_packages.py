@@ -132,9 +132,9 @@ class TestApi(testutil.PulpAsyncTest):
                 release=test_release, arch=test_arch, description=test_description,
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         result = self.package_api.package_dependency(["test_package_versions_name"], ["some-id"])
-        self.assertTrue(result['dependency_list'] == '')
+        self.assertTrue(result['printable_dependency_result'] == '')
         result = self.package_api.package_dependency(["test_package_versions_name"], ["some-id"], recursive=1)
-        self.assertTrue(result['dependency_list'] == '')
+        self.assertTrue(result['printable_dependency_result'] == '')
 
 
     def test_package_filenames_descriptions(self):

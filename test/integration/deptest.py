@@ -14,12 +14,16 @@ rapi = RepoApi()
 papi = PackageApi()
 
 def recursive_deps(pnames, repos):
-    solved = papi.package_dependency(pnames, repos, recursive=0)['available_packages']
+    solved = papi.package_dependency(pnames, repos, recursive=0)
     print "========= Non Recursive Results ============\n"
-    print_deps(solved)
-    solved = papi.package_dependency(pnames, repos, recursive=1)['available_packages']
+    print_deps(solved['available_packages'])
+    print "========= Missing Dependencies =========\n"
+    print(solved['unresolved_dependencies'])
+    solved = papi.package_dependency(pnames, repos, recursive=1)
     print "========= Recursive Results ============\n"
-    print_deps(solved)
+    print_deps(solved['available_packages'])
+    print "========= Missing Dependencies =========\n"
+    print(solved['unresolved_dependencies'])
 
 def print_deps(deps):
     print "# of deps: %s\n" % len(deps)

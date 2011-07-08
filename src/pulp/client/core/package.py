@@ -293,12 +293,12 @@ class DependencyList(PackageAction):
         if not repos:
             system_exit(os.EX_DATAERR)
         deps = self.service_api.dependencies(pnames, repos)
-        if not deps['dependency_list']:
+        if not deps['printable_dependency_result']:
             system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
                         (pnames, repos))
         print_header(_("Dependencies for package(s) [%s]" % pnames))
 
-        print deps['dependency_list']
+        print deps['printable_dependency_result']
         print_header(_("Suggested Packages in Repo [%s]" % repos))
         if not deps['available_packages']:
             system_exit(os.EX_OK, _("None"))

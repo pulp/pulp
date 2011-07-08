@@ -95,10 +95,10 @@ class DepSolver:
             log.debug("Solving %s \n\n" % to_solve)
             results = self.getDependencylist()
             all_results.update(results)
-            deps = self.processResults(results)
+            found = self.processResults(results)[0]
             solved += to_solve
             to_solve = []
-            for dep in deps:
+            for dep in found:
                 name, version, epoch, release, arch = dep
                 ndep = "%s-%s-%s.%s" % (name, version, release, arch)
                 solved = list(set(solved))
@@ -134,6 +134,7 @@ class DepSolver:
 
     def processResults(self, results):
         reqlist = []
+        notfound = []
         for pkg in results:
             if len(results[pkg]) == 0:
                 continue
@@ -141,15 +142,16 @@ class DepSolver:
                 rlist = results[pkg][req]
                 if not rlist:
                     # Unsatisfied dependency
+                    notfound.append(prco_tuple_to_string(req))
                     continue
                 reqlist.append(rlist)
-        deps = []
+        found = []
         for req in reqlist:
             for r in req:
                 dep = [r.name, r.version, r.epoch, r.release, r.arch]
-                if dep not in deps:
-                    deps.append(dep)
-        return deps
+                if dep not in found:
+                    found.append(dep)
+        return found, notfound
 
     def printable_result(self, results):
         print_doc_str = ""
