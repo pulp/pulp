@@ -806,72 +806,85 @@ class LocalSynchronizer(BaseSynchronizer):
                 updateinfo_path = None
                 prestodelta_path = None
                 src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
+                base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db']
                 if os.path.isfile(src_repomd_xml):
                     ftypes = pulp.server.util.get_repomd_filetypes(src_repomd_xml)
-                    log.debug("repodata has filetypes of %s" % (ftypes))
-                    if "group" in ftypes:
-                        g = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "group")
-                        src_groups = os.path.join(src_repo_dir, g)
-                        if os.path.isfile(src_groups):
-                            shutil.copy(src_groups,
-                                os.path.join(dst_repo_dir, os.path.basename(src_groups)))
-                            log.debug("Copied groups over to %s" % (dst_repo_dir))
-                        groups_xml_path = os.path.join(dst_repo_dir,
-                            os.path.basename(src_groups))
-                    if "updateinfo" in ftypes and (not skip_dict.has_key('errata') or skip_dict['errata'] != 1):
-                        f = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
-                        src_updateinfo_path = os.path.join(src_repo_dir, f)
-                        if os.path.isfile(src_updateinfo_path):
-                            # Copy the updateinfo metadata to 'updateinfo.xml'
-                            # We want to ensure modifyrepo is run with updateinfo
-                            # called 'updateinfo.xml', this result in correct
-                            # metadata type
-                            #
-                            # updateinfo reported from repomd.xml may be gzipped,
-                            # if it is uncompress and copy to updateinfo.xml
-                            # along side of packages in repo
-                            #
-                            f = src_updateinfo_path.endswith('.gz') and gzip.open(src_updateinfo_path) \
-                                    or open(src_updateinfo_path, 'rt')
-                            shutil.copyfileobj(f, open(
-                                os.path.join(dst_repo_dir, "updateinfo.xml"), "wt"))
-                            log.debug("Copied %s to %s" % (src_updateinfo_path, dst_repo_dir))
-                            updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
-                    else:
-                        log.info("Skipping errata imports from sync process")
-                    if "prestodelta" in ftypes and (not skip_dict.has_key('packages') or skip_dict['packages'] != 1):
-                        drpm_meta = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "prestodelta")
-                        src_presto_path = os.path.join(src_repo_dir, drpm_meta)
-                        if os.path.isfile(src_presto_path):
-                            f = src_presto_path.endswith('.gz') and gzip.open(src_presto_path) \
+                    md_type_files = {}
+                    for ftype in ftypes:
+                        if ftype in base_ftypes:
+                            continue
+                        log.debug("repodata has filetypes of %s" % (ftypes))
+                        if "group" == ftype:
+                            g = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "group")
+                            src_groups = os.path.join(src_repo_dir, g)
+                            if os.path.isfile(src_groups):
+                                shutil.copy(src_groups,
+                                    os.path.join(dst_repo_dir, os.path.basename(src_groups)))
+                                log.debug("Copied groups over to %s" % (dst_repo_dir))
+                            groups_xml_path = os.path.join(dst_repo_dir,
+                                os.path.basename(src_groups))
+                            md_type_files[ftype] = groups_xml_path
+                        elif "updateinfo" == ftype and (not skip_dict.has_key('errata') or skip_dict['errata'] != 1):
+                            f = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
+                            src_updateinfo_path = os.path.join(src_repo_dir, f)
+                            if os.path.isfile(src_updateinfo_path):
+                                # Copy the updateinfo metadata to 'updateinfo.xml'
+                                # We want to ensure modifyrepo is run with updateinfo
+                                # called 'updateinfo.xml', this result in correct
+                                # metadata type
+                                #
+                                # updateinfo reported from repomd.xml may be gzipped,
+                                # if it is uncompress and copy to updateinfo.xml
+                                # along side of packages in repo
+                                #
+                                f = src_updateinfo_path.endswith('.gz') and gzip.open(src_updateinfo_path) \
+                                        or open(src_updateinfo_path, 'rt')
+                                shutil.copyfileobj(f, open(
+                                    os.path.join(dst_repo_dir, "updateinfo.xml"), "wt"))
+                                log.debug("Copied %s to %s" % (src_updateinfo_path, dst_repo_dir))
+                                updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
+                                md_type_files[ftype] = updateinfo_path
+                            else:
+                                log.info("Skipping errata imports from sync process")
+                        elif "prestodelta" == ftype and (not skip_dict.has_key('packages') or skip_dict['packages'] != 1):
+                            drpm_meta = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "prestodelta")
+                            src_presto_path = os.path.join(src_repo_dir, drpm_meta)
+                            if os.path.isfile(src_presto_path):
+                                f = src_presto_path.endswith('.gz') and gzip.open(src_presto_path) \
                                     or open(src_presto_path, 'rt')
-                            shutil.copyfileobj(f, open(
-                                os.path.join(dst_repo_dir, "prestodelta.xml"), "wt"))
-                            log.debug("Copied %s to %s" % (src_presto_path, dst_repo_dir))
-                            prestodelta_path = os.path.join(dst_repo_dir, "prestodelta.xml")
-                if not repo['preserve_metadata']:
-                    if progress_callback is not None:
-                        self.progress["step"] = "Running Createrepo"
-                        progress_callback(self.progress)
-                    log.info("Running createrepo, this may take a few minutes to complete.")
-                    start = time.time()
-                    pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path, checksum_type=repo['checksum_type'])
-                    end = time.time()
-                    log.info("Createrepo finished in %s seconds" % (end - start))
-                    if prestodelta_path:
-                        log.debug("Modifying repo for prestodelta")
+                                shutil.copyfileobj(f, open(
+                                    os.path.join(dst_repo_dir, "prestodelta.xml"), "wt"))
+                                log.debug("Copied %s to %s" % (src_presto_path, dst_repo_dir))
+                                prestodelta_path = os.path.join(dst_repo_dir, "prestodelta.xml")
+                                md_type_files[ftype] = prestodelta_path
+                        else:
+                            f_type = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, ftype)
+                            src_f_type = os.path.join(src_repo_dir, f_type)
+                            if os.path.isfile(src_f_type):
+                                shutil.copy(src_f_type,
+                                    os.path.join(dst_repo_dir, os.path.basename(src_f_type)))
+                                log.debug("Copied groups over to %s" % (dst_repo_dir))
+                            f_type_xml_path = os.path.join(dst_repo_dir,
+                                os.path.basename(src_f_type))
+                            renamed_filetype_path = os.path.join(os.path.dirname(f_type_xml_path), \
+                                         ftype + '.' + '.'.join(os.path.basename(f_type_xml_path).split('.')[1:]))
+                            os.rename(f_type_xml_path,  renamed_filetype_path)
+                            md_type_files[ftype] = renamed_filetype_path
+                    if not repo['preserve_metadata']:
                         if progress_callback is not None:
-                            self.progress["step"] = "Running Modifyrepo for prestodelta metadata"
+                            self.progress["step"] = "Running Createrepo"
                             progress_callback(self.progress)
-                        pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
-                                prestodelta_path)
-                    if updateinfo_path:
-                        log.debug("Modifying repo for updateinfo")
-                        if progress_callback is not None:
-                            self.progress["step"] = "Running Modifyrepo for updateinfo metadata"
-                            progress_callback(self.progress)
-                        pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
-                                updateinfo_path)
+                        log.info("Running createrepo, this may take a few minutes to complete.")
+                        start = time.time()
+                        pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path, checksum_type=repo['checksum_type'])
+                        end = time.time()
+                        log.info("Createrepo finished in %s seconds" % (end - start))
+                        for ftype, path in md_type_files.items():
+                            log.debug("Modifying repo for %s" % ftype)
+                            if progress_callback is not None:
+                                self.progress["step"] = "Running Modifyrepo for %s metadata" % ftype
+                                progress_callback(self.progress)
+                            pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"), path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))
             raise
