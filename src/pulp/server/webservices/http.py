@@ -139,7 +139,7 @@ def _is_basic_auth(credentials):
     @return: True if the credentials are for http basic authorization,
              False otherwise
     """
-    if len(credentials) < 5:
+    if len(credentials) <= 5:
         return False
     type = credentials[:5].lower()
     return type == 'basic'
