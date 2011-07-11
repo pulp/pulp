@@ -52,6 +52,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jul 11 2011 James Slagle <jslagle@redhat.com> 3.2-3.sslpatch
+- Don't use epoch after all, use a custom release (jslagle@redhat.com)
+- Reset release to 3 and use epoch to distinguish our mod_wsgi package
+  (jslagle@redhat.com)
+
 * Thu Jul 07 2011 James Slagle <jslagle@redhat.com> 3.2-5
 - Add missing wsgi.conf file (jslagle@redhat.com)
 
