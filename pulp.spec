@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.204
+Version:        0.0.205
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -314,6 +314,160 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jul 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.205-1
+- Fix check for basic auth (jslagle@redhat.com)
+- Add a header that sets a blank Basic authorization for every request, needed
+  for repo auth.  Remove the blank authorization when validating from the API
+  side. (jslagle@redhat.com)
+- changing local syncs to account for all metadata (pkilambi@redhat.com)
+- Add dist to required relase for mod_wsgi (jslagle@redhat.com)
+- Add required mod_wsgi to spec file (jslagle@redhat.com)
+- Automatic commit of package [mod_wsgi] minor release [3.2-3.sslpatch].
+  (jslagle@redhat.com)
+- check metadata preservation when add/remove on repositories
+  (pkilambi@redhat.com)
+- Adding checks to see if repo has metadata preserved before regenerating
+  (pkilambi@redhat.com)
+- 719955 - log.info is trying to print an entire repo object instead of just
+  the id spamming the pulp logs during delete (pkilambi@redhat.com)
+- 703878 - RFE: Exposing the unresolved dependencies  in the package dependency
+  result (pkilambi@redhat.com)
+- Make same repo_auth changes for pulp cds (jslagle@redhat.com)
+- Update pulp.spec to install repo_auth.wsgi correctly and no longer need to
+  uncomment lines for mod_python (jslagle@redhat.com)
+- Move repo_auth.wsgi to /srv (jslagle@redhat.com)
+- 696669 fix unit tests for oid validation updates (jslagle@redhat.com)
+- 696669 move repo auth to mod_wsgi access script handler and eliminate dep on
+  mod_python (jslagle@redhat.com)
+- fixing help (pkilambi@redhat.com)
+- fixing exit messages to refer filetype as metadata type (pkilambi@redhat.com)
+- Add missing wsgi.conf file (jslagle@redhat.com)
+- Automatic commit of package [pulp] release [0.0.203-1]. (jslagle@redhat.com)
+- Add mod_wsgi rpm build to pulp (jslagle@redhat.com)
+- 669759 - typo, missing word "is" in schedule time is in past message
+  (jmatthews@redhat.com)
+- converted all auditing events to use utc (jconnor@redhat.com)
+- added query parametes to GET method (jconnor@redhat.com)
+- using $in for union and $all for intersection operations (jconnor@redhat.com)
+- added collection query decorator (jconnor@redhat.com)
+- gutted decorator to simply parse the query parameter and pass in a keyword
+  filters argument (jconnor@redhat.com)
+- added _ prefix to common query parameters (jconnor@redhat.com)
+- fix issue downloading sqlite db metadata files (pkilambi@redhat.com)
+- fixing help for download metadata (pkilambi@redhat.com)
+- Add a helper mock function to testutil, also keeps track of all mocks to make
+  sure everything is unmocked in tearDown (jslagle@redhat.com)
+- make sure run_async gets unmocked (jslagle@redhat.com)
+- Incremented to match latest rhui version (jason.dobies@redhat.com)
+- 718287 - Pulp is inconsistent with what it stores in relative URL, so
+  changing from a startswith to a find for the protected repo retrieval.
+  (jason.dobies@redhat.com)
+- Move towards using mock library for now since dingus has many python 2.4
+  incompatibilities (jslagle@redhat.com)
+- 715071 - lowering the log level during repo delete to debug
+  (pkilambi@redhat.com)
+- Update createrepo login in pulp to account for custom metadata; also rename
+  the backup file before running modifyrepo to preserve the mdtype
+  (pkilambi@redhat.com)
+- renaming metadata call to generate_metadata (pkilambi@redhat.com)
+- Custom Metadata support: (pkilambi@redhat.com)
+- added args to returned serialized task (jconnor@redhat.com)
+- converted timestamp to utc (jconnor@redhat.com)
+- Refactor __del__ into a cancel_dispatcher method that is meant to be called
+  (jslagle@redhat.com)
+- Pulp now uses profile module from python-rhsm and requires it
+  (pkilambi@redhat.com)
+- added tzinfo to start and end dates (jconnor@redhat.com)
+- added task cancel command (jconnor@redhat.com)
+- changed cds history query to properly deal with iso8601 timestamps
+  (jconnor@redhat.com)
+- Importing python-rhsm source into pulp (pkilambi@redhat.com)
+- 712083 - changing the error message to warnings (pkilambi@redhat.com)
+- Adding a preserve metadata as an option at repo creation time. More info
+  about feature  can be found at
+  https://fedorahosted.org/pulp/wiki/PreserveMetadata (pkilambi@redhat.com)
+- 715504 - Apache's error_log also generating pulp log messages
+  (jmatthews@redhat.com)
+- replacing query_by_bz and query_by_cve functions by advanced mongo queries
+  for better performance and cleaner implementation (skarmark@redhat.com)
+- Bump to gofer 0.42 (just to keep projects aligned). (jortel@redhat.com)
+- added some ghetto date format validation (jconnor@redhat.com)
+- converting expected iso8601 date string to datetime instance
+  (jconnor@redhat.com)
+- added iso8601 parsing and formating methods for date (only) instances
+  (jconnor@redhat.com)
+- errata enhancement api and cli changes for bugzilla and cve search
+  (skarmark@redhat.com)
+- 713742 - patch by Chris St. Pierre fixed improper rlock instance detection in
+  get state for pickling (jconnor@redhat.com)
+- 714046 - added login to string substitution (jconnor@redhat.com)
+- added new controller for generic task cancelation (jconnor@redhat.com)
+  (jason.dobies@redhat.com)
+- Move repos under /var/lib/pulp-cds/repos so we don't serve packages straight
+  up (jason.dobies@redhat.com)
+- Tell grinder to use a single location for package storage.
+  (jason.dobies@redhat.com)
+- converting timedelta to duration in order to properly format it
+  (jconnor@redhat.com)
+- 706953, 707986 - allow updates to modify existing schedule instead of having
+  to re-specify the schedule in its entirety (jconnor@redhat.com)
+- 709488 Use keyword arg for timeout value, and fix help messages for timeout
+  values (jslagle@redhat.com)
+- Added CDS sync history to CDS CLI API (jason.dobies@redhat.com)
+- Added CLI API call for repo sync history (jason.dobies@redhat.com)
+- changed scheduled task behavior to reset task states on enqueue instead of on
+  run (jconnor@redhat.com)
+- added conditional to avoid calling release on garbage collected lock
+  (jconnor@redhat.com)
+- only release the lock in the dispatcher on exit as we are no longer killing
+  the thread on errors (jconnor@redhat.com)
+- 691962 - repo clone should not clone files along with packages and errata
+  (skarmark@redhat.com)
+- adding id to repo delete error message to find culprit repo
+  (skarmark@redhat.com)
+- 714745 - added initial parsing call for start and end dates of cds history so
+  that we convert a datetime object to local tz instead of a string
+  (jconnor@redhat.com)
+- 714691 - fixed type that caused params to resolve to an instance method
+  instead of a local variable (jconnor@redhat.com)
+- Cast itertools.chain to tuple so that it can be iterated more than once, it
+  happens in both from_snapshot and to_snapshot (jslagle@redhat.com)
+- 713493 - fixed auth login to relogin new credentials; will just replace
+  existing user certs with new ones (pkilambi@redhat.com)
+- Bump website to CR13. (jortel@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (jslagle@redhat.com)
+- 709500 Fix scheduling of package install using --when parameter
+  (jslagle@redhat.com)
+- Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
+- 707295 - removed relativepath from repo update; updated feed update logic to
+  check if relative path matches before allowing update (pkilambi@redhat.com)
+- In a consumer case, password can be none, let it return the user
+  (pkilambi@redhat.com)
+- updated log config for rhel5, remove spaces from 'handlers'
+  (jmatthews@redhat.com)
+- Fix to work around http://bugs.python.org/issue3136 in python 2.4
+  (jmatthews@redhat.com)
+- Updates for Python 2.4 logging configuration file (jmatthews@redhat.com)
+- Pulp logging now uses configuration file from /etc/pulp/logging
+  (jmatthews@redhat.com)
+- adding new createrepo as a dependency for el5 builds (pkilambi@redhat.com)
+- 709514 - error message for failed errata install for consumer and
+  consumergroup corrected (skarmark@redhat.com)
+- Adding newer version of createrepo for pulp on el5 (pkilambi@redhat.com)
+- Tell systemctl to ignore deps so that our init script works correctly on
+  Fedora 15 (jslagle@redhat.com)
+- 713183 - python 2.4 compat patch (pkilambi@redhat.com)
+-  Patch from Chris St. Pierre <chris.a.st.pierre@gmail.com> :
+  (pkilambi@redhat.com)
+- 713580 - fixing wrong list.remove in blacklist filter application logic in
+  repo sync (skarmark@redhat.com)
+- 669520 python 2.4 compat fix (jslagle@redhat.com)
+- 713176 - Changed user certificate expirations to 1 week. Consumer certificate
+  expirations, while configurable, remain at the default of 10 years.
+  (jason.dobies@redhat.com)
+- bz# 669520 handle exception during compilation of invalid regular expression
+  so that we can show the user a helpful message (jslagle@redhat.com)
 
 * Thu Jul 07 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.204-1
 - Update pulp.spec to install repo_auth.wsgi correctly and no longer need to
