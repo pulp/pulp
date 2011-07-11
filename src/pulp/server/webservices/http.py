@@ -153,6 +153,10 @@ def _basic_username_password(credentials):
     if not _whitespace_regex.match(credentials):
         raise HTTPAuthError('malformed basic authentication information')
     encoded_str = _whitespace_regex.split(credentials, 1)[1].strip()
+    # All requests come in with a blank Basic authorization (for repo auth),
+    # in addition to one that may be specified.  Remove the blank one.
+    if encoded_str.endswith(', Basic'):
+        encoded_str = encoded_str[:-7]
     decoded_str = base64.decodestring(encoded_str)
     if decoded_str.find(':') < 0:
         raise HTTPAuthError('malformed basic authentication information')
