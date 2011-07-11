@@ -1074,24 +1074,6 @@ class TestRepoApi(testutil.PulpAsyncTest):
             failed = True
         assert(failed)
 
-    def test_local_sync(self):
-        my_dir = os.path.abspath(os.path.dirname(__file__))
-        datadir = my_dir + "/data/"
-        repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'file://%s' % datadir)
-
-        repo_sync._sync(repo['id'])
-        found = self.repo_api.repository(repo['id'])
-        packages = found['packages']
-        assert(packages is not None)
-        assert(len(packages) > 0)
-        p = packages[0]
-        assert(p is not None)
-        # versions = p['versions']
-
-
-
-
     def test_local_sync_callback(self):
         # We need report to be accesible for writing by the callback
         global report
