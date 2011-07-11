@@ -32,7 +32,6 @@ Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
 Requires: grinder >= 0.0.102
 Requires: httpd
-Requires: mod_wsgi
 Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
@@ -40,6 +39,7 @@ Requires: python-ldap
 Requires: python-gofer >= 0.42
 Requires: crontabs
 Requires: acl
+Requires: mod_wsgi = 3.2-3.sslpatch
 %if 0%{?fedora} > 14 
 Requires: mongodb = 1.7.5
 Requires: mongodb-server = 1.7.5
@@ -113,7 +113,7 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.42
 Requires:       grinder
 Requires:       httpd
-Requires:       mod_wsgi
+Requires:       mod_wsgi = 3.2-3.sslpatch
 Requires:       mod_ssl
 Requires:       m2crypto
 
