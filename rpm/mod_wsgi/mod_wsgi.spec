@@ -1,7 +1,6 @@
 Name:           mod_wsgi
 Version:        3.2
-Release:        3%{?dist}
-Epoch:          ssl-patch
+Release:        3.sslpatch%{?dist}
 Summary:        A WSGI interface for Python web applications in Apache
 
 Group:          System Environment/Libraries
