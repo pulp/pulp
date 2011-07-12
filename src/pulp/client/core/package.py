@@ -300,10 +300,11 @@ class DependencyList(PackageAction):
 
         print deps['printable_dependency_result']
         print_header(_("Suggested Packages in Repo [%s]" % repos))
-        if not deps['available_packages']:
+        if not deps['resolved']:
             system_exit(os.EX_OK, _("None"))
-        for pkg in deps['available_packages']:
-            print str(pkg['filename'])
+        for dep, pkgs in deps['resolved'].items():
+            for pkg in pkgs:
+                print str(pkg['filename'])
 
 # package command -------------------------------------------------------------
 

@@ -244,19 +244,21 @@ class PackageApi(BaseApi):
         else:
             results = dsolve.getDependencylist()
         solved, unsolved = dsolve.processResults(results)
-        pkgs = []
+        dep_pkgs_map = {}
         log.info(" results from depsolver %s" % results)
-        for dep in solved:
-            name, version, epoch, release, arch = dep
-            epkg = self.package_by_ivera(name, version, epoch, release, arch)
-            if not epkg:
-                continue
-            pkgs.append(epkg)
+        for dep, pkgs in solved.items():
+            dep_pkgs_map[dep] = []
+            for pkg in pkgs:
+                name, version, epoch, release, arch = pkg
+                epkg = self.package_by_ivera(name, version, epoch, release, arch)
+                if not epkg:
+                    continue
+                dep_pkgs_map[dep].append(epkg)
         dsolve.cleanup()
-        log.info("deps packages suggested %s" % solved)
+        log.debug("deps packages suggested %s" % solved)
         return {'printable_dependency_result' : dsolve.printable_result(results),
-                'available_packages' :pkgs,
-                'unresolved_dependencies' : unsolved}
+                'resolved' :dep_pkgs_map,
+                'unresolved' : unsolved}
 
     def package_checksum(self, filename):
         """

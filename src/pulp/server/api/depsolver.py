@@ -98,12 +98,13 @@ class DepSolver:
             found = self.processResults(results)[0]
             solved += to_solve
             to_solve = []
-            for dep in found:
-                name, version, epoch, release, arch = dep
-                ndep = "%s-%s-%s.%s" % (name, version, release, arch)
-                solved = list(set(solved))
-                if ndep not in solved:
-                    to_solve.append(ndep)
+            for dep, pkgs in found.items():
+                for pkg in pkgs:
+                    name, version, epoch, release, arch = pkg
+                    ndep = "%s-%s-%s.%s" % (name, version, release, arch)
+                    solved = list(set(solved))
+                    if ndep not in solved:
+                        to_solve.append(ndep)
             self.pkgs = to_solve
 #        log.debug("difference:: %s \n\n" % list(set(to_solve) - set(solved)))
         return all_results
@@ -133,8 +134,8 @@ class DepSolver:
             return ListPackageSack(self._repostore.pkgSack.searchProvides(name))
 
     def processResults(self, results):
-        reqlist = []
-        notfound = []
+        reqlist = {}
+        notfound = {}
         for pkg in results:
             if len(results[pkg]) == 0:
                 continue
@@ -142,15 +143,16 @@ class DepSolver:
                 rlist = results[pkg][req]
                 if not rlist:
                     # Unsatisfied dependency
-                    notfound.append(prco_tuple_to_string(req))
+                    notfound[prco_tuple_to_string(req)] = []
                     continue
-                reqlist.append(rlist)
-        found = []
-        for req in reqlist:
-            for r in req:
+                reqlist[prco_tuple_to_string(req)] = rlist
+        found = {}
+        for req, rlist in reqlist.items():
+            found[req] = []
+            for r in rlist:
                 dep = [r.name, r.version, r.epoch, r.release, r.arch]
-                if dep not in found:
-                    found.append(dep)
+                if dep not in found[req]:
+                    found[req].append(dep)
         return found, notfound
 
     def printable_result(self, results):

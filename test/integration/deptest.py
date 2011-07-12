@@ -16,19 +16,20 @@ papi = PackageApi()
 def recursive_deps(pnames, repos):
     solved = papi.package_dependency(pnames, repos, recursive=0)
     print "========= Non Recursive Results ============\n"
-    print_deps(solved['available_packages'])
+    print_deps(solved['resolved'])
     print "========= Missing Dependencies =========\n"
-    print(solved['unresolved_dependencies'])
+    print(solved['unresolved'])
     solved = papi.package_dependency(pnames, repos, recursive=1)
     print "========= Recursive Results ============\n"
-    print_deps(solved['available_packages'])
+    print_deps(solved['resolved'])
     print "========= Missing Dependencies =========\n"
-    print(solved['unresolved_dependencies'])
+    print(solved['unresolved'])
 
 def print_deps(deps):
-    print "# of deps: %s\n" % len(deps)
-    for dep in deps:
-        print make_nvrea(dep['name'], dep['version'], dep['release'], dep['arch'])
+    print "# of deps: %s\n" % deps
+    for dep, pkgs in deps.items():
+        for pkg in pkgs:
+            print make_nvrea(pkg['name'], pkg['version'], pkg['release'], pkg['arch'])
 
 def solve_deps(pnames, repos):
     solved = []
