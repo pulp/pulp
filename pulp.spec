@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.205
+Version:        0.0.206
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -309,6 +309,8 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Jul 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.206-1
+- removing mongo 1.7.5 restriction on pulp f15 (pkilambi@redhat.com)
 * Mon Jul 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.205-1
 - Fix check for basic auth (jslagle@redhat.com)
 - Add a header that sets a blank Basic authorization for every request, needed
