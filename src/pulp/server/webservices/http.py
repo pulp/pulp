@@ -128,7 +128,10 @@ def http_authorization():
     @return: str representing the http authorization credentials if found,
              None otherwise
     """
-    return request_info('HTTP_AUTHORIZATION')
+    auth = request_info('HTTP_AUTHORIZATION')
+    if auth.endswith(', Basic'):
+        auth = auth[:-7]
+    return auth
 
 
 def _is_basic_auth(credentials):
