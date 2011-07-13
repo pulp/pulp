@@ -98,6 +98,10 @@ class Install(PackageAction):
         self.parser.add_option("--when", dest="when", default=None,
                                help=_("specifies when to execute the install.  "
                                "Format: iso8601, YYYY-MM-DDThh:mm"))
+        self.parser.add_option("--wait", dest="wait", default=False,
+            action="store_true",
+            help=_("if specified, wait for the package install to finish, "
+            "otherwise return once the the install has been scheduled."))
 
     def run(self):
         consumerid = self.opts.consumerid
@@ -169,20 +173,23 @@ class Install(PackageAction):
                 print id
 
     def getwait(self, ids):
-        wait = True
+        wait = self.opts.wait
         ualist = self.getunavailable(ids)
         if ualist:
             self.printunavailable(ualist)
             if not self.askcontinue():
                 system_exit(0)
-            wait = self.askwait()
+            # The consumer is unavailable, if wait was specified, verify that
+            # we still want to wait.
+            if self.opts.wait:
+                wait = self.askwait()
         return wait
 
     def askcontinue(self):
         return self.askquestion('\nContinue? [y/n]:')
 
     def askwait(self):
-        return self.askquestion('\nWait? [y/n]:')
+        return self.askquestion('\nStill Wait? [y/n]:')
 
     def askquestion(self, question):
         while True:
