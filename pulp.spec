@@ -40,10 +40,6 @@ Requires: python-gofer >= 0.37
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
-%if 0%{?fedora} > 14 
-Requires: mongodb = 1.7.5
-Requires: mongodb-server = 1.7.5
-%else
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
