@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.207
+Version:        0.0.208
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -309,6 +309,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.208-1
+- Incremented to match latest RHUI version (jortel@redhat.com)
+
 * Thu Jul 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.207-1
 - Fix reference to field variable (jslagle@redhat.com)
 - Adding script to display mongodb file space usage statistics
