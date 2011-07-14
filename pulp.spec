@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.207
+Version:        0.0.208
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -307,6 +307,31 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 14 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.208-1
+- typo in conf file (jconnor@redhat.com)
+- added config option to toggle auditing (jconnor@redhat.com)
+- Check for None auth before trying to remove emtpy basic http authorization
+  (jslagle@redhat.com)
+- Switch to using append option instead of merge.  merge is not available on
+  rhel 5's apache (jslagle@redhat.com)
+- Fix reference to field variable (jslagle@redhat.com)
+- 721021 remove empty Basic auth from end of authorization header if specified
+  (jslagle@redhat.com)
+- Fix check for basic auth (jslagle@redhat.com)
+- Add a header that sets a blank Basic authorization for every request, needed
+  for repo auth.  Remove the blank authorization when validating from the API
+  side. (jslagle@redhat.com)
+- Add dist to required relase for mod_wsgi (jslagle@redhat.com)
+- Cherry pick d1b8a47445ceca57a9412b86d4c67a3634ed514d from master
+  (jslagle@redhat.com)
+- Automatic commit of package [mod_wsgi] minor release [3.2-3.sslpatch].
+  (jslagle@redhat.com)
+- Don't use epoch after all, use a custom release (jslagle@redhat.com)
+- Reset release to 3 and use epoch to distinguish our mod_wsgi package
+  (jslagle@redhat.com)
+- 719955 - log.info is trying to print an entire repo object instead of just
+  the id spamming the pulp logs during delete (pkilambi@redhat.com)
+
 * Thu Jul 07 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.204-1
 - Update pulp.spec to install repo_auth.wsgi correctly and no longer need to
   uncomment lines for mod_python (jslagle@redhat.com)
