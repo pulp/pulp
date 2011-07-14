@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.208
+Version:        0.0.209
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -309,6 +309,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.209-1
+- typo in conf file (jconnor@redhat.com)
+- added config option to toggle auditing (jconnor@redhat.com)
+- Check for None auth before trying to remove emtpy basic http authorization
+  (jslagle@redhat.com)
+- Switch to using append option instead of merge.  merge is not available on
+  rhel 5's apache (jslagle@redhat.com)
 * Thu Jul 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.208-1
 - Incremented to match latest RHUI version (jortel@redhat.com)
 
