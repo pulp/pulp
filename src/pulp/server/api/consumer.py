@@ -714,7 +714,7 @@ class InstallPackageGroups(AgentTask):
     def from_snapshot(cls, snapshot):
         task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['groups'])
         for field in task._copy_fields:
-            setattr(task, field, snapshot['field'])
+            setattr(task, field, snapshot[field])
         for field in task._pickle_fields:
             setattr(task, field, pickle.loads(snapshot[field]))
         task.snapshot_id = snapshot['_id']
