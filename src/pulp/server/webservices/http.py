@@ -129,7 +129,7 @@ def http_authorization():
              None otherwise
     """
     auth = request_info('HTTP_AUTHORIZATION')
-    if auth.endswith(', Basic'):
+    if auth is not None and auth.endswith(', Basic'):
         auth = auth[:-7]
     return auth
 
