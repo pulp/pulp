@@ -163,6 +163,10 @@ def audit(params=None, record_result=False):
     """
     def _audit_decorator(method):
 
+        # don't even bother to decorate the method if auditing is turned off
+        if not config.config.getboolean('auditing', 'audit_events'):
+            return method
+
         inspector = MethodInspector(method, params)
 
         @wraps(method)

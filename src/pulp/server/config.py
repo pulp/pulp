@@ -24,6 +24,7 @@ config = None # ConfigParser.SafeConfigParser instance
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
     'auditing': {
+        'audit_events': 'false',
         'events_file': '/var/log/pulp/events.log',
         'lifetime': '90',
         'backups': '4',
