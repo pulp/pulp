@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.206
+Version:        0.0.207
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -309,6 +309,21 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.207-1
+- Fix reference to field variable (jslagle@redhat.com)
+- Adding script to display mongodb file space usage statistics
+  (jmatthews@redhat.com)
+- Updated pulpproject.org index to fix updated Pulp BZ Category -> Community
+  (tsanders@tsanders-x201.(none))
+- 709500 Add a command line option --wait that can specify if the user wants to
+  wait for the package install to finish or not.  If the consumer is
+  unavailable, confirm the wait option (jslagle@redhat.com)
+- Bump website to CR14. (jortel@redhat.com)
+- 721021 remove empty Basic auth from end of authorization header if specified
+  (jslagle@redhat.com)
+- Changing the result datastructure to be a dictionary of {dep:[pkgs]} fit
+  katello's needs (pkilambi@redhat.com)
+
 * Tue Jul 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.206-1
 - removing mongo 1.7.5 restriction on pulp f15 (pkilambi@redhat.com)
 * Mon Jul 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.205-1
