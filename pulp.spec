@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.209
+Version:        0.0.210
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -309,6 +309,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jul 15 2011 Jeff Ortel <jortel@redhat.com> 0.0.210-1
+- 722521 change --wait option to --nowait to restore previous behavior
+  (jslagle@redhat.com)
+- Expose Heartbeat.send() on agent as RMI for debugging.
+  (jortel@redhat.com)
+
 * Thu Jul 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.209-1
 - typo in conf file (jconnor@redhat.com)
 - added config option to toggle auditing (jconnor@redhat.com)
