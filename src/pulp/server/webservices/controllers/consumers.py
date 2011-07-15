@@ -47,7 +47,7 @@ user_api = UserApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
-default_fields = ['id', 'description', 'key_value_pairs']
+default_fields = ['id', 'description', 'key_value_pairs',]
 
 # controllers -----------------------------------------------------------------
 
@@ -293,7 +293,6 @@ class ConsumerActions(JSONController):
         'add_key_value_pair',
         'delete_key_value_pair',
         'update_key_value_pair',
-        'profile',
         'installpackages',
         'installpackagegroups',
         'installpackagegroupcategories',
@@ -376,16 +375,6 @@ class ConsumerActions(JSONController):
         if data['key'] not in key_value_pairs.keys():
             return self.conflict('Given key [%s] does not exist' % data['key'])
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
-        return self.ok(True)
-
-    def profile(self, id):
-        """
-        update/add Consumer profile information. eg:package, hardware etc
-        @type id: str
-        @param id: consumer id
-        """
-        log.debug("consumers.py profile() with id: %s" % id)
-        consumer_api.profile_update(id, self.params())
         return self.ok(True)
 
     def installpackages(self, id):
@@ -569,6 +558,25 @@ class ConsumerActionStatus(JSONController):
             return self.not_found('No %s with id %s found' % (action_name, action_id))
         return self.ok(task_info)
 
+class ConsumerProfileUpdate(JSONController):
+
+    @error_handler
+    @auth_required(UPDATE)
+    def PUT(self, id):
+        """
+        Update consumer's profile information
+        @param id: The consumer id
+        @type id: str
+        """
+        log.debug("PUT called on consumer profile update")
+        delta = self.params()
+        if id != delta.pop('id', id):
+            return self.bad_request('Cannot change the consumer id')
+        if not delta.has_key('package_profile') or not len(delta['package_profile']):
+            self.bad_request('No package profile information found for consumer [%s].' % id)
+        log.debug("Updating consumer Profile %s" % delta['package_profile'])
+        consumer_api.profile_update(id, delta['package_profile'])
+        return self.ok(True)
 
 # web.py application ----------------------------------------------------------
 
@@ -576,6 +584,7 @@ URLS = (
     '/$', 'Consumers',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
+    '/([^/]+)/package_profile/$', 'ConsumerProfileUpdate',
 
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields),
     'ConsumerDeferredFields',
@@ -585,6 +594,7 @@ URLS = (
 
     '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerActions.exposed_actions),
     'ConsumerActionStatus',
+
 )
 
 application = web.application(URLS, globals())

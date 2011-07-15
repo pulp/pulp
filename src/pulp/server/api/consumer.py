@@ -96,7 +96,7 @@ class ConsumerApi(BaseApi):
         for key, value in delta.items():
             # simple changes
             if key in ('description',):
-                erratum[key] = value
+                consumer[key] = value
                 continue
             # unsupported
             raise Exception, \
@@ -416,6 +416,7 @@ class ConsumerApi(BaseApi):
             raise PulpException('Consumer [%s] not found', id)
         consumer["package_profile"] = package_profile
         self.collection.save(consumer, safe=True)
+        log.info('Successfully updated package profile for consumer %s' % id)
 
     @audit()
     def installpackages(self, id, packagenames=()):

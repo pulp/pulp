@@ -47,7 +47,7 @@ def update_consumer_profile(cid):
     pulpserver()
     capi = ConsumerAPI()
     pkginfo = get_profile("rpm").collect()
-    capi.profile(cid, pkginfo)
+    capi.package_profile(cid, pkginfo)
 
 def posttrans_hook(conduit):
     """

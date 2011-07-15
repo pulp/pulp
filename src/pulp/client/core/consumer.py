@@ -210,7 +210,7 @@ class Update(ConsumerAction):
             system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
         pkginfo = get_profile("rpm").collect()
         try:
-            self.consumer_api.profile(consumer_id, pkginfo)
+            self.consumer_api.package_profile(consumer_id, pkginfo)
             print _("Successfully updated consumer [%s] profile") % consumer_id
         except:
             system_exit(os.EX_DATAERR, _("Error updating consumer [%s]." % consumer_id))

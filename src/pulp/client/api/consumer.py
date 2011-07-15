@@ -98,9 +98,10 @@ class ConsumerAPI(PulpAPI):
         path = "/consumers/%s/keyvalues/" % str(id)
         return self.server.GET(path)[1]
 
-    def profile(self, id, profile):
-        path = "/consumers/%s/profile/" % id
-        return self.server.POST(path, profile)[1]
+    def package_profile(self, id, profile):
+        path = "/consumers/%s/package_profile/" % id
+        delta = {'package_profile' : profile}
+        return self.server.PUT(path, delta)[1]
 
     def installpackages(self, id, packagenames, when=None):
         path = "/consumers/%s/installpackages/" % id
