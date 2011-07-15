@@ -78,7 +78,7 @@ def ybcleanup(yb):
 
 class Heartbeat:
     """
-    Send agent heartbeat.
+    Provide agent heartbeat.
     """
 
     __producer = None
@@ -93,6 +93,10 @@ class Heartbeat:
 
     @action(seconds=HEARTBEAT)
     def heartbeat(self):
+        return self.send()
+
+    @remote
+    def send(self):
         topic = Topic('heartbeat')
         delay = int(HEARTBEAT)
         bundle = ConsumerBundle()
@@ -101,8 +105,8 @@ class Heartbeat:
             p = self.producer()
             body = dict(uuid=myid, next=delay)
             p.send(topic, ttl=delay, heartbeat=body)
-        return self
-
+        return myid
+        
 
 class IdentityAction:
     """
