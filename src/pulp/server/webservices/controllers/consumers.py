@@ -570,6 +570,9 @@ class ConsumerProfileUpdate(JSONController):
         """
         log.debug("PUT called on consumer profile update")
         delta = self.params()
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.bad_request('Consumer [%s] does not exist' % id)
         if id != delta.pop('id', id):
             return self.bad_request('Cannot change the consumer id')
         if not delta.has_key('package_profile') or not len(delta['package_profile']):
@@ -577,6 +580,21 @@ class ConsumerProfileUpdate(JSONController):
         log.debug("Updating consumer Profile %s" % delta['package_profile'])
         consumer_api.profile_update(id, delta['package_profile'])
         return self.ok(True)
+
+    def GET(self, id):
+        """
+        Get a consumer's set of packages
+        @param id: consumer id
+        @return: consumer's installed packages
+        """
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.bad_request('Consumer [%s] does not exist' % id)
+        valid_filters = ('name', 'arch')
+        filters = self.filters(valid_filters)
+        packages = consumer_api.packages(id)
+        packages = self.filter_results(packages, filters)
+        return self.ok(packages)
 
 # web.py application ----------------------------------------------------------
 
