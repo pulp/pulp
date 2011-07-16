@@ -151,7 +151,6 @@ def collection_query(*valid_filters):
             intersect = filters.pop('_intersect', ())
             union = filters.pop('_union', ())
             spec = mongo.filters_to_set_spec(filters, intersect, union)
-            _log.debug(pformat(spec))
             kwargs.update({'spec': spec})
             return method(self, *args, **kwargs)
 
