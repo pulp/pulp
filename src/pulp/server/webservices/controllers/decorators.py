@@ -147,7 +147,8 @@ def collection_query(*valid_filters):
 
         @wraps(method)
         def _query_decortator(self, *args, **kwargs):
-            filters = self.filters(itertools.chain(common_filters, valid_filters))
+            valid_filters = tuple(itertools.chain(common_filters, valid_filters))
+            filters = self.filters(valid_filters)
             intersect = filters.pop('_intersect', ())
             union = filters.pop('_union', ())
             spec = mongo.filters_to_set_spec(filters, intersect, union)
