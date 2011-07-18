@@ -309,6 +309,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jul 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.206-2
+- bump to release 2. (jortel@redhat.com)
+- Check for None auth before trying to remove emtpy basic http authorization
+  (jslagle@redhat.com)
+- 721021 remove empty Basic auth from end of authorization header if specified
+  (jslagle@redhat.com)
+
 * Tue Jul 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.206-1
 - removing mongo 1.7.5 restriction on pulp f15 (pkilambi@redhat.com)
 * Mon Jul 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.205-1
