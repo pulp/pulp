@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.206
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
