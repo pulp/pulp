@@ -83,12 +83,17 @@ class RepoAction(Action):
 
 
     def handle_dependencies(self, srcrepo, tgtrepo=None, pkgnames=[], recursive=0, assumeyes=False):
-        deps = self.service_api.dependencies(pkgnames, [srcrepo], recursive)['available_packages']
-        deplist = [{'name'    :   dep['name'],
-                    'version' : dep['version'],
-                    'release' : dep['release'],
-                    'epoch'   : dep['epoch'],
-                    'arch'    : dep['arch']} for dep in deps]
+        deps = self.service_api.dependencies(pkgnames, [srcrepo], recursive)['resolved']
+        deplist = []
+        for dep, pkgs in deps.items():
+            for pkg in pkgs:
+                deplist.append({'name'    : pkg['name'],
+                                'version' : pkg['version'],
+                                'release' : pkg['release'],
+                                'epoch'   : pkg['epoch'],
+                                'arch'    : pkg['arch'],
+                                'filename': pkg['filename'],
+                                'id'      : pkg['id']})
         new_deps = []
         if tgtrepo:
             avail_deps = self.repository_api.find_package_by_nvrea(tgtrepo, deplist) or []
@@ -96,7 +101,7 @@ class RepoAction(Action):
                 if dep['filename'] not in avail_deps:
                     new_deps.append(dep)
         else:
-            new_deps = deps
+            new_deps = deplist
         if not new_deps:
             # None relevant, return
             print(_("No dependencies to process.."))
