@@ -178,7 +178,7 @@ class Create(ConsumerAction):
         bundle = ConsumerBundle()
         bundle.write(crt)
         pkginfo = get_profile("rpm").collect()
-        self.consumer_api.profile(id, pkginfo)
+        self.consumer_api.package_profile(id, pkginfo)
         print _("Successfully created consumer [ %s ]") % consumer['id']
 
 
