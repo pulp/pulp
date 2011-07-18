@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.210
+Version:        0.0.211
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -307,6 +307,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jul 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.211-1
+- 722446 - fixing pulp to pass in proxy settings correctly to grinder
+  (pkilambi@redhat.com)
+
 * Thu Jul 14 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.208-1
 - typo in conf file (jconnor@redhat.com)
 - added config option to toggle auditing (jconnor@redhat.com)
