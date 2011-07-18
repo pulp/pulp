@@ -394,7 +394,9 @@ class YumSynchronizer(BaseSynchronizer):
         proxy_url = proxy_port = proxy_user = proxy_pass = None
         for proxy_cfg in ['proxy_url', 'proxy_port', 'proxy_user', 'proxy_pass']:
             if (config.config.has_option('yum', proxy_cfg)):
-                vars()[proxy_cfg] = config.config.get('yum', proxy_cfg)
+                vars(self)[proxy_cfg] = config.config.get('yum', proxy_cfg)
+            else:
+                vars(self)[proxy_cfg] = None
 
         num_threads = threads
         if threads is None and config.config.getint('yum', 'threads'):
@@ -418,8 +420,8 @@ class YumSynchronizer(BaseSynchronizer):
                                 num_threads, cacert=cacert, clicert=clicert,
                                 packages_location=pulp.server.util.top_package_location(),
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
-                                proxy_url=proxy_url, proxy_port=proxy_port,
-                                proxy_user=proxy_user, proxy_pass=proxy_pass,
+                                proxy_url=self.proxy_url, proxy_port=self.proxy_port,
+                                proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
                                 max_speed=limit_in_KB)
         relative_path = repo['relative_path']
         if relative_path:
