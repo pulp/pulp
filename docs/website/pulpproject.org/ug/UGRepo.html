@@ -466,23 +466,6 @@ default_to_published: true
 </pre></li></ul><ul><li>Example to disable publishing a repository
 <pre class="wiki">$ pulp-admin repo publish --id test-repo --disable
 </pre></li></ul><hr />
-<h2 id="Metadata">Metadata</h2>
-<p>
-Schedules metadata generation for a specific repository. This creates an asynchronous task and queues it. The status for this task can be checked with a status flag.
-</p>
-<p>
-The <tt>repo metadata</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository to generate metadata. 
-</td></tr><tr><td> Status </td><td> <tt>--status</tt> </td><td> Metadata generation status for this repository. 
-</td></tr></table>
-<h4 id="Example:scheduleametadatagenerationforarepository">Example: schedule a metadata generation for a repository</h4>
-<pre class="wiki">$ pulp-admin repo metadata --id testrepo
-</pre><h4 id="Example:checkthemetadataschedulestatusforarepository">Example: check the metadata schedule status for a repository</h4>
-<pre class="wiki">$ pulp-admin repo metadata --id testrepo --status
-</pre><hr />
 <h2 id="discovery">Discovery</h2>
 <p>
 Perform repo discovery for a specified url and type. This command will wait for the discovery to complete and prompt the user to select which repositories to import.
@@ -552,6 +535,69 @@ Number of Urls Discovered: 4
 (-)  [4] https://&lt;hostname&gt;/content/dist/rhel/rhui/server-6/releases/6Server/x86_64/os/Server
 
 Select urls for which candidate repos should be created (h for help):
+</pre><hr />
+<h2 id="GenerateMetadata">Generate Metadata</h2>
+<p>
+Schedules metadata generation for a specific repository. This creates an asynchronous task and queues it. The status for this task can be checked with a status flag.
+</p>
+<p>
+The <tt>repo generate_metadata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository to generate metadata. 
+</td></tr><tr><td> Status </td><td> <tt>--status</tt> </td><td> Metadata generation status for this repository. 
+</td></tr></table>
+<h4 id="Example:scheduleametadatagenerationforarepository">Example: schedule a metadata generation for a repository</h4>
+<pre class="wiki">$ pulp-admin repo generate_metadata --id testrepo
+</pre><h4 id="Example:checkthemetadataschedulestatusforarepository">Example: check the metadata schedule status for a repository</h4>
+<pre class="wiki">$ pulp-admin repo generate_metadata --id testrepo --status
+</pre><hr />
+<h2 id="AddMetadata">Add Metadata</h2>
+<p>
+Add custom filetypes for a specific repository metadata. This integrates the custom data to existing metadata.
+</p>
+<p>
+The <tt>repo add_metadata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository to add metadata. 
+</td></tr><tr><td> MDTYPE </td><td> <tt>--mdtype</tt> </td><td> metadata type to add to the repository metadata 
+</td></tr><tr><td> PATH </td><td> <tt>--path</tt> </td><td> path to the metadata file to be added  
+</td></tr></table>
+<h4 id="Example:Addacustomfiletypetorepositorymetadata">Example: Add a custom file type to repository metadata</h4>
+<pre class="wiki">  $ pulp-admin repo add_metadata --id=test_metadata --mdtype=product --path=/data/product.gz 
+</pre><hr />
+<h2 id="ListMetadata">List Metadata</h2>
+<p>
+List all filetypes information  in specific repository metadata.
+</p>
+<p>
+The <tt>repo list_metadata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository to list metadata. 
+</td></tr></table>
+<h4 id="Example:Listrepositorymetadata">Example: List repository metadata</h4>
+<pre class="wiki">  $ pulp-admin repo list_metadata --id=test_metadata
+</pre><hr />
+<h2 id="DownloadMetadata">Download Metadata</h2>
+<p>
+Download a specific filetype from existing repository metadata.
+</p>
+<p>
+The <tt>repo download_metadata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository from which to download metadata. 
+</td></tr><tr><td> MDTYPE </td><td> <tt>--mdtype</tt> </td><td> metadata type to download from repository 
+</td></tr><tr><td> OUT </td><td> <tt>--out</tt> </td><td> output file to store the exported metadata file (optional); default is stdout 
+</td></tr></table>
+<h4 id="Example:Downloadrepositorymetadata">Example: Download repository metadata</h4>
+<pre class="wiki">  $ sudo pulp-admin repo download_metadata --id=test_metadata --mdtype=product --out=product.gz
 </pre></div>
    </div>
    

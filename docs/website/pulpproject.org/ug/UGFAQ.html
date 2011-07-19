@@ -49,7 +49,8 @@
 <a href="UGFAQ.html#Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</a></li><li class="active">
 <a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a></li><li class="active">
 <a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a></li><li class="active">
-<a href="UGFAQ.html#PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</a></li></ol></li></ol></div>
+<a href="UGFAQ.html#PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</a></li><li class="active">
+<a href="UGFAQ.html#Mongo1.8.shellfreezesonf15howdoidowngrade">Mongo 1.8.* shell freezes on f15, how do i downgrade</a></li></ol></li></ol></div>
 
 </p>
 <h1 id="FrequentlyAskedQuestions">Frequently Asked Questions</h1>
@@ -262,7 +263,14 @@ The solution is to manually install 1.6.  Below are the recommended steps.  (For
  6. sudo ln -s /opt/mongodb-linux-x86_64-1.6.5/bin/mongod /usr/bin/mongod
  Restart mongo
  7. sudo /etc/init.d/mongod restart
-</pre></div>
+</pre><h2 id="Mongo1.8.shellfreezesonf15howdoidowngrade">Mongo 1.8.* shell freezes on f15, how do i downgrade</h2>
+<blockquote>
+<p>
+When running queries in mongo shell 1.8.* users shell hangs indefinitely. This is not an issue in 1.7.5, so downgrading to this version should help. 
+</p>
+<pre class="wiki"> $ yum downgrade mongodb mongodb-server libmongodb js elinks
+</pre></blockquote>
+</div>
    </div>
    
   

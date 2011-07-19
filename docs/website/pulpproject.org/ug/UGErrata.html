@@ -88,7 +88,7 @@ Id                  	Type           	Title
 custom3             	bugfix         	customerrata3
 
 </pre><p>
-In addition you can pass "--type" option to all above list commands to restrict results to a particular errata type. 
+You can pass "--type" option to all above list commands to restrict results to a particular errata type. 
 </p>
 <pre class="wiki">$ pulp-admin errata list --repoid=foo --type=enhancement
 +------------------------------------------+
@@ -102,7 +102,7 @@ custom4             	enhancement    	customerrata4
 
 </pre><h3 id="Search">Search</h3>
 <p>
-In addition, you can search errata using one or more of following search options. Errata satisfying all given parameters will be returned. 
+In addition, you can search errata using one or more of search options such as bugzilla id, CVE, title etc. Errata satisfying all given parameters will be returned. 
 </p>
 <pre class="wiki">$ pulp-admin errata search --help
 Usage: pulp-admin &lt;options&gt; errata search &lt;options&gt;
@@ -111,7 +111,9 @@ Options:
   -h, --help     show this help message and exit
   --id=ID        errata id
   --title=TITLE  errata title
-  --type=TYPE    type of errata to search
+  --type=TYPE    type of errata to search; eg. security, bugfix etc.
+  --bzid=BZID    reference bugzilla id
+  --cve=CVE      reference CVE
   --orphaned     search only orphaned packages
 </pre><pre class="wiki">$ pulp-admin errata search --type=bugfix --orphaned 
 
@@ -120,11 +122,25 @@ Id                  	Type           	Title
 custom1             	bugfix         	customerrata1
 custom3             	bugfix         	customerrata3
 
+$ sudo pulp-admin errata search --bzid=433560
+
+Id                  	Type           	Title
+
+RHSA-2008:0194      	security       	Important: xen security and bug fix update
+
+$ sudo pulp-admin errata search --cve=CVE-2007-3919
+
+Id                  	Type           	Title
+
+RHSA-2008:0194      	security       	Important: xen security and bug fix update
+
 $ pulp-admin errata search --title=httpd-2.2.16-1.fc13 --type=security
 
 Id                  	Type           	Title
 
 FEDORA-2010-12478   	security       	httpd-2.2.16-1.fc13
+
+
 </pre><h3 id="Info">Info</h3>
 <p>
 An individual erratum's details are displayed using the <tt>errata info</tt> command:
