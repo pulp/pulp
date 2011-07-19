@@ -26,10 +26,10 @@ from pulp.server.auth import authorization
 from pulp.server.webservices import application
 from pulp.server.webservices import http
 
-class TestOauth(testutil.PulpTest):
+class TestOauth(testutil.PulpAsyncTest):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        testutil.PulpAsyncTest.setUp(self)
         self.web_app = web.subdir_application(application.urls)
         self.test_app = TestApp(self.web_app.wsgifunc())
 
@@ -47,9 +47,9 @@ class TestOauth(testutil.PulpTest):
 
     def tearDown(self):
         self.user_api.delete("admin")
-        testutil.PulpTest.tearDown(self)
+        testutil.PulpAsyncTest.tearDown(self)
 
-    def XXXtest_oauth_header(self):
+    def test_oauth_header(self):
         CONSUMER_KEY = 'some-key'
         CONSUMER_SECRET = 'some-secret'
         URL = "http://localhost/repositories/"

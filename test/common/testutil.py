@@ -214,9 +214,11 @@ class PulpTest(unittest.TestCase):
     def setup_async(self):
         async._queue = mock.Mock()
 
-    def mock(self, parent, attribute):
+    def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
-        setattr(parent, attribute, mock.Mock())
+        if mock_object is None:
+            mock_object = mock.Mock()
+        setattr(parent, attribute, mock_object)
 
     def unmock_all(self):
         for parent in self._mocks:
