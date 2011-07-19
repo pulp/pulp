@@ -107,6 +107,9 @@ def _check_username_password_local(username, password=None):
         _log.error('User [%s] specified in certificate was not found in the system' %
                    username)
         return None
+    if user['password'] is None and password is not None:
+        _log.error('This is an ldap user %s' % user)
+        return None
     if password is not None:
         if not check_password(user['password'], password):
             _log.error('Password for user [%s] was incorrect' % username)
