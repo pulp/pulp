@@ -26,8 +26,11 @@ from urlparse import urlparse
 
 import yum
 from grinder.BaseFetch import BaseFetch
+from grinder.FileFetch import FileGrinder
+from grinder.GrinderUtils import parseManifest
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
+from pulp.server.api.file import FileApi
 
 import pulp.server.comps_util
 import pulp.server.util
@@ -85,6 +88,7 @@ class BaseSynchronizer(object):
         self.errata_api = ErrataApi()
         self.distro_api = DistributionApi()
         self.filter_api = FilterApi()
+        self.file_api = FileApi()
         self.progress = {
             'status': 'running',
             'item_name': None,
@@ -119,12 +123,77 @@ class BaseSynchronizer(object):
             self.progress[key] = kwargs[key]
         self.callback(self.progress)
 
+    def sync(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
+            max_speed=None, threads=None):
+        """
+        Top level sync method to invoke sync based on type
+        @type repo_id: str
+        @param repo_id: repository to sync
+        @type repo_source: RepoSource instance
+        @param repo_source: source type on the repository rg: remote, local
+        @type skip_dict: dictionary
+        @param skip_dict: content types to skip during sync process eg: {packages : 1, distribution : 0}
+        @type progress_callback: progress callback instance
+        @param progress_callback: callback method to track sync progress
+        @type max_speed: int
+        @param max_speed: maximum bandwidth to use
+        @type threads: int
+        @param threads: Number of threads to run the sync process in
+        @raise RuntimeError: if the sync raises exception
+        """
+        repo = self.repo_api._get_existing_repo(repo_id)
+        source_type = getattr(self, repo['source']['type']) # 'remote' or 'local'
+        return source_type(repo_id, repo_source, skip_dict=skip_dict, progress_callback=progress_callback,
+                        max_speed=max_speed, threads=threads)
+
+    def remote(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
+            max_speed=None, threads=None):
+        """
+        remote sync method implementation
+        @type repo_id: str
+        @param repo_id: repository to sync
+        @type repo_source: RepoSource instance
+        @param repo_source: source type on the repository rg: remote, local
+        @type skip_dict: dictionary
+        @param skip_dict: content types to skip during sync process eg: {packages : 1, distribution : 0}
+        @type progress_callback: progress callback instance
+        @param progress_callback: callback method to track sync progress
+        @type max_speed: int
+        @param max_speed: maximum bandwidth to use
+        @type threads: int
+        @param threads: Number of threads to run the sync process in
+        @raise RuntimeError: if the sync raises exception
+        """
+        raise NotImplementedError('base synchronizer class method called')
+
+    def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
+            max_speed=None, threads=None):
+        """
+        local sync method implementation
+        @type repo_id: str
+        @param repo_id: repository to sync
+        @type repo_source: RepoSource instance
+        @param repo_source: source type on the repository rg: remote, local
+        @type skip_dict: dictionary
+        @param skip_dict: content types to skip during sync process eg: {packages : 1, distribution : 0}
+        @type progress_callback: progress callback instance
+        @param progress_callback: callback method to track sync progress
+        @type max_speed: int
+        @param max_speed: maximum bandwidth to use
+        @type threads: int
+        @param threads: Number of threads to run the sync process in
+        @raise RuntimeError: if the sync raises exception
+        """
+        raise NotImplementedError('base synchronizer class method called')
+
     # Point of this method is to return what packages exist in the repo after being syncd
     def add_packages_from_dir(self, dir, repo_id, skip=None):
         repo = self.repo_api._get_existing_repo(repo_id)
+        added_packages = {}
+        if "yum" not in repo['content_types']:
+            return added_packages
         if not skip:
             skip = {}
-        added_packages = {}
         if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
             log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
@@ -150,6 +219,12 @@ class BaseSynchronizer(object):
         else:
             log.info("skipping distribution imports from sync process")
         self.repo_api.collection.save(repo, safe=True)
+
+    def add_files_from_dir(self, dir, repo_id, skip=None):
+        repo = self.repo_api.repository(repo_id)
+        added_files = self._process_files(dir, repo)
+        self.repo_api.collection.save(repo, safe=True)
+        return added_files
 
     def import_metadata(self, dir, repo_id, skip=None):
         added_errataids = []
@@ -189,6 +264,26 @@ class BaseSynchronizer(object):
                 log.info("Skipping errata imports from sync process")
         self.repo_api.collection.save(repo, safe=True)
         return added_errataids
+
+    def _process_files(self, repodir, repo):
+        log.debug("Processing any files synced as part of the repo")
+        file_metadata = os.path.join(repodir, "MANIFEST")
+        if not os.path.exists(file_metadata):
+            log.info("No metadata file found; no files to import to repo..")
+            return
+        # Handle files that are part of repo syncs
+        files = parseManifest(file_metadata) or {}
+        added_files = []
+        for hash, fileinfo in files.items():
+            checksum_type, checksum = ("sha256", hash)
+            fileobj = self.file_api.create(os.path.basename(fileinfo['filename']),
+                                           checksum=checksum, checksum_type=checksum_type, size=int(fileinfo['size']))
+            if fileobj['id'] not in repo['files']:
+                repo['files'].append(fileobj['id'])
+                added_files.append(fileobj['id'])
+                log.info("Created a fileID %s" % fileobj['id'])
+        self.repo_api.collection.save(repo, safe=True)
+        return added_files
 
     def _process_repo_images(self, repodir, repo):
         log.debug("Processing any images synced as part of the repo")
@@ -372,14 +467,53 @@ class BaseSynchronizer(object):
             return []
         return eids
 
+    def _init_progress_details(self, item_type, item_list, src_repo_dir):
+        if not item_list:
+            # Only create a details entry if there is data to report progress on
+            return
+        size_bytes = self._calculate_bytes(src_repo_dir, item_list)
+        num_items = len(item_list)
+        if not self.progress["details"].has_key(item_type):
+            self.progress["details"][item_type] = {}
+        self.progress['size_left'] += size_bytes
+        self.progress['size_total'] += size_bytes
+        self.progress['items_total'] += num_items
+        self.progress['items_left'] += num_items
+        self.progress['details'][item_type]["items_left"] = num_items
+        self.progress['details'][item_type]["total_count"] = num_items
+        self.progress['details'][item_type]["num_success"] = 0
+        self.progress['details'][item_type]["num_error"] = 0
+        self.progress['details'][item_type]["total_size_bytes"] = size_bytes
+        self.progress['details'][item_type]["size_left"] = size_bytes
+
+    def _calculate_bytes(self, dir, pkglist):
+        bytes = 0
+        for pkg in pkglist:
+            bytes += os.stat(os.path.join(dir, pkg))[6]
+        return bytes
+
+    def _add_error_details(self, file_name, item_type, error_info):
+        # We are adding blank fields to the error entry so it will
+        # match the structure returned from yum syncs
+        missing_fields = ("checksumtype", "checksum", "downloadurl", "item_type", "savepath", "pkgpath", "size")
+        entry = {"fileName":file_name, "item_type":item_type}
+        for key in missing_fields:
+            entry[key] = ""
+        for key in error_info:
+            entry[key] = error_info[key]
+        self.progress["error_details"].append(entry)
+        self.progress['details'][item_type]["num_error"] += 1
+        self.progress['num_error'] += 1
 
 class YumSynchronizer(BaseSynchronizer):
-
+    """
+     Yum synchronizer class to sync rpm, drpms, errata, distributions from remote or local yum feeds
+    """
     def __init__(self):
         super(YumSynchronizer, self).__init__()
         self.yum_repo_grinder = None
 
-    def sync(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
+    def remote(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
         cacert = clicert = None
@@ -462,20 +596,6 @@ class YumSynchronizer(BaseSynchronizer):
             log.info("Stop sync is being issued")
             self.yum_repo_grinder.stop(block=False)
 
-
-class LocalSynchronizer(BaseSynchronizer):
-    """
-    Sync class to synchronize a directory of rpms from a local filer
-    """
-    def __init__(self):
-        super(LocalSynchronizer, self).__init__()
-
-    def _calculate_bytes(self, dir, pkglist):
-        bytes = 0
-        for pkg in pkglist:
-            bytes += os.stat(os.path.join(dir, pkg))[6]
-        return bytes
-
     def list_rpms(self, src_repo_dir):
         pkglist = pulp.server.util.listdir(src_repo_dir)
         pkglist = filter(lambda x: x.endswith(".rpm"), pkglist)
@@ -494,24 +614,6 @@ class LocalSynchronizer(BaseSynchronizer):
         log.info("Found %s delta rpm packages in %s" % (len(dpkglist), src_repo_dir))
         return dpkglist
 
-    def __init_progress_details(self, item_type, item_list, src_repo_dir):
-        if not item_list:
-            # Only create a details entry if there is data to report progress on
-            return
-        size_bytes = self._calculate_bytes(src_repo_dir, item_list)
-        num_items = len(item_list)
-        if not self.progress["details"].has_key(item_type):
-            self.progress["details"][item_type] = {}
-        self.progress['size_left'] += size_bytes
-        self.progress['size_total'] += size_bytes
-        self.progress['items_total'] += num_items
-        self.progress['items_left'] += num_items
-        self.progress['details'][item_type]["items_left"] = num_items
-        self.progress['details'][item_type]["total_count"] = num_items
-        self.progress['details'][item_type]["num_success"] = 0
-        self.progress['details'][item_type]["num_error"] = 0
-        self.progress['details'][item_type]["total_size_bytes"] = size_bytes
-        self.progress['details'][item_type]["size_left"] = size_bytes
 
     def init_progress_details(self, src_repo_dir, skip_dict):
         if not self.progress.has_key('size_total'):
@@ -527,25 +629,12 @@ class LocalSynchronizer(BaseSynchronizer):
 
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
             rpm_list = self.list_rpms(src_repo_dir)
-            self.__init_progress_details("rpm", rpm_list, src_repo_dir)
+            self._init_progress_details("rpm", rpm_list, src_repo_dir)
             drpm_list = self.list_drpms(src_repo_dir)
-            self.__init_progress_details("drpm", drpm_list, src_repo_dir)
+            self._init_progress_details("drpm", drpm_list, src_repo_dir)
         if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
             tree_files = self.list_tree_files(src_repo_dir)
-            self.__init_progress_details("tree_file", tree_files, src_repo_dir)
-
-    def _add_error_details(self, file_name, item_type, error_info):
-        # We are adding blank fields to the error entry so it will
-        # match the structure returned from yum syncs
-        missing_fields = ("checksumtype", "checksum", "downloadurl", "item_type", "savepath", "pkgpath", "size")
-        entry = {"fileName":file_name, "item_type":item_type}
-        for key in missing_fields:
-            entry[key] = ""
-        for key in error_info:
-            entry[key] = error_info[key]
-        self.progress["error_details"].append(entry)
-        self.progress['details'][item_type]["num_error"] += 1
-        self.progress['num_error'] += 1
+            self._init_progress_details("tree_file", tree_files, src_repo_dir)
 
     def _process_rpm(self, pkg, dst_repo_dir):
         pkg_info = pulp.server.util.get_rpm_information(pkg)
@@ -709,8 +798,7 @@ class LocalSynchronizer(BaseSynchronizer):
             if progress_callback is not None:
                 progress_callback(self.progress)
 
-
-    def sync(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
+    def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
@@ -895,4 +983,160 @@ class LocalSynchronizer(BaseSynchronizer):
             raise
         return dst_repo_dir
 
+class FileSynchronizer(BaseSynchronizer):
+    """
+     File synchronizer class to sync isos, txt,  etc from remote or local feeds
+    """
+    def __init__(self):
+        super(FileSynchronizer, self).__init__()
+        self.file_repo_grinder = None
+
+    def remote(self, repo_id, repo_source, skip_dict={}, progress_callback=None, max_speed=None, threads=None):
+        repo = self.repo_api._get_existing_repo(repo_id)
+        cacert = clicert = None
+        if repo['feed_ca']:
+            cacert = repo['feed_ca'].encode('utf8')
+        if repo['feed_cert']:
+            clicert = repo['feed_cert'].encode('utf8')
+        log.info("cacert = <%s>, cert = <%s>" % (cacert, clicert))
+        # check for proxy settings
+        proxy_url = proxy_port = proxy_user = proxy_pass = None
+        for proxy_cfg in ['proxy_url', 'proxy_port', 'proxy_user', 'proxy_pass']:
+            if config.config.has_option('yum', proxy_cfg):
+                vars(self)[proxy_cfg] = config.config.get('yum', proxy_cfg)
+            else:
+                vars(self)[proxy_cfg] = None
+
+        num_threads = threads
+        if threads is None and config.config.getint('yum', 'threads'):
+            num_threads = config.config.getint('yum', 'threads')
+        if num_threads < 1:
+            log.error("Invalid number of threads specified [%s].  Will default to 1" % (num_threads))
+            num_threads = 1
+        limit_in_KB = max_speed
+        # limit_in_KB can be 0, that is a valid value representing unlimited bandwidth
+        if limit_in_KB is None and config.config.has_option('yum', 'limit_in_KB'):
+            limit_in_KB = config.config.getint('yum', 'limit_in_KB')
+        if limit_in_KB < 0:
+            log.error("Invalid value [%s] for bandwidth limit in KB.  Negative values not allowed." % (limit_in_KB))
+            limit_in_KB = 0
+        if limit_in_KB:
+            log.info("Limiting download speed to %s KB/sec per thread. [%s] threads will be used" % \
+                    (limit_in_KB, num_threads))
+        if self.stopped:
+            raise CancelException()
+        self.file_repo_grinder = FileGrinder('', repo_source['url'].encode('ascii', 'ignore'),
+                                num_threads, cacert=cacert, clicert=clicert,
+                                proxy_url=self.proxy_url, proxy_port=self.proxy_port,
+                                proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
+                                files_location=pulp.server.util.top_file_location(), max_speed=limit_in_KB)
+        relative_path = repo['relative_path']
+        if relative_path:
+            store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
+        else:
+            store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+        report = self.file_repo_grinder.fetch(store_path, callback=progress_callback)
+        if self.stopped:
+            raise CancelException()
+        self.progress = yum_rhn_progress_callback(report.last_progress)
+        start = time.time()
+
+        if self.stopped:
+            raise CancelException()
+        log.info("FileSynchronizer reported %s successes, %s downloads, %s errors" \
+                % (report.successes, report.downloads, report.errors))
+        return store_path
+
+    def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None, max_speed=None, threads=None):
+        repo = self.repo_api._get_existing_repo(repo_id)
+        src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
+        log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
+        self.init_progress_details(src_repo_dir, skip_dict)
+
+        try:
+            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+
+            if not os.path.exists(src_repo_dir):
+                raise InvalidPathError("Path %s is invalid" % src_repo_dir)
+            if repo['use_symlinks']:
+                log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
+                pulp.server.util.create_rel_symlink(src_repo_dir, dst_repo_dir)
+                if progress_callback is not None:
+                    self.progress['size_total'] = 0
+                    self.progress['size_left'] = 0
+                    self.progress['items_total'] = 0
+                    self.progress['items_left'] = 0
+                    self.progress['details'] = {}
+                    self.progress['num_download'] = 0
+                    self.progress['step'] = ProgressReport.DownloadItems
+                    progress_callback(self.progress)
+            else:
+                if not os.path.exists(dst_repo_dir):
+                    os.makedirs(dst_repo_dir)
+                filelist = self.list_files(src_repo_dir)
+                for count, pkg in enumerate(filelist):
+                    skip_copy = False
+                    log.debug("Processing files %s" % pkg)
+                    if count % 500 == 0:
+                        log.info("Working on %s/%s" % (count, len(filelist)))
+                    try:
+                        src_file_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+                        dst_file_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+                        if not pulp.server.util.check_package_exists(dst_file_path, src_file_checksum):
+                            shutil.copy(pkg, dst_file_path)
+                            self.progress['num_download'] += 1
+                        else:
+                            log.info("file %s already exists with same checksum. skip import" % os.path.basename(pkg))
+                            skip_copy = True
+                        log.debug("Imported delta rpm %s " % dst_file_path)
+                        self.progress['details']["file"]["num_success"] += 1
+                        self.progress["num_success"] += 1
+                    except (IOError, OSError):
+                        log.error("%s" % (traceback.format_exc()))
+                        error_info = {}
+                        exctype, value = sys.exc_info()[:2]
+                        error_info["error_type"] = str(exctype)
+                        error_info["error"] = str(value)
+                        error_info["traceback"] = traceback.format_exc().splitlines()
+                        self._add_error_details(pkg, "file", error_info)
+                    self.progress['step'] = ProgressReport.DownloadItems
+                    item_size = self._calculate_bytes(src_repo_dir, [pkg])
+                    self.progress['size_left'] -= item_size
+                    self.progress['items_left'] -= 1
+                    self.progress['details']["file"]["items_left"] -= 1
+                    self.progress['details']["file"]["size_left"] -= item_size
+                    if progress_callback is not None:
+                        progress_callback(self.progress)
+
+        except InvalidPathError:
+            log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))
+            raise
+        except IOError:
+            log.error("Unable to create repo directory %s" % dst_repo_dir)
+            raise
+        return dst_repo_dir
+
+    def init_progress_details(self, src_repo_dir, skip_dict):
+        if not self.progress.has_key('size_total'):
+            self.progress['size_total'] = 0
+        if not self.progress.has_key('items_total'):
+            self.progress['items_total'] = 0
+        if not self.progress.has_key('size_left'):
+            self.progress['size_left'] = 0
+        if not self.progress.has_key('items_left'):
+            self.progress['items_left'] = 0
+        if not self.progress.has_key("details"):
+            self.progress["details"] = {}
+
+        files = self.list_files(src_repo_dir)
+        self._init_progress_details("file", files, src_repo_dir)
+
+    def list_files(self, file_repo_dir):
+        return pulp.server.util.listdir(file_repo_dir)
+
+    def stop(self):
+        super(FileSynchronizer, self).stop()
+        if self.file_repo_grinder:
+            log.info("Stop sync is being issued")
+            self.file_repo_grinder.stop(block=False)
 

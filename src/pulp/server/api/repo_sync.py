@@ -25,8 +25,8 @@ from pulp.server import comps_util
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.api.synchronizers import BaseSynchronizer, LocalSynchronizer, YumSynchronizer, \
-    yum_rhn_progress_callback, local_progress_callback
+from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
+    yum_rhn_progress_callback, local_progress_callback, FileSynchronizer
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.auditing import audit
 from pulp.server.async import run_async
@@ -41,8 +41,8 @@ errata_api = ErrataApi()
 
 # synchronization type map ----------------------------------------------------
 type_classes = {
-    'remote': YumSynchronizer,
-    'local': LocalSynchronizer,
+    'yum': YumSynchronizer,
+    'file' : FileSynchronizer,
 }
 
 @audit()
@@ -94,17 +94,18 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
     
     if relative_path is None:
         relative_path = clone_id
-    
+    # inherit content types from parent
+    content_types = repo['content_types']
     log.info("Creating [%s] feed repo [%s] cloned from [%s] with relative_path [%s]" % (feed, clone_id, id, relative_path))
     if feed == 'origin':
         origin_feed = repo['source']['url']
         repo_api.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
                 relative_path=relative_path, feed_cert_data=feed_cert_data,
-                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
+                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], content_types=content_types)
     else:
         repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
                 relative_path=relative_path, feed_cert_data=feed_cert_data,
-                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
+                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], content_types=content_types)
 
     # Associate filters if specified
     if len(filters) > 0:
@@ -171,10 +172,12 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
     if repo['source'] is not None:
         source_type = repo['source']['type']
         if source_type in ('remote'):
-                task.set_progress('progress_callback', yum_rhn_progress_callback)
+            # its a remote sync, use supported content types to select synchronizer
+            task.set_progress('progress_callback', yum_rhn_progress_callback)
         elif source_type in ('local'):
             task.set_progress('progress_callback', local_progress_callback)
-        synchronizer = get_synchronizer(source_type)
+        content_type = repo['content_types']
+        synchronizer = get_synchronizer(content_type)
         task.set_synchronizer(synchronizer)
     return task
 
@@ -224,7 +227,11 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         if not synchronizer:
-            synchronizer = get_synchronizer(repo_source["type"])
+            if repo['content_types'] in ('yum'):
+                source = repo['content_types']
+            elif repo['content_types'] in ('file'):
+                source = repo['content_types']
+            synchronizer = get_synchronizer(source)
             synchronizer.set_callback(progress_callback)
         log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip_dict))
         start_sync_items = time.time()
@@ -315,6 +322,8 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
     added_packages = synchronizer.add_packages_from_dir(repo_dir, repo_id, skip_dict)
     # Process Distribution
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
+    # Process Files
+    synchronizer.add_files_from_dir(repo_dir, repo_id, skip_dict)
     # Process Metadata
     added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
     return added_packages, added_errataids

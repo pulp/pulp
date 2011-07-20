@@ -56,6 +56,8 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
         packages = found['packages']
         assert(packages is not None)
         assert(len(packages) > 0)
+        #validate content_types
+        assert(found['content_types'] == repo['content_types'])
 
         # Try repo cloning with origin feed
         try:

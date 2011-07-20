@@ -14,6 +14,7 @@
 
 import os
 import sys
+from pulp.server.util import top_repos_location
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
@@ -21,11 +22,11 @@ import mock
 
 from pulp.server import async
 from pulp.server.api import repo_sync
-from pulp.server.api.synchronizers import (YumSynchronizer, 
+from pulp.server.api.synchronizers import (FileSynchronizer,
     yum_rhn_progress_callback, local_progress_callback)
 
 
-class TestRepoSync(testutil.PulpAsyncTest):
+class TestFileSync(testutil.PulpAsyncTest):
 
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
@@ -34,10 +35,26 @@ class TestRepoSync(testutil.PulpAsyncTest):
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
 
-    def test_sync_remote(self):
+    def test_file_repo_create(self):
         # create a remote repo
-        remote_repo = self.repo_api.create("testrepoid", "testrepoid", "x86_64",
-            "http://www.example.com")
+        remote_repo = self.repo_api.create("test_file_repo_id", "test_file_repo_id", "noarch",
+            "http://www.example.com/foo", content_types="file")
+        assert(remote_repo['content_types'] == "file")
+
+    def test_file_repo_create_no_metadata(self):
+        # create a remote repo
+        remote_repo = self.repo_api.create("test_file_repo_id", "test_file_repo_id", "noarch",
+            "http://www.example.com/foo", content_types="file")
+        d = os.path.join(top_repos_location(), remote_repo['relative_path'])
+        self.assertTrue(os.path.isdir(d))
+        dirList = os.listdir(d)
+        # should be empty and no repodata created
+        assert(len(dirList) == 0)
+        
+    def test_file_sync_remote(self):
+        # create a remote repo
+        remote_repo = self.repo_api.create("test_file_repo_id", "test_file_repo_id", "noarch",
+            "http://www.example.com", content_types="file")
 
         # sync the remote_repo
         repo_sync.sync(remote_repo["id"])
@@ -57,12 +74,12 @@ class TestRepoSync(testutil.PulpAsyncTest):
         self.assertEquals(1, task.set_synchronizer.call_count)
         call_args = task.set_synchronizer.call_args[0]
         self.assertEquals(1, len(call_args))
-        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
+        self.assertTrue(isinstance(call_args[0], FileSynchronizer))
 
-    def test_sync_local(self):
+    def test_file_sync_local(self):
         # create a local_repo
-        local_repo = self.repo_api.create("testrepoid2", "testrepoid2", "x86_64",
-            "file://repo")
+        local_repo = self.repo_api.create("test_file_repo_local", "test_file_repo_local", "noarch",
+            "file://repo", content_types="file")
 
         # sync the local_repo
         repo_sync.sync(local_repo["id"])
@@ -82,21 +99,5 @@ class TestRepoSync(testutil.PulpAsyncTest):
         self.assertEquals(1, task.set_synchronizer.call_count)
         call_args = task.set_synchronizer.call_args[0]
         self.assertEquals(1, len(call_args))
-        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
-
-    def test_local_sync(self):
-        my_dir = os.path.abspath(os.path.dirname(__file__))
-        datadir = my_dir + "/data/repo_resync_b"
-        print "Data DIR %s" % datadir
-        repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'file://%s' % datadir)
-
-        repo_sync._sync(repo['id'])
-        found = self.repo_api.repository(repo['id'])
-        packages = found['packages']
-        print "Packages :: %s" % packages
-        assert(packages is not None)
-        assert(len(packages) > 0)
-        p = packages[0]
-        assert(p is not None)
-        # versions = p['versions']
+        print call_args[0]
+        self.assertTrue(isinstance(call_args[0], FileSynchronizer))

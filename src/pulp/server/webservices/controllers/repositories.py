@@ -146,6 +146,7 @@ default_fields = [
     'consumer_ca',
     'consumer_key',
     'notes',
+    'content_types'
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -232,7 +233,8 @@ class Repositories(JSONController):
                           gpgkeys=repo_data.get('gpgkeys', None),
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
                           notes=repo_data.get('notes', None),
-                          preserve_metadata=repo_data.get('preserve_metadata', False))
+                          preserve_metadata=repo_data.get('preserve_metadata', False),
+                          content_types=repo_data.get('content_types', 'yum'))
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path

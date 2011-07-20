@@ -27,7 +27,7 @@ class RepositoryAPI(PulpAPI):
     def create(self, id, name, arch, feed=None, symlinks=False,
                sync_schedule=None, feed_cert_data=None, consumer_cert_data=None,
                relative_path=None, groupid=None, gpgkeys=None, checksum_type="sha256", notes={},
-               preserve_metadata=False):
+               preserve_metadata=False, content_types="yum"):
         path = "/repositories/"
         repodata = {"id": id,
                     "name": name,
@@ -42,7 +42,8 @@ class RepositoryAPI(PulpAPI):
                     "gpgkeys": gpgkeys,
                     "checksum_type" : checksum_type,
                     "notes" : notes,
-                    "preserve_metadata" : preserve_metadata,}
+                    "preserve_metadata" : preserve_metadata,
+                    "content_types" : content_types}
         return self.server.PUT(path, repodata)[1]
 
     def repository(self, id, fields=()):

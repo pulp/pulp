@@ -463,6 +463,8 @@ class Create(RepoAction):
                             help=_('date and time of the first run in iso8601 combined date and time format'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
                             help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        schedule.add_option('--content_type', dest='content_type', default="yum",
+                            help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
         self.parser.add_option_group(schedule)
 
     def run(self):
@@ -534,7 +536,8 @@ class Create(RepoAction):
                                           groupid=groupid,
                                           gpgkeys=keylist,
                                           checksum_type=self.opts.checksum_type,
-                                          notes=notes, preserve_metadata=preserve_metadata)
+                                          notes=notes, preserve_metadata=preserve_metadata,
+                                          content_types=self.opts.content_type)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 class Clone(RepoProgressAction):

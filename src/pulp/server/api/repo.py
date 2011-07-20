@@ -175,7 +175,7 @@ class RepoApi(BaseApi):
     def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
-               preserve_metadata=False):
+               preserve_metadata=False, content_types="yum"):
         """
         Create a new Repository object and return it
         """
@@ -190,7 +190,8 @@ class RepoApi(BaseApi):
         if not model.Repo.is_supported_checksum(checksum_type):
             raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
 
-
+        if not model.Repo.is_supported_content_type(content_types):
+            raise PulpException('Content Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CONTENT_TYPES))
         r = model.Repo(id, name, arch, feed, notes)
         r['use_symlinks'] = symlinks
 
@@ -250,6 +251,8 @@ class RepoApi(BaseApi):
         if feed:
             # only preserve metadata if its a feed repo
             r['preserve_metadata'] = preserve_metadata
+        if content_types:
+            r['content_types'] = content_types
         self.collection.insert(r, safe=True)
         if sync_schedule:
             update_repo_schedule(r, sync_schedule)
@@ -258,7 +261,8 @@ class RepoApi(BaseApi):
             pulp.server.util.top_repos_location(), r['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
-        pulp.server.util.create_repo(repo_path)
+        if content_types in ("yum"):
+            pulp.server.util.create_repo(repo_path)
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)

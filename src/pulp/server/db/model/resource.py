@@ -239,11 +239,12 @@ class Repo(Model):
 
     SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64']
     SUPPORTED_CHECKSUMS = ['sha256', 'sha', 'sha1', 'md5']
+    SUPPORTED_CONTENT_TYPES = ['yum', 'file']
 
     collection_name = 'repos'
     other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
 
-    def __init__(self, id, name, arch, source=None, notes=None):
+    def __init__(self, id, name, arch, source=None, notes=None, content_types=None):
         self._id = id
         self.id = id
         if source:
@@ -281,6 +282,7 @@ class Repo(Model):
             self.notes = {}
         self.notes = notes
         self.preserve_metadata = False
+        self.content_types = content_types
 
 #        self.size = None
 
@@ -296,6 +298,10 @@ class Repo(Model):
     @classmethod
     def is_supported_checksum(cls, checksum_type):
         return checksum_type in cls.SUPPORTED_CHECKSUMS
+
+    @classmethod
+    def is_supported_content_type(cls, content_type):
+        return content_type in cls.SUPPORTED_CONTENT_TYPES
 
 class RepoSource(Model):
 
