@@ -73,8 +73,10 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer:
             raise PulpException("Consumer [%s] already exists" % id)
-        c = model.Consumer(id, description, key_value_pairs)
+        c = model.Consumer(id, description)
         self.collection.insert(c, safe=True)
+        for key, value in key_value_pairs.items():
+            self.add_key_value_pair(c.id, key, value)
         self.consumer_history_api.consumer_created(c.id)
         return c
 
