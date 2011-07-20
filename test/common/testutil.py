@@ -20,7 +20,10 @@ from datetime import timedelta
 
 import mock
 
-import mocks
+try:
+    import mocks
+except ImportError:
+    mocks = None
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
@@ -158,7 +161,9 @@ class PulpTest(unittest.TestCase):
         self.config = load_test_config()
         connection.initialize()
 
-        mocks.install()
+        if mocks is not None:
+            mocks.install()
+
         self.setup_async()
 
         self.repo_api = RepoApi()
@@ -209,7 +214,9 @@ class PulpTest(unittest.TestCase):
         CDSRepoRoundRobin.get_collection().remove(safe=True)
 
         auditing.cull_events(timedelta())
-        mocks.reset()
+
+        if mocks is not None:
+            mocks.reset()
 
     def setup_async(self):
         async._queue = mock.Mock()
