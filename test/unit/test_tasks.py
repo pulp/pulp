@@ -344,6 +344,18 @@ class TaskQueueTester(QueueTester):
         # Verify
         self.assertTrue(task2 in found)
 
+    def test_find_job(self):
+        # Setup
+        ntasks = 3
+        job_id = 99
+        for i in range(0,ntasks):
+            t = Task(noop)
+            t.job_id = job_id
+            self.queue.enqueue(t)
+        # Test & Verify
+        found = self.queue.find(job_id=job_id)
+        self.assertEqual(len(found), ntasks)
+
     def test_task_status(self):
         task = Task(noop)
         self.queue.enqueue(task)

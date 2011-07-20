@@ -121,6 +121,7 @@ class Task(object):
         self.traceback = None
         self.consecutive_failures = 0
         self.cancel_attempts = 0
+        self.job_id = None
 
     def __cmp__(self, other):
         """
@@ -205,11 +206,11 @@ class Task(object):
 
     _copy_fields = ('id', 'class_name', 'method_name', 'failure_threshold',
                     'state', 'progress', 'consecutive_failures',
-                    'cancel_attempts')
+                    'cancel_attempts', 'job_id',)
 
     _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout',
                       'schedule_threshold', '_progress_callback', 'start_time',
-                      'finish_time', 'result', 'exception', 'traceback')
+                      'finish_time', 'result', 'exception', 'traceback', 'job_id',)
 
     def snapshot(self):
         """

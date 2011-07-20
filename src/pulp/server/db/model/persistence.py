@@ -78,7 +78,7 @@ class TaskHistory(Model):
         self.task_type = task.__class__.__name__
         for attr in ('id', 'class_name', 'method_name', 'args', 'kwargs',
                      'state', 'progress', 'result', 'exception', 'traceback',
-                     'consecutive_failures'):
+                     'consecutive_failures', 'job_id'):
             setattr(self, attr, getattr(task, attr))
         # remove the kwargs that can't be stored in the database
         for arg in ('synchronizer', 'progress_callback'):
