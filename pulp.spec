@@ -309,6 +309,21 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jul 20 2011 Jeff Ortel <jortel@redhat.com> 0.0.212-1
+- Add Task.job_id to support job concept in task subsystem. (jortel@redhat.com)
+- Pulp synchronizer implementation to support generic content types and file
+  based sync support: (pkilambi@redhat.com)
+- 719651 - fixing the ldap check during authentication (pkilambi@redhat.com)
+- fixing selective sync to use updated depsolver api changes
+  (pkilambi@redhat.com)
+- fixing consumer create to use new put call (pkilambi@redhat.com)
+- fixing pulp to pass in proxy settings correctly to grinder
+  (pkilambi@redhat.com)
+- turning the valid filters into a tuple (jconnor@redhat.com)
+- moving the GET package profile call to same class to match the url requests
+  (pkilambi@redhat.com)
+- Changing the package profile update from POST to PUT (pkilambi@redhat.com)
+
 * Fri Jul 15 2011 Jeff Ortel <jortel@redhat.com> 0.0.210-1
 - 722521 change --wait option to --nowait to restore previous behavior
   (jslagle@redhat.com)
