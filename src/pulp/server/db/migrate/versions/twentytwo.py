@@ -20,9 +20,23 @@ _log = logging.getLogger('pulp')
 
 # migration module conventions ------------------------------------------------
 
-version = 17
+version = 22
 
-# NOTE: This db change has moved to version 22 to account for pushcount fix
+def _migrate_errata_model():
+    collection = Errata.get_collection()
+    for erratum in collection.find():
+        modified = False
+        if 'pushcount' not in erratum or not erratum['pushcount']:
+            erratum['pushcount'] = 1
+            modified = True
+        elif type(erratum['pushcount']) in [type(u""), type("")]:
+            # convert pushcount to int
+            erratum['pushcount'] = int(erratum['pushcount'])
+            modified = True
+        if modified:
+            collection.save(erratum, safe=True)
+
 def migrate():
-    _log.info('migration to data model version 17 started')
-    _log.info('migration to data model version 17 complete')
+    _log.info('migration to data model version 22 started')
+    _migrate_errata_model()
+    _log.info('migration to data model version 22 complete')

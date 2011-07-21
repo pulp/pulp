@@ -27,7 +27,7 @@ def migrate():
 
 def _migrate_repos():
     #
-    # update repo: Add a new preserve_metadata option 
+    # update repo: Add a new content_types option
     #
     collection = Repo.get_collection()
     for repo in collection.find():
