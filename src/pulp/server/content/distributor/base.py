@@ -13,4 +13,17 @@
 
 
 class Distributor(object):
-    pass
+
+    def __init__(self, **options):
+        self.__dict__.update(options)
+
+    @classmethod
+    @property
+    def types(self):
+        return ()
+
+    def publish(self, distributor_config, publish_config, publish_hook):
+        raise NotImplementedError()
+
+    def unpublish(self, distributor_config, unpublish_config, unpublish_hook):
+        raise NotImplementedError()

@@ -13,4 +13,17 @@
 
 
 class Importer(object):
-    pass
+
+    def __init__(self, **options):
+        self.__dict__.update(options)
+
+    @classmethod
+    @property
+    def types(self):
+        return ()
+
+    def sync(self, repo_data, importer_config, sync_config, sync_hook):
+        raise NotImplementedError()
+
+    def delete_repo(self, repo_data, importer_config, delete_config, delete_hook):
+        raise NotImplementedError()
