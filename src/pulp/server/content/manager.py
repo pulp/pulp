@@ -15,6 +15,8 @@ import os
 import re
 from gettext import gettext as _
 
+from pulp.server.content.distributor.base import Distributor
+from pulp.server.content.importer.base import Importer
 from pulp.server.content.module import import_module
 from pulp.server.pexceptions import PulpException
 
@@ -187,10 +189,10 @@ def get_importer(content_type):
     """
     # TODO allow client to pass in constructor arguments/options
     assert _manager is not None
-    Importer = _manager.lookup_importer_class(content_type)
-    if importer is None:
+    cls = _manager.lookup_importer_class(content_type)
+    if cls is None:
         raise PluginNotFoundError(_('No importer found for %s') % content_type)
-    return Importer()
+    return cls()
 
 
 def get_distributor(distribution_type):
@@ -204,7 +206,7 @@ def get_distributor(distribution_type):
     """
     # TODO allow client to pass in constructor arguments/options
     assert _manager is not None
-    Distributor = _manager.lookup_distributor_class(distribution_type)
-    if Distributor is None:
+    cls = _manager.lookup_distributor_class(distribution_type)
+    if cls is None:
         raise PluginNotFoundError(_('No distributor found for %s') % distribution_type)
-    return Distributor()
+    return cls()
