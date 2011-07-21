@@ -96,7 +96,15 @@ class Manager(object):
         """
         assert not self.importers
         modules = self._load_modules(self.importer_paths, ('__init__', 'base'))
-        # TODO associate module contents with importer types
+        for module in modules:
+            for attr in dir(module):
+                if not issubclass(attr, Importer):
+                    continue
+                for content_type in attr.types:
+                    # TODO log error or raise exception or something
+                    if content_type in self.importers:
+                        continue
+                    self.importers[content_type] = attr
 
     def load_distributors(self):
         """
@@ -104,7 +112,15 @@ class Manager(object):
         """
         assert not self.distributors
         modules = self._load_modules(self.distributor_paths, ('__init__', 'base'))
-        # TODO associate module contents with distributor types
+        for module in modules:
+            for attr in dir(module):
+                if not issubclass(attr, Distributor):
+                    continue
+                for distribution_type in attr.types:
+                    if distribution_type in self.distributors:
+                        # TODO log error
+                        continue
+                    self.distributors[distribution_type] = attr
 
     def lookup_importer_class(self, content_type):
         """
