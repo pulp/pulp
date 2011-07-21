@@ -181,6 +181,7 @@ def get_importer(content_type):
     @return: importer associated with content type
     @raises PluginNotFoundError: if not importer is associated with the content type
     """
+    # TODO allow client to pass in constructor arguments/options
     assert _manager is not None
     Importer = _manager.lookup_importer_class(content_type)
     if importer is None:
@@ -197,6 +198,7 @@ def get_distributor(distribution_type):
     @return: distributor associated with the distribution type
     @raises PluginNotFoundError: if not importer is associated with the distribution type
     """
+    # TODO allow client to pass in constructor arguments/options
     assert _manager is not None
     Distributor = _manager.lookup_distributor_class(distribution_type)
     if Distributor is None:
