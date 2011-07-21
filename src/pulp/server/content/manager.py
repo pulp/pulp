@@ -47,8 +47,10 @@ class Manager(object):
         @param path: filesystem path to python package containing importer modules
         @type package_name: None or str
         @param package_name: optional fully qualified package name, defaults to ''
+        @raises ValueError: if the path is not found or cannot be read
         """
-        assert os.access(path, os.F_OK | os.R_OK), _('Cannot find path %s') % path
+        if not os.access(path, os.F_OK | os.R_OK):
+            raise ValueError(_('Cannot find path %s') % path)
         self.importer_paths[path] = package_name or ''
 
     def add_distributor_path(self, path, package_name=None):
@@ -58,8 +60,10 @@ class Manager(object):
         @param path: filesystem path to python package containing distributor modules
         @type package_name: None or str
         @param package_name: optional fully qualified package name, defaults to ''
+        @raises ValueError: if the path is not found or cannot be read
         """
-        assert os.access(path, os.F_OK | os.R_OK), _('Cannot find path %s') % path
+        if not os.access(path, os.F_OK | os.R_OK):
+            raise ValueError(_('Cannot find path %s') % path)
         self.distributor_paths[path] = package_name or ''
 
     def _load_modules(self, paths, skip=None):
