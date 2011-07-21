@@ -26,8 +26,12 @@ def _migrate_errata_model():
     collection = Errata.get_collection()
     for erratum in collection.find():
         modified = False
-        if 'pushcount' in erratum and erratum['pushcount'] == u"":
+        if 'pushcount' not in erratum:
             erratum['pushcount'] = 1
+            modified = True
+        if type(erratum['pushcount']) == type(u""):
+            # convert pushcount to int
+            erratum['pushcount'] = int(erratum['pushcount'])
             modified = True
         if modified:
             collection.save(erratum, safe=True)

@@ -108,7 +108,10 @@ class Errata(Model):
         self.status = status
         self.updated = updated
         self.issued = issued
-        self.pushcount = pushcount
+        if pushcount:
+            self.pushcount = int(pushcount)
+        else:
+            self.pushcount = 1
         self.from_str = from_str
         self.reboot_suggested = reboot_suggested
         self.references = references
