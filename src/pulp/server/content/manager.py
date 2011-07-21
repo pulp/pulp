@@ -10,3 +10,195 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+import os
+import re
+from gettext import gettext as _
+
+from pulp.server.content.module import import_module
+from pulp.server.pexceptions import PulpException
+
+# exceptions -------------------------------------------------------------------
+
+class PluginNotFoundError(PulpException):
+    pass
+
+# manager instance -------------------------------------------------------------
+
+_manager = None
+
+# manager class ----------------------------------------------------------------
+
+class Manager(object):
+    """
+    Plugin manager class that discovers and associates importer and distributor
+    plugin with content types.
+    """
+    def __init__(self):
+        self.importer_paths = {}
+        self.distributor_paths = {}
+        self.importers = {}
+        self.distributors = {}
+
+    def add_importer_path(self, path, package_name=None):
+        """
+        Add a path for the importer modules.
+        @type path: str
+        @param path: filesystem path to python package containing importer modules
+        @type package_name: None or str
+        @param package_name: optional fully qualified package name, defaults to ''
+        """
+        assert os.access(path, os.F_OK | os.R_OK), _('Cannot find path %s') % path
+        self.importer_paths[path] = package_name or ''
+
+    def add_distributor_path(self, path, package_name=None):
+        """
+        Add a path for the distributor modules.
+        @type path: str
+        @param path: filesystem path to python package containing distributor modules
+        @type package_name: None or str
+        @param package_name: optional fully qualified package name, defaults to ''
+        """
+        assert os.access(path, os.F_OK | os.R_OK), _('Cannot find path %s') % path
+        self.distributor_paths[path] = package_name or ''
+
+    def _load_modules(self, paths, skip=None):
+        """
+        Helper method that loads modules from the given package paths.
+        @type paths: dict
+        @param patsh: a mapping of package directory paths to package names
+        @type skip: tuple or list
+        @param skip: list of module names to *not* load
+        @rtype: list of modules
+        @return: list of all modules in all packages in the paths
+        """
+        assert isinstance(paths, dict)
+        skip = skip or ('__init__',)
+        files_regex = re.compile('(?!(%s)).*\.py$') % '|'.join(skip)
+        modules = []
+        for path, package_name in paths.items():
+            files = os.listdir(path)
+            for file_name in filter(files_regex.match, files):
+                name = '.'.join((package_name, file_name.rsplit('.', 1)[0]))
+                module = import_module(name)
+                modules.append(module)
+        return modules
+
+    def load_importers(self):
+        """
+        Load all importer modules and associate them with their supported types.
+        """
+        assert not self.importers
+        modules = self._load_modules(self.importer_paths, ('__init__', 'base'))
+        # TODO associate module contents with importer types
+
+    def load_distributors(self):
+        """
+        Load all distributor modules and associate them with their supported types.
+        """
+        assert not self.distributors
+        modules = self._load_modules(self.distributor_paths, ('__init__', 'base'))
+        # TODO associate module contents with distributor types
+
+    def lookup_importer_class(self, content_type):
+        """
+        Retrieve an importer class associated with the given content type.
+        @type content_type: str
+        @param content_type: content type label
+        @rtype: Importer class or None
+        @return: importer class associated with the the content type or None if
+                 no associated importer class is found
+        """
+        return self.importers.get(content_type, None)
+
+    def lookup_distributor_class(self, distribution_type):
+        """
+        Retrieve a distributor class associated with the given distribution type.
+        @type distribution_type: str
+        @param distribution_type: content type label
+        @rtype: Distributor class or None
+        @return: distributor class associated with the the distribution type or
+                 None if no associated distributor class is found
+        """
+        return self.distributors.get(distribution_type, None)
+
+# manager api ------------------------------------------------------------------
+
+def _create_manager():
+    global _manager
+    _manager = Manager()
+
+
+def _add_paths(importer_paths, distributor_paths):
+    for p, n in importer_paths.items():
+        _manager.add_importer_path(p, n)
+    for p, n in distributor_paths.items():
+        _manager.add_distributor_path(p, n)
+
+
+def _load_plugins():
+    _manager.load_importers()
+    _manager.load_distributors()
+
+
+def initialize():
+    """
+    Initialize importer/distributor plugin discovery and association.
+    """
+    # NOTE this is broken down into the the helper functions: _create_manager,
+    # _add_paths, and _load_plugins to facilitate testing and other alternate
+    # control flows on startup
+    global _manager
+    assert _manager is None
+    local_path = os.path.dirname(__file__)
+    importer_paths = {os.path.join(local_path, 'importer'):
+                      'pulp.server.content.importer'}
+    distributor_paths = {os.path.join(local_path, 'distributor'):
+                         'pulp.server.content.distributor'}
+    _create_manager()
+    _add_paths(importer_paths, distributor_paths)
+    _load_plugins()
+
+
+def finalize():
+    """
+    Conduct and necessary cleanup of the plugn manager.
+    """
+    # NOTE this is not necessary for the pulp server but is provided for testing
+    global _manager
+    assert _manager is not None
+    tmp = _manager
+    _manager = None
+    del tmp
+
+
+def get_importer(content_type):
+    """
+    Get an importer for the given content type.
+    @type content_type: str
+    @param content_type: content type label
+    @rtype: Importer instance
+    @return: importer associated with content type
+    @raises PluginNotFoundError: if not importer is associated with the content type
+    """
+    assert _manager is not None
+    Importer = _manager.lookup_importer_class(content_type)
+    if importer is None:
+        raise PluginNotFoundError(_('No importer found for %s') % content_type)
+    return Importer()
+
+
+def get_distributor(distribution_type):
+    """
+    Get a distributor for the give distribution type.
+    @type distribution_type: str
+    @param distribution_type: distribution type label
+    @rtype: Distributor instance
+    @return: distributor associated with the distribution type
+    @raises PluginNotFoundError: if not importer is associated with the distribution type
+    """
+    assert _manager is not None
+    Distributor = _manager.lookup_distributor_class(distribution_type)
+    if Distributor is None:
+        raise PluginNotFoundError(_('No distributor found for %s') % distribution_type)
+    return Distributor()
