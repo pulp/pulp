@@ -21,13 +21,13 @@ import pulp.server.auth.cert_generator as cert_generator
 import pulp.server.cds.round_robin as round_robin
 from pulp.server import config
 import pulp.server.consumer_utils as consumer_utils
+
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
@@ -421,7 +421,7 @@ class ConsumerApi(BaseApi):
         log.info('Successfully updated package profile for consumer %s' % id)
 
     @audit()
-    def installpackages(self, id, packagenames=()):
+    def installpackages(self, id, names=()):
         """
         Install packages on the consumer.
         @param id: A consumer id.
@@ -429,20 +429,39 @@ class ConsumerApi(BaseApi):
         @param packagenames: The package names to install.
         @type packagenames: [str,..]
         """
-        data = []
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        for pkg in packagenames:
+        packages = []
+        for pkg in names:
             info = pkg.split('.')
             if len(info) > 1:
-                data.append(('.'.join(info[:-1]), info[-1]))
+                packages.append(('.'.join(info[:-1]), info[-1]))
             else:
-                data.append(pkg)
-        log.debug("Packages to Install: %s" % data)
-        secret = PulpAgent.getsecret(consumer)
-        task = InstallPackages(id, secret, data)
+                packages.append(pkg)
+        task = Task(self.__installpackages, [id, packages])
         return task
+
+    def __installpackages(self, id, names, reboot=False, yes=False):
+        """
+        Task callback to install packages.
+        @param id: The consumer ID.
+        @type id: str
+        @param names: A list of package names.
+        @type names: list
+        @param reboot: The suggested reboot flag (supports errata).
+        @type reboot: bool
+        @param yes: Assume (yes) when prompted by yum.
+        @type yes: bool
+        @return: Whatever the agent returns.
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', id)
+        agent = PulpAgent(consumer)
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        packages = agent.Packages(timeout=tm)
+        return packages.install(names, reboot, yes)
 
     @audit()
     def installpackagegroups(self, id, groupnames=()):
@@ -456,9 +475,25 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        secret = PulpAgent.getsecret(consumer)
-        task = InstallPackageGroups(id, secret, groupnames)
+        task = Task(self.__installpackagegroups, [id, groupnames])
         return task
+
+    def __installpackagegroups(self, id, groups):
+        """
+        Task callback to install package groups.
+        @param id: The consumer ID.
+        @type id: str
+        @param groups: A list of package group names.
+        @type groups: list
+        @return: Whatever the agent returns.
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', id)
+        agent = PulpAgent(consumer)
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        pkgrps = agent.PackageGroups(timeout=tm)
+        return pkgrps.install(groups)
 
     def installerrata(self, id, errataids=(), types=(), assumeyes=False):
         """
@@ -500,14 +535,12 @@ class ConsumerApi(BaseApi):
         if not len(pkgs):
             return None
         log.error("Packages to install [%s]" % pkgs)
-        secret = PulpAgent.getsecret(consumer)
-        task = InstallErrata(
-            id,
-            secret,
+        task = Task(
+            self.__installpackages,
+            [id,
             pkgs,
-            errata_titles,
-            reboot_suggested=reboot_suggested,
-            assumeyes=assumeyes)
+            reboot_suggested,
+            assumeyes])
         return task
 
     def listerrata(self, id, types=()):
@@ -589,155 +622,3 @@ class ConsumerApi(BaseApi):
                                                                 'reboot_suggested' : erratum['reboot_suggested']}
                             applicable_errata[erratumid]['packages'].append(pkg)
         return applicable_errata
-
-
-class InstallPackages(AgentTask):
-    """
-    Install packages task
-    @ivar consumerid: The consumer ID.
-    @type consumerid: str
-    @ivar secret: The shared secret
-    @type secret: str
-    @ivar packages: A list of packages to install.
-    @type packages: [str,..]
-    """
-
-    def __init__(self,
-        consumerid,
-        secret,
-        packages,
-        errata=(),
-        reboot_suggested=False,
-        assumeyes=False):
-        """
-        @param consumerid: The consumer ID.
-        @type consumerid: str
-        @param secret: The shared secret.
-        @type secret: str
-        @param packages: A list of packages to install.
-        @type packages: [str,..]
-        @param errata: A list of errata titles.
-        @type errata: list
-        """
-        self.consumerid = consumerid
-        self.secret = secret
-        self.packages = packages
-        self.errata = errata
-        self.reboot_suggested = reboot_suggested
-        self.assumeyes = assumeyes
-        AgentTask.__init__(self, self.install)
-
-    # snapshot fields: used for task persistence
-    _copy_fields = tuple(itertools.chain(('consumerid', 'secret', 'packages',
-                                    'errata', 'reboot_suggested', 'assumeyes'),
-                                   Task._copy_fields))
-
-    def snapshot(self):
-        # since the callable is set, we do not need to pickle it
-        self.callable = None
-        snapshot = super(InstallPackages, self).snapshot()
-        self.callable = self.install
-        return snapshot
-
-    @classmethod
-    def from_snapshot(cls, snapshot):
-        task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['packages'])
-        for field in task._copy_fields:
-            setattr(task, field, snapshot[field])
-        for field in task._pickle_fields:
-            setattr(task, field, pickle.loads(snapshot[field]))
-        task.snapshot_id = snapshot['_id']
-        return task
-
-    def install(self):
-        """
-        Perform the RMI to the agent to install packages.
-        """
-        agent = AsyncAgent(self.consumerid, self.secret)
-        packages = agent.Packages(self)
-        packages.install(self.packages, self.reboot_suggested, self.assumeyes)
-
-    def succeeded(self, sn, result):
-        """
-        On success, update the consumer history.
-        @param sn: The RMI serial #.
-        @type sn: uuid
-        @param result: The object returned by the RMI call.
-        @type result: object
-        """
-        AgentTask.succeeded(self, sn, result)
-        history = ConsumerHistoryApi()
-        history.packages_installed(
-            self.consumerid,
-            result,
-            errata_titles=self.errata)
-
-
-class InstallErrata(InstallPackages):
-    pass
-
-
-class InstallPackageGroups(AgentTask):
-    """
-    Install package group task
-    @ivar consumerid: The consumer ID.
-    @type consumerid: str
-    @ivar secret: The shared secret
-    @type secret: str
-    @ivar groups: A list of package groups to install.
-    @type groups: [str,..]
-    """
-
-    def __init__(self, consumerid, secret, groups):
-        """
-        @param consumerid: The consumer ID.
-        @type consumerid: str
-        @param secret: The shared secret.
-        @type secret: str
-        @param groups: A list of package groups to install.
-        @type groups: [str,..]
-        """
-        self.consumerid = consumerid
-        self.secret = secret
-        self.groups = groups
-        AgentTask.__init__(self, self.install)
-
-    # snapshot fields: used for task persistence
-    _copy_fields = tuple(itertools.chain(('consumerid', 'secret', 'groups'),
-                                   Task._copy_fields))
-
-    def snapshot(self):
-        # since the callable is set, we do not need to pickle it
-        self.callable = None
-        snapshot = super(InstallPackageGroups, self).snapshot()
-        self.callable = self.install
-        return snapshot
-
-    @classmethod
-    def from_snapshot(cls, snapshot):
-        task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['groups'])
-        for field in task._copy_fields:
-            setattr(task, field, snapshot[field])
-        for field in task._pickle_fields:
-            setattr(task, field, pickle.loads(snapshot[field]))
-        task.snapshot_id = snapshot['_id']
-        return task
-
-    def install(self):
-        """
-        Perform the RMI to the agent to install package groups.
-        """
-        agent = AsyncAgent(self.consumerid, self.secret)
-        pg = agent.PackageGroups(self)
-        pg.install(self.groups)
-
-    def succeeded(self, sn, result):
-        """
-        On success, update the consumer history.
-        @param sn: The RMI serial #.
-        @type sn: uuid
-        @param result: The object returned by the RMI call.
-        @type result: object
-        """
-        AgentTask.succeeded(self, sn, result)
-        # TODO: update consumer history
