@@ -10,7 +10,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.212
+Version:        0.0.213
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -373,6 +373,21 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jul 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.213-1
+- Change package & packagegroup install on consumer to synchronous RMI.
+  (jortel@redhat.com)
+- SElinux first steps, auth login/logout, repo create/sync/delete
+  (jmatthews@redhat.com)
+- Added Importer and Distributor base classes (jconnor@redhat.com)
+- Moving the pushcount migration from 17 to 22 to account for latest fix
+  (pkilambi@redhat.com)
+- Added first pass at generic content plugin manager (jconnor@redhat.com)
+- Skeleton for server-side content plugins and framework (jconnor@redhat.com)
+- Fixing pushcount to convert to int before storing in db (pkilambi@redhat.com)
+- 714046 - fixed error message for admin user deletion (skarmark@redhat.com)
+- Fixing key-value attributes api bug when creating a consumer
+  (skarmark@redhat.com)
+
 * Wed Jul 20 2011 Jeff Ortel <jortel@redhat.com> 0.0.212-1
 - Add Task.job_id to support job concept in task subsystem. (jortel@redhat.com)
 - Pulp synchronizer implementation to support generic content types and file
