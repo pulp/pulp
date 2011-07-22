@@ -236,9 +236,10 @@ class Install(PackageGroupAction):
         print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']
+        sys.stdout.write(_('Waiting: [-] '))
+        sys.stdout.flush()
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
-            sys.stdout.write('.')
-            sys.stdout.flush()
+            self.printwait()
             time.sleep(2)
             status = self.consumer_api.task_status(spath)
             state = status['state']
@@ -246,6 +247,15 @@ class Install(PackageGroupAction):
             print _('\n[%s] installed on %s') % (status['result'], consumerid)
         else:
             print("\nPackage group install failed")
+
+    def printwait(self):
+        symbols = '|/-\|/-\\'
+        for i in range(0,len(symbols)):
+            sys.stdout.write('\b\b\b')
+            sys.stdout.write(symbols[i])
+            sys.stdout.write('] ')
+            sys.stdout.flush()
+            time.sleep(1)
 
 # --- Package Group Category Operations ---
 class ListCategory(PackageGroupAction):
