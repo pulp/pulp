@@ -86,7 +86,7 @@ class TestErrata(testutil.PulpAsyncTest):
         status = 'test_create_status'
         updated = 'test_create_status'
         issued = 'test_create_issued'
-        pushcount = 'test_create_pushcount'
+        pushcount = 1
         from_str = 'test_create_from_str'
         reboot_suggested = 'test_create_reboot_suggested'
         references = ['test_create_references']
