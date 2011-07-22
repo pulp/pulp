@@ -29,9 +29,10 @@ class Config(Base):
     @type ALT: str
     """
 
-    FILE = None
-    PATH = None
-    USER = None
+    # FILE should be overridden in the base class.
+    FILE = ''
+    PATH = ''
+    USER = ''
     ALT = 'PULP_CLIENT_OVERRIDE'
 
     def __init__(self):
@@ -40,6 +41,13 @@ class Config(Base):
         Merge (in) alternate configuration file when specified
         by environment variable.
         """
+
+        # This class is meant to be subclassed for specific config
+        # implementations.  Each subclass should set the FILE attribute.
+        if self.FILE == '':
+            raise NotImplementedError("Base Config Class can not be "
+                "instantiated")
+
         self.PATH = os.path.join('/etc/pulp', self.FILE)
         self.USER = os.path.join('~/.pulp', self.FILE)
 

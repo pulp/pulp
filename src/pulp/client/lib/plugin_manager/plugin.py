@@ -15,4 +15,3 @@
 class Plugin(object):
 
     commands = []
-
