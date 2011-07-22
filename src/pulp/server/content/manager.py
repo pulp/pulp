@@ -13,8 +13,10 @@
 
 import os
 import re
+from ConfigParser import SafeConfigParser
 from gettext import gettext as _
 
+from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
 from pulp.server.content.module import import_module
@@ -41,6 +43,26 @@ class Manager(object):
         self.distributor_paths = {}
         self.importers = {}
         self.distributors = {}
+        self.configured_importers = self.__configured_importers()
+        self.configured_distributors = self.__configured_distributors()
+        self.importer_configs = {}
+        self.distributor_configs = {}
+
+    def __configured_importers(self):
+        cfg = {}
+        if not config.config.has_section)'importers'):
+            return cfg
+        for content_type in config.config.options('importers'):
+            cfg[content_type] = config.config.getboolean('importers', content_type)
+        return cfg
+
+    def __configured_distributors(self):
+        cfg = {}
+        if not config.config.has_section('distributors'):
+            return cfg
+        for distribution_type in config.config.options('distributors'):
+            cfg[distribution_type] = config.config.getboolean('distributors', distribution_type)
+        return cfg
 
     def add_importer_path(self, path, package_name=None):
         """
@@ -104,6 +126,7 @@ class Manager(object):
                     # TODO log error or raise exception or something
                     if content_type in self.importers:
                         continue
+                     # TODO load per-importer config file
                     self.importers[content_type] = attr
 
     def load_distributors(self):
@@ -120,6 +143,7 @@ class Manager(object):
                     if distribution_type in self.distributors:
                         # TODO log error
                         continue
+                     # TODO load per-distributor config file
                     self.distributors[distribution_type] = attr
 
     def lookup_importer_class(self, content_type):
@@ -131,6 +155,8 @@ class Manager(object):
         @return: importer class associated with the the content type or None if
                  no associated importer class is found
         """
+        if not self.configured_importers.get(content_type, True):
+            return None
         return self.importers.get(content_type, None)
 
     def lookup_distributor_class(self, distribution_type):
@@ -142,6 +168,8 @@ class Manager(object):
         @return: distributor class associated with the the distribution type or
                  None if no associated distributor class is found
         """
+        if not self.configured_distributors.get(distribution_type, True):
+            return None
         return self.distributors.get(distribution_type, None)
 
 # manager api ------------------------------------------------------------------
