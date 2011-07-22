@@ -19,7 +19,7 @@ from pulp.client.cli.admin import AdminCLI
 from pulp.client.config import Config
 from pulp.client.core import (
     auth, cds, consumer, consumergroup, errata, package, packagegroup, repo,
-    user, distribution, permission, role, content, filter, task)
+    repogroup, user, distribution, permission, role, content, filter, task)
 
 def setup_admin(admin):
     config = Config()
@@ -131,8 +131,11 @@ def setup_admin(admin):
     repo_cmd.add_action('list_metadata', repo.ListMetadata())
     repo_cmd.add_action('download_metadata', repo.DownloadMetadata())
     repo_cmd.add_action('discovery', repo.Discovery())
-
     admin.add_command('repo', repo_cmd)
+
+    repogroup_cmd = repogroup.RepoGroup()
+    repogroup_cmd.add_action('update', repogroup.Update())
+    admin.add_command('repogroup', repogroup_cmd)
 
     filter_cmd = filter.Filter()
     filter_cmd.add_action('list', filter.List())

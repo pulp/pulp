@@ -279,7 +279,7 @@ class List(RepoAction):
 
     def run(self):
         if self.opts.groupid:
-            repos = self.repository_api.repositories_by_groupid(groups=self.opts.groupid)
+            repos = self.repository_api.repositories_by_groupid(group=self.opts.groupid)
         else:
             repos = self.repository_api.repositories()
         if not len(repos):
@@ -657,8 +657,6 @@ class Update(RepoAction):
                                help=_("path location to the consumer entitlement certificate key"))
         self.parser.add_option("--remove_consumer_cert", dest="remove_consumer_cert", action="store_true",
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
-        self.parser.add_option("--symlinks", dest="use_symlinks",
-                               help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
         self.parser.add_option("--addgroup", dest="addgroup",
                                help=_("group id to be added to the repository"))
         self.parser.add_option("--rmgroup", dest="rmgroup",
@@ -683,7 +681,6 @@ class Update(RepoAction):
         id = self.get_required_option('id')
         delta = {}
         optdict = vars(self.opts)
-
         feed_cert_bundle = None
         consumer_cert_bundle = None
 
@@ -693,19 +690,19 @@ class Update(RepoAction):
             if k in ('remove_consumer_cert', 'remove_feed_cert'):
                 continue
             if k == 'addgroup':
-                self.repository_api.add_group(id, v)
+                delta['addgrp'] = v
                 continue
             if k == 'rmgroup':
-                self.repository_api.remove_group(id, v)
+                delta['rmgrp'] = v
                 continue
             if k == 'addkeys':
                 reader = KeyReader()
                 keylist = reader.expand(v)
-                self.repository_api.addkeys(id, keylist)
+                delta['addkeys'] = keylist
                 continue
             if k == 'rmkeys':
                 keylist = v.split(',')
-                self.repository_api.rmkeys(id, keylist)
+                delta['rmkeys'] = keylist
                 continue
             if k in ('feed_ca', 'feed_cert', 'feed_key'):
                 f = open(v)
@@ -762,7 +759,6 @@ class Update(RepoAction):
             delta['consumer_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif consumer_cert_bundle:
             delta['consumer_cert_data'] = consumer_cert_bundle
-
         self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
 
