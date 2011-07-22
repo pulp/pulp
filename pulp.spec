@@ -1,6 +1,11 @@
 # sitelib for noarch packages, sitearch for others (remove the unneeded one)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+#SELinux 
+%define selinux_variants mls strict targeted
+%define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
+%define modulename pulp
+%define moduletype apps
 
 # -- headers - pulp server ---------------------------------------------------
 
@@ -20,6 +25,7 @@ BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
+BuildRequires:  checkpolicy, selinux-policy-devel, hardlink
 
 Requires: %{name}-common = %{version}
 Requires: pymongo >= 1.9
@@ -43,6 +49,14 @@ Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
+%if "%{selinux_policyver}" != ""
+Requires: selinux-policy >= %{selinux_policyver}
+%endif
+%if 0%{?rhel} == 5
+Requires:        selinux-policy >= 2.4.6-80
+%endif
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule
 %if 0%{?el5}
 # RHEL-5
 Requires: python-uuid
@@ -125,6 +139,17 @@ to clients.
 pushd src
 %{__python} setup.py build
 popd
+# SELinux Configuration
+cd selinux
+perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' %{modulename}.te
+for selinuxvariant in %{selinux_variants}
+do
+    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
+    mv %{modulename}.pp %{modulename}.pp.${selinuxvariant}
+    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
+done
+cd -
+
 
 %install
 rm -rf %{buildroot}
@@ -196,6 +221,25 @@ mkdir -p %{buildroot}/var/log/pulp-cds
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 
+
+# Install SELinux policy modules
+cd selinux
+for selinuxvariant in %{selinux_variants}
+  do
+    install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
+    install -p -m 644 %{modulename}.pp.${selinuxvariant} \
+           %{buildroot}%{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp
+  done
+# Install SELinux interfaces
+install -d %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
+install -p -m 644 %{modulename}.if \
+  %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+
+# Hardlink identical policy module packages together
+/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+cd -
+
+
 %clean
 rm -rf %{buildroot}
 
@@ -203,7 +247,13 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
-
+if /usr/sbin/selinuxenabled ; then
+    for selinuxvariant in %{selinux_variants}
+    do
+        /usr/sbin/semodule -s ${selinuxvariant} -i \
+        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
+    done
+fi
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
@@ -226,6 +276,17 @@ if [ "$1" = "1" ]; then
   ln -s goferd pulp-agent
 fi
 popd
+
+%postun
+# Clean up after package removal
+if [ $1 -eq 0 ]; then
+  for selinuxvariant in %{selinux_variants}
+    do
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
+       #      /usr/sbin/semodule -s ${selinuxvariant} -l > /dev/null 2>&1 \
+#        && /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} || :
+    done
+fi
 
 %postun client
 if [ "$1" = "0" ]; then
@@ -257,7 +318,10 @@ fi
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
-
+# SELinux
+%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
+%{_datadir}/selinux/*/%{modulename}.pp
+%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
 # -- files - common ----------------------------------------------------------
 
 %files common
