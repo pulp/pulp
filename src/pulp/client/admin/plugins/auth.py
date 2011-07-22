@@ -16,18 +16,20 @@
 import getpass
 from gettext import gettext as _
 
-from pulp.client import server
-from pulp.client import utils
+from pulp.client.api import server
+from pulp.client.lib import utils
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.user import UserAPI
 from pulp.client.api.service import ServiceAPI
-from pulp.client.credentials import Login as LoginBundle
-from pulp.client.core.base import Action, Command
+from pulp.client.admin.credentials import Login as LoginBundle
+from pulp.client.lib.plugin_manager.command import Action, Command
 
 # login actions ----------------------------------------------------------------
 
 class Login(Action):
 
     description = _('stores user credentials on this machine')
+    name = "login"
 
     def __init__(self):
         super(Login, self).__init__()
@@ -57,6 +59,7 @@ class Login(Action):
 class Logout(Action):
 
     description = _('removes stored user credentials on this machine')
+    name = "logout"
 
     def run(self):
         # Remove the certificate and private key files
@@ -69,6 +72,7 @@ class Logout(Action):
 class EnableGlobalRepoAuth(Action):
 
     description = _('uploads a certificate bundle to be used for global repo authentication')
+    name = "enable_global_repo_auth"
 
     def __init__(self):
         super(EnableGlobalRepoAuth, self).__init__()
@@ -103,6 +107,7 @@ class EnableGlobalRepoAuth(Action):
 class DisableGlobalRepoAuth(Action):
 
     description = _('disables the global repo authentication checks across all repos')
+    name = "disable_global_repo_auth"
 
     def __init__(self):
         super(DisableGlobalRepoAuth, self).__init__()
@@ -117,3 +122,13 @@ class DisableGlobalRepoAuth(Action):
 class Auth(Command):
 
     description = _('stores pulp authentication credentials')
+    name = "auth"
+
+    actions = [ Login,
+                Logout,
+                EnableGlobalRepoAuth,
+                DisableGlobalRepoAuth ]
+
+class AuthPlugin(AdminPlugin):
+
+    commands = [ Auth ]

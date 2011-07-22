@@ -29,9 +29,9 @@ class Config(Base):
     @type ALT: str
     """
 
-    FILE = 'client.conf'
-    PATH = os.path.join('/etc/pulp', FILE)
-    USER = os.path.join('~/.pulp', FILE)
+    FILE = None
+    PATH = None
+    USER = None
     ALT = 'PULP_CLIENT_OVERRIDE'
 
     def __init__(self):
@@ -40,6 +40,9 @@ class Config(Base):
         Merge (in) alternate configuration file when specified
         by environment variable.
         """
+        self.PATH = os.path.join('/etc/pulp', self.FILE)
+        self.USER = os.path.join('~/.pulp', self.FILE)
+
         fp = open(self.PATH)
         try:
             Base.__init__(self, fp)

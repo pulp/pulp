@@ -16,11 +16,8 @@ import sys
 from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
-from pulp.client.config import Config
-from pulp.client import server
-
-
-_cfg = Config()
+from pulp.client.lib.config import Config
+from pulp.client.api import server
 
 
 class PulpCLI(object):
@@ -35,6 +32,7 @@ class PulpCLI(object):
         self.opts = None
         self._server = None
         self._commands = {}
+        self.cfg = self.config()
 
     @property
     def usage(self):
@@ -98,12 +96,23 @@ class PulpCLI(object):
         elif self.opts.certfile is not None:
             self._server.set_ssl_credentials(self.opts.certfile)
 
+    def load_plugins(self):
+        self._plugin_loader = self.plugin_loader(self.cfg)
+        self._plugins = self._plugin_loader.load_plugins()
+
+    def register_plugins(self):
+        for plugin in self._plugins.values():
+            for command in plugin.commands:
+                self.add_command(command.name, command())
+
     def main(self, args=sys.argv[1:]):
         """
         Run this command.
         @type args: list of str's
         @param args: command line arguments
         """
+        self.load_plugins()
+        self.register_plugins()
         self.parser.set_usage(self.usage)
         self.setup_parser()
         self.opts, args = self.parser.parse_args(args)

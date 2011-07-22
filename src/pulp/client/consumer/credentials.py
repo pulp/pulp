@@ -17,28 +17,10 @@ Module containing classes to manage client credentials.
 
 import os
 from pulp.common.bundle import Bundle
-from pulp.client.config import Config
-from gettext import gettext as _
 from M2Crypto import X509
 from logging import getLogger
 
 log = getLogger(__name__)
-
-cfg = Config()
-
-
-class Login(Bundle):
-    """
-    The bundle for logged in user.
-    """
-
-    ROOT = '~/.pulp'
-    CRT = 'user-cert.pem'
-
-    def __init__(self):
-        path = os.path.join(self.ROOT, self.CRT)
-        Bundle.__init__(self, path)
-
 
 class Consumer(Bundle):
     """

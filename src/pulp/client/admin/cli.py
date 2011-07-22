@@ -14,15 +14,16 @@
 import os
 from gettext import gettext as _
 from optparse import OptionGroup, SUPPRESS_HELP
-from pulp.client.cli.base import PulpCLI
-from pulp.client.credentials import Login
-from pulp.client.core.utils import system_exit
-from pulp.client.config import Config
-
-_cfg = Config()
-
+from pulp.client.lib.cli import PulpCLI
+from pulp.client.admin.credentials import Login
+from pulp.client.admin.loader import AdminPluginLoader
+from pulp.client.lib.utils import system_exit
+from pulp.client.admin.config import AdminConfig
 
 class AdminCLI(PulpCLI):
+
+    config = AdminConfig
+    plugin_loader = AdminPluginLoader
 
     def setup_credentials(self):
         """
@@ -48,16 +49,16 @@ class AdminCLI(PulpCLI):
         PulpCLI.setup_parser(self)
 
         server = OptionGroup(self.parser, _('Pulp Server Information'))
-        host = _cfg.server.host or 'localhost.localdomain'
+        host = self.cfg.server.host or 'localhost.localdomain'
         server.add_option('--host', dest='host', default=host,
                           help=_('pulp server host name (default: %s)') % host)
-        port = _cfg.server.port or '443'
+        port = self.cfg.server.port or '443'
         server.add_option('--port', dest='port', default=port,
                           help=SUPPRESS_HELP)
-        scheme = _cfg.server.scheme or 'https'
+        scheme = self.cfg.server.scheme or 'https'
         server.add_option('--scheme', dest='scheme', default=scheme,
                           help=SUPPRESS_HELP)
-        path = _cfg.server.path or '/pulp/api'
+        path = self.cfg.server.path or '/pulp/api'
         server.add_option('--path', dest='path', default=path,
                           help=SUPPRESS_HELP)
         self.parser.add_option_group(server)

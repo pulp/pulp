@@ -15,21 +15,15 @@
 # in this software or its documentation.
 #
 
-from pulp.client.cli.admin import AdminCLI
-from pulp.client.config import Config
-from pulp.client.core import (
-    auth, cds, consumer, consumergroup, errata, package, packagegroup, repo,
-    user, distribution, permission, role, content, filter, task)
+from pulp.client.admin.cli import AdminCLI
+from pulp.client.admin.config import AdminConfig
+# from pulp.client.core import (
+    # cds, consumer, consumergroup, errata, package, packagegroup, repo,
+    # user, distribution, permission, role, content, filter, task)
 
 def setup_admin(admin):
+    return
     config = Config()
-
-    auth_cmd = auth.Auth()
-    auth_cmd.add_action('login', auth.Login())
-    auth_cmd.add_action('logout', auth.Logout())
-    auth_cmd.add_action('enable_global_repo_auth', auth.EnableGlobalRepoAuth())
-    auth_cmd.add_action('disable_global_repo_auth', auth.DisableGlobalRepoAuth())
-    admin.add_command('auth', auth_cmd)
 
     cds_cmd = cds.Cds()
     cds_cmd.add_action('register', cds.Register())

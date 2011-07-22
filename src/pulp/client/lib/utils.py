@@ -307,4 +307,25 @@ def parseCSV(filepath):
     in_file.close()
     return lines
 
+# system exit ------------------------------------------------------------------
 
+def system_exit(code, msgs=None):
+    """
+    Exit with a code and optional message(s). Saves a few lines of code.
+    @type code: int
+    @param code: code to return
+    @type msgs: str or list or tuple of str's
+    @param msgs: messages to display
+    """
+    assert msgs is None or isinstance(msgs, (basestring, list, tuple))
+    if msgs:
+        if isinstance(msgs, basestring):
+            msgs = (msgs,)
+        if code == os.EX_OK:
+            out = sys.stdout
+        else:
+            out = sys.stderr
+        #out = sys.stdout if code == os.EX_OK else sys.stderr
+        for msg in msgs:
+            print >> out, msg
+    sys.exit(code)

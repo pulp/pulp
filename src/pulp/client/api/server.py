@@ -26,7 +26,7 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
-from pulp.client.logutil import getLogger
+from pulp.client.lib.logutil import getLogger
 
 # current active server -------------------------------------------------------
 
