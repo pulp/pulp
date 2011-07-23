@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import logging
 import os
 import re
 from ConfigParser import SafeConfigParser
@@ -27,9 +28,11 @@ from pulp.server.pexceptions import PulpException
 class PluginNotFoundError(PulpException):
     pass
 
-# manager instance -------------------------------------------------------------
+# globals ----------------------------------------------------------------------
 
-_manager = None
+_log = logging.getLogger(__name__)
+
+_manager = None # Manger instance
 
 # manager class ----------------------------------------------------------------
 
@@ -125,8 +128,9 @@ class Manager(object):
                 cfg = SafeConfigParser
                 cfg.read(attr.config_files)
                 for content_type in attr.types:
-                    # TODO log error or raise exception or something
                     if content_type in self.importers:
+                        _log.warn(_('Importer for %s already found, not loading %s') %
+                                  (content_type, repr(attr)))
                         continue
                     self.importers[content_type] = attr
                     self.importer_configs[content_type] = cfg
@@ -145,7 +149,8 @@ class Manager(object):
                 cfg.read(attr.config_files)
                 for distribution_type in attr.types:
                     if distribution_type in self.distributors:
-                        # TODO log error
+                        _log.warn(_('Distributor for %s already found, not loading %s') %
+                                  (content_type, repr(attr)))
                         continue
                     self.distributors[distribution_type] = attr
                     self.distributor_configs[distribution_type] = cfg
