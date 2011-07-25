@@ -20,17 +20,17 @@ from gettext import gettext as _
 from optparse import OptionGroup
 
 from pulp.client import constants
-from pulp.client import utils
+from pulp.client.admin.plugin import AdminPlugin
+from pulp.client.lib import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.api.file import FileAPI
-from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.base import Action, Command
+from pulp.client.lib.plugins.repo import RepoAction, Repo, List
 from pulp.client.core.utils import (
-    print_header, parse_interval_schedule, system_exit)
-from pulp.client.logutil import getLogger
+    print_header, parse_interval_schedule)
+from pulp.client.lib.logutil import getLogger
 from pulp.common.dateutils import (
     parse_iso8601_datetime, parse_iso8601_duration, parse_iso8601_interval,
     format_iso8601_datetime, format_iso8601_duration)
@@ -50,7 +50,7 @@ class CloneError(Exception):
 
 # base repo action class ------------------------------------------------------
 
-class RepoAction(Action):
+class AdminRepoAction(RepoAction):
 
     def __init__(self):
         super(RepoAction, self).__init__()
@@ -58,12 +58,7 @@ class RepoAction(Action):
         self.errata_api = ErrataAPI()
         self.package_api = PackageAPI()
         self.service_api = ServiceAPI()
-        self.repository_api = RepositoryAPI()
         self.file_api = FileAPI()
-
-    def setup_parser(self):
-        self.parser.add_option("--id", dest="id",
-                               help=_("repository id (required)"))
 
     def get_repo(self, id):
         """
@@ -78,7 +73,7 @@ class RepoAction(Action):
         assert hasattr(self, 'repository_api')
         repo = self.repository_api.repository(id)
         if repo is None:
-            system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
+            utils.system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         return repo
 
 
@@ -117,7 +112,7 @@ class RepoAction(Action):
                     print(_("Skipping dependencies"))
                     return []
                 elif do_deps.strip().lower() == 'q':
-                    system_exit(os.EX_OK, _("Operation aborted upon user request."))
+                    utils.system_exit(os.EX_OK, _("Operation aborted upon user request."))
                 else:
                     continue
         return new_deps
@@ -132,6 +127,8 @@ class RepoAction(Action):
                 return pkg
         return None
 
+
+# repo actions ----------------------------------------------------------------
 
 class RepoProgressAction(RepoAction):
 
@@ -267,58 +264,11 @@ class RepoProgressAction(RepoAction):
                 else:
                     ret_val += "\t" + str(errors) + "\n"
         return ret_val
-# repo actions ----------------------------------------------------------------
-
-class List(RepoAction):
-
-    description = _('list available repositories')
-
-    def setup_parser(self):
-        self.parser.add_option("--groupid", action="append", dest="groupid",
-                               help=_("filter repositories by group id"))
-
-    def run(self):
-        if self.opts.groupid:
-            repos = self.repository_api.repositories_by_groupid(groups=self.opts.groupid)
-        else:
-            repos = self.repository_api.repositories()
-        if not len(repos):
-            system_exit(os.EX_OK, _("No repositories available to list"))
-        print_header(_('List of Available Repositories'))
-        for repo in repos:
-            feedUrl = feedType = None
-            if repo['source']:
-                feedUrl = repo['source']['url']
-                feedType = repo['source']['type']
-            filters = []
-            for filter in repo['filters']:
-                filters.append(str(filter))
-
-            feed_cert = 'No'
-            if repo.has_key('feed_cert') and repo['feed_cert']:
-                feed_cert = 'Yes'
-            feed_ca = 'No'
-            if repo.has_key('feed_ca') and repo['feed_ca']:
-                feed_ca = 'Yes'
-
-            consumer_cert = 'No'
-            if repo.has_key('consumer_cert') and repo['consumer_cert']:
-                consumer_cert = 'Yes'
-            consumer_ca = 'No'
-            if repo.has_key('consumer_ca') and repo['consumer_ca']:
-                consumer_ca = 'Yes'
-
-            print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], feedUrl, feedType,
-                    feed_ca, feed_cert,
-                    consumer_ca, consumer_cert,
-                    repo["arch"], repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
 
 
 class Status(RepoAction):
 
+    name = "status"
     description = _('show the status of a repository')
 
     def run(self):
@@ -358,6 +308,7 @@ class Status(RepoAction):
 
 class Content(RepoAction):
 
+    name = "content"
     description = _('list the contents of a repository')
 
     def setup_parser(self):
@@ -418,6 +369,7 @@ class Content(RepoAction):
 
 class Create(RepoAction):
 
+    name = "create"
     description = _('create a repository')
 
     def setup_parser(self):
@@ -473,7 +425,7 @@ class Create(RepoAction):
         arch = self.opts.arch or 'noarch'
         feed = self.opts.feed
         if self.opts.preserve_metadata and not feed:
-            system_exit(os.EX_USAGE, _('Cannot use `preserve_metadata` option for feedless repos'))
+            utils.system_exit(os.EX_USAGE, _('Cannot use `preserve_metadata` option for feedless repos'))
         preserve_metadata = False
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
@@ -542,6 +494,7 @@ class Create(RepoAction):
 
 class Clone(RepoProgressAction):
 
+    name = "clone"
     description = _('clone a repository')
 
     def setup_parser(self):
@@ -614,12 +567,13 @@ class Clone(RepoProgressAction):
         foreground = self.opts.foreground
         task = self.get_task()
         if not foreground:
-            system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
+            utils.system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
         self.clone_foreground(task)
 
 
 class Delete(RepoAction):
 
+    name = "delete"
     description = _('delete a repository')
 
     def run(self):
@@ -631,6 +585,7 @@ class Delete(RepoAction):
 
 class Update(RepoAction):
 
+    name = "update"
     description = _('update a repository')
 
     def setup_parser(self):
@@ -769,6 +724,7 @@ class Update(RepoAction):
 
 class Sync(RepoProgressAction):
 
+    name = "sync"
     description = _('synchronize data to a repository from its feed')
 
     def setup_parser(self):
@@ -829,7 +785,7 @@ class Sync(RepoProgressAction):
         self.print_sync_finish(task['state'], task['progress'])
         if task['state'] == 'error':
             if task['traceback']:
-                system_exit(-1, task['traceback'][-1])
+                utils.system_exit(-1, task['traceback'][-1])
 
     def get_task(self):
         id = self.get_required_option('id')
@@ -861,13 +817,14 @@ class Sync(RepoProgressAction):
         foreground = self.opts.foreground
         task = self.get_task()
         if not foreground:
-            system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
+            utils.system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
         self.sync_foreground(task)
 
 
 
 class CancelSync(RepoAction):
 
+    name = "cancel_sync"
     description = _('cancel a running sync')
 
     def run(self):
@@ -875,10 +832,10 @@ class CancelSync(RepoAction):
         self.get_repo(id)
         syncs = self.repository_api.sync_list(id)
         if not syncs:
-            system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
+            utils.system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
         task = syncs[0]
         if task['state'] not in ('waiting', 'running'):
-            system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
+            utils.system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
         taskid = task['id']
         self.repository_api.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s is being canceled") % id
@@ -886,6 +843,7 @@ class CancelSync(RepoAction):
 
 class GenerateMetadata(RepoAction):
 
+    name = "generate_metadata"
     description =  _('schedule metadata generation for a repository')
 
     def setup_parser(self):
@@ -905,13 +863,14 @@ class GenerateMetadata(RepoAction):
             if task['finish_time']:
                 finish_time = str(parse_iso8601_datetime(task['finish_time']))
             status = constants.METADATA_STATUS % (task['id'], task['state'], task['exception'], start_time, finish_time)
-            system_exit(os.EX_OK, _(status))
+            utils.system_exit(os.EX_OK, _(status))
         else:
             task = self.repository_api.generate_metadata(id)
-            system_exit(os.EX_OK, _('Metadata generation has been successfully scheduled for repo id [%s]. Use --status to check the status.') % id)
+            utils.system_exit(os.EX_OK, _('Metadata generation has been successfully scheduled for repo id [%s]. Use --status to check the status.') % id)
 
 class AddMetadata(RepoAction):
 
+    name = "add_metadata"
     description =  _('Add a metadata type to existing repository')
 
     def setup_parser(self):
@@ -925,23 +884,24 @@ class AddMetadata(RepoAction):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
         if not self.opts.mdtype:
-            system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
+            utils.system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
         else:
             filetype = self.opts.mdtype
         if not self.opts.path:
-            system_exit(os.EX_USAGE, _("Error: path is a required option"))
+            utils.system_exit(os.EX_USAGE, _("Error: path is a required option"))
         else:
             filepath = self.opts.path
         filedata = None
         try:
             filedata = open(filepath, 'r').read()
         except Exception, e:
-            system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.path))
+            utils.system_exit(os.EX_DATAERR, _("Error occurred while reading the metadata file at [%s]" % self.opts.path))
         self.repository_api.add_metadata(id, self.opts.mdtype, filedata)
-        system_exit(os.EX_OK, _("Successfully added metadata type [%s] to repo [%s]" % (filetype, id)))
+        utils.system_exit(os.EX_OK, _("Successfully added metadata type [%s] to repo [%s]" % (filetype, id)))
 
 class DownloadMetadata(RepoAction):
 
+    name = "download_metadata"
     description =  _('Download a metadata type if available from existing repository')
 
     def setup_parser(self):
@@ -955,29 +915,30 @@ class DownloadMetadata(RepoAction):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
         if not self.opts.mdtype:
-            system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
+            utils.system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
         else:
             filetype = self.opts.mdtype
         try:
             file_stream = self.repository_api.download_metadata(repo['id'], filetype)
         except Exception, e:
             log.error(e)
-            system_exit(os.EX_DATAERR, _("Error:%s") % e[1])
+            utils.system_exit(os.EX_DATAERR, _("Error:%s") % e[1])
         if not file_stream:
-            system_exit(os.EX_DATAERR, _("Error:No file data found for file type [%s]") % filetype)
+            utils.system_exit(os.EX_DATAERR, _("Error:No file data found for file type [%s]") % filetype)
         if self.opts.out:
             try:
                 f = open(self.opts.out, 'w')
                 f.write(file_stream.encode("utf8"))
                 f.close()
             except Exception,e:
-                system_exit(os.EX_DATAERR, _("Error occurred while storing the file data %s" % e))
-            system_exit(os.EX_OK, _("Successfully exported the metadata type data to [%s]" % self.opts.out))
+                utils.system_exit(os.EX_DATAERR, _("Error occurred while storing the file data %s" % e))
+            utils.system_exit(os.EX_OK, _("Successfully exported the metadata type data to [%s]" % self.opts.out))
         else:
             print file_stream.encode("utf8")
 
 class ListMetadata(RepoAction):
 
+    name = "list_metadata"
     description =  _('List metadata type information associated to existing repository')
 
     def setup_parser(self):
@@ -988,7 +949,7 @@ class ListMetadata(RepoAction):
         repo = self.get_repo(id)
         filetype_info_dict = self.repository_api.list_metadata(repo['id'])
         if not filetype_info_dict:
-            system_exit(os.EX_DATAERR, _('No metadata types to list'))
+            utils.system_exit(os.EX_DATAERR, _('No metadata types to list'))
         print_header(_('Metadata Type information for Respoitory [%s]' % id))
         for filetype, value in filetype_info_dict.items():
             print '  datatype: %s' % filetype
@@ -1003,6 +964,7 @@ class ListMetadata(RepoAction):
 
 class Schedules(RepoAction):
 
+    name = "schedules"
     description = _('list all repository schedules')
 
     def setup_parser(self):
@@ -1016,6 +978,7 @@ class Schedules(RepoAction):
 
 class ListKeys(RepoAction):
 
+    name = "list_keys"
     description = _('list gpg keys')
 
     def run(self):
@@ -1024,6 +987,8 @@ class ListKeys(RepoAction):
             print os.path.basename(key)
 
 class Publish(RepoAction):
+
+    name = "publish"
     description = _('enable/disable repository being published by apache')
 
     def setup_parser(self):
@@ -1036,9 +1001,9 @@ class Publish(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if self.opts.enable and self.opts.disable:
-            system_exit(os.EX_USAGE, _("Error: Both enable and disable are set to True"))
+            utils.system_exit(os.EX_USAGE, _("Error: Both enable and disable are set to True"))
         if not self.opts.enable and not self.opts.disable:
-            system_exit(os.EX_USAGE, _("Error: Either --enable or --disable needs to be chosen"))
+            utils.system_exit(os.EX_USAGE, _("Error: Either --enable or --disable needs to be chosen"))
         if self.opts.enable:
             state = True
         if self.opts.disable:
@@ -1050,6 +1015,8 @@ class Publish(RepoAction):
 
 
 class AddPackages(RepoAction):
+
+    name = "add_package"
     description = _('add package to a repository')
 
     def setup_parser(self):
@@ -1069,9 +1036,9 @@ class AddPackages(RepoAction):
         id = self.get_required_option('id')
 
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform an add."))
+            utils.system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform an add."))
         if self.opts.pkgname and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
+            utils.system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -1081,7 +1048,7 @@ class AddPackages(RepoAction):
         pids = []
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             pkglist = utils.parseCSV(self.opts.csv)
         else:
             pkglist = self.opts.pkgname
@@ -1123,7 +1090,7 @@ class AddPackages(RepoAction):
             pids.append(src_pkgobj['id'])
 
         if not pnames:
-            system_exit(os.EX_DATAERR)
+            utils.system_exit(os.EX_DATAERR)
         if self.opts.srcrepo:
             # lookup dependencies and let use decide whether to include them
             pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
@@ -1136,7 +1103,7 @@ class AddPackages(RepoAction):
         try:
             errors = self.repository_api.add_package(id, pids)
         except Exception:
-            system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
+            utils.system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
         if not errors:
             print _("Successfully added packages %s to repo [%s]." % (pnames, id))
         else:
@@ -1151,6 +1118,8 @@ class AddPackages(RepoAction):
 
 
 class RemovePackages(RepoAction):
+
+    name = "remove_package"
     description = _('remove package from the repository')
 
     def setup_parser(self):
@@ -1167,16 +1136,16 @@ class RemovePackages(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform a remove."))
+            utils.system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform a remove."))
         if self.opts.pkgname and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
+            utils.system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repo is valid
         self.get_repo(id)
         pnames = []
         pobj = []
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             pkglist = utils.parseCSV(self.opts.csv)
         else:
             pkglist = self.opts.pkgname
@@ -1194,7 +1163,7 @@ class RemovePackages(RepoAction):
             pnames.append(name)
             pobj.append(src_pkgobj)
         if not pnames:
-            system_exit(os.EX_DATAERR)
+            utils.system_exit(os.EX_DATAERR)
         pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
         pobj += pkgdeps
         pkg = list(set([p['filename'] for p in pobj]))
@@ -1206,6 +1175,8 @@ class RemovePackages(RepoAction):
 
 
 class AddErrata(RepoAction):
+
+    name = "add_errata"
     description = _('add errata to a repository')
 
     def setup_parser(self):
@@ -1222,7 +1193,7 @@ class AddErrata(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform an add."))
+            utils.system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform an add."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -1275,10 +1246,12 @@ class AddErrata(RepoAction):
                 self.repository_api.add_package(id, pids)
             print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
         except Exception:
-            system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
+            utils.system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
 
 
 class RemoveErrata(RepoAction):
+
+    name = "remove_errata"
     description = _('remove errata from the repository')
 
     def setup_parser(self):
@@ -1295,7 +1268,7 @@ class RemoveErrata(RepoAction):
         # check if repo is valid
         self.get_repo(id)
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform a remove."))
+            utils.system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform a remove."))
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
@@ -1337,6 +1310,8 @@ class RemoveErrata(RepoAction):
 
 
 class AddFiles(RepoAction):
+
+    name = "add_file"
     description = _('add file to a repository')
 
     def setup_parser(self):
@@ -1356,14 +1331,14 @@ class AddFiles(RepoAction):
             self.get_repo(self.opts.srcrepo)
         fids = {}
         if self.opts.filename and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Both --filename and --csv cannot be used in the same command."))
+            utils.system_exit(os.EX_USAGE, _("Both --filename and --csv cannot be used in the same command."))
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.filename:
-                system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an add."))
+                utils.system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an add."))
             flist = self.opts.filename
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1403,6 +1378,8 @@ class AddFiles(RepoAction):
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
 
 class RemoveFiles(RepoAction):
+
+    name = "remove_file"
     description = _('remove file from a repository')
 
     def setup_parser(self):
@@ -1418,16 +1395,16 @@ class RemoveFiles(RepoAction):
         # check if repos are valid
         self.get_repo(id)
         if self.opts.filename and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: Both --filename and --csv cannot be used in the same command."))
+            utils.system_exit(os.EX_USAGE, _("Error: Both --filename and --csv cannot be used in the same command."))
 
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.filename:
-                system_exit(os.EX_USAGE, _("Error: At least one file is required to perform a remove."))
+                utils.system_exit(os.EX_USAGE, _("Error: At least one file is required to perform a remove."))
             flist = self.opts.filename
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1458,12 +1435,13 @@ class RemoveFiles(RepoAction):
                 self.repository_api.remove_file(id, [fid])
             except Exception:
                 raise
-                system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
+                utils.system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
 
 
 class AddFilters(RepoAction):
 
+    name = "add_filters"
     description = _('add filters to a repository')
 
     def setup_parser(self):
@@ -1480,6 +1458,7 @@ class AddFilters(RepoAction):
 
 class RemoveFilters(RepoAction):
 
+    name = "remove_filters"
     description = _('remove filters from a repository')
 
     def setup_parser(self):
@@ -1496,6 +1475,7 @@ class RemoveFilters(RepoAction):
 
 class Discovery(RepoProgressAction):
 
+    name = "discovery"
     description = _('discover and create repositories')
     selected = []
 
@@ -1545,7 +1525,7 @@ class Discovery(RepoProgressAction):
         try:
             task = self.service_api.repo_discovery(url, type=ctype, cert_data=cert_data)
         except Exception,e:
-            system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
+            utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
         while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
             self.print_discovery_progress(task['progress'])
@@ -1555,7 +1535,7 @@ class Discovery(RepoProgressAction):
         repourls = task['result'] or []
 
         if not len(repourls):
-            system_exit(os.EX_OK, "No repos discovered @ url location [%s]" % url)
+            utils.system_exit(os.EX_OK, "No repos discovered @ url location [%s]" % url)
         print_header(_("Repository Urls discovered @ [%s]" % url))
         assumeyes =  self.opts.assumeyes
         if not assumeyes:
@@ -1575,7 +1555,7 @@ class Discovery(RepoProgressAction):
                     self.__add_selection([repourls[int(proceed.strip().lower())-1]])
                 elif select_val == 'q':
                     self.selection = []
-                    system_exit(os.EX_OK, _("Operation aborted upon user request."))
+                    utils.system_exit(os.EX_OK, _("Operation aborted upon user request."))
                 elif set(select_val.split(":")).issubset(num_selects):
                     lower, upper = tuple(select_val.split(":"))
                     self.__add_selection(repourls[int(lower)-1:int(upper)])
@@ -1610,7 +1590,7 @@ class Discovery(RepoProgressAction):
                 success = -1
                 print("Error: %s" % e[1])
                 log.error("Error creating candidate repos %s" % e[1])
-        system_exit(success)
+        utils.system_exit(success)
 
     def __add_selection(self, urls):
         for url in urls:
@@ -1623,13 +1603,6 @@ class Discovery(RepoProgressAction):
                 print "(+)  [%s] %-5s" % (index+1, url)
             else:
                 print "(-)  [%s] %-5s" % (index+1, url)
-
-
-# repo command ----------------------------------------------------------------
-
-class Repo(Command):
-
-    description = _('repository specific actions to pulp server')
 
 
 class KeyReader:
@@ -1661,4 +1634,44 @@ class KeyReader:
                 f.close()
             return keylist
         except Exception, e:
-            system_exit(os.EX_DATAERR, _(str(e)))
+            utils.system_exit(os.EX_DATAERR, _(str(e)))
+
+
+# repo command ----------------------------------------------------------------
+
+class AdminRepo(Repo):
+
+    name = "repo"
+    description = _('repository specific actions to pulp server')
+
+    actions = [ List,
+                Status,
+                Content,
+                Create,
+                Clone,
+                Delete,
+                Update,
+                Sync,
+                CancelSync,
+                ListKeys,
+                Publish,
+                AddPackages,
+                RemovePackages,
+                AddErrata,
+                RemoveErrata,
+                AddFiles,
+                RemoveFiles,
+                AddFilters,
+                RemoveFilters,
+                GenerateMetadata,
+                AddMetadata,
+                ListMetadata,
+                DownloadMetadata,
+                Discovery ]
+
+
+# repo plugin ----------------------------------------------------------------
+
+class AdminRepoPlugin(AdminPlugin):
+
+    commands = [ AdminRepo ]
