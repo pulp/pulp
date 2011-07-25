@@ -456,6 +456,8 @@ class Create(RepoAction):
                                help=_("additional information about repo in a dictionary form inside a string"))
         self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
                                help=_("Preserves the original metadata; only works with feed repos"))
+        self.parser.add_option('--content_type', dest='content_type', default="yum",
+                            help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
         schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
                             help=_('length of time between each run in iso8601 duration format'))
@@ -463,8 +465,6 @@ class Create(RepoAction):
                             help=_('date and time of the first run in iso8601 combined date and time format'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
                             help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        schedule.add_option('--content_type', dest='content_type', default="yum",
-                            help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
         self.parser.add_option_group(schedule)
 
     def run(self):
