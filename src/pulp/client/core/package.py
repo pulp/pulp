@@ -30,11 +30,16 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
+from pulp.client.api.job import JobAPI
 from pulp.client.api.upload import UploadAPI
 from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, parse_at_schedule, system_exit
+from pulp.client.core.utils import (
+    print_header, parse_at_schedule, system_exit,
+    waitinit, printwait, askwait, askcontinue,
+    task_end, task_succeeded, job_end, job_succeeded,
+)
 from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
@@ -112,29 +117,25 @@ class Install(PackageAction):
         pnames = self.opts.pnames
         if not pnames:
             system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
-        when = parse_at_schedule(self.opts.when)
         if consumergroupid:
-            group = self.consumer_group_api.consumergroup(consumergroupid)
-            if not group:
-                system_exit(-1,
-                    _('Invalid group: %s' % consumergroupid))
-            wait = self.getwait(group['consumerids'])
-            task = self.consumer_group_api.installpackages(consumergroupid, pnames, when=when)
+            self.on_group(consumergroupid, pnames)
         else:
-            wait = self.getwait([consumerid,])
-            task = self.consumer_api.installpackages(consumerid, pnames, when=when)
+            self.on_consumer(consumerid, pnames)
+
+    def on_consumer(self, id, pnames):
+        when = parse_at_schedule(self.opts.when)
+        wait = self.getwait([id,])
+        task = self.consumer_api.installpackages(id, pnames, when=when)
         print _('Created task id: %s') % task['id']
         print _('Task is scheduled for: %s') % when
-
         if not wait:
             system_exit(0)
         state = None
         status = None
         spath = task['status_path']
-        sys.stdout.write(_('Waiting: [-] '))
-        sys.stdout.flush()
+        waitinit()
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
-            self.printwait()
+            printwait()
             status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
@@ -147,14 +148,29 @@ class Install(PackageAction):
                         (status['exception'], status['traceback'])
             system_exit(-1, msg)
 
-    def printwait(self):
-        symbols = '|/-\|/-\\'
-        for i in range(0,len(symbols)):
-            sys.stdout.write('\b\b\b')
-            sys.stdout.write(symbols[i])
-            sys.stdout.write('] ')
-            sys.stdout.flush()
-            time.sleep(1)
+    def on_group(self, id, pnames):
+        japi = JobAPI()
+        when = parse_at_schedule(self.opts.when)
+        group = self.consumer_group_api.consumergroup(id)
+        if not group:
+            system_exit(-1,
+                _('Invalid group: %s' % id))
+        wait = self.getwait(group['consumerids'])
+        job = self.consumer_group_api.installpackages(id, pnames, when=when)
+        print _('Created job id: %s') % job['id']
+        print _('Job is scheduled for: %s') % when
+        waitinit()
+        while not job_end(job):
+            job = japi.info(job['id'])
+            printwait()
+        print _('\nInstall Summary:')
+        for t in job['tasks']:
+            state = t['state']
+            exception = t['exception']
+            id, packages = t['args']
+            print _('\t[ %-8s ] %s' % (state.upper(), id))
+            if exception:
+                print '\t\t, %s' % exception
 
     def getunavailable(self, ids):
         lst = []
@@ -177,30 +193,13 @@ class Install(PackageAction):
         ualist = self.getunavailable(ids)
         if ualist:
             self.printunavailable(ualist)
-            if not self.askcontinue():
+            if not askcontinue():
                 system_exit(0)
             # The consumer is unavailable, if wait was specified, verify that
             # we still want to wait.
             if wait:
-                wait = self.askwait()
+                wait = askwait()
         return wait
-
-    def askcontinue(self):
-        return self.askquestion('\nContinue? [y/n]:')
-
-    def askwait(self):
-        return self.askquestion('\nWait? [y/n]:')
-
-    def askquestion(self, question):
-        while True:
-            sys.stdout.write(_(question))
-            sys.stdout.flush()
-            reply = sys.stdin.readline()
-            reply = reply.lower()
-            if reply.startswith('y'):
-                return True
-            if reply.startswith('n'):
-                return False
 
 
 class Search(PackageAction):

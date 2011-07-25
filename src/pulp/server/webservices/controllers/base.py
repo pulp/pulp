@@ -73,7 +73,7 @@ class JSONController(object):
         @param task: task to convert
         @return dict representing task
         """
-        fields = ('id', 'class_name', 'method_name', 'args', 'state', 'result',
+        fields = ('id', 'job_id', 'class_name', 'method_name', 'args', 'state', 'result',
                   'exception', 'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
         # convert the exception into a string as it cannot be json encoded
@@ -94,6 +94,14 @@ class JSONController(object):
         elif isinstance(task.scheduler, IntervalScheduler):
             d['scheduler'] = 'interval'
         return d
+
+    def _job_to_dict(self, job):
+        tasks = []
+        d = dict(id=job.id, tasks=tasks)
+        for t in job.tasks:
+            tasks.append(self._task_to_dict(t))
+        return d
+
 
     def _status_path(self, id):
         """

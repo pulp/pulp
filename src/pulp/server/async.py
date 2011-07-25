@@ -273,7 +273,7 @@ class RemoteMethod:
     @type taskid: str
     """
 
-    CTAG = 'asynctaskreplyqueue'
+    CTAG = 'pulp.task'
 
     def __init__(self, id, secret, classname, name, taskid):
         """
@@ -339,7 +339,7 @@ class ReplyHandler(Listener):
         if task:
             sn = reply.sn
             result = reply.retval
-            task[0].succeeded(sn, result)
+            task[0].succeeded(result)
         else:
             log.warn('Task (%s), not found', taskid)
 
@@ -351,36 +351,9 @@ class ReplyHandler(Listener):
             sn = reply.sn
             exception = reply.exval,
             tb = repr(exception)
-            task[0].failed(sn, exception, tb)
+            task[0].failed(exception, tb)
         else:
             log.warn('Task (%s), not found', taskid)
 
     def status(self, reply):
         pass
-
-
-class AgentTask(AsyncTask):
-    """
-    Task represents an async task involving an RMI to the agent.
-    """
-
-    def succeeded(self, sn, result):
-        """
-        The RMI succeeded.
-        @param sn: The RMI serial #.
-        @type sn: uuid
-        @param result: The RMI returned value.
-        @type result: object
-        """
-        AsyncTask.succeeded(self, result)
-
-    def failed(self, sn, exception, tb=None):
-        """
-        @param sn: The RMI serial #.
-        @type sn: uuid
-        @param exception: The RMI raised exception.
-        @type exception: Exception
-        @param tb: The exception traceback.
-        @type tb: list
-        """
-        AsyncTask.failed(self, exception, tb=tb)

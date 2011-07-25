@@ -27,6 +27,7 @@ class Task(Command):
 # task actions -----------------------------------------------------------------
 
 _task_template = _('''Task: %s
+    Job: %s
     Scheduler: %s
     Call: %s
     Arguments: %s
@@ -61,6 +62,7 @@ class TaskAction(Action):
             return '.'.join((task['class_name'], task['method_name']))
 
         return _task_template % (task['id'],
+                                 task['job_id'],
                                  task['scheduler'],
                                  _call(task),
                                  ', '.join([str(a) for a in task['args']]),

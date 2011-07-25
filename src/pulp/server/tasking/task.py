@@ -17,6 +17,7 @@ import pickle
 import sys
 import time
 import traceback
+import threading
 import uuid
 from gettext import gettext as _
 
@@ -436,7 +437,30 @@ class AsyncTask(Task):
     execution is the first part of running the task and does not result in
     transition to a finished state.  Rather, the Task state is advanced
     by external processing.
+    @cvar __current: The current task running in the thread.
+    @type __current: L{AsyncTask}
     """
+
+    __current = threading.local()
+
+    @classmethod
+    def current(cls):
+        """
+        The current running task.
+        @return: The current running task.
+        @rtype: L{AsyncTask}
+        """
+        return cls.__current
+
+    def run(self):
+        """
+        Set current running task and call super.
+        """
+        try:
+            AsyncTask.__current = self
+            return Task.run(self)
+        finally:
+            AsyncTask.__current = None
 
     def invoked(self, result):
         """
