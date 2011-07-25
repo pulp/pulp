@@ -13,9 +13,12 @@ import os
 from gettext import gettext as _
 
 from pulp.client import constants
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumergroup import ConsumerGroupAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import system_exit
+
 
 # consumer group base action --------------------------------------------------
 
@@ -29,10 +32,12 @@ class ConsumerGroupAction(Action):
         self.parser.add_option("--id", dest="id",
                                help=_("consumer group id (required)"))
 
+
 # consumer group actions ------------------------------------------------------
 
 class List(ConsumerGroupAction):
 
+    name = "list"
     description = _('list available consumer groups')
 
     def setup_parser(self):
@@ -54,6 +59,7 @@ class List(ConsumerGroupAction):
 
 class Create(ConsumerGroupAction):
 
+    name = "create"
     description = _('create a consumer group')
 
     def setup_parser(self):
@@ -71,6 +77,7 @@ class Create(ConsumerGroupAction):
 
 class Delete(ConsumerGroupAction):
 
+    name = "delete"
     description = _('delete the consumer group')
 
     def setup_parser(self):
@@ -87,6 +94,7 @@ class Delete(ConsumerGroupAction):
 
 class AddConsumer(ConsumerGroupAction):
 
+    name = "add_consumer"
     description = _('add a consumer to a consumer group')
 
     def setup_parser(self):
@@ -104,6 +112,7 @@ class AddConsumer(ConsumerGroupAction):
 
 class DeleteConsumer(ConsumerGroupAction):
 
+    name = "delete_consumer"
     description = _('delete a consumer from a consumer group')
 
     def setup_parser(self):
@@ -121,6 +130,7 @@ class DeleteConsumer(ConsumerGroupAction):
 
 class Bind(ConsumerGroupAction):
 
+    name = "bind"
     description = _('bind the consumer group to listed repos')
 
     def setup_parser(self):
@@ -138,6 +148,7 @@ class Bind(ConsumerGroupAction):
 
 class Unbind(ConsumerGroupAction):
 
+    name = "unbind"
     description = _('unbind the consumer group from repos')
 
     def setup_parser(self):
@@ -155,6 +166,7 @@ class Unbind(ConsumerGroupAction):
 
 class AddKeyValue(ConsumerGroupAction):
 
+    name = "add_keyvalue"
     description = _('add key-value information to consumer group')
 
     def setup_parser(self):
@@ -181,6 +193,7 @@ class AddKeyValue(ConsumerGroupAction):
 
 class DeleteKeyValue(ConsumerGroupAction):
 
+    name = "delete_keyvalue"
     description = _('delete key-value information from consumer group')
 
     def setup_parser(self):
@@ -197,6 +210,7 @@ class DeleteKeyValue(ConsumerGroupAction):
 
 class UpdateKeyValue(ConsumerGroupAction):
 
+    name = "update_keyvalue"
     description = _('update key-value information in consumer group')
 
     def setup_parser(self):
@@ -213,8 +227,28 @@ class UpdateKeyValue(ConsumerGroupAction):
         self.consumer_group_api.update_key_value_pair(groupid, key, value)
         print _("Successfully updated key-value pair %s:%s") % (key, value)
 
+
 # consumer group command ------------------------------------------------------
 
 class ConsumerGroup(Command):
 
+    name = "consumergroup"
     description = _('consumer group specific actions to pulp server')
+
+    actions = [ List,
+                Create,
+                Delete,
+                AddConsumer,
+                DeleteConsumer,
+                Bind,
+                Unbind,
+                AddKeyValue,
+                DeleteKeyValue,
+                UpdateKeyValue ]
+
+
+# consumer group plugin ------------------------------------------------------
+
+class ConsumerGroupPlugin(AdminPlugin):
+    
+    commands = [ ConsumerGroup ]

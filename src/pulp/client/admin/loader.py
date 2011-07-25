@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp.client.lib.plugin_manager.loader import PluginLoader
+from pulp.client.lib.plugin_lib.loader import PluginLoader
 from pulp.client.admin.plugin import AdminPlugin
 
 

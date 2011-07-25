@@ -21,14 +21,17 @@ import time
 from gettext import gettext as _
 
 import pulp.client.constants as constants
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
-from pulp.client.logutil import getLogger
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import system_exit
+from pulp.client.lib.logutil import getLogger
 
 
 _log = getLogger(__name__)
+
 
 # base package group action class ---------------------------------------------
 
@@ -47,6 +50,7 @@ class PackageGroupAction(Action):
 
 class List(PackageGroupAction):
 
+    name = "list"
     description = _('list available package groups')
 
     def setup_parser(self):
@@ -72,6 +76,7 @@ class List(PackageGroupAction):
 
 class Info(PackageGroupAction):
 
+    name = "info"
     description = _('lookup information for a package group')
 
     def setup_parser(self):
@@ -100,6 +105,7 @@ class Info(PackageGroupAction):
 
 class Create(PackageGroupAction):
 
+    name = "create"
     description = _('create a package group')
 
     def setup_parser(self):
@@ -131,6 +137,7 @@ class Create(PackageGroupAction):
 
 class Delete(PackageGroupAction):
 
+    name = "delete"
     description = _('delete a package group')
 
     def setup_parser(self):
@@ -154,6 +161,7 @@ class Delete(PackageGroupAction):
 
 class AddPackage(PackageGroupAction):
 
+    name = "add_package"
     description = _('add package to an existing package group')
 
     def setup_parser(self):
@@ -192,6 +200,7 @@ class AddPackage(PackageGroupAction):
 
 class DeletePackage(PackageGroupAction):
 
+    name = "delete_package"
     description = _('delete package from an existing package group')
 
     def setup_parser(self):
@@ -221,6 +230,7 @@ class DeletePackage(PackageGroupAction):
 
 class Install(PackageGroupAction):
 
+    name = "install"
     description = _('schedule a packagegroup install')
 
     def setup_parser(self):
@@ -260,6 +270,7 @@ class Install(PackageGroupAction):
 # --- Package Group Category Operations ---
 class ListCategory(PackageGroupAction):
 
+    name = "list_category"
     description = _('list available package group categories')
 
     def setup_parser(self):
@@ -279,6 +290,7 @@ class ListCategory(PackageGroupAction):
 
 class InfoCategory(PackageGroupAction):
 
+    name = "info_category"
     description = _('lookup information for a package group category')
 
     def setup_parser(self):
@@ -302,6 +314,7 @@ class InfoCategory(PackageGroupAction):
 
 class CreateCategory(PackageGroupAction):
 
+    name = "create_category"
     description = _('create a package group category')
 
     def setup_parser(self):
@@ -335,6 +348,7 @@ class CreateCategory(PackageGroupAction):
 
 class DeleteCategory(PackageGroupAction):
 
+    name = "delete_category"
     description = _('delete a package group category')
 
     def setup_parser(self):
@@ -358,6 +372,7 @@ class DeleteCategory(PackageGroupAction):
 
 class InstallCategory(PackageGroupAction):
 
+    name = "install_category"
     description = _('schedule a packagegroupcategory install')
 
     def setup_parser(self):
@@ -390,6 +405,7 @@ class InstallCategory(PackageGroupAction):
 
 class AddGroupToCategory(PackageGroupAction):
 
+    name = "add_group"
     description = _('add package group to an existing package group category')
 
     def setup_parser(self):
@@ -418,6 +434,7 @@ class AddGroupToCategory(PackageGroupAction):
 
 class DeleteGroupFromCategory(PackageGroupAction):
 
+    name = "delete_group"
     description = _('delete package group from an existing package group category')
 
     def setup_parser(self):
@@ -443,6 +460,7 @@ class DeleteGroupFromCategory(PackageGroupAction):
                     
 class ImportComps(PackageGroupAction):
     
+    name = "import"
     description = _('Import package groups and categories from an existing comps.xml')
     
     def setup_parser(self):
@@ -472,6 +490,7 @@ class ImportComps(PackageGroupAction):
             
 class ExportComps(PackageGroupAction):
     
+    name = "export"
     description = _('Export comps.xml for package groups and categories in a repo')
     
     def setup_parser(self):
@@ -505,4 +524,29 @@ class ExportComps(PackageGroupAction):
 
 class PackageGroup(Command):
 
+    name = "packagegroup"
     description = _('package group specific actions to pulp server')
+
+    actions = [ List,
+                Info,
+                Create,
+                Delete,
+                AddPackage,
+                DeletePackage,
+                Install,
+                InstallCategory,
+                ListCategory,
+                InfoCategory,
+                CreateCategory,
+                DeleteCategory,
+                AddGroupToCategory,
+                DeleteGroupFromCategory,
+                ImportComps,
+                ExportComps ]
+
+
+# package group plugin -------------------------------------------------------
+
+class PackageGroupPlugin(AdminPlugin):
+
+    commands = [ PackageGroup ]

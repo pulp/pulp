@@ -60,6 +60,7 @@ class Command(object):
         self.parser.disable_interspersed_args()
         self._actions = {}
         self._action_order = []
+        self.register_actions()
 
     @property
     def usage(self):

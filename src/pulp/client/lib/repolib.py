@@ -21,9 +21,9 @@ entirely on the consumer.
 import os
 
 # Pulp
-from pulp.client.lock import Lock
-from pulp.client.logutil import getLogger
-from pulp.client.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp.client.lib.lock import Lock
+from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 log = getLogger(__name__)
 

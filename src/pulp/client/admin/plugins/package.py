@@ -13,7 +13,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-
 import base64
 import os
 import re
@@ -25,7 +24,8 @@ from gettext import gettext as _
 from optparse import OptionGroup
 
 from pulp.client.constants import UNAVAILABLE, PACKAGE_INFO
-from pulp.client import utils
+from pulp.client.lib import utils
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.api.repository import RepositoryAPI
@@ -33,11 +33,13 @@ from pulp.client.api.service import ServiceAPI
 from pulp.client.api.upload import UploadAPI
 from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, parse_at_schedule, system_exit
-from pulp.client.logutil import getLogger
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header, parse_at_schedule
+from pulp.client.lib.logutil import getLogger
+
 
 log = getLogger(__name__)
+
 
 # package action base class ---------------------------------------------------
 
@@ -56,6 +58,7 @@ class PackageAction(Action):
 
 class Info(PackageAction):
 
+    name = "info"
     description = _('lookup information for a package')
 
     def setup_parser(self):
@@ -69,7 +72,7 @@ class Info(PackageAction):
         repoid = self.get_required_option('repoid')
         pkg = self.repository_api.get_package(repoid, name)
         if not pkg:
-            system_exit(os.EX_DATAERR,
+            utils.system_exit(os.EX_DATAERR,
                         _("Package [%s] not found in repo [%s]") %
                         (name, repoid))
         print_header(_("Package Information"))
@@ -83,6 +86,7 @@ class Info(PackageAction):
 
 class Install(PackageAction):
 
+    name = "install"
     description = _('schedule a package install')
 
     def setup_parser(self):
@@ -107,16 +111,16 @@ class Install(PackageAction):
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
-            system_exit(os.EX_USAGE,
+            utils.system_exit(os.EX_USAGE,
                         _("Consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
+            utils.system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
         when = parse_at_schedule(self.opts.when)
         if consumergroupid:
             group = self.consumer_group_api.consumergroup(consumergroupid)
             if not group:
-                system_exit(-1,
+                utils.system_exit(-1,
                     _('Invalid group: %s' % consumergroupid))
             wait = self.getwait(group['consumerids'])
             task = self.consumer_group_api.installpackages(consumergroupid, pnames, when=when)
@@ -127,7 +131,7 @@ class Install(PackageAction):
         print _('Task is scheduled for: %s') % when
 
         if not wait:
-            system_exit(0)
+            utils.system_exit(0)
         state = None
         status = None
         spath = task['status_path']
@@ -145,7 +149,7 @@ class Install(PackageAction):
             if status is not None and state == 'error':
                 msg += _('\nException: %s\nTraceback: %s') % \
                         (status['exception'], status['traceback'])
-            system_exit(-1, msg)
+            utils.system_exit(-1, msg)
 
     def printwait(self):
         symbols = '|/-\|/-\\'
@@ -178,7 +182,7 @@ class Install(PackageAction):
         if ualist:
             self.printunavailable(ualist)
             if not self.askcontinue():
-                system_exit(0)
+                utils.system_exit(0)
             # The consumer is unavailable, if wait was specified, verify that
             # we still want to wait.
             if wait:
@@ -205,6 +209,7 @@ class Install(PackageAction):
 
 class Search(PackageAction):
 
+    name = "search"
     description = _('search for packages')
 
     def setup_parser(self):
@@ -231,7 +236,7 @@ class Search(PackageAction):
         pkgs = self.service_api.search_packages(name=name, epoch=epoch, version=version,
                 release=release, arch=arch, filename=filename)
         if not pkgs:
-            system_exit(os.EX_DATAERR, _("No packages found."))
+            utils.system_exit(os.EX_DATAERR, _("No packages found."))
 
         name_field_size = self.get_field_size(pkgs, field_name="name")
         evra_field_size = self.get_field_size(pkgs, msg="%s:%s-%s.%s",
@@ -268,6 +273,7 @@ class Search(PackageAction):
 
 class DependencyList(PackageAction):
 
+    name = "deplist"
     description = _('List available dependencies')
 
     def setup_parser(self):
@@ -280,12 +286,12 @@ class DependencyList(PackageAction):
     def run(self):
 
         if not self.opts.pnames:
-            system_exit(os.EX_DATAERR, \
+            utils.system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
         repoid = [ r for r in self.opts.repoid or [] if len(r)]
 
         if not self.opts.repoid or not repoid:
-            system_exit(os.EX_DATAERR, \
+            utils.system_exit(os.EX_DATAERR, \
                         _("At least one repoid is required to lookup dependencies."))
 
         pnames = self.opts.pnames
@@ -298,17 +304,17 @@ class DependencyList(PackageAction):
                 continue
             repos.append(rid)
         if not repos:
-            system_exit(os.EX_DATAERR)
+            utils.system_exit(os.EX_DATAERR)
         deps = self.service_api.dependencies(pnames, repos)
         if not deps['printable_dependency_result']:
-            system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
+            utils.system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
                         (pnames, repos))
         print_header(_("Dependencies for package(s) [%s]" % pnames))
 
         print deps['printable_dependency_result']
         print_header(_("Suggested Packages in Repo [%s]" % repos))
         if not deps['resolved']:
-            system_exit(os.EX_OK, _("None"))
+            utils.system_exit(os.EX_OK, _("None"))
         for dep, pkgs in deps['resolved'].items():
             for pkg in pkgs:
                 print str(pkg['filename'])
@@ -317,4 +323,16 @@ class DependencyList(PackageAction):
 
 class Package(Command):
 
+    name = "package"
     description = _('package specific actions to pulp server')
+
+    actions = [ Info,
+                Install,
+                Search,
+                DependencyList ]
+
+# package plugin -------------------------------------------------------------
+
+class PackagePlugin(AdminPlugin):
+
+    commands = [ Package ]

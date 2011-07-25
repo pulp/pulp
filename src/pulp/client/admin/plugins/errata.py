@@ -19,108 +19,23 @@ import string
 import sys
 import time
 from gettext import gettext as _
-from optparse import OptionGroup, SUPPRESS_HELP
+from optparse import OptionGroup
 
-from pulp.client import utils
+from pulp.client.admin.plugin import AdminPlugin
+from pulp.client.lib import utils
 from pulp.client import constants
-from pulp.client.api.consumer import ConsumerAPI
-from pulp.client.api.consumergroup import ConsumerGroupAPI
-from pulp.client.api.errata import ErrataAPI
-from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import system_exit, print_header
-from pulp.client.logutil import getLogger
+from pulp.client.lib.plugins.errata import ErrataAction, Errata, List
+from pulp.client.lib.logutil import getLogger
+
 
 log = getLogger(__name__)
 
-# errata action base class ----------------------------------------------------
-
-class ErrataAction(Action):
-
-    def __init__(self):
-        super(ErrataAction, self).__init__()
-        self.consumer_api = ConsumerAPI()
-        self.consumer_group_api = ConsumerGroupAPI()
-        self.errata_api = ErrataAPI()
-        self.repository_api = RepositoryAPI()
 
 # errata actions --------------------------------------------------------------
 
-class List(ErrataAction):
-
-    description = _('list applicable errata')
-
-    def __init__(self, is_consumer_client=False):
-        super(List, self).__init__()
-        self.is_consumer_client = is_consumer_client
-        self.id_field_size = 20
-        self.type_field_size = 15
-
-    def setup_parser(self):
-        default = None
-        consumerid = self.getconsumerid()
-
-        # Only want to default the consumer ID when running the consumer client
-        if consumerid is not None and self.is_consumer_client:
-            default = consumerid
-            help = SUPPRESS_HELP
-
-        self.parser.add_option("--consumerid",
-                               dest="consumerid",
-                               default=default,
-                               help=_('consumer id if a consumer doesn\'t exist locally'))
-        self.parser.add_option("--repoid", dest="repoid",
-                               help=_("repository id"))
-        self.parser.add_option("--type", dest="type", default=None,
-                               help=_("type of errata to lookup; eg. security, bugfix etc."))
-
-
-    def run(self):
-        consumerid = self.opts.consumerid
-        repoid = self.opts.repoid
-
-        # List all errata if no consumerid or repoid is specified
-        if not (consumerid or repoid):
-            errata = self.errata_api.errata(self.opts.type)
-            if errata:
-                print_header(_("Errata Information"))
-
-        # Only do the double argument check when not running the consumer client
-        if not self.is_consumer_client and (consumerid and repoid):
-            system_exit(os.EX_USAGE, _('Please select either a consumer or a repository, not both'))
-
-        # If running the consumer client, let the repo ID override the consumer's retrieved ID
-        if self.is_consumer_client and repoid:
-            consumerid = None
-
-        if repoid:
-            errata = self.repository_api.errata(repoid, self.opts.type)
-            if errata:
-                print_header(_("Available Errata in Repo [%s]" % repoid))
-        elif consumerid:
-            errata = self.consumer_api.errata(consumerid, self.opts.type)
-            if errata:
-                print_header(_("Applicable Errata for consumer [%s]" % consumerid))
-        
-        if not errata:
-            system_exit(os.EX_OK, _("No errata available to list"))
-
-        print _("\n%s\t%s\t%s\n" % (self.form_item_string("Id", self.id_field_size),
-                self.form_item_string("Type", self.type_field_size),
-                "Title"))
-        for erratum in errata:
-            print "%s\t%s\t%s" % \
-                (self.form_item_string(erratum["id"], self.id_field_size),
-                 self.form_item_string(erratum["type"], self.type_field_size),
-                 erratum["title"])
-
-
-    def form_item_string(self, msg, field_size):
-        return string.ljust(msg, field_size)
-
-
 class Info(ErrataAction):
 
+    name = "info"
     description = _('see details on a specific errata')
 
     def setup_parser(self):
@@ -130,7 +45,7 @@ class Info(ErrataAction):
         id = self.get_required_option('id')
         errata = self.errata_api.erratum(id)
         if not errata:
-            system_exit(os.EX_DATAERR, _("Errata Id %s not found." % id))
+            utils.system_exit(os.EX_DATAERR, _("Errata Id %s not found." % id))
         effected_pkgs = [str(pinfo['filename'])
                          for pkg in errata['pkglist']
                          for pinfo in pkg['packages']]
@@ -148,6 +63,7 @@ class Info(ErrataAction):
 
 class Search(ErrataAction):
 
+    name = "search"
     description = _('search for a specific errata')
 
     def __init__(self):
@@ -189,6 +105,7 @@ class Search(ErrataAction):
 
 class Install(ErrataAction):
 
+    name = "install"
     description = _('install errata on a consumer')
 
     def setup_parser(self):
@@ -212,7 +129,7 @@ class Install(ErrataAction):
             self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
 
         if not errataids:
-            system_exit(os.EX_USAGE, _("Specify an erratum id to perform install"))
+            utils.system_exit(os.EX_USAGE, _("Specify an erratum id to perform install"))
 
         assumeyes = False
         if self.opts.assumeyes:
@@ -232,7 +149,7 @@ class Install(ErrataAction):
                     elif ask_reboot.strip().lower() == 'n':
                         assumeyes = False
                     elif ask_reboot.strip().lower() == 'q':
-                        system_exit(os.EX_OK, _("Errata install aborted upon user request."))
+                        utils.system_exit(os.EX_OK, _("Errata install aborted upon user request."))
                     else:
                         continue
         try:
@@ -241,9 +158,9 @@ class Install(ErrataAction):
             elif self.opts.consumergroupid:
                 task = self.consumer_group_api.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
         except Exception,e:
-            system_exit(os.EX_DATAERR, _("Error:%s" % e[1] ))
+            utils.system_exit(os.EX_DATAERR, _("Error:%s" % e[1] ))
         if not task:
-            system_exit(os.EX_DATAERR,
+            utils.system_exit(os.EX_DATAERR,
                 _("The requested errataids %s are not applicable for your system" % errataids))
         print _('Created task id: %s') % task['id']
         state = None
@@ -270,8 +187,10 @@ class Install(ErrataAction):
         else:
             print("\nErrata install failed")
             
+
 class Create(ErrataAction):
     
+    name = "create"
     description = _('create a custom errata')
 
     def setup_parser(self):
@@ -328,12 +247,12 @@ class Create(ErrataAction):
 
         found = self.errata_api.erratum(errata_id)
         if found:
-            system_exit(os.EX_DATAERR, _("Erratum with id [%s] already exists on server." % errata_id))
+            utils.system_exit(os.EX_DATAERR, _("Erratum with id [%s] already exists on server." % errata_id))
         # process package list
         references = []
         if self.opts.refcsv:
             if not os.path.exists(self.opts.refcsv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             reflist = utils.parseCSV(self.opts.refcsv)
             for ref in reflist:
                 if not len(ref) == 4:
@@ -346,7 +265,7 @@ class Create(ErrataAction):
         pkglist = []
         if self.opts.pkgcsv:
             if not os.path.exists(self.opts.pkgcsv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             plist = utils.parseCSV(self.opts.pkgcsv)
             pkgs = []
             for p in plist:
@@ -365,7 +284,7 @@ class Create(ErrataAction):
         try:
             pushcount = int(self.opts.pushcount)
         except:
-            system_exit(os.EX_DATAERR, _("Error: Invalid pushcount [%s]; should be an integer " % self.opts.pushcount))
+            utils.system_exit(os.EX_DATAERR, _("Error: Invalid pushcount [%s]; should be an integer " % self.opts.pushcount))
         #create an erratum
 
         erratum_new = self.errata_api.create(errata_id, errata_title, self.opts.description,
@@ -380,12 +299,10 @@ class Create(ErrataAction):
         if erratum_new:
             print _("Successfully created an Erratum with id [%s]" % erratum_new['id'])
         
-class update(ErrataAction):
-    #TODO: put this in place once update semantics is done
-    pass
 
 class Delete(ErrataAction):
     
+    name = "delete"
     description = _('delete a custom errata')
 
     def setup_parser(self):
@@ -394,16 +311,51 @@ class Delete(ErrataAction):
         
     def run(self):
         if not self.opts.id:
-            system_exit(os.EX_USAGE, _("Errata Id is required; see --help"))
+            utils.system_exit(os.EX_USAGE, _("Errata Id is required; see --help"))
         found = self.errata_api.erratum(self.opts.id)
         if not found:
-            system_exit(os.EX_DATAERR, _("Erratum with id [%s] not found." % self.opts.id))
+            utils.system_exit(os.EX_DATAERR, _("Erratum with id [%s] not found." % self.opts.id))
         
         self.errata_api.delete(self.opts.id)
         print _("Successfully deleted Erratum with id [%s]" % self.opts.id)
 
+
+# errata overridden actions --------------------------------------------------------------
+
+class AdminList(List):
+
+    def setup_parser(self):
+        self.parser.add_option("--consumerid",
+                               dest="consumerid",
+                               default=None,
+                               help=_('consumer id if a consumer doesn\'t exist locally'))
+        List.setup_parser(self)
+
+
+    def run(self):
+        consumerid = self.opts.consumerid
+        repoid = self.opts.repoid
+
+        # Only do the double argument check when not running the consumer client
+        if consumerid and repoid:
+            utils.system_exit(os.EX_USAGE, _('Please select either a consumer or a repository, not both'))
+
+        List.run(self, consumerid)
+
+
 # errata command --------------------------------------------------------------
 
-class Errata(Command):
+class AdminErrata(Errata):
 
-    description = _('errata specific actions to pulp server')
+    actions = [ AdminList,
+                Search,
+                Info,
+                Install,
+                Create,
+                Delete ]
+
+# errata plugin --------------------------------------------------------------
+
+class AdminErrataPlugin(AdminPlugin):
+
+    commands = [ AdminErrata ]

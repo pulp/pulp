@@ -17,8 +17,9 @@ from optparse import OptionGroup
 
 # Pulp
 from pulp.client import constants
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.cds import CDSAPI
-from pulp.client.core.base import Action, Command
+from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header, parse_interval_schedule
 from pulp.common import dateutils
 
@@ -57,12 +58,6 @@ def _print_cds(cds):
          responding,
          last_heartbeat,))
 
-# -- commands ----------------------------------------------------------------------
-
-class Cds(Command):
-
-    description = _('CDS instance management actions')
-
 # -- actions ----------------------------------------------------------------------
 
 class CDSAction(Action):
@@ -74,6 +69,7 @@ class CDSAction(Action):
 
 class Register(CDSAction):
 
+    name = "register"
     description = _('associates a CDS instance with the pulp server')
 
     def setup_parser(self):
@@ -113,6 +109,7 @@ class Register(CDSAction):
 
 class Unregister(CDSAction):
 
+    name = "unregister"
     description = _('removes the association between the Pulp server and a CDS')
 
     def setup_parser(self):
@@ -128,6 +125,7 @@ class Unregister(CDSAction):
 
 class Update(CDSAction):
 
+    name = "update"
     description = _('updates an existing CDS instance')
 
     def setup_parser(self):
@@ -193,6 +191,7 @@ class Update(CDSAction):
         
 class List(CDSAction):
 
+    name = "list"
     description = _('lists all CDS instances associated with the pulp server')
 
     def run(self):
@@ -205,6 +204,7 @@ class List(CDSAction):
 
 class Info(CDSAction):
 
+    name = "info"
     description = _('lists all CDS instances associated with the pulp server')
 
     def setup_parser(self):
@@ -220,6 +220,7 @@ class Info(CDSAction):
 
 class History(CDSAction):
 
+    name = "history"
     description = _('displays the history of events on a CDS')
 
     def setup_parser(self):
@@ -268,6 +269,7 @@ class History(CDSAction):
 
 class Associate(CDSAction):
 
+    name = "associate_repo"
     description = _('associates a repo with a CDS')
 
     def setup_parser(self):
@@ -288,6 +290,7 @@ class Associate(CDSAction):
 
 class Unassociate(CDSAction):
 
+    name = "unassociate_repo"
     description = _('unassociates a repo from a CDS')
 
     def setup_parser(self):
@@ -308,6 +311,7 @@ class Unassociate(CDSAction):
 
 class Sync(CDSAction):
 
+    name = "sync"
     description = _('triggers an immediate sync between the pulp server and the given CDS')
 
     def setup_parser(self):
@@ -323,6 +327,7 @@ class Sync(CDSAction):
 
 class Status(CDSAction):
 
+    name = "status"
     description = _('displays the sync status of the given CDS')
 
     def setup_parser(self):
@@ -387,3 +392,27 @@ class Status(CDSAction):
                 print(formatted)
 
             counter += 1
+
+# -- command ----------------------------------------------------------------------
+
+class Cds(Command):
+
+    name = "cds"
+    description = _('CDS instance management actions')
+
+    actions = [ Register,
+                Unregister,
+                Update,
+                Associate,
+                Unassociate,
+                List,
+                History,
+                Sync,
+                Status,
+                Info ]
+
+# -- plugin ----------------------------------------------------------------------
+
+class CdsPlugin(AdminPlugin):
+
+    commands = [ Cds ]

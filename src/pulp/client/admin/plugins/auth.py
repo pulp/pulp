@@ -22,7 +22,7 @@ from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.user import UserAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.admin.credentials import Login as LoginBundle
-from pulp.client.lib.plugin_manager.command import Action, Command
+from pulp.client.lib.plugin_lib.command import Action, Command
 
 # login actions ----------------------------------------------------------------
 
@@ -128,6 +128,8 @@ class Auth(Command):
                 Logout,
                 EnableGlobalRepoAuth,
                 DisableGlobalRepoAuth ]
+
+# auth plugin ----------------------------------------------------------------
 
 class AuthPlugin(AdminPlugin):
 
