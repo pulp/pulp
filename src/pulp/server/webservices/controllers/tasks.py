@@ -18,6 +18,7 @@ description: RESTful interface providing an administrative and debugging api for
              pulp's tasking system.
 Task object fields:
  * id, str, unique id (usually a uuid) for the task
+ * job_id, str, associate job id
  * class_name, str, name of the class, if the task's method is an instance method
  * method_name, str, name of the pulp library method that was called
  * state, str, one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended

@@ -67,13 +67,13 @@ class RepositoryAPI(PulpAPI):
                 "filters": filters}
         return self.server.POST(path, data)[1]
 
-    def repositories(self):
+    def repositories(self, queries):
         path = "/repositories/"
-        return self.server.GET(path)[1]
+        return self.server.GET(path, queries)[1]
 
-    def repositories_by_groupid(self, groups=()):
+    def repositories_by_groupid(self, group):
         path = "/repositories/"
-        queries = [('groupid', g) for g in groups]
+        queries = [('groupid', group)]
         return self.server.GET(path, queries)[1]
 
     def update(self, id, delta):

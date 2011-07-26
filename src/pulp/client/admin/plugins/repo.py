@@ -408,6 +408,8 @@ class Create(RepoAction):
                                help=_("additional information about repo in a dictionary form inside a string"))
         self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
                                help=_("Preserves the original metadata; only works with feed repos"))
+        self.parser.add_option('--content_type', dest='content_type', default="yum",
+                            help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
         schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
                             help=_('length of time between each run in iso8601 duration format'))
@@ -415,8 +417,6 @@ class Create(RepoAction):
                             help=_('date and time of the first run in iso8601 combined date and time format'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
                             help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        schedule.add_option('--content_type', dest='content_type', default="yum",
-                            help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
         self.parser.add_option_group(schedule)
 
     def run(self):
@@ -612,8 +612,6 @@ class Update(RepoAction):
                                help=_("path location to the consumer entitlement certificate key"))
         self.parser.add_option("--remove_consumer_cert", dest="remove_consumer_cert", action="store_true",
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
-        self.parser.add_option("--symlinks", dest="use_symlinks",
-                               help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
         self.parser.add_option("--addgroup", dest="addgroup",
                                help=_("group id to be added to the repository"))
         self.parser.add_option("--rmgroup", dest="rmgroup",
@@ -638,7 +636,6 @@ class Update(RepoAction):
         id = self.get_required_option('id')
         delta = {}
         optdict = vars(self.opts)
-
         feed_cert_bundle = None
         consumer_cert_bundle = None
 
@@ -648,19 +645,19 @@ class Update(RepoAction):
             if k in ('remove_consumer_cert', 'remove_feed_cert'):
                 continue
             if k == 'addgroup':
-                self.repository_api.add_group(id, v)
+                delta['addgrp'] = v
                 continue
             if k == 'rmgroup':
-                self.repository_api.remove_group(id, v)
+                delta['rmgrp'] = v
                 continue
             if k == 'addkeys':
                 reader = KeyReader()
                 keylist = reader.expand(v)
-                self.repository_api.addkeys(id, keylist)
+                delta['addkeys'] = keylist
                 continue
             if k == 'rmkeys':
                 keylist = v.split(',')
-                self.repository_api.rmkeys(id, keylist)
+                delta['rmkeys'] = keylist
                 continue
             if k in ('feed_ca', 'feed_cert', 'feed_key'):
                 f = open(v)
@@ -717,7 +714,6 @@ class Update(RepoAction):
             delta['consumer_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif consumer_cert_bundle:
             delta['consumer_cert_data'] = consumer_cert_bundle
-
         self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
 

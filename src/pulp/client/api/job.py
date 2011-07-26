@@ -11,24 +11,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.client.api.base import PulpAPI
+from pulp.client.server import ServerRequestError
 
-class Distributor(object):
+class JobAPI(PulpAPI):
 
-    def __init__(self, **options):
-        self.__dict__.update(options)
+    def list(self):
+        path = '/jobs/'
+        return self.server.GET(path)[1]
 
-    @classmethod
-    @property
-    def types(cls):
-        return ()
-
-    @classmethod
-    @property
-    def config_files(cls):
-        return ()
-
-    def publish(self, distributor_config, publish_config, publish_hook):
-        raise NotImplementedError()
-
-    def unpublish(self, distributor_config, unpublish_config, unpublish_hook):
-        raise NotImplementedError()
+    def info(self, job_id):
+        path = '/jobs/%s/' % job_id
+        try:
+            return self.server.GET(path)[1]
+        except ServerRequestError, e:
+            print e.args[1]
+        return None

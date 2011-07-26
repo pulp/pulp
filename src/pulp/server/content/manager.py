@@ -11,10 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import logging
 import os
 import re
+from ConfigParser import SafeConfigParser
 from gettext import gettext as _
 
+from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
 from pulp.server.content.module import import_module
@@ -25,9 +28,11 @@ from pulp.server.pexceptions import PulpException
 class PluginNotFoundError(PulpException):
     pass
 
-# manager instance -------------------------------------------------------------
+# globals ----------------------------------------------------------------------
 
-_manager = None
+_log = logging.getLogger(__name__)
+
+_manager = None # Manger instance
 
 # manager class ----------------------------------------------------------------
 
@@ -41,6 +46,26 @@ class Manager(object):
         self.distributor_paths = {}
         self.importers = {}
         self.distributors = {}
+        self.configured_importers = self.__configured_importers()
+        self.configured_distributors = self.__configured_distributors()
+        self.importer_configs = {}
+        self.distributor_configs = {}
+
+    def __configured_importers(self):
+        cfg = {}
+        if not config.config.has_section)'importers'):
+            return cfg
+        for content_type in config.config.options('importers'):
+            cfg[content_type] = config.config.getboolean('importers', content_type)
+        return cfg
+
+    def __configured_distributors(self):
+        cfg = {}
+        if not config.config.has_section('distributors'):
+            return cfg
+        for distribution_type in config.config.options('distributors'):
+            cfg[distribution_type] = config.config.getboolean('distributors', distribution_type)
+        return cfg
 
     def add_importer_path(self, path, package_name=None):
         """
@@ -100,11 +125,15 @@ class Manager(object):
             for attr in dir(module):
                 if not issubclass(attr, Importer):
                     continue
+                cfg = SafeConfigParser
+                cfg.read(attr.config_files)
                 for content_type in attr.types:
-                    # TODO log error or raise exception or something
                     if content_type in self.importers:
+                        _log.warn(_('Importer for %s already found, not loading %s') %
+                                  (content_type, repr(attr)))
                         continue
                     self.importers[content_type] = attr
+                    self.importer_configs[content_type] = cfg
 
     def load_distributors(self):
         """
@@ -116,11 +145,15 @@ class Manager(object):
             for attr in dir(module):
                 if not issubclass(attr, Distributor):
                     continue
+                cfg = SafeConfigParser()
+                cfg.read(attr.config_files)
                 for distribution_type in attr.types:
                     if distribution_type in self.distributors:
-                        # TODO log error
+                        _log.warn(_('Distributor for %s already found, not loading %s') %
+                                  (content_type, repr(attr)))
                         continue
                     self.distributors[distribution_type] = attr
+                    self.distributor_configs[distribution_type] = cfg
 
     def lookup_importer_class(self, content_type):
         """
@@ -131,7 +164,19 @@ class Manager(object):
         @return: importer class associated with the the content type or None if
                  no associated importer class is found
         """
+        if not self.configured_importers.get(content_type, True):
+            return None
         return self.importers.get(content_type, None)
+
+    def lookup_importer_config(self, content_type):
+        """
+        Return the (potentially empty) importer config for the given content type.
+        @type content_type: str
+        @param content_type: content type to get importer config for
+        @rtype: SafeConfigParser instance
+        @return: importer config for given content type
+        """
+        return self.importer_configs.get(content_type, SafeConfigParser())
 
     def lookup_distributor_class(self, distribution_type):
         """
@@ -142,7 +187,19 @@ class Manager(object):
         @return: distributor class associated with the the distribution type or
                  None if no associated distributor class is found
         """
+        if not self.configured_distributors.get(distribution_type, True):
+            return None
         return self.distributors.get(distribution_type, None)
+
+    def lookup_distributor_config(self, distributor_type):
+        """
+        Return the (potentially empty) distributor config for the given content type.
+        @type content_type: str
+        @param content_type: content type to get distributor config for
+        @rtype: SafeConfigParser instance
+        @return: distributor config for given content type
+        """
+        return self.distributor_configs.get(distributor_type, SafeConfigParser())
 
 # manager api ------------------------------------------------------------------
 
@@ -208,7 +265,8 @@ def get_importer(content_type):
     cls = _manager.lookup_importer_class(content_type)
     if cls is None:
         raise PluginNotFoundError(_('No importer found for %s') % content_type)
-    return cls()
+    cfg = _manager.lookup_importer_config(content_type)
+    return cls(config=cfg)
 
 
 def get_distributor(distribution_type):
@@ -225,4 +283,5 @@ def get_distributor(distribution_type):
     cls = _manager.lookup_distributor_class(distribution_type)
     if cls is None:
         raise PluginNotFoundError(_('No distributor found for %s') % distribution_type)
-    return cls()
+    cfg = _manager.lookup_distributor_config(distribution_type)
+    return cls(config=cfg)

@@ -13,6 +13,7 @@
 
 import os
 import sys
+import time
 from gettext import gettext as _
 
 import isodate
@@ -91,3 +92,55 @@ def parse_at_schedule(start):
         return start
     except isodate.ISO8601Error, e:
         system_exit(os.EX_USAGE, e.args[0])
+
+# task & job ------------------------------------------------------------------
+
+def task_end(task):
+    return task['state'] in ('finished', 'error', 'canceled', 'timed_out')
+
+def task_succeeded(task):
+    return task['state'] in ('finished',)
+
+def job_end(job):
+    for task in job['tasks']:
+        if not task_end(task):
+            return False
+    return True
+
+def job_succeeded(job):
+    for task in job['tasks']:
+        if not task_succeeded(task):
+            return False
+    return True
+
+# user I/O ---------------------------------------------------------------------
+
+def waitinit():
+    sys.stdout.write(_('Waiting: [-] '))
+    sys.stdout.flush()
+
+def printwait():
+    symbols = '|/-\|/-\\'
+    for i in range(0,len(symbols)):
+        sys.stdout.write('\b\b\b')
+        sys.stdout.write(symbols[i])
+        sys.stdout.write('] ')
+        sys.stdout.flush()
+        time.sleep(0.5)
+
+def askquestion(question):
+    while True:
+        sys.stdout.write(_(question))
+        sys.stdout.flush()
+        reply = sys.stdin.readline()
+        reply = reply.lower()
+        if reply.startswith(_('y')):
+            return True
+        if reply.startswith(_('n')):
+            return False
+
+def askcontinue():
+    return askquestion(_('\nContinue? [y/n]:'))
+
+def askwait():
+    return askquestion(_('\nWait? [y/n]:'))

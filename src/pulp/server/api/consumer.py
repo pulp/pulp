@@ -426,8 +426,8 @@ class ConsumerApi(BaseApi):
         Install packages on the consumer.
         @param id: A consumer id.
         @type id: str
-        @param packagenames: The package names to install.
-        @type packagenames: [str,..]
+        @param names: The package names to install.
+        @type names: [str,..]
         """
         consumer = self.consumer(id)
         if consumer is None:
@@ -442,17 +442,13 @@ class ConsumerApi(BaseApi):
         task = Task(self.__installpackages, [id, packages])
         return task
 
-    def __installpackages(self, id, names, reboot=False, yes=False):
+    def __installpackages(self, id, names, **options):
         """
         Task callback to install packages.
         @param id: The consumer ID.
         @type id: str
         @param names: A list of package names.
         @type names: list
-        @param reboot: The suggested reboot flag (supports errata).
-        @type reboot: bool
-        @param yes: Assume (yes) when prompted by yum.
-        @type yes: bool
         @return: Whatever the agent returns.
         """
         consumer = self.consumer(id)
@@ -461,7 +457,9 @@ class ConsumerApi(BaseApi):
         agent = PulpAgent(consumer)
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         packages = agent.Packages(timeout=tm)
-        return packages.install(names, reboot, yes)
+        reboot = options.get('reboot', False)
+        assumeyes = options.get('assumeyes', True)
+        return packages.install(names, reboot, assumeyes)
 
     @audit()
     def installpackagegroups(self, id, groupnames=()):
@@ -537,10 +535,8 @@ class ConsumerApi(BaseApi):
         log.error("Packages to install [%s]" % pkgs)
         task = Task(
             self.__installpackages,
-            [id,
-            pkgs,
-            reboot_suggested,
-            assumeyes])
+            [id, pkgs],
+            dict(reboot=reboot_suggested,assumeyes=assumeyes))
         return task
 
     def listerrata(self, id, types=()):

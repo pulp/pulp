@@ -209,16 +209,16 @@ class ConsumerGroupActions(JSONController):
         """
         data = self.params()
         names = data.get('packagenames', [])
-        task = api.installpackages(id, names)
+        job = api.installpackages(id, names)
         scheduled_time = data.get('scheduled_time', None)
-        if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-            task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Package install already scheduled'))
-        taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
-        return self.accepted(taskdict)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+                task.scheduler = AtScheduler(scheduled_time)
+            if async.enqueue(task) is None:
+                return self.conflict(_('Package install already scheduled'))
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
 
     def installerrata(self, id):
         """
@@ -229,18 +229,18 @@ class ConsumerGroupActions(JSONController):
         errataids = data.get('errataids', [])
         types = data.get('types', [])
         assumeyes = data.get('assumeyes', False)
-        task = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
-        if not task:
+        job = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
+        if not job:
             return self.not_found('Errata %s you requested are not applicable for this consumergroup' % errataids)
-        scheduled_time = data.get('scheduled_time', None)
-        if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-            task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Errata install already scheduled'))
-        taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
-        return self.accepted(taskdict)
+        for task in job.tasks:
+            scheduled_time = data.get('scheduled_time', None)
+            if scheduled_time is not None:
+                scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+                task.scheduler = AtScheduler(scheduled_time)
+            if async.enqueue(task) is None:
+                return self.conflict(_('Errata install already scheduled'))
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
 
     @error_handler
     @auth_required(EXECUTE)

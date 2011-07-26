@@ -613,6 +613,24 @@ class RepoApi(BaseApi):
         consumer_cert_updated = False
         for key, value in delta.items():
             # simple changes
+            if key == "addgrp":
+                groupids = repo['groupid']
+                if value not in groupids:
+                    groupids.append(value)
+                repo["groupid"] = groupids
+                continue
+            if key == "rmgrp":
+                groupids = repo['groupid']
+                if value in groupids:
+                    groupids.remove(value)
+                repo["groupid"] = groupids
+                continue
+            if key == 'addkeys':
+                self.addkeys(id, value)
+                continue
+            if key == 'rmkeys':
+                self.rmkeys(id, value)
+                continue
             if key in ('name', 'arch',):
                 repo[key] = value
                 if key == 'name':
@@ -655,12 +673,6 @@ class RepoApi(BaseApi):
                     update_repo_schedule(repo, value)
                 else:
                     delete_repo_schedule(repo)
-                continue
-            if key == 'use_symlinks':
-                if hascontent and (value != repo[key]):
-                    raise PulpException(
-                        "Repository has content, symlinks cannot be changed")
-                repo[key] = value
                 continue
             raise Exception, \
                 'update keyword "%s", not-supported' % key
@@ -1798,7 +1810,6 @@ class RepoApi(BaseApi):
         groupids = repo['groupid']
         if addgrp not in groupids:
             groupids.append(addgrp)
-
         repo["groupid"] = groupids
         self.collection.save(repo, safe=True)
         log.info('repository (%s), added group: %s', id, addgrp)
