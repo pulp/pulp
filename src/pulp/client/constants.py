@@ -19,6 +19,7 @@ Id                 \t%-25s
 Name               \t%-25s
 Feed URL           \t%-25s
 Feed Type          \t%-25s
+Content Type       \t%-25s
 Feed Certs         \tCA:%s   Cert:%s
 Consumer Certs     \tCA:%s   Cert:%s
 Architecture       \t%-25s

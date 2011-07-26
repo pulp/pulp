@@ -309,7 +309,7 @@ class List(RepoAction):
                 consumer_ca = 'Yes'
 
             print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], feedUrl, feedType,
+                    repo["id"], repo["name"], feedUrl, feedType, repo["content_types"],
                     feed_ca, feed_cert,
                     consumer_ca, consumer_cert,
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
