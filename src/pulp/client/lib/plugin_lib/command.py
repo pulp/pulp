@@ -49,6 +49,8 @@ class Command(object):
     @ivar key_file: private key file credential
     """
 
+    name = "name"
+    description = "description"
     actions = []
 
     def __init__(self, cfg):
@@ -58,7 +60,6 @@ class Command(object):
         """
         self.cfg = cfg
         self.cli = None
-        self.name = None
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
         self._actions = {}
@@ -133,10 +134,12 @@ class Action(object):
     @ivar args: arguments returned from parsing command line
     """
 
+    name = "name"
+    description = "description"
+
     def __init__(self, cfg):
         self.cfg = cfg
         self.cmd = None
-        self.name = None
         self.parser = OptionParser()
         self.opts = None
         self.args = None

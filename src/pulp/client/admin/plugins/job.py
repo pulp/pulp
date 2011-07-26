@@ -14,9 +14,12 @@
 import os
 from gettext import gettext as _
 
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.job import JobAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import system_exit, task_end
+from pulp.client.core.utils import task_end
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.lib.utils import system_exit
+
 
 JOB = """
 Job:      %s
@@ -39,12 +42,6 @@ TASK_LONG = """
 \tException: %s
 """
 
-
-# job command -----------------------------------------------------------------
-
-class Job(Command):
-
-    description = _('pulp server job administration and debugging')
 
 # job actions -----------------------------------------------------------------
 
@@ -75,6 +72,7 @@ class JobAction(Action):
 
 class List(JobAction):
 
+    name = "list"
     description = _('list jobs currently in the tasking system')
 
     def run(self):
@@ -94,6 +92,7 @@ class List(JobAction):
 
 class Info(JobAction):
 
+    name = "info"
     description = _('show information for a job')
 
     def run(self):
@@ -113,3 +112,21 @@ class Info(JobAction):
              task['finish_time'],
              task['result'],
              task['exception'],)
+
+
+# job command -----------------------------------------------------------------
+
+class Job(Command):
+
+    name = "job"
+    description = _('pulp server job administration and debugging')
+    actions = [ List,
+                Info ]
+
+
+# job plugin -----------------------------------------------------------------
+
+class JobPlugin(AdminPlugin):
+
+    name = "job"
+    commands = [ Job ]
