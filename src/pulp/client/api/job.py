@@ -16,6 +16,10 @@ from pulp.client.server import ServerRequestError
 
 class JobAPI(PulpAPI):
 
+    def list(self):
+        path = '/jobs/'
+        return self.server.GET(path)[1]
+
     def info(self, job_id):
         path = '/jobs/%s/' % job_id
         try:

@@ -72,15 +72,17 @@ class Jobs(JSONController):
         """
         jobs = {}
         for task in async.all_async():
-            job_id = task['job_id']
+            job_id = task.job_id
             if  job_id is None:
                 continue
             job = jobs.get(job_id)
             if job is None:
-                job = dict(id=job_id, tasks=[])
+                tasks = []
+                job = dict(id=job_id, tasks=tasks)
                 jobs[job_id] = job
-            job['tasks'].append(task)
-        return self.ok(jobs)
+                t = self._task_to_dict(task)
+            tasks.append(t)
+        return self.ok(jobs.values())
 
 
 class Job(JSONController):

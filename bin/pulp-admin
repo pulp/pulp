@@ -19,7 +19,7 @@ from pulp.client.cli.admin import AdminCLI
 from pulp.client.config import Config
 from pulp.client.core import (
     auth, cds, consumer, consumergroup, errata, package, packagegroup, repo,
-    repogroup, user, distribution, permission, role, content, filter, task)
+    repogroup, user, distribution, permission, role, content, filter, task, job,)
 
 def setup_admin(admin):
     config = Config()
@@ -189,6 +189,11 @@ def setup_admin(admin):
         task_cmd.add_action('snapshot', task.Snapshot())
         task_cmd.add_action('delete_snapshot', task.DeleteSnapshot())
         admin.add_command('task', task_cmd)
+        # job
+        job_cmd = job.Job()
+        job_cmd.add_action('list', job.List())
+        job_cmd.add_action('info', job.Info())
+        admin.add_command('job', job_cmd)
 
 
 if __name__ == "__main__":
