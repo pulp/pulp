@@ -14,17 +14,13 @@
 import os
 from gettext import gettext as _
 
+from pulp.client.admin.config import AdminConfig
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.task import TaskAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.lib.utils import system_exit
 
-# task command -----------------------------------------------------------------
-
-class Task(Command):
-
-    description = _('pulp server asynchronous task administration and debugging')
-
-# task actions -----------------------------------------------------------------
+_cfg = AdminConfig()
 
 _task_template = _('''Task: %s
     Scheduler: %s
@@ -44,6 +40,8 @@ _snapshot_template = _('''Snapshot for task: %s
     Snapshot id: %s
 ''')
 
+
+# base task action class ------------------------------------------------------
 
 class TaskAction(Action):
 
@@ -76,8 +74,11 @@ class TaskAction(Action):
         return _snapshot_template % (snapshot['id'], snapshot['_id'])
 
 
+# task actions -----------------------------------------------------------------
+
 class List(TaskAction):
 
+    name = "list"
     description = _('list tasks currently in the tasking system')
 
     def setup_parser(self):
@@ -94,6 +95,7 @@ class List(TaskAction):
 
 class Info(TaskAction):
 
+    name = "info"
     description = _('show information for a task')
 
     def run(self):
@@ -106,6 +108,7 @@ class Info(TaskAction):
 
 class Remove(TaskAction):
 
+    name = "remove"
     description = _('remove a task from the tasking system')
 
     def run(self):
@@ -118,6 +121,7 @@ class Remove(TaskAction):
 
 class Cancel(TaskAction):
 
+    name = "cancel"
     description = _('cancel a running task')
 
     def run(self):
@@ -130,6 +134,7 @@ class Cancel(TaskAction):
 
 class Snapshots(TaskAction):
 
+    name = "snapshots"
     description = _('list current task snapshots')
 
     def setup_parser(self):
@@ -145,6 +150,7 @@ class Snapshots(TaskAction):
 
 class Snapshot(TaskAction):
 
+    name = "snapshot"
     description = _('show the snapshot for a task')
 
     def run(self):
@@ -157,6 +163,7 @@ class Snapshot(TaskAction):
 
 class DeleteSnapshot(TaskAction):
 
+    name = "delete_snapshot"
     description = _('delete a snapshot from the database')
 
     def run(self):
@@ -165,3 +172,27 @@ class DeleteSnapshot(TaskAction):
         if not snapshot:
             system_exit(os.EX_OK)
         print _('Snapshot for task [%s] deleted') % id
+
+
+# task command -----------------------------------------------------------------
+
+class Task(Command):
+
+    name = "task"
+    description = _('pulp server asynchronous task administration and debugging')
+
+    actions = [ List,
+                Info,
+                Remove,
+                Cancel,
+                Snapshots,
+                Snapshot,
+                DeleteSnapshot ]
+
+# task plugin -----------------------------------------------------------------
+
+class TaskPlugin(AdminPlugin):
+
+    disabled = (_cfg.admin.expose_task_command.lower() == "false")
+
+    commands = [ Task ]

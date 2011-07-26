@@ -15,8 +15,10 @@ import os
 from gettext import gettext as _
 
 from pulp.client.api.permission import PermissionAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.admin.plugin import AdminPlugin
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import system_exit
 
 # base permission action class ------------------------------------------------
 
@@ -41,6 +43,7 @@ class PermissionAction(Action):
 
 class Show(PermissionAction):
 
+    name = "show"
     description = _('show permissions for a resource')
 
     def setup_parser(self):
@@ -59,6 +62,7 @@ class Show(PermissionAction):
 
 class Grant(PermissionAction):
 
+    name = "grant"
     description = _('grant permissions to pulp users or roles')
 
     def run(self):
@@ -85,6 +89,7 @@ class Grant(PermissionAction):
 
 class Revoke(PermissionAction):
 
+    name = "revoke"
     description = _('revoke permissions from pulp users or roles')
 
     def run(self):
@@ -108,8 +113,21 @@ class Revoke(PermissionAction):
             print _('Operations %s revoked from role [ %s ] on resource [ %s ]') % \
                     (str(operations), role, resource)
 
+
 # permission command ----------------------------------------------------------
 
 class Permission(Command):
 
+    name = "permission"
     description = _('manage pulp permissions')
+
+    actions = [ Show,
+                Grant,
+                Revoke ]
+
+
+# permission plugin ----------------------------------------------------------
+
+class Permission(AdminPlugin):
+
+    commands = [ Permission ]

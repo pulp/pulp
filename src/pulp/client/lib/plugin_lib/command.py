@@ -49,6 +49,8 @@ class Command(object):
     @ivar key_file: private key file credential
     """
 
+    actions = []
+
     def __init__(self):
         """
         @type actions: None or tuple/list of str's

@@ -18,13 +18,15 @@ import os
 from gettext import gettext as _
 
 from pulp.client import constants
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.distribution import DistributionAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import system_exit, print_header
-from pulp.client.config import Config
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import system_exit
+from pulp.client.admin.config import AdminConfig
 
-_cfg = Config()
+_cfg = AdminConfig()
 # distribution action base class ----------------------------------------------------
 
 class DistributionAction(Action):
@@ -34,10 +36,11 @@ class DistributionAction(Action):
         self.distribution_api = DistributionAPI()
         self.repository_api = RepositoryAPI()
 
-# errata actions --------------------------------------------------------------
+# distribution actions --------------------------------------------------------------
 
 class List(DistributionAction):
 
+    name = "list"
     description = _('list available distributions')
 
     def setup_parser(self):
@@ -61,6 +64,7 @@ class List(DistributionAction):
 
 class Info(DistributionAction):
 
+    name = "info"
     description = _('view information about a particular distribution')
 
     def setup_parser(self):
@@ -80,6 +84,19 @@ class Info(DistributionAction):
         print constants.DISTRO_INFO % (distribution['id'], distribution['description'], ksurl,
                                        '\n \t\t\t'.join(distribution['files'][:]), distribution['relativepath'])
 
+
+# distribution command --------------------------------------------------------------
+
 class Distribution(Command):
 
+    name = "distribution"
     description = _('distribution specific actions to pulp server')
+
+    actions = [ List,
+                Info ]
+
+# distribution plugin --------------------------------------------------------------
+
+class DistributionPlugin(AdminPlugin):
+
+    commands = [ Distribution ]

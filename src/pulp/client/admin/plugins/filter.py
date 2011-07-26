@@ -19,9 +19,11 @@ import re
 from gettext import gettext as _
 
 from pulp.client import constants
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.filter import FilterAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import system_exit
 
 
 # base filter action class ------------------------------------------------------
@@ -43,6 +45,7 @@ class FilterAction(Action):
 
 class List(FilterAction):
 
+    name = "list"
     description = _('list available filters')
     
     def run(self):
@@ -60,6 +63,7 @@ class List(FilterAction):
 
 class Info(FilterAction):
 
+    name = "info"
     description = _('lookup information for a filter')
     
     def setup_parser(self):
@@ -81,6 +85,7 @@ class Info(FilterAction):
 
 class Create(FilterAction):
 
+    name = "create"
     description = _('create a filter')
 
     def setup_parser(self):
@@ -117,6 +122,7 @@ class Create(FilterAction):
             
 class Delete(FilterAction):
 
+    name = "delete"
     description = _('delete a filter')
 
     def setup_parser(self):
@@ -143,6 +149,7 @@ class Delete(FilterAction):
 
 class AddPackages(FilterAction):
 
+    name = "add_package"
     description = _('add packages to filter')
 
     def setup_parser(self):
@@ -162,6 +169,7 @@ class AddPackages(FilterAction):
 
 class RemovePackages(FilterAction):
 
+    name = "remove_package"
     description = _('remove packages from filter')
 
     def setup_parser(self):
@@ -178,8 +186,25 @@ class RemovePackages(FilterAction):
         filter = self.filter_api.remove_packages(id, pnames)
         print _("Successfully removed packages to filter [ %s ]" % id)
 
+
 # filter command ----------------------------------------------------------------
 
 class Filter(Command):
 
+    name = "filter"
     description = _('filter specific actions to pulp server')
+
+    actions = [ List,
+                Create,
+                Delete,
+                Info,
+                AddPackages,
+                RemovePackages ]
+
+
+# filter command ----------------------------------------------------------------
+
+class FilterPlugin(AdminPlugin):
+
+    commands = [ Filter ]
+

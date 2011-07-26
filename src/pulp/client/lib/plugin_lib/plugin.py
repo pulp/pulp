@@ -14,4 +14,6 @@
 
 class Plugin(object):
 
+    disabled = False
+
     commands = []

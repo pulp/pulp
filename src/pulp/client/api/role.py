@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.client.api.base import PulpAPI
-from pulp.client.server import ServerRequestError
+from pulp.client.api.server import ServerRequestError
 
 
 class RoleAPI(PulpAPI):

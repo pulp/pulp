@@ -14,9 +14,11 @@
 import os
 from gettext import gettext as _
 
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.role import RoleAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import system_exit
 
 # base role action class ------------------------------------------------------
 
@@ -30,6 +32,7 @@ class RoleAction(Action):
 
 class List(RoleAction):
 
+    name = "list"
     description = _('list current roles')
 
     def run(self):
@@ -40,6 +43,7 @@ class List(RoleAction):
 
 class Info(RoleAction):
 
+    name = "info"
     description = _('get information for a single role')
 
     def setup_parser(self):
@@ -61,6 +65,7 @@ class Info(RoleAction):
 
 class Create(RoleAction):
 
+    name = "create"
     description = _('create a new role')
 
     def setup_parser(self):
@@ -74,6 +79,7 @@ class Create(RoleAction):
 
 class Delete(RoleAction):
 
+    name = "Delete"
     description = _('delete an existing role')
 
     def setup_parser(self):
@@ -87,6 +93,7 @@ class Delete(RoleAction):
 
 class Add(RoleAction):
 
+    name = "Add"
     description = _('add a user to a role')
 
     def setup_parser(self):
@@ -102,6 +109,7 @@ class Add(RoleAction):
 
 class Remove(RoleAction):
 
+    name = "remove"
     description = _('remove a user from a role')
 
     def setup_parser(self):
@@ -114,8 +122,23 @@ class Remove(RoleAction):
         if self.role_api.remove_user(rolename, username):
             print _('[ %s ] removed from role [ %s ]') % (username, rolename)
 
+
 # role command ----------------------------------------------------------------
 
 class Role(Command):
 
+    name = "role"
     description = _('manage pulp permission roles')
+
+    actions = [ List,
+                Info,
+                Create,
+                Delete,
+                Add,
+                Remove ]
+
+# role plugin ----------------------------------------------------------------
+
+class RolePlugin(AdminPlugin):
+
+    commands = [ Role ]

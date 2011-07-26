@@ -18,10 +18,12 @@ import os
 import getpass
 from gettext import gettext as _
 
-from pulp.client import constants
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.user import UserAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.core.utils import print_header
+from pulp.client import constants
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.lib.utils import system_exit
 
 # base user action class ------------------------------------------------------
 
@@ -42,6 +44,7 @@ class UserAction(Action):
 
 class List(UserAction):
 
+    name = "list"
     description = _('list available users')
 
     def run(self):
@@ -57,6 +60,7 @@ class List(UserAction):
 
 class Create(UserAction):
 
+    name = "create"
     description = _('create a user')
 
     def setup_parser(self):
@@ -94,6 +98,7 @@ class Create(UserAction):
 
 class Update(UserAction):
 
+    name = "update"
     description = _('update a user')
 
     def setup_parser(self):
@@ -130,6 +135,7 @@ class Update(UserAction):
 
 class Delete(UserAction):
 
+    name = "delete"
     description = _('delete a user')
 
     def setup_parser(self):
@@ -149,4 +155,17 @@ class Delete(UserAction):
 
 class User(Command):
 
+    name = "user"
     description = _('user specific actions to pulp server')
+
+    actions = [ List,
+                Create,
+                Delete,
+                Update ]
+
+
+# user plugin ----------------------------------------------------------------
+
+class UserPlugin(AdminPlugin):
+
+    commands = [ User ]

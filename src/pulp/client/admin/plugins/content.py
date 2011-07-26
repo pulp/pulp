@@ -18,15 +18,16 @@ import os
 import sys
 from gettext import gettext as _
 
-from pulp.client import utils
+from pulp.client.admin.plugin import AdminPlugin
+from pulp.client.api.file import FileAPI
+from pulp.client.api.package import PackageAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.api.upload import UploadAPI
-from pulp.client.api.file import FileAPI
-from pulp.client.api.package import PackageAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import system_exit
-from pulp.client.logutil import getLogger
+from pulp.client.lib import utils
+from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.plugin_lib.command import Action, Command
+
 from rpm import _rpm
 
 log = getLogger(__name__)
@@ -44,6 +45,7 @@ class ContentAction(Action):
 
 class Upload(ContentAction):
 
+    name = "upload"
     description = _('upload content to the Pulp server')
 
     def setup_parser(self):
@@ -65,9 +67,9 @@ class Upload(ContentAction):
             try:
                 files += utils.processDirectory(dir)
             except Exception, e:
-                system_exit(os.EX_DATAERR, _(str(e)))
+                utils.system_exit(os.EX_DATAERR, _(str(e)))
         if not files:
-            system_exit(os.EX_USAGE,
+            utils.system_exit(os.EX_USAGE,
                         _("Error: Need to provide at least one file to perform upload"))
         if not self.opts.verbose:
             print _("* Starting Content Upload operation. See /var/log/pulp/client.log for more verbose output\n")
@@ -145,9 +147,9 @@ class Upload(ContentAction):
                     print msg
                 exit_code = os.EX_DATAERR
         if not repoids:
-            system_exit(exit_code, _("\n* Content Upload complete."))
+            utils.system_exit(exit_code, _("\n* Content Upload complete."))
         if not pids and not fids:
-            system_exit(os.EX_DATAERR, _("No applicable content to associate."))
+            utils.system_exit(os.EX_DATAERR, _("No applicable content to associate."))
         print _('\n* Performing Repo Associations ')
         # performing package Repo Association
         for rid in repoids:
@@ -173,11 +175,12 @@ class Upload(ContentAction):
             log.info(msg)
             if self.opts.verbose:
                 print msg
-        system_exit(exit_code, _("\n* Content Upload complete."))
+        utils.system_exit(exit_code, _("\n* Content Upload complete."))
 
 
 class List(ContentAction):
 
+    name = "list"
     description = _('list content(packages/files) on the Pulp server')
 
     def setup_parser(self):
@@ -188,13 +191,13 @@ class List(ContentAction):
 
     def run(self):
         if not self.opts.orphaned and not self.opts.repoid:
-            system_exit(os.EX_USAGE, "--orphaned or --repoid is required to list packages")
+            utils.system_exit(os.EX_USAGE, "--orphaned or --repoid is required to list packages")
         if self.opts.orphaned:
             orphaned_pkgs = self.package_api.orphaned_packages()
             orphaned_files = self.file_api.orphaned_files()
             orphaned = orphaned_pkgs + orphaned_files
             if not len(orphaned):
-                system_exit(os.EX_OK, _("No orphaned content on server"))
+                utils.system_exit(os.EX_OK, _("No orphaned content on server"))
             for pkg in orphaned:
                 try:
                     print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
@@ -205,7 +208,7 @@ class List(ContentAction):
             repo_files = self.repository_api.list_files(self.opts.repoid)
             repo_data = repo_pkgs + repo_files
             if not len(repo_data):
-                system_exit(os.EX_OK, _("No content in the repo [%s]" % self.opts.repoid))
+                utils.system_exit(os.EX_OK, _("No content in the repo [%s]" % self.opts.repoid))
             for pkg in repo_data:
                 try:
                     print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
@@ -214,6 +217,7 @@ class List(ContentAction):
                 
 class Delete(ContentAction):
     
+    name = "delete"
     description = _("delete content from the Pulp server")
 
     def setup_parser(self):
@@ -224,16 +228,16 @@ class Delete(ContentAction):
         
     def run(self):
         if self.opts.files and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
+            utils.system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
             
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found" % self.opts.csv))
+                utils.system_exit(os.EX_DATAERR, _("CSV file [%s] not found" % self.opts.csv))
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error: Need to provide at least one file to perform remove."))
+                utils.system_exit(os.EX_USAGE, _("Error: Need to provide at least one file to perform remove."))
             flist = self.opts.files
         exit_code = 0    
         fids = {}
@@ -284,11 +288,23 @@ class Delete(ContentAction):
                 self.file_api.delete(pobj['id'])
             
             print _("Successfully deleted content [%s] from pulp server" % filename)
-        system_exit(exit_code)
+        utils.system_exit(exit_code)
+
 
 # content command -------------------------------------------------------------
 
 class Content(Command):
 
+    name = "content"
     description = _('generic content specific actions to pulp server')
 
+    actions = [ Upload,
+                List,
+                Delete ]
+
+
+# content plugin -------------------------------------------------------------
+
+class ContentPlugin(AdminPlugin):
+
+    commands = [ Content ]
