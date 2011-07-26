@@ -16,22 +16,22 @@
 
 from gettext import gettext as _
 
-from pulp.client import constants
-from pulp.client.lib import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
+from pulp.client import constants
+from pulp.client.lib import utils
 from pulp.client.lib.plugin_lib.command import Action, Command
-import pulp.client.lib.repolib as repolib
 from pulp.client.lib.repo_file import RepoFile
 from pulp.common import dateutils
+import pulp.client.lib.repolib as repolib
 
 
 # base consumer action --------------------------------------------------------
 
 class ConsumerAction(Action):
 
-    def __init__(self):
-        super(ConsumerAction, self).__init__()
+    def __init__(self, cfg):
+        super(ConsumerAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
 
 # consumer actions ------------------------------------------------------------

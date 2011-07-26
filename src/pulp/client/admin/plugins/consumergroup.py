@@ -12,11 +12,11 @@
 import os
 from gettext import gettext as _
 
-from pulp.client import constants
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumergroup import ConsumerGroupAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header
+from pulp.client import constants
+from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 
@@ -24,8 +24,8 @@ from pulp.client.lib.utils import system_exit
 
 class ConsumerGroupAction(Action):
 
-    def __init__(self):
-        super(ConsumerGroupAction, self).__init__()
+    def __init__(self, cfg):
+        super(ConsumerGroupAction, self).__init__(cfg)
         self.consumer_group_api = ConsumerGroupAPI()
 
     def setup_parser(self):
@@ -251,4 +251,5 @@ class ConsumerGroup(Command):
 
 class ConsumerGroupPlugin(AdminPlugin):
     
+    name = "consumergroup"
     commands = [ ConsumerGroup ]

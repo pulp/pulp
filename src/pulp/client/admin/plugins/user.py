@@ -29,8 +29,8 @@ from pulp.client.lib.utils import system_exit
 
 class UserAction(Action):
 
-    def __init__(self):
-        super(UserAction, self).__init__()
+    def __init__(self, cfg):
+        super(UserAction, self).__init__(cfg)
         self.user_api = UserAPI()
 
     def get_user(self, username):
@@ -168,4 +168,5 @@ class User(Command):
 
 class UserPlugin(AdminPlugin):
 
+    name = "user"
     commands = [ User ]

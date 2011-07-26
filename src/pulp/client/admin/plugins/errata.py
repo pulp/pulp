@@ -22,10 +22,10 @@ from gettext import gettext as _
 from optparse import OptionGroup
 
 from pulp.client.admin.plugin import AdminPlugin
-from pulp.client.lib import utils
 from pulp.client import constants
-from pulp.client.lib.plugins.errata import ErrataAction, Errata, List
+from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.plugins.errata import ErrataAction, Errata, List
 
 
 log = getLogger(__name__)
@@ -66,8 +66,8 @@ class Search(ErrataAction):
     name = "search"
     description = _('search for a specific errata')
 
-    def __init__(self):
-        super(Search, self).__init__()
+    def __init__(self, cfg):
+        super(Search, self).__init__(cfg)
         self.id_field_size = 20
         self.type_field_size = 15
 
@@ -358,4 +358,5 @@ class AdminErrata(Errata):
 
 class AdminErrataPlugin(AdminPlugin):
 
+    name = "errata"
     commands = [ AdminErrata ]

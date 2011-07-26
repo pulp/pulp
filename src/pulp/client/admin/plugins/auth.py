@@ -16,24 +16,28 @@
 import getpass
 from gettext import gettext as _
 
-from pulp.client.api import server
-from pulp.client.lib import utils
-from pulp.client.admin.plugin import AdminPlugin
-from pulp.client.api.user import UserAPI
-from pulp.client.api.service import ServiceAPI
 from pulp.client.admin.credentials import Login as LoginBundle
+from pulp.client.admin.plugin import AdminPlugin
+from pulp.client.api import server
+from pulp.client.api.service import ServiceAPI
+from pulp.client.api.user import UserAPI
+from pulp.client.lib import utils
 from pulp.client.lib.plugin_lib.command import Action, Command
 
 # login actions ----------------------------------------------------------------
 
-class Login(Action):
+class AuthAction(Action):
+
+    def __init__(self, cfg):
+        super(AuthAction, self).__init__(cfg)
+        self.user_api = UserAPI()
+        self.services_api = ServiceAPI()
+
+
+class Login(AuthAction):
 
     description = _('stores user credentials on this machine')
     name = "login"
-
-    def __init__(self):
-        super(Login, self).__init__()
-        self.user_api = UserAPI()
 
     def setup_parser(self):
         self.parser.add_option('-u', '--username', dest='username',
@@ -56,7 +60,7 @@ class Login(Action):
         print _('User credentials successfully stored at [%s]') % bundle.crtpath()
 
 
-class Logout(Action):
+class Logout(AuthAction):
 
     description = _('removes stored user credentials on this machine')
     name = "logout"
@@ -69,14 +73,10 @@ class Logout(Action):
 
 # repo auth actions------------------------------------------------------------
 
-class EnableGlobalRepoAuth(Action):
+class EnableGlobalRepoAuth(AuthAction):
 
     description = _('uploads a certificate bundle to be used for global repo authentication')
     name = "enable_global_repo_auth"
-
-    def __init__(self):
-        super(EnableGlobalRepoAuth, self).__init__()
-        self.services_api = ServiceAPI()
 
     def setup_parser(self):
         self.parser.add_option("--ca", dest="ca",
@@ -104,14 +104,10 @@ class EnableGlobalRepoAuth(Action):
         self.services_api.enable_global_repo_auth(bundle)
         print _('Global repository authentication enabled')
 
-class DisableGlobalRepoAuth(Action):
+class DisableGlobalRepoAuth(AuthAction):
 
     description = _('disables the global repo authentication checks across all repos')
     name = "disable_global_repo_auth"
-
-    def __init__(self):
-        super(DisableGlobalRepoAuth, self).__init__()
-        self.services_api = ServiceAPI()
 
     def run(self):
         self.services_api.disable_global_repo_auth()
@@ -133,4 +129,5 @@ class Auth(Command):
 
 class AuthPlugin(AdminPlugin):
 
+    name = "auth"
     commands = [ Auth ]

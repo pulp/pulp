@@ -45,8 +45,8 @@ _snapshot_template = _('''Snapshot for task: %s
 
 class TaskAction(Action):
 
-    def __init__(self):
-        super(TaskAction, self).__init__()
+    def __init__(self, cfg):
+        super(TaskAction, self).__init__(cfg)
         self.api = TaskAPI()
 
     def setup_parser(self):
@@ -193,6 +193,6 @@ class Task(Command):
 
 class TaskPlugin(AdminPlugin):
 
-    disabled = (_cfg.admin.expose_task_command.lower() == "false")
-
+    name = "task"
+    config_file = "task.conf"
     commands = [ Task ]

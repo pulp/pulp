@@ -32,7 +32,7 @@ class PulpCLI(object):
         self.opts = None
         self._server = None
         self._commands = {}
-        self.cfg = self.config()
+        self.cfg = self.CONFIG()
 
     @property
     def usage(self):
@@ -97,13 +97,13 @@ class PulpCLI(object):
             self._server.set_ssl_credentials(self.opts.certfile)
 
     def load_plugins(self):
-        self._plugin_loader = self.plugin_loader(self.cfg)
-        self._plugins = self._plugin_loader.load_plugins()
+        self.plugin_loader = self.PLUGIN_LOADER(self.cfg)
+        self.plugins = self.plugin_loader.load_plugins()
 
     def register_plugins(self):
-        for plugin in self._plugins.values():
+        for plugin in self.plugins.values():
             for command in plugin.commands:
-                self.add_command(command.name, command())
+                self.add_command(command.name, plugin.get_command(command.name))
 
     def main(self, args=sys.argv[1:]):
         """

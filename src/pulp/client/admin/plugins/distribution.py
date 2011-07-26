@@ -26,13 +26,13 @@ from pulp.client.core.utils import print_header
 from pulp.client.lib.utils import system_exit
 from pulp.client.admin.config import AdminConfig
 
-_cfg = AdminConfig()
+
 # distribution action base class ----------------------------------------------------
 
 class DistributionAction(Action):
 
-    def __init__(self):
-        super(DistributionAction, self).__init__()
+    def __init__(self, cfg):
+        super(DistributionAction, self).__init__(cfg)
         self.distribution_api = DistributionAPI()
         self.repository_api = RepositoryAPI()
 
@@ -58,7 +58,7 @@ class List(DistributionAction):
             system_exit(os.EX_OK, _("No distributions found to list"))
         print_header(_('List of Available Distributions'))
         for distro in distribution:
-            ksurl = _cfg._sections['cds'].__getitem__('ksurl') + '/' + distro['relativepath']
+            ksurl = self.cfg._sections['cds'].__getitem__('ksurl') + '/' + distro['relativepath']
             print constants.DISTRO_LIST % (distro['id'], distro['description'], ksurl)
 
 
@@ -80,7 +80,7 @@ class Info(DistributionAction):
         if not distribution:
             system_exit(os.EX_OK, _("No distribution found with id [%s]" % distid))
         print_header(_('Distribution Info for %s' % distid))
-        ksurl = _cfg._sections['cds'].__getitem__('ksurl') + '/' + distribution['relativepath']
+        ksurl = self.cfg._sections['cds'].__getitem__('ksurl') + '/' + distribution['relativepath']
         print constants.DISTRO_INFO % (distribution['id'], distribution['description'], ksurl,
                                        '\n \t\t\t'.join(distribution['files'][:]), distribution['relativepath'])
 
@@ -99,4 +99,5 @@ class Distribution(Command):
 
 class DistributionPlugin(AdminPlugin):
 
+    name = "distribution"
     commands = [ Distribution ]

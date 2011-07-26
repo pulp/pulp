@@ -22,8 +22,8 @@ from pulp.client.admin.config import AdminConfig
 
 class AdminCLI(PulpCLI):
 
-    config = AdminConfig
-    plugin_loader = AdminPluginLoader
+    CONFIG = AdminConfig
+    PLUGIN_LOADER = AdminPluginLoader
 
     def setup_credentials(self):
         """

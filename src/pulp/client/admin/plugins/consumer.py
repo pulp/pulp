@@ -16,23 +16,20 @@
 import urlparse
 from gettext import gettext as _
 
-from pulp.client import constants
-from pulp.client.lib import utils
-from pulp.client.api.consumer import ConsumerAPI
-from pulp.client.api.service import ServiceAPI
 from pulp.client.admin.config import AdminConfig
 from pulp.client.admin.plugin import AdminPlugin
+from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.service import ServiceAPI
+from pulp.client.core.utils import print_header
+from pulp.client import constants
+from pulp.client.lib import utils
 from pulp.client.lib.plugins.consumer import (ConsumerAction, Consumer,
     Delete, Bind, Unbind, History)
-from pulp.client.core.utils import print_header
+from pulp.client.lib.repo_file import RepoFile
 from pulp.client.lib.utils import system_exit
+from pulp.common import dateutils
 from rhsm.profile import get_profile
 import pulp.client.lib.repolib as repolib
-from pulp.client.lib.repo_file import RepoFile
-from pulp.common import dateutils
-
-
-_cfg = AdminConfig()
 
 
 # base consumer action --------------------------------------------------------
@@ -60,8 +57,8 @@ class List(ConsumerAdminAction):
         key = self.opts.key
         value = self.opts.value
         cons = self.consumer_api.consumers()
-        baseurl = "%s://%s:%s" % (_cfg.server.scheme, _cfg.server.host,
-                                  _cfg.server.port)
+        baseurl = "%s://%s:%s" % (self.cfg.server.scheme, self.cfg.server.host,
+                                  self.cfg.server.port)
         for con in cons:
             con['package_profile'] = urlparse.urljoin(baseurl,
                                                       con['package_profile'])
@@ -286,4 +283,5 @@ class AdminConsumer(Consumer):
 
 class ConsumerPlugin(AdminPlugin):
 
+    name = "consumer"
     commands = [ AdminConsumer ]

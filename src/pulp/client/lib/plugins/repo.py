@@ -14,12 +14,12 @@
 import os
 from gettext import gettext as _
 
-from pulp.client import constants
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header
-from pulp.client.lib.utils import system_exit
+from pulp.client import constants
 from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.lib.utils import system_exit
 
 log = getLogger(__name__)
 
@@ -27,8 +27,8 @@ log = getLogger(__name__)
 
 class RepoAction(Action):
 
-    def __init__(self):
-        super(RepoAction, self).__init__()
+    def __init__(self, cfg):
+        super(RepoAction, self).__init__(cfg)
         self.repository_api = RepositoryAPI()
 
     def setup_parser(self):

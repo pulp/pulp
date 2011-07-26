@@ -31,7 +31,8 @@ class Config(Base):
 
     # FILE should be overridden in the base class.
     FILE = ''
-    PATH = ''
+    PATH = '/etc/pulp'
+    FILE_PATH = ''
     USER = ''
     ALT = 'PULP_CLIENT_OVERRIDE'
 
@@ -48,10 +49,10 @@ class Config(Base):
             raise NotImplementedError("Base Config Class can not be "
                 "instantiated")
 
-        self.PATH = os.path.join('/etc/pulp', self.FILE)
+        self.FILE_PATH = os.path.join(self.PATH, self.FILE)
         self.USER = os.path.join('~/.pulp', self.FILE)
 
-        fp = open(self.PATH)
+        fp = open(self.FILE_PATH)
         try:
             Base.__init__(self, fp)
             altpath = self.__altpath()
@@ -72,13 +73,16 @@ class Config(Base):
             path = altpath
             s = str(alt)
         else:
-            path = self.PATH
+            path = self.FILE_PATH
             s = str(self)
         fp = open(path, 'w')
         try:
             fp.write(s)
         finally:
             fp.close()
+
+    def merge(self, path):
+        return self.__mergeIn(Base(open(path)))
 
     def __mergeIn(self, other):
         """
@@ -90,12 +94,14 @@ class Config(Base):
         """
         for section in other:
             if section not in self:
-                continue
-            sA = self[section]
-            sB = other[section]
-            for key in sB:
-                value = sB[key]
-                setattr(sA, key, value)
+                for option in other[section]:
+                    self[section][option] = other[section][option]
+            else:
+                sA = self[section]
+                sB = other[section]
+                for key in sB:
+                    value = sB[key]
+                    setattr(sA, key, value)
         return self
 
     def __mergeOut(self, other):

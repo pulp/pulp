@@ -19,14 +19,14 @@ import string
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client.lib import utils
-from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
+from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header
+from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.plugin_lib.command import Action, Command
 
 log = getLogger(__name__)
 
@@ -34,8 +34,8 @@ log = getLogger(__name__)
 
 class ErrataAction(Action):
 
-    def __init__(self):
-        super(ErrataAction, self).__init__()
+    def __init__(self, cfg):
+        super(ErrataAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.consumer_group_api = ConsumerGroupAPI()
         self.errata_api = ErrataAPI()
@@ -48,8 +48,8 @@ class List(ErrataAction):
     name = "list"
     description = _('list applicable errata')
 
-    def __init__(self, is_consumer_client=False):
-        super(List, self).__init__()
+    def __init__(self, cfg):
+        super(List, self).__init__(cfg)
         self.id_field_size = 20
         self.type_field_size = 15
 

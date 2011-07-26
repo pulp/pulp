@@ -36,8 +36,8 @@ log = getLogger(__name__)
 
 class ContentAction(Action):
 
-    def __init__(self):
-        super(ContentAction, self).__init__()
+    def __init__(self, cfg):
+        super(ContentAction, self).__init__(cfg)
         self.repository_api = RepositoryAPI()
         self.service_api = ServiceAPI()
         self.file_api = FileAPI()
@@ -307,4 +307,5 @@ class Content(Command):
 
 class ContentPlugin(AdminPlugin):
 
+    name = "content"
     commands = [ Content ]

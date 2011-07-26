@@ -45,8 +45,8 @@ log = getLogger(__name__)
 
 class PackageAction(Action):
 
-    def __init__(self):
-        super(PackageAction, self).__init__()
+    def __init__(self, cfg):
+        super(PackageAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.consumer_group_api = ConsumerGroupAPI()
         self.repository_api = RepositoryAPI()

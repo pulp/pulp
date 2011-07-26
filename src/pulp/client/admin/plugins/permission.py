@@ -14,18 +14,18 @@
 import os
 from gettext import gettext as _
 
-from pulp.client.api.permission import PermissionAPI
 from pulp.client.admin.plugin import AdminPlugin
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.api.permission import PermissionAPI
 from pulp.client.core.utils import print_header
+from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 # base permission action class ------------------------------------------------
 
 class PermissionAction(Action):
 
-    def __init__(self):
-        super(PermissionAction, self).__init__()
+    def __init__(self, cfg):
+        super(PermissionAction, self).__init__(cfg)
         self.permission_api = PermissionAPI()
 
     def setup_parser(self):
@@ -130,4 +130,5 @@ class Permission(Command):
 
 class Permission(AdminPlugin):
 
+    name = "permission"
     commands = [ Permission ]

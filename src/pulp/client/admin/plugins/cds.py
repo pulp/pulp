@@ -11,18 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 from gettext import gettext as _
 from optparse import OptionGroup
 
-# Pulp
-from pulp.client import constants
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.cds import CDSAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header, parse_interval_schedule
+from pulp.client import constants
+from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.common import dateutils
-
 
 
 # -- utilities ---------------------------------------------------------------------
@@ -62,8 +59,8 @@ def _print_cds(cds):
 
 class CDSAction(Action):
 
-    def __init__(self):
-        super(CDSAction, self).__init__()
+    def __init__(self, cfg):
+        super(CDSAction, self).__init__(cfg)
         self.cds_api = CDSAPI()
 
 
@@ -415,4 +412,5 @@ class Cds(Command):
 
 class CdsPlugin(AdminPlugin):
 
+    name = "cds"
     commands = [ Cds ]

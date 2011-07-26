@@ -16,16 +16,16 @@ from gettext import gettext as _
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.role import RoleAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header
+from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 # base role action class ------------------------------------------------------
 
 class RoleAction(Action):
 
-    def __init__(self):
-        super(RoleAction, self).__init__()
+    def __init__(self, cfg):
+        super(RoleAction, self).__init__(cfg)
         self.role_api = RoleAPI()
 
 # role action classes ---------------------------------------------------------
@@ -141,4 +141,5 @@ class Role(Command):
 
 class RolePlugin(AdminPlugin):
 
+    name = "role"
     commands = [ Role ]

@@ -19,21 +19,21 @@ import urlparse
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client import constants
 from pulp.client.admin.plugin import AdminPlugin
-from pulp.client.lib import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
+from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.api.service import ServiceAPI
-from pulp.client.api.file import FileAPI
-from pulp.client.lib.plugins.repo import RepoAction, Repo, List
-from pulp.client.core.utils import (
-    print_header, parse_interval_schedule)
-from pulp.client.lib.logutil import getLogger
+from pulp.client import constants
 from pulp.common.dateutils import (
     parse_iso8601_datetime, parse_iso8601_duration, parse_iso8601_interval,
     format_iso8601_datetime, format_iso8601_duration)
+from pulp.client.core.utils import (
+    print_header, parse_interval_schedule)
+from pulp.client.lib import utils
+from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.plugins.repo import RepoAction, Repo, List
 
 log = getLogger(__name__)
 
@@ -52,8 +52,8 @@ class CloneError(Exception):
 
 class AdminRepoAction(RepoAction):
 
-    def __init__(self):
-        super(RepoAction, self).__init__()
+    def __init__(self, cfg):
+        super(RepoAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.errata_api = ErrataAPI()
         self.package_api = PackageAPI()
@@ -132,8 +132,8 @@ class AdminRepoAction(RepoAction):
 
 class RepoProgressAction(RepoAction):
 
-    def __init__(self):
-        RepoAction.__init__(self)
+    def __init__(self, cfg):
+        RepoAction.__init__(self, cfg)
         self._previous_progress = None
         self.wait_index = 0
         self.wait_symbols = "|/-\|/-\\"
@@ -1674,4 +1674,5 @@ class AdminRepo(Repo):
 
 class AdminRepoPlugin(AdminPlugin):
 
+    name = "repo"
     commands = [ AdminRepo ]

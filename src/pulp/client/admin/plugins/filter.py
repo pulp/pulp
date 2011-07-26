@@ -18,11 +18,11 @@ import os
 import re
 from gettext import gettext as _
 
-from pulp.client import constants
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.filter import FilterAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header
+from pulp.client import constants
+from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 
@@ -30,8 +30,8 @@ from pulp.client.lib.utils import system_exit
 
 class FilterAction(Action):
 
-    def __init__(self):
-        super(FilterAction, self).__init__()
+    def __init__(self, cfg):
+        super(FilterAction, self).__init__(cfg)
         self.filter_api = FilterAPI()
         
     def get_filter(self, id):
@@ -206,5 +206,5 @@ class Filter(Command):
 
 class FilterPlugin(AdminPlugin):
 
+    name = "filter"
     commands = [ Filter ]
-

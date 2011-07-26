@@ -20,14 +20,14 @@ import sys
 import time
 from gettext import gettext as _
 
-import pulp.client.constants as constants
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
 from pulp.client.core.utils import print_header
-from pulp.client.lib.utils import system_exit
 from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.lib.utils import system_exit
+import pulp.client.constants as constants
 
 
 _log = getLogger(__name__)
@@ -37,8 +37,8 @@ _log = getLogger(__name__)
 
 class PackageGroupAction(Action):
 
-    def __init__(self):
-        super(PackageGroupAction, self).__init__()
+    def __init__(self, cfg):
+        super(PackageGroupAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.repository_api = RepositoryAPI()
 
@@ -549,4 +549,5 @@ class PackageGroup(Command):
 
 class PackageGroupPlugin(AdminPlugin):
 
+    name = "packagegroup"
     commands = [ PackageGroup ]

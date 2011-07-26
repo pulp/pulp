@@ -51,11 +51,12 @@ class Command(object):
 
     actions = []
 
-    def __init__(self):
+    def __init__(self, cfg):
         """
         @type actions: None or tuple/list of str's
         @param actoins: list of actions to expose, uses _default_actions if None
         """
+        self.cfg = cfg
         self.cli = None
         self.name = None
         self.parser = OptionParser()
@@ -100,7 +101,7 @@ class Command(object):
 
     def register_actions(self):
         for action in self.actions:
-            self.add_action(action.name, action())
+            self.add_action(action.name, action(self.cfg))
 
     def main(self, args):
         """
@@ -132,7 +133,8 @@ class Action(object):
     @ivar args: arguments returned from parsing command line
     """
 
-    def __init__(self):
+    def __init__(self, cfg):
+        self.cfg = cfg
         self.cmd = None
         self.name = None
         self.parser = OptionParser()

@@ -14,6 +14,11 @@
 
 import os
 import sys
+import traceback
+
+from pulp.client.lib.logutil import getLogger 
+
+log = getLogger(__name__)
 
 
 class PluginLoader(object):
@@ -46,15 +51,25 @@ class PluginLoader(object):
         # Try to import the module.
         try:
             module = __import__(module_name)
-        except ImportError, ie:
-            # TODO: log an error/warning
+        except Exception, e:
+            log.error("Could not import any plugins from %s. Import error "
+                "was: '%s'" % (module_name, e))
+            ei = sys.exc_info()
+            log.debug(''.join(traceback.format_tb(ei[2])))
             return
 
         for name, mod_object in module.__dict__.items():
             try:
                 if issubclass(mod_object, self.plugin_base_class):
                     # TODO: log info about laoding a plugin
-                    self.plugins[name] = mod_object()
+                    plugin = mod_object(self.cfg)
+
+                    if plugin.name in self.cfg._sections:
+                        if "disabled" in self.cfg[plugin.name]._options:
+                            if self.cfg[plugin.name].disabled.lower() == "true":
+                                continue
+
+                    self.plugins[name] = plugin
             except TypeError:
                 continue
 
