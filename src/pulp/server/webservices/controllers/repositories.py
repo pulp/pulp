@@ -155,7 +155,7 @@ class Repositories(JSONController):
 
     @error_handler
     @auth_required(READ)
-    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path')
+    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path', 'notes')
     def GET(self, spec=None):
         """
         [[wiki]]
@@ -174,6 +174,13 @@ class Repositories(JSONController):
          * groupid, str, repository group id
          * relative_path, str, repository's on disk path
         """
+        # Query by notes
+        if "notes" in spec.keys() :
+            notes = eval(spec["notes"])
+            for key, value in notes.items():
+                spec["notes."+ key] = value
+            del spec["notes"]
+
         repositories = api.repositories(spec, default_fields)
 
         for repo in repositories:
