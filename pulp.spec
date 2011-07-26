@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.213
+Version:        0.0.214
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -30,7 +30,7 @@ Requires: python-oauth2
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.102
+Requires: grinder >= 0.0.108
 Requires: httpd
 Requires: mod_ssl
 Requires: m2crypto
@@ -307,6 +307,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Jul 26 2011 Sayli Karmarkar <skarmark@redhat.com> 0.0.214-1
+- Restricting threads to 4 to avoid memory leak (skarmark@redhat.com)
+- Brought in line with master's version (jason.dobies@redhat.com)
+
 * Mon Jul 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.211-1
 - 722446 - fixing pulp to pass in proxy settings correctly to grinder
   (pkilambi@redhat.com)
