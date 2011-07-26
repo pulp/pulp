@@ -53,6 +53,7 @@ LINKS = (
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
+    'srv/pulp/repo_auth.wsgi',
     ('src/pulp/client/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
     ('src/pulp/client/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('etc/pulp/logging', '/etc/pulp/logging'),
