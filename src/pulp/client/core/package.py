@@ -168,9 +168,11 @@ class Install(PackageAction):
             state = t['state']
             exception = t['exception']
             id, packages = t['args']
-            print _('\t[ %-8s ] %s' % (state.upper(), id))
             if exception:
-                print '\t\t, %s' % exception
+                exception = ', %s' % exception
+            else:
+                exception = ''
+            print _('\t[ %-8s ] %s %s' % (state.upper(), id, exception))
 
     def getunavailable(self, ids):
         lst = []
