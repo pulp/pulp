@@ -15,20 +15,23 @@ import os
 from gettext import gettext as _
 from optparse import OptionGroup
 
+from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
-from pulp.client.api.package import PackageAPI
-from pulp.client.api.service import ServiceAPI
 from pulp.client.api.file import FileAPI
+from pulp.client.api.package import PackageAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import (
-    parse_interval_schedule, system_exit)
-from pulp.client.logutil import getLogger
+from pulp.client.api.service import ServiceAPI
+from pulp.client.core.utils import parse_interval_schedule
+from pulp.client.lib.utils import system_exit
+from pulp.client.lib.logutil import getLogger
+from pulp.client.pluginlib.command import Action, Command
 from pulp.common.dateutils import (
     parse_iso8601_interval, format_iso8601_datetime, format_iso8601_duration)
 
+
 log = getLogger(__name__)
+
 
 # repogroup command errors ---------------------------------------------------------
 
@@ -41,12 +44,13 @@ class SyncError(Exception):
 class CloneError(Exception):
     pass
 
+
 # base repogroup action class ------------------------------------------------------
 
 class RepoGroupAction(Action):
 
-    def __init__(self):
-        super(RepoGroupAction, self).__init__()
+    def __init__(self, cfg):
+        super(RepoGroupAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.errata_api = ErrataAPI()
         self.package_api = PackageAPI()
@@ -124,6 +128,7 @@ class RepoGroupAction(Action):
 
 class Update(RepoGroupAction):
 
+    name = "update"
     description = _('update all repositories in a repository group')
 
     def setup_parser(self):
@@ -206,12 +211,6 @@ class Update(RepoGroupAction):
             for k, v in failed_update_repos.items():
                 print _("\n[ %s ]\n%s" % (k, v)) 
 
-# repogroup command ----------------------------------------------------------------
-
-class RepoGroup(Command):
-
-    description = _('repository group specific actions to pulp server')
-
 
 class KeyReader:
 
@@ -243,3 +242,20 @@ class KeyReader:
             return keylist
         except Exception, e:
             system_exit(os.EX_DATAERR, _(str(e)))
+
+
+# repogroup command ----------------------------------------------------------------
+
+class RepoGroup(Command):
+
+    name = "repogroup"
+    description = _('repository group specific actions to pulp server')
+    actions = [ Update ]
+
+
+# repogroup plugin ----------------------------------------------------------------
+
+class RepoPlugin(AdminPlugin):
+
+    name = "repogroup"
+    commands = [ RepoGroup ]
