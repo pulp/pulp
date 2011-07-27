@@ -46,8 +46,9 @@ class PluginLoader(object):
         @return: List of directories to look for plugins.
         @rtype: list
         """
-        if not self.cfg.plugins.plugin_dirs:
-            return self.plugin_dirs
+        if ("plugins" not in self.cfg._sections or 
+           "plugin_dirs" not in self.plugins._options):
+                return self.plugin_dirs
         else:
             return self.cfg.plugins.plugin_dirs.split('\n')
 

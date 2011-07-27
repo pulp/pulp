@@ -19,9 +19,8 @@ import sys
 import os
 from gettext import gettext as _
 
-from pulp.client.credentials import Consumer
-from pulp.client.cli.client import ClientCLI
-from pulp.client.core import consumer, errata, repo
+from pulp.client.consumer.credentials import Consumer
+from pulp.client.consumer.cli import ConsumerCLI
 
 
 def root_check():
@@ -35,6 +34,7 @@ def root_check():
 
 
 def setup_client(client):
+    return 
     consumer_cmd = consumer.Consumer()
     consumer_cmd.add_action('create', consumer.Create())
     consumer_cmd.add_action('delete', consumer.Delete(is_consumer_client=True))
@@ -55,7 +55,7 @@ def setup_client(client):
 
 if __name__ == '__main__':
     #root_check()
-    client = ClientCLI()
+    client = ConsumerCLI()
     setup_client(client)
     bundle = Consumer()
     if not bundle.getid():

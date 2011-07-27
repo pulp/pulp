@@ -17,30 +17,28 @@ import os
 import urlparse
 from gettext import gettext as _
 
-from pulp.client import constants
-from pulp.client.lib import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.consumer.config import ConsumerConfig
+from pulp.client.consumer.credentials import Consumer as ConsumerBundle
+from pulp.client.consumer.plugin import ConsumerPlugin
+from pulp.client import constants
+from pulp.client.lib import repolib
+from pulp.client.lib import utils
+from pulp.client.lib.repo_file import RepoFile
+from pulp.client.lib.utils import print_header
+from pulp.client.lib.utils import system_exit
 from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Bind, Unbind, Delete, History)
-from pulp.client.lib.utils import print_header
-from pulp.client.utils import system_exit
-from pulp.client.consumer.credentials import Consumer as ConsumerBundle
-from rhsm.profile import get_profile
-import pulp.client.lib.repolib as repolib
-from pulp.client.lib.repo_file import RepoFile
 from pulp.common import dateutils
-
-
-_cfg = ConsumerConfig()
+from rhsm.profile import get_profile
 
 # base consumer action --------------------------------------------------------
 
 class ConsumerClientAction(ConsumerAction):
 
-    def __init__(self, is_consumer_client=False):
-        super(ConsumerAction, self).__init__()
+    def __init__(self, cfg):
+        super(ConsumerAction, self).__init__(cfg)
         self.consumerid = self.getconsumerid()
 
     def getconsumerid(self):
@@ -51,7 +49,6 @@ class ConsumerClientAction(ConsumerAction):
         """
         bundle = ConsumerBundle()
         return bundle.getid()
-
 
 # consumer actions ------------------------------------------------------------
 
@@ -105,12 +102,12 @@ class ClientUnbind(Unbind):
         repoid = self.get_required_option('repoid')
         Unbind.run(self, consumerid, repoid)
         mirror_list_filename = \
-            repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
+            repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
         repolib.unbind(
-            _cfg.client.repo_file,
+            self.cfg.client.repo_file,
             mirror_list_filename,
-            _cfg.client.gpg_keys_dir,
-            _cfg.client.cert_dir,
+            self.cfg.client.gpg_keys_dir,
+            self.cfg.client.cert_dir,
             repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
@@ -128,7 +125,7 @@ class ClientDelete(Delete):
     def run(self):
         consumerid = self.consumerid
         Delete.run(self, consumerid)
-        repo_file = RepoFile(_cfg.client.repo_file)
+        repo_file = RepoFile(self.cfg.client.repo_file)
         repo_file.delete()
         bundle = ConsumerBundle()
         bundle.delete()
@@ -144,12 +141,12 @@ class ClientBind(Bind):
 
         if bind_data:
             mirror_list_filename = \
-                repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
+                repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
             repolib.bind(
-                _cfg.client.repo_file,
+                self.cfg.client.repo_file,
                 mirror_list_filename,
-                _cfg.client.gpg_keys_dir,
-                _cfg.client.cert_dir,
+                self.cfg.client.gpg_keys_dir,
+                self.cfg.client.cert_dir,
                 repoid,
                 bind_data['repo'],
                 bind_data['host_urls'],
@@ -162,10 +159,9 @@ class ClientBind(Bind):
         else:
             print _('Repo [%s] already bound to the consumer' % repoid)
 
-
 # consumer command ------------------------------------------------------------
 
-class ConsumerClient(Command):
+class ConsumerClient(Consumer):
 
     actions = [ Create,
                 ClientDelete,
@@ -174,9 +170,9 @@ class ConsumerClient(Command):
                 ClientHistory,
                 Update ]
 
-
 # consumer plugin ------------------------------------------------------------
 
 class ConsumerClientPlugin(ConsumerPlugin):
 
+    name = "consumer"
     commands = [ ConsumerClient ]

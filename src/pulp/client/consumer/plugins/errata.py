@@ -15,8 +15,9 @@
 #
 
 from pulp.client.consumer.credentials import Consumer as ConsumerBundle
+from pulp.client.consumer.plugin import ConsumerPlugin
 from pulp.client.plugins.errata import ErrataAction, Errata, List
-from pulp.client.logutil.lib import getLogger
+from pulp.client.lib.logutil import getLogger
 
 log = getLogger(__name__)
 
@@ -43,16 +44,15 @@ class ConsumerList(List):
         bundle = ConsumerBundle()
         return bundle.getid()
 
-
 # errata command --------------------------------------------------------------
 
 class ConsumerErrata(Errata):
 
     actions = [ ConsumerList ]
 
-
 # errata plugin --------------------------------------------------------------
 
 class ConsumerErrataPlugin(ConsumerPlugin):
     
+    name = "errata"
     commands = [ ConsumerErrata ]

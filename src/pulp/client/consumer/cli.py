@@ -13,22 +13,32 @@
 
 import os
 
-from pulp.client.cli.base import PulpCLI
-from pulp.client.credentials import Consumer
+from pulp.client.api import server
+from pulp.client.consumer.config import ConsumerConfig
+from pulp.client.consumer.credentials import Consumer
+from pulp.client.consumer.loader import ConsumerPluginLoader
+from pulp.client.lib.cli import PulpCLI
 from pulp.client.lib.utils import system_exit
-from pulp.client import server
-from pulp.client.config import Config
 
-_cfg = Config()
 
-class ClientCLI(PulpCLI):
+class ConsumerCLI(PulpCLI):
+    """
+    Pulp consumer command line interface class.
+    @cvar CONFIG: Config class for this cli.
+    @type CONFIG: class
+    @cvar PLUGIN_LOADER: Plugin loader class for this cli.
+    @type PLUGIN_LOADER: class
+    """
+
+    CONFIG = ConsumerConfig
+    PLUGIN_LOADER = ConsumerPluginLoader
 
     def setup_credentials(self):
         """
         User the super-class credentials then fallback to the consumer
         credentials if present.
         """
-        super(ClientCLI, self).setup_credentials()
+        super(PulpCLI, self).setup_credentials()
         if self._server.has_credentials_set():
             return
         consumer = Consumer()

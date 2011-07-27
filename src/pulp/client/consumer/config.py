@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -10,23 +9,23 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
 
-from pulp.client.plugins.repo import Repo, List
-from pulp.client.consumer.plugin import ConsumerPlugin
-from pulp.client.lib.logutil import getLogger
+from pulp.client.lib.config import Config
 
+class ConsumerConfig(Config):
+    """
+    The pulp consumer configuration.
 
-log = getLogger(__name__)
+    @cvar BASE_PATH: The absolute path to the config directory.
+    @type BASE_PATH: str
+    @cvar FILE: The name of the config file.
+    @type FILE: str
+    @cvar ALT: The environment variable with a path to an alternate
+        configuration file.
+    @type ALT: str
+    """
 
-# repo command ----------------------------------------------------------------
-
-class ConsumerRepo(Repo):
-
-    actions = [ List ]
-
-# repo plugin ----------------------------------------------------------------
-
-class ConsumerRepoPlugin(ConsumerPlugin):
-
-    name = "repo"
-    commands = [ ConsumerRepo ]
+    BASE_PATH = "/etc/pulp/client"
+    FILE = "client.conf"
+    ALT = "PULP_CLIENT_OVERRIDE"
