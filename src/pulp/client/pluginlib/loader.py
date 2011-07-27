@@ -47,7 +47,7 @@ class PluginLoader(object):
         @rtype: list
         """
         if ("plugins" not in self.cfg._sections or 
-           "plugin_dirs" not in self.plugins._options):
+           "plugin_dirs" not in self.cfg.plugins._options):
                 return self.plugin_dirs
         else:
             return self.cfg.plugins.plugin_dirs.split('\n')
