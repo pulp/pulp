@@ -204,12 +204,14 @@ class Action(object):
         try:
             self.run()
         except SSL.Checker.WrongHost, wh:
-            print _("ERROR: The server hostname you have configured in /etc/pulp/client.conf does not match the")
+            print _("ERROR: The server hostname you have configured in %s "
+                "does not match the" % self.cfg.FILE_PATH)
             print _("hostname returned from the Pulp server you are connecting to.  ")
             print ""
             print _("You have: [%s] configured but got: [%s] from the server.") % (wh.expectedHost, wh.actualHost)
             print ""
-            print _("Please correct the host in the /etc/pulp/client.conf file")
+            print _("Please correct the host in the %s file" %
+                self.cfg.FILE_PATH)
             sys.exit(1)
         except ServerRequestError, re:
             _log.error("error: %s" % re)
