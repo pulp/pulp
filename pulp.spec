@@ -373,6 +373,29 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jul 27 2011 Jeff Ortel <jortel@redhat.com> 0.0.215-1
+- skip tag used on rhui branch. (jortel@redhat.com)
+- Bump to gofer 0.43 for project alignment. (jortel@redhat.com)
+- Fix printed summary on package install on consumer group. (jortel@redhat.com)
+- Add job debugging CLI command to pulp-admin. (jortel@redhat.com)
+- bumping grinder version (pkilambi@redhat.com)
+- 713507 - API and cli changes for RFE: querying repos by notes field
+  (skarmark@redhat.com)
+- adding content type to repo list output (pkilambi@redhat.com)
+- Refit package install/errata on consumer group to use jobs.
+  (jortel@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (skarmark@redhat.com)
+- moving content_type help out of schedule area (pkilambi@redhat.com)
+- added logging for duplicate importers and distributors (jconnor@redhat.com)
+- added support for per-plugin toggling of importers and distributors in the
+  main pulp configuration file (jconnor@redhat.com)
+- Repogroup update changes This change includes changes to repo update
+  consolidating all parameters of update in delta instead of calling separate
+  update calls. This also includes removing symlink update from repo update and
+  repogroup update, fixing repo sync schedule update as well.
+  (skarmark@redhat.com)
+
 * Fri Jul 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.213-1
 - Change package & packagegroup install on consumer to synchronous RMI.
   (jortel@redhat.com)
