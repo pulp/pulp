@@ -10,7 +10,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.215
+Version:        0.0.216
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -373,6 +373,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jul 27 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.216-1
+- fixed typo (jconnor@redhat.com)
+
 * Wed Jul 27 2011 Jeff Ortel <jortel@redhat.com> 0.0.215-1
 - skip tag used on rhui branch. (jortel@redhat.com)
 - Bump to gofer 0.43 for project alignment. (jortel@redhat.com)
