@@ -322,13 +322,13 @@ class ConsumerGroupApi(BaseApi):
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
         job = Job()
-        timeout = timedelta(seconds=1)
+        timeout = timedelta(seconds=600)
         for consumerid in consumergroup['consumerids']:
             consumer = self.consumerApi.consumer(consumerid)
             if consumer is None:
                 log.error('consumer [%s], not-found', consumerid)
                 continue
-            task = AsyncTask(self.__installpackages, [id, names], timeout=timeout)
+            task = AsyncTask(self.__installpackages, [consumerid, names], timeout=timeout)
             job.add(task)
         return job
 

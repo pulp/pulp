@@ -335,7 +335,7 @@ class ReplyHandler(Listener):
     def succeeded(self, reply):
         log.info('Task RMI (succeeded)\n%s', reply)
         taskid = reply.any
-        task = _queue.find(id=taskid)
+        task = find_async(id=taskid)
         if task:
             sn = reply.sn
             result = reply.retval
@@ -346,7 +346,7 @@ class ReplyHandler(Listener):
     def failed(self, reply):
         log.info('Task RMI (failed)\n%s', reply)
         taskid = reply.any
-        task = _queue.find(id=taskid)
+        task = find_async(id=taskid)
         if task:
             sn = reply.sn
             exception = reply.exval,
