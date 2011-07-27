@@ -22,8 +22,7 @@ from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
-from pulp.client.core.utils import parse_interval_schedule
-from pulp.client.lib.utils import system_exit
+from pulp.client.lib.utils import parse_interval_schedule, system_exit
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
 from pulp.common.dateutils import (

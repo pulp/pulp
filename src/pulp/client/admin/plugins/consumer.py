@@ -20,13 +20,12 @@ from pulp.client.admin.config import AdminConfig
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
-from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import print_header, system_exit
 from pulp.client import constants
 from pulp.client.lib import utils
 from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Delete, Bind, Unbind, History)
 from pulp.client.lib.repo_file import RepoFile
-from pulp.client.lib.utils import system_exit
 from pulp.common import dateutils
 from rhsm.profile import get_profile
 import pulp.client.lib.repolib as repolib

@@ -23,7 +23,7 @@ from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import print_header
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command

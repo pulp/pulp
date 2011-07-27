@@ -22,8 +22,7 @@ from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.distribution import DistributionAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.pluginlib.command import Action, Command
-from pulp.client.core.utils import print_header
-from pulp.client.lib.utils import system_exit
+from pulp.client.lib.utils import print_header, system_exit
 from pulp.client.admin.config import AdminConfig
 
 

@@ -29,7 +29,7 @@ from pulp.client import constants
 from pulp.common.dateutils import (
     parse_iso8601_datetime, parse_iso8601_duration, parse_iso8601_interval,
     format_iso8601_datetime, format_iso8601_duration)
-from pulp.client.core.utils import (
+from pulp.client.lib.utils import (
     print_header, parse_interval_schedule)
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger

@@ -15,11 +15,10 @@ import os
 from gettext import gettext as _
 
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import print_header, system_exit
 from pulp.client import constants
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
-from pulp.client.lib.utils import system_exit
 
 log = getLogger(__name__)
 

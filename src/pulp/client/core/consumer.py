@@ -23,7 +23,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.config import Config
 from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.lib.utils import print_header, system_exit
 from pulp.client.credentials import Consumer as ConsumerBundle
 from rhsm.profile import get_profile
 import pulp.client.repolib as repolib

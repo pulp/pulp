@@ -15,7 +15,7 @@ import os
 
 from pulp.client.cli.base import PulpCLI
 from pulp.client.credentials import Consumer
-from pulp.client.core.utils import system_exit
+from pulp.client.lib.utils import system_exit
 from pulp.client import server
 from pulp.client.config import Config
 

@@ -33,7 +33,7 @@ from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.api.upload import UploadAPI
 from pulp.client.constants import UNAVAILABLE, PACKAGE_INFO
-from pulp.client.core.utils import (
+from pulp.client.lib.utils import (
     print_header, parse_at_schedule, 
     waitinit, printwait, askwait, askcontinue,
     task_end, task_succeeded, job_end, job_succeeded)

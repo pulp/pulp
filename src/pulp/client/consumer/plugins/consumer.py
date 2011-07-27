@@ -24,7 +24,7 @@ from pulp.client.api.service import ServiceAPI
 from pulp.client.consumer.config import ConsumerConfig
 from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Bind, Unbind, Delete, History)
-from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import print_header
 from pulp.client.utils import system_exit
 from pulp.client.consumer.credentials import Consumer as ConsumerBundle
 from rhsm.profile import get_profile

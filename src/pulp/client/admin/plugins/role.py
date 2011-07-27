@@ -16,9 +16,8 @@ from gettext import gettext as _
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.role import RoleAPI
-from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import print_header, system_exit
 from pulp.client.pluginlib.command import Action, Command
-from pulp.client.lib.utils import system_exit
 
 # base role action class ------------------------------------------------------
 

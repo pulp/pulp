@@ -14,10 +14,9 @@ from gettext import gettext as _
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumergroup import ConsumerGroupAPI
-from pulp.client.core.utils import print_header
+from pulp.client.lib.utils import print_header, system_exit
 from pulp.client import constants
 from pulp.client.pluginlib.command import Action, Command
-from pulp.client.lib.utils import system_exit
 
 
 # consumer group base action --------------------------------------------------
