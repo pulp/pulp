@@ -53,7 +53,7 @@ class Manager(object):
 
     def __configured_importers(self):
         cfg = {}
-        if not config.config.has_section)'importers'):
+        if not config.config.has_section('importers'):
             return cfg
         for content_type in config.config.options('importers'):
             cfg[content_type] = config.config.getboolean('importers', content_type)
