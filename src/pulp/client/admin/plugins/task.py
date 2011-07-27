@@ -17,7 +17,7 @@ from gettext import gettext as _
 from pulp.client.admin.config import AdminConfig
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.task import TaskAPI
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 _cfg = AdminConfig()

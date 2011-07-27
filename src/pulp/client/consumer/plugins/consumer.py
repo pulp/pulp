@@ -22,7 +22,7 @@ from pulp.client.lib import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.consumer.config import ConsumerConfig
-from pulp.client.lib.plugins.consumer import (ConsumerAction, Consumer,
+from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Bind, Unbind, Delete, History)
 from pulp.client.core.utils import print_header
 from pulp.client.utils import system_exit
@@ -42,6 +42,16 @@ class ConsumerClientAction(ConsumerAction):
     def __init__(self, is_consumer_client=False):
         super(ConsumerAction, self).__init__()
         self.consumerid = self.getconsumerid()
+
+    def getconsumerid(self):
+        """
+        Get the consumer ID from the identity certificate.
+        @return: The consumer id.  Returns (None) when not registered.
+        @rtype: str
+        """
+        bundle = ConsumerBundle()
+        return bundle.getid()
+
 
 # consumer actions ------------------------------------------------------------
 

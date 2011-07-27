@@ -20,7 +20,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client import constants
 from pulp.client.lib import utils
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.repo_file import RepoFile
 from pulp.common import dateutils
 import pulp.client.lib.repolib as repolib

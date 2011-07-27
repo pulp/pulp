@@ -38,7 +38,7 @@ from pulp.client.core.utils import (
     waitinit, printwait, askwait, askcontinue,
     task_end, task_succeeded, job_end, job_succeeded)
 from pulp.client.lib import utils
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.logutil import getLogger
 
 

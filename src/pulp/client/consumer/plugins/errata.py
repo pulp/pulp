@@ -14,7 +14,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-from pulp.client.lib.plugins.errata import ErrataAction, Errata, List
+from pulp.client.consumer.credentials import Consumer as ConsumerBundle
+from pulp.client.plugins.errata import ErrataAction, Errata, List
 from pulp.client.logutil.lib import getLogger
 
 log = getLogger(__name__)
@@ -32,6 +33,15 @@ class ConsumerList(List):
             consumerid = None
 
         List.run(self, consumerid)
+
+    def getconsumerid(self):
+        """
+        Get the consumer ID from the identity certificate.
+        @return: The consumer id.  Returns (None) when not registered.
+        @rtype: str
+        """
+        bundle = ConsumerBundle()
+        return bundle.getid()
 
 
 # errata command --------------------------------------------------------------

@@ -33,7 +33,7 @@ from pulp.client.core.utils import (
     print_header, parse_interval_schedule)
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
-from pulp.client.lib.plugins.repo import RepoAction, Repo, List
+from pulp.client.plugins.repo import RepoAction, Repo, List
 
 log = getLogger(__name__)
 

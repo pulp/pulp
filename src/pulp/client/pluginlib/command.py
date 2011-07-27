@@ -19,7 +19,6 @@ from optparse import OptionParser
 from M2Crypto import SSL
 
 from pulp.client.lib.config import Config
-# from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.lib.utils import system_exit
 from pulp.client.lib.logutil import getLogger
 from pulp.client.api.server import ServerRequestError
@@ -27,16 +26,8 @@ from pulp.client.api.server import ServerRequestError
 
 _log = getLogger(__name__)
 
+
 # base command class ----------------------------------------------------------
-#
-# NOTE: If you are adding or removing Commands and Actions you
-# need to edit:
-#
-# 1) pulp/bin/pulp-admin
-# 2) pulp/bin/pulp-client
-#
-# They contain the mapping and lists of Commands and Actions for
-# everything the CLI can do.
 
 class Command(object):
     """
@@ -176,15 +167,6 @@ class Action(object):
         if value is "":
             self.parser.error(_('%s option requires an argument') % flag)
         return value
-
-    def getconsumerid(self):
-        """
-        Get the consumer ID from the identity certificate.
-        @return: The consumer id.  Returns (None) when not registered.
-        @rtype: str
-        """
-        bundle = ConsumerBundle()
-        return bundle.getid()
 
     def setup_parser(self):
         """

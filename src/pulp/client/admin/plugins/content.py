@@ -26,7 +26,7 @@ from pulp.client.api.service import ServiceAPI
 from pulp.client.api.upload import UploadAPI
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 
 from rpm import _rpm
 

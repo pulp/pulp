@@ -17,7 +17,7 @@ from gettext import gettext as _
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.permission import PermissionAPI
 from pulp.client.core.utils import print_header
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 # base permission action class ------------------------------------------------

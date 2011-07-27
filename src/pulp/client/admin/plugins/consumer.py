@@ -23,7 +23,7 @@ from pulp.client.api.service import ServiceAPI
 from pulp.client.core.utils import print_header
 from pulp.client import constants
 from pulp.client.lib import utils
-from pulp.client.lib.plugins.consumer import (ConsumerAction, Consumer,
+from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Delete, Bind, Unbind, History)
 from pulp.client.lib.repo_file import RepoFile
 from pulp.client.lib.utils import system_exit

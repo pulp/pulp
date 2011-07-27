@@ -26,7 +26,7 @@ from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.utils import print_header
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 
 log = getLogger(__name__)
 

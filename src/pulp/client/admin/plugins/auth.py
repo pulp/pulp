@@ -22,7 +22,7 @@ from pulp.client.api import server
 from pulp.client.api.service import ServiceAPI
 from pulp.client.api.user import UserAPI
 from pulp.client.lib import utils
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 
 # login actions ----------------------------------------------------------------
 

@@ -22,7 +22,7 @@ from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.user import UserAPI
 from pulp.client.core.utils import print_header
 from pulp.client import constants
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
 # base user action class ------------------------------------------------------

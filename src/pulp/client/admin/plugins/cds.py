@@ -18,7 +18,7 @@ from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.cds import CDSAPI
 from pulp.client.core.utils import print_header, parse_interval_schedule
 from pulp.client import constants
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.common import dateutils
 
 

@@ -16,5 +16,18 @@ from pulp.client.lib.config import Config
 
 
 class AdminConfig(Config):
+    """
+    The pulp admin configuration.
 
+    @cvar BASE_PATH: The absolute path to the config directory.
+    @type BASE_PATH: str
+    @cvar FILE: The name of the config file.
+    @type FILE: str
+    @cvar ALT: The environment variable with a path to an alternate
+        configuration file.
+    @type ALT: str
+    """
+
+    BASE_PATH = "/etc/pulp/admin"
     FILE = "admin.conf"
+    ALT = "PULP_ADMIN_OVERRIDE"

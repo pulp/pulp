@@ -13,28 +13,38 @@
 
 
 import os
-from iniparse import INIConfig as Base
+from iniparse import INIConfig
 
 
-class Config(Base):
+class Config(INIConfig):
     """
     The pulp client configuration.
-    @cvar PATH: The absolute path to the config directory.
-    @type PATH: str
-    @cvar USER: The path to an alternate configuration file
+    @cvar USER_PATH: The path to an alternate configuration file
         within the user's home.
-    @type USER: str
+    @type USER_PATH: str
+    @cvar BASE_PATH: The absolute path to the config directory.
+    @type BASE_PATH: str
+    @cvar FILE: The name of the config file.
+    @type FILE: str
     @cvar ALT: The environment variable with a path to an alternate
         configuration file.
     @type ALT: str
+    @cvar FILE_PATH: The absolute path of the config file.
+    @type FILE_PATH: str
     """
 
-    # FILE should be overridden in the base class.
-    FILE = ''
-    PATH = '/etc/pulp'
-    FILE_PATH = ''
-    USER = ''
-    ALT = 'PULP_CLIENT_OVERRIDE'
+    USER_PATH = "~/.pulp"
+
+    # These variables should be set in subclasses.
+    BASE_PATH = ""
+    FILE = ""
+
+    # ALT can optionally be set in a subclass, but is not required.
+    ALT = ""
+
+    # These variables are set in __init__, but need to be defined as class
+    # variables since we inherit from INIConfig.
+    FILE_PATH = ""
 
     def __init__(self):
         """
@@ -45,16 +55,15 @@ class Config(Base):
 
         # This class is meant to be subclassed for specific config
         # implementations.  Each subclass should set the FILE attribute.
-        if self.FILE == '':
+        if self.FILE == "" or self.BASE_PATH == "":
             raise NotImplementedError("Base Config Class can not be "
                 "instantiated")
 
-        self.FILE_PATH = os.path.join(self.PATH, self.FILE)
-        self.USER = os.path.join('~/.pulp', self.FILE)
+        self.FILE_PATH = os.path.join(self.BASE_PATH, self.FILE)
 
         fp = open(self.FILE_PATH)
         try:
-            Base.__init__(self, fp)
+            INIConfig.__init__(self, fp)
             altpath = self.__altpath()
             if altpath:
                 alt = self.__read(altpath)
@@ -82,13 +91,13 @@ class Config(Base):
             fp.close()
 
     def merge(self, path):
-        return self.__mergeIn(Base(open(path)))
+        return self.__mergeIn(INIConfig(open(path)))
 
     def __mergeIn(self, other):
         """
         Merge (in) the specified I{other} configuration.
         @param other: The conf to merge in.
-        @type other: Base
+        @type other: INIConfig
         @return: self
         @rtype: L{Config}
         """
@@ -108,7 +117,7 @@ class Config(Base):
         """
         Merge (out) to the specified I{other} configuration.
         @param other: The conf to merge out.
-        @type other: Base
+        @type other: INIConfig
         @return: self
         @rtype: L{Config}
         """
@@ -128,11 +137,11 @@ class Config(Base):
         @param path: The fully qualified path.
         @type path: str
         @return: The configuration object.
-        @rtype: Base
+        @rtype: INIConfig
         """
         fp = open(path)
         try:
-            return Base(fp)
+            return INIConfig(fp)
         finally:
             fp.close()
 
@@ -140,15 +149,17 @@ class Config(Base):
     def __altpath(self):
         """
         Get the I{alternate} configuration path.
-        Resolution order: ALT, USER
+        Resolution order: ALT, USER_PATH
         @return: The path to the alternate configuration file.
         @rtype: str
         """
-        path =  os.environ.get(self.ALT)
-        if path:
-            return path
-        path = os.path.expanduser(self.USER)
-        if os.path.exists(path):
-            return path
+        if self.ALT:
+            path =  os.environ.get(self.ALT)
+            if path:
+                return path
+        user_path = os.path.join(os.path.expanduser(self.USER_PATH),
+            self.FILE)
+        if os.path.exists(user_path):
+            return user_path
         else:
             None

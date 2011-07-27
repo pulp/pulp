@@ -25,7 +25,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.utils import print_header
 from pulp.client.lib.logutil import getLogger
-from pulp.client.lib.plugin_lib.command import Action, Command
+from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 import pulp.client.constants as constants
 

@@ -25,7 +25,7 @@ from pulp.client.admin.plugin import AdminPlugin
 from pulp.client import constants
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
-from pulp.client.lib.plugins.errata import ErrataAction, Errata, List
+from pulp.client.plugins.errata import ErrataAction, Errata, List
 
 
 log = getLogger(__name__)
