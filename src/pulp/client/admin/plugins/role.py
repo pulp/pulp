@@ -121,7 +121,6 @@ class Remove(RoleAction):
         if self.role_api.remove_user(rolename, username):
             print _('[ %s ] removed from role [ %s ]') % (username, rolename)
 
-
 # role command ----------------------------------------------------------------
 
 class Role(Command):

@@ -31,7 +31,6 @@ from pulp.common.dateutils import (
 
 log = getLogger(__name__)
 
-
 # repogroup command errors ---------------------------------------------------------
 
 class FileError(Exception):
@@ -42,7 +41,6 @@ class SyncError(Exception):
 
 class CloneError(Exception):
     pass
-
 
 # base repogroup action class ------------------------------------------------------
 
@@ -242,7 +240,6 @@ class KeyReader:
         except Exception, e:
             system_exit(os.EX_DATAERR, _(str(e)))
 
-
 # repogroup command ----------------------------------------------------------------
 
 class RepoGroup(Command):
@@ -250,7 +247,6 @@ class RepoGroup(Command):
     name = "repogroup"
     description = _('repository group specific actions to pulp server')
     actions = [ Update ]
-
 
 # repogroup plugin ----------------------------------------------------------------
 

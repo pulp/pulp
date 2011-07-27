@@ -20,7 +20,6 @@ from pulp.client.api.task import TaskAPI
 from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.utils import system_exit
 
-_cfg = AdminConfig()
 
 _task_template = _('''Task: %s
     Job: %s
@@ -40,7 +39,6 @@ _task_template = _('''Task: %s
 _snapshot_template = _('''Snapshot for task: %s
     Snapshot id: %s
 ''')
-
 
 # base task action class ------------------------------------------------------
 

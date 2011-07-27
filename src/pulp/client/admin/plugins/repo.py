@@ -1632,7 +1632,6 @@ class KeyReader:
         except Exception, e:
             utils.system_exit(os.EX_DATAERR, _(str(e)))
 
-
 # repo command ----------------------------------------------------------------
 
 class AdminRepo(Repo):
@@ -1664,7 +1663,6 @@ class AdminRepo(Repo):
                 ListMetadata,
                 DownloadMetadata,
                 Discovery ]
-
 
 # repo plugin ----------------------------------------------------------------
 

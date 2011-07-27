@@ -162,7 +162,6 @@ class User(Command):
                 Delete,
                 Update ]
 
-
 # user plugin ----------------------------------------------------------------
 
 class UserPlugin(AdminPlugin):

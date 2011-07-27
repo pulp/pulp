@@ -11,12 +11,24 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
 
 from pulp.client.pluginlib.loader import PluginLoader
+from pulp.client.admin import plugins
 from pulp.client.admin.plugin import AdminPlugin
 
 
 class AdminPluginLoader(PluginLoader):
+    """
+    Pulp admin plugin loader.
+    """
 
     plugin_base_class = AdminPlugin
-    plugin_dirs = ["/usr/lib/pulp-admin-plugins"]
+
+    def get_plugin_dirs(self):
+        """
+        Append the default install locations for admin plugins to the list of
+        plugin directories.
+        """
+        plugin_dirs = PluginLoader.get_plugin_dirs(self)
+        return plugin_dirs + [os.path.dirname(plugins.__file__)]

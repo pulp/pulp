@@ -26,13 +26,17 @@ from pulp.client.api.server import ServerRequestError
 
 _log = getLogger(__name__)
 
-
 # base command class ----------------------------------------------------------
 
 class Command(object):
     """
     Command class representing a pulp cli command
-    @ivar name: command's name
+    @cvar name: Command name
+    @type name: str
+    @cvar description: Command description
+    @type description: str
+    @cvar actions: List of Action classes that this command provides
+    @type actions: list
     @ivar parser: optparse.OptionParser instance
     @ivar username: username credential
     @ivar password: password credential
@@ -92,6 +96,10 @@ class Command(object):
         self._actions[name] = action
 
     def register_actions(self):
+        """
+        Register the actions for this command by instantiating each action and
+        adding it to the exposed actions on this command.
+        """
         for action in self.actions:
             self.add_action(action.name, action(self.cfg))
 

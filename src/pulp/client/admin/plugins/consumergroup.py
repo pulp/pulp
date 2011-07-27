@@ -18,7 +18,6 @@ from pulp.client.lib.utils import print_header, system_exit
 from pulp.client import constants
 from pulp.client.pluginlib.command import Action, Command
 
-
 # consumer group base action --------------------------------------------------
 
 class ConsumerGroupAction(Action):
@@ -30,7 +29,6 @@ class ConsumerGroupAction(Action):
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("consumer group id (required)"))
-
 
 # consumer group actions ------------------------------------------------------
 

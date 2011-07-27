@@ -14,4 +14,6 @@
 from pulp.client.pluginlib.plugin import Plugin
 
 class AdminPlugin(Plugin):
-    pass
+    """
+    Pulp admin plugins.
+    """

@@ -30,7 +30,6 @@ from pulp.client.plugins.errata import ErrataAction, Errata, List
 
 log = getLogger(__name__)
 
-
 # errata actions --------------------------------------------------------------
 
 class Info(ErrataAction):
@@ -319,7 +318,6 @@ class Delete(ErrataAction):
         self.errata_api.delete(self.opts.id)
         print _("Successfully deleted Erratum with id [%s]" % self.opts.id)
 
-
 # errata overridden actions --------------------------------------------------------------
 
 class AdminList(List):
@@ -341,7 +339,6 @@ class AdminList(List):
             utils.system_exit(os.EX_USAGE, _('Please select either a consumer or a repository, not both'))
 
         List.run(self, consumerid)
-
 
 # errata command --------------------------------------------------------------
 

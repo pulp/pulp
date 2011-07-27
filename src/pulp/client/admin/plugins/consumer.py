@@ -30,7 +30,6 @@ from pulp.common import dateutils
 from rhsm.profile import get_profile
 import pulp.client.lib.repolib as repolib
 
-
 # base consumer action --------------------------------------------------------
 
 class ConsumerAdminAction(ConsumerAction):
@@ -38,7 +37,6 @@ class ConsumerAdminAction(ConsumerAction):
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
         self.parser.add_option("--id", dest="id", help=help)
-
 
 # consumer actions ------------------------------------------------------------
 
@@ -220,7 +218,6 @@ class GetKeyValues(ConsumerAdminAction):
             print constants.CONSUMER_KEY_VALUE_INFO % (key, keyvalues[key])
         system_exit(os.EX_OK)
 
-
 # consumer overridden actions  ------------------------------------------------------------
 
 class AdminDelete(Delete):
@@ -261,7 +258,6 @@ class AdminHistory(History):
         consumerid = self.get_required_option('id')
         History.run(self, consumerid)
 
-
 # consumer command ------------------------------------------------------------
 
 class AdminConsumer(Consumer):
@@ -276,7 +272,6 @@ class AdminConsumer(Consumer):
                 GetKeyValues,
                 UpdateKeyValue,
                 AdminHistory ]
-
 
 # consumer plugin ------------------------------------------------------------
 

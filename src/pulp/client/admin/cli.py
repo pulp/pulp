@@ -21,6 +21,13 @@ from pulp.client.lib.utils import system_exit
 from pulp.client.admin.config import AdminConfig
 
 class AdminCLI(PulpCLI):
+    """
+    Pulp admin command line interface class.
+    @cvar CONFIG: Config class for this cli.
+    @type CONFIG: class
+    @cvar PLUGIN_LOADER: Plugin loader class for this cli.
+    @type PLUGIN_LOADER: class
+    """
 
     CONFIG = AdminConfig
     PLUGIN_LOADER = AdminPluginLoader

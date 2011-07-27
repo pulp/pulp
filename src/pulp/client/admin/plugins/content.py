@@ -13,7 +13,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-
 import os
 import sys
 from gettext import gettext as _
@@ -290,7 +289,6 @@ class Delete(ContentAction):
             print _("Successfully deleted content [%s] from pulp server" % filename)
         utils.system_exit(exit_code)
 
-
 # content command -------------------------------------------------------------
 
 class Content(Command):
@@ -301,7 +299,6 @@ class Content(Command):
     actions = [ Upload,
                 List,
                 Delete ]
-
 
 # content plugin -------------------------------------------------------------
 

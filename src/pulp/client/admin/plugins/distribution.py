@@ -25,7 +25,6 @@ from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.utils import print_header, system_exit
 from pulp.client.admin.config import AdminConfig
 
-
 # distribution action base class ----------------------------------------------------
 
 class DistributionAction(Action):
@@ -82,7 +81,6 @@ class Info(DistributionAction):
         ksurl = self.cfg._sections['cds'].__getitem__('ksurl') + '/' + distribution['relativepath']
         print constants.DISTRO_INFO % (distribution['id'], distribution['description'], ksurl,
                                        '\n \t\t\t'.join(distribution['files'][:]), distribution['relativepath'])
-
 
 # distribution command --------------------------------------------------------------
 

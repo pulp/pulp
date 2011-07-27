@@ -24,7 +24,6 @@ from pulp.client.lib.utils import print_header, system_exit
 from pulp.client import constants
 from pulp.client.pluginlib.command import Action, Command
 
-
 # base filter action class ------------------------------------------------------
 
 class FilterAction(Action):
@@ -185,7 +184,6 @@ class RemovePackages(FilterAction):
         filter = self.filter_api.remove_packages(id, pnames)
         print _("Successfully removed packages to filter [ %s ]" % id)
 
-
 # filter command ----------------------------------------------------------------
 
 class Filter(Command):
@@ -199,7 +197,6 @@ class Filter(Command):
                 Info,
                 AddPackages,
                 RemovePackages ]
-
 
 # filter command ----------------------------------------------------------------
 

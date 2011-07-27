@@ -31,7 +31,6 @@ import pulp.client.constants as constants
 
 _log = getLogger(__name__)
 
-
 # base package group action class ---------------------------------------------
 
 class PackageGroupAction(Action):
@@ -518,7 +517,6 @@ class ExportComps(PackageGroupAction):
             else:
                 print comps_xml.encode("utf8")
     
-
 # package group command -------------------------------------------------------
 
 class PackageGroup(Command):
@@ -542,7 +540,6 @@ class PackageGroup(Command):
                 DeleteGroupFromCategory,
                 ImportComps,
                 ExportComps ]
-
 
 # package group plugin -------------------------------------------------------
 

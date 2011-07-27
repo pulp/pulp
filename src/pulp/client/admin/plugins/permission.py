@@ -112,7 +112,6 @@ class Revoke(PermissionAction):
             print _('Operations %s revoked from role [ %s ] on resource [ %s ]') % \
                     (str(operations), role, resource)
 
-
 # permission command ----------------------------------------------------------
 
 class Permission(Command):
@@ -123,7 +122,6 @@ class Permission(Command):
     actions = [ Show,
                 Grant,
                 Revoke ]
-
 
 # permission plugin ----------------------------------------------------------
 

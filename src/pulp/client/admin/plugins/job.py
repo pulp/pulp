@@ -41,7 +41,6 @@ TASK_LONG = """
 \tException: %s
 """
 
-
 # job actions -----------------------------------------------------------------
 
 class JobAction(Action):
@@ -112,7 +111,6 @@ class Info(JobAction):
              task['result'],
              task['exception'],)
 
-
 # job command -----------------------------------------------------------------
 
 class Job(Command):
@@ -121,7 +119,6 @@ class Job(Command):
     description = _('pulp server job administration and debugging')
     actions = [ List,
                 Info ]
-
 
 # job plugin -----------------------------------------------------------------
 

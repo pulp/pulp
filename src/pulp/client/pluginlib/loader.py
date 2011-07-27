@@ -22,21 +22,41 @@ log = getLogger(__name__)
 
 
 class PluginLoader(object):
+    """
+    Plugin loader class.  Loads plugins from a set of plugin directories by
+    importing each python module in those directories and checking to see if
+    there are subclasses of C{PLUGIN_BASE_CLASS}.
+
+    @cvar plugin_base_class: Class that plugins that should be discoverd by
+    the loader should inherit from.
+    @type plugin_base_class: class
+    @cvar plugin_dirs: List of directories to search for loadable plugins.
+    @type plugin_dirs: list
+    """
 
     plugin_base_class = object
-    plugin_dirs = ["/usr/lib/pulp-plugins"]
+    plugin_dirs = []
 
     def __init__(self, cfg):
         self.cfg = cfg
         self.plugins = {}
 
     def get_plugin_dirs(self):
+        """
+        @return: List of directories to look for plugins.
+        @rtype: list
+        """
         if not self.cfg.plugins.plugin_dirs:
             return self.plugin_dirs
         else:
             return self.cfg.plugins.plugin_dirs.split('\n')
 
     def _load_plugins_from_file(self, file_name):
+        """
+        Load all plugins from C{file_name}.
+        @param file_name: Name of file to intropsect for plugins.
+        @type file_name: str
+        """
         # File name must end with .py or .pyc.
         if file_name.endswith(".py"):
             file_name = file_name[:-3]
@@ -58,12 +78,17 @@ class PluginLoader(object):
             log.debug(''.join(traceback.format_tb(ei[2])))
             return
 
+        # For each module level attribute, check if it is a sublcass of
+        # self.plugin_base_class, if so, it's a plugin.
         for name, mod_object in module.__dict__.items():
             try:
                 if issubclass(mod_object, self.plugin_base_class):
-                    # TODO: log info about laoding a plugin
+                    # Instantiate the plugin.
                     plugin = mod_object(self.cfg)
 
+                    # Check for plugin disablement.  The disabled config
+                    # value, if set, needs to be in the config section that
+                    # matches the plugin name.
                     if plugin.name in self.cfg._sections:
                         if "disabled" in self.cfg[plugin.name]._options:
                             if self.cfg[plugin.name].disabled.lower() == "true":
@@ -71,9 +96,17 @@ class PluginLoader(object):
 
                     self.plugins[name] = plugin
             except TypeError:
+                # issubclass throws TypeError if the 1st arg is not a class,
+                # we can ignore this exception.
                 continue
 
     def load_plugins(self):
+        """
+        The main API for this class, load_plugins will load all plugins this
+        loader should and return them.
+        @return: Loaded plugins
+        @rtype: dict, keys of plugin names, values of plugin instances
+        """
         for plugin_dir in self.get_plugin_dirs():
             for root, dirs, files in os.walk(plugin_dir):
                 sys.path.insert(0, root)

@@ -23,7 +23,14 @@ from pulp.client.api import server
 class PulpCLI(object):
     """
     Pulp command line tool class.
+    @cvar CONFIG: Config class for this cli.
+    @type CONFIG: class
+    @cvar PLUGIN_LOADER: Plugin loader class for this cli.
+    @type PLUGIN_LOADER: class
     """
+
+    CONFIG = None
+    PLUGIN_LOADER = None
 
     def __init__(self):
         self.name = os.path.basename(sys.argv[0])
@@ -97,10 +104,18 @@ class PulpCLI(object):
             self._server.set_ssl_credentials(self.opts.certfile)
 
     def load_plugins(self):
+        """
+        Load the plugins for this cli using the class defined at
+        C{self.PLUGIN_LOADER}
+        """
         self.plugin_loader = self.PLUGIN_LOADER(self.cfg)
         self.plugins = self.plugin_loader.load_plugins()
 
     def register_plugins(self):
+        """
+        Register the loaded plugins by adding their commands to the exposed
+        commands of the cli.
+        """
         for plugin in self.plugins.values():
             for command in plugin.commands:
                 self.add_command(command.name, plugin.get_command(command.name))

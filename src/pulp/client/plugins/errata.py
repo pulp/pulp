@@ -95,7 +95,6 @@ class List(ErrataAction):
     def form_item_string(self, msg, field_size):
         return string.ljust(msg, field_size)
 
-
 # errata command --------------------------------------------------------------
 
 class Errata(Command):

@@ -34,7 +34,6 @@ class RepoAction(Action):
         self.parser.add_option("--id", dest="id",
                                help=_("repository id (required)"))
 
-
 # repo actions ----------------------------------------------------------------
 
 class List(RepoAction):
@@ -88,7 +87,6 @@ class List(RepoAction):
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
-
 
 # repo command ----------------------------------------------------------------
 

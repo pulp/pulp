@@ -44,7 +44,6 @@ from pulp.client.lib.logutil import getLogger
 
 log = getLogger(__name__)
 
-
 # package action base class ---------------------------------------------------
 
 class PackageAction(Action):
