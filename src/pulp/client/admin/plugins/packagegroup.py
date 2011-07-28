@@ -23,10 +23,11 @@ from gettext import gettext as _
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
-from pulp.client.lib.utils import print_header, system_exit
+import pulp.client.constants as constants
+from pulp.client.lib.utils import (print_header, system_exit, waitinit,
+    printwaid
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
-import pulp.client.constants as constants
 
 
 _log = getLogger(__name__)
@@ -244,11 +245,9 @@ class Install(PackageGroupAction):
         print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']
-        sys.stdout.write(_('Waiting: [-] '))
-        sys.stdout.flush()
+        waitinit()
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
-            self.printwait()
-            time.sleep(2)
+            printwait()
             status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
@@ -256,14 +255,6 @@ class Install(PackageGroupAction):
         else:
             print("\nPackage group install failed")
 
-    def printwait(self):
-        symbols = '|/-\|/-\\'
-        for i in range(0,len(symbols)):
-            sys.stdout.write('\b\b\b')
-            sys.stdout.write(symbols[i])
-            sys.stdout.write('] ')
-            sys.stdout.flush()
-            time.sleep(1)
 
 # --- Package Group Category Operations ---
 class ListCategory(PackageGroupAction):

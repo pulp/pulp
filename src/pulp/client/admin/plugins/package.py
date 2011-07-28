@@ -141,8 +141,7 @@ class Install(PackageAction):
             status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
-            print _('\n[%s] installed on %s') % \
-                    (status['result'], (consumerid or consumergroupid))
+            print _('\n%s installed on %s') % (status['result'][0], id)
         else:
             msg = _('\nPackage install failed: %s') % state
             if status is not None and state == 'error':
@@ -170,9 +169,11 @@ class Install(PackageAction):
             state = t['state']
             exception = t['exception']
             id, packages = t['args']
-            print _('\t[ %-8s ] %s' % (state.upper(), id))
             if exception:
-                print '\t\t, %s' % exception
+                exception = ', %s' % exception
+            else:
+                exception = ''
+            print _('\t[ %-8s ] %s %s' % (state.upper(), id, exception))
 
     def getunavailable(self, ids):
         lst = []

@@ -15,11 +15,13 @@
 # Python
 import sys
 import os
+import time
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.pexceptions import PulpException
+from pulp.server.agent import Agent
 
 
 # -- test cases ---------------------------------------------------------------------------
@@ -180,4 +182,31 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         self.consumer_api.delete_key_value_pair('consumerid', 'key1')
         self.consumer_group_api.add_consumer('groupid', 'consumerid')
 
+
+    def test_package_install(self):
+        '''
+        Test package install
+        '''
+        # Setup
+        id = ('A','B')
+        packages = ['zsh',]
+        self.consumer_api.create(id[0], None)
+        self.consumer_api.create(id[1], None)
+        self.consumer_group_api.create(id[0], '')
+        self.consumer_group_api.add_consumer(id[0], id[0])
+        self.consumer_group_api.add_consumer(id[0], id[1])
         
+        # Test
+        job = self.consumer_group_api.installpackages(id[0], packages)
+        self.assertTrue(job is not None)
+        self.assertEqual(len(job.tasks), len(id))
+        for task in job.tasks:
+            task.run()
+            
+        # Verify
+        for x in id:
+            agent = Agent(x)
+            pkgproxy = agent.Packages()
+            calls = pkgproxy.install.history()
+            last = calls[-1]
+            self.assertEqual(last.args[0], packages)
