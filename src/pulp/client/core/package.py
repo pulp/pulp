@@ -139,8 +139,7 @@ class Install(PackageAction):
             status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
-            print _('\n[%s] installed on %s') % \
-                    (status['result'], (consumerid or consumergroupid))
+            print _('\n%s installed on %s') % (status['result'][0], id)
         else:
             msg = _('\nPackage install failed: %s') % state
             if status is not None and state == 'error':
