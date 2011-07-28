@@ -25,7 +25,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
 import pulp.client.constants as constants
 from pulp.client.lib.utils import (print_header, system_exit, waitinit,
-    printwaid
+    printwaid)
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
 
