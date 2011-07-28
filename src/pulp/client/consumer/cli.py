@@ -38,7 +38,7 @@ class ConsumerCLI(PulpCLI):
         User the super-class credentials then fallback to the consumer
         credentials if present.
         """
-        super(PulpCLI, self).setup_credentials()
+        super(ConsumerCLI, self).setup_credentials()
         if self._server.has_credentials_set():
             return
         consumer = Consumer()
@@ -52,10 +52,10 @@ class ConsumerCLI(PulpCLI):
         """
         Setup the active server connection.
         """
-        host = _cfg.server.host or 'localhost.localdomain'
-        port = _cfg.server.port or '443'
-        scheme = _cfg.server.scheme or 'https'
-        path = _cfg.server.path or '/pulp/api'
+        host = self.cfg.server.host or 'localhost.localdomain'
+        port = self.cfg.server.port or '443'
+        scheme = self.cfg.server.scheme or 'https'
+        path = self.cfg.server.path or '/pulp/api'
         #print >> sys.stderr, 'server information: %s, %s, %s, %s' % \
         #        (host, port, scheme, path)
         self._server = server.PulpServer(host, int(port), scheme, path)
