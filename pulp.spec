@@ -361,7 +361,8 @@ fi
 %{python_sitelib}/pulp/client/lib
 %{python_sitelib}/pulp/client/pluginlib
 %{python_sitelib}/pulp/client/plugins
-%{python_sitelib}/pulp/client/*.py
+%{python_sitelib}/pulp/client/__init__.*
+%{python_sitelib}/pulp/client/constants.*
 
 # -- files - pulp client -----------------------------------------------------
 
