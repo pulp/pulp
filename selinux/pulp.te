@@ -11,14 +11,11 @@ require {
     type var_log_t;
     type port_t;
     type amqp_port_t;
-    type ldconfig_exec_t;
-    type src_t;
-    class process { execstack execmem };
     class sock_file { write create unlink setattr };
     class tcp_socket name_connect;
     class lnk_file { create unlink };
-    class dir { rename search getattr setattr create write rmdir remove_name add_name };
-    class file { write rename execute read create unlink open getattr append execute_no_trans };
+    class dir { rename setattr create write rmdir remove_name add_name };
+    class file { write rename execute read create unlink open getattr append };
 }
 
 #============= httpd_t ==============
@@ -28,14 +25,10 @@ allow httpd_t cert_t:file { write create unlink };
 allow httpd_t httpd_log_t:file { write rename unlink create};
 allow httpd_t httpd_tmp_t:file execute;
 allow httpd_t httpd_tmpfs_t:file execute;
-allow httpd_t ldconfig_exec_t:file { read execute_no_trans };
 allow httpd_t port_t:tcp_socket name_connect;
-allow httpd_t self:process { execstack execmem };
-allow httpd_t src_t:dir { search getattr };
 allow httpd_t var_lib_t:dir { rename create rmdir setattr };
 allow httpd_t var_lib_t:file { write append };
 allow httpd_t var_lib_t:lnk_file {create unlink};
-allow httpd_t var_t:dir { write remove_name add_name };
 allow httpd_t var_t:file { read getattr open };
 allow httpd_t var_t:sock_file { write create unlink setattr };
 allow httpd_t var_log_t:file write;
