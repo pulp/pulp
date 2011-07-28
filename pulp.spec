@@ -81,10 +81,10 @@ Requires: %{name}-client >= %{version}
 %description
 Pulp provides replication, access, and accounting for software repositories.
 
-# -- headers - pulp client ---------------------------------------------------
+# -- headers - pulp client lib ---------------------------------------------------
 
-%package client
-Summary:        Client side tools for managing content on pulp server
+%package client-lib
+Summary:        Client side libraries pulp client tools
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
@@ -98,11 +98,32 @@ Requires: python-hashlib
 %endif
 Requires: python-rhsm >= 0.96.4
 
-%description client
-A collection of tools to interact and perform content specific operations such as repo management, 
-package profile updates etc.
+%description client-lib
+A collection of libraries used by by the pulp client tools. 
 
 # -- headers - pulp client ---------------------------------------------------
+
+%package client
+Summary:        Client side tool for pulp consumers
+Group:          Development/Languages
+Requires:       %{name}-client-lib = %{version}
+
+%description client
+A client tool used on pulp consumers to do things such as consumer
+registration, and repository binding.
+
+# -- headers - pulp admin ---------------------------------------------------
+
+%package admin
+Summary:        Admin tool to administer the pulp server
+Group:          Development/Languages
+Requires:       %{name}-client-lib = %{version}
+
+%description admin
+A tool used to administer the pulp server, such as repo creation and synching,
+and to kick off remote actions on consumers.
+
+# -- headers - pulp common ---------------------------------------------------
 
 %package common
 Summary:        Pulp common python packages.
@@ -330,24 +351,48 @@ fi
 %{python_sitelib}/pulp/__init__.*
 %{python_sitelib}/pulp/common/
 
+# -- files - pulp client lib -----------------------------------------------------
+
+%files client-lib
+%defattr(-,root,root,-)
+%doc
+# For noarch packages: sitelib
+%{python_sitelib}/pulp/client/api
+%{python_sitelib}/pulp/client/lib
+%{python_sitelib}/pulp/client/pluginlib
+%{python_sitelib}/pulp/client/plugins
+%{python_sitelib}/pulp/client/*.py
+
 # -- files - pulp client -----------------------------------------------------
 
 %files client
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulp/client/
-%{_bindir}/pulp-admin
+%{python_sitelib}/pulp/client/consumer
+%{python_sitelib}/pulp/client/gofer
+%{python_sitelib}/pulp/client/yumplugin
 %{_bindir}/pulp-client
-%{_bindir}/pulp-migrate
 %{_exec_prefix}/lib/gofer/plugins/pulpplugin.*
 %{_prefix}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
-%config(noreplace) %{_sysconfdir}/pulp/client.conf
+%config(noreplace) %{_sysconfdir}/pulp/client/client.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
+
+# -- files - pulp admin -----------------------------------------------------
+
+%files admin
+%defattr(-,root,root,-)
+%doc
+# For noarch packages: sitelib
+%{python_sitelib}/pulp/client/admin
+%{_bindir}/pulp-admin
+%{_bindir}/pulp-migrate
+%config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
+%config(noreplace) %{_sysconfdir}/pulp/admin/task.conf
 
 # -- files - pulp cds --------------------------------------------------------
 
