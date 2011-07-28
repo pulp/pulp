@@ -10,7 +10,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.216
+Version:        0.0.217
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -373,6 +373,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.217-1
+- Fix package install. (jortel@redhat.com)
+
 * Wed Jul 27 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.216-1
 - fixed typo (jconnor@redhat.com)
 
