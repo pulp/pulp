@@ -87,16 +87,17 @@ Pulp provides replication, access, and accounting for software repositories.
 Summary:        Client side libraries pulp client tools
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires: python-simplejson
-Requires: python-isodate >= 0.4.4
-Requires: m2crypto
-Requires: %{name}-common = %{version}
-Requires: gofer >= 0.43
+Requires:       python-simplejson
+Requires:       python-isodate >= 0.4.4
+Requires:       m2crypto
+Requires:       %{name}-common = %{version}
+Requires:       gofer >= 0.43
 %if !0%{?fedora}
 # RHEL
-Requires: python-hashlib
+Requires:       python-hashlib
 %endif
-Requires: python-rhsm >= 0.96.4
+Requires:       python-rhsm >= 0.96.4
+Obsoletes:      pulp-client <= 0.217
 
 %description client-lib
 A collection of libraries used by by the pulp client tools. 
@@ -107,6 +108,7 @@ A collection of libraries used by by the pulp client tools.
 Summary:        Client side tool for pulp consumers
 Group:          Development/Languages
 Requires:       %{name}-client-lib = %{version}
+Obsoletes:      pulp-client <= 0.217
 
 %description client
 A client tool used on pulp consumers to do things such as consumer
@@ -118,6 +120,7 @@ registration, and repository binding.
 Summary:        Admin tool to administer the pulp server
 Group:          Development/Languages
 Requires:       %{name}-client-lib = %{version}
+Obsoletes:      pulp-client <= 0.217
 
 %description admin
 A tool used to administer the pulp server, such as repo creation and synching,
