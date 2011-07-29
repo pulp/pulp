@@ -61,8 +61,6 @@ class PluginLoader(object):
         # File name must end with .py or .pyc.
         if file_name.endswith(".py"):
             file_name = file_name[:-3]
-        elif file_name.endswith(".pyc"):
-            file_name = file_name[:-4]
         else:
             return
 
