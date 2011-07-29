@@ -100,7 +100,7 @@ class Task(object):
         self.args = args or []
         self.kwargs = kwargs or {}
         self.scheduler = scheduler or ImmediateScheduler()
-        self.timeout = timeout
+        self.timeout_delta = timeout
         self._progress_callback = None
 
         # resources managed by the task queue to deliver events
