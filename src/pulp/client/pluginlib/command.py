@@ -61,6 +61,12 @@ class Command(object):
         self._action_order = []
         self.register_actions()
 
+    def __getattr__(self, attr):
+        """
+        Expose the commands actions as attributes on the instance.
+        """
+        return self._actions[attr]
+
     @property
     def usage(self):
         """

@@ -367,7 +367,7 @@ class ConsumerApi(BaseApi):
 
         # Send the bind request over to the consumer
         agent = PulpAgent(consumer, async=True)
-        agent_repolib = agent.Repo()
+        agent_repolib = agent.Consumer()
         agent_repolib.bind(repoid, bind_data)
 
         # Return the bind data to the caller

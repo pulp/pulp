@@ -53,6 +53,12 @@ class Plugin(object):
         for command in self.commands:
             self._commands[command.name] = command(self.cfg)
 
+    def __getattr__(self, attr):
+        """
+        Expose the plugin's commands as attributes on the instance.
+        """
+        return self.get_command(attr)
+
     def get_command(self, command_name):
         """
         Return the requested command.

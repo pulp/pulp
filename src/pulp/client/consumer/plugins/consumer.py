@@ -101,6 +101,11 @@ class ClientUnbind(Unbind):
         consumerid = self.consumerid
         repoid = self.get_required_option('repoid')
         Unbind.run(self, consumerid, repoid)
+        self.unbind_repo()
+        print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
+                (consumerid, repoid)
+
+    def unbind_repo(self, repoid):
         mirror_list_filename = \
             repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
         repolib.unbind(
@@ -109,8 +114,6 @@ class ClientUnbind(Unbind):
             self.cfg.client.gpg_keys_dir,
             self.cfg.client.cert_dir,
             repoid)
-        print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
-                (consumerid, repoid)
 
 
 class ClientHistory(History):
@@ -140,24 +143,26 @@ class ClientBind(Bind):
         bind_data = Bind.run(self, consumerid, repoid)
 
         if bind_data:
-            mirror_list_filename = \
-                repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
-            repolib.bind(
-                self.cfg.client.repo_file,
-                mirror_list_filename,
-                self.cfg.client.gpg_keys_dir,
-                self.cfg.client.cert_dir,
-                repoid,
-                bind_data['repo'],
-                bind_data['host_urls'],
-                bind_data['gpg_keys'],
-                bind_data['cacert'],
-                bind_data['clientcert'])
-
+            self.bind(repoid, bind_data)
             print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                   (consumerid, repoid)
         else:
             print _('Repo [%s] already bound to the consumer' % repoid)
+
+    def bind_repo(self, repoid, bind_data):
+        mirror_list_filename = \
+            repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
+        repolib.bind(
+            self.cfg.client.repo_file,
+            mirror_list_filename,
+            self.cfg.client.gpg_keys_dir,
+            self.cfg.client.cert_dir,
+            repoid,
+            bind_data['repo'],
+            bind_data['host_urls'],
+            bind_data['gpg_keys'],
+            bind_data['cacert'],
+            bind_data['clientcert'])
 
 # consumer command ------------------------------------------------------------
 

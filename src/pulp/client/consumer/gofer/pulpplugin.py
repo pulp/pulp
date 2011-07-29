@@ -193,56 +193,6 @@ class Consumer:
         log.info('Artifacts deleted')
 
 
-class Repo:
-    """
-    Pulp (pulp.repo) yum repository object.
-    """
-
-    @remote(secret=getsecret)
-    def bind(self, repo_id, bind_data):
-        """
-        Binds the repo described in bind_data to this consumer.
-        """
-        log.info('Binding repo [%s]' % repo_id)
-
-        repo_file = cfg.client.repo_file
-        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, repo_id)
-        gpg_keys_dir = cfg.client.gpg_keys_dir
-        cert_dir = cfg.client.cert_dir
-
-        repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, cert_dir, repo_id,
-                     bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'],
-                     bind_data['cacert'], bind_data['clientcert'])
-
-    @remote(secret=getsecret)
-    def unbind(self, repo_id):
-        """
-        Unbinds the given repo from this consumer.
-        """
-        log.info('Unbinding repo [%s]' % repo_id)
-
-        repo_file = cfg.client.repo_file
-        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, repo_id)
-        gpg_keys_dir = cfg.client.gpg_keys_dir
-        cert_dir = cfg.client.cert_dir
-
-        repolib.unbind(repo_file, mirror_list_file, gpg_keys_dir, cert_dir, repo_id)
-
-    @remote(secret=getsecret)
-    def update(self, repo_id, bind_data):
-        '''
-        Updates a repo that was previously bound to the consumer. Only the changed
-        information will be in bind_data.
-        '''
-        log.info('Updating repo [%s]' % repo_id)
-
-        repo_file = cfg.client.repo_file
-        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, repo_id)
-        gpg_keys_dir = cfg.client.gpg_keys_dir
-
-        repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
-                     bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
-        
 class Packages:
     """
     Package management object.

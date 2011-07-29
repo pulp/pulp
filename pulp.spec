@@ -209,7 +209,7 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp src/pulp/client/gofer/pulpplugin.py %{buildroot}/usr/lib/gofer/plugins
+cp -R src/pulp/client/consumer/gofer/*.py %{buildroot}/usr/lib/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # profile plugin
@@ -361,8 +361,7 @@ fi
 %{python_sitelib}/pulp/client/lib
 %{python_sitelib}/pulp/client/pluginlib
 %{python_sitelib}/pulp/client/plugins
-%{python_sitelib}/pulp/client/__init__.*
-%{python_sitelib}/pulp/client/constants.*
+%{python_sitelib}/pulp/client/*.py*
 
 # -- files - pulp client -----------------------------------------------------
 
@@ -372,7 +371,7 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-client
-%{_exec_prefix}/lib/gofer/plugins/pulpplugin.*
+%{_exec_prefix}/lib/gofer/plugins/*.py
 %{_prefix}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
