@@ -99,16 +99,24 @@ class RepositoryAPI(PulpAPI):
         except ServerRequestError:
             return []
 
-    def running_sync(self, sync_list):
+    def clone_list(self, repoid):
+        path = '/repositories/%s/clone/' % repoid
+        try:
+            return self.server.GET(path)[1]
+        except ServerRequestError:
+            return []
+
+
+    def running_task(self, task_list):
         """
-        Iterate over a list of syncs and return one that is currently running or
-        about to be run. If no such sync is found, return None.
+        Iterate over a list of tasks and return one that is currently running or
+        about to be run. If no such task is found, return None.
         """
-        for sync in sync_list:
-            if sync['state'] == 'running':
-                return sync
-            if sync['state'] == 'waiting' and sync['scheduler'] == 'immediate':
-                return sync
+        for task in task_list:
+            if task['state'] == 'running':
+                return task
+            if task['state'] == 'waiting' and task['scheduler'] == 'immediate':
+                return task
         return None
 
     def cancel_sync(self, repoid, taskid):

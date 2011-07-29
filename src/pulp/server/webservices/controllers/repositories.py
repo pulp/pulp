@@ -173,6 +173,7 @@ class Repositories(JSONController):
          * arch, str, repository contect architecture
          * groupid, str, repository group id
          * relative_path, str, repository's on disk path
+         * notes, str of dict, repository notes
         """
         # Query by notes
         if "notes" in spec.keys() :
@@ -1358,6 +1359,8 @@ class RepositoryActions(JSONController):
         action_methods = {
             'sync': '_sync',
             '_sync': '_sync',
+            'clone': '_clone',
+            '_clone': '_clone',
             'generate_metadata' : '_generate_metadata',
         }
         if action_name not in action_methods:
