@@ -10,7 +10,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.217
+Version:        0.0.218
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -373,6 +373,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jul 29 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.218-1
+- changed the name of the timeout field to timeout_delta in _pickled_fields
+  (jconnor@redhat.com)
+- 679764 - added cloning status, if present along with sync status under repo
+  status (skarmark@redhat.com)
+- 726709 - Resolved name conflict between timeout field and timeout method of
+  Task class (jconnor@redhat.com)
+- manifest generate support for files (pkilambi@redhat.com)
+
 * Thu Jul 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.217-1
 - Fix package install. (jortel@redhat.com)
 
