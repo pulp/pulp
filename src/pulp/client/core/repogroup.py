@@ -68,6 +68,9 @@ class RepoGroupAction(Action):
                 continue
             if k in ('remove_consumer_cert', 'remove_feed_cert'):
                 continue
+            if k == 'arch':
+                delta['arch'] = v
+                continue
             if k == 'addkeys':
                 reader = KeyReader()
                 keylist = reader.expand(v)
