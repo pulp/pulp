@@ -209,7 +209,7 @@ class Task(object):
                     'state', 'progress', 'consecutive_failures',
                     'cancel_attempts', 'job_id',)
 
-    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout',
+    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout_delta',
                       'schedule_threshold', '_progress_callback', 'start_time',
                       'finish_time', 'result', 'exception', 'traceback', 'job_id',)
 
