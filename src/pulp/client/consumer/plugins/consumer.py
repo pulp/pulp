@@ -128,11 +128,14 @@ class ClientDelete(Delete):
     def run(self):
         consumerid = self.consumerid
         Delete.run(self, consumerid)
+        bundle = ConsumerBundle()
+        self.delete_files(bundle)
+        print _("Successfully deleted consumer [%s]") % consumerid
+
+    def delete_files(self, bundle):
         repo_file = RepoFile(self.cfg.client.repo_file)
         repo_file.delete()
-        bundle = ConsumerBundle()
         bundle.delete()
-        print _("Successfully deleted consumer [%s]") % consumerid
 
 
 class ClientBind(Bind):

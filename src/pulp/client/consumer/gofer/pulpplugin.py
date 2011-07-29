@@ -166,33 +166,6 @@ class ProfileUpdateAction:
             log.error("Error: %s" % e)
             
             
-class Consumer:
-    """
-    Pulp Consumer.
-    """
-    
-    @remote(secret=getsecret)
-    def deleted(self, digest):
-        """
-        Notification that the consumer has been deleted.
-        Clean up associated artifacts.
-        @param digest: The SHA-1 of the associated x.509 credentials.
-        @type digest: str
-        """
-        bundle = ConsumerBundle()
-        found = bundle.digest()
-        if found != digest:
-            log.warn('Artifacts NOT deleted')
-            return
-        try:
-            repo_file = RepoFile(cfg.client.repo_file)
-            repo_file.delete()
-        except:
-            log.error('Repo delete, failed', exc_info=1)
-        bundle.delete()
-        log.info('Artifacts deleted')
-
-
 class Packages:
     """
     Package management object.
