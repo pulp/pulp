@@ -84,3 +84,25 @@ class TestRepoMetadataApi(testutil.PulpAsyncTest):
 
     def test_metadata_remove_repo(self):
         pass
+
+    def test_metadata(self):
+        repo = self.repo_api.create('some-id', 'some name', \
+            'i386', 'http://example.com')
+        p1 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm")
+        self.repo_api.add_package(repo["id"], [p1['id']])
+
+        p2 = testutil.create_package(self.package_api, 'test_pkg2_by_name', filename="test02.rpm")
+        self.repo_api.add_package(repo["id"], [p2['id']])
+
+        pkgs = self.repo_api.packages(repo['id'])
+        self.assertTrue(len(pkgs) == 2)
+        self.assertTrue(p1["id"] in pkgs)
+        self.assertTrue(p2["id"] in pkgs)
+        success = True
+        try:
+            self.repo_api._generate_metadata(repo['id'])
+        except:
+            raise
+            success = False
+        assert(success)
+

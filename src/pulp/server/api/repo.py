@@ -1733,9 +1733,6 @@ class RepoApi(BaseApi):
          @param repo: The repo object.
         """
         fileids = repo['files']
-        if not len(fileids):
-            # No file info to add to manifest, exit
-            return
         try:
             manifest_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "MANIFEST")
             f = open(manifest_path, "w")
@@ -1945,7 +1942,12 @@ class RepoApi(BaseApi):
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
-        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+        if repo['content_types'] in ('yum'):
+            pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+        elif repo['content_types'] in ('file'):
+            self._generate_file_manifest(repo)
+        else:
+            raise PulpException("Cannot spawn metadata generation for repo with content type %s" % repo['content_types'])
 
     def list_metadata_task(self, id):
         """
