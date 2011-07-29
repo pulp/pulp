@@ -65,9 +65,6 @@ Requires: qpid-cpp-server
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
 %endif
-%endif
-
-%if %{pulp_selinux}
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
 %endif
@@ -140,6 +137,15 @@ Requires:       httpd
 Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires:       mod_ssl
 Requires:       m2crypto
+
+%if %{pulp_selinux}
+%if "%{selinux_policyver}" != ""
+Requires: selinux-policy >= %{selinux_policyver}
+%endif
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule
+%endif
+
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
@@ -288,6 +294,16 @@ touch /var/lib/pulp-cds/.cluster-members
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
+%if %{pulp_selinux}
+if /usr/sbin/selinuxenabled ; then
+    for selinuxvariant in %{selinux_variants}
+    do
+        /usr/sbin/semodule -s ${selinuxvariant} -i \
+        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
+    done
+fi
+%endif
+
 # -- post - pulp client ------------------------------------------------------
 
 %post client
@@ -304,9 +320,6 @@ if [ $1 -eq 0 ]; then
   for selinuxvariant in %{selinux_variants}
     do
     /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename}
-#/usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
-       #      /usr/sbin/semodule -s ${selinuxvariant} -l > /dev/null 2>&1 \
-#        && /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} || :
     done
 fi
 %endif
@@ -315,6 +328,17 @@ fi
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
+
+%postun cds
+# Clean up after package removal
+%if %{pulp_selinux}
+if [ $1 -eq 0 ]; then
+  for selinuxvariant in %{selinux_variants}
+    do
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename}
+    done
+fi
+%endif
 
 # -- files - pulp server -----------------------------------------------------
 
@@ -394,6 +418,12 @@ fi
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
 %attr(3775, apache, apache) /var/log/pulp-cds
+%if %{pulp_selinux}
+# SELinux
+%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
+%{_datadir}/selinux/*/%{modulename}.pp
+%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+%endif
 
 # -- changelog ---------------------------------------------------------------
 
