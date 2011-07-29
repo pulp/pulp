@@ -371,7 +371,7 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-client
-%{_exec_prefix}/lib/gofer/plugins/*.py
+%{_exec_prefix}/lib/gofer/plugins/*.py*
 %{_prefix}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
