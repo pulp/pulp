@@ -178,9 +178,9 @@ class TaskQueue(object):
         for task in running_tasks:
             # the task.start_time can be None if the task has been 'run' by the
             # queue, but the task thread has not had a chance to execute yet
-            if None in (task.timeout, task.start_time):
+            if None in (task.timeout_delta, task.start_time):
                 continue
-            if now - task.start_time < task.timeout:
+            if now - task.start_time < task.timeout_delta:
                 continue
             task.timeout()
 

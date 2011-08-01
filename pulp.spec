@@ -1,16 +1,25 @@
 # sitelib for noarch packages, sitearch for others (remove the unneeded one)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+
+%if 0%{?el5}
+%define pulp_selinux 0
+%else
+%define pulp_selinux 1
+%endif
+
+%if %{pulp_selinux}
 #SELinux 
 %define selinux_variants mls strict targeted
 %define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
 %define modulename pulp
 %define moduletype apps
+%endif
 
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.217
+Version:        0.0.218
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -25,7 +34,9 @@ BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
+%if %{pulp_selinux}
 BuildRequires:  checkpolicy, selinux-policy-devel, hardlink
+%endif
 
 Requires: %{name}-common = %{version}
 Requires: pymongo >= 1.9
@@ -49,14 +60,15 @@ Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
+
+%if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
 %endif
-%if 0%{?rhel} == 5
-Requires:        selinux-policy >= 2.4.6-80
-%endif
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
+%endif
+
 %if 0%{?el5}
 # RHEL-5
 Requires: python-uuid
@@ -150,6 +162,15 @@ Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires:       mod_ssl
 Requires:       m2crypto
 
+%if %{pulp_selinux}
+%if "%{selinux_policyver}" != ""
+Requires: selinux-policy >= %{selinux_policyver}
+%endif
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule
+%endif
+
+
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
 to clients.
@@ -163,6 +184,7 @@ to clients.
 pushd src
 %{__python} setup.py build
 popd
+%if %{pulp_selinux}
 # SELinux Configuration
 cd selinux
 perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' %{modulename}.te
@@ -173,6 +195,7 @@ do
     make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
 done
 cd -
+%endif
 
 
 %install
@@ -245,7 +268,7 @@ mkdir -p %{buildroot}/var/log/pulp-cds
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 
-
+%if %{pulp_selinux}
 # Install SELinux policy modules
 cd selinux
 for selinuxvariant in %{selinux_variants}
@@ -262,6 +285,7 @@ install -p -m 644 %{modulename}.if \
 # Hardlink identical policy module packages together
 /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
 cd -
+%endif
 
 
 %clean
@@ -271,6 +295,7 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
+%if %{pulp_selinux}
 if /usr/sbin/selinuxenabled ; then
     for selinuxvariant in %{selinux_variants}
     do
@@ -278,6 +303,7 @@ if /usr/sbin/selinuxenabled ; then
         %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
     done
 fi
+%endif
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
@@ -292,6 +318,16 @@ touch /var/lib/pulp-cds/.cluster-members
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
+%if %{pulp_selinux}
+if /usr/sbin/selinuxenabled ; then
+    for selinuxvariant in %{selinux_variants}
+    do
+        /usr/sbin/semodule -s ${selinuxvariant} -i \
+        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
+    done
+fi
+%endif
+
 # -- post - pulp client ------------------------------------------------------
 
 %post client
@@ -303,19 +339,30 @@ popd
 
 %postun
 # Clean up after package removal
+%if %{pulp_selinux}
 if [ $1 -eq 0 ]; then
   for selinuxvariant in %{selinux_variants}
     do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
-       #      /usr/sbin/semodule -s ${selinuxvariant} -l > /dev/null 2>&1 \
-#        && /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} || :
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename}
     done
 fi
+%endif
 
 %postun client
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
+
+%postun cds
+# Clean up after package removal
+%if %{pulp_selinux}
+if [ $1 -eq 0 ]; then
+  for selinuxvariant in %{selinux_variants}
+    do
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename}
+    done
+fi
+%endif
 
 # -- files - pulp server -----------------------------------------------------
 
@@ -342,10 +389,12 @@ fi
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
+%if %{pulp_selinux}
 # SELinux
 %doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
 %{_datadir}/selinux/*/%{modulename}.pp
 %{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+%endif
 # -- files - common ----------------------------------------------------------
 
 %files common
@@ -415,10 +464,25 @@ fi
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
 %attr(3775, apache, apache) /var/log/pulp-cds
+%if %{pulp_selinux}
+# SELinux
+%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
+%{_datadir}/selinux/*/%{modulename}.pp
+%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+%endif
 
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jul 29 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.218-1
+- changed the name of the timeout field to timeout_delta in _pickled_fields
+  (jconnor@redhat.com)
+- 679764 - added cloning status, if present along with sync status under repo
+  status (skarmark@redhat.com)
+- 726709 - Resolved name conflict between timeout field and timeout method of
+  Task class (jconnor@redhat.com)
+- manifest generate support for files (pkilambi@redhat.com)
+
 * Thu Jul 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.217-1
 - Fix package install. (jortel@redhat.com)
 

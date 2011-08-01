@@ -284,25 +284,48 @@ class Status(RepoAction):
         else:
             last_sync = str(parse_iso8601_datetime(last_sync))
         print _('Last Sync: %s') % last_sync
-        running_sync = self.repository_api.running_sync(syncs)
+        running_sync = self.repository_api.running_task(syncs)
         if not syncs or running_sync is None:
             if syncs and syncs[0]['state'] in ('error'):
                 print _("Last Error: %s\n%s") % \
                         (str(parse_iso8601_datetime(syncs[0]['finish_time'])),
                                 syncs[0]['traceback'][-1])
+        else:
+            print _('Currently syncing:'),
+            if running_sync['progress'] is None:
+                print _('progress unknown')
+            else:
+                pkgs_left = running_sync['progress']['items_left']
+                pkgs_total = running_sync['progress']['items_total']
+                bytes_left = float(running_sync['progress']['size_left'])
+                bytes_total = float(running_sync['progress']['size_total'])
+                percent = 0
+                if bytes_total > 0:
+                    percent = ((bytes_total - bytes_left) / bytes_total) * 100.0
+                print _('%d%% done (%d of %d packages downloaded)') % \
+                    (int(percent), (pkgs_total - pkgs_left), pkgs_total)
+
+        # Process cloning status, if exists
+        clones = self.repository_api.clone_list(id)
+        running_clone = self.repository_api.running_task(clones)
+        if not clones or running_clone is None:
+            if clones and clones[0]['state'] in ('error'):
+                print _("Last Error: %s\n%s") % \
+                        (str(parse_iso8601_datetime(clones[0]['finish_time'])),
+                                clones[0]['traceback'][-1])
             return
-        print _('Currently syncing:'),
-        if running_sync['progress'] is None:
+        print _('Currently cloning:'),
+        if running_clone['progress'] is None:
             print _('progress unknown')
         else:
-            pkgs_left = running_sync['progress']['items_left']
-            pkgs_total = running_sync['progress']['items_total']
-            bytes_left = float(running_sync['progress']['size_left'])
-            bytes_total = float(running_sync['progress']['size_total'])
+            pkgs_left = running_clone['progress']['items_left']
+            pkgs_total = running_clone['progress']['items_total']
+            bytes_left = float(running_clone['progress']['size_left'])
+            bytes_total = float(running_clone['progress']['size_total'])
             percent = 0
             if bytes_total > 0:
                 percent = ((bytes_total - bytes_left) / bytes_total) * 100.0
-            print _('%d%% done (%d of %d packages downloaded)') % \
+            print _('%d%% done (%d of %d packages cloned)') % \
                     (int(percent), (pkgs_total - pkgs_left), pkgs_total)
 
 
@@ -787,7 +810,7 @@ class Sync(RepoProgressAction):
         id = self.get_required_option('id')
         self.get_repo(id)
         tasks = self.repository_api.sync_list(id)
-        running = self.repository_api.running_sync(tasks)
+        running = self.repository_api.running_task(tasks)
         if running is not None:
             print _('Sync for repository %s already in progress') % id
             return running
@@ -867,7 +890,7 @@ class GenerateMetadata(RepoAction):
 class AddMetadata(RepoAction):
 
     name = "add_metadata"
-    description =  _('Add a metadata type to existing repository')
+    description =  _('add a metadata type to an existing repository')
 
     def setup_parser(self):
         super(AddMetadata, self).setup_parser()
@@ -898,7 +921,7 @@ class AddMetadata(RepoAction):
 class DownloadMetadata(RepoAction):
 
     name = "download_metadata"
-    description =  _('Download a metadata type if available from existing repository')
+    description =  _('download a metadata type if available from an existing repository')
 
     def setup_parser(self):
         super(DownloadMetadata, self).setup_parser()
@@ -935,7 +958,7 @@ class DownloadMetadata(RepoAction):
 class ListMetadata(RepoAction):
 
     name = "list_metadata"
-    description =  _('List metadata type information associated to existing repository')
+    description =  _('list metadata type information associated to an existing repository')
 
     def setup_parser(self):
         super(ListMetadata, self).setup_parser()

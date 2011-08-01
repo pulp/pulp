@@ -411,7 +411,7 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
     #generate new metadata
     _create_repo(dir, groups=groups, checksum_type=checksum_type)
     if not backup_repo_dir:
-        log.info("Noting further to check; we got our fresh metadata")
+        log.info("Nothing further to check; we got our fresh metadata")
         return
     #check if presto metadata exist in the backup
     repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
