@@ -26,6 +26,6 @@ class ConsumerConfig(Config):
     @type ALT: str
     """
 
-    BASE_PATH = "/etc/pulp/client"
-    FILE = "client.conf"
+    BASE_PATH = "/etc/pulp/consumer"
+    FILE = "consumer.conf"
     ALT = "PULP_CLIENT_OVERRIDE"
