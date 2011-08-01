@@ -935,7 +935,7 @@ class GenerateMetadata(RepoAction):
 
 class AddMetadata(RepoAction):
 
-    description =  _('Add a metadata type to existing repository')
+    description =  _('add a metadata type to an existing repository')
 
     def setup_parser(self):
         super(AddMetadata, self).setup_parser()
@@ -965,7 +965,7 @@ class AddMetadata(RepoAction):
 
 class DownloadMetadata(RepoAction):
 
-    description =  _('Download a metadata type if available from existing repository')
+    description =  _('download a metadata type if available from an existing repository')
 
     def setup_parser(self):
         super(DownloadMetadata, self).setup_parser()
@@ -1001,7 +1001,7 @@ class DownloadMetadata(RepoAction):
 
 class ListMetadata(RepoAction):
 
-    description =  _('List metadata type information associated to existing repository')
+    description =  _('list metadata type information associated to an existing repository')
 
     def setup_parser(self):
         super(ListMetadata, self).setup_parser()
