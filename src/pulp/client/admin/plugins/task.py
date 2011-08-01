@@ -194,5 +194,5 @@ class Task(Command):
 class TaskPlugin(AdminPlugin):
 
     name = "task"
-    config_file = "task.conf"
     commands = [ Task ]
+    CONFIG_FILE = "task.conf"

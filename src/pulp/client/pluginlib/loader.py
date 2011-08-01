@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
+import copy
 import os
 import sys
 import traceback
@@ -83,14 +84,16 @@ class PluginLoader(object):
             try:
                 if issubclass(mod_object, self.plugin_base_class):
                     # Instantiate the plugin.
-                    plugin = mod_object(self.cfg)
+                    # Use a copy of self.cfg so that plugins don't modify the
+                    # main config (perhaps maliciously).
+                    plugin = mod_object(copy.deepcopy(self.cfg))
 
                     # Check for plugin disablement.  The disabled config
                     # value, if set, needs to be in the config section that
                     # matches the plugin name.
-                    if plugin.name in self.cfg._sections:
-                        if "disabled" in self.cfg[plugin.name]._options:
-                            if self.cfg[plugin.name].disabled.lower() == "true":
+                    if plugin.name in plugin.cfg._sections:
+                        if "disabled" in plugin.cfg[plugin.name]._options:
+                            if plugin.cfg[plugin.name].disabled.lower() == "true":
                                 continue
 
                     self.plugins[name] = plugin
