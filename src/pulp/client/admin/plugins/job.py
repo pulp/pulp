@@ -126,3 +126,4 @@ class JobPlugin(AdminPlugin):
 
     name = "job"
     commands = [ Job ]
+    CONFIG_FILE = "job.conf"
