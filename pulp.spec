@@ -87,7 +87,8 @@ Requires: curl => 7.19.7
 %endif
 
 # newer pulp builds should require same client version
-Requires: %{name}-client >= %{version}
+Requires: %{name}-consumer >= %{version}
+Requires: %{name}-admin >= %{version}
 
 
 %description
@@ -122,7 +123,7 @@ Group:          Development/Languages
 Requires:       %{name}-client-lib = %{version}
 Obsoletes:      pulp-client <= 0.217
 
-%description client
+%description consumer
 A client tool used on pulp consumers to do things such as consumer
 registration, and repository binding.
 
@@ -328,9 +329,9 @@ if /usr/sbin/selinuxenabled ; then
 fi
 %endif
 
-# -- post - pulp client ------------------------------------------------------
+# -- post - pulp consumer ------------------------------------------------------
 
-%post client
+%post consumer
 pushd %{_sysconfdir}/rc.d/init.d
 if [ "$1" = "1" ]; then
   ln -s goferd pulp-agent
@@ -348,7 +349,7 @@ if [ $1 -eq 0 ]; then
 fi
 %endif
 
-%postun client
+%postun consumer
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
@@ -429,7 +430,7 @@ fi
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
-%config(noreplace) %{_sysconfdir}/pulp/client/client.conf
+%config(noreplace) %{_sysconfdir}/pulp/consumer/consumer.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # -- files - pulp admin -----------------------------------------------------
