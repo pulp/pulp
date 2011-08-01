@@ -116,7 +116,7 @@ A collection of libraries used by by the pulp client tools.
 
 # -- headers - pulp client ---------------------------------------------------
 
-%package client
+%package consumer
 Summary:        Client side tool for pulp consumers
 Group:          Development/Languages
 Requires:       %{name}-client-lib = %{version}
@@ -417,7 +417,7 @@ fi
 
 # -- files - pulp client -----------------------------------------------------
 
-%files client
+%files consumer
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
@@ -443,6 +443,7 @@ fi
 %{_bindir}/pulp-migrate
 %config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/task.conf
+%config(noreplace) %{_sysconfdir}/pulp/admin/job.conf
 
 # -- files - pulp cds --------------------------------------------------------
 
