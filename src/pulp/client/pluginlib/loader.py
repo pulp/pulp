@@ -92,8 +92,8 @@ class PluginLoader(object):
                     # value, if set, needs to be in the config section that
                     # matches the plugin name.
                     if plugin.name in plugin.cfg._sections:
-                        if "disabled" in plugin.cfg[plugin.name]._options:
-                            if plugin.cfg[plugin.name].disabled.lower() == "true":
+                        if "enabled" in plugin.cfg[plugin.name]._options:
+                            if plugin.cfg[plugin.name].enabled.lower() == "false":
                                 continue
 
                     self.plugins[name] = plugin
