@@ -25,6 +25,9 @@ from pulp.server.pexceptions import PulpException
 
 # exceptions -------------------------------------------------------------------
 
+class PluginConflictError(PulpException):
+    pass
+
 class PluginNotFoundError(PulpException):
     pass
 
@@ -32,7 +35,7 @@ class PluginNotFoundError(PulpException):
 
 _log = logging.getLogger(__name__)
 
-_manager = None # Manger instance
+_manager = None # Manager instance
 
 # manager class ----------------------------------------------------------------
 
@@ -97,7 +100,7 @@ class Manager(object):
         """
         Helper method that loads modules from the given package paths.
         @type paths: dict
-        @param patsh: a mapping of package directory paths to package names
+        @param path: a mapping of package directory paths to package names
         @type skip: tuple or list
         @param skip: list of module names to *not* load
         @rtype: list of modules
@@ -125,7 +128,7 @@ class Manager(object):
             for attr in dir(module):
                 if not issubclass(attr, Importer):
                     continue
-                cfg = SafeConfigParser
+                cfg = SafeConfigParser()
                 cfg.read(attr.config_files)
                 for content_type in attr.types:
                     if content_type in self.importers:
@@ -150,7 +153,7 @@ class Manager(object):
                 for distribution_type in attr.types:
                     if distribution_type in self.distributors:
                         _log.warn(_('Distributor for %s already found, not loading %s') %
-                                  (content_type, repr(attr)))
+                                  (distribution_type, repr(attr)))
                         continue
                     self.distributors[distribution_type] = attr
                     self.distributor_configs[distribution_type] = cfg
@@ -194,8 +197,8 @@ class Manager(object):
     def lookup_distributor_config(self, distributor_type):
         """
         Return the (potentially empty) distributor config for the given content type.
-        @type content_type: str
-        @param content_type: content type to get distributor config for
+        @type distributor_type: str
+        @param distributor_type: content type to get distributor config for
         @rtype: SafeConfigParser instance
         @return: distributor config for given content type
         """
@@ -230,6 +233,7 @@ def initialize():
     global _manager
     assert _manager is None
     local_path = os.path.dirname(__file__)
+    # TODO configurable plugin directories
     importer_paths = {os.path.join(local_path, 'importer'):
                       'pulp.server.content.importer'}
     distributor_paths = {os.path.join(local_path, 'distributor'):

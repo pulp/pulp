@@ -20,12 +20,7 @@ class Importer(object):
     @classmethod
     @property
     def types(cls):
-        return ()
-
-    @classmethod
-    @property
-    def config_files(cls):
-        return ()
+        return []
 
     def sync(self, repo_data, importer_config, sync_config, sync_hook):
         raise NotImplementedError()
