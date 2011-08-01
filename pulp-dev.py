@@ -48,6 +48,7 @@ LINKS = (
     'etc/pulp/repo_auth.conf',
     'etc/pulp/admin/admin.conf',
     'etc/pulp/admin/task.conf',
+    'etc/pulp/admin/job.conf',
     'etc/pulp/client/client.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
