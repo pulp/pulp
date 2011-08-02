@@ -180,7 +180,7 @@ def _unpickle_method(func_name, obj, cls):
     func = None
     # handle public, protected, and private method names
     lookup = func_name
-    if func_name.starts_with('__'):
+    if func_name.startswith('__'):
         lookup = '_%s%s' % (cls.__name__, func_name)
     for cls in cls.mro():
         try:
