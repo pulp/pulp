@@ -30,7 +30,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.package import PackageApi
 from pulp.server.util import get_rpm_information
-from pulp.client.utils import generatePakageProfile
+from pulp.client.lib.utils import generatePakageProfile
 
 class TestErrata(testutil.PulpAsyncTest):
 

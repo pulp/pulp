@@ -26,7 +26,6 @@ def install():
     mock.reset()
     mock.register(
         Consumer=Consumer,
-        Repo=Repo,
         Packages=Packages,
         PackageGroups=PackageGroups,
         cdsplugin=cdsplugin,)
@@ -42,9 +41,6 @@ class Consumer(object):
 
     def deleted(self):
         pass
-
-
-class Repo(object):
 
     def bind(self, repoid, data):
         pass
