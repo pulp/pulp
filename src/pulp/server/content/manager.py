@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import logging
 import os
 import re
@@ -36,6 +37,10 @@ class PluginNotFoundError(PulpException):
 _log = logging.getLogger(__name__)
 
 _manager = None # Manager instance
+
+_top_level_config_dir = '/etc/pulp'
+_importers_config_dir = os.path.join(_top_level_config_dir, 'importers')
+_distributors_config_dir = os.path.join(_top_level_config_dir, 'distributors')
 
 # manager class ----------------------------------------------------------------
 
