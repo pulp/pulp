@@ -95,7 +95,7 @@ class Update(ConsumerAction):
 
 # consumer overridden actions ------------------------------------------------------------
 
-class ClientUnbind(Unbind):
+class ClientUnbind(ConsumerAction, Unbind):
 
     def run(self):
         consumerid = self.consumerid
@@ -116,14 +116,14 @@ class ClientUnbind(Unbind):
             repoid)
 
 
-class ClientHistory(History):
+class ClientHistory(ConsumerAction, History):
 
     def run(self):
         consumerid = self.consumerid
         History.run(self, consumerid)
 
 
-class ClientDelete(Delete):
+class ClientDelete(ConsumerAction, Delete):
 
     def run(self):
         consumerid = self.consumerid
@@ -138,7 +138,7 @@ class ClientDelete(Delete):
         bundle.delete()
 
 
-class ClientBind(Bind):
+class ClientBind(ConsumerAction, Bind):
 
     def run(self):
         consumerid = self.consumerid
