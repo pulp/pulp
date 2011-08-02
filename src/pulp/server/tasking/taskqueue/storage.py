@@ -178,11 +178,11 @@ def _pickle_method(method):
 
 def _unpickle_method(func_name, obj, cls):
     func = None
+    # handle public, protected, and private method names
+    lookup = func_name
+    if func_name.starts_with('__'):
+        lookup = '_%s%s' % (cls.__name__, func_name)
     for cls in cls.mro():
-        # handle public, protected, and private method names
-        lookup = func_name
-        if func_name.starts_with('__'):
-            lookup = '_%s%s' % (cls.__name__, func_name)
         try:
             func = cls.__dict__[lookup]
         except KeyError:
