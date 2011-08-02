@@ -53,12 +53,7 @@ class Bind(ConsumerAction):
         self.parser.add_option("--repoid", dest="repoid",
                        help=_("repo identifier (required)"))
 
-    def run(self):
-        if not self.consumerid:
-            consumerid = self.get_required_option('id')
-        else:
-            consumerid = self.consumerid
-        repoid = self.get_required_option('repoid')
+    def run(self, consumerid, repoid):
         bind_data = self.consumer_api.bind(consumerid, repoid)
         return bind_data
 
@@ -73,11 +68,7 @@ class Unbind(ConsumerAction):
         self.parser.add_option("--repoid", dest="repoid",
                        help=_("repo identifier (required)"))
 
-    def run(self):
-        if not self.consumerid:
-            consumerid = self.get_required_option('id')
-        else:
-            consumerid = self.consumerid
+    def run(self, consumerid, repoid):
         repoid = self.get_required_option('repoid')
         self.consumer_api.unbind(consumerid, repoid)
 

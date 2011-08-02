@@ -645,7 +645,7 @@ class CdsApi(BaseApi):
 
             # Retrieve the repo proxy for the consumer being handled
             agent = PulpAgent(consumer, async=True)
-            agent_repolib = agent.Repo()
+            agent_repolib = agent.Consumer()
 
             # Send the update message to the consumer
             agent_repolib.update(repo_id, bind_data)

@@ -403,7 +403,7 @@ class ConsumerApi(BaseApi):
         self.collection.save(consumer, safe=True)
 
         agent = PulpAgent(consumer, async=True)
-        agent_repolib = agent.Repo()
+        agent_repolib = agent.Consumer()
         agent_repolib.unbind(repo_id)
 
         self.consumer_history_api.repo_unbound(id, repo_id)

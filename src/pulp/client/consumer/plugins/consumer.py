@@ -98,7 +98,7 @@ class ClientUnbind(Unbind, ConsumerClientActionMixIn):
         consumerid = self.consumerid
         repoid = self.get_required_option('repoid')
         Unbind.run(self, consumerid, repoid)
-        self.unbind_repo()
+        self.unbind_repo(repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 
@@ -143,7 +143,7 @@ class ClientBind(Bind, ConsumerClientActionMixIn):
         bind_data = Bind.run(self, consumerid, repoid)
 
         if bind_data:
-            self.bind(repoid, bind_data)
+            self.bind_repo(repoid, bind_data)
             print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                   (consumerid, repoid)
         else:
