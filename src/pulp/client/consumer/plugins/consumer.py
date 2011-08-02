@@ -79,7 +79,7 @@ class Update(ConsumerAction, ConsumerClientActionMixIn):
     description = _('update consumer profile')
 
     def run(self):
-        consumer_id = self.getconsumerid()
+        consumer_id = self.consumerid
         if not consumer_id:
             system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
         pkginfo = get_profile("rpm").collect()

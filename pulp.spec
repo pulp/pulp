@@ -427,6 +427,7 @@ fi
 %{_exec_prefix}/lib/gofer/plugins/*.py*
 %{_prefix}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
+%{_sysconfdir}/gofer/plugins/consumer.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
