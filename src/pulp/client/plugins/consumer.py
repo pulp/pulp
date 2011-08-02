@@ -18,11 +18,11 @@ from gettext import gettext as _
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client import constants
+from pulp.client.lib import repolib
 from pulp.client.lib import utils
-from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.repo_file import RepoFile
+from pulp.client.pluginlib.command import Action, Command
 from pulp.common import dateutils
-import pulp.client.lib.repolib as repolib
 
 # base consumer action --------------------------------------------------------
 
@@ -103,7 +103,7 @@ class History(ConsumerAction):
             'end_date' : self.opts.end_date,
         }
         results = self.consumer_api.history(consumerid, query_params)
-        print_header(_("Consumer History"))
+        utils.print_header(_("Consumer History"))
         for entry in results:
             # Attempt to translate the programmatic event type name to a user readable one
             type_name = entry['type_name']

@@ -223,6 +223,11 @@ class GetKeyValues(ConsumerAdminAction):
 
 class AdminDelete(Delete):
 
+    def setup_parser(self):
+        super(AdminDelete, self).setup_parser()
+        help = _("consumer identifier eg: foo.example.com (required)")
+        self.parser.add_option("--id", dest="id", help=help)
+
     def run(self):
         consumerid = self.get_required_option('id')
         Delete.run(self, consumerid)
@@ -230,6 +235,11 @@ class AdminDelete(Delete):
 
 
 class AdminBind(Bind):
+
+    def setup_parser(self):
+        super(AdminBind, self).setup_parser()
+        help = _("consumer identifier eg: foo.example.com (required)")
+        self.parser.add_option("--id", dest="id", help=help)
 
     def run(self):
         consumerid = self.get_required_option('id')
@@ -245,6 +255,11 @@ class AdminBind(Bind):
 
 class AdminUnbind(Unbind):
 
+    def setup_parser(self):
+        super(AdminUnbind, self).setup_parser()
+        help = _("consumer identifier eg: foo.example.com (required)")
+        self.parser.add_option("--id", dest="id", help=help)
+
     def run(self):
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
@@ -254,6 +269,11 @@ class AdminUnbind(Unbind):
 
 
 class AdminHistory(History):
+
+    def setup_parser(self):
+        super(AdminHistory, self).setup_parser()
+        help = _("consumer identifier eg: foo.example.com (required)")
+        self.parser.add_option("--id", dest="id", help=help)
 
     def run(self):
         consumerid = self.get_required_option('id')

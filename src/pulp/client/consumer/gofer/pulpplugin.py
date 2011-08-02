@@ -18,13 +18,13 @@ Contains recurring actions and remote classes.
 
 import os
 from hashlib import sha256
-from pulp.client import repolib
-from pulp.client.server import PulpServer, set_active_server
+from pulp.client.lib import repolib
+from pulp.client.api.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
 from rhsm.profile import get_profile
-from pulp.client.config import Config
-from pulp.client.repo_file import RepoFile
-from pulp.client.credentials import Consumer as ConsumerBundle
+from pulp.client.consumer.config import ConsumerConfig
+from pulp.client.lib.repo_file import RepoFile
+from pulp.client.consumer.credentials import Consumer as ConsumerBundle
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
@@ -35,7 +35,7 @@ from logging import getLogger
 
 log = getLogger(__name__)
 plugin = Plugin.find(__name__)
-cfg = Config()
+cfg = ConsumerConfig()
 
 HEARTBEAT = cfg.heartbeat.seconds
 
