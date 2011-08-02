@@ -50,7 +50,7 @@ class Consumer(PulpGoferPlugin):
         Unbinds the given repo from this consumer.
         """
         log.info('Unbinding repo [%s]' % repo_id)
-        self.consumer.bind.unbind_repo(repo_id)
+        self.consumer.unbind.unbind_repo(repo_id)
 
     @remote(secret=getsecret)
     def update(self, repo_id, bind_data):
