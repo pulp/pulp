@@ -59,8 +59,8 @@ LINKS = (
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
     'srv/pulp/repo_auth.wsgi',
-    ('src/pulp/client/consumer/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
-    ('src/pulp/client/consumer/gofer/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
+    ('src/pulp/client/consumer/goferplugins/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
+    ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
     ('src/pulp/client/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('etc/pulp/logging', '/etc/pulp/logging'),
 )
