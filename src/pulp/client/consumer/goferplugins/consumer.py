@@ -42,7 +42,7 @@ class Consumer(PulpGoferPlugin):
         Binds the repo described in bind_data to this consumer.
         """
         log.info('Binding repo [%s]' % repo_id)
-        self.consumer.bind.bind_repo(bind_data)
+        self.consumer.bind.bind_repo(repo_id, bind_data)
 
     @remote(secret=getsecret)
     def unbind(self, repo_id):
