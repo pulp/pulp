@@ -450,17 +450,17 @@ class AsyncTask(Task):
         @return: The current running task.
         @rtype: L{AsyncTask}
         """
-        return cls.__current
+        return cls.__current.task
 
     def run(self):
         """
         Set current running task and call super.
         """
         try:
-            AsyncTask.__current = self
+            AsyncTask.__current.task = self
             return Task.run(self)
         finally:
-            AsyncTask.__current = None
+            AsyncTask.__current.task = None
 
     def invoked(self, result):
         """
