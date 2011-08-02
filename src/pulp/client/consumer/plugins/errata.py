@@ -25,13 +25,19 @@ log = getLogger(__name__)
 
 class ConsumerList(List):
 
-    def run(self):
-        consumerid = self.getconsumerid()
-        repoid = self.opts.repoid
+    @property
+    def consumerid(self):
+        """
+        Get the consumer ID from the identity certificate.
+        @return: The consumer id.  Returns (None) when not registered.
+        @rtype: str
+        """
+        bundle = ConsumerBundle()
+        return bundle.getid()
 
-        # If running the consumer client, let the repo ID override the consumer's retrieved ID
-        if self.is_consumer_client and repoid:
-            consumerid = None
+    def run(self):
+        consumerid = self.consumerid
+        repoid = self.opts.repoid
 
         List.run(self, consumerid)
 
