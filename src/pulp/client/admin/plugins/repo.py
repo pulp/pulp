@@ -130,10 +130,10 @@ class AdminRepoAction(RepoAction):
 
 # repo actions ----------------------------------------------------------------
 
-class RepoProgressAction(RepoAction):
+class RepoProgressAction(AdminRepoAction):
 
     def __init__(self, cfg):
-        RepoAction.__init__(self, cfg)
+        AdminRepoAction.__init__(self, cfg)
         self._previous_progress = None
         self.wait_index = 0
         self.wait_symbols = "|/-\|/-\\"
@@ -266,7 +266,7 @@ class RepoProgressAction(RepoAction):
         return ret_val
 
 
-class Status(RepoAction):
+class Status(AdminRepoAction):
 
     name = "status"
     description = _('show the status of a repository')
@@ -329,7 +329,7 @@ class Status(RepoAction):
                     (int(percent), (pkgs_total - pkgs_left), pkgs_total)
 
 
-class Content(RepoAction):
+class Content(AdminRepoAction):
 
     name = "content"
     description = _('list the contents of a repository')
@@ -390,7 +390,7 @@ class Content(RepoAction):
 
 
 
-class Create(RepoAction):
+class Create(AdminRepoAction):
 
     name = "create"
     description = _('create a repository')
@@ -594,7 +594,7 @@ class Clone(RepoProgressAction):
         self.clone_foreground(task)
 
 
-class Delete(RepoAction):
+class Delete(AdminRepoAction):
 
     name = "delete"
     description = _('delete a repository')
@@ -606,7 +606,7 @@ class Delete(RepoAction):
         print _("Successful deleted repository [ %s ]") % id
 
 
-class Update(RepoAction):
+class Update(AdminRepoAction):
 
     name = "update"
     description = _('update a repository')
@@ -841,7 +841,7 @@ class Sync(RepoProgressAction):
 
 
 
-class CancelSync(RepoAction):
+class CancelSync(AdminRepoAction):
 
     name = "cancel_sync"
     description = _('cancel a running sync')
@@ -860,7 +860,7 @@ class CancelSync(RepoAction):
         print _("Sync for repository %s is being canceled") % id
 
 
-class GenerateMetadata(RepoAction):
+class GenerateMetadata(AdminRepoAction):
 
     name = "generate_metadata"
     description =  _('schedule metadata generation for a repository')
@@ -887,7 +887,7 @@ class GenerateMetadata(RepoAction):
             task = self.repository_api.generate_metadata(id)
             utils.system_exit(os.EX_OK, _('Metadata generation has been successfully scheduled for repo id [%s]. Use --status to check the status.') % id)
 
-class AddMetadata(RepoAction):
+class AddMetadata(AdminRepoAction):
 
     name = "add_metadata"
     description =  _('add a metadata type to an existing repository')
@@ -918,7 +918,7 @@ class AddMetadata(RepoAction):
         self.repository_api.add_metadata(id, self.opts.mdtype, filedata)
         utils.system_exit(os.EX_OK, _("Successfully added metadata type [%s] to repo [%s]" % (filetype, id)))
 
-class DownloadMetadata(RepoAction):
+class DownloadMetadata(AdminRepoAction):
 
     name = "download_metadata"
     description =  _('download a metadata type if available from an existing repository')
@@ -955,7 +955,7 @@ class DownloadMetadata(RepoAction):
         else:
             print file_stream.encode("utf8")
 
-class ListMetadata(RepoAction):
+class ListMetadata(AdminRepoAction):
 
     name = "list_metadata"
     description =  _('list metadata type information associated to an existing repository')
@@ -981,7 +981,7 @@ class ListMetadata(RepoAction):
 
 
 
-class Schedules(RepoAction):
+class Schedules(AdminRepoAction):
 
     name = "schedules"
     description = _('list all repository schedules')
@@ -995,7 +995,7 @@ class Schedules(RepoAction):
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
 
-class ListKeys(RepoAction):
+class ListKeys(AdminRepoAction):
 
     name = "list_keys"
     description = _('list gpg keys')
@@ -1005,7 +1005,7 @@ class ListKeys(RepoAction):
         for key in self.repository_api.listkeys(id):
             print os.path.basename(key)
 
-class Publish(RepoAction):
+class Publish(AdminRepoAction):
 
     name = "publish"
     description = _('enable/disable repository being published by apache')
@@ -1033,7 +1033,7 @@ class Publish(RepoAction):
             print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
 
 
-class AddPackages(RepoAction):
+class AddPackages(AdminRepoAction):
 
     name = "add_package"
     description = _('add package to a repository')
@@ -1136,7 +1136,7 @@ class AddPackages(RepoAction):
         print _("%s packages added to repo [%s]") % (len(pids) - len(errors), id)
 
 
-class RemovePackages(RepoAction):
+class RemovePackages(AdminRepoAction):
 
     name = "remove_package"
     description = _('remove package from the repository')
@@ -1193,7 +1193,7 @@ class RemovePackages(RepoAction):
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
 
 
-class AddErrata(RepoAction):
+class AddErrata(AdminRepoAction):
 
     name = "add_errata"
     description = _('add errata to a repository')
@@ -1268,7 +1268,7 @@ class AddErrata(RepoAction):
             utils.system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
 
 
-class RemoveErrata(RepoAction):
+class RemoveErrata(AdminRepoAction):
 
     name = "remove_errata"
     description = _('remove errata from the repository')
@@ -1328,7 +1328,7 @@ class RemoveErrata(RepoAction):
         print _("Successfully removed Errata %s from repo [%s]." % (errataids, id))
 
 
-class AddFiles(RepoAction):
+class AddFiles(AdminRepoAction):
 
     name = "add_file"
     description = _('add file to a repository')
@@ -1396,7 +1396,7 @@ class AddFiles(RepoAction):
                 continue
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
 
-class RemoveFiles(RepoAction):
+class RemoveFiles(AdminRepoAction):
 
     name = "remove_file"
     description = _('remove file from a repository')
@@ -1458,7 +1458,7 @@ class RemoveFiles(RepoAction):
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
 
 
-class AddFilters(RepoAction):
+class AddFilters(AdminRepoAction):
 
     name = "add_filters"
     description = _('add filters to a repository')
@@ -1475,7 +1475,7 @@ class AddFilters(RepoAction):
         print _("Successfully added filters %s to repository [%s]" % (filters, repoid))
 
 
-class RemoveFilters(RepoAction):
+class RemoveFilters(AdminRepoAction):
 
     name = "remove_filters"
     description = _('remove filters from a repository')
