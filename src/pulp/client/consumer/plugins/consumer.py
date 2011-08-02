@@ -35,13 +35,10 @@ from rhsm.profile import get_profile
 
 # base consumer action --------------------------------------------------------
 
-class ConsumerClientAction(ConsumerAction):
+class ConsumerClientActionMixIn(object):
 
-    def __init__(self, cfg):
-        super(ConsumerAction, self).__init__(cfg)
-        self.consumerid = self.getconsumerid()
-
-    def getconsumerid(self):
+    @property
+    def consumerid(self):
         """
         Get the consumer ID from the identity certificate.
         @return: The consumer id.  Returns (None) when not registered.
@@ -52,7 +49,7 @@ class ConsumerClientAction(ConsumerAction):
 
 # consumer actions ------------------------------------------------------------
 
-class Create(ConsumerAction):
+class Create(ConsumerAction, ConsumerClientActionMixIn):
 
     name = "create"
     description = _('create a consumer')
@@ -76,7 +73,7 @@ class Create(ConsumerAction):
         print _("Successfully created consumer [ %s ]") % consumer['id']
 
 
-class Update(ConsumerAction):
+class Update(ConsumerAction, ConsumerClientActionMixIn):
 
     name = "update"
     description = _('update consumer profile')
@@ -95,7 +92,7 @@ class Update(ConsumerAction):
 
 # consumer overridden actions ------------------------------------------------------------
 
-class ClientUnbind(ConsumerAction, Unbind):
+class ClientUnbind(Unbind, ConsumerClientActionMixIn):
 
     def run(self):
         consumerid = self.consumerid
@@ -116,14 +113,14 @@ class ClientUnbind(ConsumerAction, Unbind):
             repoid)
 
 
-class ClientHistory(ConsumerAction, History):
+class ClientHistory(History, ConsumerClientActionMixIn):
 
     def run(self):
         consumerid = self.consumerid
         History.run(self, consumerid)
 
 
-class ClientDelete(ConsumerAction, Delete):
+class ClientDelete(Delete, ConsumerClientActionMixIn):
 
     def run(self):
         consumerid = self.consumerid
@@ -138,7 +135,7 @@ class ClientDelete(ConsumerAction, Delete):
         bundle.delete()
 
 
-class ClientBind(ConsumerAction, Bind):
+class ClientBind(Bind, ConsumerClientActionMixIn):
 
     def run(self):
         consumerid = self.consumerid
