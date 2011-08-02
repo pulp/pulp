@@ -24,6 +24,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
 from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
+from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client import constants
 from pulp.common.dateutils import (
@@ -59,6 +60,7 @@ class AdminRepoAction(RepoAction):
         self.package_api = PackageAPI()
         self.service_api = ServiceAPI()
         self.file_api = FileAPI()
+        self.repository_api = RepositoryAPI()
 
     def get_repo(self, id):
         """
@@ -70,7 +72,6 @@ class AdminRepoAction(RepoAction):
         @rtype: dict
         @return: dictionary representing the repository
         """
-        assert hasattr(self, 'repository_api')
         repo = self.repository_api.repository(id)
         if repo is None:
             utils.system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
