@@ -169,7 +169,7 @@ def update_repo_schedule(repo, new_schedule):
     @param new_schedule: dictionary representing new schedule
     """
     if repo['source'] is None:
-        raise PulpException(_('Cannot add schedule to repository with out sync source'))
+        raise PulpException(_('Cannot add schedule to repository without sync source'))
     repo['sync_schedule'] = validate_schedule(new_schedule)
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
