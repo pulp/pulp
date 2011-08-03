@@ -20,6 +20,7 @@ from pulp.server.agent import HeartbeatListener
 from pulp.server.async import ReplyHandler
 from pulp.server.config import config
 from gofer.messaging.broker import Broker
+from gofer.messaging.async import WatchDog
 
 # start logging
 start_logging()
@@ -35,9 +36,13 @@ if config.getboolean('events', 'recv_enabled'):
     dispatcher = EventDispatcher()
     dispatcher.start()
 
+# start async message timeout watchdog
+watchdog = WatchDog(url=url)
+watchdog.start()
+
 # start async task reply handler
 replyHandler = ReplyHandler(url)
-replyHandler.start()
+replyHandler.start(watchdog)
 
 # start agent heartbeat listener
 heartbeatListener = HeartbeatListener(url)

@@ -15,7 +15,6 @@ import itertools
 import logging
 import pickle
 
-from datetime import timedelta
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
@@ -322,13 +321,12 @@ class ConsumerGroupApi(BaseApi):
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
         job = Job()
-        timeout = timedelta(seconds=600)
         for consumerid in consumergroup['consumerids']:
             consumer = self.consumerApi.consumer(consumerid)
             if consumer is None:
                 log.error('consumer [%s], not-found', consumerid)
                 continue
-            task = AsyncTask(self.__installpackages, [consumerid, names], timeout=timeout)
+            task = AsyncTask(self.__installpackages, [consumerid, names])
             job.add(task)
         return job
 
@@ -352,7 +350,8 @@ class ConsumerGroupApi(BaseApi):
         reboot = options.get('reboot', False)
         assumeyes = options.get('assumeyes', True)
         task = AsyncTask.current()
-        packages = agent.Packages(task)
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        packages = agent.Packages(task, timeout=tm)
         return packages.install(names, reboot, assumeyes)
 
     def installerrata(self, id, errataids=[], types=[], assumeyes=False):
@@ -395,11 +394,9 @@ class ConsumerGroupApi(BaseApi):
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
             log.error("For consumer id %s Packages to install %s" % (consumerid, pkgs))
-            timeout = timedelta(minutes=10)
             task = AsyncTask(
                 self.__installpackages,
                 [consumer, names],
-                dict(reboot=reboot_suggested,assumeyes=assumeyes),
-                timeout=timeout)
+                dict(reboot=reboot_suggested,assumeyes=assumeyes))
             job.add(task)
         return job

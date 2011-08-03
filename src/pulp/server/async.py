@@ -26,6 +26,7 @@ from pulp.server.tasking.exception import (
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import SnapshotStorage
+from gofer.messaging.async import WatchDog
 
 
 log = getLogger(__name__)
@@ -173,17 +174,22 @@ class AsyncAgent:
     @type __id: str
     @ivar __secret: The shared secret.
     @type __secret: str
+    @ivar __options: Additional gofer options.
+    @type __options: dict
     """
 
-    def __init__(self, id, secret):
+    def __init__(self, id, secret, **options):
         """
         @param id: The agent ID.
         @type id: str
         @param secret: The shared secret.
         @type secret: str
+        @param options: Additional gofer options.
+        @type options: dict
         """
         self.__id = id
         self.__secret = secret
+        self.__options = options
 
     def __getattr__(self, name):
         """
@@ -195,7 +201,11 @@ class AsyncAgent:
         if name.startswith('__'):
             return self.__dict__[name]
         else:
-            return RemoteClass(self.__id, self.__secret, name)
+            return RemoteClass(
+                self.__id,
+                self.__secret,
+                self.__options,
+                name)
 
 
 class RemoteClass:
@@ -205,27 +215,32 @@ class RemoteClass:
     @type __id: str
     @ivar __secret: The shared secret.
     @type __secret: str
+    @ivar __options: Additional gofer options.
+    @type __options: dict
     @ivar __name: The remote class name.
     @type __name: str
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
     """
 
-    def __init__(self, id, secret, name):
+    def __init__(self, id, secret, options, name):
         """
         @param id: The agent (consumer) id.
         @type id: str
         @param secret: The shared secret.
         @type secret: str
+        @param options: Additional gofer options.
+        @type options: dict
         @param name: The remote class name.
         @type name: str
         """
         self.__id = id
         self.__secret = secret
+        self.__options = options
         self.__name = name
         self.__taskid = 0
 
-    def __call__(self, task):
+    def __call__(self, task, **options):
         """
         Mock constructor.
         @param task: The associated task.
@@ -234,6 +249,9 @@ class RemoteClass:
         @rtype: L{AsyncClass}
         """
         self.taskid = task.id
+        d = dict(self.__options)
+        d.update(options)
+        self.__options = d
         return self
 
     def __getattr__(self, name):
@@ -250,8 +268,9 @@ class RemoteClass:
             self.__id,
             self.__secret,
             self.__name,
-            name,
-            self.taskid)
+            self.__options,
+            self.taskid,
+            name)
 
 
 class RemoteMethod:
@@ -265,17 +284,17 @@ class RemoteMethod:
     @type secret: str
     @ivar im_class: The remote class.
     @type im_class: classobj
-    @ivar name: The method name.
-    @type name: str
-    @ivar cb: The completed callback (module,class).
-    @type cb: tuple
+    @ivar options: Additional gofer options.
+    @type options: dict
     @ivar taskid: The associated task ID.
     @type taskid: str
+    @ivar name: The method name.
+    @type name: str
     """
 
     CTAG = 'pulp.task'
 
-    def __init__(self, id, secret, classname, name, taskid):
+    def __init__(self, id, secret, classname, options, taskid, name):
         """
         @param id: The consumer (agent) id.
         @type id: str
@@ -283,16 +302,19 @@ class RemoteMethod:
         @type secret: str
         @param classname: The remote object class name.
         @type classname: str
-        @param name: The remote method name.
-        @type name: str
+        @param options: Additional gofer options.
+        @type options: dict
         @param taskid: The associated task ID.
         @type taskid: str
+        @param name: The remote method name.
+        @type name: str
         """
         self.id = id
         self.secret = secret
         self.classname = classname
-        self.name = name
+        self.options = options
         self.taskid = taskid
+        self.name = name
 
     def __call__(self, *args, **kwargs):
         """
@@ -305,12 +327,15 @@ class RemoteMethod:
         @rtype: object
         """
         url = config.config.get('messaging', 'url')
+        watchdog = WatchDog(url=url)
         agent = Agent(
             self.id,
             url=url,
             secret=self.secret,
             any=self.taskid,
-            ctag=self.CTAG)
+            ctag=self.CTAG,
+            watchdog=watchdog,
+            **self.options)
         classobj = getattr(agent, self.classname)
         method = getattr(classobj, self.name)
         return method(*args, **kwargs)
@@ -328,8 +353,8 @@ class ReplyHandler(Listener):
         queue = Queue(ctag)
         self.consumer = ReplyConsumer(queue, url=url)
 
-    def start(self):
-        self.consumer.start(self)
+    def start(self, watchdog):
+        self.consumer.start(self, watchdog=watchdog)
         log.info('Task reply handler, started.')
 
     def succeeded(self, reply):
