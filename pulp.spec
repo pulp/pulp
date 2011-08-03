@@ -2,7 +2,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
-%if 0%{?el5}
+%if 0%{?rhel} == 5
 %define pulp_selinux 0
 %else
 %define pulp_selinux 1
@@ -69,7 +69,7 @@ Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
 %endif
 
-%if 0%{?el5}
+%if 0%{?rhel} == 5
 # RHEL-5
 Requires: python-uuid
 Requires: python-ssl
@@ -77,9 +77,8 @@ Requires: python-ctypes
 Requires: python-hashlib
 Requires: createrepo = 0.9.8-3
 %endif
-%if 0%{?el6}
+%if 0%{?rhel} == 6
 # RHEL-6
-Requires: python-uuid
 Requires: python-ctypes
 Requires: python-hashlib
 Requires: nss >= 3.12.9
@@ -976,25 +975,18 @@ fi
 - bz# 709395 Fix bug in parsing of start_date/end_date when querying for
   consumer history (jslagle@redhat.com)
 
-* Tue Jun 21 2011 Jay Dobies <jason.dobies@redhat.com>
-- 707295 - removed relativepath from repo update; updated feed update logic to
-  check if relative path matches before allowing update (pkilambi@redhat.com)
+ Jun 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.192-1
 - 713493 - fixed auth login to relogin new credentials; will just replace
   existing user certs with new ones (pkilambi@redhat.com)
-- Tell grinder to use a single location for package storage.
-  (jason.dobies@redhat.com)
-- 714691 - fixed type that caused params to resolve to an instance method
-  instead of a local variable (jconnor@redhat.com)
-- Fixed incorrect variable name (jason.dobies@redhat.com)
-- Added CDS sync history to CDS CLI API (jason.dobies@redhat.com)
-- Remove unneeded log.error for translate_to_utf8 (jmatthews@redhat.com)
-- Added CLI API call for repo sync history (jason.dobies@redhat.com)
-- changed corresponding unittest (jconnor@redhat.com)
-- changed scheduled task behavior to reset task states on enqueue instead of on
-  run (jconnor@redhat.com)
+- Bump website to CR13. (jortel@redhat.com)
+- Automatic commit of package [pulp] release [0.0.191-1]. (jortel@redhat.com)
 - Changed unit test logfile to /tmp/pulp_unittests.log, avoid log file being
   deleted when unit tests run (jmatthews@redhat.com)
->>>>>>> 6eccd7f... Automatic commit of package [pulp] release [0.0.193-1].
+- Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
+- 707295 - removed relativepath from repo update; updated feed update logic to
+  check if relative path matches before allowing update (pkilambi@redhat.com)
+- In a consumer case, password can be none, let it return the user
+  (pkilambi@redhat.com)
 - updated log config for rhel5, remove spaces from 'handlers'
   (jmatthews@redhat.com)
 - Disable console logging for unit tests (jmatthews@redhat.com)
@@ -1003,7 +995,6 @@ fi
 - Updates for Python 2.4 logging configuration file (jmatthews@redhat.com)
 - Pulp logging now uses configuration file from /etc/pulp/logging
   (jmatthews@redhat.com)
-<<<<<<< HEAD
 - adding new createrepo as a dependency for el5 builds (pkilambi@redhat.com)
 - 709514 - error message for failed errata install for consumer and
   consumergroup corrected (skarmark@redhat.com)
@@ -1036,37 +1027,11 @@ fi
   iso8601 format (jslagle@redhat.com)
 - 709395 - Fix bug in parsing of start_date/end_date when querying for
   consumer history (jslagle@redhat.com)
+
 * Fri Jun 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.191-1
 - Tell systemctl to ignore deps so that our init script works correctly on
   Fedora 15 (jslagle@redhat.com)
 - Adding mongo 1.7.5 as a requires for f15 pulp build (pkilambi@redhat.com)
-=======
-- 713176 - Changed user certificate expirations to 1 week. Consumer certificate
-  expirations, while configurable, remain at the default of 10 years.
-  (jason.dobies@redhat.com)
-- more specific documentation (jconnor@redhat.com)
-- missed a find_async substitution (jconnor@redhat.com)
-- refactored auth_required and error_handler decorators out of JSONController
-  base class and into their own module (jconnor@redhat.com)
-- eliminated AsyncController class (jconnor@redhat.com)
-- making args and kwargs optional (jconnor@redhat.com)
-- fixed bug in server class name and added raw request method
-  (jconnor@redhat.com)
-- default to no debug in web.py (jconnor@redhat.com)
-- print the body instead of returning it (jconnor@redhat.com)
-- quick and dirty framework for web.py parameter testing (jconnor@redhat.com)
-- Updated for CR 13 (jason.dobies@redhat.com)
-- Merge branch 'master' of git://git.fedorahosted.org/git/pulp
-  (jslagle@redhat.com)
-- bz# 709395 Fix cull_history api to convert to iso8601 format
-  (jslagle@redhat.com)
-- bz# 709395 Update tests for consumer history events to populate test data in
-  iso8601 format (jslagle@redhat.com)
-- Merge branch 'master' of git://git.fedorahosted.org/git/pulp
-  (jslagle@redhat.com)
-- bz# 709395 Fix bug in parsing of start_date/end_date when querying for
-  consumer history (jslagle@redhat.com)
->>>>>>> 6eccd7f... Automatic commit of package [pulp] release [0.0.193-1].
 
 * Mon Jun 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.190-1
 - 707295 - updated to provide absolute path. (jortel@redhat.com)
