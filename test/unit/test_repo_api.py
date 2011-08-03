@@ -49,7 +49,7 @@ from pulp.server.db.model import persistence
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
-from pulp.client.utils import generatePakageProfile
+from pulp.client.lib.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server import constants

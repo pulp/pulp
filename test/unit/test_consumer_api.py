@@ -76,7 +76,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Messaging bind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         lastbind = calls[-1]
         bindargs = lastbind[0]
@@ -120,7 +120,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Messaging bind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         lastbind = calls[-1]
         bindargs = lastbind[0]
@@ -140,7 +140,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         self.assertEqual(0, len(calls))
 
@@ -158,7 +158,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         self.assertEqual(0, len(calls))
 
@@ -213,7 +213,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Messaging unbind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         lastunbind = calls[-1]
         unbindargs = lastunbind[0]
@@ -248,7 +248,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Messaging unbind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         lastunbind = calls[-1]
         unbindargs = lastunbind[0]
@@ -269,7 +269,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         self.assertEqual(0, len(calls))
 
@@ -288,7 +288,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('fake-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         self.assertEqual(0, len(calls))
         

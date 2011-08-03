@@ -44,7 +44,7 @@ setup(
     packages=find_packages(),
     scripts=[
         '../bin/pulp-admin',
-        '../bin/pulp-client',
+        '../bin/pulp-consumer',
         '../bin/pulp-migrate',
     ],
     include_package_data=False,

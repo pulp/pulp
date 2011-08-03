@@ -17,9 +17,9 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.client.lock import Lock
-import pulp.client.repolib as repolib
-from pulp.client.repo_file import MirrorListFile, RepoFile, Repo
+from pulp.client.lib import repolib
+from pulp.client.lib.lock import Lock
+from pulp.client.lib.repo_file import MirrorListFile, RepoFile, Repo
 
 # -- constants ------------------------------------------------------------------------
 

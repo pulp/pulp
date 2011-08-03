@@ -18,7 +18,7 @@ from logging import getLogger
 from socket import error as SocketError
 from M2Crypto.SSL import SSLError
 from pulp.client.api.base import PulpAPI
-from pulp.client.server import Bytes
+from pulp.client.api.server import Bytes
 
 
 log = getLogger(__name__)

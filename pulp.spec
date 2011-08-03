@@ -87,34 +87,59 @@ Requires: curl => 7.19.7
 %endif
 
 # newer pulp builds should require same client version
-Requires: %{name}-client >= %{version}
+Requires: %{name}-consumer >= %{version}
+Requires: %{name}-admin >= %{version}
 
 
 %description
 Pulp provides replication, access, and accounting for software repositories.
 
-# -- headers - pulp client ---------------------------------------------------
+# -- headers - pulp client lib ---------------------------------------------------
 
-%package client
-Summary:        Client side tools for managing content on pulp server
+%package client-lib
+Summary:        Client side libraries pulp client tools
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires: python-simplejson
-Requires: python-isodate >= 0.4.4
-Requires: m2crypto
-Requires: %{name}-common = %{version}
-Requires: gofer >= 0.43
+Requires:       python-simplejson
+Requires:       python-isodate >= 0.4.4
+Requires:       m2crypto
+Requires:       %{name}-common = %{version}
+Requires:       gofer >= 0.43
 %if !0%{?fedora}
 # RHEL
-Requires: python-hashlib
+Requires:       python-hashlib
 %endif
-Requires: python-rhsm >= 0.96.4
+Requires:       python-rhsm >= 0.96.4
+Obsoletes:      pulp-client <= 0.218
 
-%description client
-A collection of tools to interact and perform content specific operations such as repo management, 
-package profile updates etc.
+%description client-lib
+A collection of libraries used by by the pulp client tools. 
 
 # -- headers - pulp client ---------------------------------------------------
+
+%package consumer
+Summary:        Client side tool for pulp consumers
+Group:          Development/Languages
+Requires:       %{name}-client-lib = %{version}
+Obsoletes:      pulp-client <= 0.218
+
+%description consumer
+A client tool used on pulp consumers to do things such as consumer
+registration, and repository binding.
+
+# -- headers - pulp admin ---------------------------------------------------
+
+%package admin
+Summary:        Admin tool to administer the pulp server
+Group:          Development/Languages
+Requires:       %{name}-client-lib = %{version}
+Obsoletes:      pulp-client <= 0.218
+
+%description admin
+A tool used to administer the pulp server, such as repo creation and synching,
+and to kick off remote actions on consumers.
+
+# -- headers - pulp common ---------------------------------------------------
 
 %package common
 Summary:        Pulp common python packages.
@@ -211,7 +236,7 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp src/pulp/client/gofer/pulpplugin.py %{buildroot}/usr/lib/gofer/plugins
+cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/usr/lib/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # profile plugin
@@ -223,7 +248,10 @@ cp src/pulp/client/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plu
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
 cp etc/rc.d/init.d/* %{buildroot}/etc/rc.d/init.d/
-ln -s etc/rc.d/init.d/goferd %{buildroot}/etc/rc.d/init.d/pulp-agent
+if [ ! -e %{buildroot}/etc/rc.d/init.d/pulp-agent ]
+then
+    ln -s etc/rc.d/init.d/goferd %{buildroot}/etc/rc.d/init.d/pulp-agent
+fi
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -304,9 +332,9 @@ if /usr/sbin/selinuxenabled ; then
 fi
 %endif
 
-# -- post - pulp client ------------------------------------------------------
+# -- post - pulp consumer ------------------------------------------------------
 
-%post client
+%post consumer
 pushd %{_sysconfdir}/rc.d/init.d
 if [ "$1" = "1" ]; then
   ln -s goferd pulp-agent
@@ -324,7 +352,7 @@ if [ $1 -eq 0 ]; then
 fi
 %endif
 
-%postun client
+%postun consumer
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
@@ -379,24 +407,48 @@ fi
 %{python_sitelib}/pulp/__init__.*
 %{python_sitelib}/pulp/common/
 
-# -- files - pulp client -----------------------------------------------------
+# -- files - pulp client lib -----------------------------------------------------
 
-%files client
+%files client-lib
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulp/client/
-%{_bindir}/pulp-admin
-%{_bindir}/pulp-client
-%{_bindir}/pulp-migrate
-%{_exec_prefix}/lib/gofer/plugins/pulpplugin.*
+%{python_sitelib}/pulp/client/api
+%{python_sitelib}/pulp/client/lib
+%{python_sitelib}/pulp/client/pluginlib
+%{python_sitelib}/pulp/client/plugins
+%{python_sitelib}/pulp/client/*.py*
+
+# -- files - pulp client -----------------------------------------------------
+
+%files consumer
+%defattr(-,root,root,-)
+%doc
+# For noarch packages: sitelib
+%{python_sitelib}/pulp/client/consumer
+%{_bindir}/pulp-consumer
+%{_exec_prefix}/lib/gofer/plugins/*.py*
 %{_prefix}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
+%{_sysconfdir}/gofer/plugins/consumer.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
-%config(noreplace) %{_sysconfdir}/pulp/client.conf
+%config(noreplace) %{_sysconfdir}/pulp/consumer/consumer.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
+
+# -- files - pulp admin -----------------------------------------------------
+
+%files admin
+%defattr(-,root,root,-)
+%doc
+# For noarch packages: sitelib
+%{python_sitelib}/pulp/client/admin
+%{_bindir}/pulp-admin
+%{_bindir}/pulp-migrate
+%config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
+%config(noreplace) %{_sysconfdir}/pulp/admin/task.conf
+%config(noreplace) %{_sysconfdir}/pulp/admin/job.conf
 
 # -- files - pulp cds --------------------------------------------------------
 
