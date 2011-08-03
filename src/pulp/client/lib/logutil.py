@@ -58,7 +58,7 @@ def getLogger(name):
         path = os.path.join(logdir, LOGFILE)
         handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
         handler.setFormatter(Formatter(FMT))
-        root.setLevel(logging.DEBUG)
+        root.setLevel(logging.INFO)
         root.addHandler(handler)
     log = logging.getLogger(name)
     return log
