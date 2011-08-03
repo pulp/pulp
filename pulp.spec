@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.218
+Version:        0.0.219
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -479,6 +479,48 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Aug 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.219-1
+- Requires gofer 0.44. (jortel@redhat.com)
+- 695607 - Fix RHEL macros.  Clean up merge artifacts in changelog.
+  (jortel@redhat.com)
+- Add support for asynchronous RMI timeouts using gofer 0.44 watchdog.
+  (jortel@redhat.com)
+- 726706 - Error in repo sync schedule error message (jmatthews@redhat.com)
+- Fix syntax error in if stmt (jslagle@redhat.com)
+- Only link pulp-agent to goferd init script if it doesn't exist already
+  (jslagle@redhat.com)
+- 727666 - fixed unpickling of private methods (jconnor@redhat.com)
+- 727666 - not a fix, added instrumentation to code that raises a
+  SnapshotFailure exception when the lookup of a pickled method on a class
+  occurs much more informative than the UnboundLocalError that was being raised
+  (jconnor@redhat.com)
+- Client refactoring to support generic content. (jslagle@redhat.com)
+- Require grinder .109 for quicker cancel syncs (jmatthews@redhat.com)
+- Rename gofer dir to goferplugins to avoid name conflict with the installed
+  gofer module (jslagle@redhat.com)
+- Fix current() task management in AsyncTask. (jortel@redhat.com)
+- Add missing repository_api (jslagle@redhat.com)
+- Bump obsoletes version of pulp-client to 218 (jslagle@redhat.com)
+- More updates for client->consumer rename (jslagle@redhat.com)
+- Rename pulp-client -> pulp-consumer (jslagle@redhat.com)
+- Task plugin should be disabled by default (jslagle@redhat.com)
+- 723663 - minor help fixes (pkilambi@redhat.com)
+- SELinux changes for pulp-cds (jmatthews@redhat.com)
+- pulp.spec will only install selinux files on fedora/el6
+  (jmatthews@redhat.com)
+- SELinux changes for RHEL-5 (jmatthews@redhat.com)
+- 726782 - added missing arch update information to delta (skarmark@redhat.com)
+- Update spec file for client refactoring packaging (jslagle@redhat.com)
+- Wire up consumer commands as plugins (jslagle@redhat.com)
+- Remove core module (jslagle@redhat.com)
+- Merge core.utils and lib.utils into a single utils module
+  (jslagle@redhat.com)
+- Reorginazations: client.lib.plugin_lib -> client.pluginlib and
+  client.lib.plugins -> client.plugins (jslagle@redhat.com)
+- Admin refactorings to support plugins, add auth as first plugin
+  (jslagle@redhat.com)
+- Reorganize modules amoung admin/consumer clients (jslagle@redhat.com)
+
 * Fri Jul 29 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.218-1
 - changed the name of the timeout field to timeout_delta in _pickled_fields
   (jconnor@redhat.com)
