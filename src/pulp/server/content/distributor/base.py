@@ -20,12 +20,7 @@ class Distributor(object):
     @classmethod
     @property
     def types(cls):
-        return ()
-
-    @classmethod
-    @property
-    def config_files(cls):
-        return ()
+        return []
 
     def publish(self, distributor_config, publish_config, publish_hook):
         raise NotImplementedError()
