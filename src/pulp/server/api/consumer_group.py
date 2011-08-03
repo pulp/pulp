@@ -396,7 +396,8 @@ class ConsumerGroupApi(BaseApi):
             log.error("For consumer id %s Packages to install %s" % (consumerid, pkgs))
             task = AsyncTask(
                 self.__installpackages,
-                [consumer, names],
-                dict(reboot=reboot_suggested,assumeyes=assumeyes))
+                [consumer, pkgs],
+                dict(reboot=reboot_suggested,
+                     assumeyes=assumeyes))
             job.add(task)
         return job
