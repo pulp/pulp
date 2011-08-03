@@ -54,6 +54,7 @@ LINKS = (
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
     'etc/gofer/plugins/pulpplugin.conf',
+    'etc/gofer/plugins/consumer.conf',
     'etc/yum/pluginconf.d/pulp-profile-update.conf',
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
