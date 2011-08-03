@@ -248,7 +248,8 @@ cp src/pulp/client/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plu
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
 cp etc/rc.d/init.d/* %{buildroot}/etc/rc.d/init.d/
-if [ ! -e %{buildroot}/etc/rc.d/init.d/pulp-agent ] then
+if [ ! -e %{buildroot}/etc/rc.d/init.d/pulp-agent ]
+then
     ln -s etc/rc.d/init.d/goferd %{buildroot}/etc/rc.d/init.d/pulp-agent
 fi
 
