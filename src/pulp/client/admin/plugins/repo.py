@@ -278,7 +278,11 @@ class Status(AdminRepoAction):
         syncs = self.repository_api.sync_list(id)
         print_header(_('Status for %s') % id)
         print _('Repository: %s') % repo['id']
-        print _('Number of Packages: %d') % repo['package_count']
+        if repo['content_types'] in ('yum'):
+            print _('Number of Packages: %d') % repo['package_count']
+        if repo['content_types'] in ('file'):
+            files_count = self.repository_api.list_files(id)
+            print _('Number of Files: %d' % len(files_count))
         last_sync = repo['last_sync']
         if last_sync is None:
             last_sync = 'never'
