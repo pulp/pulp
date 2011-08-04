@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.220
+Version:        0.0.221
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -479,6 +479,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Aug 04 2011 Jeff Ortel <jortel@redhat.com> 0.0.221-1
+- Update client (yum) code to make idempotent. Rewrite Package.install() so
+  package install will not raise TransactionError when a package is already
+  installed.  Also, changed API to no longer need (or accept) package names
+  explicitly parsed into name, arch for arch specific matching.
+  (jortel@redhat.com)
+- Fix plugin directories in the configurations (jslagle@redhat.com)
+
 * Wed Aug 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.220-1
 - Enqueue package install tasks, non-unique. (jortel@redhat.com)
 - renamed file manifest to match cdn (pkilambi@redhat.com)
