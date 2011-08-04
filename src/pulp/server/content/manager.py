@@ -62,32 +62,33 @@ class Manager(object):
         self.distributor_configs = {}
         self.distributor_plugins = {}
 
+    def _check_path(self, path):
+        if os.access(path, os.F_OK | os.R_OK):
+            return
+        raise ValueError(_('Cannot find path %s') % path)
+
     def add_importer_config_path(self, path):
         """
         """
-        if not os.access(path, os.F_OK | os.R_OK):
-            raise ValueError(_('Cannot find path %s') % path)
+        self._check_path(path)
         self.importer_config_paths.append(path)
 
     def add_importer_plugin_path(self, path, package_name=None):
         """
         """
-        if not os.access(path, os.F_OK | os.R_OK):
-            raise ValueError(_('Cannot find path %s') % path)
+        self._check_path(path)
         self.importer_paths[path] = package_name or ''
 
     def add_distributor_config_path(self, path):
         """
         """
-        if not os.access(path, os.F_OK | os.R_OK):
-            raise ValueError(_('Cannot find path %s') % path)
+        self._check_path(path)
         self.distributor_config_paths.append(path)
 
     def add_distributor_plugin_path(self, path, package_name=None):
         """
         """
-        if not os.access(path, os.F_OK | os.R_OK):
-            raise ValueError(_('Cannot find path %s') % path)
+        self._check_path(path)
         self.distributor_paths[path] = package_name or ''
 
     def _load_configs(self, config_paths):
