@@ -41,7 +41,7 @@ _importers_plugin_dir = os.path.join(_top_level_plugin_dir, 'importers')
 _distributors_plugin_dir = os.path.join(_top_level_plugin_dir, 'distributors')
 
 _top_level_plugins_package = 'pulp.server.content'
-_importers_plugins_package = '.'.join((_top_level_plugins_package, 'importers'))
+_importer_plugins_package = '.'.join((_top_level_plugins_package, 'importers'))
 _distributor_plugins_package = '.'.join((_top_level_plugins_package, 'distributors'))
 
 # manager class ----------------------------------------------------------------
@@ -62,37 +62,68 @@ class Manager(object):
         self.distributor_configs = {}
         self.distributor_plugins = {}
 
+    # plugin discovery configuration
+
     def _check_path(self, path):
+        """
+        Check a path for existence and read permissions.
+        @type path: str
+        @param path: file system path to check
+        @raise ValueError: if path does not exist or is unreadable
+        """
         if os.access(path, os.F_OK | os.R_OK):
             return
         raise ValueError(_('Cannot find path %s') % path)
 
     def add_importer_config_path(self, path):
         """
+        Add a directory for importer configuration files.
+        @type path: str
+        @param path: importer configuration directory
         """
         self._check_path(path)
         self.importer_config_paths.append(path)
 
     def add_importer_plugin_path(self, path, package_name=None):
         """
+        Add a directory for importer plugins and associated package name.
+        @type path: str
+        @param path: importer plugin directory
+        @type package_name: str or None
+        @param package_name: optional package name for importation
         """
         self._check_path(path)
         self.importer_paths[path] = package_name or ''
 
     def add_distributor_config_path(self, path):
         """
+        Add a directory for distributor configuration files.
+        @type path: str
+        @param path: distributor configuration directory
         """
         self._check_path(path)
         self.distributor_config_paths.append(path)
 
     def add_distributor_plugin_path(self, path, package_name=None):
         """
+        Add a directory for distributor plugins and associate package name.
+        @type path: str
+        @param path: distributor plugin directory
+        @type package_name: str or None
+        @param package_name: optional package name for importation
         """
         self._check_path(path)
         self.distributor_paths[path] = package_name or ''
 
+    # plugin discovery
+
     def _load_configs(self, config_paths):
         """
+        Load and parse plugin cofiguration files from the list directories.
+        @type config_paths: list of strs
+        @params config_paths: list of directories
+        @rtype: dict
+        @return: map of config name to SafeConfigParser instance
         """
         configs = {}
         files_regex = re.compile('.*\.conf$')
@@ -107,8 +138,15 @@ class Manager(object):
                 configs[name] = parser
         return configs
 
-    def _load_plugins(self, plugin_paths, skip=None):
+    def _load_modules(self, plugin_paths, skip=None):
         """
+        Load python modules from the list of plugin directories.
+        @type plugin_paths: tuple or list of strs
+        @param plugin_paths: list of directories
+        @type skip: tuple or list of strs
+        @param skip: optional list of module names to skip
+        @rtype: list of modeule instances
+        @return: all modules in the list of directories not in the skip list
         """
         skip = skip or ('__init__',)
         files_regex = re.compile('(?!(%s))\.py$') % '|'.join(skip)
@@ -180,6 +218,8 @@ class Manager(object):
                     self.distributor_plugins[distribution_type] = attr
                     self.distributor_configs[distribution_type] = config or SafeConfigParser()
 
+    # importer/distributor lookup api
+
     def lookup_importer_class(self, content_type):
         """
         """
@@ -206,6 +246,18 @@ class Manager(object):
             return None
         return copy.deepcopy(config)
 
+    # query api
+
+    def content_types(self):
+        """
+        """
+        return self.importer_plugins.keys()
+
+    def distributor_types(self):
+        """
+        """
+        return self.distributor_plugins.keys()
+
 # manager api ------------------------------------------------------------------
 
 def _create_manager():
@@ -216,7 +268,7 @@ def _create_manager():
 def _add_paths():
     _manager.add_importer_config_path(_importers_config_dir)
     _manager.add_importer_plugin_path(_importers_plugin_dir,
-                                      _importers_plugins_package)
+                                      _importer_plugins_package)
     _manager.add_distributor_config_path(_distributors_config_dir)
     _manager.add_distributor_plugin_path(_distributors_plugin_dir,
                                          _distributor_plugins_package)
