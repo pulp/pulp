@@ -16,8 +16,8 @@ import sys
 from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
-from pulp.client.lib.config import Config
 from pulp.client.api import server
+from pulp.client.lib.config import Config
 
 
 class PulpCLI(object):
@@ -120,11 +120,11 @@ class PulpCLI(object):
             for command in plugin.commands:
                 self.add_command(command.name, plugin.get_command(command.name))
 
-    def main(self, args=sys.argv[1:]):
+    def setup(self, args):
         """
-        Run this command.
-        @type args: list of str's
+        Setup method.  Calls other setup methods for more specific setup.
         @param args: command line arguments
+        @type args: list of str's
         """
         self.load_plugins()
         self.register_plugins()
@@ -138,4 +138,14 @@ class PulpCLI(object):
             self.parser.error(_('Invalid command; please see --help'))
         self.setup_server()
         self.setup_credentials()
+
+        return command
+
+    def main(self, args=sys.argv[1:]):
+        """
+        Run this command.
+        @type args: list of str's
+        @param args: command line arguments
+        """
+        command = self.setup(args)
         command.main(args[1:])

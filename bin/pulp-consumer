@@ -19,7 +19,6 @@ import sys
 import os
 from gettext import gettext as _
 
-from pulp.client.consumer.credentials import Consumer
 from pulp.client.consumer.cli import ConsumerCLI
 
 
@@ -34,9 +33,5 @@ def root_check():
 
 
 if __name__ == '__main__':
-    #root_check()
     client = ConsumerCLI()
-    bundle = Consumer()
-    if not bundle.getid():
-        print >> sys.stderr, _("warning: this client is not registered; please register to continue")
     client.main()

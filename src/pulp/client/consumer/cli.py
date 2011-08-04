@@ -12,6 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import sys
+from gettext import gettext as _
 
 from pulp.client.api import server
 from pulp.client.consumer.config import ConsumerConfig
@@ -60,3 +62,17 @@ class ConsumerCLI(PulpCLI):
         #        (host, port, scheme, path)
         self._server = server.PulpServer(host, int(port), scheme, path)
         server.set_active_server(self._server)
+
+    def setup(self, args):
+        """
+        Overridden method setup method that issues a warning to run consumer
+        create if not already done.
+        """
+        command = super(ConsumerCLI, self).setup(args)
+        if not (command.name == "consumer" and args[1] == "create"):
+            bundle = Consumer()
+            if not bundle.getid():
+                print >> sys.stderr, _("warning: this client is not known "
+                    "to the pulp server; please create a consumer to continue")
+
+        return command
