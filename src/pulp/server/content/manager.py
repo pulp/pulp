@@ -22,15 +22,6 @@ from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
 from pulp.server.content.module import import_module
-from pulp.server.pexceptions import PulpException
-
-# exceptions -------------------------------------------------------------------
-
-class PluginConflictError(PulpException):
-    pass
-
-class PluginNotFoundError(PulpException):
-    pass
 
 # globals ----------------------------------------------------------------------
 
