@@ -22,7 +22,7 @@ from pulp.client.lib import repolib
 from pulp.client.api.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
 from rhsm.profile import get_profile
-from pulp.client.consumer.config import ConsumerConfig
+from pulp.client.consumer.config import *
 from pulp.client.lib.repo_file import RepoFile
 from pulp.client.consumer.credentials import Consumer as ConsumerBundle
 from gofer.agent.plugin import Plugin
@@ -172,54 +172,45 @@ class Packages:
     """
 
     @remote(secret=getsecret)
-    def install(self, packageinfo, reboot_suggested=False, assumeyes=False):
+    def install(self, names, reboot=False, assumeyes=False):
         """
         Install packages by name.
-        @param packageinfo: A list of strings for pkg names
-                            or tuples for name/arch info.
-        @type packageinfo: str or tuple
+        @param names: A list of package names.
+        @type names: [str,]
+        @param reboot: Request reboot after packages are installed.
+        @type reboot: bool
+        @param assumeyes: Assume (yes) to yum prompts.
+        @type assumeyes: bool
+        @return: A list of installed packages.
+        @rtype: list
         """
         pulpserver()
         installed = []
         try:
             yb = YumBase()
-            yum_assumeyes = False
-            cfg_import_gpgkeys = cfg.client.import_gpg_keys
-            if cfg_import_gpgkeys in ["True", "False"]:
-                yum_assumeyes = eval(cfg_import_gpgkeys)
-            else:
-                log.info("unknown config values provided; using defaults")
-            yb.conf.assumeyes = yum_assumeyes
-            log.info('installing packages: %s %s' % (packageinfo, yum_assumeyes))
-            for info in packageinfo:
-                if isinstance(info, list):
-                    pkgs = yb.pkgSack.returnNewestByNameArch(tuple(info))
-                else:
-                    pkgs = yb.pkgSack.returnNewestByName(info)
-                for p in pkgs:
-                    installed.append(str(p))
-                    yb.tsInfo.addInstall(p)
-            yb.resolveDeps()
-            yb.processTransaction()
+            impkeys = getbool(cfg.client, import_gpg_keys=False)
+            yb.conf.assumeyes = impkeys
+            log.info('installing packages: %s import keys: %s', names, impkeys)
+            for info in names:
+                yb.install(pattern=info)
+            if len(yb.tsInfo):
+                for t in yb.tsInfo:
+                    installed.append(str(t.po))
+                yb.resolveDeps()
+                yb.processTransaction()
         finally:
             ybcleanup(yb)
-        if reboot_suggested:
-            cfg_assumeyes = cfg.client.assumeyes
-            if cfg_assumeyes in ["True", "False"]:
-                assumeyes = eval(cfg_assumeyes)
-            else:
-                assumeyes = assumeyes
-            if assumeyes is True:
+        if reboot:
+            approved = getbool(cfg.client, assumeyes=assumeyes)
+            if approved:
                 self.__schedule_reboot()
-                return (installed, {'reboot_performed' :True})
-            else:
-                return (installed, {'reboot_performed' :False})
+            return (installed, {'reboot_performed':approved})
         return (installed, None)
-    
+
     def __schedule_reboot(self):
         interval = cfg.client.reboot_schedule
-        os.system("shutdown -r %s &" % interval)
-        log.info("System is scheduled to reboot in %s minutes" % interval)
+        os.system("shutdown -r %s &", interval)
+        log.info("System is scheduled to reboot in %s minutes", interval)
 
 
 class PackageGroups:
@@ -228,24 +219,24 @@ class PackageGroups:
     """
 
     @remote(secret=getsecret)
-    def install(self, packagegroupids):
+    def install(self, groups):
         """
-        Install packagegroups by id.
-        @param packagegroupids: A list of package ids.
-        @param packagegroupids: str
+        Install package groups by name.
+        @param groups: A list of package names.
+        @param groups: str
         """
         pulpserver()
-        log.info('installing packagegroups: %s', packagegroupids)
+        log.info('installing package groups: %s', groups)
         yb = YumBase()
         try:
-            for grp_id in packagegroupids:
-                txmbrs = yb.selectGroup(grp_id)
-                log.info("Added '%s' group to transaction, packages: %s", grp_id, txmbrs)
+            for g in groups:
+                pkgs = yb.selectGroup(g)
+                log.info("Added '%s' group to transaction, packages: %s", g, pkgs)
             yb.resolveDeps()
             yb.processTransaction()
         finally:
             ybcleanup(yb)
-        return packagegroupids
+        return groups
 
 
 class Shell:

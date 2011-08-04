@@ -14,6 +14,61 @@
 
 import os
 from iniparse import INIConfig
+from logging import getLogger
+
+log = getLogger(__name__)
+
+
+def getbool(cfg, **opt):
+    """
+    Get configuration value as boolean.
+    @param cfg: A section.
+    @type cfg: Section
+    @param opt: key=default
+    @type opt: dict[0]
+    @return: bool value.
+    @rtype: bool
+    @see: getbools
+    """
+    assert(len(opt) == 1)
+    return getbools(cfg, **opt)[0]
+
+def getbools(cfg, **opt):
+    """
+    Get and convert boolean configuration properties into bool objects.
+    The specified I{default} is returned for each properties with
+    non-boolean values or those without values.
+    Valid TRUE values:
+      - 1
+      - true
+      - yes
+    Valid FALSE values:
+      - 0
+      - false
+      - no
+    @param cfg: A section.
+    @type cfg: Section
+    @param opt: keywords, key=default
+    @type opt: dict
+    @return: bool values.
+    @rtype: list
+    """
+    flags = []
+    for p,d in opt.items():
+        v = getattr(cfg, p)
+        if not v:
+            flags.append(d)
+            continue
+        v = v.lower()
+        if v in ('1', 'true', 'yes'):
+            flags.append(True)
+            continue
+        if v in ('0', 'false', 'no'):
+            flags.append(False)
+            continue
+        flags.append(d)
+        log.error('bool expected for: %s', p)
+    return flags
 
 
 class Config(INIConfig):

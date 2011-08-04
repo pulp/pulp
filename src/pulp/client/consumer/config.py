@@ -11,7 +11,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-from pulp.client.lib.config import Config
+from pulp.client.lib.config import *
 
 class ConsumerConfig(Config):
     """

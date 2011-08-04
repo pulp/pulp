@@ -432,14 +432,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        packages = []
-        for pkg in names:
-            info = pkg.split('.')
-            if len(info) > 1:
-                packages.append(('.'.join(info[:-1]), info[-1]))
-            else:
-                packages.append(pkg)
-        task = Task(self.__installpackages, [id, packages])
+        task = Task(self.__installpackages, [id, names])
         return task
 
     def __installpackages(self, id, names, **options):
