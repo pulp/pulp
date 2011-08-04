@@ -392,8 +392,7 @@ class ConsumerActions(JSONController):
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Install packages already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -413,8 +412,7 @@ class ConsumerActions(JSONController):
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Package group installation already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -445,8 +443,7 @@ class ConsumerActions(JSONController):
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Package group installation already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -470,8 +467,7 @@ class ConsumerActions(JSONController):
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Errata installation already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)

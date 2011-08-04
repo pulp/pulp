@@ -215,8 +215,7 @@ class ConsumerGroupActions(JSONController):
             if scheduled_time is not None:
                 scheduled_time = datetime.fromtimestamp(float(scheduled_time))
                 task.scheduler = AtScheduler(scheduled_time)
-            if async.enqueue(task) is None:
-                return self.conflict(_('Package install already scheduled'))
+            async.enqueue(task, unique=False)
         jobdict = self._job_to_dict(job)
         return self.ok(jobdict)
 
@@ -237,8 +236,7 @@ class ConsumerGroupActions(JSONController):
             if scheduled_time is not None:
                 scheduled_time = datetime.fromtimestamp(float(scheduled_time))
                 task.scheduler = AtScheduler(scheduled_time)
-            if async.enqueue(task) is None:
-                return self.conflict(_('Errata install already scheduled'))
+            async.enqueue(task, unique=False)
         jobdict = self._job_to_dict(job)
         return self.ok(jobdict)
 
