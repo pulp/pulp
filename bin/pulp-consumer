@@ -33,30 +33,9 @@ def root_check():
     sys.exit(os.EX_NOUSER)
 
 
-def setup_client(client):
-    return 
-    consumer_cmd = consumer.Consumer()
-    consumer_cmd.add_action('create', consumer.Create())
-    consumer_cmd.add_action('delete', consumer.Delete(is_consumer_client=True))
-    consumer_cmd.add_action('bind', consumer.Bind(is_consumer_client=True))
-    consumer_cmd.add_action('unbind', consumer.Unbind(is_consumer_client=True))
-    consumer_cmd.add_action('history', consumer.History(is_consumer_client=True))
-    consumer_cmd.add_action('update', consumer.Update(is_consumer_client=True))
-    client.add_command('consumer', consumer_cmd)
-
-    errata_cmd = errata.Errata()
-    errata_cmd.add_action('list', errata.List(is_consumer_client=True))
-    client.add_command('errata', errata_cmd)
-
-    repo_cmd = repo.Repo()
-    repo_cmd.add_action('list', repo.List())
-    client.add_command('repo', repo_cmd)
-
-
 if __name__ == '__main__':
     #root_check()
     client = ConsumerCLI()
-    setup_client(client)
     bundle = Consumer()
     if not bundle.getid():
         print >> sys.stderr, _("warning: this client is not registered; please register to continue")
