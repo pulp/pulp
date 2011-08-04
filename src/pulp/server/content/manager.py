@@ -32,13 +32,15 @@ _log = logging.getLogger(__name__)
 
 _manager = None # Manager instance
 
-_top_level_config_dir = '/etc/pulp'
-_importers_config_dir = os.path.join(_top_level_config_dir, 'importers')
-_distributors_config_dir = os.path.join(_top_level_config_dir, 'distributors')
+# initial plugin and configuration file conventions
 
-_top_level_plugin_dir = os.path.dirname(__file__)
-_importers_plugin_dir = os.path.join(_top_level_plugin_dir, 'importers')
-_distributors_plugin_dir = os.path.join(_top_level_plugin_dir, 'distributors')
+_top_level_configs_dir = '/etc/pulp'
+_importer_configs_dir = os.path.join(_top_level_configs_dir, 'importers')
+_distributor_configs_dir = os.path.join(_top_level_configs_dir, 'distributors')
+
+_top_level_plugins_dir = os.path.dirname(__file__)
+_importer_plugins_dir = os.path.join(_top_level_plugins_dir, 'importers')
+_distributor_plugins_dir = os.path.join(_top_level_plugins_dir, 'distributors')
 
 _top_level_plugins_package = 'pulp.server.content'
 _importer_plugins_package = '.'.join((_top_level_plugins_package, 'importers'))
@@ -196,6 +198,8 @@ class Manager(object):
                                                      (attr.__name__, content_type))
                     self.importer_plugins[content_type] = attr
                     self.importer_configs[content_type] = config or SafeConfigParser()
+                    _log.info(_('Importer plugin %s associated with content type %s') %
+                              (attr.__name__, content_type))
 
     def load_distributors(self):
         """
@@ -217,6 +221,8 @@ class Manager(object):
                                                      (attr.__name__, distribution_type))
                     self.distributor_plugins[distribution_type] = attr
                     self.distributor_configs[distribution_type] = config or SafeConfigParser()
+                    _log.info(_('Distributor plugin %s associated with distribution type %s') %
+                              (attr.__name__, distribution_type))
 
     # importer/distributor lookup api
 
@@ -266,11 +272,11 @@ def _create_manager():
 
 
 def _add_paths():
-    _manager.add_importer_config_path(_importers_config_dir)
-    _manager.add_importer_plugin_path(_importers_plugin_dir,
+    _manager.add_importer_config_path(_importer_configs_dir)
+    _manager.add_importer_plugin_path(_importer_plugins_dir,
                                       _importer_plugins_package)
-    _manager.add_distributor_config_path(_distributors_config_dir)
-    _manager.add_distributor_plugin_path(_distributors_plugin_dir,
+    _manager.add_distributor_config_path(_distributor_configs_dir)
+    _manager.add_distributor_plugin_path(_distributor_plugins_dir,
                                          _distributor_plugins_package)
 
 
