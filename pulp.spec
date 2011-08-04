@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.219
+Version:        0.0.220
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -479,6 +479,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Aug 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.220-1
+- Enqueue package install tasks, non-unique. (jortel@redhat.com)
+- renamed file manifest to match cdn (pkilambi@redhat.com)
+- 727900 - file status (pkilambi@redhat.com)
+
 * Wed Aug 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.219-1
 - Requires gofer 0.44. (jortel@redhat.com)
 - 695607 - Fix RHEL macros.  Clean up merge artifacts in changelog.
