@@ -237,7 +237,7 @@ class Manager(object):
         config = self.importer_configs.get(content_type, None)
         if config is None:
             return None
-        return copy.deepcopy(config)
+        return copy.copy(config)
 
     def lookup_distributor_class(self, distribution_type):
         """
@@ -250,7 +250,7 @@ class Manager(object):
         config = self.distributor_configs.get(distributor_type, None)
         if config is None:
             return None
-        return copy.deepcopy(config)
+        return copy.copy(config)
 
     # query api
 
