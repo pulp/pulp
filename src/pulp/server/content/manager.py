@@ -149,7 +149,7 @@ class Manager(object):
         @rtype: list of modeule instances
         @return: all modules in the list of directories not in the skip list
         """
-        skip = skip or ('__init__',)
+        skip = skip or ('__init__', 'base') # don't load package or base modules
         files_regex = re.compile('(?!(%s))\.py$') % '|'.join(skip)
         modules = []
         for path, package_name in paths.items():
@@ -181,32 +181,41 @@ class Manager(object):
         """
         Load all importer modules and associate them with their supported types.
         """
-        assert not self.importers
+        assert not (self.importer_plugins or self.importer_configs)
         configs = self._load_configs(self.importer_config_paths)
-        modules = self._load_modules(self.importer_plugin_paths, ('__init__', 'base'))
+        modules = self._load_modules(self.importer_plugin_paths)
         for module in modules:
-            config = configs.get(module.__name__, None)
-            if not self._is_plugin_enabled(config):
-                continue
             for attr in dir(module):
                 if not issubclass(attr, Importer):
                     continue
-                for content_type in attr.types:
-                    if content_type in self.importers:
-                        raise ConflictingPluginError(_('Duplicate importer %s for content type %s found') %
-                                                     (attr.__name__, content_type))
-                    self.importer_plugins[content_type] = attr
-                    self.importer_configs[content_type] = config or SafeConfigParser()
-                    _log.info(_('Importer plugin %s associated with content type %s') %
-                              (attr.__name__, content_type))
+                metadata = attr.metadata()
+                name = metadata.get('name', None)
+                version = metadata.get('version', None)
+                types = metadata.get('types', ())
+                conf_file = metadata.get('conf_file', None)
+                if name is None:
+                    raise MalformedPluginError(_('Importer discoverd with no name metadata: %s') %
+                                               attr.__name__)
+                cfg = configs.get(conf_file, None)
+                if not self._is_plugin_enabled(name, cfg):
+                    continue
+                plugin_versions = self.importer_plugins.setdefault('name', {})
+                if version in plugin_versions:
+                    raise ConflictingPluginError(_('Two importers %s version %s found') %
+                                                 (name, str(version)))
+                plugin_versions[version] = attr
+                config_versions = self.importer_configs.setdefault('name', {})
+                config_versions[version] = cfg or SafeConfigParser()
+                _log.info(_('Importer plugin %s version %s loaded for content types: %s') %
+                          (name, str(version), ','.join(types)))
 
     def load_distributors(self):
         """
         Load all distributor modules and associate them with their supported types.
         """
-        assert not self.distributors
+        assert not (self.distributor_plugins or self.distributor_configs)
         configs = self._load_configs(self.distributor_config_paths)
-        modules = self._load_modules(self.distributor_plugin_paths, ('__init__', 'base'))
+        modules = self._load_modules(self.distributor_plugin_paths)
         for module in modules:
             config = configs.get(module.__name__, None)
             if not self._is_plugin_enabled(config):
