@@ -106,6 +106,7 @@ class BaseSynchronizer(object):
         }
         self.stopped = False
         self.callback = None
+        self.repo_dir = None
 
     def stop(self):
         self.stopped = True
@@ -269,7 +270,7 @@ class BaseSynchronizer(object):
         log.debug("Processing any files synced as part of the repo")
         file_metadata = os.path.join(repodir, "MANIFEST")
         if not os.path.exists(file_metadata):
-            log.info("No metadata file found; no files to import to repo..")
+            log.info("No metadata for 'File Sync' present; no files to import to repo..")
             return
         # Handle files that are part of repo syncs
         files = parseManifest(file_metadata) or {}
@@ -562,6 +563,7 @@ class YumSynchronizer(BaseSynchronizer):
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
         else:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+        self.repo_dir = store_path
         report = self.yum_repo_grinder.fetchYumRepo(store_path, callback=progress_callback)
         if self.stopped:
             raise CancelException()
@@ -595,7 +597,11 @@ class YumSynchronizer(BaseSynchronizer):
         if self.yum_repo_grinder:
             log.info("Stop sync is being issued")
             self.yum_repo_grinder.stop(block=False)
-
+        if self.repo_dir:
+            if pulp.server.util.cancel_createrepo(self.repo_dir):
+                log.info("createrepon on %s has been stopped" % (self.repo_dir))
+        log.info("Synchronizer stop has completed")
+        
     def list_rpms(self, src_repo_dir):
         pkglist = pulp.server.util.listdir(src_repo_dir)
         pkglist = filter(lambda x: x.endswith(".rpm"), pkglist)
@@ -707,11 +713,13 @@ class YumSynchronizer(BaseSynchronizer):
             progress_callback(self.progress)
 
         for count, pkg in enumerate(pkglist):
+            if self.stopped:
+                raise CancelException()
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(pkglist)))
             try:
                 rpm_name = os.path.basename(pkg)
-                log.info("Processing rpm: %s" % rpm_name)
+                log.debug("Processing rpm: %s" % rpm_name)
                 self._process_rpm(pkg, dst_repo_dir)
                 self.progress['details']["rpm"]["num_success"] += 1
                 self.progress["num_success"] += 1
@@ -733,7 +741,6 @@ class YumSynchronizer(BaseSynchronizer):
             self.progress['details']["rpm"]["size_left"] -= item_size
 
             if progress_callback is not None:
-                log.error("Calling progress_callback<%s>" % (self.progress))
                 progress_callback(self.progress)
                 self.progress["item_type"] = ""
                 self.progress["item_name"] = ""
@@ -765,6 +772,8 @@ class YumSynchronizer(BaseSynchronizer):
         if not os.path.exists(dst_drpms_dir):
             os.makedirs(dst_drpms_dir)
         for count, pkg in enumerate(dpkglist):
+            if self.stopped:
+                raise CancelException()
             skip_copy = False
             log.debug("Processing drpm %s" % pkg)
             if count % 500 == 0:
@@ -807,7 +816,7 @@ class YumSynchronizer(BaseSynchronizer):
 
         try:
             dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
-
+            self.repo_dir = dst_repo_dir
             # Process repo filters if any
             if repo['filters']:
                 log.info("Repo filters : %s" % repo['filters'])
