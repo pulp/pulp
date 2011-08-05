@@ -71,7 +71,7 @@ class ConsumerCLI(PulpCLI):
         command = super(ConsumerCLI, self).setup(args)
 
         if (len(args) > 1 and
-            not (command.name == "consumer" and args[1] == "create")):
+            not (command.name == "consumer" and args[1] == "register")):
 
             bundle = Consumer()
             if not bundle.getid():
