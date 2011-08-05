@@ -16,11 +16,15 @@
 import hashlib # 3rd party on RHEL 5
 import logging
 import os
+import os.path
 import random
 import re
+import signal
+import shlex
 import shutil
 import sre_constants
 import string
+import subprocess
 import tempfile
 import threading
 import time
@@ -30,6 +34,7 @@ import yum
 
 from pulp.server import config, constants
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.exception import CancelException
 from grinder import GrinderUtils
 from grinder import RepoFetch
 
@@ -43,12 +48,23 @@ log = logging.getLogger(__name__)
 # See bz:695743 - Multiple concurrent calls to util.get_repo_packages() results in Segmentation fault
 __yum_lock = RepoFetch.GRINDER_YUM_LOCK
 
+# In memory lookup table for createrepo processes
+# Responsible for 2 tasks.  1) Restrict only one createrepo per repo_dir, 2) Allow an async cancel of running createrepo
+CREATE_REPO_PROCESS_LOOKUP = {}
+CREATE_REPO_PROCESS_LOOKUP_LOCK = threading.Lock()
+
 class CreateRepoError(PulpException):
     def __init__(self, output):
         self.output = output
 
     def __str__(self):
         return self.output
+
+class CreateRepoAlreadyRunningError(PulpException):
+    def __init__(self, repo_dir):
+        self.repo_dir = repo_dir
+    def __str__(self):
+        return "Already running on %s" % (self.repo_dir)
 
 class ModifyRepoError(CreateRepoError):
     pass
@@ -388,48 +404,108 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
                 comps_file = os.path.join(dir, comps_file)
                 if comps_file and os.path.isfile(comps_file):
                     cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, comps_file, dir)
-    log.info("started repo metadata update")
-    status, out = commands.getstatusoutput(cmd)
-
-    if status != 0:
-        log.error("createrepo on %s failed" % dir)
-        raise CreateRepoError(out)
-    log.info("[%s] on %s finished" % (cmd, dir))
-    return status, out
+    #shlex doesn't like unicode strings
+    cmd = shlex.split(cmd.encode('ascii', 'ignore'))
+    log.info("started repo metadata update: %s" % (cmd))
+    handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return handle
 
 def create_repo(dir, groups=None, checksum_type="sha256"):
-    current_repo_dir = os.path.join(dir, "repodata")
-    backup_repo_dir = None
-    if os.path.exists(current_repo_dir):
-        log.info("metadata found; taking backup.")
-        #take a snapshot of existing metadata
-        backup_repo_dir = os.path.join(dir, "repodata.old")
-        if os.path.exists(backup_repo_dir):
-            log.debug("clean up any stale dirs")
-            shutil.rmtree(backup_repo_dir)
-        shutil.copytree(current_repo_dir, backup_repo_dir)
-    #generate new metadata
-    _create_repo(dir, groups=groups, checksum_type=checksum_type)
-    if not backup_repo_dir:
-        log.info("Nothing further to check; we got our fresh metadata")
-        return
-    #check if presto metadata exist in the backup
-    repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
-    ftypes = get_repomd_filetypes(repodata_file)
-    base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db']
-    for ftype in ftypes:
-        if ftype in base_ftypes:
-            # no need to process these again
-            continue
-        filetype_path = os.path.join(backup_repo_dir, os.path.basename(get_repomd_filetype_path(repodata_file, ftype)))
-        # modifyrepo uses filename as mdtype, rename to type.<ext>
-        renamed_filetype_path = os.path.join(os.path.dirname(filetype_path), \
+    handle = None
+    # Lock the lookup and launch of a new createrepo process
+    # Lock is released once createrepo is launched
+    CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+    try:
+        if CREATE_REPO_PROCESS_LOOKUP.has_key(dir):
+            raise CreateRepoAlreadyRunningError(dir)
+        current_repo_dir = os.path.join(dir, "repodata")
+        # Note: backup_repo_dir is used to store presto metadata and possibly other custom metadata types
+        # they will be copied back into new 'repodata' if needed.
+        backup_repo_dir = None
+        if os.path.exists(current_repo_dir):
+            log.info("metadata found; taking backup.")
+            backup_repo_dir = os.path.join(dir, "repodata.old")
+            if os.path.exists(backup_repo_dir):
+                log.debug("clean up any stale dirs")
+                shutil.rmtree(backup_repo_dir)
+            shutil.copytree(current_repo_dir, backup_repo_dir)
+        handle = _create_repo(dir, groups=groups, checksum_type=checksum_type)
+        if not handle:
+            raise CreateRepoError("Unable to execute createrepo on %s" % (dir))
+        CREATE_REPO_PROCESS_LOOKUP[dir] = handle
+    finally:
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+    # Ensure we clean up CREATE_REPO_PROCESS_LOOKUP, surround all ops with try/finally
+    try:
+        # Block on process till complete (Note it may be async terminated)
+        out_msg, err_msg = handle.communicate(None)
+        if handle.returncode != 0:
+            try:
+                # Cleanup createrepo's temporary working directory
+                cleanup_dir = os.path.join(dir, ".repodata")
+                if os.path.exist(cleanup_dir):
+                    shutil.rmtree(cleanup_dir)
+            except Exception, e:
+                log.warn(e)
+                log.warn("Unable to remove temporary createrepo dir: %s" % (cleanup_dir))
+            if handle.returncode == -9:
+                log.warn("createrepo on %s was killed" % (dir))
+                raise CancelException()
+            else:
+                log.error("createrepo on %s failed with returncode <%s>" % (dir, handle.returncode))
+                log.error("createrepo stdout:\n%s" % (out_msg))
+                log.error("createrepo stderr:\n%s" % (err_msg))
+                raise CreateRepoError(err_msg)
+        log.info("createrepo on %s finished" % (dir))
+        if not backup_repo_dir:
+            log.info("Nothing further to check; we got our fresh metadata")
+            return
+        #check if presto metadata exist in the backup
+        repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
+        ftypes = get_repomd_filetypes(repodata_file)
+        base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db']
+        for ftype in ftypes:
+            if ftype in base_ftypes:
+                # no need to process these again
+                continue
+            filetype_path = os.path.join(backup_repo_dir, os.path.basename(get_repomd_filetype_path(repodata_file, ftype)))
+            # modifyrepo uses filename as mdtype, rename to type.<ext>
+            renamed_filetype_path = os.path.join(os.path.dirname(filetype_path), \
                                          ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
-        os.rename(filetype_path,  renamed_filetype_path)
-        if os.path.isfile(renamed_filetype_path):
-            log.info("Modifying repo for %s metadata" % ftype)
-            modify_repo(current_repo_dir, renamed_filetype_path)
-    shutil.rmtree(backup_repo_dir)
+            os.rename(filetype_path,  renamed_filetype_path)
+            if os.path.isfile(renamed_filetype_path):
+                log.info("Modifying repo for %s metadata" % ftype)
+                modify_repo(current_repo_dir, renamed_filetype_path)
+    finally:
+        if backup_repo_dir:
+            shutil.rmtree(backup_repo_dir)
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+        try:
+            del CREATE_REPO_PROCESS_LOOKUP[dir]
+        finally:
+            CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+
+def cancel_createrepo(repo_dir):
+    """
+    Method will lookup a createrepo process associated to 'repo_dir'
+    If a createrepo process is running we will send a SIGKILL to it and return True
+    Else we return False to denote no process was found
+    """
+    CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+    try:
+        if CREATE_REPO_PROCESS_LOOKUP.has_key(repo_dir):
+            handle = CREATE_REPO_PROCESS_LOOKUP[repo_dir]
+            try:
+                os.kill(handle.pid, signal.SIGKILL)
+            except Exception, e:
+                log.info(e)
+                return False
+            return True
+        else:
+            return False
+    finally:
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+
         
 def modify_repo(dir, new_file):
     cmd = "modifyrepo %s %s" % (new_file, dir)
