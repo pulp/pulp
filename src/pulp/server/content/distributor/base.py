@@ -18,9 +18,8 @@ class Distributor(object):
         self.__dict__.update(options)
 
     @classmethod
-    @property
-    def types(cls):
-        return []
+    def metadata(cls):
+        return {}
 
     def publish(self, distributor_config, publish_config, publish_hook):
         raise NotImplementedError()

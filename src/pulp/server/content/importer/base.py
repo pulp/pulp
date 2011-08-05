@@ -18,9 +18,8 @@ class Importer(object):
         self.__dict__.update(options)
 
     @classmethod
-    @property
-    def types(cls):
-        return []
+    def metadata(cls):
+        return {}
 
     def sync(self, repo_data, importer_config, sync_config, sync_hook):
         raise NotImplementedError()
