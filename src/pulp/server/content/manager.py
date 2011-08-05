@@ -132,12 +132,11 @@ class Manager(object):
         for path in config_paths:
             files = os.listdir(path)
             for file_name in filter(files_regex.match, files):
-                name = file_name.rsplit('.', 1)[0]
-                if name in configs:
-                    raise ConflictingPluginError(_('More than one configuration file found for %s') % name)
+                if file_name in configs:
+                    raise ConflictingPluginError(_('More than one configuration file found for %s') % file_name)
                 parser = SafeConfigParser()
                 parser.read(os.path.join(path, file_name))
-                configs[name] = parser
+                configs[file_name] = parser
         return configs
 
     def _load_modules(self, plugin_paths, skip=None):
