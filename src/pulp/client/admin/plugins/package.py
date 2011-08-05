@@ -170,10 +170,11 @@ class Install(PackageAction):
             exception = t['exception']
             id, packages = t['args']
             if exception:
-                exception = ', %s' % exception
+                details = str(exception)
             else:
-                exception = ''
-            print _('\t[ %-8s ] %s %s' % (state.upper(), id, exception))
+                installed, reboot = t['result']
+                details = 'packages installed: %s' % installed
+            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
 
     def getunavailable(self, ids):
         lst = []

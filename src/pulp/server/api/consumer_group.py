@@ -343,8 +343,7 @@ class ConsumerGroupApi(BaseApi):
         """
         consumer = self.consumerApi.consumer(consumerid)
         if consumer is None:
-            log.error('consumer [%s], not-found', consumerid)
-            return
+            raise PulpException('Consumer [%s] not found', consumerid)
         secret = PulpAgent.getsecret(consumer)
         agent = AsyncAgent(consumerid, secret)
         reboot = options.get('reboot', False)
@@ -353,6 +352,9 @@ class ConsumerGroupApi(BaseApi):
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         packages = agent.Packages(task, timeout=tm)
         return packages.install(names, reboot, assumeyes)
+
+    def __nopackagestoinstall(self, consumerid, names=(), **options):
+        return ([], (False, False))
 
     def installerrata(self, id, errataids=[], types=[], assumeyes=False):
         """
@@ -380,6 +382,10 @@ class ConsumerGroupApi(BaseApi):
                 applicable_errata = self.consumerApi._applicable_errata(consumer, types)
                 rlist = []
                 for eid in errataids:
+                    errata = applicable_errata.get(eid)
+                    if errata is None:
+                        log.info('%s, not applicable to: %s', eid, consumerid)
+                        continue
                     for pobj in applicable_errata[eid]['packages']:
                         if pobj["arch"] != "src":
                             pkgs.append(pobj["name"]) # + "." + pobj["arch"])
@@ -393,11 +399,18 @@ class ConsumerGroupApi(BaseApi):
                 for pobj in pkgobjs:
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
-            log.error("For consumer id %s Packages to install %s" % (consumerid, pkgs))
-            task = AsyncTask(
-                self.__installpackages,
-                [consumer, pkgs],
-                dict(reboot=reboot_suggested,
-                     assumeyes=assumeyes))
+            if pkgs:
+                log.info("For consumer id %s Packages to install %s",
+                          consumerid,
+                          pkgs)
+                task = AsyncTask(
+                    self.__installpackages,
+                    [consumerid, pkgs],
+                    dict(reboot=reboot_suggested,
+                         assumeyes=assumeyes))
+            else:
+                task = Task(
+                    self.__nopackagestoinstall,
+                    [consumerid, pkgs])
             job.add(task)
         return job

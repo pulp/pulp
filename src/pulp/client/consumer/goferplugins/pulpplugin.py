@@ -181,8 +181,8 @@ class Packages:
         @type reboot: bool
         @param assumeyes: Assume (yes) to yum prompts.
         @type assumeyes: bool
-        @return: A list of installed packages.
-        @rtype: list
+        @return: (installed, (reboot requested, performed))
+        @rtype: tuple
         """
         pulpserver()
         installed = []
@@ -200,12 +200,13 @@ class Packages:
                 yb.processTransaction()
         finally:
             ybcleanup(yb)
+        scheduled = False
         if reboot:
             approved = getbool(cfg.client, assumeyes=assumeyes)
             if approved:
                 self.__schedule_reboot()
-            return (installed, {'reboot_performed':approved})
-        return (installed, None)
+                scheduled = True
+        return (installed, (reboot, scheduled))
 
     def __schedule_reboot(self):
         interval = cfg.client.reboot_schedule

@@ -121,15 +121,12 @@ class Install(ErrataAction):
 
     def run(self):
         errataids = self.opts.id
-
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
             self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
-
         if not errataids:
             utils.system_exit(os.EX_USAGE, _("Specify an erratum id to perform install"))
-
         assumeyes = False
         if self.opts.assumeyes:
             assumeyes = True
@@ -151,41 +148,67 @@ class Install(ErrataAction):
                         utils.system_exit(os.EX_OK, _("Errata install aborted upon user request."))
                     else:
                         continue
-        try:
-            if self.opts.consumerid:
-                task = self.consumer_api.installerrata(consumerid, errataids, assumeyes=assumeyes)
-            elif self.opts.consumergroupid:
-                task = self.consumer_group_api.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
-        except Exception,e:
-            utils.system_exit(os.EX_DATAERR, _("Error:%s" % e[1] ))
-        if not task:
-            utils.system_exit(os.EX_DATAERR,
-                _("The requested errataids %s are not applicable for your system" % errataids))
+        if consumerid:
+            self.on_consumer(consumerid, errataids, assumeyes=assumeyes)
+        elif self.opts.consumergroupid:
+            self.on_group(consumergroupid, errataids, assumeyes=assumeyes)
+
+    def on_consumer(self, id, errataids, assumeyes):
+        task = self.consumer_api.installerrata(
+                id,
+                errataids,
+                assumeyes=assumeyes)
         print _('Created task id: %s') % task['id']
-        state = None
+        utils.waitinit()
         spath = task['status_path']
-        while state not in ['finished', 'error']:
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            time.sleep(2)
+        while True:
+            utils.printwait()
             status = self.consumer_api.task_status(spath)
             state = status['state']
-        if state == 'finished' and consumerid:
-            (installed, reboot_status) = status['result']
-            if not reboot_status:
-                print _('\nSuccessfully installed [%s] on [%s]') % \
-                      (installed, (consumerid or (consumergroupid)))
-            elif reboot_status.has_key('reboot_performed') and reboot_status['reboot_performed']:
-                print _('\nSuccessfully installed [%s] and reboot scheduled on [%s]' % (installed, (consumerid or (consumergroupid))))
-            elif reboot_status.has_key('reboot_performed') and not reboot_status['reboot_performed']:
-                print _('\nSuccessfully installed [%s]; This update requires a reboot, please reboot [%s] at your earliest convenience' % \
-                        (installed, (consumerid or (consumergroupid))))
+            if state == 'finished':
+                installed, reboot = status['result']
+                if installed:
+                    print _('\nErrata applied to [%s]; packages installed: %s' % \
+                            (id, installed))
+                else:
+                    print _('\nErrata applied to [%s]; no packages installed' % id)
+                if reboot[0] and not reboot[1]:
+                    print _('Please reboot at your earliest convenience')
+                break
+            if state == 'error':
+                print("\nErrata install failed")
+                break
 
-        elif state == 'finished' and consumergroupid:
-            print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
-        else:
-            print("\nErrata install failed")
-            
+    def on_group(self, id, errataids, assumeyes):
+        group = self.consumer_group_api.consumergroup(id)
+        if not group:
+            system_exit(-1,
+                _('Invalid group: %s' % id))
+        job = self.consumer_group_api.installerrata(
+                id,
+                errataids,
+                assumeyes=assumeyes)
+        print _('Created job id: %s') % job['id']
+        utils.waitinit()
+        while not utils.job_end(job):
+            job = self.job_api.info(job['id'])
+            utils.printwait()
+        print _('\nInstall Summary:')
+        for t in job['tasks']:
+            state = t['state']
+            exception = t['exception']
+            id, packages = t['args']
+            if exception:
+                details = '; %s' % exception
+            else:
+                s = []
+                installed, reboot = t['result']
+                if reboot[0] and not reboot[1]:
+                    s.append('reboot needed')
+                s.append('packages installed: %s' % installed)
+                details = ', '.join(s)
+            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+
 
 class Create(ErrataAction):
     

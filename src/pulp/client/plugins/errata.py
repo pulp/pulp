@@ -23,6 +23,7 @@ from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
 from pulp.client.api.repository import RepositoryAPI
+from pulp.client.api.job import JobAPI
 from pulp.client.lib.utils import print_header
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
@@ -40,6 +41,7 @@ class ErrataAction(Action):
         self.consumer_group_api = ConsumerGroupAPI()
         self.errata_api = ErrataAPI()
         self.repository_api = RepositoryAPI()
+        self.job_api = JobAPI()
 
 # errata actions --------------------------------------------------------------
 
