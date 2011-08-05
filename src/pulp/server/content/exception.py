@@ -22,6 +22,14 @@ class ConflictingPluginError(PulpException):
     pass
 
 
+class MalformedPluginError(PulpException):
+    """
+    Raised when a plugin does not provide required information or pass a sanity
+    check.
+    """
+    pass
+
+
 class PluginNotFoundError(PulpException):
     """
     Raised when no plugin is found for a content or distribution type.

@@ -22,7 +22,7 @@ from gettext import gettext as _
 from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.exception import (
-    ConflictingPluginError, PluginNotFoundError)
+    ConflictingPluginError, MalformedPluginError, PluginNotFoundError)
 from pulp.server.content.importer.base import Importer
 from pulp.server.content.module import import_module
 
