@@ -80,6 +80,7 @@ class List(RepoAction):
             if repo.has_key('consumer_ca') and repo['consumer_ca']:
                 consumer_ca = 'Yes'
 
+            repo['files_count'] = len(self.repository_api.list_files(repo['id']))
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["content_types"],
                     feed_ca, feed_cert,
