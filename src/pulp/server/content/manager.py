@@ -225,43 +225,7 @@ class Manager(object):
 
     # importer/distributor lookup api
 
-    def lookup_importer_class(self, content_type):
-        """
-        """
-        return self.importer_plugins.get(content_type, None)
-
-    def lookup_importer_config(self, content_type):
-        """
-        """
-        config = self.importer_configs.get(content_type, None)
-        if config is None:
-            return None
-        return copy.copy(config)
-
-    def lookup_distributor_class(self, distribution_type):
-        """
-        """
-        return self.distributor_plugins.get(distribution_type, None)
-
-    def lookup_distributor_config(self, distributor_type):
-        """
-        """
-        config = self.distributor_configs.get(distributor_type, None)
-        if config is None:
-            return None
-        return copy.copy(config)
-
     # query api
-
-    def content_types(self):
-        """
-        """
-        return self.importer_plugins.keys()
-
-    def distributor_types(self):
-        """
-        """
-        return self.distributor_plugins.keys()
 
 # manager api ------------------------------------------------------------------
 
@@ -308,39 +272,3 @@ def finalize():
     tmp = _manager
     _manager = None
     del tmp
-
-
-def get_importer(content_type):
-    """
-    Get an importer for the given content type.
-    @type content_type: str
-    @param content_type: content type label
-    @rtype: Importer instance
-    @return: importer associated with content type
-    @raises PluginNotFoundError: if not importer is associated with the content type
-    """
-    # TODO allow client to pass in constructor arguments/options
-    assert _manager is not None
-    cls = _manager.lookup_importer_class(content_type)
-    if cls is None:
-        raise PluginNotFoundError(_('No importer found for %s') % content_type)
-    cfg = _manager.lookup_importer_config(content_type)
-    return cls(config=cfg)
-
-
-def get_distributor(distribution_type):
-    """
-    Get a distributor for the give distribution type.
-    @type distribution_type: str
-    @param distribution_type: distribution type label
-    @rtype: Distributor instance
-    @return: distributor associated with the distribution type
-    @raises PluginNotFoundError: if not importer is associated with the distribution type
-    """
-    # TODO allow client to pass in constructor arguments/options
-    assert _manager is not None
-    cls = _manager.lookup_distributor_class(distribution_type)
-    if cls is None:
-        raise PluginNotFoundError(_('No distributor found for %s') % distribution_type)
-    cfg = _manager.lookup_distributor_config(distribution_type)
-    return cls(config=cfg)
