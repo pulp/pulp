@@ -34,10 +34,10 @@ class ConsumerAction(Action):
 
 # consumer actions ------------------------------------------------------------
 
-class Delete(ConsumerAction):
+class Unregister(ConsumerAction):
 
-    name = "delete"
-    description = _('delete the consumer')
+    name = "unregister"
+    description = _('unregister the consumer')
 
     def run(self, consumerid):
         self.consumer_api.delete(consumerid)

@@ -25,7 +25,7 @@ from pulp.client.lib.utils import print_header, system_exit
 from pulp.client import constants
 from pulp.client.lib import utils
 from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
-    Delete, Bind, Unbind, History)
+    Unregister, Bind, Unbind, History)
 from pulp.client.lib.repo_file import RepoFile
 from pulp.common import dateutils
 from rhsm.profile import get_profile
@@ -221,17 +221,17 @@ class GetKeyValues(ConsumerAdminAction):
 
 # consumer overridden actions  ------------------------------------------------------------
 
-class AdminDelete(Delete):
+class AdminUnregister(Unregister):
 
     def setup_parser(self):
-        super(AdminDelete, self).setup_parser()
+        super(AdminUnregister, self).setup_parser()
         help = _("consumer identifier eg: foo.example.com (required)")
         self.parser.add_option("--id", dest="id", help=help)
 
     def run(self):
         consumerid = self.get_required_option('id')
-        Delete.run(self, consumerid)
-        print _("Successfully deleted consumer [%s]") % consumerid
+        Unregister.run(self, consumerid)
+        print _("Successfully unregistered consumer [%s]") % consumerid
 
 
 class AdminBind(Bind):
@@ -285,7 +285,7 @@ class AdminConsumer(Consumer):
 
     actions = [ List,
                 Info,
-                AdminDelete,
+                AdminUnregister,
                 AdminBind,
                 AdminUnbind,
                 AddKeyValue,

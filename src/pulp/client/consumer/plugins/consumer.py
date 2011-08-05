@@ -29,7 +29,7 @@ from pulp.client.lib.repo_file import RepoFile
 from pulp.client.lib.utils import print_header
 from pulp.client.lib.utils import system_exit
 from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
-    Bind, Unbind, Delete, History)
+    Bind, Unbind, Unregister, History)
 from pulp.common import dateutils
 from rhsm.profile import get_profile
 
@@ -49,13 +49,13 @@ class ConsumerClientActionMixIn(object):
 
 # consumer actions ------------------------------------------------------------
 
-class Create(ConsumerAction, ConsumerClientActionMixIn):
+class Register(ConsumerAction, ConsumerClientActionMixIn):
 
-    name = "create"
-    description = _('create a consumer')
+    name = "register"
+    description = _('register the consumer')
 
     def setup_parser(self):
-        # always provide --id option for create, even on registered clients
+        # always provide --id option for register, even on registered clients
         self.parser.add_option('--id', dest='id',
                                help=_("consumer identifier eg: foo.example.com (required)"))
         self.parser.add_option("--description", dest="description",
@@ -70,7 +70,7 @@ class Create(ConsumerAction, ConsumerClientActionMixIn):
         bundle.write(crt)
         pkginfo = get_profile("rpm").collect()
         self.consumer_api.package_profile(id, pkginfo)
-        print _("Successfully created consumer [ %s ]") % consumer['id']
+        print _("Successfully registered consumer [ %s ]") % consumer['id']
 
 
 class Update(ConsumerAction, ConsumerClientActionMixIn):
@@ -120,14 +120,14 @@ class ClientHistory(History, ConsumerClientActionMixIn):
         History.run(self, consumerid)
 
 
-class ClientDelete(Delete, ConsumerClientActionMixIn):
+class ClientUnregister(Unregister, ConsumerClientActionMixIn):
 
     def run(self):
         consumerid = self.consumerid
-        Delete.run(self, consumerid)
+        Unregister.run(self, consumerid)
         bundle = ConsumerBundle()
         self.delete_files(bundle)
-        print _("Successfully deleted consumer [%s]") % consumerid
+        print _("Successfully unregistered consumer [%s]") % consumerid
 
     def delete_files(self, bundle):
         repo_file = RepoFile(self.cfg.client.repo_file)
@@ -168,8 +168,8 @@ class ClientBind(Bind, ConsumerClientActionMixIn):
 
 class ConsumerClient(Consumer):
 
-    actions = [ Create,
-                ClientDelete,
+    actions = [ Register,
+                ClientUnregister,
                 ClientBind,
                 ClientUnbind,
                 ClientHistory,

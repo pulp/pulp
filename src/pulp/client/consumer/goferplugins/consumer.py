@@ -79,7 +79,7 @@ class Consumer(PulpGoferPlugin):
             log.warn('Artifacts NOT deleted')
             return
         try:
-            self.consumer.delete.delete_files(self.bundle)
+            self.consumer.unregister.delete_files(self.bundle)
         except:
             log.error('Repo delete, failed', exc_info=1)
         log.info('Artifacts deleted')

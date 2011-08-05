@@ -69,10 +69,14 @@ class ConsumerCLI(PulpCLI):
         create if not already done.
         """
         command = super(ConsumerCLI, self).setup(args)
-        if not (command.name == "consumer" and args[1] == "create"):
+
+        if (len(args) > 1 and
+            not (command.name == "consumer" and args[1] == "create")):
+
             bundle = Consumer()
             if not bundle.getid():
                 print >> sys.stderr, _("warning: this client is not known "
-                    "to the pulp server; please create a consumer to continue")
+                    "to the pulp server; run 'pulp-consumer consumer register' "
+                    "to register it")
 
         return command
