@@ -161,7 +161,7 @@ class Manager(object):
                 modules.append(module)
         return modules
 
-    def _is_plugin_enabled(self, config):
+    def _is_plugin_enabled(self, pulgin_name, config):
         """
         Grok through a config parser and see if the plugin is not disabled.
         @type config: SafeConfigParser instance
