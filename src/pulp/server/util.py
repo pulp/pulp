@@ -16,7 +16,6 @@
 import hashlib # 3rd party on RHEL 5
 import logging
 import os
-import os.path
 import random
 import re
 import signal
@@ -443,7 +442,7 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
             try:
                 # Cleanup createrepo's temporary working directory
                 cleanup_dir = os.path.join(dir, ".repodata")
-                if os.path.exist(cleanup_dir):
+                if os.path.exists(cleanup_dir):
                     shutil.rmtree(cleanup_dir)
             except Exception, e:
                 log.warn(e)
