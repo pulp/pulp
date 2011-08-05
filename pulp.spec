@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.221
+Version:        0.0.222
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -479,6 +479,21 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 05 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.0.222-1
+- bumping grinder requires (pkilambi@redhat.com)
+- fixing file sync imports (pkilambi@redhat.com)
+- 728579 - Fix errata install broken during jobs migration. (jortel@redhat.com)
+- fix typo (jmatthews@redhat.com)
+- Cancel sync enhancements for local sync as well as interrupting createrepo
+  (jmatthews@redhat.com)
+- Adding ability to cancel a running createrepo process (jmatthews@redhat.com)
+- 642654 fix another reference to create (jslagle@redhat.com)
+- 642654 Rename consumer create/delete to register/unregister
+  (jslagle@redhat.com)
+- Change wording about consumer creation and don't show it if the user is
+  already running consumer create (jslagle@redhat.com)
+- remove unused setup_client method (jslagle@redhat.com)
+
 * Thu Aug 04 2011 Jeff Ortel <jortel@redhat.com> 0.0.221-1
 - Update client (yum) code to make idempotent. Rewrite Package.install() so
   package install will not raise TransactionError when a package is already
