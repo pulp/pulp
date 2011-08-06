@@ -243,16 +243,16 @@ class Manager(object):
     def _get_latest_version(self, versions):
         pass
 
-    def get_importer_class(self, name, version=None):
+    def get_importer_class_by_name(self, name, version=None):
         pass
 
-    def get_importer_config(self, name, version=None):
+    def get_importer_config_by_name(self, name, version=None):
         pass
 
-    def get_distributor_class(self, name, version=None):
+    def get_distributor_class_by_name(self, name, version=None):
         pass
 
-    def get_distributor_config(self, name, version):
+    def get_distributor_config_by_name(self, name, version):
         pass
 
     # query api
