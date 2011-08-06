@@ -217,24 +217,51 @@ class Manager(object):
         configs = self._load_configs(self.distributor_config_paths)
         modules = self._load_modules(self.distributor_plugin_paths)
         for module in modules:
-            config = configs.get(module.__name__, None)
-            if not self._is_plugin_enabled(config):
-                continue
             for attr in dir(module):
                 if not issubclass(attr, Distributor):
                     continue
-                for distribution_type in attr.types:
-                    if distribution_type in self.distributors:
-                        raise ConflictingPluginError(_('Duplicate distributor %s for distribution type %s found') %
-                                                     (attr.__name__, distribution_type))
-                    self.distributor_plugins[distribution_type] = attr
-                    self.distributor_configs[distribution_type] = config or SafeConfigParser()
-                    _log.info(_('Distributor plugin %s associated with distribution type %s') %
-                              (attr.__name__, distribution_type))
+                metadata = attr.metadata()
+                name = metadata.get('name', None)
+                version = metadata.get('version', None)
+                types = metadata.get('types', ())
+                conf_file = metadata.get('conf_file', None)
+                if name is None:
+                    raise MalformedPluginError(_(''))
+                cfg = configs.get(conf_file, None)
+                if not self._is_plugin_enabled(name, cfg):
+                    continue
+                plugin_versions = self.distributor_plugins.setdefault('name', {})
+                if version in plugin_versions:
+                    raise ConflictingPluginError(_(''))
+                plugin_versions[version] = attr
+                config_versions = self.distributor_configs.setdefault('name', {})
+                config_versions[version] = cfg or SafeConfigParser()
+                _log.info(_(''))
 
     # importer/distributor lookup api
 
+    def _get_latest_version(self, versions):
+        pass
+
+    def get_importer_class(self, name, version=None):
+        pass
+
+    def get_importer_config(self, name, version=None):
+        pass
+
+    def get_distributor_class(self, name, version=None):
+        pass
+
+    def get_distributor_config(self, name, version):
+        pass
+
     # query api
+
+    def get_loaded_importers(self):
+        pass
+
+    def get_loaded_distributors(self):
+        pass
 
 # manager api ------------------------------------------------------------------
 
