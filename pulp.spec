@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.222
+Version:        0.0.223
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -479,6 +479,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Aug 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-1
+- Save args as self.args so when it gets modified in setup(), the change is
+  preserved (jslagle@redhat.com)
+- 727906 - Added input validation and error message with a correct format for
+  notes input. (skarmark@redhat.com)
 * Fri Aug 05 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.0.222-1
 - bumping grinder requires (pkilambi@redhat.com)
 - fixing file sync imports (pkilambi@redhat.com)
