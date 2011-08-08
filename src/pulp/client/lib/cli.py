@@ -130,10 +130,10 @@ class PulpCLI(object):
         self.register_plugins()
         self.parser.set_usage(self.usage)
         self.setup_parser()
-        self.opts, args = self.parser.parse_args(args)
-        if not args:
+        self.opts, self.args = self.parser.parse_args(self.args)
+        if not self.args:
             self.parser.error(_('No command given; please see --help'))
-        command = self._commands.get(args[0], None)
+        command = self._commands.get(self.args[0], None)
         if command is None:
             self.parser.error(_('Invalid command; please see --help'))
         self.setup_server()
@@ -147,5 +147,6 @@ class PulpCLI(object):
         @type args: list of str's
         @param args: command line arguments
         """
-        command = self.setup(args)
-        command.main(args[1:])
+        self.args = args
+        command = self.setup(self.args)
+        command.main(self.args[1:])
