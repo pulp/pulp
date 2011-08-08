@@ -463,7 +463,11 @@ class Create(AdminRepoAction):
                                            self.opts.schedule_runs)
         relative_path = self.opts.relativepath
         if self.opts.notes:
-            notes = eval(self.opts.notes)
+            try:
+                notes = eval(self.opts.notes)
+            except:
+                utils.system_exit(os.EX_USAGE, _("Invalid argument for notes. Notes need to be specified in dictionary form inside a string eg. \"{'key':'value'}\""))
+                
         else:
             notes = {}
 
@@ -863,6 +867,25 @@ class CancelSync(AdminRepoAction):
         taskid = task['id']
         self.repository_api.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s is being canceled") % id
+
+
+class CancelClone(AdminRepoAction):
+
+    name = "cancel_clone"
+    description = _('cancel a running clone')
+
+    def run(self):
+        id = self.get_required_option('id')
+        self.get_repo(id)
+        clones = self.repository_api.clone_list(id)
+        if not clones:
+            utils.system_exit(os.EX_OK, _('There is no clone in progress for this repository'))
+        task = clones[0]
+        if task['state'] not in ('waiting', 'running'):
+            utils.system_exit(os.EX_OK, _('There is no clone in progress for this repository'))
+        taskid = task['id']
+        self.repository_api.cancel_clone(str(id), str(taskid))
+        print _("Clone for this repository %s is being canceled") % id
 
 
 class GenerateMetadata(AdminRepoAction):
