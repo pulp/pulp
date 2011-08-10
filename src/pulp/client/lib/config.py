@@ -159,6 +159,7 @@ class Config(INIConfig):
         for section in other:
             if section not in self:
                 for option in other[section]:
+                    self._sections[section] = other[section]
                     self[section][option] = other[section][option]
             else:
                 sA = self[section]
