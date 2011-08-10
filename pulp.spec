@@ -89,6 +89,9 @@ Requires: curl => 7.19.7
 Requires: %{name}-consumer >= %{version}
 Requires: %{name}-admin >= %{version}
 
+# Both attempt to serve content at the same apache alias, so don't
+# allow them to be installed at the same time.
+Conflicts:      pulp-cds
 
 %description
 Pulp provides replication, access, and accounting for software repositories.
@@ -170,6 +173,9 @@ Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
 %endif
 
+# Both attempt to serve content at the same apache alias, so don't
+# allow them to be installed at the same time.
+Conflicts:      pulp
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
