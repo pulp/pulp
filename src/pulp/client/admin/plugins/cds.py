@@ -293,12 +293,12 @@ class Unassociate(CDSAction):
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
                                help=_('CDS hostname (required)'))
-        self.parser.add_option('--repoid', dest='repo_id',
+        self.parser.add_option('--repoid', dest='repoid',
                                help=_('repo identifier (required)'))
 
     def run(self):
         hostname = self.get_required_option('hostname')
-        repo_id = self.get_required_option('repo_id')
+        repo_id = self.get_required_option('repoid')
 
         result = self.cds_api.unassociate(hostname, repo_id)
         if result:
