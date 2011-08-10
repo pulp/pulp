@@ -84,9 +84,10 @@ class PluginLoader(object):
             try:
                 if issubclass(mod_object, self.plugin_base_class):
                     # Instantiate the plugin.
-                    # Use a copy of self.cfg so that plugins don't modify the
-                    # main config (perhaps maliciously).
-                    plugin = mod_object(copy.deepcopy(self.cfg))
+                    # TODO: use a copy of self.cfg, however iniparse on python
+                    # 2.6 does not support deepcopy, so we need to come up
+                    # with a different solution.
+                    plugin = mod_object(self.cfg)
 
                     # Check for plugin disablement.  The disabled config
                     # value, if set, needs to be in the config section that
