@@ -116,7 +116,7 @@ class PulpCollection(Collection):
 
 # collection factory -----------------------------------------------------------
 
-def get_collection(name):
+def get_collection(name, create=False):
     """
     Factory function to instantiate PulpConnection objects using configurable
     parameters.
@@ -125,4 +125,4 @@ def get_collection(name):
     if _database is None:
         raise PulpCollectionFailure(_('Cannot get collection from uninitialized database'))
     retries = config.config.getint('database', 'operation_retries')
-    return PulpCollection(_database, name, retries=retries)
+    return PulpCollection(_database, name, retries=retries, create=create)
