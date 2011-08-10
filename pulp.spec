@@ -479,6 +479,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Aug 10 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-2
+- Bump release. (jortel@redhat.com)
+- Disable deepcopy of self.cfg for now since it's completely unsupported on
+  python 2.6 (jslagle@redhat.com)
+
 * Mon Aug 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-1
 - Save args as self.args so when it gets modified in setup(), the change is
   preserved (jslagle@redhat.com)
