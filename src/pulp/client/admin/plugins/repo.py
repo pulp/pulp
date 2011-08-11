@@ -1064,18 +1064,18 @@ class Publish(AdminRepoAction):
 class AddPackages(AdminRepoAction):
 
     name = "add_package"
-    description = _('add package to a repository')
+    description = _('associate an already uploaded package to a repository')
 
     def setup_parser(self):
         super(AddPackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
-                help=_("package filename to add to this repository"))
+                help=_("package filename to associate to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("source repository with specified packages to perform add (optional)"))
+            help=_("source repository with specified packages (optional)"))
         self.parser.add_option("--csv", dest="csv",
                 help=_("csv file to perform batch operations on; Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("assume yes; automatically process dependencies as part of add operation"))
+                            help=_("assume yes; automatically process dependencies as part of the operation"))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
                             help=_("recursively lookup the dependency list; defaults to one level of lookup"))
 
@@ -1083,7 +1083,7 @@ class AddPackages(AdminRepoAction):
         id = self.get_required_option('id')
 
         if not self.opts.pkgname and not self.opts.csv:
-            utils.system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform an add."))
+            utils.system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform an association."))
         if self.opts.pkgname and self.opts.csv:
             utils.system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repos are valid
@@ -1119,7 +1119,7 @@ class AddPackages(AdminRepoAction):
                     continue
                 if len(src_pkgobj) > 1:
                     if not self.opts.csv:
-                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % pkg)
+                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping associate" % pkg)
                         continue
                     else:
                         for fo in src_pkgobj:
@@ -1150,18 +1150,18 @@ class AddPackages(AdminRepoAction):
         try:
             errors = self.repository_api.add_package(id, pids)
         except Exception:
-            utils.system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
+            utils.system_exit(os.EX_DATAERR, _("Unable to associate package [%s] to repo [%s]" % (pnames, id)))
         if not errors:
-            print _("Successfully added packages %s to repo [%s]." % (pnames, id))
+            print _("Successfully associated packages %s to repo [%s]." % (pnames, id))
         else:
             for e in errors:
                 # Format, [pkg_id, NEVRA, filename, sha256]
                 filename = e[2]
                 checksum = e[3]
-                print _("Error unable to add: %s with sha256sum of %s") % (filename, checksum)
+                print _("Error unable to associate: %s with sha256sum of %s") % (filename, checksum)
             print _("Errors occurred see /var/log/pulp/pulp.log for more info")
-            print _("Note: any packages not listed in error output have been added")
-        print _("%s packages added to repo [%s]") % (len(pids) - len(errors), id)
+            print _("Note: any packages not listed in error output have been associated")
+        print _("%s packages associated to repo [%s]") % (len(pids) - len(errors), id)
 
 
 class RemovePackages(AdminRepoAction):
@@ -1224,23 +1224,23 @@ class RemovePackages(AdminRepoAction):
 class AddErrata(AdminRepoAction):
 
     name = "add_errata"
-    description = _('add errata to a repository')
+    description = _('associate an existing errata to a repository')
 
     def setup_parser(self):
         super(AddErrata, self).setup_parser()
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
-                help=_("errata id to add to this repository"))
+                help=_("errata id to associate to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("optional source repository with specified packages to perform selective add"))
+            help=_("optional source repository with specified packages to perform selective association"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("assume yes; automatically process dependencies as part of remove operation"))
+                            help=_("assume yes; automatically process dependencies as part of associate operation"))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
                             help=_("recursively lookup the dependency list; defaults to one level of lookup"))
 
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
-            utils.system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform an add."))
+            utils.system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform an association."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -1291,9 +1291,9 @@ class AddErrata(AdminRepoAction):
             if pids:
                 # add dependencies to repo
                 self.repository_api.add_package(id, pids)
-            print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
+            print _("Successfully associated Errata %s to repo [%s]." % (errataids, id))
         except Exception:
-            utils.system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
+            utils.system_exit(os.EX_DATAERR, _("Unable to associate errata [%s] to repo [%s]" % (errataids, id)))
 
 
 class RemoveErrata(AdminRepoAction):
@@ -1359,14 +1359,14 @@ class RemoveErrata(AdminRepoAction):
 class AddFiles(AdminRepoAction):
 
     name = "add_file"
-    description = _('add file to a repository')
+    description = _('associate an already uploaded file to a repository')
 
     def setup_parser(self):
         super(AddFiles, self).setup_parser()
         self.parser.add_option("-f", "--filename", action="append", dest="filename",
-                help=_("file to add to this repository"))
+                help=_("file to associate to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("source repository with specified files to perform add (optional)"))
+            help=_("source repository with specified files to perform association (optional)"))
         self.parser.add_option("--csv", dest="csv",
                 help=_("csv file to perform batch operations on; Format:filename,checksum"))
 
@@ -1385,7 +1385,7 @@ class AddFiles(AdminRepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.filename:
-                utils.system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an add."))
+                utils.system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an association."))
             flist = self.opts.filename
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1398,12 +1398,12 @@ class AddFiles(AdminRepoAction):
 
             fobj = self.service_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
-                print _("File [%s] could not be found on server; Skipping add" % filename)
+                print _("File [%s] could not be found on server; Skipping association" % filename)
                 continue
             if len(fobj) > 1:
                 if not self.opts.csv:
                     print fobj
-                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % filename)
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping association" % filename)
                     continue
                 else:
                     for fo in fobj:
@@ -1420,9 +1420,9 @@ class AddFiles(AdminRepoAction):
                 self.repository_api.add_file(id, [fobj['id']])
             except Exception:
                 raise
-                print _("Unable to add package [%s] to repo [%s]" % (fname, id))
+                print _("Unable to associate package [%s] to repo [%s]" % (fname, id))
                 continue
-            print _("Successfully added packages %s to repo [%s]." % (fname, id))
+            print _("Successfully associated packages %s to repo [%s]." % (fname, id))
 
 class RemoveFiles(AdminRepoAction):
 
