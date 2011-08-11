@@ -220,7 +220,7 @@ class PackageApi(BaseApi):
         #return list(self.collection.find({}, {'name' : True, 'description' : True,}))
         return list(self.collection.find(spec, ['id', 'name', 'description']))
 
-    def package_dependency(self, pkgnames=[], repoids=[], recursive=0):
+    def package_dependency(self, pkgnames=[], repoids=[], recursive=0, make_tree=0):
         '''
          Get list of available dependencies for a given package in
          a specific repo
@@ -254,11 +254,18 @@ class PackageApi(BaseApi):
                 if not epkg:
                     continue
                 dep_pkgs_map[dep].append(epkg)
-        dsolve.cleanup()
         log.debug("deps packages suggested %s" % solved)
-        return {'printable_dependency_result' : dsolve.printable_result(results),
-                'resolved' :dep_pkgs_map,
-                'unresolved' : unsolved}
+
+        dep_result = {'printable_dependency_result' : dsolve.printable_result(results),
+                      'resolved' :dep_pkgs_map,
+                      'unresolved' : unsolved}
+        if make_tree:
+            dep_tree = {}
+            dsolve.make_tree(pkgnames, results, dep_tree)
+            dep_result['dependency_tree'] = dep_tree
+        dsolve.cleanup()
+        return dep_result
+
 
     def package_checksum(self, filename):
         """

@@ -16,7 +16,6 @@
 import logging
 import shutil
 import sys
-
 import yum
 from yum.misc import prco_tuple_to_string
 from yum.packageSack import ListPackageSack
@@ -172,6 +171,34 @@ class DepSolver:
                     print_doc_str += "   provider: %s\n" % po.compactPrint()
         return print_doc_str
 
+    def make_tree(self, pkgs, requires_set, results):
+        """
+         Returns a dependency tree structure for the requested packages
+
+        """
+        for pkg in pkgs:
+            pkg_hash = {}
+            ematch, match, unmatch = self._repostore.pkgSack.matchPackageNames([pkg])
+            po = (ematch + match)[0]
+            if not po:
+                continue
+            preq = po.requires
+            pname = "%s-%s-%s.%s" % (po.name, po.version, po.release, po.arch)
+            for req in preq:
+                (r, f, v) = req
+                if r.startswith('rpmlib(') or req in requires_set.values()[0]:
+                    pkg_hash[req] = requires_set.values()[0][req]
+                    continue
+                else:
+                    satisfiers = []
+                    new_pkgs=[]
+                    for new_po in self.__whatProvides(r, f, v):
+                        new_pkgs.append("%s-%s-%s.%s" % (new_po.name, new_po.version, new_po.release, new_po.arch))
+                        satisfiers.append(po)
+                        requires_set[po] = req
+                    pkg_hash[req] = new_pkgs
+                    self.make_tree(new_pkgs, requires_set, results)
+            results[pname] = pkg_hash
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
