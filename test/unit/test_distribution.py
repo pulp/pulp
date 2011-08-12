@@ -49,7 +49,7 @@ class TestDistribution(testutil.PulpAsyncTest):
         assert(distro1 is not None)
         distro2 = self.distribution_api.create(id, None, None, [])
         assert(distro2 is not None)
-        self.assertTrue(distro1 == distro2)
+        self.assertTrue(distro1['id'] == distro2['id'])
 
         status = True
         try:
