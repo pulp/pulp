@@ -79,7 +79,8 @@ class DistributionApi(BaseApi):
         Return a distribution object based on the id
         """
         distro = self.collection.find_one({'id': id})
-        self.__make_ks_url(distro)
+        if distro:
+            self.__make_ks_url(distro)
         return distro
 
     def distributions(self):
@@ -87,6 +88,8 @@ class DistributionApi(BaseApi):
          Return all available distributions
         """
         distributions = list(self.collection.find())
+        if not len(distributions):
+            return []
         for distro in distributions:
             self.__make_ks_url(distro)
         return distributions
