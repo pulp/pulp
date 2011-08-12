@@ -53,7 +53,7 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.44
+Requires: python-gofer >= 0.45
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
@@ -106,7 +106,7 @@ Requires:       python-simplejson
 Requires:       python-isodate >= 0.4.4
 Requires:       m2crypto
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.44
+Requires:       gofer >= 0.45
 %if !0%{?fedora}
 # RHEL
 Requires:       python-hashlib
@@ -158,7 +158,7 @@ Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.44
+Requires:       gofer >= 0.45
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}

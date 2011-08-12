@@ -19,7 +19,7 @@
 #
 
 
-from gofer.messaging import mock
+from gofer.rmi import mock
 
 def install():
     mock.install()

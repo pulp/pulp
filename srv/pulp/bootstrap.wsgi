@@ -17,10 +17,9 @@
 from pulp.server.logs import start_logging
 from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.agent import HeartbeatListener
-from pulp.server.async import ReplyHandler
+from pulp.server.async import ReplyHandler, WatchDog
 from pulp.server.config import config
 from gofer.messaging.broker import Broker
-from gofer.messaging.async import WatchDog
 
 # start logging
 start_logging()

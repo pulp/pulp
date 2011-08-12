@@ -16,7 +16,8 @@ from gettext import gettext as _
 from logging import getLogger
 
 from gofer.messaging import Queue
-from gofer.messaging.async import ReplyConsumer, Listener
+from gofer.rmi.async import ReplyConsumer, Listener
+from gofer.rmi.async import WatchDog
 
 from pulp.server import config
 from pulp.server.agent import Agent
@@ -26,7 +27,7 @@ from pulp.server.tasking.exception import (
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import SnapshotStorage
-from gofer.messaging.async import WatchDog
+
 
 
 log = getLogger(__name__)
