@@ -44,7 +44,7 @@ Below are a few examples of how to use Pulp to get content synchronized locally 
 <hr />
 <h2 id="basic">Basic Usage</h2>
 <p>
-The starting point for a new Pulp installation is the <tt>pulp-admin</tt> command. Help information is available for both the <tt>pulp-admin</tt> and <tt>pulp-client</tt> scripts:
+The starting point for a new Pulp installation is the <tt>pulp-admin</tt> command. Help information is available for both the <tt>pulp-admin</tt> and <tt>pulp-consumer</tt> scripts:
 </p>
 <pre class="wiki">$ pulp-admin --help
 Usage: pulp-admin &lt;options&gt; &lt;command&gt;
@@ -143,17 +143,17 @@ You can safely CTRL+C this current command and it will continue
 </pre><hr />
 <h2 id="consumer">Register a Consumer (System) to Pulp</h2>
 <p>
-After content is synchronized to Pulp, the next step is to connect a system so it can start installing packages from your Pulp repository. The <tt>pulp-client</tt> is used for registration with a Pulp server. See the <a class="wiki" href="UGInstallation.html#consumerclient">Consumer Client Guide</a> for installation and configuration information.
+After content is synchronized to Pulp, the next step is to connect a system so it can start installing packages from your Pulp repository. The <tt>pulp-consumer</tt> is used for registration with a Pulp server. See the <a class="wiki" href="UGInstallation.html#consumerclient">Consumer Client Guide</a> for installation and configuration information.
 </p>
 <p>
-1. Using the <tt>pulp-client</tt> script, register the client system with the Pulp server:
+1. Using the <tt>pulp-consumer</tt> script, register the client system with the Pulp server:
 </p>
-<pre class="wiki">$ sudo pulp-client -u admin -p ****** consumer create --id myclient
+<pre class="wiki">$ sudo pulp-consumer -u admin -p ****** consumer create --id myclient
 Successfully created consumer [ myclient ]
 </pre><p>
-2. Once the client is registered, we can see a list of possible repositories to use:
+2. Once the consumer is registered, we can see a list of possible repositories to use:
 </p>
-<pre class="wiki">$ sudo pulp-client repo list
+<pre class="wiki">$ sudo pulp-consumer repo list
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
@@ -172,10 +172,10 @@ Clones             	[]
 </pre><p>
 3. To use a repository, it is <i>bound</i> to the client system. Binding a repository makes that repository available to the client system:
 </p>
-<pre class="wiki">$ sudo pulp-client consumer bind --repoid f14-x86_64
+<pre class="wiki">$ sudo pulp-consumer consumer bind --repoid f14-x86_64
 Successfully subscribed consumer [myclient] to repo [f14-x86_64]
 </pre><p>
-4. The <tt>pulp-client</tt> script creates a repo config file at <tt>/etc/yum.repos.d/pulp.repo</tt> for the newly bound repository:
+4. The <tt>pulp-consumer</tt> script creates a repo config file at <tt>/etc/yum.repos.d/pulp.repo</tt> for the newly bound repository:
 </p>
 <pre class="wiki">$ cat /etc/yum.repos.d/pulp.repo 
 #

@@ -66,7 +66,7 @@ The easiest way to download the dependencies is to install Pulp through yum, whi
 <p>
 2. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked out code.
 </p>
-<pre class="wiki">$ rpm -e pulp pulp-client pulp-common
+<pre class="wiki">$ rpm -e pulp pulp-admin pulp-client-lib pulp-consumer pulp-common
 </pre><p>
 The only caveat to this approach is that these dependencies will need to be maintained after this initial setup. Leaving the testing builds repository enabled will cause them to be automatically updated on subsequent <tt>yum update</tt> calls. Messages are sent to the Pulp mailing list when these dependencies are updated as well to serve as a reminder to update before the next code update.
 </p>

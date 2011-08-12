@@ -39,7 +39,7 @@
    <div class="wikipage">
     <div id="searchable"><h1 id="Consumers">Consumers</h1>
 <p>
-The <tt>pulp-admin</tt> script provides a number of features to remotely administer consumers. Much of the same functionality that <tt>pulp-client</tt> offers on a client machine is supported for administrators as well. Whereas the <tt>pulp-client</tt> scripts runs on the client system and automatically performs operations for its consumer, the same features when accessed through <tt>pulp-admin</tt> require a consumer to be specified as part of the invocation.
+The <tt>pulp-admin</tt> script provides a number of features to remotely administer consumers. Much of the same functionality that <tt>pulp-consumer</tt> offers on a client machine is supported for administrators as well. Whereas the <tt>pulp-consumer</tt> scripts runs on the client system and automatically performs operations for its consumer, the same features when accessed through <tt>pulp-admin</tt> require a consumer to be specified as part of the invocation.
 </p>
 <hr />
 <h2 id="crud">Removal, Display, History</h2>
@@ -101,7 +101,7 @@ gucharmap-2.32.0-1.fc14.x86_64
 </pre><hr />
 <h2 id="history">History</h2>
 <p>
-The same consumer history query mechanism that is provided by <tt>pulp-client</tt> is also supported by <tt>pulp-admin</tt>. The only addition is the <tt>--id</tt> flag that indicates consumer whose history is being queried.
+The same consumer history query mechanism that is provided by <tt>pulp-consumer</tt> is also supported by <tt>pulp-admin</tt>. The only addition is the <tt>--id</tt> flag that indicates consumer whose history is being queried.
 </p>
 <p>
 For more information, see the <a class="wiki" href="UGClientIntroduction.html#history">Pulp Client User Guide - History</a> section.
@@ -109,7 +109,7 @@ For more information, see the <a class="wiki" href="UGClientIntroduction.html#hi
 <hr />
 <h2 id="bind">Bind</h2>
 <p>
-A consumer's bindings to repositories can manipulated through the <tt>pulp-admin</tt> script. Unlike <tt>pulp-client</tt>, which must be run on the consumer itself, the <tt>pulp-admin</tt> script can be used to change bindings for any consumer. The Pulp messaging subsystem is then used to communicate those changes out to the consumers.
+A consumer's bindings to repositories can manipulated through the <tt>pulp-admin</tt> script. Unlike <tt>pulp-consumer</tt>, which must be run on the consumer itself, the <tt>pulp-admin</tt> script can be used to change bindings for any consumer. The Pulp messaging subsystem is then used to communicate those changes out to the consumers.
 </p>
 <p>
 The <tt>consumer bind</tt> command takes two parameters which identify the consumer (<tt>--id</tt>) and the repository being bound (<tt>--repoid</tt>):

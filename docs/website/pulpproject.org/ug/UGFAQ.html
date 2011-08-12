@@ -50,7 +50,8 @@
 <a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a></li><li class="active">
 <a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a></li><li class="active">
 <a href="UGFAQ.html#PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</a></li><li class="active">
-<a href="UGFAQ.html#Mongo1.8.shellfreezesonf15howdoidowngrade">Mongo 1.8.* shell freezes on f15, how do i downgrade</a></li></ol></li></ol></div>
+<a href="UGFAQ.html#Mongo1.8.shellfreezesonf15howdoidowngrade">Mongo 1.8.* shell freezes on f15, how do i downgrade</a></li><li class="active">
+<a href="UGFAQ.html#Permissiondenied:etcpki.contentrepo_name_idonrepocreate">Permission denied: '/etc/pki.content/repo_name_id' on repo create</a></li></ol></li></ol></div>
 
 </p>
 <h1 id="FrequentlyAskedQuestions">Frequently Asked Questions</h1>
@@ -270,7 +271,21 @@ When running queries in mongo shell 1.8.* users shell hangs indefinitely. This i
 </p>
 <pre class="wiki"> $ yum downgrade mongodb mongodb-server libmongodb js elinks
 </pre></blockquote>
-</div>
+<h2 id="Permissiondenied:etcpki.contentrepo_name_idonrepocreate">Permission denied: '/etc/pki.content/repo_name_id' on repo create</h2>
+<blockquote>
+<p>
+Filesystem needs to be mounted with 'acl' support.  In particular, some Fedora EC2 images do not have 'acl' enabled on '/' by default.
+</p>
+</blockquote>
+<ul><li>Update mount of filesystem to include 'acl' support
+<ul><li>Temporary
+<pre class="wiki"> mount -o remount,defaults,acl /
+</pre></li><li>Persistent fix, edit /etc/fstab
+<pre class="wiki">$ cat /etc/fstab
+LABEL=79d3d2d4    /         ext4    defaults,acl         1 1
+</pre></li></ul></li><li>Run setfacl or reinstall pulp (rpm will run this as part of install)
+<pre class="wiki"> sudo setfacl -m u:apache:rwx /etc/pki/content/
+</pre></li></ul></div>
    </div>
    
   
