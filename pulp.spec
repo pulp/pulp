@@ -479,6 +479,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-4
+- if distribution is None dont set the url (pkilambi@redhat.com)
+
 * Fri Aug 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-3
 - 730102 - compute the kickstart url on server when showing the distribution
   list (pkilambi@redhat.com)
