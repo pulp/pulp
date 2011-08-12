@@ -579,7 +579,8 @@ class RepositoryActions(JSONController):
         'sync_history',
         'add_metadata',
         'download_metadata',
-        'list_metadata'
+        'list_metadata',
+        'remove_metadata',
     )
 
     def sync(self, id):
@@ -689,6 +690,28 @@ class RepositoryActions(JSONController):
             return self.bad_request('No file data specified')
         return self.ok(api.add_metadata(id, metadata=metadata_params))
 
+    def remove_metadata(self, id):
+        """
+        [[wiki]]
+        title: remove metadata filetype from Repository Metadata
+        description: remove the specified metadata filetype
+                     if exists from a repository metadata; else None.
+        method: POST
+        path: /repositories/<id>/remove_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: True
+	    parameters:
+         * filetype, str, filetype name to lookup in the metadata
+        """
+        if api.repository(id, default_fields) is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        params = self.params()
+        if "filetype" not in params:
+            return self.bad_request('No filetype specified')
+        return self.ok(api.remove_metadata(id, filetype=params['filetype']))
+
     def download_metadata(self, id):
         """
         [[wiki]]
@@ -701,7 +724,7 @@ class RepositoryActions(JSONController):
         success response: 200 Accepted
         failure response: 404 Not Found if the id does not match a repository
         return: True
-	parameters:
+	    parameters:
          * filetype, str, filetype name to lookup in the metadata
         """
         if api.repository(id, default_fields) is None:

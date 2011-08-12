@@ -360,3 +360,16 @@ class RepositoryAPI(PulpAPI):
         """
         path = "/repositories/%s/list_metadata/" % repoid
         return self.server.POST(path)[1]
+
+    def remove_metadata(self, repoid, filetype):
+        """
+        remove metadata filetype xml from existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @param filetype: file type info to identify metadata with eg: primary
+        @type filetype: str
+        @return: True
+        """
+        path = "/repositories/%s/remove_metadata/" % repoid
+        fileinfo = {'filetype' : filetype}
+        return self.server.POST(path, fileinfo)[1]

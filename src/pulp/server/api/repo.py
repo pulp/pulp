@@ -2118,3 +2118,28 @@ class RepoApi(BaseApi):
             log.info(msg)
             raise PulpException(msg)
 
+    def remove_metadata(self, id, filetype):
+        '''
+        remove a metadata file from a repo
+        @param id: repo id
+        @type  id: string
+        @param filetype: file type to look up in metadata
+        @type  filetype: string
+        @raise PulpException: if any of the input values are invalid
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
+        file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
+        if not file_path:
+            msg = "metadata file of type [%s] cannot be found in repository [%s]" % (filetype, id)
+            log.info(msg)
+            raise PulpException(msg)
+        try:
+            pulp.server.util.modify_repo(os.path.dirname(repo_repomd_path), filetype, remove=True)
+        except Exception, e:
+            msg = "Error [%s] removing the metadata file for type [%s]" % (str(e), filetype)
+            log.info(msg)
+            raise PulpException(msg)
+

@@ -946,6 +946,27 @@ class AddMetadata(AdminRepoAction):
         self.repository_api.add_metadata(id, self.opts.mdtype, filedata)
         utils.system_exit(os.EX_OK, _("Successfully added metadata type [%s] to repo [%s]" % (filetype, id)))
 
+class RemoveMetadata(AdminRepoAction):
+
+    name = "remove_metadata"
+    description =  _('remove a metadata type from an existing repository')
+
+    def setup_parser(self):
+        super(RemoveMetadata, self).setup_parser()
+        self.parser.add_option("--mdtype", dest="mdtype",
+                help=_("metadata type to remove from the repository metadata. see `pulp-admin list_metadata` for mdtypes"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        repo = self.get_repo(id)
+        if not self.opts.mdtype:
+            utils.system_exit(os.EX_USAGE, _("Error: mdtype is a required option"))
+        try:
+            self.repository_api.remove_metadata(id, self.opts.mdtype)
+            utils.system_exit(os.EX_OK, _("Successfully removed metadata type [%s] from repo [%s]" % (self.opts.mdtype, id)))
+        except:
+            raise
+
 class DownloadMetadata(AdminRepoAction):
 
     name = "download_metadata"
@@ -1713,6 +1734,7 @@ class AdminRepo(Repo):
                 AddMetadata,
                 ListMetadata,
                 DownloadMetadata,
+                RemoveMetadata,
                 Discovery ]
 
 # repo plugin ----------------------------------------------------------------

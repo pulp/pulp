@@ -505,14 +505,23 @@ def cancel_createrepo(repo_dir):
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
 
-        
-def modify_repo(dir, new_file):
-    cmd = "modifyrepo %s %s" % (new_file, dir)
+def modify_repo(repodata_dir, new_file, remove=False):
+    """
+     run modifyrepo to add a new file to repodata directory
+     @param repodata_dir: repodata directory path
+     @type repodata_dir: string
+     @param new_file: new file type to add or remove
+     @type new_file: string
+    """
+    if remove:
+        cmd = "modifyrepo --remove %s %s" % (new_file, repodata_dir)
+    else:
+        cmd = "modifyrepo %s %s" % (new_file, repodata_dir)
     status, out = commands.getstatusoutput(cmd)
     if status != 0:
-        log.error("modifyrepo on %s failed" % dir)
+        log.error("modifyrepo on %s failed" % repodata_dir)
         raise ModifyRepoError(out)
-    log.info("modifyrepo with %s on %s finished" % (new_file, dir))
+    log.info("modifyrepo with %s on %s finished" % (new_file, repodata_dir))
     return status, out
 
 def delete_empty_directories(dirname):

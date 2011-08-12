@@ -83,7 +83,18 @@ class TestRepoMetadataApi(testutil.PulpAsyncTest):
         self.assertTrue(list_of_metadata_info is not None)
 
     def test_metadata_remove_repo(self):
-        pass
+        repo = self.repo_api.create('test-list-custom-id', 'custom name', 'noarch')
+        custom_metadata_file = "%s/%s" % (self.data_path, "product")
+        custom_data = open(custom_metadata_file, 'rb').read()
+        metadata_dict = {'filetype' : 'product',
+                         'filedata' : custom_data}
+        self.repo_api.add_metadata(repo['id'], metadata_dict)
+        found_custom_xml = self.repo_api.get_metadata(repo['id'], filetype='product')
+        self.assertTrue(found_custom_xml is not None)
+        self.repo_api.remove_metadata(repo['id'], "product")
+        found_custom_xml = self.repo_api.get_metadata(repo['id'], filetype='product')
+        print found_custom_xml
+        assert(found_custom_xml is None)
 
     def test_metadata(self):
         repo = self.repo_api.create('some-id', 'some name', \
