@@ -65,6 +65,7 @@ _default_values = {
         'server_name': 'localhost',
         'relative_url': '/pulp/repos',
         'key_url': '/pulp/gpg',
+        'ks_url' : '/pulp/ks',
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'true', # XXX should change to false,

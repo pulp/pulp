@@ -17,7 +17,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
-
+from pulp.server import config
 
 log = logging.getLogger(__name__)
 
@@ -78,11 +78,24 @@ class DistributionApi(BaseApi):
         """
         Return a distribution object based on the id
         """
-        return self.collection.find_one({'id': id})
+        distro = self.collection.find_one({'id': id})
+        self.__make_ks_url(distro)
+        return distro
 
     def distributions(self):
         """
          Return all available distributions
         """
-        return list(self.collection.find())
+        distributions = list(self.collection.find())
+        for distro in distributions:
+            self.__make_ks_url(distro)
+        return distributions
 
+    def __make_ks_url(self, distribution):
+        """
+        construct a kickstart url for distribution
+        """
+        server_name = config.config.get("server", "server_name")
+        ks_url = config.config.get("server", "ks_url")
+        distribution['url'] = "%s://%s%s/%s/" % ("https", server_name, ks_url, distribution['relativepath'])
+        return distribution
