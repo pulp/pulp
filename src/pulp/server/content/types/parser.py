@@ -27,7 +27,7 @@ from pulp.server.compat import json
 REQUIRED_DEFINITION_FIELDS = ['id', 'display_name', 'description']
 OPTIONAL_DEFINITION_FIELDS = ['unique_indexes', 'search_indexes']
 
-TYPE_ID_REGEX = re.compile(r'^[-A-Za-z]+$') # letters and hyphen
+TYPE_ID_REGEX = re.compile(r'^[_A-Za-z]+$') # letters and underscore
 
 LOG = logging.getLogger(__name__)
 
@@ -146,16 +146,6 @@ def parse(descriptors):
 
     return type_definitions
 
-
-def destroy():
-    """
-    Purges the database of all types and their associated collections. This
-    isn't really meant to be run from Pulp server code but rather as a utility
-    for test cases.
-    """
-
-    LOG.info('Purging the database of all content type definitions and collections')
-
 # -- parsing and validation --------------------------------------------------
 
 def _parse_descriptors(descriptors):
@@ -236,7 +226,7 @@ def _validate_semantics(descriptors):
     all_type_ids = _all_type_ids(descriptors)
 
     # Type ID validtity
-    error_ids = [id for id in all_type_ids if TYPE_ID_REGEX.match(id) is None]
+    error_ids = [id for id in all_type_ids if not _valid_id(id)]
 
     if len(error_ids) > 0:
         raise InvalidTypeId(error_ids)
@@ -294,3 +284,9 @@ def _all_type_ids(descriptors):
     all_ids = [type['id'] for type in types]
 
     return all_ids
+
+def _valid_id(id):
+    """
+    @return: True if the given ID is a valid type ID; false otherwise
+    """
+    return TYPE_ID_REGEX.match(id) is not None
