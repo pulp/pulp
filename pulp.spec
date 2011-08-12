@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.223
+Version:        0.0.224
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -485,6 +485,32 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.224-1
+- Align with gofer 0.45. (jortel@redhat.com)
+- Update UG for CR15. (jortel@redhat.com)
+- Update website to: CR15. (jortel@redhat.com)
+- 717975 - discover urls with repodata as valid urls (pkilambi@redhat.com)
+- if distribution is None dont set the url (pkilambi@redhat.com)
+-  Remove Metadata: * util method to support modifyrepo --remove * api changes
+  to support remove_metadata call * web services remove_metadata call * cli
+  changes to support pulp-admin remove_metadata * unit tests
+  (pkilambi@redhat.com)
+- Bump grinder to 0.110 (jmatthews@redhat.com)
+- 730102 - compute the kickstart url on server when showing the distribution
+  list (pkilambi@redhat.com)
+- Initial implementation of the type descriptors parser. Still need to flush
+  out unit tests but I want to back it up now. (jason.dobies@redhat.com)
+- 729099 - fixing help text for associate operations (pkilambi@redhat.com)
+- Adding make tree option to dependency resolver (pkilambi@redhat.com)
+- Disable deepcopy of self.cfg for now since it's completely unsupported on
+  python 2.6 (jslagle@redhat.com)
+- 721321 - Don't allow pulp and pulp-cds to be installed on the same box
+  (jason.dobies@redhat.com)
+- 691752 - Corrected the argument name in the error text
+  (jason.dobies@redhat.com)
+- Adding ability to set the create flag on collection retrieval.
+  (jason.dobies@redhat.com)
+
 * Mon Aug 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-1
 - Save args as self.args so when it gets modified in setup(), the change is
   preserved (jslagle@redhat.com)
