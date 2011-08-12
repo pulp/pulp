@@ -56,8 +56,7 @@ class List(DistributionAction):
             system_exit(os.EX_OK, _("No distributions found to list"))
         print_header(_('List of Available Distributions'))
         for distro in distribution:
-            ksurl = self.cfg._sections['cds'].__getitem__('ksurl') + '/' + distro['relativepath']
-            print constants.DISTRO_LIST % (distro['id'], distro['description'], ksurl)
+            print constants.DISTRO_LIST % (distro['id'], distro['description'], distro['url'])
 
 
 class Info(DistributionAction):

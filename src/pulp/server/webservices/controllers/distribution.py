@@ -42,21 +42,6 @@ class Distributions(JSONController):
         distributions = api.distributions()
         return self.ok(distributions)
 
-#    @error_handler
-#    @auth_required(CREATE)
-#    def POST(self):
-#        """
-#        Create a new errata
-#        @return: errata that was created
-#        """
-#        distribution_data = self.params()
-#        distribution = api.create(distribution_data['id'],
-#                                  distribution_data['description'],
-#                                  distribution_data['relative_path'],
-#                                  distribution_data.get('files', []))
-#        path = extend_uri_path(distribution['id'])
-#        return self.created(path, distribution)
-
 
 class Distribution(JSONController):
 
@@ -70,14 +55,6 @@ class Distribution(JSONController):
         """
         # implement filters
         return self.ok(api.distribution(id))
-
-#    @error_handler
-#    @auth_required(DELETE)
-#    def DELETE(self, id):
-#        """
-#        @return: True on successful deletion of distribution
-#        """
-#        return self.ok(api.delete(id))
 
 # web.py application ----------------------------------------------------------
 

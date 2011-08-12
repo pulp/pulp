@@ -67,14 +67,14 @@ class ConsumerHistoryEvent(Model):
 # distribution model ----------------------------------------------------------
 
 class Distribution(Model):
-    '''
+    """
      Distribution Model to represent kickstart trees
-    '''
-
+    """
     collection_name = 'distribution'
     other_indicies = ('files', 'relativepath')
 
     def __init__(self, id, description, relativepath, files=[]):
+        Model.__init__(self)
         self._id = id
         self.id = id
         self.description = description
