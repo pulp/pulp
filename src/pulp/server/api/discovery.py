@@ -199,31 +199,36 @@ class YumDiscovery(BaseDiscovery):
         '''
         Takes a root url and traverses the tree to find all the sub urls
         that has repodata in them.
-        @param url: url link to be parse.
-        @type url: string
         @return: list of matching urls
         @rtype: list
         '''
         repourls = []
         urls = self.parse_url(self.url, handle_redirect=True)
         while urls:
-            uri = urls.pop()
-            results = self.parse_url(uri)
-            for result in results:
-                if not "href=" in result:
-                    urls.append(result)
-                if result.endswith('/repodata/'):
-                    try:
-                        self._request(url="%s/%s" % (result, 'repomd.xml'))
-                        repourls.append(result[:result.rfind('/repodata/')])
-                    except:
-                        # repomd.xml could not be found, skip
-                        continue
+            results = []
             self.set_callback(progress_callback)
             self.progress_callback(num_of_urls=len(repourls))
+            uri = urls.pop()
+            if uri.endswith('/repodata/'):
+                self.__check_repomd_exists(repourls, uri)
+                continue
+            else:
+                results += self.parse_url(uri)
+                for result in results:
+                    if not "href=" in result:
+                        urls.append(result)
+                    if result.endswith('/repodata/'):
+                        self.__check_repomd_exists(repourls, result)
         # clean up the temp files
         self.clean()
         return repourls
+
+    def __check_repomd_exists(self, repourls, result):
+        try:
+            self._request(url="%s/%s" % (result, 'repomd.xml'))
+            repourls.append(result[:result.rfind('/repodata/')])
+        except:
+            log.debug("repomd.xml couldnt be found @ %s" % result)
 
 def discovery_progress_callback(progress):
     """
