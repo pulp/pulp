@@ -2,8 +2,9 @@
 
 import os
 import sys
-from create_ca import run_command
-from create_content_cert import parse_args
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/..")
+from base import run_command, get_parser
 
 def check_modulus(key, cert):
     cert_modulus = ""
@@ -23,12 +24,13 @@ def check_modulus(key, cert):
     return False
 
 if __name__ == "__main__":
-    opts, args = parse_args()
+    parser = get_parser()
+    opts, args = parser.parse_args()
 
-    ent_key = os.path.join(opts.dir, opts.ent_key)
-    ent_cert = os.path.join(opts.dir, opts.ent_cert)
-    ca_key = os.path.join(opts.dir, opts.ca_key)
-    ca_cert = os.path.join(opts.dir, opts.ca_cert)
+    ent_key = opts.ent_key
+    ent_cert = opts.ent_cert
+    ca_key = opts.ca_key
+    ca_cert = opts.ca_cert
 
     #Check the matching server/key.  They should have the same modulus
     if not check_modulus(ca_key, ca_cert):

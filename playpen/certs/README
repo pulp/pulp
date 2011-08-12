@@ -1,0 +1,66 @@
+Overview:
+Helper scripts to:
+ 1) generate a CA for apache with a CN of your server hostname
+ 2) generate a custom x509 entitlement cert to be used with Repo Authentication
+
+These scripts some notes Jason Dobies posted at:
+http://blog.pulpproject.org/2011/05/18/pulp-protected-repositories/
+
+Further reference, see RepoAuth wiki:
+https://fedorahosted.org/pulp/wiki/RepoAuth
+
+
+Usage:
+[Generate a CA with your hostname]
+    ./create_ca.py
+
+This will determine your hostname and set the CN to that.
+If you want to override anything see './create_ca.py --help'
+
+[Create a custom x509 entitlement cert]
+    ./create_content_cert.py
+
+This will use 'extensions.txt' and will add the info there into a x509 cert.
+It relies on the CA previously generated.
+If you want to override anything see './create_content_cert.py --help'
+
+
+[Create a test pulp repo with these certs]
+    ./create_test_repos.py
+
+This will create pulp repos from 'config_test_repos.cfg' with the previously generated certs
+
+Config:
+    config_pulp_certs.cfg - This has configuration options for the script, change cert names/locations here
+    config_test_repos.cfg - Config options for creating pulp repos
+    template_openssl.cnf - Openssl configuration template, we'll update 'REPLACE_COMMON_NAME' with the hostname
+    extensions.txt - These are the x509 extensions we'll add to the entitlement cert
+
+
+Example using defaults:
+
+./create_ca.py
+Running: openssl genrsa -out ./certs/Pulp_CA.key 2048
+Running: openssl req -new -x509 -days 365 -key ./certs/Pulp_CA.key -out ./certs/Pulp_CA.cert -config ./certs/openssl.cnf
+CA Key: ./certs/Pulp_CA.key
+CA Cert: ./certs/Pulp_CA.cert
+
+./create_content_cert.py
+Running: openssl genrsa -out ./certs/ent.key 2048
+Running: openssl req -new -key ./certs/ent.key -out ./certs/ent.csr -config ./certs/openssl.cnf
+Running: openssl x509 -req -days 365 -CA ./certs/Pulp_CA.cert -CAkey ./certs/Pulp_CA.key -extfile ./extensions.txt -extensions pulp-repos -in ./certs/ent.csr -out ./certs/ent.cert -CAserial ./certs/Pulp_CA.srl -CAcreateserial
+Entitlement Cert: ./certs/ent.cert
+Entitlement Key: ./certs/ent.key
+
+
+./create_test_repos.py
+Running: sudo pulp-admin repo create --id pulp_f15_i386 --feed http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/i386/ --consumer_ca ./certs/Pulp_CA.cert --consumer_cert ./certs/ent.cert --consumer_key ./certs/ent.key
+Running: sudo pulp-admin repo create --id pulp_f15_x86_64 --feed http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/ --consumer_ca ./certs/Pulp_CA.cert --consumer_cert ./certs/ent.cert --consumer_key ./certs/ent.key
+
+The output files we care about:
+CA Certificate:     certs/Pulp_CA.cert
+CA Key:             certs/Pulp_CA.key
+Ent Certificate:    certs/ent.cert
+Ent Key:            certs/ent.key
+
+
