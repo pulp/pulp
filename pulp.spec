@@ -479,6 +479,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-3
+- 730102 - compute the kickstart url on server when showing the distribution
+  list (pkilambi@redhat.com)
+
 * Wed Aug 10 2011 Jeff Ortel <jortel@redhat.com> 0.0.223-2
 - Bump release. (jortel@redhat.com)
 - Disable deepcopy of self.cfg for now since it's completely unsupported on
