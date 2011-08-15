@@ -16,7 +16,8 @@ from gettext import gettext as _
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.job import JobAPI
-from pulp.client.lib.utils import task_end, system_exit
+from pulp.client.api.task import task_end
+from pulp.client.utils import system_exit
 from pulp.client.pluginlib.command import Action, Command
 
 

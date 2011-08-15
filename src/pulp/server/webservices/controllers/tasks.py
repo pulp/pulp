@@ -29,7 +29,6 @@ Task object fields:
  * traceback, str or nil, a string print out of the trace back for the exception, if any
  * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
  * scheduled_time, str or nil, time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks
- * status_path, str, complete uri path to poll for the task's progress using http GET
  * snapshot_id, str, id of task's snapshot, if it has one
 TaskSnapshot object fields:
  * id, str, unique task id
@@ -57,6 +56,7 @@ from gettext import gettext as _
 
 from pulp.server import async
 from pulp.server.db.model.persistence import TaskSnapshot
+from pulp.server.auth.authorization import READ
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -66,7 +66,7 @@ from pulp.server.webservices.controllers.decorators import (
 class Tasks(JSONController):
 
     @error_handler
-    @auth_required(super_user_only=True)
+    @auth_required(READ)
     def GET(self):
         """
         [[wiki]]
@@ -112,7 +112,7 @@ class Tasks(JSONController):
 class Task(JSONController):
 
     @error_handler
-    @auth_required(super_user_only=True)
+    @auth_required(READ)
     def GET(self, id):
         """
         [[wiki]]

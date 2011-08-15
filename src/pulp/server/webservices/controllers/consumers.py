@@ -394,7 +394,6 @@ class ConsumerActions(JSONController):
             task.scheduler = AtScheduler(scheduled_time)
         async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
     def installpackagegroups(self, id):
@@ -414,7 +413,6 @@ class ConsumerActions(JSONController):
             task.scheduler = AtScheduler(scheduled_time)
         async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
     def installpackagegroupcategories(self, id):
@@ -445,7 +443,6 @@ class ConsumerActions(JSONController):
             task.scheduler = AtScheduler(scheduled_time)
         async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
     def installerrata(self, id):
@@ -469,7 +466,6 @@ class ConsumerActions(JSONController):
             task.scheduler = AtScheduler(scheduled_time)
         async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
     def listerrata(self, id):
@@ -537,23 +533,6 @@ class ConsumerActions(JSONController):
         return action(id)
 
 
-class ConsumerActionStatus(JSONController):
-
-    @error_handler
-    @auth_required(READ)
-    def GET(self, id, action_name, action_id):
-        """
-        Check the status of a package install operation.
-        @param id: repository id
-        @param action_name: name of the action
-        @param action_id: action id
-        @return: action status information
-        """
-        task_info = self.task_status(action_id)
-        if task_info is None:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        return self.ok(task_info)
-
 class ConsumerProfileUpdate(JSONController):
 
     @error_handler
@@ -605,10 +584,6 @@ URLS = (
 
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions),
     'ConsumerActions',
-
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerActions.exposed_actions),
-    'ConsumerActionStatus',
-
 )
 
 application = web.application(URLS, globals())

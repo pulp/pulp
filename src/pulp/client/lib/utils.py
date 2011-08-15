@@ -99,40 +99,20 @@ def parse_at_schedule(start):
     except isodate.ISO8601Error, e:
         system_exit(os.EX_USAGE, e.args[0])
 
-# task & job ------------------------------------------------------------------
-
-def task_end(task):
-    return task['state'] in ('finished', 'error', 'canceled', 'timed_out')
-
-def task_succeeded(task):
-    return task['state'] in ('finished',)
-
-def job_end(job):
-    for task in job['tasks']:
-        if not task_end(task):
-            return False
-    return True
-
-def job_succeeded(job):
-    for task in job['tasks']:
-        if not task_succeeded(task):
-            return False
-    return True
-
 # user I/O ---------------------------------------------------------------------
 
-def waitinit():
+def startwait():
     sys.stdout.write(_('Waiting: [-] '))
     sys.stdout.flush()
 
 def printwait():
-    symbols = '|/-\|/-\\'
+    symbols = '|/-\|/-\\|/-\|/-\\'
     for i in range(0,len(symbols)):
         sys.stdout.write('\b\b\b')
         sys.stdout.write(symbols[i])
         sys.stdout.write('] ')
         sys.stdout.flush()
-        time.sleep(0.5)
+        time.sleep(0.25)
 
 def askquestion(question):
     while True:

@@ -15,6 +15,13 @@ from pulp.client.api.base import PulpAPI
 from pulp.client.api.server import ServerRequestError
 
 
+def task_end(task):
+    return task['state'] in ('finished', 'error', 'canceled', 'timed_out')
+
+def task_succeeded(task):
+    return task['state'] in ('finished',)
+
+
 class TaskAPI(PulpAPI):
 
     def list(self, states=()):

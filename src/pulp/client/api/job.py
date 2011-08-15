@@ -13,6 +13,21 @@
 
 from pulp.client.api.base import PulpAPI
 from pulp.client.api.server import ServerRequestError
+from pulp.client.api.task import task_end, task_succeeded
+
+
+def job_end(job):
+    for task in job['tasks']:
+        if not task_end(task):
+            return False
+    return True
+
+def job_succeeded(job):
+    for task in job['tasks']:
+        if not task_succeeded(task):
+            return False
+    return True
+
 
 class JobAPI(PulpAPI):
 

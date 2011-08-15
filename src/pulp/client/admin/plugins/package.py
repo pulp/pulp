@@ -27,7 +27,8 @@ from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.file import FileAPI
-from pulp.client.api.job import JobAPI
+from pulp.client.api.job import JobAPI, job_end
+from pulp.client.api.task import TaskAPI, task_end, task_succeeded
 from pulp.client.api.package import PackageAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
@@ -35,8 +36,7 @@ from pulp.client.api.upload import UploadAPI
 from pulp.client.constants import UNAVAILABLE, PACKAGE_INFO
 from pulp.client.lib.utils import (
     print_header, parse_at_schedule, 
-    waitinit, printwait, askwait, askcontinue,
-    task_end, task_succeeded, job_end, job_succeeded)
+    startwait, printwait, askwait, askcontinue)
 from pulp.client.lib import utils
 from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.logutil import getLogger
@@ -56,6 +56,8 @@ class PackageAction(Action):
         self.service_api = ServiceAPI()
         self.file_api = FileAPI()
         self.package_api = PackageAPI()
+        self.job_api = JobAPI()
+        self.task_api = TaskAPI()
 
 # package actions -------------------------------------------------------------
 
@@ -132,25 +134,17 @@ class Install(PackageAction):
         print _('Task is scheduled for: %s') % when
         if not wait:
             utils.system_exit(0)
-        state = None
-        status = None
-        spath = task['status_path']
-        waitinit()
-        while state not in ('finished', 'error', 'canceled', 'timed_out'):
+        startwait()
+        while not task_end(task):
             printwait()
-            status = self.consumer_api.task_status(spath)
-            state = status['state']
-        if state == 'finished':
-            print _('\n%s installed on %s') % (status['result'][0], id)
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            print _('\n%s installed on %s') % (task['result'][0], id)
         else:
-            msg = _('\nPackage install failed: %s') % state
-            if status is not None and state == 'error':
-                msg += _('\nException: %s\nTraceback: %s') % \
-                        (status['exception'], status['traceback'])
-            utils.system_exit(-1, msg)
+            print _('\nInstall failed: %s' % task['exception'])
+            utils.system_exit(-1)
 
     def on_group(self, id, pnames):
-        japi = JobAPI()
         when = parse_at_schedule(self.opts.when)
         group = self.consumer_group_api.consumergroup(id)
         if not group:
@@ -160,9 +154,9 @@ class Install(PackageAction):
         job = self.consumer_group_api.installpackages(id, pnames, when=when)
         print _('Created job id: %s') % job['id']
         print _('Job is scheduled for: %s') % when
-        waitinit()
+        startwait()
         while not job_end(job):
-            job = japi.info(job['id'])
+            job = self.job_api.info(job['id'])
             printwait()
         print _('\nInstall Summary:')
         for t in job['tasks']:

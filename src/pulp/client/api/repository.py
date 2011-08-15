@@ -119,14 +119,6 @@ class RepositoryAPI(PulpAPI):
                 return task
         return None
 
-    def cancel_sync(self, repoid, taskid):
-        path = "/repositories/%s/sync/%s/" % (repoid, taskid)
-        return self.server.DELETE(path)[1]
-
-    def cancel_clone(self, repoid, taskid):
-        path = "/repositories/%s/clone/%s/" % (repoid, taskid)
-        return self.server.DELETE(path)[1]
-
     def add_package(self, repoid, packageid):
         addinfo = {'repoid': repoid, 'packageid': packageid}
         path = "/repositories/%s/add_package/" % repoid

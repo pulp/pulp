@@ -282,7 +282,6 @@ class CdsRedistribute(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
 class AssociatePackages(JSONController):
@@ -422,30 +421,8 @@ class RepoDiscovery(JSONController):
         task.set_progress('progress_callback', discovery_progress_callback)
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
-
         return self.accepted(task_info)
 
-class DiscoveryStatus(JSONController):
-
-    def GET(self, id):
-        """
-        [[wiki]]
-        title: Discovery Task status
-        description: Get status of an async task.
-        This method only works for actions that returned a 202 Accepted response.
-        e.g. /services/discovery/repo/<id>
-        method: GET
-        path: /services/discovery/repo/<id>
-        permission: READ
-        success response: 200 OK
-        failure response: None
-        return: Task objects
-        """
-        task = self.task_status(id)
-        if task is None:
-            return self.not_found('No task with id %s found' % id)
-        return self.ok(task)
 
 # web.py application ----------------------------------------------------------
 
@@ -466,7 +443,6 @@ URLS = (
     '/enable_global_repo_auth/$', 'EnableGlobalRepoAuth',
     '/disable_global_repo_auth/$', 'DisableGlobalRepoAuth',
     '/discovery/repo/$', 'RepoDiscovery',
-    '/discovery/repo/([^/]+)/$', 'DiscoveryStatus',
 )
 
 application = web.application(URLS, globals())

@@ -26,6 +26,7 @@ from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
+from pulp.client.api.task import TaskAPI, task_end, task_succeeded
 from pulp.client import constants
 from pulp.common.dateutils import (
     parse_iso8601_datetime, parse_iso8601_duration, parse_iso8601_interval,
@@ -61,6 +62,7 @@ class AdminRepoAction(RepoAction):
         self.service_api = ServiceAPI()
         self.file_api = FileAPI()
         self.repository_api = RepositoryAPI()
+        self.task_api = TaskAPI()
 
     def get_repo(self, id):
         """
@@ -566,10 +568,10 @@ class Clone(RepoProgressAction):
     def clone_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')
         try:
-            while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
+            while not task_end(task):
                 self.print_progress(task['progress'])
                 time.sleep(0.25)
-                task = self.repository_api.task_status(task['status_path'])
+                task = self.task_api.info(task['id'])
         except KeyboardInterrupt:
             print ''
             return
@@ -803,10 +805,10 @@ class Sync(RepoProgressAction):
     def sync_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')
         try:
-            while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
+            while not task_end(task):
                 self.print_progress(task['progress'])
                 time.sleep(0.25)
-                task = self.repository_api.task_status(task['status_path'])
+                task = self.task_api.info(task['id'])
         except KeyboardInterrupt:
             print ''
             return
@@ -862,10 +864,10 @@ class CancelSync(AdminRepoAction):
         if not syncs:
             utils.system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
         task = syncs[0]
-        if task['state'] not in ('waiting', 'running'):
+        if task_end(task):
             utils.system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
         taskid = task['id']
-        self.repository_api.cancel_sync(str(id), str(taskid))
+        self.task_api.cancel(taskid)
         print _("Sync for repository %s is being canceled") % id
 
 
@@ -881,10 +883,10 @@ class CancelClone(AdminRepoAction):
         if not clones:
             utils.system_exit(os.EX_OK, _('There is no clone in progress for this repository'))
         task = clones[0]
-        if task['state'] not in ('waiting', 'running'):
+        if task_end(task):
             utils.system_exit(os.EX_OK, _('There is no clone in progress for this repository'))
         taskid = task['id']
-        self.repository_api.cancel_clone(str(id), str(taskid))
+        self.task_api.cancel(taskid)
         print _("Clone for this repository %s is being canceled") % id
 
 
@@ -1595,10 +1597,10 @@ class Discovery(RepoProgressAction):
         except Exception,e:
             utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
-        while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
+        while not task_end(task):
             self.print_discovery_progress(task['progress'])
             time.sleep(0.25)
-            task = self.service_api.task_status(task['status_path'])
+            task = self.task_api.info(task['id'])
 
         repourls = task['result'] or []
 

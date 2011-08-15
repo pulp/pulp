@@ -65,7 +65,6 @@ Task object fields:
  * traceback, str or nil, a string print out of the trace back for the exception, if any
  * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
  * scheduled_time, str or nil, time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks
- * status_path, str, complete uri path to poll for the task's progress using http GET
 Progress object fields:
  * step, str, name of the step the pulp library call is on
  * items_total, int, the total number of items to be processed by the call
@@ -635,7 +634,6 @@ class RepositoryActions(JSONController):
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     # XXX hack to make the web services unit tests work
@@ -662,7 +660,6 @@ class RepositoryActions(JSONController):
         if not task:
             return self.conflict('Metadata generation already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     def add_metadata(self, id):
@@ -803,7 +800,6 @@ class RepositoryActions(JSONController):
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
 
@@ -1398,54 +1394,8 @@ class RepositoryActions(JSONController):
         task_infos = []
         for task in tasks:
             info = self._task_to_dict(task)
-            info['status_path'] = self._status_path(task.id)
             task_infos.append(info)
         return self.ok(task_infos)
-
-
-class RepositoryActionStatus(JSONController):
-
-    @error_handler
-    @auth_required(EXECUTE) # this is checking an execute, not reading a resource
-    def GET(self, id, action_name, action_id):
-        """
-        [[wiki]]
-        title: Action Status
-        description: Check the status of a previously returned task.
-        This url path should match the status_uri of a Task object.
-        method: GET
-        path: /repositories/<id>/<action name>/<task id>/
-        permission: EXECUTE
-        success response: 200 OK
-        failure response: 404 Not Found if the task id does not match a task for the repository
-        return: Task object
-        """
-        task_info = self.task_status(action_id)
-        if task_info is None:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        return self.ok(task_info)
-
-    @error_handler
-    @auth_required(EXECUTE) # this is stopping an execute, not deleting a resource
-    def DELETE(self, id, action_name, action_id):
-        """
-        [[wiki]]
-        title: Cancel A Task
-        description:
-        method: DELETE
-        path: /repositories/<id>/<action name>/<task id>/
-        permission: READ
-        success response: 202 Accepted
-         204 No Content if the task has already finished
-        failure response: 404 Not Found if the task id does nat match a task for the repository
-        return: Task object on 202
-        """
-        tasks = async.find_async(id=action_id)
-        if not tasks:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        task = tasks[0]
-        async.cancel_async(task)
-        return self.accepted(self._task_to_dict(task))
 
 
 class Schedules(JSONController):
@@ -1514,9 +1464,6 @@ urls = (
 
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions),
     'RepositoryActions',
-
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions),
-    'RepositoryActionStatus',
 
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
     'RepositoryTaskHistory',

@@ -160,7 +160,6 @@ class CdsActions(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     def unassociate(self, id):
@@ -178,7 +177,6 @@ class CdsActions(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     def history(self, id):
@@ -259,7 +257,6 @@ class CdsSyncActions(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     @error_handler
@@ -279,24 +276,9 @@ class CdsSyncActions(JSONController):
         all_task_infos = []
         for task in tasks:
             info = self._task_to_dict(task)
-            info['status_path'] = self._status_path(task.id)
             all_task_infos.append(info)
 
         return self.ok(all_task_infos)
-
-
-class CdsSyncTaskStatus(JSONController):
-
-    @error_handler
-    @auth_required(READ)
-    def GET(self, id, task_id):
-        '''
-        Returns the state of an individual CDS sync task.
-        '''
-        task_info = self.task_status(task_id)
-        if task_info is None:
-            return self.not_found('No sync with id [%s] found' % task_id)
-        return self.ok(task_info)
 
 
 class CDSTaskHistory(JSONController):
@@ -335,7 +317,6 @@ urls = (
     '/$', 'CdsInstances',
     '/([^/]+)/(%s)/$' % '|'.join(CdsActions.exposed_actions), 'CdsActions',
     '/([^/]+)/sync/$', 'CdsSyncActions',
-    '/([^/]+)/sync/([^/]+)/$', 'CdsSyncTaskStatus',
     '/([^/]+)/$', 'CdsInstance',
 
     '/([^/]+)/history/(%s)/$' % '|'.join(CDSTaskHistory.available_histories),

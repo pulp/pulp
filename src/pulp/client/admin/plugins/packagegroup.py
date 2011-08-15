@@ -23,8 +23,9 @@ from gettext import gettext as _
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
+from pulp.client.api.task import TaskAPI, task_end, task_succeeded
 import pulp.client.constants as constants
-from pulp.client.lib.utils import (print_header, system_exit, waitinit,
+from pulp.client.lib.utils import (print_header, system_exit, startwait,
     printwait)
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
@@ -40,6 +41,7 @@ class PackageGroupAction(Action):
         super(PackageGroupAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.repository_api = RepositoryAPI()
+        self.task_api = TaskAPI()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -243,17 +245,14 @@ class Install(PackageGroupAction):
         pkggroupid = self.get_required_option('id')
         task = self.consumer_api.installpackagegroups(consumerid, pkggroupid)
         print _('Created task id: %s') % task['id']
-        state = None
-        spath = task['status_path']
-        waitinit()
-        while state not in ('finished', 'error', 'canceled', 'timed_out'):
+        startwait()
+        while not task_end(task):
             printwait()
-            status = self.consumer_api.task_status(spath)
-            state = status['state']
-        if state == 'finished':
-            print _('\n[%s] installed on %s') % (status['result'], consumerid)
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            print _('\n[%s] installed on %s') % (task['result'], consumerid)
         else:
-            print("\nPackage group install failed")
+            print("\nInstall failed:\n%s", task['exception'])
 
 
 # --- Package Group Category Operations ---
@@ -379,16 +378,12 @@ class InstallCategory(PackageGroupAction):
         task = self.consumer_api.installpackagegroupcategories(consumerid,
                 repoid, categoryid)
         print _('Created task id: %s') % task['id']
-        state = None
-        spath = task['status_path']
-        while state not in ('finished', 'error', 'canceled', 'timed_out'):
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            time.sleep(2)
-            status = self.consumer_api.task_status(spath)
-            state = status['state']
-        if state == 'finished':
-            print _('\n[%s] installed on %s') % (status['result'], consumerid)
+        startwait()
+        while not task_end(task):
+            printwait()
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            print _('\n[%s] installed on %s') % (task['result'], consumerid)
         else:
             print("\nPackage group category install failed")
 

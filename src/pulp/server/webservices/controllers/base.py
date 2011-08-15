@@ -103,32 +103,6 @@ class JSONController(object):
         return d
 
 
-    def _status_path(self, id):
-        """
-        Construct a URL path that can be used to poll a task's status
-        A status path is constructed as follows:
-        /<collection>/<object id>/<action>/<action id>/
-        A GET request sent to this path will get a JSON encoded status object
-        """
-        parts = web.ctx.path.split('/')
-        if parts[-2] == id:
-            return http.uri_path()
-        return http.extend_uri_path(id)
-
-    def task_status(self, id):
-        """
-        Get the current status of an asynchronous task.
-        @param id: task id
-        @return: TaskModel instance
-        """
-        tasks = async.find_async(id=id)
-        if not tasks:
-            return None
-        task = tasks[0]
-        status = self._task_to_dict(task)
-        status.update({'status_path': self._status_path(id)})
-        return status
-
     def filter_results(self, results, filters):
         """
         @deprecated: use mongo.filters_to_re_spec and pass the result into
@@ -202,7 +176,6 @@ class JSONController(object):
         @return: JSON encoded response
         """
         http.status_accepted()
-        status.update({'status_path': self._status_path(status['id'])})
         return self._output(status)
 
     def no_content(self):

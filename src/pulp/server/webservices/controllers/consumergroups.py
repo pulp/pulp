@@ -258,24 +258,6 @@ class ConsumerGroupActions(JSONController):
         return action(id)
 
 
-class ConsumerGroupActionStatus(JSONController):
-
-    @error_handler
-    @auth_required(EXECUTE) # this is checking an execute, not reading a resource
-    def GET(self, id, action_name, action_id):
-        """
-        Check the status of a package group install operation.
-        @param id: repository id
-        @param action_name: name of the action
-        @param action_id: action id
-        @return: action status information
-        """
-        task_info = self.task_status(action_id)
-        if task_info is None:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        return self.ok(task_info)
-
-
 # web.py application ----------------------------------------------------------
 
 URLS = (
@@ -283,9 +265,6 @@ URLS = (
     '/([^/]+)/$', 'ConsumerGroup',
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
     'ConsumerGroupActions',
-
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
-    'ConsumerGroupActionStatus',
 )
 
 application = web.application(URLS, globals())

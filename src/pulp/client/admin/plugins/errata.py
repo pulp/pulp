@@ -23,6 +23,8 @@ from optparse import OptionGroup
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client import constants
+from pulp.client.api.job import JobAPI, job_end
+from pulp.client.api.task import TaskAPI, task_end, task_succeeded
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
 from pulp.client.plugins.errata import ErrataAction, Errata, List
@@ -107,6 +109,11 @@ class Install(ErrataAction):
     name = "install"
     description = _('install errata on a consumer')
 
+    def __init__(self, cfg):
+        super(Install, self).__init__(cfg)
+        self.job_api = JobAPI()
+        self.task_api = TaskAPI()
+
     def setup_parser(self):
         self.parser.add_option("-e", "--erratum", action="append", dest="id",
                                help=_("id of the erratum to be installed; to specify multiple erratum use multiple uses of this flag"))
@@ -159,25 +166,21 @@ class Install(ErrataAction):
                 errataids,
                 assumeyes=assumeyes)
         print _('Created task id: %s') % task['id']
-        utils.waitinit()
-        spath = task['status_path']
-        while True:
+        utils.startwait()
+        while not task_end(task):
             utils.printwait()
-            status = self.consumer_api.task_status(spath)
-            state = status['state']
-            if state == 'finished':
-                installed, reboot = status['result']
-                if installed:
-                    print _('\nErrata applied to [%s]; packages installed: %s' % \
-                            (id, installed))
-                else:
-                    print _('\nErrata applied to [%s]; no packages installed' % id)
-                if reboot[0] and not reboot[1]:
-                    print _('Please reboot at your earliest convenience')
-                break
-            if state == 'error':
-                print("\nErrata install failed")
-                break
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            installed, reboot = status['result']
+            if installed:
+                print _('\nErrata applied to [%s]; packages installed: %s' % \
+                       (id, installed))
+            else:
+                print _('\nErrata applied to [%s]; no packages installed' % id)
+            if reboot[0] and not reboot[1]:
+                print _('Please reboot at your earliest convenience')
+        else:
+            print("\nErrata install failed: %s" % task['exception'])
 
     def on_group(self, id, errataids, assumeyes):
         group = self.consumer_group_api.consumergroup(id)
@@ -189,8 +192,8 @@ class Install(ErrataAction):
                 errataids,
                 assumeyes=assumeyes)
         print _('Created job id: %s') % job['id']
-        utils.waitinit()
-        while not utils.job_end(job):
+        utils.startwait()
+        while not job_end(job):
             job = self.job_api.info(job['id'])
             utils.printwait()
         print _('\nInstall Summary:')
