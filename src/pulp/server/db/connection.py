@@ -114,7 +114,7 @@ class PulpCollection(Collection):
         return get_collection(state['name'])
 
 
-# collection factory -----------------------------------------------------------
+# -- public --------------------------------------------------------------------
 
 def get_collection(name, create=False):
     """
@@ -126,3 +126,10 @@ def get_collection(name, create=False):
         raise PulpCollectionFailure(_('Cannot get collection from uninitialized database'))
     retries = config.config.getint('database', 'operation_retries')
     return PulpCollection(_database, name, retries=retries, create=create)
+
+def database():
+    """
+    @return: reference to the mongo database being used by the server
+    @rtype:  L{pymongo.database.Database}
+    """
+    return _database
