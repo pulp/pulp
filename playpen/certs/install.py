@@ -28,6 +28,10 @@ def update_httpd_config(ca_key, ca_cert, httpd_ssl_confd="/etc/httpd/conf.d/ssl.
         return False
     return True
 
+def enable_repo_auth(repo_auth_config="/etc/pulp/repo_auth.conf"):
+    cmd = "sed -i 's/enabled: false/enabled: true/' %s" % (repo_auth_config)
+    return run_command(cmd)
+
 def restart_httpd():
     cmd = "service httpd restart"
     return run_command(cmd)
@@ -55,8 +59,16 @@ if __name__ == "__main__":
         print "Error installing ca_cert"
         sys.exit(1)
 
-    update_httpd_config(installed_ca_key, installed_ca_cert)
+    if not update_httpd_config(installed_ca_key, installed_ca_cert):
+        print "Error updating httpd"
+        sys.exit(1)
     print "Httpd ssl.conf has been updated"
 
-    restart_httpd()
+    if not enable_repo_auth():
+        print "Error enabling repo auth"
+        sys.exit(1)
+
+    if not restart_httpd():
+        print "Error restarting httpd"
+        sys.exit(1)
 
