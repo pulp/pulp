@@ -29,7 +29,7 @@ from pulp.client.api.job import JobAPI, job_end
 from pulp.client.api.task import TaskAPI, task_end, task_succeeded
 import pulp.client.constants as constants
 from pulp.client.lib.utils import (
-    print_header, system_exit, askwait,
+    print_header, system_exit, askwait, parse_at_schedule,
     askcontinue, startwait, printwait)
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
@@ -253,8 +253,11 @@ class Install(PackageGroupAction):
         self.parser.add_option_group(id_group)
         self.parser.add_option("--nowait", dest="nowait", default=False,
             action="store_true",
-            help=_("if specified, don't wait for the package install to finish, "
+            help=_("if specified, don't wait for the install to finish, "
             "return immediately."))
+        self.parser.add_option("--when", dest="when", default=None,
+                               help=_("specifies when to execute the install.  "
+                               "Format: iso8601, YYYY-MM-DDThh:mm"))
 
     def run(self):
         grpids = self.get_required_option('id')
@@ -266,9 +269,12 @@ class Install(PackageGroupAction):
             self.on_group(consumergroupid, grpids)
 
     def on_consumer(self, id, grpids):
+        when = parse_at_schedule(self.opts.when)
         wait = self.getwait([id,])
-        task = self.consumer_api.installpackagegroups(id, grpids)
+        task = self.consumer_api.installpackagegroups(id, grpids, when=when)
         print _('Created task id: %s') % task['id']
+        if when:
+            print _('Task is scheduled for: %s') % when
         if not wait:
             system_exit(0)
         startwait()
@@ -281,13 +287,18 @@ class Install(PackageGroupAction):
             print("\nInstall failed: %s" % task['exception'])
 
     def on_group(self, id, grpids):
+        when = parse_at_schedule(self.opts.when)
         group = self.consumer_group_api.consumergroup(id)
         if not group:
             system_exit(-1,
                 _('Invalid group: %s' % id))
         wait = self.getwait(group['consumerids'])
-        job = self.consumer_group_api.installpackagegroups(id, grpids)
+        job = self.consumer_group_api.installpackagegroups(id, grpids, when=when)
         print _('Created job id: %s') % job['id']
+        if when:
+            print _('Job is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
         startwait()
         while not job_end(job):
             job = self.job_api.info(job['id'])

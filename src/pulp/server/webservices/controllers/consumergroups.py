@@ -18,6 +18,7 @@ from gettext import gettext as _
 
 import web
 
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
@@ -214,8 +215,9 @@ class ConsumerGroupActions(JSONController):
         scheduled_time = data.get('scheduled_time', None)
         for task in job.tasks:
             if scheduled_time is not None:
-                scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-                task.scheduler = AtScheduler(scheduled_time)
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
             async.enqueue(task, unique=False)
         jobdict = self._job_to_dict(job)
         return self.ok(jobdict)
@@ -231,8 +233,9 @@ class ConsumerGroupActions(JSONController):
         scheduled_time = data.get('scheduled_time', None)
         for task in job.tasks:
             if scheduled_time is not None:
-                scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-                task.scheduler = AtScheduler(scheduled_time)
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
             async.enqueue(task, unique=False)
         jobdict = self._job_to_dict(job)
         return self.ok(jobdict)
@@ -252,8 +255,9 @@ class ConsumerGroupActions(JSONController):
         for task in job.tasks:
             scheduled_time = data.get('scheduled_time', None)
             if scheduled_time is not None:
-                scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-                task.scheduler = AtScheduler(scheduled_time)
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
             async.enqueue(task, unique=False)
         jobdict = self._job_to_dict(job)
         return self.ok(jobdict)
