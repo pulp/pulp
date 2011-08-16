@@ -33,13 +33,12 @@ def revoke_cert(crl_path, cert_to_revoke, ca_cert, ca_key, ssl_conf):
     return True
 
 if __name__ == "__main__":
-    parser = get_parser()
+    parser = get_parser(limit_options=["index", "crlnumber", "ssl_conf_server", "ca_key", "ca_cert", "crl"])
     (opts, args) = parser.parse_args()
 
     index = opts.index
     crlnumber = opts.crlnumber
-    ssl_conf = opts.ssl_conf
-    ent_cert = opts.ent_cert
+    ssl_conf = opts.ssl_conf_server
     ca_key = opts.ca_key
     ca_cert = opts.ca_cert
     crl = opts.crl
@@ -51,7 +50,7 @@ if __name__ == "__main__":
 
     cert_to_revoke = args[0]
 
-    if not update_openssl_config(ssl_conf, ssl_conf, index=opts.index, crlnumber=opts.crlnumber):
+    if not update_openssl_config(ssl_conf, ssl_conf, index=index, crlnumber=crlnumber):
         print "Failed to create cert configuration file"
         sys.exit(1)
 

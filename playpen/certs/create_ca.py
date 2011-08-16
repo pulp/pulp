@@ -9,29 +9,25 @@ import socket
 import sys
 import subprocess
 
-from base import get_parser, run_command, update_openssl_config
+from base import get_parser, run_command, update_openssl_config, check_dirs
 
 def create_ca_key(ca_key_name):
+    check_dirs(ca_key_name)
     cmd = "openssl genrsa -out %s 2048" % (ca_key_name)
     return run_command(cmd)
 
 def create_ca_cert(ca_key_name, ca_cert_name, config_file):
+    check_dirs(ca_key_name)
     cmd = ("openssl req -new -x509 -days 365 -key %s -out %s -config %s") % (ca_key_name, ca_cert_name, config_file)
     return run_command(cmd)
 
 if __name__ == "__main__":
-    parser = get_parser()
+    parser = get_parser(limit_options=["ca_key", "ca_cert", "ssl_conf_ca"])
     (opts, args) = parser.parse_args()
 
     ca_key = opts.ca_key
     ca_cert = opts.ca_cert
-    ssl_conf_template = opts.ssl_conf_template
-    ssl_conf = opts.ssl_conf
-    hostname = opts.hostname
-
-    if not update_openssl_config(ssl_conf_template, ssl_conf, hostname):
-        print "Failed to create cert configuration file"
-        sys.exit(1)
+    ssl_conf = opts.ssl_conf_ca
 
     if not create_ca_key(ca_key):
         print "Failed to create CA key"

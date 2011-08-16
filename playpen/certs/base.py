@@ -8,6 +8,10 @@ import subprocess
 import sys
 from optparse import OptionParser
 
+def check_dirs(p):
+    if not os.path.exists(os.path.dirname(p)):
+        os.makedirs(os.path.dirname(p))
+
 def update_openssl_config(template_file, output_name, hostname=None, index=None, crlnumber=None):
     if not hostname:
         hostname = socket.gethostname()
@@ -40,9 +44,6 @@ def run_command(cmd, verbose=True):
         return False
     return True, out_msg, err_msg
 
-def get_hostname():
-    return socket.gethostname()
-
 def get_config(filename='config_pulp_certs.cfg', section='certs'):
     config = ConfigParser.ConfigParser()
     config.read(filename)
@@ -66,6 +67,11 @@ def get_parser(config=None, parser=None, description=None, limit_options=None):
                 continue
         value = config[item]
         parser.add_option('--%s' % (item), action='store', help="Default value: %s" % value, default=value)
-    parser.add_option('--hostname', action='store', help="Default value: %s" % (get_hostname()), default=get_hostname())
     return parser
 
+def add_hostname_option(parser, hostname=None):
+    if not hostname:
+        hostname = socket.gethostname()
+    parser.add_option('--hostname', action='store', 
+            help="Default value: %s" % (hostname), default=hostname)
+    return parser
