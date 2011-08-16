@@ -27,8 +27,6 @@ if __name__ == "__main__":
     parser = get_parser()
     (opts, args) = parser.parse_args()
 
-    ca_key = opts.ca_key
-    ca_cert = opts.ca_cert
     ssl_conf_template = opts.ssl_conf_template
     ssl_conf = opts.ssl_conf
     hostname = opts.hostname

@@ -42,17 +42,17 @@ default_ca	= CA_default		# The default ca section
 dir		= ./		# Where everything is kept
 certs		= $dir/certs		# Where the issued certs are kept
 crl_dir		= $certs		# Where the issued crl are kept
-database	= $certs/index.txt	# database index file.
+database	= REPLACE_INDEX_FILE 	# database index file.
 #unique_subject	= no			# Set to 'no' to allow creation of
 					# several ctificates with same subject.
 new_certs_dir	= $certs		# default place for new certs.
 
 certificate	= $dir/cacert.pem 	# The CA certificate
 serial		= $certs/serial 		# The current serial number
-crlnumber	= $certs/crlnumber	# the current crl number
+crlnumber	= REPLACE_CRLNUMBER 	# the current crl number
 					# must be commented out to leave a V1 CRL
 crl		= $dir/crl.pem 		# The current CRL
-private_key	= $dir/private/cakey.pem# The private key
+private_key	= $dir/private/cakey.pem # The private key
 RANDFILE	= $dir/private/.rand	# private random number file
 
 x509_extensions	= usr_cert		# The extentions to add to the cert

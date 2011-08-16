@@ -8,7 +8,7 @@ import subprocess
 import sys
 from optparse import OptionParser
 
-def update_openssl_config(template_file, output_name, hostname=None):
+def update_openssl_config(template_file, output_name, hostname=None, index=None, crlnumber=None):
     if not hostname:
         hostname = socket.gethostname()
     d = os.path.dirname(output_name)
@@ -18,8 +18,12 @@ def update_openssl_config(template_file, output_name, hostname=None):
         print "Unable to find template file for openssl configuration: %s" % (template_file)
         return False
     template = open(template_file, "r").read()
-    data = template.replace("REPLACE_COMMON_NAME", hostname)
-    out_file = open(output_name, "w").write(data)
+    template = template.replace("REPLACE_COMMON_NAME", hostname)
+    if index:
+        template = template.replace("REPLACE_INDEX_FILE", index)
+    if crlnumber:
+        template = template.replace("REPLACE_CRLNUMBER", crlnumber)
+    out_file = open(output_name, "w").write(template)
     return True
 
 def run_command(cmd, verbose=True):

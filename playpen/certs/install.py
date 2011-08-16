@@ -11,6 +11,10 @@ import subprocess
 
 from base import get_parser, run_command
 
+def restart_httpd():
+    cmd = "service httpd restart"
+    return run_command(cmd)
+
 def copy_file(src, dst):
     cmd = "cp %s %s" % (src, dst)
     if not run_command(cmd):
@@ -32,14 +36,9 @@ def enable_repo_auth(repo_auth_config="/etc/pulp/repo_auth.conf"):
     cmd = "sed -i 's/enabled: false/enabled: true/' %s" % (repo_auth_config)
     return run_command(cmd)
 
-def restart_httpd():
-    cmd = "service httpd restart"
-    return run_command(cmd)
-
-
 if __name__ == "__main__":
     default_install_dir = "/etc/pki/content"
-    parser = get_parser()
+    parser = get_parser(limit_options=["ca_key", "ca_cert"])
     parser.add_option("--install_dir", action="store", 
             help="Install directory for CA cert/key.  Default is %s" % (default_install_dir), 
             default=default_install_dir)
