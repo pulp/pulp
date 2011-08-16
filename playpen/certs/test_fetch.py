@@ -14,6 +14,8 @@ if __name__ == "__main__":
 
     url = "https://%s/pulp/repos/repos/pulp/pulp/fedora-15/i386/repodata/repomd.xml" % (hostname)
     cmd = "curl --cacert %s --cert %s --key %s %s" % (ca_cert, ent_cert, ent_key, url)
-    state, out, err = run_command(cmd)
-    print "%s" % (out)
-    print "%s" % (err)
+    result = run_command(cmd)
+    if result:
+        state, out, err = result
+        print "%s" % (out)
+        print "%s" % (err)
