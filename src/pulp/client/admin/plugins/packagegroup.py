@@ -19,14 +19,18 @@ import os
 import sys
 import time
 from gettext import gettext as _
-
+from optparse import OptionGroup
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.consumergroup import ConsumerGroupAPI
+from pulp.client.api.service import ServiceAPI
 from pulp.client.api.repository import RepositoryAPI
+from pulp.client.api.job import JobAPI, job_end
 from pulp.client.api.task import TaskAPI, task_end, task_succeeded
 import pulp.client.constants as constants
-from pulp.client.lib.utils import (print_header, system_exit, startwait,
-    printwait)
+from pulp.client.lib.utils import (
+    print_header, system_exit, askwait,
+    askcontinue, startwait, printwait)
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
 
@@ -40,7 +44,10 @@ class PackageGroupAction(Action):
     def __init__(self, cfg):
         super(PackageGroupAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
-        self.repository_api = RepositoryAPI()
+        self.consumergroup_api = ConsumerGroupAPI()
+        self.consumer_group_api = ConsumerGroupAPI()
+        self.service_api = ServiceAPI()
+        self.job_api = JobAPI()
         self.task_api = TaskAPI()
 
     def setup_parser(self):
@@ -237,22 +244,93 @@ class Install(PackageGroupAction):
     def setup_parser(self):
         self.parser.add_option("--id", dest="id", action="append",
                                help=_("package group id (required)"))
-        self.parser.add_option("--consumerid", dest="consumerid",
-                               help=_("consumer id (required)"))
+        id_group = OptionGroup(self.parser,
+                               _('Consumer or Consumer Group id (one is required'))
+        id_group.add_option("--consumerid", dest="consumerid",
+                            help=_("consumer id"))
+        id_group.add_option("--consumergroupid", dest="consumergroupid",
+                            help=_("consumer group id"))
+        self.parser.add_option_group(id_group)
+        self.parser.add_option("--nowait", dest="nowait", default=False,
+            action="store_true",
+            help=_("if specified, don't wait for the package install to finish, "
+            "return immediately."))
 
     def run(self):
-        consumerid = self.get_required_option('consumerid')
-        pkggroupid = self.get_required_option('id')
-        task = self.consumer_api.installpackagegroups(consumerid, pkggroupid)
+        grpids = self.get_required_option('id')
+        consumerid = self.opts.consumerid
+        consumergroupid = self.opts.consumergroupid
+        if consumerid:
+            self.on_consumer(consumerid, grpids)
+        else:
+            self.on_group(consumergroupid, grpids)
+
+    def on_consumer(self, id, grpids):
+        wait = self.getwait([id,])
+        task = self.consumer_api.installpackagegroups(id, grpids)
         print _('Created task id: %s') % task['id']
+        if not wait:
+            system_exit(0)
         startwait()
         while not task_end(task):
             printwait()
             task = self.task_api.info(task['id'])
         if task_succeeded(task):
-            print _('\n[%s] installed on %s') % (task['result'], consumerid)
+            print _('\n%s installed on %s') % (task['result'], id)
         else:
-            print("\nInstall failed:\n%s", task['exception'])
+            print("\nInstall failed: %s" % task['exception'])
+
+    def on_group(self, id, grpids):
+        group = self.consumer_group_api.consumergroup(id)
+        if not group:
+            system_exit(-1,
+                _('Invalid group: %s' % id))
+        wait = self.getwait(group['consumerids'])
+        job = self.consumer_group_api.installpackagegroups(id, grpids)
+        print _('Created job id: %s') % job['id']
+        startwait()
+        while not job_end(job):
+            job = self.job_api.info(job['id'])
+            printwait()
+        print _('\nInstall Summary:')
+        for t in job['tasks']:
+            state = t['state']
+            exception = t['exception']
+            id, packages = t['args']
+            if exception:
+                details = str(exception)
+            else:
+                details = 'groups installed: %s' %  t['result']
+            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+
+    def getunavailable(self, ids):
+        lst = []
+        stats = self.service_api.agentstatus(ids)
+        for id in ids:
+            stat = stats[id]
+            if stat[0]:
+                continue
+            lst.append(id)
+        return lst
+
+    def printunavailable(self, ualist):
+        if ualist:
+            sys.stdout.write(constants.UNAVAILABLE)
+            for id in ualist:
+                print id
+
+    def getwait(self, ids):
+        wait = not self.opts.nowait
+        ualist = self.getunavailable(ids)
+        if ualist:
+            self.printunavailable(ualist)
+            if not askcontinue():
+                system_exit(0)
+            # The consumer is unavailable, if wait was specified, verify that
+            # we still want to wait.
+            if wait:
+                wait = askwait()
+        return wait
 
 
 # --- Package Group Category Operations ---

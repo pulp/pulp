@@ -209,7 +209,8 @@ Finish Time         \t%-25s'''
 UNAVAILABLE = '''
 The following consumers appear to be unavailable.
 You may continue with the understanding that your request
-will not complete until all consumers have processed the request.
+will not complete until all consumers have processed the request
+or the request has timed out.
 
 Unavailable Consumers
 ------------------------------

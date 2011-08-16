@@ -123,6 +123,7 @@ class ConsumerGroupActions(JSONController):
         'add_consumer',
         'delete_consumer',
         'installpackages',
+        'installpackagegroups',
         'installerrata',
     )
 
@@ -210,6 +211,23 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         names = data.get('packagenames', [])
         job = api.installpackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+                task.scheduler = AtScheduler(scheduled_time)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
+
+    def installpackagegroups(self, id):
+        """
+        Install package groups.
+        Body contains a list of package group names.
+        """
+        data = self.params()
+        grpids = data.get('grpids', [])
+        job = api.installpackagegroups(id, grpids)
         scheduled_time = data.get('scheduled_time', None)
         for task in job.tasks:
             if scheduled_time is not None:

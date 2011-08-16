@@ -35,9 +35,8 @@ from pulp.client.api.service import ServiceAPI
 from pulp.client.api.upload import UploadAPI
 from pulp.client.constants import UNAVAILABLE, PACKAGE_INFO
 from pulp.client.lib.utils import (
-    print_header, parse_at_schedule, 
+    print_header, parse_at_schedule, system_exit,
     startwait, printwait, askwait, askcontinue)
-from pulp.client.lib import utils
 from pulp.client.pluginlib.command import Action, Command
 from pulp.client.lib.logutil import getLogger
 
@@ -77,7 +76,7 @@ class Info(PackageAction):
         repoid = self.get_required_option('repoid')
         pkg = self.repository_api.get_package(repoid, name)
         if not pkg:
-            utils.system_exit(os.EX_DATAERR,
+            system_exit(os.EX_DATAERR,
                         _("Package [%s] not found in repo [%s]") %
                         (name, repoid))
         print_header(_("Package Information"))
@@ -116,11 +115,11 @@ class Install(PackageAction):
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
-            utils.system_exit(os.EX_USAGE,
+            system_exit(os.EX_USAGE,
                         _("Consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            utils.system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
+            system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
         if consumergroupid:
             self.on_group(consumergroupid, pnames)
         else:
@@ -133,7 +132,7 @@ class Install(PackageAction):
         print _('Created task id: %s') % task['id']
         print _('Task is scheduled for: %s') % when
         if not wait:
-            utils.system_exit(0)
+            system_exit(0)
         startwait()
         while not task_end(task):
             printwait()
@@ -142,7 +141,7 @@ class Install(PackageAction):
             print _('\n%s installed on %s') % (task['result'][0], id)
         else:
             print _('\nInstall failed: %s' % task['exception'])
-            utils.system_exit(-1)
+            system_exit(-1)
 
     def on_group(self, id, pnames):
         when = parse_at_schedule(self.opts.when)
@@ -192,7 +191,7 @@ class Install(PackageAction):
         if ualist:
             self.printunavailable(ualist)
             if not askcontinue():
-                utils.system_exit(0)
+                system_exit(0)
             # The consumer is unavailable, if wait was specified, verify that
             # we still want to wait.
             if wait:
@@ -229,7 +228,7 @@ class Search(PackageAction):
         pkgs = self.service_api.search_packages(name=name, epoch=epoch, version=version,
                 release=release, arch=arch, filename=filename)
         if not pkgs:
-            utils.system_exit(os.EX_DATAERR, _("No packages found."))
+            system_exit(os.EX_DATAERR, _("No packages found."))
 
         name_field_size = self.get_field_size(pkgs, field_name="name")
         evra_field_size = self.get_field_size(pkgs, msg="%s:%s-%s.%s",
@@ -279,12 +278,12 @@ class DependencyList(PackageAction):
     def run(self):
 
         if not self.opts.pnames:
-            utils.system_exit(os.EX_DATAERR, \
+            system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
         repoid = [ r for r in self.opts.repoid or [] if len(r)]
 
         if not self.opts.repoid or not repoid:
-            utils.system_exit(os.EX_DATAERR, \
+            system_exit(os.EX_DATAERR, \
                         _("At least one repoid is required to lookup dependencies."))
 
         pnames = self.opts.pnames
@@ -297,17 +296,17 @@ class DependencyList(PackageAction):
                 continue
             repos.append(rid)
         if not repos:
-            utils.system_exit(os.EX_DATAERR)
+            system_exit(os.EX_DATAERR)
         deps = self.service_api.dependencies(pnames, repos)
         if not deps['printable_dependency_result']:
-            utils.system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
+            system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
                         (pnames, repos))
         print_header(_("Dependencies for package(s) [%s]" % pnames))
 
         print deps['printable_dependency_result']
         print_header(_("Suggested Packages in Repo [%s]" % repos))
         if not deps['resolved']:
-            utils.system_exit(os.EX_OK, _("None"))
+            system_exit(os.EX_OK, _("None"))
         for dep, pkgs in deps['resolved'].items():
             for pkg in pkgs:
                 print str(pkg['filename'])

@@ -404,7 +404,7 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        ids = data.get('packageids', [])
+        ids = data.get('groupids', [])
         task = consumer_api.installpackagegroups(id, ids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:

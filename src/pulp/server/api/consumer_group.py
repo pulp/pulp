@@ -356,6 +356,48 @@ class ConsumerGroupApi(BaseApi):
     def __nopackagestoinstall(self, consumerid, names=(), **options):
         return ([], (False, False))
 
+    @audit()
+    def installpackagegroups(self, id, grpids):
+        """
+        Task callback to install package groups.
+        @param id: The consumer group ID.
+        @type id: str
+        @param grpids: A list of package group ids.
+        @type grpids: list
+        @return: Whatever the agent returns.
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        job = Job()
+        for consumerid in consumergroup['consumerids']:
+            consumer = self.consumerApi.consumer(consumerid)
+            if consumer is None:
+                log.error('consumer [%s], not-found', consumerid)
+                continue
+            task = AsyncTask(self.__installpackagegroups, [consumerid, grpids])
+            job.add(task)
+        return job
+
+    def __installpackagegroups(self, consumerid, grpids):
+        """
+        Task callback to install package groups.
+        @param consumerid: The consumer ID.
+        @type consumerid: str
+        @param grpids: A list of package group ids.
+        @type grpids: list
+        @return: Whatever the agent returns.
+        """
+        consumer = self.consumerApi.consumer(consumerid)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', consumerid)
+        secret = PulpAgent.getsecret(consumer)
+        agent = AsyncAgent(consumerid, secret)
+        task = AsyncTask.current()
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        pkgrps = agent.PackageGroups(task, timeout=tm)
+        return pkgrps.install(grpids)
+
     def installerrata(self, id, errataids=[], types=[], assumeyes=False):
         """
         Install errata on a consumer group.

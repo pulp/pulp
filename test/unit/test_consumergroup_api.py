@@ -210,3 +210,40 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             calls = pkgproxy.install.history()
             last = calls[-1]
             self.assertEqual(last.args[0], packages)
+
+    def test_packagegrp_install(self):
+        '''
+        Test package install
+        '''
+        # Setup
+        id = ('A','B')
+        packages = ['zsh',]
+        self.consumer_api.create(id[0], None)
+        self.consumer_api.create(id[1], None)
+        self.consumer_group_api.create(id[0], '')
+        self.consumer_group_api.add_consumer(id[0], id[0])
+        self.consumer_group_api.add_consumer(id[0], id[1])
+
+        repoid = 'test-repo'
+        grpid = 'test-group'
+        grpname = 'test-group'
+        self.repo_api.create(repoid, 'Test Repo', 'noarch')
+        group = self.repo_api.create_packagegroup(repoid, grpid, grpname, '')
+        package = testutil.create_package(self.package_api, packages[0])
+        self.repo_api.add_package(repoid, [package["id"]])
+        self.repo_api.add_packages_to_group(repoid, grpid, [packages[0]], gtype="default")
+
+        # Test
+        job = self.consumer_group_api.installpackagegroups(id[0], [grpname,])
+        self.assertTrue(job is not None)
+        self.assertEqual(len(job.tasks), len(id))
+        for task in job.tasks:
+            task.run()
+
+        # Verify
+        for x in id:
+            agent = Agent(x)
+            proxy = agent.PackageGroups()
+            calls = proxy.install.history()
+            last = calls[-1]
+            self.assertEqual(last.args[0], [grpname,])

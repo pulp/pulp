@@ -455,27 +455,27 @@ class ConsumerApi(BaseApi):
         return packages.install(names, reboot, assumeyes)
 
     @audit()
-    def installpackagegroups(self, id, groupnames=()):
+    def installpackagegroups(self, id, grpids):
         """
         Install package groups on the consumer.
         @param id: A consumer id.
         @type id: str
-        @param groupnames: The package group names to install.
-        @type groupnames: [str,..]
+        @param grpids: The package group ids to install.
+        @type grpids: [str,..]
         """
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        task = Task(self.__installpackagegroups, [id, groupnames])
+        task = Task(self.__installpackagegroups, [id, grpids])
         return task
 
-    def __installpackagegroups(self, id, groups):
+    def __installpackagegroups(self, id, grpids):
         """
         Task callback to install package groups.
         @param id: The consumer ID.
         @type id: str
-        @param groups: A list of package group names.
-        @type groups: list
+        @param grpids: A list of package group names.
+        @type v: list
         @return: Whatever the agent returns.
         """
         consumer = self.consumer(id)
@@ -484,7 +484,7 @@ class ConsumerApi(BaseApi):
         agent = PulpAgent(consumer)
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         pkgrps = agent.PackageGroups(timeout=tm)
-        return pkgrps.install(groups)
+        return pkgrps.install(grpids)
 
     def installerrata(self, id, errataids=(), types=(), assumeyes=False):
         """
