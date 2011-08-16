@@ -1,0 +1,21 @@
+Instructions for setting up a new pulp system for repo auth testing.
+Assumes:
+ 1) Pulp is installed and we are running from the pulp server
+ 2) We will use the Pulp Fedora 15 i386 repo as a test.  
+   If this repo has already been synced, delete it.
+
+Run:
+ 1) ./create_ca.py
+ 2) ./create_content_cert.py
+ 3) ./install.py
+ 4) ./create_test_repos.py
+
+The above will create the certs and install them into httpd.
+It will also create a test repo and upload certs
+
+Now to test run:
+ ./test_fetch.py
+
+ If everything is working you should see the contents of 'repomd.xml'.
+
+

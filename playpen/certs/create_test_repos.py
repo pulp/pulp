@@ -21,6 +21,10 @@ def create_test_repo(repo_id, repo_feed, ca_cert, ent_cert, ent_key):
             (repo_id, repo_feed, ca_cert, ent_cert, ent_key)
     return run_command(cmd)
 
+def sync_test_repo(repo_id):
+    cmd = "sudo pulp-admin repo sync --id %s -F" % (repo["id"])
+    return run_command(cmd)
+
 if __name__ == "__main__":
     parser = get_parser(description="Creat test repos", 
             limit_options=['ca_cert', 'ent_key', 'ent_cert'])
@@ -34,4 +38,7 @@ if __name__ == "__main__":
     for repo in repos.values():
         if not create_test_repo(repo["id"], repo["feed"], ca_cert, ent_cert, ent_key):
             print "Failed to create repo <%s> with feed <%s>" % (repo["id"], repo["feed"])
+            sys.exit(1)
+        if not sync_test_repo(repo["id"]):
+            print "Failed to sync repo <%s>" % (repo["id"])
             sys.exit(1)
