@@ -247,7 +247,7 @@ basicConstraints = CA:true
 # Only issuerAltName and authorityKeyIdentifier make any sense in a CRL.
 
 # issuerAltName=issuer:copy
-authorityKeyIdentifier=keyid:always
+authorityKeyIdentifier=keyid:always,issuer:always
 
 [ proxy_cert_ext ]
 # These extensions should be added when creating a proxy certificate

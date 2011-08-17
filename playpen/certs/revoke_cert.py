@@ -27,7 +27,7 @@ def revoke_cert(crl_path, cert_to_revoke, ca_cert, ca_key, ssl_conf):
     if not run_command(cmd):
         return False
     # openssl ca -gencrl -config openssl.cnf -keyfile ./Pulp_CA.key -cert Pulp_CA.cert -out my_crl.pem
-    cmd = "openssl ca -gencrl -keyfile %s -cert %s -out %s -config %s" % (ca_key, ca_cert, crl_path, ssl_conf)
+    cmd = "openssl ca -gencrl -keyfile %s -cert %s -out %s -config %s -crlexts crl_ext" % (ca_key, ca_cert, crl_path, ssl_conf)
     if not run_command(cmd):
         return False
     return True
