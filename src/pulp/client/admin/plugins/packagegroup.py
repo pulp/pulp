@@ -46,6 +46,7 @@ class PackageGroupAction(Action):
         self.consumer_api = ConsumerAPI()
         self.consumergroup_api = ConsumerGroupAPI()
         self.consumer_group_api = ConsumerGroupAPI()
+        self.repository_api = RepositoryAPI()
         self.service_api = ServiceAPI()
         self.job_api = JobAPI()
         self.task_api = TaskAPI()
