@@ -9,9 +9,6 @@ import sys
 
 from base import run_command, get_parser, update_openssl_config, add_hostname_option
 
-def get_hostname():
-    return socket.gethostname()
-
 def create_server_key(server_key):
     cmd = "openssl genrsa -out %s 2048" % (server_key)
     return run_command(cmd)
