@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.224
+Version:        0.0.225
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -488,6 +488,33 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Aug 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.225-1
+- 730118 - Add BuildRequires: make for SELinux. (jortel@redhat.com)
+- Fix package group, create. (jortel@redhat.com)
+- Enhance job/task GET(id) to search history when not found in the queue.
+  (jortel@redhat.com)
+- 730752 - when comparing feeds during update use relativepath of feed and not
+  the repo tself (pkilambi@redhat.com)
+- Updates while investigating CRL signature mismatch (jmatthews@redhat.com)
+- CRL now using 'crl_ext' to add issuer and keyIdentifier, matches CRL from
+  candlepin (jmatthews@redhat.com)
+- adding example crl from candlepin for reference (jmatthews@redhat.com)
+- Add support for: --when, --nowait to package group & errata install.
+  (jortel@redhat.com)
+- Update cert generation, create ca, server, client certs
+  (jmatthews@redhat.com)
+- Add support for package group install on consumer group. (jortel@redhat.com)
+- Added public call to retrieve the database directly (jason.dobies@redhat.com)
+- Scripts to revoke a cert and generate a CRL (jmatthews@redhat.com)
+- Enable repo_auth (jmatthews@redhat.com)
+- Updating openssl conf so it is closer to typical default settings
+  (jmatthews@redhat.com)
+- remove duplicate option in config file (jmatthews@redhat.com)
+- Discontinue using status_path to query task status. Remove status_path from
+  WS controllers. Update client plugins to use TaskAPI.info(). Rename
+  initwait() -> startwait(). Move job and task state testing functions to the
+  API classes. Replace one-off task cancel, method with TaskAPI.cancel() in
+  client plugins. (jortel@redhat.com)
 * Fri Aug 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.224-1
 - Align with gofer 0.45. (jortel@redhat.com)
 - Update UG for CR15. (jortel@redhat.com)
