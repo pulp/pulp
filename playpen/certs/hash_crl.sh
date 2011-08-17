@@ -1,4 +1,4 @@
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
     echo "Usage: $0 CRL_path"
     exit 1
 fi
