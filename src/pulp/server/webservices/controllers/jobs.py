@@ -44,6 +44,7 @@ import web
 import logging
 from gettext import gettext as _
 from pulp.server import async
+from pulp.server.api import task_history
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.auth.authorization import READ
 from pulp.server.webservices.controllers.decorators import (
@@ -101,17 +102,23 @@ class Job(JSONController):
         failure response: 404 Not Found if no such job
         return: Job object
         """
-        found = async.find_async(job_id=id)
-        if not found:
+        tasks = self.active(id)
+        if not tasks:
+            tasks = task_history.job(id)
+        if not tasks:
             return self.not_found(_('job %s, not-found') % id)
         job = {}
-        tasks = []
         job['id'] = id
         job['tasks'] = tasks
-        for task in found:
-            t = self._task_to_dict(task)
-            tasks.append(t)
         return self.ok(job)
+
+    def active(self, id):
+        tasks = []
+        for task in async.find_async(job_id=id):
+            task_dict = self._task_to_dict(task)
+            tasks.append(task_dict)
+        return tasks
+
 
 # web.py application -----------------------------------------------------------
 

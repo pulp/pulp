@@ -69,6 +69,7 @@ class JobAction(Action):
         f = (ended/float(total))
         return int(f*100)
 
+
 class List(JobAction):
 
     name = "list"

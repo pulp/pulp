@@ -55,6 +55,7 @@ import web
 from gettext import gettext as _
 
 from pulp.server import async
+from pulp.server.api import task_history
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.auth.authorization import READ
 from pulp.server.webservices.controllers.base import JSONController
@@ -125,13 +126,29 @@ class Task(JSONController):
         failure response: 404 Not Found if no such task
         return: Task object
         """
-        tasks = async.find_async(id=id)
+        tasks = self.active(id)
+        if not tasks:
+            tasks = self.history(id)
         if not tasks:
             return self.not_found(_('Task not found: %s') % id)
-        task = tasks[0]
-        task_dict = self._task_to_dict(task)
-        task_dict['snapshot_id'] = task.snapshot_id
-        return self.ok(task_dict)
+        return self.ok(tasks[0])
+
+    def active(self, id):
+        tasks = []
+        for task in async.find_async(id=id):
+            task_dict = self._task_to_dict(task)
+            task_dict['snapshot_id'] = task.snapshot_id
+            tasks.append(task_dict)
+        return tasks
+
+    def history(self, id):
+        tasks = []
+        for task in task_history.task(id):
+            task['scheduler'] = None
+            task['snapshot_id'] = None
+            tasks.append(task)
+        return tasks
+
 
     @error_handler
     @auth_required(super_user_only=True)
