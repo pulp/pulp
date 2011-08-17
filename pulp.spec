@@ -35,7 +35,10 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 %if %{pulp_selinux}
-BuildRequires:  checkpolicy, selinux-policy-devel, hardlink
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
 %endif
 
 Requires: %{name}-common = %{version}
