@@ -44,7 +44,7 @@ class UpdateFailed(Exception):
         self.type_definitions = type_definitions
 
     def __str__(self):
-        return 'UpdateFailed [%s]' % ', '.join(self.type_definitions)
+        return 'UpdateFailed [%s]' % ', '.join([t.id for t in self.type_definitions])
 
 class MissingDefinitions(Exception):
     """

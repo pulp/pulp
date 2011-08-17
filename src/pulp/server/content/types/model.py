@@ -44,5 +44,12 @@ class TypeDefinition:
         self.id = id
         self.display_name = display_name
         self.description = description
+
+        if not isinstance(unique_indexes, list) and not isinstance(unique_indexes, tuple):
+            unique_indexes = [unique_indexes]
+
+        if not isinstance(search_indexes, list) and not isinstance(search_indexes, tuple):
+            search_indexes = [search_indexes]
+
         self.unique_indexes = unique_indexes
         self.search_indexes = search_indexes

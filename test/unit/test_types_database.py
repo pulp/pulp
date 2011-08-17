@@ -27,13 +27,13 @@ import pulp.server.db.connection as pulp_db
 # -- constants -----------------------------------------------------------------
 
 DEF_1 = TypeDefinition('def_1', 'Definition 1', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], 'search_1')
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
 DEF_2 = TypeDefinition('def_2', 'Definition 2', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], 'search_1')
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
 DEF_3 = TypeDefinition('def_3', 'Definition 3', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], 'search_1')
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
 DEF_4 = TypeDefinition('def_4', 'Definition 4', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], 'search_1')
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
 
 # -- test cases ----------------------------------------------------------------
 
@@ -146,6 +146,61 @@ class TypesDatabaseTests(testutil.PulpTest):
             self.assertTrue(DEF_2.id in e.missing_type_ids)
             self.assertTrue(DEF_3.id in e.missing_type_ids)
             print(e) # used to test the __str__ impl
+
+    def test_update_failed_create(self):
+        """
+        Simulates a failure to create a collection by passing in a bad ID for
+        the definition. 
+        """
+
+        # Setup
+        busted = TypeDefinition('!@#$%^&*()', 'Busted', 'Busted', None, None)
+        defs = [DEF_1, busted]
+
+        # Tests
+        try:
+            types_db.update_database(defs)
+            self.fail('Update with a failed create did not raise exception')
+        except types_db.UpdateFailed, e:
+            self.assertEqual(1, len(e.type_definitions))
+            self.assertEqual(busted, e.type_definitions[0])
+            print(e)
+
+    def test_update_failed_unique_indexes(self):
+        """
+        Simulates a failure to create unique indexes by passing a bad ID in the
+        index list.
+        """
+
+        # Setup
+        busted = TypeDefinition('busted', 'Busted', 'Busted', ['bad..dot..notation'], None)
+        defs = [busted, DEF_1]
+
+        # Tests
+        try:
+            types_db.update_database(defs)
+            self.fail('Update with a failed unique index did not raise exception')
+        except types_db.UpdateFailed, e:
+            self.assertEqual(1, len(e.type_definitions))
+            self.assertEqual(busted, e.type_definitions[0])
+
+    def test_update_failed_search_indexes(self):
+        """
+        Simulates a failure to create unique indexes by passing a bad ID in the
+        index list.
+        """
+
+        # Setup
+        busted = TypeDefinition('busted', 'Busted', 'Busted', None, ['bad..dot..notation'])
+        defs = [busted, DEF_1]
+
+        # Tests
+        try:
+            types_db.update_database(defs)
+            self.fail('Update with a failed search index update did not raise exception')
+        except types_db.UpdateFailed, e:
+            self.assertEqual(1, len(e.type_definitions))
+            self.assertEqual(busted, e.type_definitions[0])
 
     def test_all_type_collection_names(self):
         """
