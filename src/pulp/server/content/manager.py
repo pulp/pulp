@@ -270,17 +270,20 @@ class Manager(object):
                 types = metadata.get('types', ())
                 conf_file = metadata.get('conf_file', None)
                 if name is None:
-                    raise MalformedPluginError(_(''))
+                    raise MalformedPluginError(_('Distributor discovered with no name metadata: %s') %
+                                               attr.__name__)
                 cfg = configs.get(conf_file, None)
                 if not _is_plugin_enabled(name, cfg):
                     continue
                 plugin_versions = self.distributor_plugins.setdefault('name', {})
                 if version in plugin_versions:
-                    raise ConflictingPluginError(_(''))
+                    raise ConflictingPluginError(_('Two distributors %s version %s found') %
+                                                 (name, str(version)))
                 plugin_versions[version] = attr
                 config_versions = self.distributor_configs.setdefault('name', {})
                 config_versions[version] = cfg or SafeConfigParser()
-                _log.info(_(''))
+                _log.info(_('Distributor plugin %s version %s loaded for distribution typs: %s') %
+                          (name, str(version), ','.join(types)))
 
     # importer/distributor lookup api
 
@@ -315,6 +318,7 @@ def _create_manager():
 
 
 def _add_paths():
+    # add the pulp conventional importer and distributor paths
     _manager.add_importer_config_path(_importer_configs_dir)
     _manager.add_importer_plugin_path(_importer_plugins_dir,
                                       _importer_plugins_package)
@@ -333,7 +337,7 @@ def initialize():
     """
     Initialize importer/distributor plugin discovery and association.
     """
-    # NOTE this is broken down into the the helper functions: _create_manager,
+    # NOTE this is broken down into the the utility functions: _create_manager,
     # _add_paths, and _load_plugins to facilitate testing and other alternate
     # control flows on startup
     global _manager
@@ -345,7 +349,7 @@ def initialize():
 
 def finalize():
     """
-    Conduct and necessary cleanup of the plugn manager.
+    Cleanup the plugn manager.
     """
     # NOTE this is not necessary for the pulp server but is provided for testing
     global _manager
