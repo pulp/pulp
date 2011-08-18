@@ -187,7 +187,7 @@ class Install(ErrataAction):
             utils.printwait()
             task = self.task_api.info(task['id'])
         if task_succeeded(task):
-            installed, reboot = status['result']
+            installed, reboot = task['result']
             if installed:
                 print _('\nErrata applied to [%s]; packages installed: %s' % \
                        (id, installed))
