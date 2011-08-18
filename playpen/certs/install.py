@@ -12,7 +12,7 @@ import subprocess
 from base import get_parser, run_command
 
 def restart_httpd():
-    cmd = "service httpd restart"
+    cmd = "/sbin/service httpd restart"
     return run_command(cmd)
 
 def copy_file(src, dst):
