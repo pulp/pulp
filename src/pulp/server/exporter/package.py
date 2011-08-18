@@ -39,18 +39,19 @@ class PackageExporter(BaseExporter):
         @type make_isos: boolean
         """
         BaseExporter.__init__(self, repoid, target_dir, start_date, end_date, make_isos)
-        self.package_api = PackageApi()
-        self.repo_api = RepoApi()
         self.export_count = 0
 
     def export(self):
         self.validate_target_path()
-        repo = self.repo_api.repository(self.repoid)
+        repo = self.get_repository()
         hashtype = repo['checksum_type']
         for pkg in repo['packages']:
             package_obj = self.package_api.package(pkg)
             pkg_path = util.get_shared_package_path(package_obj['name'], package_obj['version'], package_obj['release'],
                                                     package_obj['arch'], package_obj['filename'], package_obj['checksum'])
+            if not os.path.exists(pkg_path):
+                # package not found on filesystem, continue
+                continue
             src_file_checksum = util.get_file_checksum(hashtype=hashtype, filename=pkg_path)
             dst_file_path = os.path.join(self.target_dir, os.path.basename(pkg_path))
             if not util.check_package_exists(dst_file_path, src_file_checksum):

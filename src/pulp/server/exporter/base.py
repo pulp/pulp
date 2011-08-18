@@ -12,8 +12,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import logging
+from pulp.server.api.errata import ErrataApi
+from pulp.server.api.package import PackageApi
 import pulp.server.util as util
 from pulp.server.db import connection
+from pulp.server.api.repo import RepoApi
+
 log = logging.getLogger(__name__)
 
 class BaseExporter(object):
@@ -56,7 +60,17 @@ class BaseExporter(object):
     def init_pulp(self):
         # initialize DB
         connection.initialize()
+        # initialize pulp components
+        self.errata_api = ErrataApi()
+        self.repo_api = RepoApi()
+        self.package_api = PackageApi()
 
+    def get_repository(self):
+        repo = self.repo_api.repository(self.repoid)
+        if not repo:
+            raise Exception("Repository id %s not found" % self.repoid)
+        return repo
+    
     def export(self):
         raise NotImplementedError()
 
