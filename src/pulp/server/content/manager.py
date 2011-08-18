@@ -62,13 +62,6 @@ class MalformedPluginError(PulpException):
     """
     pass
 
-
-class PluginNotFoundError(PulpException):
-    """
-    Raised when no plugin is found for a content or distribution type.
-    """
-    pass
-
 # manager class utils ----------------------------------------------------------
 
 def _check_path(path):
@@ -160,6 +153,49 @@ def _is_plugin_enabled(pulgin_name, config):
     return config.getboolean(plugin_name, 'enabled')
 
 
+def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
+    """
+    Load various various plugins of type "cls" and their configurations from the
+    provided paths into the provided dictionaries.
+    @type cls: Plugin class instance
+    @param cls: plugin class to load
+    @type plugin_paths: list of strs
+    @param plugin_paths: directories to load plugin modules from
+    @type config_paths: list of strs
+    @param config_paths: directories to load configuration files from
+    @type plugin_dict: dict
+    @param plugin_dict: dictionary to store plugin classes in
+    @type config_dict: dict
+    @param config_dict: dictionary to story parsed configuration files in
+    """
+    configs = _load_configs(config_paths)
+    modules = _load_modules(plugin_paths)
+    for module in modules:
+        for attr in dir(module):
+            if not issubclass(attr, cls):
+                continue
+            metadata = attr.metadata()
+            name = metadata.get('name', None)
+            version = metadata.get('version', None)
+            types = metadata.get('types', ())
+            conf_file = metadata.get('conf_file', None)
+            if name is None:
+                raise MalformedPluginError(_('%s discoverd with no name metadata: %s') %
+                                           (cls.__name__, attr.__name__))
+            cfg = configs.get(conf_file, None)
+            if not _is_plugin_enabled(name, cfg):
+                continue
+            plugin_versions = plugin_dict.setdefault('name', {})
+            if version in plugin_versions:
+                raise ConflictingPluginError(_('Two %s plugins %s version %s found') %
+                                             (cls.__name__, name, str(version)))
+            plugin_versions[version] = attr
+            config_versions = config_dict.setdefault('name', {})
+            config_versions[version] = cfg or SafeConfigParser()
+            _LOG.info(_('%s plugin %s version %s loaded for content types: %s') %
+                      (cls.__name__, name, str(version), ','.join(types)))
+
+
 def _get_versioned_dict_value(d, key, version=None):
     """
     Do a lookup in a dictionary whos values are dictionaries keyed by version.
@@ -246,89 +282,39 @@ class Manager(object):
         Load all importer modules and associate them with their supported types.
         """
         assert not (self.importer_plugins or self.importer_configs)
-        configs = _load_configs(self.importer_config_paths)
-        modules = _load_modules(self.importer_plugin_paths)
-        for module in modules:
-            for attr in dir(module):
-                if not issubclass(attr, Importer):
-                    continue
-                metadata = attr.metadata()
-                name = metadata.get('name', None)
-                version = metadata.get('version', None)
-                types = metadata.get('types', ())
-                conf_file = metadata.get('conf_file', None)
-                if name is None:
-                    raise MalformedPluginError(_('Importer discoverd with no name metadata: %s') %
-                                               attr.__name__)
-                cfg = configs.get(conf_file, None)
-                if not _is_plugin_enabled(name, cfg):
-                    continue
-                plugin_versions = self.importer_plugins.setdefault('name', {})
-                if version in plugin_versions:
-                    raise ConflictingPluginError(_('Two importers %s version %s found') %
-                                                 (name, str(version)))
-                plugin_versions[version] = attr
-                config_versions = self.importer_configs.setdefault('name', {})
-                config_versions[version] = cfg or SafeConfigParser()
-                _LOG.info(_('Importer plugin %s version %s loaded for content types: %s') %
-                          (name, str(version), ','.join(types)))
+        _load_plugins(Importer,
+                      self.importer_plugin_paths,
+                      self.importer_config_paths,
+                      self.importer_plugins,
+                      self.importer_configs)
 
     def load_distributors(self):
         """
         Load all distributor modules and associate them with their supported types.
         """
         assert not (self.distributor_plugins or self.distributor_configs)
-        configs = _load_configs(self.distributor_config_paths)
-        modules = _load_modules(self.distributor_plugin_paths)
-        for module in modules:
-            for attr in dir(module):
-                if not issubclass(attr, Distributor):
-                    continue
-                metadata = attr.metadata()
-                name = metadata.get('name', None)
-                version = metadata.get('version', None)
-                types = metadata.get('types', ())
-                conf_file = metadata.get('conf_file', None)
-                if name is None:
-                    raise MalformedPluginError(_('Distributor discovered with no name metadata: %s') %
-                                               attr.__name__)
-                cfg = configs.get(conf_file, None)
-                if not _is_plugin_enabled(name, cfg):
-                    continue
-                plugin_versions = self.distributor_plugins.setdefault('name', {})
-                if version in plugin_versions:
-                    raise ConflictingPluginError(_('Two distributors %s version %s found') %
-                                                 (name, str(version)))
-                plugin_versions[version] = attr
-                config_versions = self.distributor_configs.setdefault('name', {})
-                config_versions[version] = cfg or SafeConfigParser()
-                _LOG.info(_('Distributor plugin %s version %s loaded for distribution typs: %s') %
-                          (name, str(version), ','.join(types)))
+        _load_plugins(Distributor,
+                      self.distributor_plugin_paths,
+                      self.distributor_config_paths,
+                      self.distributor_plugins,
+                      self.distributor_configs)
 
     # importer/distributor lookup api
 
     def get_importer_class_by_name(self, name, version=None):
         cls = _get_versioned_dict_value(self.importer_plugins, name, version)
-        if cls is None:
-            raise PluginNotFoundError(_(''))
         return cls
 
     def get_importer_config_by_name(self, name, version=None):
         cfg = _get_versioned_dict_value(self.importer_configs, name, version)
-        if cfg is None:
-            raise PluginNotFoundError(_(''))
         return cfg
 
     def get_distributor_class_by_name(self, name, version=None):
         cls = _get_versioned_dict_value(self.distributor_plugins, name, version)
-        if cls is None:
-            raise PluginNotFoundError(_(''))
         return cls
 
     def get_distributor_config_by_name(self, name, version=None):
         cfg = _get_versioned_dict_value(self.distributor_configs, name, version)
-        if cfg is None:
-            raise PluginNotFoundError(_(''))
         return cfg
 
     # query api
