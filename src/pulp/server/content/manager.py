@@ -47,7 +47,14 @@ _DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributo
 
 # exceptions -------------------------------------------------------------------
 
-class ConflictingPluginError(PulpException):
+class ManagerException(PulpException):
+    """
+    Base manager exception class.
+    """
+    pass
+
+
+class ConflictingPluginError(ManagerException):
     """
     Raised when two or more plugins try to handle the same content or
     distribution type(s).
@@ -55,7 +62,7 @@ class ConflictingPluginError(PulpException):
     pass
 
 
-class MalformedPluginError(PulpException):
+class MalformedPluginError(ManagerException):
     """
     Raised when a plugin does not provide required information or pass a sanity
     check.
@@ -327,6 +334,9 @@ class Manager(object):
 
 # manager api utils ------------------------------------------------------------
 
+def _load_content_types():
+    pass
+
 def _create_manager():
     global _MANAGER
     _MANAGER = Manager()
@@ -357,6 +367,7 @@ def initialize():
     # control flows on startup
     global _MANAGER
     assert _MANAGER is None
+    _load_content_types()
     _create_manager()
     _add_paths()
     _load_plugins()
