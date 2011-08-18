@@ -159,6 +159,26 @@ def _is_plugin_enabled(pulgin_name, config):
         return True
     return config.getboolean(plugin_name, 'enabled')
 
+
+def _get_versioned_dict_value(d, key, version=None):
+    """
+    Do a lookup in a dictionary whos values are dictionaries keyed by version.
+    @type d: dict
+    @param d: dictionary to do lookup in.
+    @type key: any immutable
+    @param key: key to lookup versions for
+    @type version: any immutable
+    @param version: version of value to return, None returns the highest version
+    @rtype: any
+    @return: value for the given key and version, None if lookup fails
+    """
+    versions = d.get(key, None)
+    if versions is None:
+        return None
+    if version is None:
+        version = max(versions)
+    return versions.get(version, None)
+
 # manager class ----------------------------------------------------------------
 
 class Manager(object):
@@ -287,20 +307,29 @@ class Manager(object):
 
     # importer/distributor lookup api
 
-    def _get_latest_version(self, versions):
-        pass
-
     def get_importer_class_by_name(self, name, version=None):
-        pass
+        cls = _get_versioned_dict_value(self.importer_plugins, name, version)
+        if cls is None:
+            raise PluginNotFoundError(_(''))
+        return cls
 
     def get_importer_config_by_name(self, name, version=None):
-        pass
+        cfg = _get_versioned_dict_value(self.importer_configs, name, version)
+        if cfg is None:
+            raise PluginNotFoundError(_(''))
+        return cfg
 
     def get_distributor_class_by_name(self, name, version=None):
-        pass
+        cls = _get_versioned_dict_value(self.distributor_plugins, name, version)
+        if cls is None:
+            raise PluginNotFoundError(_(''))
+        return cls
 
-    def get_distributor_config_by_name(self, name, version):
-        pass
+    def get_distributor_config_by_name(self, name, version=None):
+        cfg = _get_versioned_dict_value(self.distributor_configs, name, version)
+        if cfg is None:
+            raise PluginNotFoundError(_(''))
+        return cfg
 
     # query api
 
