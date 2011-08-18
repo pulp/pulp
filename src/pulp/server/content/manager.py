@@ -16,15 +16,14 @@ import itertools
 import logging
 import os
 import re
+import sys
 from ConfigParser import SafeConfigParser
 from gettext import gettext as _
 
 from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
-from pulp.server.content.exception import (
-    ConflictingPluginError, MalformedPluginError, PluginNotFoundError)
 from pulp.server.content.importer.base import Importer
-from pulp.server.content.module import import_module
+from pulp.server.pexceptions import PulpException
 
 # globals ----------------------------------------------------------------------
 
@@ -46,6 +45,120 @@ _top_level_plugins_package = 'pulp.server.content'
 _importer_plugins_package = '.'.join((_top_level_plugins_package, 'importers'))
 _distributor_plugins_package = '.'.join((_top_level_plugins_package, 'distributors'))
 
+# exceptions -------------------------------------------------------------------
+
+class ConflictingPluginError(PulpException):
+    """
+    Raised when two or more plugins try to handle the same content or
+    distribution type(s).
+    """
+    pass
+
+
+class MalformedPluginError(PulpException):
+    """
+    Raised when a plugin does not provide required information or pass a sanity
+    check.
+    """
+    pass
+
+
+class PluginNotFoundError(PulpException):
+    """
+    Raised when no plugin is found for a content or distribution type.
+    """
+    pass
+
+# manager class utils ----------------------------------------------------------
+
+def _check_path(path):
+    """
+    Check a path for existence and read permissions.
+    @type path: str
+    @param path: file system path to check
+    @raise ValueError: if path does not exist or is unreadable
+    """
+    if os.access(path, os.F_OK | os.R_OK):
+        return
+    raise ValueError(_('Cannot find path %s') % path)
+
+
+def _load_configs(config_paths):
+    """
+    Load and parse plugin cofiguration files from the list directories.
+    @type config_paths: list of strs
+    @params config_paths: list of directories
+    @rtype: dict
+    @return: map of config name to SafeConfigParser instance
+    """
+    configs = {}
+    files_regex = re.compile('.*\.conf$')
+    for path in config_paths:
+        files = os.listdir(path)
+        for file_name in filter(files_regex.match, files):
+            if file_name in configs:
+                raise ConflictingPluginError(_('More than one configuration file found for %s') % file_name)
+            parser = SafeConfigParser()
+            parser.read(os.path.join(path, file_name))
+            configs[file_name] = parser
+    return configs
+
+
+def _import_module(name):
+    """
+    Given the name of a python module, import it.
+    @type name: str
+    @param name: name of the module to import
+    @rtype: module
+    @return: python module corresponding to given name
+    """
+    if name in sys.modules:
+        del sys.modules[name]
+    mod = __import__(name)
+    for sub in name.split('.')[1:]:
+        mod = getattr(mod, sub)
+    return mod
+
+
+def _load_modules(plugin_paths, skip=None):
+    """
+    Load python modules from the list of plugin directories.
+    @type plugin_paths: tuple or list of strs
+    @param plugin_paths: list of directories
+    @type skip: tuple or list of strs
+    @param skip: optional list of module names to skip
+    @rtype: list of modeule instances
+    @return: all modules in the list of directories not in the skip list
+    """
+    skip = skip or ('__init__', 'base') # don't load package or base modules
+    files_regex = re.compile('(?!(%s))\.py$') % '|'.join(skip)
+    modules = []
+    for path, package_name in paths.items():
+        files = os.listdir(path)
+        for file_name in filter(files_regex.match, files):
+            name = file_name.rsplit('.', 1)[0]
+            module_name = '.'.join((package_name, name))
+            module = _import_module(module_name)
+            modules.append(module)
+    return modules
+
+
+def _is_plugin_enabled(pulgin_name, config):
+    """
+    Grok through a config parser and see if the plugin is not disabled.
+    @type config: SafeConfigParser instance
+    @param config: plugin config
+    @rtype: bool
+    @return: True if the plugin is enabled, False otherwise
+    """
+    if config is None:
+        return True
+    if not config.has_section(plugin_name):
+        return True
+    if not config.has_option(plugin_name, 'enabled'):
+        return True
+    return config.getboolean(plugin_name, 'enabled')
+
 # manager class ----------------------------------------------------------------
 
 class Manager(object):
@@ -66,24 +179,13 @@ class Manager(object):
 
     # plugin discovery configuration
 
-    def _check_path(self, path):
-        """
-        Check a path for existence and read permissions.
-        @type path: str
-        @param path: file system path to check
-        @raise ValueError: if path does not exist or is unreadable
-        """
-        if os.access(path, os.F_OK | os.R_OK):
-            return
-        raise ValueError(_('Cannot find path %s') % path)
-
     def add_importer_config_path(self, path):
         """
         Add a directory for importer configuration files.
         @type path: str
         @param path: importer configuration directory
         """
-        self._check_path(path)
+        _check_path(path)
         self.importer_config_paths.append(path)
 
     def add_importer_plugin_path(self, path, package_name=None):
@@ -94,7 +196,7 @@ class Manager(object):
         @type package_name: str or None
         @param package_name: optional package name for importation
         """
-        self._check_path(path)
+        _check_path(path)
         self.importer_paths[path] = package_name or ''
 
     def add_distributor_config_path(self, path):
@@ -103,7 +205,7 @@ class Manager(object):
         @type path: str
         @param path: distributor configuration directory
         """
-        self._check_path(path)
+        _check_path(path)
         self.distributor_config_paths.append(path)
 
     def add_distributor_plugin_path(self, path, package_name=None):
@@ -114,76 +216,18 @@ class Manager(object):
         @type package_name: str or None
         @param package_name: optional package name for importation
         """
-        self._check_path(path)
+        _check_path(path)
         self.distributor_paths[path] = package_name or ''
 
     # plugin discovery
-
-    def _load_configs(self, config_paths):
-        """
-        Load and parse plugin cofiguration files from the list directories.
-        @type config_paths: list of strs
-        @params config_paths: list of directories
-        @rtype: dict
-        @return: map of config name to SafeConfigParser instance
-        """
-        configs = {}
-        files_regex = re.compile('.*\.conf$')
-        for path in config_paths:
-            files = os.listdir(path)
-            for file_name in filter(files_regex.match, files):
-                if file_name in configs:
-                    raise ConflictingPluginError(_('More than one configuration file found for %s') % file_name)
-                parser = SafeConfigParser()
-                parser.read(os.path.join(path, file_name))
-                configs[file_name] = parser
-        return configs
-
-    def _load_modules(self, plugin_paths, skip=None):
-        """
-        Load python modules from the list of plugin directories.
-        @type plugin_paths: tuple or list of strs
-        @param plugin_paths: list of directories
-        @type skip: tuple or list of strs
-        @param skip: optional list of module names to skip
-        @rtype: list of modeule instances
-        @return: all modules in the list of directories not in the skip list
-        """
-        skip = skip or ('__init__', 'base') # don't load package or base modules
-        files_regex = re.compile('(?!(%s))\.py$') % '|'.join(skip)
-        modules = []
-        for path, package_name in paths.items():
-            files = os.listdir(path)
-            for file_name in filter(files_regex.match, files):
-                name = file_name.rsplit('.', 1)[0]
-                module_name = '.'.join((package_name, name))
-                module = import_module(module_name)
-                modules.append(module)
-        return modules
-
-    def _is_plugin_enabled(self, pulgin_name, config):
-        """
-        Grok through a config parser and see if the plugin is not disabled.
-        @type config: SafeConfigParser instance
-        @param config: plugin config
-        @rtype: bool
-        @return: True if the plugin is enabled, False otherwise
-        """
-        if config is None:
-            return True
-        if not config.has_section(plugin_name):
-            return True
-        if not config.has_option(plugin_name, 'enabled'):
-            return True
-        return config.getboolean(plugin_name, 'enabled')
 
     def load_importers(self):
         """
         Load all importer modules and associate them with their supported types.
         """
         assert not (self.importer_plugins or self.importer_configs)
-        configs = self._load_configs(self.importer_config_paths)
-        modules = self._load_modules(self.importer_plugin_paths)
+        configs = _load_configs(self.importer_config_paths)
+        modules = _load_modules(self.importer_plugin_paths)
         for module in modules:
             for attr in dir(module):
                 if not issubclass(attr, Importer):
@@ -197,7 +241,7 @@ class Manager(object):
                     raise MalformedPluginError(_('Importer discoverd with no name metadata: %s') %
                                                attr.__name__)
                 cfg = configs.get(conf_file, None)
-                if not self._is_plugin_enabled(name, cfg):
+                if not _is_plugin_enabled(name, cfg):
                     continue
                 plugin_versions = self.importer_plugins.setdefault('name', {})
                 if version in plugin_versions:
@@ -214,8 +258,8 @@ class Manager(object):
         Load all distributor modules and associate them with their supported types.
         """
         assert not (self.distributor_plugins or self.distributor_configs)
-        configs = self._load_configs(self.distributor_config_paths)
-        modules = self._load_modules(self.distributor_plugin_paths)
+        configs = _load_configs(self.distributor_config_paths)
+        modules = _load_modules(self.distributor_plugin_paths)
         for module in modules:
             for attr in dir(module):
                 if not issubclass(attr, Distributor):
@@ -228,7 +272,7 @@ class Manager(object):
                 if name is None:
                     raise MalformedPluginError(_(''))
                 cfg = configs.get(conf_file, None)
-                if not self._is_plugin_enabled(name, cfg):
+                if not _is_plugin_enabled(name, cfg):
                     continue
                 plugin_versions = self.distributor_plugins.setdefault('name', {})
                 if version in plugin_versions:
@@ -263,7 +307,7 @@ class Manager(object):
     def get_loaded_distributors(self):
         pass
 
-# manager api ------------------------------------------------------------------
+# manager api utils ------------------------------------------------------------
 
 def _create_manager():
     global _manager
@@ -283,6 +327,7 @@ def _load_plugins():
     _manager.load_importers()
     _manager.load_distributors()
 
+# manager api ------------------------------------------------------------------
 
 def initialize():
     """
