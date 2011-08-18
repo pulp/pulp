@@ -25,25 +25,25 @@ from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
 from pulp.server.pexceptions import PulpException
 
-# globals ----------------------------------------------------------------------
+# constants --------------------------------------------------------------------
 
-_log = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
-_manager = None # Manager instance
+_MANAGER = None # Manager instance
 
 # initial plugin and configuration file conventions
 
-_top_level_configs_dir = '/etc/pulp'
-_importer_configs_dir = os.path.join(_top_level_configs_dir, 'importers')
-_distributor_configs_dir = os.path.join(_top_level_configs_dir, 'distributors')
+_TOP_LEVEL_CONFIGS_DIR = '/etc/pulp'
+_IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importers')
+_DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributors')
 
-_top_level_plugins_dir = os.path.dirname(__file__)
-_importer_plugins_dir = os.path.join(_top_level_plugins_dir, 'importers')
-_distributor_plugins_dir = os.path.join(_top_level_plugins_dir, 'distributors')
+_TOP_LEVEL_PLUGINS_DIR = os.path.dirname(__file__)
+_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importers')
+_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributors')
 
-_top_level_plugins_package = 'pulp.server.content'
-_importer_plugins_package = '.'.join((_top_level_plugins_package, 'importers'))
-_distributor_plugins_package = '.'.join((_top_level_plugins_package, 'distributors'))
+_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content'
+_IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importers'))
+_DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributors'))
 
 # exceptions -------------------------------------------------------------------
 
@@ -270,7 +270,7 @@ class Manager(object):
                 plugin_versions[version] = attr
                 config_versions = self.importer_configs.setdefault('name', {})
                 config_versions[version] = cfg or SafeConfigParser()
-                _log.info(_('Importer plugin %s version %s loaded for content types: %s') %
+                _LOG.info(_('Importer plugin %s version %s loaded for content types: %s') %
                           (name, str(version), ','.join(types)))
 
     def load_distributors(self):
@@ -302,7 +302,7 @@ class Manager(object):
                 plugin_versions[version] = attr
                 config_versions = self.distributor_configs.setdefault('name', {})
                 config_versions[version] = cfg or SafeConfigParser()
-                _log.info(_('Distributor plugin %s version %s loaded for distribution typs: %s') %
+                _LOG.info(_('Distributor plugin %s version %s loaded for distribution typs: %s') %
                           (name, str(version), ','.join(types)))
 
     # importer/distributor lookup api
@@ -342,23 +342,23 @@ class Manager(object):
 # manager api utils ------------------------------------------------------------
 
 def _create_manager():
-    global _manager
-    _manager = Manager()
+    global _MANAGER
+    _MANAGER = Manager()
 
 
 def _add_paths():
     # add the pulp conventional importer and distributor paths
-    _manager.add_importer_config_path(_importer_configs_dir)
-    _manager.add_importer_plugin_path(_importer_plugins_dir,
-                                      _importer_plugins_package)
-    _manager.add_distributor_config_path(_distributor_configs_dir)
-    _manager.add_distributor_plugin_path(_distributor_plugins_dir,
-                                         _distributor_plugins_package)
+    _MANAGER.add_importer_config_path(_IMPORTER_CONFIGS_DIR)
+    _MANAGER.add_importer_plugin_path(_IMPORTER_PLUGINS_DIR,
+                                      _IMPORTER_PLUGINS_PACKAGE)
+    _MANAGER.add_distributor_config_path(_DISTRIBUTOR_CONFIGS_DIR)
+    _MANAGER.add_distributor_plugin_path(_DISTRIBUTOR_PLUGINS_DIR,
+                                         _DISTRIBUTOR_PLUGINS_PACKAGE)
 
 
 def _load_plugins():
-    _manager.load_importers()
-    _manager.load_distributors()
+    _MANAGER.load_importers()
+    _MANAGER.load_distributors()
 
 # manager api ------------------------------------------------------------------
 
@@ -369,8 +369,8 @@ def initialize():
     # NOTE this is broken down into the the utility functions: _create_manager,
     # _add_paths, and _load_plugins to facilitate testing and other alternate
     # control flows on startup
-    global _manager
-    assert _manager is None
+    global _MANAGER
+    assert _MANAGER is None
     _create_manager()
     _add_paths()
     _load_plugins()
@@ -381,8 +381,8 @@ def finalize():
     Cleanup the plugn manager.
     """
     # NOTE this is not necessary for the pulp server but is provided for testing
-    global _manager
-    assert _manager is not None
-    tmp = _manager
-    _manager = None
+    global _MANAGER
+    assert _MANAGER is not None
+    tmp = _MANAGER
+    _MANAGER = None
     del tmp
