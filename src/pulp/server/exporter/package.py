@@ -14,9 +14,7 @@ import os
 import shutil
 import logging
 import pulp.server.util as util
-from pulp.server.api.repo import RepoApi
 from pulp.server.exporter.base import BaseExporter
-from pulp.server.api.package import PackageApi
 
 log = logging.getLogger(__name__)
 

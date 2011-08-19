@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import logging
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 import pulp.server.util as util
@@ -64,6 +65,7 @@ class BaseExporter(object):
         self.errata_api = ErrataApi()
         self.repo_api = RepoApi()
         self.package_api = PackageApi()
+        self.distribution_api = DistributionApi()
 
     def get_repository(self):
         repo = self.repo_api.repository(self.repoid)

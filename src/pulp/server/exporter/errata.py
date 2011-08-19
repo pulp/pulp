@@ -13,14 +13,10 @@
 import os
 import shutil
 import logging
-from yum.update_md import UpdateNotice, UpdateMetadata
 from pulp.server import updateinfo
-from pulp.server.api.package import PackageApi
 from pulp.server.compat import chain
 import pulp.server.util as util
-from pulp.server.api.repo import RepoApi
 from pulp.server.exporter.base import BaseExporter
-from pulp.server.api.errata import ErrataApi
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +26,7 @@ class ErrataExporter(BaseExporter):
     """
     def __init__(self, repoid, target_dir="./", start_date=None, end_date=None, make_isos=False):
         """
-        initialize package exporter
+        initialize errata exporter
         @param repoid: repository Id
         @type repoid: string
         @param target_dir: target directory where exported content is written
