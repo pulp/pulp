@@ -602,7 +602,9 @@ class RepoApi(BaseApi):
         """
         delta.pop('id', None)
         repo = self._get_existing_repo(id)
-        prevpath = repo.get('relative_path')
+	prevpath = ''
+	if repo['source']:
+            prevpath = urlparse(repo['source']['url'])[2].strip('/')
         hascontent = self._hascontent(repo)
         repo_cert_utils = RepoCertUtils(config.config)
         protected_repo_utils = ProtectedRepoUtils(config.config)

@@ -20,6 +20,8 @@ def create_server_csr(server_key, csr_config, csr):
     # Maybe we can use -subj and not worry about the config file
     # http://onlamp.com/onlamp/2008/03/04/step-by-step-configuring-ssl-under-apache.html
     # -subj '/O=Company/OU=Department/CN=www.example.com'
+    # http://www.bluequartz.us/phpBB2/viewtopic.php?p=397812&sid=208a45f412493be951cc3998569d8344
+    # SUBJECT = /C=US/ST=OR/L=Portland/O=Our Organization  
     cmd = "openssl req -new -key %s -out %s -config %s" % (server_key, csr, csr_config)
     return run_command(cmd)
 

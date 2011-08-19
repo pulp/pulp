@@ -17,7 +17,7 @@ from gettext import gettext as _
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.job import JobAPI
 from pulp.client.api.task import task_end
-from pulp.client.utils import system_exit
+from pulp.client.lib.utils import system_exit
 from pulp.client.pluginlib.command import Action, Command
 
 
@@ -68,6 +68,7 @@ class JobAction(Action):
                 ended += 1
         f = (ended/float(total))
         return int(f*100)
+
 
 class List(JobAction):
 

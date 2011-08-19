@@ -1,5 +1,7 @@
-if [ $# -lt 2 ]; then
-    echo "Usage: $0 CRL_path revoked_cert"
+if [ $# -lt 3 ]; then
+    echo "Usage: $0 CA CRL revoked_cert"
     exit 1
 fi
-openssl verify -CAfile $1 -crl_check $2
+
+cat $1 $2 > ./certs/CA_CRL.pem
+openssl verify -extended_crl -issuer_checks -verbose -CAfile ./certs/CA_CRL.pem -crl_check $3

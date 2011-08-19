@@ -130,7 +130,8 @@ class Install(PackageAction):
         wait = self.getwait([id,])
         task = self.consumer_api.installpackages(id, pnames, when=when)
         print _('Created task id: %s') % task['id']
-        print _('Task is scheduled for: %s') % when
+        if when:
+            print _('Task is scheduled for: %s') % when
         if not wait:
             system_exit(0)
         startwait()
@@ -152,7 +153,10 @@ class Install(PackageAction):
         wait = self.getwait(group['consumerids'])
         job = self.consumer_group_api.installpackages(id, pnames, when=when)
         print _('Created job id: %s') % job['id']
-        print _('Job is scheduled for: %s') % when
+        if when:
+            print _('Job is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
         startwait()
         while not job_end(job):
             job = self.job_api.info(job['id'])

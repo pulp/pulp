@@ -20,11 +20,12 @@ import sys
 import time
 from gettext import gettext as _
 from optparse import OptionGroup
-
+from pulp.common import dateutils
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client import constants
 from pulp.client.api.job import JobAPI, job_end
 from pulp.client.api.task import TaskAPI, task_end, task_succeeded
+from pulp.client.api.service import ServiceAPI
 from pulp.client.lib import utils
 from pulp.client.lib.logutil import getLogger
 from pulp.client.plugins.errata import ErrataAction, Errata, List
@@ -113,6 +114,7 @@ class Install(ErrataAction):
         super(Install, self).__init__(cfg)
         self.job_api = JobAPI()
         self.task_api = TaskAPI()
+        self.service_api = ServiceAPI()
 
     def setup_parser(self):
         self.parser.add_option("-e", "--erratum", action="append", dest="id",
@@ -125,6 +127,13 @@ class Install(ErrataAction):
         self.parser.add_option_group(id_group)
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("assume yes; assume that install performs all the suggested actions such as reboot on successful install"))
+        self.parser.add_option("--when", dest="when", default=None,
+                       help=_("specifies when to execute the install.  "
+                       "Format: iso8601, YYYY-MM-DDThh:mm"))
+        self.parser.add_option("--nowait", dest="nowait", default=False,
+            action="store_true",
+            help=_("if specified, don't wait for the install to finish, "
+            "return immediately."))
 
     def run(self):
         errataids = self.opts.id
@@ -161,17 +170,24 @@ class Install(ErrataAction):
             self.on_group(consumergroupid, errataids, assumeyes=assumeyes)
 
     def on_consumer(self, id, errataids, assumeyes):
+        when = utils.parse_at_schedule(self.opts.when)
+        wait = self.getwait([id,])
         task = self.consumer_api.installerrata(
                 id,
                 errataids,
-                assumeyes=assumeyes)
+                assumeyes=assumeyes,
+                when=when)
         print _('Created task id: %s') % task['id']
+        if when:
+            print _('Task is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
         utils.startwait()
         while not task_end(task):
             utils.printwait()
             task = self.task_api.info(task['id'])
         if task_succeeded(task):
-            installed, reboot = status['result']
+            installed, reboot = task['result']
             if installed:
                 print _('\nErrata applied to [%s]; packages installed: %s' % \
                        (id, installed))
@@ -183,15 +199,22 @@ class Install(ErrataAction):
             print("\nErrata install failed: %s" % task['exception'])
 
     def on_group(self, id, errataids, assumeyes):
+        when = utils.parse_at_schedule(self.opts.when)
         group = self.consumer_group_api.consumergroup(id)
         if not group:
             system_exit(-1,
                 _('Invalid group: %s' % id))
+        wait = self.getwait(group['consumerids'])
         job = self.consumer_group_api.installerrata(
                 id,
                 errataids,
-                assumeyes=assumeyes)
+                assumeyes=assumeyes,
+                when=when)
         print _('Created job id: %s') % job['id']
+        if when:
+            print _('Job is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
         utils.startwait()
         while not job_end(job):
             job = self.job_api.info(job['id'])
@@ -211,6 +234,35 @@ class Install(ErrataAction):
                 s.append('packages installed: %s' % installed)
                 details = ', '.join(s)
             print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+
+    def getunavailable(self, ids):
+        lst = []
+        stats = self.service_api.agentstatus(ids)
+        for id in ids:
+            stat = stats[id]
+            if stat[0]:
+                continue
+            lst.append(id)
+        return lst
+
+    def printunavailable(self, ualist):
+        if ualist:
+            sys.stdout.write(constants.UNAVAILABLE)
+            for id in ualist:
+                print id
+
+    def getwait(self, ids):
+        wait = not self.opts.nowait
+        ualist = self.getunavailable(ids)
+        if ualist:
+            self.printunavailable(ualist)
+            if not utils.askcontinue():
+                system_exit(0)
+            # The consumer is unavailable, if wait was specified, verify that
+            # we still want to wait.
+            if wait:
+                wait = utils.askwait()
+        return wait
 
 
 class Create(ErrataAction):

@@ -80,9 +80,9 @@ class ConsumerGroupAPI(PulpAPI):
         body = dict(packagenames=packagenames, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
-    def installpackagegroups(self, id, grpids):
+    def installpackagegroups(self, id, grpids, when=None):
         path = "/consumergroups/%s/installpackagegroups/" % id
-        body = dict(grpids=grpids)
+        body = dict(grpids=grpids, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
     def installerrata(self, id, errataids, types=[], assumeyes=False, when=None):
