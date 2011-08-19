@@ -262,14 +262,19 @@ class TypesDatabaseTests(testutil.PulpTest):
 
     def test_create_or_update_existing_type_collection(self):
         """
-        Tests calling create_or_update on an existing type collection is successful.
+        Tests calling create_or_update with a change to an existing type
+        collection is successful.
         """
 
         # Setup
         type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'])
+        types_db._create_or_update_type(type_def)
 
         # Test
-        types_db._create_or_update_type(type_def)
+        type_def.display_name = 'new-name'
+        type_def.description = 'new-description'
+        type_def.unique_indexes = None
+        type_def.search_indexes = None
         types_db._create_or_update_type(type_def)
 
         # Verify
