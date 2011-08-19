@@ -31,6 +31,10 @@ _LOG = logging.getLogger(__name__)
 
 _MANAGER = None # Manager instance
 
+# initial type definitions location
+
+_TYPES_DIRECTORY = '/var/lib/pulp'
+
 # initial plugin and configuration file conventions
 
 _TOP_LEVEL_CONFIGS_DIR = '/etc/pulp'
