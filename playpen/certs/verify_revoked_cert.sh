@@ -4,4 +4,4 @@ if [ $# -lt 3 ]; then
 fi
 
 cat $1 $2 > ./certs/CA_CRL.pem
-openssl verify -extended_crl -issuer_checks -verbose -CAfile ./certs/CA_CRL.pem -crl_check $3
+openssl verify -extended_crl -verbose -CAfile ./certs/CA_CRL.pem -crl_check $3
