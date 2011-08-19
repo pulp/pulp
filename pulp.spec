@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.225
+Version:        0.0.226
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -488,6 +488,25 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 19 2011 Jeff Ortel <jortel@redhat.com> 0.0.226-1
+- Simplified openssl conf entries for revoking a cert (jmatthews@redhat.com)
+- Simplify certs scripts, specify CN as -subj CLI option and limit need for
+  custom openssl.conf (jmatthews@redhat.com)
+- Changed test to better reflect that the content type collection is being
+  updated (jason.dobies@redhat.com)
+- Added note about possible performance issue found during deep dive
+  (jason.dobies@redhat.com)
+- Update cert scripts for el5 & add pyOpenSSL-0.12 to allow retrieval of
+  'revoked_objects' from a CRL (jmatthews@redhat.com)
+- Cleanup cert creation scripts (jmatthews@redhat.com)
+- renamed constants in all caps, why did I ever stop doing that?
+  (jconnor@redhat.com)
+- added error and log messages for distributor loading (jconnor@redhat.com)
+- consolidated exceptions and utils into manager module moved utility functions
+  out of Manager class that do not touch internal state (jconnor@redhat.com)
+- 726194 - prune repo object sent to the agent on bind(). (jortel@redhat.com)
+- Fix errata install. (jortel@redhat.com)
+
 * Wed Aug 17 2011 Jeff Ortel <jortel@redhat.com> 0.0.225-1
 - 730118 - Add BuildRequires: make for SELinux. (jortel@redhat.com)
 - Fix package group, create. (jortel@redhat.com)
