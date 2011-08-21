@@ -202,6 +202,7 @@ class ConsumerDeferredFields(JSONController):
         'keyvalues',
         'package_updates',
         'errata_package_updates',
+        'errata',
     )
 
     def package_profile(self, id):
@@ -270,6 +271,18 @@ class ConsumerDeferredFields(JSONController):
         """
         return self.ok(consumer_api.list_errata_package(id))
 
+    def errata(self, id):
+        """
+        list applicable errata for a given consumer.
+        filter by errata type if any
+        @type id: str
+        @param id: consumer id
+        """
+        valid_filters = ('types')
+        filters = self.filters(valid_filters)
+        types = filters.pop('types')
+        return self.ok(consumer_api.listerrata(id, types=[types,]))
+
     @error_handler
     @auth_required(READ)
     def GET(self, id, field_name):
@@ -296,7 +309,6 @@ class ConsumerActions(JSONController):
         'installpackages',
         'installpackagegroups',
         'installpackagegroupcategories',
-        'listerrata',
         'installerrata',
         'history',
     )
@@ -467,16 +479,6 @@ class ConsumerActions(JSONController):
         async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
         return self.accepted(taskdict)
-
-    def listerrata(self, id):
-        """
-        list applicable errata for a given consumer.
-        filter by errata type if any
-        @type id: str
-        @param id: consumer id
-        """
-        data = self.params()
-        return self.ok(consumer_api.listerrata(id, data['types']))
 
     def history(self, id):
         """
