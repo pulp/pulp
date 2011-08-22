@@ -298,6 +298,7 @@ class Manager(object):
                       self.importer_config_paths,
                       self.importer_plugins,
                       self.importer_configs)
+        # TODO verify supported plugin types
 
     def load_distributors(self):
         """
@@ -313,33 +314,82 @@ class Manager(object):
     # importer/distributor lookup api
 
     def get_importer_class_by_name(self, name, version=None):
+        """
+        Get an importer class by name and version.
+        @type name: str
+        @param name: importer class name
+        @type version: None or int
+        @param version: version of plugin class to get, None means highest
+        @rtype: L{Importer} class
+        @return: importer class or None if no importer class is found
+        """
         cls = _get_versioned_dict_value(self.importer_plugins, name, version)
         return cls
 
     def get_importer_config_by_name(self, name, version=None):
+        """
+        Get an importer configuration by name and version.
+        @type name: str
+        @param name: importer configuration name
+        @type version: None or int
+        @param version: version of plugin configuration to get, None means highest
+        @rtype: L{Importer} class
+        @return: importer configuration or None if no importer configuration is found
+        """
         cfg = _get_versioned_dict_value(self.importer_configs, name, version)
         return cfg
 
     def get_distributor_class_by_name(self, name, version=None):
+        """
+        Get an distributor class by name and version.
+        @type name: str
+        @param name: distributor class name
+        @type version: None or int
+        @param version: version of plugin class to get, None means highest
+        @rtype: L{Distributor} class
+        @return: distributor class or None if no distributor class is found
+        """
         cls = _get_versioned_dict_value(self.distributor_plugins, name, version)
         return cls
 
     def get_distributor_config_by_name(self, name, version=None):
+        """
+        Get an distributor configuration by name and version.
+        @type name: str
+        @param name: distributor configuration name
+        @type version: None or int
+        @param version: version of plugin configuration to get, None means highest
+        @rtype: L{Distributor} class
+        @return: distributor configuration or None if no distributor configuration is found
+        """
         cfg = _get_versioned_dict_value(self.distributor_configs, name, version)
         return cfg
 
     # query api
 
     def get_loaded_importers(self):
-        pass
+        """
+        Return the loaded importer classes and their versions.
+        @rtype: list of tuples
+        @return: list of tuples: importer name, list of versions
+        """
+        return [(i, sorted(v.keys())) for i, v in self.importer_plugins.items()]
 
     def get_loaded_distributors(self):
-        pass
+        """
+        Return the loaded distributor classes and their versions.
+        @rtype: list of tuples
+        @return: list of tuples: distributor name, list of versions
+        """
+        return [(i, sorted(v.keys())) for i, v in self.distributor_plugins.items()]
 
-# manager api utils ------------------------------------------------------------
+# content type initialization utils --------------------------------------------
 
 def _load_content_types():
+    # TODO
     pass
+
+# manager initialization utils -------------------------------------------------
 
 def _create_manager():
     global _MANAGER
@@ -387,3 +437,71 @@ def finalize():
     tmp = _MANAGER
     _MANAGER = None
     del tmp
+
+# query api --------------------------------------------------------------------
+
+def list_importers():
+    """
+    List the loaded importers
+    @rtype: list
+    @return: list of tuples: importer name, list of versions
+    """
+    assert _MANAGER is not None
+    return _MANAGER.get_loaded_importers()
+
+
+def list_distributors():
+    """
+    List the loaded distributors
+    @rtype: list
+    @return: list of tuples: distributor name, list of versions
+    """
+    assert _MANAGER is not None
+    return _MANAGER.get_loaded_distributors()
+
+
+def list_content_types():
+    """
+    List the supported content types.
+    """
+    # TODO
+    pass
+
+# plugin api -------------------------------------------------------------------
+
+def get_importer_by_name(name, version=None):
+    """
+    Get an importer instance for a given name and version.
+    @type name: str
+    @param name: name of the importer instance to get
+    @type version: None or int
+    @param version: optional version, None means to use the latest version
+    @rtype: L{Importer} instance or None
+    @return: importer for the given name and version, None if one isn't found
+    """
+    assert _MANAGER is not None
+    cls = _MANAGER.get_importer_class_by_name(name, version)
+    if cls is None:
+        return None
+    cfg = _MANAGER.get_importer_config_by_name(name, version)
+    importer = cls(cfg)
+    return importer
+
+
+def get_distributor_by_name(name, version=None):
+    """
+    Get an distributor instance for a given name and version.
+    @type name: str
+    @param name: name of the distributor instance to get
+    @type version: None or int
+    @param version: optional version, None means to use the latest version
+    @rtype: L{Distributor} instance or None
+    @return: distributor for the given name and version, None if one isn't found
+    """
+    assert _MANAGER is not None
+    cls = _MANAGER.get_distributor_class_by_name(name, version)
+    if cls is None:
+        return None
+    cfg = _MANAGER.get_distributor_config_by_name(name, version)
+    distributor = cls(cfg)
+    return distributor
