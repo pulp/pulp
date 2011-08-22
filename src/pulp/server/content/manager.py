@@ -23,6 +23,8 @@ from gettext import gettext as _
 from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
+from pulp.server.content.types import database, parser
+from pulp.server.content.types.model import TypeDescriptor
 from pulp.server.pexceptions import PulpException
 
 # constants --------------------------------------------------------------------
@@ -298,7 +300,19 @@ class Manager(object):
                       self.importer_config_paths,
                       self.importer_plugins,
                       self.importer_configs)
-        # TODO verify supported plugin types
+        supported_types = list_content_types()
+        for name, versions in tuple(self.importer_plugins.items()):
+            for version, cls in tuple(versions.items()):
+                for content_type in cls.metadata().get('types', ()):
+                    if content_type not in supported_types:
+                        msg = _('Unloading importer %s, version %s: unsupported content type %s')
+                        _LOG.error(msg % (name, version, content_type))
+                        del self.importer_plugins[name][version]
+                        del self.importer_configs[name][version]
+                        continue
+            if not versions:
+                del self.importer_plugins[name]
+                del self.importer_configs[name]
 
     def load_distributors(self):
         """
@@ -385,9 +399,28 @@ class Manager(object):
 
 # content type initialization utils --------------------------------------------
 
+def _read_contents(file_name):
+    handle = open(file_name, 'r')
+    contents = handle.read()
+    handle.close()
+    return contents
+
+
+def _load_descriptors(path):
+    descriptors = []
+    for file_name in os.listdir(path):
+        contents = _read_contents(file_name)
+        descriptor = TypeDescriptor(file_name, contents)
+        descriptors.append(descriptor)
+    return descriptors
+
+
 def _load_content_types():
-    # TODO
-    pass
+    _check_path(_TYPES_DIRECTORY)
+    descriptors = _load_descriptors(_TYPES_DIRECTORY)
+    definitions = parser.parse(descriptors)
+    database.update_database(definitions)
+
 
 # manager initialization utils -------------------------------------------------
 
@@ -463,9 +496,10 @@ def list_distributors():
 def list_content_types():
     """
     List the supported content types.
+    @rtype: list of str's
+    @return: list of content type definitions in the database
     """
-    # TODO
-    pass
+    return database.all_type_collection_names()
 
 # plugin api -------------------------------------------------------------------
 
