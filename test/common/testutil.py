@@ -51,6 +51,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.role import RoleAPI
+from pulp.server.content.types import database as types_database
 from pulp.server.db import connection
 from pulp.server.db.model import Delta
 from pulp.server.db.model.cds import CDSRepoRoundRobin
@@ -155,7 +156,7 @@ class PulpTest(unittest.TestCase):
         self.data_path = \
             os.path.join(
                 os.path.join(
-                    os.path.abspath(os.path.dirname(__file__)), 
+                    os.path.abspath(os.path.dirname(__file__)),
                     "../unit"),
                 "data")
         self.config = load_test_config()
@@ -210,6 +211,9 @@ class PulpTest(unittest.TestCase):
         self.errata_api.clean()
         self.role_api.clean()
 
+        # remove any content type definitions that have been added
+        types_database.clean()
+
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove(safe=True)
 
@@ -231,7 +235,7 @@ class PulpTest(unittest.TestCase):
         for parent in self._mocks:
             for mocked_attr, original_attr in self._mocks[parent].items():
                 setattr(parent, mocked_attr, original_attr)
-        
+
 
 class PulpAsyncTest(PulpTest):
 
