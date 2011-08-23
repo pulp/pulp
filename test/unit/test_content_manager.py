@@ -195,15 +195,18 @@ class ManagerInstanceTest(testutil.PulpTest):
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
 
-class ManagerPathTest(testutil.PulpTest):
+class ManagerTest(testutil.PulpTest):
 
     def setUp(self):
-        super(ManagerPathTest, self).setUp()
+        super(ManagerTest, self).setUp()
         self.manager = manager.Manager()
 
     def tearDown(self):
-        super(ManagerPathTest, self).tearDown()
+        super(ManagerTest, self).tearDown()
         self.manager = None
+
+
+class ManagerPathTest(ManagerTest):
 
     def test_add_valid_path(self):
         path = tempfile.mkdtemp()
@@ -229,7 +232,7 @@ class ManagerPathTest(testutil.PulpTest):
         os.rmdir(cant_read)
 
 
-class ManagerLoadTest(ManagerPathTest):
+class ManagerLoadTest(ManagerTest):
 
     def test_enabled_importer(self):
         path = gen_excellent_importer(enabled=True)
@@ -285,7 +288,7 @@ class ManagerLoadTest(ManagerPathTest):
         self.assertTrue('HTTP' in self.manager.distributor_configs)
 
 
-class ManagerAPITest(ManagerPathTest):
+class ManagerAPITest(ManagerTest):
 
     def test_get_importer(self):
         path = gen_excellent_importer()
@@ -296,6 +299,11 @@ class ManagerAPITest(ManagerPathTest):
         importer = manager.get_importer_by_name('Excellent')
         self.assertTrue(isinstance(importer, Importer))
 
+    def test_get_non_existent_importer(self):
+        manager._MANAGER = self.manager
+        importer = manager.get_distributor_by_name('Bogus')
+        self.assertTrue(importer is None)
+
     def test_get_distributor(self):
         path = gen_http_distributor()
         self.manager.add_distributor_plugin_path(path)
@@ -304,3 +312,8 @@ class ManagerAPITest(ManagerPathTest):
         manager._MANAGER = self.manager
         distributor = manager.get_distributor_by_name('HTTP')
         self.assertTrue(distributor, Distributor)
+
+    def test_get_non_existent_distributor(self):
+        manager._MANAGER = self.manager
+        distributor = manager.get_distributor_by_name('HTTPS')
+        self.assertTrue(distributor is None)
