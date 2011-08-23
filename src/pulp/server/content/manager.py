@@ -103,7 +103,8 @@ def _load_configs(config_paths):
         files = os.listdir(path)
         for file_name in filter(files_regex.match, files):
             if file_name in configs:
-                raise ConflictingPluginError(_('More than one configuration file found for %s') % file_name)
+                raise ConflictingPluginError(_('More than one configuration file found for %s') %
+                                             file_name)
             parser = SafeConfigParser()
             parser.read(os.path.join(path, file_name))
             configs[file_name] = parser
