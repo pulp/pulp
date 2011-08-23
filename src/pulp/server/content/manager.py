@@ -406,7 +406,7 @@ def _read_contents(file_name):
     return contents
 
 
-def _load_descriptors(path):
+def _load_type_descriptors(path):
     descriptors = []
     for file_name in os.listdir(path):
         contents = _read_contents(file_name)
@@ -415,11 +415,15 @@ def _load_descriptors(path):
     return descriptors
 
 
+def _load_type_definitions(descriptors):
+    definitions = parser.parse(descriptors)
+    database.update_database(definitions)
+
+
 def _load_content_types():
     _check_path(_TYPES_DIRECTORY)
     descriptors = _load_descriptors(_TYPES_DIRECTORY)
-    definitions = parser.parse(descriptors)
-    database.update_database(definitions)
+    _load_type_definitions(descriptors)
 
 
 # manager initialization utils -------------------------------------------------
