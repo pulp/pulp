@@ -188,6 +188,9 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
             if not issubclass(attr, cls):
                 continue
             metadata = attr.metadata()
+            if not isinstance(metadata, dict):
+                raise MalformedPluginError(_('%s metadata() did not return a dict: %s') %
+                                           (cls.__name__, attr.__name__))
             name = metadata.get('name', None)
             version = metadata.get('version', None)
             types = metadata.get('types', ())
