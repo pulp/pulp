@@ -23,6 +23,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../c
 import testutil
 
 from pulp.server.content import manager
+from pulp.server.content.distributor.base import Distributor
+from pulp.server.content.importer.base import Importer
 
 # test data and data generation api --------------------------------------------
 
@@ -59,6 +61,17 @@ class LessExcellentImporter(base.Importer):
     def metadata(cls):
         data = {'name': 'Excellent',
                 'version': 0,
+                'types': ['excellent_type']}
+        return data
+'''
+
+not_excellent_importer = '''
+from pulp.server.content.importer import base
+class NotExcellentImporter(base.Importer):
+    @classmethod
+    def metadata(cls):
+        data = {'name': 'Excellent',
+                'version': 1,
                 'types': ['excellent_type']}
         return data
 '''
@@ -128,9 +141,19 @@ def gen_less_excellent_importer():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
     _generated_paths.append(path)
-    mod_handle = open(os.path.join(path, 'less_excellent.py'), 'w')
-    mod_handle.write(less_excellent_importer)
-    mod_handle.close()
+    handle = open(os.path.join(path, 'less_excellent.py'), 'w')
+    handle.write(less_excellent_importer)
+    handle.close()
+    return path
+
+
+def gen_not_excellent_importer():
+    path = tempfile.mkdtemp()
+    sys.path.insert(0, path)
+    _generated_paths.append(path)
+    handle = open(os.path.join(path, 'not_excellent.py'), 'w')
+    handle.write(not_excellent_importer)
+    handle.close()
     return path
 
 
@@ -203,10 +226,76 @@ class ManagerPathTest(testutil.PulpTest):
 
 class ManagerLoadTest(ManagerPathTest):
 
-    def test_enabled_excellent_importer(self):
+    def test_enabled_importer(self):
         path = gen_excellent_importer(enabled=True)
         self.manager.add_importer_plugin_path(path)
         self.manager.add_importer_config_path(path)
         self.manager.load_importers()
         self.assertTrue('Excellent' in self.manager.importer_plugins)
         self.assertTrue('Excellent' in self.manager.importer_configs)
+
+    def test_disabled_importer(self):
+        path = gen_excellent_importer(enabled=False)
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        self.manager.load_importers()
+        self.assertFalse('Excellent' in self.manager.importer_plugins)
+        self.assertFalse('Excellent' in self.manager.importer_configs)
+
+    def test_multiple_importers(self):
+        path = gen_excellent_importer()
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        path = gen_less_excellent_importer()
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        self.manager.load_importers()
+        self.assertTrue(len(self.manager.importer_plugins['Excellent']) == 2)
+
+    def test_conflicting_excellent_importers(self):
+        path = gen_excellent_importer(enabled=True)
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        path = gen_not_excellent_importer()
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        self.assertRaises(manager.ConflictingPluginError, self.manager.load_importers)
+
+    def test_missing_metadata_plugin(self):
+        path = gen_bogus_importer(version=1)
+        self.manager.add_importer_plugin_path(path)
+        self.assertRaises(manager.MalformedPluginError, self.manager.load_importers)
+
+    def test_malformed_metadata_plugin(self):
+        path = gen_bogus_importer(version=2)
+        self.manager.add_importer_plugin_path(path)
+        self.assertRaises(manager.MalformedPluginError, self.manager.load_importers)
+
+    def test_distributor(self):
+        path = gen_http_distributor()
+        self.manager.add_distributor_plugin_path(path)
+        self.manager.add_distributor_config_path(path)
+        self.manager.load_distributors()
+        self.assertTrue('HTTP' in self.manager.distributor_plugins)
+        self.assertTrue('HTTP' in self.manager.distributor_configs)
+
+
+class ManagerAPITest(ManagerPathTest):
+
+    def test_get_importer(self):
+        path = gen_excellent_importer()
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        self.manager.load_importers()
+        manager._MANAGER = self.manager
+        importer = manager.get_importer_by_name('Excellent')
+        self.assertTrue(isinstance(importer, Importer))
+
+    def test_get_distributor(self):
+        path = gen_http_distributor()
+        self.manager.add_distributor_plugin_path(path)
+        self.manager.add_distributor_config_path(path)
+        self.manager.load_distributors()
+        manager._MANAGER = self.manager
+        distributor = manager.get_distributor_by_name('HTTP')
+        self.assertTrue(distributor, Distributor)
