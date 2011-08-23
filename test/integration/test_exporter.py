@@ -15,9 +15,9 @@ from pulp.server.exporter.package import PackageExporter
 from pulp.server.exporter.errata import ErrataExporter
 from pulp.server.exporter.distribution import DistributionExporter
 
-def test_exporter(repoid, target_dir='', start_date=None, end_date=None, make_isos=False):
+def test_exporter(repoid, target_dir='', start_date=None, end_date=None):
     for module in [PackageExporter, ErrataExporter, DistributionExporter]:
-        exporter = module(repoid, target_dir=target_dir, start_date=start_date, end_date=end_date, make_isos=make_isos)
+        exporter = module(repoid, target_dir=target_dir, start_date=start_date, end_date=end_date)
         exporter.export()
 
 if __name__== '__main__':

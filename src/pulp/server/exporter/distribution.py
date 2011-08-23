@@ -12,17 +12,17 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import shutil
-import logging
 import pulp.server.util as util
 from pulp.server.exporter.base import BaseExporter
+from pulp.server.exporter.logutil import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class DistributionExporter(BaseExporter):
     """
      Distributor exporter plugin to export repository distribution from pulp to target directory
     """
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None, make_isos=False):
+    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize distribution exporter
         @param repoid: repository Id
@@ -33,10 +33,8 @@ class DistributionExporter(BaseExporter):
         @type start_date: date
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
-        @param make_isos: flag to indicate iso generation
-        @type make_isos: boolean
         """
-        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date, make_isos)
+        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
         self.export_count = 0
         self.errataids = None
 
@@ -44,9 +42,6 @@ class DistributionExporter(BaseExporter):
         self.validate_target_path()
         repo = self.get_repository()
         distributions = repo['distributionid']
-        image_dir = "%s/%s/" % (self.target_dir, 'images')
-        if not os.path.exists(image_dir):
-            os.mkdir(image_dir)
         tree_info_path = "%s/%s/" % (util.top_repos_location(), repo['relative_path'])
         src_tree_file = dst_tree_file = None
         for tree_info_name in ['treeinfo', '.treeinfo']:
@@ -54,12 +49,15 @@ class DistributionExporter(BaseExporter):
             if os.path.exists(src_tree_file):
                 dst_tree_file = "%s/%s" % (self.target_dir, tree_info_name)
                 break
-        if not src_tree_file:
+        if not os.path.exists(src_tree_file):
             # no distributions found
             return
         else:
             shutil.copy(src_tree_file, dst_tree_file)
             log.info("Exported treeinfo file")
+        image_dir = "%s/%s/" % (self.target_dir, 'images')
+        if not os.path.exists(image_dir):
+            os.mkdir(image_dir)
         skip_copy = False
         for distroid in distributions:
             distro = self.distribution_api.distribution(distroid)

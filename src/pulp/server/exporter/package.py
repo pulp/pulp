@@ -12,17 +12,17 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import shutil
-import logging
 import pulp.server.util as util
 from pulp.server.exporter.base import BaseExporter
+from pulp.server.exporter.logutil import getLogger
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 class PackageExporter(BaseExporter):
     """
      Package exporter plugin to export repository packages from pulp to target directory
     """
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None, make_isos=False):
+    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize package exporter
         @param repoid: repository Id
@@ -33,10 +33,8 @@ class PackageExporter(BaseExporter):
         @type start_date: date
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
-        @param make_isos: flag to indicate iso generation
-        @type make_isos: boolean
         """
-        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date, make_isos)
+        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
         self.export_count = 0
 
     def export(self):
@@ -57,7 +55,7 @@ class PackageExporter(BaseExporter):
                 self.export_count += 1
                 log.info("copied package %s @ location %s" % (os.path.basename(pkg_path), dst_file_path))
             else:
-                log.info("file %s already exists with same checksum. skip import" % os.path.basename(pkg_path))
+                log.info("file %s already exists with same checksum. skip export" % os.path.basename(pkg_path))
         # generate metadata
         try:
             util.create_repo(self.target_dir)

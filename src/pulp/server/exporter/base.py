@@ -25,7 +25,7 @@ class BaseExporter(object):
     """
      Base Exporter module with common methods
     """
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None, make_isos=False):
+    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize exporter
         @param repoid: repository Id
@@ -43,7 +43,6 @@ class BaseExporter(object):
         self.target_dir = target_dir
         self.start_date = start_date
         self.end_date = end_date
-        self.make_isos = make_isos
         self.progress = {
             'status': 'running',
             'item_name': None,
@@ -71,6 +70,8 @@ class BaseExporter(object):
         repo = self.repo_api.repository(self.repoid)
         if not repo:
             raise Exception("Repository id %s not found" % self.repoid)
+        if repo['sync_in_progress']:
+            raise Exception("Repository [%s] sync is in progress; cannot perform export" % self.repoid)
         return repo
     
     def export(self):
@@ -78,9 +79,6 @@ class BaseExporter(object):
 
     def set_callback(self, callback):
         self.callback = callback
-
-    def create_iso(self):
-        pass
 
     def validate_target_path(self):
         if not os.path.exists(self.target_dir):
