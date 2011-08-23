@@ -222,10 +222,11 @@ class ManagerPathTest(testutil.PulpTest):
         non_existent = '/asdf/jkl'
         self.assertRaises(ValueError, self.manager.add_importer_plugin_path, non_existent)
 
-    @skipIf(os.access('/root', os.R_OK), 'skipping because /root is readable')
     def test_bad_permissions_path(self):
-        cant_read = '/root'
+        cant_read = tempfile.mkdtemp()
+        os.chmod(cant_read, 0300)
         self.assertRaises(ValueError, self.manager.add_distributor_plugin_path, cant_read)
+        os.rmdir(cant_read)
 
 
 class ManagerLoadTest(ManagerPathTest):
