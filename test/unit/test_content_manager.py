@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import atexit
 import os
 import shutil
 import sys
@@ -24,6 +25,18 @@ import testutil
 from pulp.server.content import manager
 
 # test data and data generation api --------------------------------------------
+
+# delete the generated data
+
+_generated_paths = []
+
+def _delete_generated_paths():
+    for p in _generated_paths:
+        shutil.rmtree(p)
+
+atexit.register(_delete_generated_paths)
+
+# test data
 
 excellent_importer = '''
 from pulp.server.content.importer import base
@@ -91,6 +104,8 @@ http_conf = '''
 enabled: yes
 '''
 
+# test file(s) generation
+
 def gen_excellent_importer(enabled=True):
     path = tempfile.mkdtemp()
     mod_handle = open(os.path.join(path, 'excellent.py'), 'w')
@@ -102,6 +117,7 @@ def gen_excellent_importer(enabled=True):
     else:
         cfg_handle.write(excellent_importer_config_2)
     cfg_handle.close()
+    _generated_paths.append(path)
     return path
 
 def gen_less_excellent_importer():
@@ -109,6 +125,7 @@ def gen_less_excellent_importer():
     mod_handle = open(os.path.join(path, 'less.py'), 'w')
     mod_handle.write(less_excellent_importer)
     mod_handle.close()
+    _generated_paths.append(path)
     return path
 
 def gen_bogus_importer(version=1):
@@ -121,6 +138,7 @@ def gen_bogus_importer(version=1):
     else:
         raise Exception('Are you kidding me?')
     handle.close()
+    _generated_paths.append(path)
     return path
 
 def gen_http_distributor():
@@ -131,6 +149,7 @@ def gen_http_distributor():
     cfg_handle = open(os.path.join(path, 'http.conf'), 'w')
     cfg_handle.write(http_conf)
     cfg_handle.close()
+    _generated_paths.append(path)
     return path
 
 # unit tests -------------------------------------------------------------------
@@ -156,6 +175,7 @@ class ManagerPathTest(testutil.PulpTest):
 
     def test_add_valid_path(self):
         path = tempfile.mkdtemp()
+        _generated_paths.append(path)
         self.manager.add_importer_plugin_path(path)
         self.assertTrue(path in self.manager.importer_plugin_paths)
         self.manager.add_importer_config_path(path)
@@ -164,7 +184,6 @@ class ManagerPathTest(testutil.PulpTest):
         self.assertTrue(path in self.manager.distributor_plugin_paths)
         self.manager.add_distributor_config_path(path)
         self.assertTrue(path in self.manager.distributor_config_paths)
-        os.rmdir(path)
 
     def test_add_invalid_path(self):
         non_existent = '/asdf/jkl'
@@ -182,4 +201,3 @@ class ManagerLoadTest(ManagerPathTest):
         self.manager.load_importers()
         self.assertTrue('ExcellentImporter' in self.manager.importer_plugins)
         self.assertTrue('ExcellentImporter' in self.manager.importer_configs)
-        shutil.rmtree(path)
