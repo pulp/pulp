@@ -17,6 +17,7 @@ import shutil
 import sys
 import tempfile
 import traceback
+from unittest import skipIf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../common')))
 
@@ -217,10 +218,13 @@ class ManagerPathTest(testutil.PulpTest):
         self.manager.add_distributor_config_path(path)
         self.assertTrue(path in self.manager.distributor_config_paths)
 
-    def test_add_invalid_path(self):
+    def test_non_existent_path(self):
         non_existent = '/asdf/jkl'
-        cant_read = '/root'
         self.assertRaises(ValueError, self.manager.add_importer_plugin_path, non_existent)
+
+    @skipIf(os.access('/root', os.R_OK), 'skipping because /root is readable')
+    def test_bad_permissions_path(self):
+        cant_read = '/root'
         self.assertRaises(ValueError, self.manager.add_distributor_plugin_path, cant_read)
 
 
