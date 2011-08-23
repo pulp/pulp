@@ -226,6 +226,9 @@ class ManagerPathTest(ManagerTest):
         self.assertRaises(ValueError, self.manager.add_importer_plugin_path, non_existent)
 
     def test_bad_permissions_path(self):
+        # NOTE this test fails if run by root
+        if os.getuid() == 0:
+            return
         cant_read = tempfile.mkdtemp()
         os.chmod(cant_read, 0300)
         self.assertRaises(ValueError, self.manager.add_distributor_plugin_path, cant_read)
