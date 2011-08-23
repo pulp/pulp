@@ -139,7 +139,7 @@ def _load_modules(plugin_paths, skip=None):
     skip = skip or ('__init__', 'base') # don't load package or base modules
     files_regex = re.compile('(?!(%s))\.py$' % '|'.join(skip))
     modules = []
-    for path, package_name in paths.items():
+    for path, package_name in plugin_paths.items():
         files = os.listdir(path)
         for file_name in filter(files_regex.match, files):
             name = file_name.rsplit('.', 1)[0]
