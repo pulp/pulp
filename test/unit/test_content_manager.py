@@ -80,12 +80,12 @@ class BogusTwoImporter(base.Importer):
 '''
 
 excellent_importer_config_1 = '''
-[ExcellentImporter]
+[Excellent]
 enabled = true
 '''
 
 excellent_importer_config_2 = '''
-[ExcellentImporter]
+[Excellent]
 enabled = false
 '''
 
@@ -111,6 +111,7 @@ enabled: yes
 def gen_excellent_importer(enabled=True):
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
+    _generated_paths.append(path)
     mod_handle = open(os.path.join(path, 'excellent.py'), 'w')
     mod_handle.write(excellent_importer)
     mod_handle.close()
@@ -120,21 +121,23 @@ def gen_excellent_importer(enabled=True):
     else:
         cfg_handle.write(excellent_importer_config_2)
     cfg_handle.close()
-    _generated_paths.append(path)
     return path
+
 
 def gen_less_excellent_importer():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
+    _generated_paths.append(path)
     mod_handle = open(os.path.join(path, 'less_excellent.py'), 'w')
     mod_handle.write(less_excellent_importer)
     mod_handle.close()
-    _generated_paths.append(path)
     return path
+
 
 def gen_bogus_importer(version=1):
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
+    _generated_paths.append(path)
     handle = open(os.path.join(path, 'bogus_%d.py' % version), 'w')
     if version == 1:
         handle.write(bogus_importer_1)
@@ -143,19 +146,19 @@ def gen_bogus_importer(version=1):
     else:
         raise Exception('Are you kidding me?')
     handle.close()
-    _generated_paths.append(path)
     return path
+
 
 def gen_http_distributor():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
+    _generated_paths.append(path)
     mod_handle = open(os.path.join(path, 'http_distributor.py'), 'w')
     mod_handle.write(http_distibutor)
     mod_handle.close()
     cfg_handle = open(os.path.join(path, 'http_distributor.conf'), 'w')
     cfg_handle.write(http_conf)
     cfg_handle.close()
-    _generated_paths.append(path)
     return path
 
 # unit tests -------------------------------------------------------------------
@@ -205,5 +208,5 @@ class ManagerLoadTest(ManagerPathTest):
         self.manager.add_importer_plugin_path(path)
         self.manager.add_importer_config_path(path)
         self.manager.load_importers()
-        self.assertTrue('ExcellentImporter' in self.manager.importer_plugins)
-        self.assertTrue('ExcellentImporter' in self.manager.importer_configs)
+        self.assertTrue('Excellent' in self.manager.importer_plugins)
+        self.assertTrue('Excellent' in self.manager.importer_configs)
