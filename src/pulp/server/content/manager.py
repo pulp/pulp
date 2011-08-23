@@ -537,7 +537,8 @@ def get_importer_by_name(name, version=None):
     if cls is None:
         return None
     cfg = _MANAGER.get_importer_config_by_name(name, version)
-    importer = cls(cfg)
+    cpy = copy.copy(cfg)
+    importer = cls(cpy)
     return importer
 
 
@@ -556,5 +557,6 @@ def get_distributor_by_name(name, version=None):
     if cls is None:
         return None
     cfg = _MANAGER.get_distributor_config_by_name(name, version)
-    distributor = cls(cfg)
+    cpy = copy.copy(cfg)
+    distributor = cls(cpy)
     return distributor
