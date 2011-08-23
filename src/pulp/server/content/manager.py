@@ -130,8 +130,8 @@ def _import_module(name):
 def _load_modules(plugin_paths, skip=None):
     """
     Load python modules from the list of plugin directories.
-    @type plugin_paths: tuple or list of strs
-    @param plugin_paths: list of directories
+    @type plugin_paths: dict
+    @param plugin_paths: dictionary of directory: package name
     @type skip: tuple or list of strs
     @param skip: optional list of module names to skip
     @rtype: list of modeule instances
