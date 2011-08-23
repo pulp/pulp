@@ -137,19 +137,22 @@ def _load_modules(plugin_paths, skip=None):
     @return: all modules in the list of directories not in the skip list
     """
     skip = skip or ('__init__', 'base') # don't load package or base modules
-    files_regex = re.compile('(?!(%s))\.py$' % '|'.join(skip))
+    files_regex = re.compile('.*(?!(%s))\.py$' % '|'.join(skip))
     modules = []
     for path, package_name in plugin_paths.items():
         files = os.listdir(path)
         for file_name in filter(files_regex.match, files):
             name = file_name.rsplit('.', 1)[0]
-            module_name = '.'.join((package_name, name))
+            if package_name:
+                module_name = '.'.join((package_name, name))
+            else:
+                module_name = name
             module = _import_module(module_name)
             modules.append(module)
     return modules
 
 
-def _is_plugin_enabled(pulgin_name, config):
+def _is_plugin_enabled(plugin_name, config):
     """
     Grok through a config parser and see if the plugin is not disabled.
     @type config: SafeConfigParser instance
@@ -184,8 +187,9 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
     configs = _load_configs(config_paths)
     modules = _load_modules(plugin_paths)
     for module in modules:
-        for attr in dir(module):
-            if not issubclass(attr, cls):
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if not isinstance(attr, type) or not issubclass(attr, cls):
                 continue
             metadata = attr.metadata()
             if not isinstance(metadata, dict):
@@ -201,12 +205,12 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
             cfg = configs.get(conf_file, None)
             if not _is_plugin_enabled(name, cfg):
                 continue
-            plugin_versions = plugin_dict.setdefault('name', {})
+            plugin_versions = plugin_dict.setdefault(name, {})
             if version in plugin_versions:
                 raise ConflictingPluginError(_('Two %s plugins %s version %s found') %
                                              (cls.__name__, name, str(version)))
             plugin_versions[version] = attr
-            config_versions = config_dict.setdefault('name', {})
+            config_versions = config_dict.setdefault(name, {})
             config_versions[version] = cfg or SafeConfigParser()
             _LOG.info(_('%s plugin %s version %s loaded for content types: %s') %
                       (cls.__name__, name, str(version), ','.join(types)))
