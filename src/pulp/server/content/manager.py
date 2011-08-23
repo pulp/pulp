@@ -429,7 +429,7 @@ def _create_manager():
     _MANAGER = Manager()
 
 
-def _add_paths():
+def _add_importer_and_distributor_paths():
     # add the pulp conventional importer and distributor paths
     _MANAGER.add_importer_config_path(_IMPORTER_CONFIGS_DIR)
     _MANAGER.add_importer_plugin_path(_IMPORTER_PLUGINS_DIR,
@@ -439,7 +439,7 @@ def _add_paths():
                                          _DISTRIBUTOR_PLUGINS_PACKAGE)
 
 
-def _load_plugins():
+def _load_importers_and_distributors():
     _MANAGER.load_importers()
     _MANAGER.load_distributors()
 
@@ -456,8 +456,8 @@ def initialize():
     assert _MANAGER is None
     _load_content_types()
     _create_manager()
-    _add_paths()
-    _load_plugins()
+    _add_importer_and_distributor_paths()
+    _load_importers_and_distributors()
 
 
 def finalize():
