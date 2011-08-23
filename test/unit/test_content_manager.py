@@ -263,7 +263,7 @@ class ManagerLoadTest(ManagerTest):
         self.manager.load_importers()
         self.assertTrue(len(self.manager.importer_plugins['Excellent']) == 2)
 
-    def test_conflicting_excellent_importers(self):
+    def test_conflicting_importers(self):
         path = gen_excellent_importer(enabled=True)
         self.manager.add_importer_plugin_path(path)
         self.manager.add_importer_config_path(path)
