@@ -266,7 +266,7 @@ class Manager(object):
         @param package_name: optional package name for importation
         """
         _check_path(path)
-        self.importer_paths[path] = package_name or ''
+        self.importer_plugin_paths[path] = package_name or ''
 
     def add_distributor_config_path(self, path):
         """
@@ -286,20 +286,15 @@ class Manager(object):
         @param package_name: optional package name for importation
         """
         _check_path(path)
-        self.distributor_paths[path] = package_name or ''
+        self.distributor_plugin_paths[path] = package_name or ''
 
     # plugin discovery
 
-    def load_importers(self):
+    def validate_importers(self):
         """
-        Load all importer modules and associate them with their supported types.
+        Validate the importers supported content types, removing and importers
+        that are for content types not found in the content types database.
         """
-        assert not (self.importer_plugins or self.importer_configs)
-        _load_plugins(Importer,
-                      self.importer_plugin_paths,
-                      self.importer_config_paths,
-                      self.importer_plugins,
-                      self.importer_configs)
         supported_types = list_content_types()
         for name, versions in tuple(self.importer_plugins.items()):
             for version, cls in tuple(versions.items()):
@@ -313,6 +308,19 @@ class Manager(object):
             if not versions:
                 del self.importer_plugins[name]
                 del self.importer_configs[name]
+
+    def load_importers(self, validate=False):
+        """
+        Load all importer modules and associate them with their supported types.
+        """
+        assert not (self.importer_plugins or self.importer_configs)
+        _load_plugins(Importer,
+                      self.importer_plugin_paths,
+                      self.importer_config_paths,
+                      self.importer_plugins,
+                      self.importer_configs)
+        if validate:
+            self.validate_importers()
 
     def load_distributors(self):
         """
@@ -444,7 +452,7 @@ def _add_importer_and_distributor_paths():
 
 
 def _load_importers_and_distributors():
-    _MANAGER.load_importers()
+    _MANAGER.load_importers(validate=True)
     _MANAGER.load_distributors()
 
 # manager api ------------------------------------------------------------------
