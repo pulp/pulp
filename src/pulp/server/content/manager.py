@@ -40,16 +40,16 @@ _TYPES_DIRECTORY = '/var/lib/pulp'
 # initial plugin and configuration file conventions
 
 _TOP_LEVEL_CONFIGS_DIR = '/etc/pulp'
-_IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importers')
-_DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributors')
+_IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importer')
+_DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributor')
 
 _TOP_LEVEL_PLUGINS_DIR = os.path.dirname(__file__)
-_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importers')
-_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributors')
+_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importer')
+_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributor')
 
 _TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content'
-_IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importers'))
-_DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributors'))
+_IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importer'))
+_DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributor'))
 
 # exceptions -------------------------------------------------------------------
 
@@ -458,8 +458,8 @@ def _add_importer_and_distributor_paths():
                                          _DISTRIBUTOR_PLUGINS_PACKAGE)
 
 
-def _load_importers_and_distributors():
-    _MANAGER.load_importers(validate=True)
+def _load_importers_and_distributors(validate=True):
+    _MANAGER.load_importers(validate)
     _MANAGER.load_distributors()
 
 # manager api ------------------------------------------------------------------
