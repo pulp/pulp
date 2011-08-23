@@ -218,7 +218,8 @@ class ManagerPathTest(testutil.PulpTest):
         self.assertTrue(path in self.manager.distributor_config_paths)
 
     def test_non_existent_path(self):
-        non_existent = '/asdf/jkl'
+        non_existent = tempfile.mkdtemp()
+        os.rmdir(non_existent)
         self.assertRaises(ValueError, self.manager.add_importer_plugin_path, non_existent)
 
     def test_bad_permissions_path(self):
