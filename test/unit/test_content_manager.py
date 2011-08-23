@@ -28,18 +28,6 @@ from pulp.server.content.importer.base import Importer
 
 # test data and data generation api --------------------------------------------
 
-# delete the generated data
-
-_generated_paths = []
-
-def _delete_generated_paths():
-    for p in _generated_paths:
-        if p in sys.path:
-            sys.path.remove(p)
-        shutil.rmtree(p)
-
-atexit.register(_delete_generated_paths)
-
 # test data
 
 excellent_importer = '''
@@ -118,13 +106,30 @@ http_conf = '''
 [HTTPDistributor]
 enabled: yes
 '''
+# delete the generated data
+
+_generated_paths = []
+
+
+def _delete_generated_paths():
+    for p in _generated_paths:
+        if p in sys.path:
+            sys.path.remove(p)
+        shutil.rmtree(p)
+
+atexit.register(_delete_generated_paths)
 
 # test file(s) generation
 
-def gen_excellent_importer(enabled=True):
+def _gen_mod_conf_path():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
     _generated_paths.append(path)
+    return path
+
+
+def gen_excellent_importer(enabled=True):
+    path = _gen_mod_conf_path()
     mod_handle = open(os.path.join(path, 'excellent.py'), 'w')
     mod_handle.write(excellent_importer)
     mod_handle.close()
@@ -138,9 +143,7 @@ def gen_excellent_importer(enabled=True):
 
 
 def gen_less_excellent_importer():
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     handle = open(os.path.join(path, 'less_excellent.py'), 'w')
     handle.write(less_excellent_importer)
     handle.close()
@@ -148,9 +151,7 @@ def gen_less_excellent_importer():
 
 
 def gen_not_excellent_importer():
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     handle = open(os.path.join(path, 'not_excellent.py'), 'w')
     handle.write(not_excellent_importer)
     handle.close()
@@ -158,9 +159,7 @@ def gen_not_excellent_importer():
 
 
 def gen_bogus_importer(version=1):
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     handle = open(os.path.join(path, 'bogus_%d.py' % version), 'w')
     if version == 1:
         handle.write(bogus_importer_1)
@@ -173,9 +172,7 @@ def gen_bogus_importer(version=1):
 
 
 def gen_http_distributor():
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     mod_handle = open(os.path.join(path, 'http_distributor.py'), 'w')
     mod_handle.write(http_distibutor)
     mod_handle.close()
