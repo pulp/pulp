@@ -137,7 +137,7 @@ def _load_modules(plugin_paths, skip=None):
     @return: all modules in the list of directories not in the skip list
     """
     skip = skip or ('__init__', 'base') # don't load package or base modules
-    files_regex = re.compile('(?!(%s))\.py$') % '|'.join(skip)
+    files_regex = re.compile('(?!(%s))\.py$' % '|'.join(skip))
     modules = []
     for path, package_name in paths.items():
         files = os.listdir(path)
