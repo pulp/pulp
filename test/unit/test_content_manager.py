@@ -17,7 +17,6 @@ import shutil
 import sys
 import tempfile
 import traceback
-from unittest import skipIf
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../common')))
 
