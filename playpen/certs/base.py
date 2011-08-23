@@ -12,21 +12,14 @@ def check_dirs(p):
     if not os.path.exists(os.path.dirname(p)):
         os.makedirs(os.path.dirname(p))
 
-def update_openssl_config(template_file, output_name, hostname=None, index=None, crlnumber=None):
-    if not hostname:
-        hostname = socket.gethostname()
-    d = os.path.dirname(output_name)
-    if not os.path.exists(d):
-        os.makedirs(d)
+def update_openssl_config(template_file, output_name, index=None, crlnumber=None):
     if not os.path.exists(template_file):
         print "Unable to find template file for openssl configuration: %s" % (template_file)
         return False
+    check_dirs(output_name)
     template = open(template_file, "r").read()
-    template = template.replace("REPLACE_COMMON_NAME", hostname)
-    if index:
-        template = template.replace("REPLACE_INDEX_FILE", index)
-    if crlnumber:
-        template = template.replace("REPLACE_CRLNUMBER", crlnumber)
+    template = template.replace("REPLACE_CRL_DATABASE_FILE", index)
+    template = template.replace("REPLACE_CRL_NUMBER_FILE", crlnumber)
     out_file = open(output_name, "w").write(template)
     return True
 

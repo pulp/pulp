@@ -119,9 +119,9 @@ class ConsumerAPI(PulpAPI):
         return self.server.POST(path, body)[1]
 
     def errata(self, id, types=None):
-        path = "/consumers/%s/listerrata/" % id
-        body = dict(types=types)
-        return self.server.POST(path, body)[1]
+        path = "/consumers/%s/errata/" % id
+        queries = [('types', types)]
+        return self.server.GET(path, queries)[1]
 
     def package_updates(self, id):
         path = "/consumers/%s/package_updates/" % id

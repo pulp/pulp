@@ -14,8 +14,8 @@
 
 class Importer(object):
 
-    def __init__(self, **options):
-        self.__dict__.update(options)
+    def __init__(self, config):
+        self.config = config
 
     @classmethod
     def metadata(cls):

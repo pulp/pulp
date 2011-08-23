@@ -33,6 +33,7 @@ from pulp.server.async import run_async
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import top_repos_location
+from pulp.server.util import top_gpg_location
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
@@ -137,7 +138,7 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
     keylist = []
     key_paths = repo_api.listkeys(id)
     for key_path in key_paths:
-        key_path = REPOS_LOCATION + key_path
+        key_path = os.path.join(top_gpg_location(), key_path)
         f = open(key_path)
         fn = os.path.basename(key_path)
         content = f.read()

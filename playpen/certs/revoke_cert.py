@@ -23,22 +23,24 @@ def setup_env(index_path, crlnumber_path):
 
 def revoke_cert(crl_path, cert_to_revoke, ca_cert, ca_key, ssl_conf):
     # openssl ca -revoke bad_crt_file -keyfile ca_key -cert ca_crt
-    cmd = "openssl ca -revoke %s -keyfile %s -cert %s -config %s" % (cert_to_revoke, ca_key, ca_cert, ssl_conf)
+    # rhel5 needs -md sha1, it complains about the 'default_md' option in openssl config
+    cmd = "openssl ca -revoke %s -keyfile %s -cert %s -config %s -md sha1" % (cert_to_revoke, ca_key, ca_cert, ssl_conf)
     if not run_command(cmd):
         return False
     # openssl ca -gencrl -config openssl.cnf -keyfile ./Pulp_CA.key -cert Pulp_CA.cert -out my_crl.pem
-    cmd = "openssl ca -gencrl -keyfile %s -cert %s -out %s -config %s -crlexts crl_ext" % (ca_key, ca_cert, crl_path, ssl_conf)
+    cmd = "openssl ca -gencrl -keyfile %s -cert %s -out %s -config %s -crlexts crl_ext -md sha1" % (ca_key, ca_cert, crl_path, ssl_conf)
     if not run_command(cmd):
         return False
     return True
 
 if __name__ == "__main__":
-    parser = get_parser(limit_options=["index", "crlnumber", "ssl_conf_server", "ca_key", "ca_cert", "crl"])
+    parser = get_parser(limit_options=["index", "crlnumber", "ssl_conf_template_crl", "ssl_conf_crl", "ca_key", "ca_cert", "crl"])
     (opts, args) = parser.parse_args()
 
     index = opts.index
     crlnumber = opts.crlnumber
-    ssl_conf = opts.ssl_conf_server
+    ssl_conf_template_crl = opts.ssl_conf_template_crl
+    ssl_conf_crl = opts.ssl_conf_crl
     ca_key = opts.ca_key
     ca_cert = opts.ca_cert
     crl = opts.crl
@@ -50,7 +52,7 @@ if __name__ == "__main__":
 
     cert_to_revoke = args[0]
 
-    if not update_openssl_config(ssl_conf, ssl_conf, index=index, crlnumber=crlnumber):
+    if not update_openssl_config(ssl_conf_template_crl, ssl_conf_crl, index=index, crlnumber=crlnumber):
         print "Failed to create cert configuration file"
         sys.exit(1)
 
@@ -58,7 +60,7 @@ if __name__ == "__main__":
         print "Failed to setup environment for CRL"
         sys.exit(1)
 
-    if not revoke_cert(crl, cert_to_revoke, ca_cert, ca_key, ssl_conf):
+    if not revoke_cert(crl, cert_to_revoke, ca_cert, ca_key, ssl_conf_crl):
         print "Failed to revoke cert"
         sys.exit(1)
 

@@ -105,6 +105,7 @@ def update_database(definitions, error_on_missing_definitions=False):
             continue
 
         try:
+            # May need to revisit if the recreation takes too long with large content sets
             _drop_indexes(type_def)
         except Exception:
             LOG.exception('Exception dropping indexes for type [%s]' % type_def.id)
