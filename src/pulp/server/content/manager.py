@@ -99,8 +99,8 @@ def _load_configs(config_paths):
     """
     configs = {}
     files_regex = re.compile('.*\.conf$')
-    for path in config_paths:
-        files = os.listdir(path)
+    for path in sorted(config_paths):
+        files = sorted(os.listdir(path))
         for file_name in filter(files_regex.match, files):
             if file_name in configs:
                 raise ConflictingPluginError(_('More than one configuration file found for %s') %
