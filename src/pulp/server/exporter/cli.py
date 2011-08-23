@@ -43,12 +43,10 @@ class ExporterCLI:
     def validate_options(self):
         self.target_dir = self.options.dir
         if not self.target_dir:
-            print "Error: save directory not specified. Please use -d or --dir"
-            return
+            system_exit(os.EX_USAGE, "Error: save directory not specified. Please use -d or --dir")
         self.repoid = self.options.repoid
         if not self.repoid:
-            print "Error: repository not specified. Please use -r or --repoid"
-            return
+           system_exit(os.EX_USAGE, "Error: repository not specified. Please use -r or --repoid")
         self.start_date = self.options.start_date
         self.end_date = self.options.end_date
         self.force = self.options.force
@@ -64,7 +62,22 @@ class ExporterCLI:
     def create_isos(self):
         if not self.make_isos:
             return
-        
+
+def system_exit(code, msgs=None):
+    """
+    Exit with a code and optional message(s). Saves a few lines of code.
+    @type code: int
+    @param code: code to return
+    @type msgs: str or list or tuple of str's
+    @param msgs: messages to display
+    """
+    if msgs:
+        if type(msgs) not in [type([]), type(())]:
+            msgs = (msgs, )
+        for msg in msgs:
+            sys.stderr.write(str(msg)+'\n')
+    sys.exit(code)
+
 
 if __name__== '__main__':
     pe = ExporterCLI()

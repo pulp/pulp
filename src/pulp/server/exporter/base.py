@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import logging
+import sys
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
@@ -83,3 +84,4 @@ class BaseExporter(object):
     def validate_target_path(self):
         if not os.path.exists(self.target_dir):
             os.mkdir(self.target_dir)
+

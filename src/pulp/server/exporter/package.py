@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import shutil
-import pulp.server.util as util
+import pulp.server.util
 from pulp.server.exporter.base import BaseExporter
 from pulp.server.exporter.logutil import getLogger
 
@@ -43,14 +43,14 @@ class PackageExporter(BaseExporter):
         hashtype = repo['checksum_type']
         for pkg in repo['packages']:
             package_obj = self.package_api.package(pkg)
-            pkg_path = util.get_shared_package_path(package_obj['name'], package_obj['version'], package_obj['release'],
+            pkg_path = pulp.server.util.get_shared_package_path(package_obj['name'], package_obj['version'], package_obj['release'],
                                                     package_obj['arch'], package_obj['filename'], package_obj['checksum'])
             if not os.path.exists(pkg_path):
                 # package not found on filesystem, continue
                 continue
-            src_file_checksum = util.get_file_checksum(hashtype=hashtype, filename=pkg_path)
+            src_file_checksum = pulp.server.util.get_file_checksum(hashtype=hashtype, filename=pkg_path)
             dst_file_path = os.path.join(self.target_dir, os.path.basename(pkg_path))
-            if not util.check_package_exists(dst_file_path, src_file_checksum):
+            if not pulp.server.util.check_package_exists(dst_file_path, src_file_checksum):
                 shutil.copy(pkg_path, dst_file_path)
                 self.export_count += 1
                 log.info("copied package %s @ location %s" % (os.path.basename(pkg_path), dst_file_path))
@@ -58,7 +58,7 @@ class PackageExporter(BaseExporter):
                 log.info("file %s already exists with same checksum. skip export" % os.path.basename(pkg_path))
         # generate metadata
         try:
-            util.create_repo(self.target_dir)
+            pulp.server.util.create_repo(self.target_dir)
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except:
             log.error("Unable to generate metadata for exported packages in target directory %s" % self.target_dir)

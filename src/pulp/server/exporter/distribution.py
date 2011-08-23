@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import shutil
-import pulp.server.util as util
+import pulp.server.util
 from pulp.server.exporter.base import BaseExporter
 from pulp.server.exporter.logutil import getLogger
 
@@ -42,7 +42,7 @@ class DistributionExporter(BaseExporter):
         self.validate_target_path()
         repo = self.get_repository()
         distributions = repo['distributionid']
-        tree_info_path = "%s/%s/" % (util.top_repos_location(), repo['relative_path'])
+        tree_info_path = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path'])
         src_tree_file = dst_tree_file = None
         for tree_info_name in ['treeinfo', '.treeinfo']:
             src_tree_file = tree_info_path + tree_info_name
@@ -64,8 +64,8 @@ class DistributionExporter(BaseExporter):
             for src_dist_file in distro['files']:
                 dst_file_path = "%s/%s" % (image_dir, os.path.basename(src_dist_file) )
                 if os.path.exists(dst_file_path):
-                    dst_file_checksum = util.get_file_checksum(filename=dst_file_path)
-                    src_file_checksum = util.get_file_checksum(filename=src_dist_file)
+                    dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
+                    src_file_checksum = pulp.server.util.get_file_checksum(filename=src_dist_file)
                     if src_file_checksum == dst_file_checksum:
                         log.info("file %s already exists with same checksum. skip import" % os.path.basename(src_dist_file))
                         skip_copy = True

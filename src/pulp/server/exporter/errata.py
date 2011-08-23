@@ -14,7 +14,7 @@ import os
 import shutil
 from pulp.server import updateinfo
 from pulp.server.compat import chain
-import pulp.server.util as util
+import pulp.server.util
 from pulp.server.exporter.base import BaseExporter
 from pulp.server.exporter.logutil import getLogger
 
@@ -49,7 +49,7 @@ class ErrataExporter(BaseExporter):
         updateinfo_path = updateinfo.updateinfo(self.errataids, self.target_dir)
         if updateinfo_path:
             log.debug("Modifying repo for updateinfo")
-            util.modify_repo(os.path.join(self.target_dir, "repodata"),
+            pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                 updateinfo_path)
 
     def __process_errata_packages(self):
@@ -60,13 +60,13 @@ class ErrataExporter(BaseExporter):
                 for pkg in pkgobj   ['packages']:
                     checksum_type, checksum = pkg['sum']
                     name, version, release, arch = pkg['name'], pkg['version'], pkg['release'], pkg['arch']
-                    src_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (util.top_package_location(), name, version, release, arch, checksum[:3], pkg['filename'])
+                    src_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), name, version, release, arch, checksum[:3], pkg['filename'])
                     if not os.path.exists(src_pkg_path):
                         # pkg not found
                         log.info("errata package %s missing on pulp server" % src_pkg_path)
                         continue
                     dst_pkg_path = os.path.join(self.target_dir, os.path.basename(src_pkg_path))
-                    if not util.check_package_exists(dst_pkg_path, checksum):
+                    if not pulp.server.util.check_package_exists(dst_pkg_path, checksum):
                         shutil.copy(src_pkg_path, dst_pkg_path)
                         errata_pkg_count += 1
                     else:
@@ -76,7 +76,7 @@ class ErrataExporter(BaseExporter):
             return
         # generate metadata
         try:
-            util.create_repo(self.target_dir)
+            pulp.server.util.create_repo(self.target_dir)
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except:
             log.error("Unable to generate metadata for exported packages in target directory %s" % self.target_dir)
