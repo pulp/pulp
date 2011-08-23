@@ -32,6 +32,8 @@ _generated_paths = []
 
 def _delete_generated_paths():
     for p in _generated_paths:
+        if p in sys.path:
+            sys.path.remove(p)
         shutil.rmtree(p)
 
 atexit.register(_delete_generated_paths)
@@ -108,6 +110,7 @@ enabled: yes
 
 def gen_excellent_importer(enabled=True):
     path = tempfile.mkdtemp()
+    sys.path.insert(0, path)
     mod_handle = open(os.path.join(path, 'excellent.py'), 'w')
     mod_handle.write(excellent_importer)
     mod_handle.close()
@@ -122,7 +125,8 @@ def gen_excellent_importer(enabled=True):
 
 def gen_less_excellent_importer():
     path = tempfile.mkdtemp()
-    mod_handle = open(os.path.join(path, 'less.py'), 'w')
+    sys.path.insert(0, path)
+    mod_handle = open(os.path.join(path, 'less_excellent.py'), 'w')
     mod_handle.write(less_excellent_importer)
     mod_handle.close()
     _generated_paths.append(path)
@@ -130,6 +134,7 @@ def gen_less_excellent_importer():
 
 def gen_bogus_importer(version=1):
     path = tempfile.mkdtemp()
+    sys.path.insert(0, path)
     handle = open(os.path.join(path, 'bogus_%d.py' % version), 'w')
     if version == 1:
         handle.write(bogus_importer_1)
@@ -143,10 +148,11 @@ def gen_bogus_importer(version=1):
 
 def gen_http_distributor():
     path = tempfile.mkdtemp()
-    mod_handle = open(os.path.join(path, 'http.py'), 'w')
+    sys.path.insert(0, path)
+    mod_handle = open(os.path.join(path, 'http_distributor.py'), 'w')
     mod_handle.write(http_distibutor)
     mod_handle.close()
-    cfg_handle = open(os.path.join(path, 'http.conf'), 'w')
+    cfg_handle = open(os.path.join(path, 'http_distributor.conf'), 'w')
     cfg_handle.write(http_conf)
     cfg_handle.close()
     _generated_paths.append(path)
