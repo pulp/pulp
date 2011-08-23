@@ -296,6 +296,56 @@ class Manager(object):
         _check_path(path)
         self.distributor_plugin_paths[path] = package_name or ''
 
+    # direct plugin management
+
+    def add_importer(self, name, version, cls, cfg):
+        if name in self.importer_plugins and version in self.importer_plugins[name]:
+            raise ConflictingPluginError()
+        if name in self.importer_plugins:
+            self.importer_plugins[name][version] = cls
+        else:
+            self.importer_plugins[name] = {version: cls}
+        cfg = cfg or SafeConfigParser()
+        if name in self.importer_configs:
+            self.importer_configs[name][version] = cfg
+        else:
+            self.importer_configs[name] = {version: cfg}
+
+    def remove_importer(self, name, version):
+        if name not in self.importer_plugins:
+            return
+        if version not in self.importer_plugins[name]:
+            return
+        del self.importer_plugins[name][version]
+        del self.importer_configs[name][version]
+        if not self.importer_plugins[name]:
+            del self.importer_plugins[name]
+            del self.importer_configs[name]
+
+    def add_distributor(self, name, version, cls, cfg):
+        if name in self.distributor_plugins and version in self.distributor_plugins[name]:
+            raise ConflictingPluginError()
+        if name in self.distributor_plugins:
+            self.distributor_plugins[name][version] = cls
+        else:
+            self.distributor_plugins[name] = {version: cls}
+        cfg = cfg or SafeConfigParser()
+        if name in self.distributor_configs:
+            self.distributor_configs[name][version] = cfg
+        else:
+            self.distributor_configs[name] = {version: cfg}
+
+    def remove_distributor(self, name, version):
+        if name not in self.distributor_plugins:
+            return
+        if version not in self.distributor_plugins[name]:
+            return
+        del self.distributor_plugins[name][version]
+        del self.distributor_configs[name][version]
+        if not self.distributor_plugins[name]:
+            del self.distributor_plugins[name]
+            del self.distributor_configs[name]
+
     # plugin discovery
 
     def validate_importers(self):
