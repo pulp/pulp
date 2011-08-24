@@ -41,6 +41,7 @@ class ErrataExporter(BaseExporter):
         self.errataids = None
 
     def export(self):
+        self.progress['step'] = 'Exporting Errata'
         self.validate_target_path()
         repo = self.get_repository()
         self.errataids = list(chain.from_iterable(repo['errata'].values()))
@@ -80,6 +81,9 @@ class ErrataExporter(BaseExporter):
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except:
             log.error("Unable to generate metadata for exported packages in target directory %s" % self.target_dir)
+
+    def get_progress(self):
+        return self.print_progress(self.progress)
                     
 if __name__== '__main__':
     pe = ErrataExporter("testrepo", target_dir="/tmp/myexport")

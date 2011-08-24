@@ -16,6 +16,7 @@ from optparse import Option, OptionParser
 from pulp.server.exporter.package import PackageExporter
 from pulp.server.exporter.errata import ErrataExporter
 from pulp.server.exporter.distribution import DistributionExporter
+from pulp.server.exporter.packagegroup import CompsExporter
 
 class ExporterCLI:
     def __init__(self):
@@ -53,10 +54,10 @@ class ExporterCLI:
         self.make_isos = self.options.make_iso
 
     def export(self):
-        for module in [PackageExporter, ErrataExporter, DistributionExporter]:
+        for module in [PackageExporter, ErrataExporter, DistributionExporter, CompsExporter]:
             exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date, end_date=self.end_date)
-            print "Processing %s" % exporter
             exporter.export()
+            exporter.get_progress()
         self.create_isos()
 
     def create_isos(self):

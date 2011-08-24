@@ -40,8 +40,11 @@ class PackageExporter(BaseExporter):
     def export(self):
         self.validate_target_path()
         repo = self.get_repository()
+        self.progress['step'] = 'Exporting Packages'
         hashtype = repo['checksum_type']
-        for pkg in repo['packages']:
+        for count, pkg in enumerate(repo['packages']):
+            if count % 500:
+                log.info("Working on %s/%s" % (count, len(repo['packages'])))
             package_obj = self.package_api.package(pkg)
             pkg_path = pulp.server.util.get_shared_package_path(package_obj['name'], package_obj['version'], package_obj['release'],
                                                     package_obj['arch'], package_obj['filename'], package_obj['checksum'])
@@ -53,8 +56,10 @@ class PackageExporter(BaseExporter):
             if not pulp.server.util.check_package_exists(dst_file_path, src_file_checksum):
                 shutil.copy(pkg_path, dst_file_path)
                 self.export_count += 1
+                self.progress['num_success'] = self.export_count
                 log.info("copied package %s @ location %s" % (os.path.basename(pkg_path), dst_file_path))
             else:
+
                 log.info("file %s already exists with same checksum. skip export" % os.path.basename(pkg_path))
         # generate metadata
         try:
@@ -62,7 +67,10 @@ class PackageExporter(BaseExporter):
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except:
             log.error("Unable to generate metadata for exported packages in target directory %s" % self.target_dir)
-        
+
+    def get_progress(self):
+        return self.print_progress(self.progress)
+
 if __name__== '__main__':
     pe = PackageExporter("testdep", target_dir="/tmp/myexport")
     pe.export()

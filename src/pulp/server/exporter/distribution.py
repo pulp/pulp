@@ -39,6 +39,7 @@ class DistributionExporter(BaseExporter):
         self.errataids = None
 
     def export(self):
+        self.progress['step'] = 'Exporting Distribution'
         self.validate_target_path()
         repo = self.get_repository()
         distributions = repo['distributionid']
@@ -75,7 +76,10 @@ class DistributionExporter(BaseExporter):
                         os.makedirs(file_dir)
                     shutil.copy(src_dist_file, dst_file_path)
                     log.info("exported %s" % src_dist_file)
-                    
+
+    def get_progress(self):
+        return self.print_progress(self.progress)
+
 if __name__== '__main__':
     pe = DistributionExporter("testfedora", target_dir="/tmp/myexport")
     pe.export()

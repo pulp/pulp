@@ -12,11 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import logging
-import sys
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
-import pulp.server.util as util
 from pulp.server.db import connection
 from pulp.server.api.repo import RepoApi
 
@@ -85,3 +83,5 @@ class BaseExporter(object):
         if not os.path.exists(self.target_dir):
             os.mkdir(self.target_dir)
 
+    def print_progress(self, progress):
+        print '* %s' % progress['step']
