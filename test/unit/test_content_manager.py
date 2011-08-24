@@ -267,17 +267,17 @@ class ManagerLoadTest(ManagerTest):
         path = gen_not_excellent_importer()
         self.manager.add_importer_plugin_path(path)
         self.manager.add_importer_config_path(path)
-        self.assertRaises(manager.ConflictingPluginError, self.manager.load_importers)
+        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
 
     def test_missing_metadata_plugin(self):
         path = gen_bogus_importer(version=1)
         self.manager.add_importer_plugin_path(path)
-        self.assertRaises(manager.MalformedPluginError, self.manager.load_importers)
+        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
 
     def test_malformed_metadata_plugin(self):
         path = gen_bogus_importer(version=2)
         self.manager.add_importer_plugin_path(path)
-        self.assertRaises(manager.MalformedPluginError, self.manager.load_importers)
+        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
 
     def test_distributor(self):
         path = gen_http_distributor()
