@@ -41,7 +41,7 @@ _DEFAULTS = {
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
-CLASSES = copy.copy(_DEFAULTS)
+_CLASSES = copy.copy(_DEFAULTS)
 
 # -- exceptions ---------------------------------------------------------------
 
@@ -75,10 +75,10 @@ def get_manager(type_key):
     @raises InvalidType: if there is no class mapping for the requested type
     """
 
-    if type_key not in CLASSES:
+    if type_key not in _CLASSES:
         raise InvalidType(type_key)
 
-    cls = CLASSES[type_key]
+    cls = _CLASSES[type_key]
     manager = cls()
 
     return manager
@@ -96,7 +96,7 @@ def register_manager(type_key, manager_class):
     @type  manager_class: class
     """
 
-    CLASSES[type_key] = manager_class
+    _CLASSES[type_key] = manager_class
 
 def reset():
     """
@@ -104,5 +104,5 @@ def reset():
     in test cleanup to prepare the state for other test runs.
     """
 
-    global CLASSES
-    CLASSES = copy.copy(_DEFAULTS)
+    global _CLASSES
+    _CLASSES = copy.copy(_DEFAULTS)
