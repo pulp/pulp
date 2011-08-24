@@ -60,18 +60,17 @@ class ManagerException(PulpException):
     pass
 
 
-class ConflictingPluginError(ManagerException):
+class PluginLoadError(ManagerException):
     """
-    Raised when two or more plugins try to handle the same content or
-    distribution type(s).
+    Raised when errors are encountered while loading plugins.
     """
     pass
 
 
-class MalformedPluginError(ManagerException):
+class ConflictingPluginError(ManagerException):
     """
-    Raised when a plugin does not provide required information or pass a sanity
-    check.
+    Raised when two or more plugins try to handle the same content or
+    distribution type(s).
     """
     pass
 
@@ -187,6 +186,7 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
     """
     configs = _load_configs(config_paths)
     modules = _load_modules(plugin_paths)
+    errors = 0
     for module in modules:
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
@@ -194,27 +194,35 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
                 continue
             metadata = attr.metadata()
             if not isinstance(metadata, dict):
-                raise MalformedPluginError(_('%s metadata() did not return a dict: %s') %
-                                           (cls.__name__, attr.__name__))
+                errors += 1
+                _LOG.critical(_('%s metadata() did not return a dict: %s') %
+                              (cls.__name__, attr.__name__))
             name = metadata.get('name', None)
             version = metadata.get('version', None)
             types = metadata.get('types', ())
             conf_file = metadata.get('conf_file', None)
             if name is None:
-                raise MalformedPluginError(_('%s discoverd with no name metadata: %s') %
-                                           (cls.__name__, attr.__name__))
+                errors += 1
+                _LOG.critical(_('%s discoverd with no name metadata: %s') %
+                              (cls.__name__, attr.__name__))
             cfg = configs.get(conf_file, None)
             if not _is_plugin_enabled(name, cfg):
+                _LOG.info(_('%s %s version %d, discovered, but disabled. Not loading.') %
+                          (cls.__name__, name, version))
                 continue
             plugin_versions = plugin_dict.setdefault(name, {})
             if version in plugin_versions:
-                raise ConflictingPluginError(_('Two %s plugins %s version %s found') %
-                                             (cls.__name__, name, str(version)))
+                errors += 1
+                _LOG.critical(_('Two %s plugins %s version %s found') %
+                              (cls.__name__, name, str(version)))
             plugin_versions[version] = attr
             config_versions = config_dict.setdefault(name, {})
             config_versions[version] = cfg or SafeConfigParser()
             _LOG.info(_('%s plugin %s version %s loaded for content types: %s') %
                       (cls.__name__, name, str(version), ','.join(types)))
+    if errors:
+        raise PluginLoadError(_('Errors while loading %ss, see log file for info') %
+                              cls.__name__)
 
 
 def _get_versioned_dict_value(d, key, version=None):
