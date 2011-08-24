@@ -197,6 +197,7 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
                 errors += 1
                 _LOG.critical(_('%s metadata() did not return a dict: %s') %
                               (cls.__name__, attr.__name__))
+                continue
             name = metadata.get('name', None)
             version = metadata.get('version', None)
             types = metadata.get('types', ())
@@ -205,6 +206,7 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
                 errors += 1
                 _LOG.critical(_('%s discoverd with no name metadata: %s') %
                               (cls.__name__, attr.__name__))
+                continue
             cfg = configs.get(conf_file, None)
             if not _is_plugin_enabled(name, cfg):
                 _LOG.info(_('%s %s version %d, discovered, but disabled. Not loading.') %
