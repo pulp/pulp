@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.226
+Version:        0.0.227
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -488,6 +488,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Aug 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.227-1
+- Website updates (jslagle@redhat.com)
+- 728326 - list errata consumer web services call moved to GET instead of post
+  and type field is optional (skarmark@redhat.com)
+- Openssl C API example for verifying a revoked certification
+  (jmatthews@redhat.com)
+- 731159 - Fixed repo clone not setting gpg keys correctly because of change in
+  location (skarmark@redhat.com)
+
 * Fri Aug 19 2011 Jeff Ortel <jortel@redhat.com> 0.0.226-1
 - Simplified openssl conf entries for revoking a cert (jmatthews@redhat.com)
 - Simplify certs scripts, specify CN as -subj CLI option and limit need for
