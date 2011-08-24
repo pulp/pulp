@@ -13,10 +13,7 @@
 import os
 import sys
 from optparse import Option, OptionParser
-from pulp.server.exporter.package import PackageExporter
-from pulp.server.exporter.errata import ErrataExporter
-from pulp.server.exporter.distribution import DistributionExporter
-from pulp.server.exporter.packagegroup import CompsExporter
+from pulp.server.exporter.base import BaseExporter
 
 class ExporterCLI:
     def __init__(self):
@@ -54,11 +51,30 @@ class ExporterCLI:
         self.make_isos = self.options.make_iso
 
     def export(self):
-        for module in [PackageExporter, ErrataExporter, DistributionExporter, CompsExporter]:
+        for module in self._load_exporter_plugins():
             exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date, end_date=self.end_date)
             exporter.export()
             exporter.get_progress()
         self.create_isos()
+
+    def _load_exporter_plugins(self):
+        plugin_dir = "plugins"
+        lst = os.listdir(plugin_dir)
+        # load the modules
+        plugins = []
+        for mod in lst:
+            if mod.endswith('pyc'):
+                continue
+            module = __import__(plugin_dir + '.' + mod.split('.')[0], fromlist = ["*"])
+            for name, attr in module.__dict__.items():
+                try:
+                    if issubclass(attr, BaseExporter):
+                        if attr == BaseExporter:
+                            continue
+                        plugins.append(attr)
+                except TypeError:
+                    continue
+        return plugins
 
     def create_isos(self):
         if not self.make_isos:
