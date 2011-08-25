@@ -18,6 +18,7 @@ import pickle
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
+from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import AsyncTask
 from pulp.server.auditing import audit
@@ -36,6 +37,7 @@ class ConsumerGroupApi(BaseApi):
     def __init__(self):
         self.consumerApi = ConsumerApi()
         self.repoApi = RepoApi()
+        self.errataApi = ErrataApi()
 
     def _getcollection(self):
         return model.ConsumerGroup.get_collection()
@@ -424,6 +426,8 @@ class ConsumerGroupApi(BaseApi):
                 applicable_errata = self.consumerApi._applicable_errata(consumer, types)
                 rlist = []
                 for eid in errataids:
+                    if self.errataApi.erratum(eid) is None:
+                        raise Exception('Erratum [%s], not found' % eid)
                     errata = applicable_errata.get(eid)
                     if errata is None:
                         log.info('%s, not applicable to: %s', eid, consumerid)
