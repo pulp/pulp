@@ -251,7 +251,7 @@ cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 mkdir -p %{buildroot}/etc/yum/pluginconf.d/
 mkdir -p %{buildroot}/usr/lib/yum-plugins/
 cp etc/yum/pluginconf.d/*.conf %{buildroot}/etc/yum/pluginconf.d/
-cp src/pulp/client/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plugins/
+cp src/pulp/client/consumer/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plugins/
 
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
