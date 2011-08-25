@@ -307,6 +307,18 @@ class Manager(object):
     # direct plugin management
 
     def add_importer(self, name, version, cls, cfg):
+        """
+        Add an Importer class to the manager.
+        @type name: str
+        @param name: name of the importer
+        @type version: int or None
+        @param version: version of the importer
+        @type cls: L{Importer} class
+        @param cls: importer class to add
+        @type cfg: SafeConfigParser or None
+        @param cfg: importer configuration instance, None will cause an empty
+                    SafeConfigParser instance to be created
+        """
         if name in self.importer_plugins and version in self.importer_plugins[name]:
             raise ConflictingPluginError(_('Importer %s, version %s already loaded') %
                                          (name, version))
@@ -321,6 +333,13 @@ class Manager(object):
             self.importer_configs[name] = {version: cfg}
 
     def remove_importer(self, name, version):
+        """
+        Remove an Importer from the manager.
+        @type name: str
+        @param name: name of the importer
+        @type version: int or None
+        @param version: version of the importer
+        """
         if name not in self.importer_plugins:
             return
         if version not in self.importer_plugins[name]:
@@ -332,6 +351,18 @@ class Manager(object):
             del self.importer_configs[name]
 
     def add_distributor(self, name, version, cls, cfg):
+        """
+        Add a Distributor to the manager.
+        @type name: str
+        @param name: name of the distributor
+        @type version: int or None
+        @param version: version of the distributor
+        @type cls: L{Distributor} class
+        @param cls: distributor class to add
+        @type cfg: SafeConfigParser or None
+        @param cfg: distributor configuration instance, None will cause an empty
+                    SafeConfigParser instance to be created
+        """
         if name in self.distributor_plugins and version in self.distributor_plugins[name]:
             raise ConflictingPluginError(_('Distributor %s, version %s already loaded') %
                                          (name, version))
@@ -346,6 +377,13 @@ class Manager(object):
             self.distributor_configs[name] = {version: cfg}
 
     def remove_distributor(self, name, version):
+        """
+        Remove a Distributor from the manager.
+        @type name: str
+        @param name: name of the distributor
+        @type version: int or None
+        @param version: version of the distributor
+        """
         if name not in self.distributor_plugins:
             return
         if version not in self.distributor_plugins[name]:
