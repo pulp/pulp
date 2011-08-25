@@ -498,7 +498,7 @@ def _load_type_definitions(descriptors):
 
 def _load_content_types():
     _check_path(_TYPES_DIRECTORY)
-    descriptors = _load_descriptors(_TYPES_DIRECTORY)
+    descriptors = _load_type_descriptors(_TYPES_DIRECTORY)
     _load_type_definitions(descriptors)
 
 
