@@ -181,7 +181,7 @@ class Install(ErrataAction):
         if when:
             print _('Task is scheduled for: %s') % when
         if not wait:
-            system_exit(0)
+            utils.system_exit(0)
         utils.startwait()
         while not task_end(task):
             utils.printwait()
@@ -202,7 +202,7 @@ class Install(ErrataAction):
         when = utils.parse_at_schedule(self.opts.when)
         group = self.consumer_group_api.consumergroup(id)
         if not group:
-            system_exit(-1,
+            utils.system_exit(-1,
                 _('Invalid group: %s' % id))
         wait = self.getwait(group['consumerids'])
         job = self.consumer_group_api.installerrata(
@@ -214,7 +214,7 @@ class Install(ErrataAction):
         if when:
             print _('Job is scheduled for: %s') % when
         if not wait:
-            system_exit(0)
+            utils.system_exit(0)
         utils.startwait()
         while not job_end(job):
             job = self.job_api.info(job['id'])
@@ -257,7 +257,7 @@ class Install(ErrataAction):
         if ualist:
             self.printunavailable(ualist)
             if not utils.askcontinue():
-                system_exit(0)
+                utils.system_exit(0)
             # The consumer is unavailable, if wait was specified, verify that
             # we still want to wait.
             if wait:
