@@ -15,33 +15,50 @@ import sys
 from optparse import Option, OptionParser
 from pulp.server.exporter.base import BaseExporter
 
+_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.exporter'
+_EXPORTER_PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'plugins')
+_EXPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'plugins'))
+
 class ExporterCLI:
+    """
+     Pulp Exporter Commandline wrapper class
+    """
     def __init__(self):
         self.processOptions()
 
     def processOptions(self):
+        """
+         Setup for commandline parser options
+        """
         optionsTable = [
             Option('-d','--dir',      action='store',
-                help="directory for saving data"),
+                help="directory path to store the exported content"),
             Option('-r','--repoid',         action='store',
-                help='process content for this repository'),
+                help='export content from this repository'),
             Option(     '--start-date',         action='store',
-                help='start date to export content'),
+                help='content start date from which the export begins'),
             Option(     '--end-date',         action='store',
-                help='end date to export content'),
+                help='content end date to conclude the export'),
             Option(     '--make-iso',         action='store_true',
                 help='generate isos for exported content'),
             Option('-f','--force',           action='store_true',
-                help="force the overwrite of contents"),
+                help="force to overwrite existing content in target directory"),
                 ]
         optionParser = OptionParser(option_list=optionsTable)
         self.options, self.args = optionParser.parse_args()
+        if not self.options.dir and not self.options.repoid:
+            system_exit(os.EX_USAGE, optionParser.print_help())
         self.validate_options()
 
     def validate_options(self):
+        """
+         Validate command line inputs and exit with relevant errors
+        """
         self.target_dir = self.options.dir
         if not self.target_dir:
             system_exit(os.EX_USAGE, "Error: save directory not specified. Please use -d or --dir")
+        if os.listdir(self.target_dir):
+            system_exit(os.EX_DATAERR, "Error: Target directory already has content; must use --force to override.")
         self.repoid = self.options.repoid
         if not self.repoid:
            system_exit(os.EX_USAGE, "Error: repository not specified. Please use -r or --repoid")
@@ -50,22 +67,19 @@ class ExporterCLI:
         self.force = self.options.force
         self.make_isos = self.options.make_iso
 
-    def export(self):
-        for module in self._load_exporter_plugins():
-            exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date, end_date=self.end_date)
-            exporter.export()
-            exporter.get_progress()
-        self.create_isos()
-
     def _load_exporter_plugins(self):
-        plugin_dir = "plugins"
-        lst = os.listdir(plugin_dir)
+        """
+        Discover and load available plugins in the exporter plugins directory
+        @rtype: list
+        @return: return list of exporter plugin modules that are subclasses of BaseExporter
+        """
+        plugin_list = os.listdir(_EXPORTER_PLUGINS_PATH)
         # load the modules
         plugins = []
-        for mod in lst:
-            if mod.endswith('pyc'):
+        for plugin in plugin_list:
+            if plugin.endswith('pyc'):
                 continue
-            module = __import__(plugin_dir + '.' + mod.split('.')[0], fromlist = ["*"])
+            module = __import__(_EXPORTER_PLUGINS_PACKAGE + '.' + plugin.split('.')[0], fromlist = ["*"])
             for name, attr in module.__dict__.items():
                 try:
                     if issubclass(attr, BaseExporter):
@@ -79,6 +93,17 @@ class ExporterCLI:
     def create_isos(self):
         if not self.make_isos:
             return
+
+    def main(self):
+        """
+        Execute the exporter
+        """
+        for module in self._load_exporter_plugins():
+            exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
+                              end_date=self.end_date, force=self.force)
+            exporter.export()
+            exporter.get_progress()
+        self.create_isos()
 
 def system_exit(code, msgs=None):
     """
@@ -98,4 +123,4 @@ def system_exit(code, msgs=None):
 
 if __name__== '__main__':
     pe = ExporterCLI()
-    pe.export()
+    pe.main()
