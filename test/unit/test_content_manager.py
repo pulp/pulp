@@ -317,3 +317,21 @@ class ManagerAPITest(ManagerTest):
         manager._MANAGER = self.manager
         distributor = manager.get_distributor_by_name('HTTPS')
         self.assertTrue(distributor is None)
+
+    def test_is_valid_importer(self):
+        path = gen_excellent_importer(enabled=True)
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        self.manager.load_importers()
+        manager._MANAGER = self.manager
+        self.assertTrue(manager.is_valid_importer('Excellent'))
+        self.assertTrue(not manager.is_valid_importer('Fake'))
+
+    def __test_is_valid_distributor(self):
+        path = gen_http_distributor()
+        self.manager.add_distributor_plugin_path(path)
+        self.manager.add_distributor_config_path(path)
+        self.manager.load_distributors()
+        manager._MANAGER = self.manager
+        self.assertTrue(manager.is_valid_distributor('HTTPDistributor'))
+        self.assertTrue(not manager.is_valid_distributor('Fake'))

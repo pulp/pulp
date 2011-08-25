@@ -581,6 +581,24 @@ def list_content_types():
     """
     return database.all_type_collection_names()
 
+def is_valid_importer(name):
+    """
+    @return: true if there is an importer class defined for the given name;
+             false otherwise
+    @rtype:  bool
+    """
+    assert _MANAGER is not None
+    return _MANAGER.get_importer_class_by_name(name) is not None
+
+def is_valid_distributor(name):
+    """
+    @return: true if there is a distributor class defined for the given name;
+             false otherwise
+    @rtype:  bool
+    """
+    assert _MANAGER is not None
+    return _MANAGER.get_distributor_class_by_name(name) is not None
+
 # plugin api -------------------------------------------------------------------
 
 def get_importer_by_name(name, version=None):
