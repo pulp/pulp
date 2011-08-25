@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
-import itertools
 import logging
 import os
 import re
@@ -20,7 +19,6 @@ import sys
 from ConfigParser import SafeConfigParser
 from gettext import gettext as _
 
-from pulp.server import config
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
 from pulp.server.content.types import database, parser
@@ -310,7 +308,8 @@ class Manager(object):
 
     def add_importer(self, name, version, cls, cfg):
         if name in self.importer_plugins and version in self.importer_plugins[name]:
-            raise ConflictingPluginError()
+            raise ConflictingPluginError(_('Importer %s, version %s already loaded') %
+                                         (name, version))
         if name in self.importer_plugins:
             self.importer_plugins[name][version] = cls
         else:
@@ -334,7 +333,8 @@ class Manager(object):
 
     def add_distributor(self, name, version, cls, cfg):
         if name in self.distributor_plugins and version in self.distributor_plugins[name]:
-            raise ConflictingPluginError()
+            raise ConflictingPluginError(_('Distributor %s, version %s already loaded') %
+                                         (name, version))
         if name in self.distributor_plugins:
             self.distributor_plugins[name][version] = cls
         else:
