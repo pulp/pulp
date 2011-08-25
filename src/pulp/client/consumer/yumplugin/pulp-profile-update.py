@@ -16,7 +16,7 @@ from pulp.client.consumer.credentials import Consumer as ConsumerBundle
 from pulp.client.api.consumer import ConsumerAPI
 from rhsm.profile import get_profile
 from pulp.client.api.server import PulpServer, set_active_server
-from pulp.client.consumer.config import Config
+from pulp.client.consumer.config import ConsumerConfig
 
 requires_api_version = '2.5'
 plugin_type = (TYPE_CORE,)
@@ -32,7 +32,7 @@ def pulpserver():
     """
     Pulp server configuration
     """
-    cfg = Config()
+    cfg = ConsumerConfig()
     bundle = get_consumer()
     pulp = PulpServer(cfg.server.host, timeout=10)
     pulp.set_ssl_credentials(bundle.crtpath())
