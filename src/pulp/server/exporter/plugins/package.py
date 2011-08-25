@@ -38,6 +38,11 @@ class PackageExporter(BaseExporter):
         self.export_count = 0
 
     def export(self):
+        """
+        Export packages associated with a repository object.
+        Packages are copied to the target dir if not alreay exists
+        and new metadata is generated.
+        """
         self.validate_target_path()
         repo = self.get_repository()
         self.progress['step'] = 'Exporting Packages'

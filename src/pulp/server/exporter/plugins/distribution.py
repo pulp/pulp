@@ -39,6 +39,11 @@ class DistributionExporter(BaseExporter):
         self.errataids = None
 
     def export(self):
+        """
+         Export distribution files associated to a repository.
+         Distribution image files are looked up and copied over to
+         the target dir along with .treeinfo files.
+        """
         self.progress['step'] = 'Exporting Distribution'
         self.validate_target_path()
         repo = self.get_repository()

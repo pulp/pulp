@@ -38,6 +38,11 @@ class CompsExporter(BaseExporter):
         BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
 
     def export(self):
+        """
+        Export package group/category associated with a repository object.
+        Packages groups/categories are looked up and comps.xml is generated
+        and metadata is updated with new comps file.
+        """
         self.validate_target_path()
         repo = self.get_repository()
         self.progress['step'] = 'Exporting Package Group/Category'

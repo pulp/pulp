@@ -41,6 +41,12 @@ class ErrataExporter(BaseExporter):
         self.errataids = None
 
     def export(self):
+        """
+        Export errata associated with a repository object.
+        Errata is looked up in pulp db and updateinfo.xml is generated,
+        packages associated with each errata are also processed and
+        and metadata is updated with new updateinfo xml.
+        """
         self.progress['step'] = 'Exporting Errata'
         self.validate_target_path()
         repo = self.get_repository()
@@ -54,6 +60,9 @@ class ErrataExporter(BaseExporter):
                 updateinfo_path)
 
     def __process_errata_packages(self):
+        """
+        Lookup packages associated with errata and export to target directory
+        """
         errata_pkg_count = 0
         for eid in self.errataids:
             eobj = self.errata_api.erratum(eid)

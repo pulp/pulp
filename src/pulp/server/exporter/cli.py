@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import glob
 import os
 import shutil
 import sys
@@ -83,13 +84,11 @@ class ExporterCLI:
         @rtype: list
         @return: return list of exporter plugin modules that are subclasses of BaseExporter
         """
-        plugin_list = os.listdir(_EXPORTER_PLUGINS_PATH)
-        # load the modules
         plugins = []
-        for plugin in plugin_list:
-            if plugin.endswith('pyc'):
-                continue
-            module = __import__(_EXPORTER_PLUGINS_PACKAGE + '.' + plugin.split('.')[0], fromlist = ["*"])
+        for plugin in glob.glob(os.path.join(_EXPORTER_PLUGINS_PATH, '*.py')):
+            # import the module 
+            module = __import__(_EXPORTER_PLUGINS_PACKAGE + '.' + os.path.basename(plugin).split('.')[0],
+                                fromlist = ["*"])
             for name, attr in module.__dict__.items():
                 try:
                     if issubclass(attr, BaseExporter):
