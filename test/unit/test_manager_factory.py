@@ -53,6 +53,7 @@ class FactoryTests(testutil.PulpTest):
             self.fail('Invalid manager type did not raise an exception')
         except factory.InvalidType, e:
             self.assertEqual(e.type_key, 'foo')
+            print(e)
 
     def test_register_and_reset(self):
         """
