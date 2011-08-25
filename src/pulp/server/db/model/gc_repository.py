@@ -40,16 +40,13 @@ class Repo(Model):
         self.content_unit_count = 0
 
         # Importers
+        #   While the APIs only allow for single importer per repo, we store
+        #   them as a mapping of ID to importer for future compatibility if
+        #   we lift that restriction
         self.importers = {} # importer ID to RepoImporter instance
 
         # Distributors
         self.distributors = {} # distributor id to RepoDistributor instance
-
-    def add_importer(self, importer):
-        self.importers[importer.id] = importer
-
-    def add_distributor(self, distributor):
-        self.distributors[distributor.id] = distributor
 
 class RepoImporter(Model):
     """
@@ -82,7 +79,7 @@ class RepoDistributor(Model):
     collection_name = 'gc_repo_distributors'
     unique_indices = ( ('repo_id', 'id'), )
 
-    def __init__(self, repo_id, id, distributor_type_id, config):
+    def __init__(self, repo_id, id, distributor_type_id, config, auto_distribute):
 
         # Generate a UUID for _id
         Model.__init__(self)
@@ -93,3 +90,4 @@ class RepoDistributor(Model):
         self.distributor_type_id = distributor_type_id
         self.config = config
 
+        self.auto_distribute = auto_distribute

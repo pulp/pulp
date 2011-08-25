@@ -18,8 +18,10 @@ Contains the manager class and exceptions for all repository related functionali
 from gettext import gettext as _
 import logging
 import re
+import uuid
 
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
+import pulp.server.content.manager as content_manager
 
 # -- constants ----------------------------------------------------------------
 
@@ -64,6 +66,39 @@ class DuplicateRepoId(Exception):
     def __str__(self):
         return _('Existing repository with ID [%(repo_id)s]') % {'repo_id' : self.duplicate_id}
 
+class MissingRepo(Exception):
+    """
+    Indicates an operation was requested against a repo that doesn't exist.
+    """
+    def __init__(self, repo_id):
+        Exception.__init__(self)
+        self.repo_id = repo_id
+
+    def __str__(self):
+        return _('No repository with ID [%(id)s]' % {'id' : self.repo_id})
+
+class MissingImporter(Exception):
+    """
+    Indicates an importer was requested that does not exist.
+    """
+    def __init__(self, importer_name):
+        Exception.__init__(self)
+        self.importer_name = importer_name
+
+    def __str__(self):
+        return _('No importer with name [%(name)s]' % {'name' : self.importer_name})
+
+class MissingDistributor(Exception):
+    """
+    Indicates a distributor was requested that does not exist.
+    """
+    def __init__(self, distributor_name):
+        Exception.__init__(self)
+        self.distributor_name = distributor_name
+
+    def __str__(self):
+        return _('No distributor with name [%(name)s]' % {'name' : self.distributor_name})
+
 # -- manager ------------------------------------------------------------------
 
 class RepoManager:
@@ -98,8 +133,8 @@ class RepoManager:
         if not is_repo_id_valid(repo_id):
             raise InvalidRepoId(repo_id)
 
-        existing_repo = list(Repo.get_collection().find({'id' : repo_id}))
-        if len(existing_repo) > 0:
+        existing_repo = Repo.get_collection().find_one({'id' : repo_id})
+        if existing_repo is not None:
             raise DuplicateRepoId(repo_id)
 
         if notes is not None and not isinstance(notes, dict):
@@ -136,6 +171,124 @@ class RepoManager:
 
         # Database Update
         Repo.get_collection().remove({'id' : repo_id})
+
+    def set_importer(self, repo_id, importer_type_name, importer_config):
+        """
+        Configures an importer to be used for the given repository.
+
+        Keep in mind this method is written assuming single importer for a repo.
+        The domain model technically supports multiple importers, but this
+        call is what enforces the single importer behavior.
+
+        @param repo_id: identifies the repo
+        @type  repo_id; str
+
+        @param importer_type_name: identifies the type of importer being added;
+                                   must correspond to an importer loaded at
+                                   server startup
+        @type  importer_type_name: str
+
+        @param importer_config: configuration values for the importer; may be None
+        @type  importer_config: dict
+
+        @raises MissingRepo: if repo_id does not represent a valid repo
+        @raises MissingImporter: if there is no importer with importer_type_name
+        """
+
+        repo_coll = Repo.get_collection()
+        importer_coll = RepoImporter.get_collection()
+
+        # Validation
+        repo = repo_coll.find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        if not content_manager.is_valid_importer(importer_type_name):
+            raise MissingImporter(importer_type_name)
+
+        # Remove old importer if one exists
+        if len(repo['importers']) > 0:
+            for importer in repo['importers'].values():
+                importer_coll.remove(importer, safe=True)
+
+        repo['importers'].clear()
+
+        # Database Update
+        importer_id = importer_type_name # use the importer name as its repo ID
+
+        importer = RepoImporter(repo_id, importer_id, importer_type_name, importer_config)
+        importer_coll.save(importer, safe=True)
+
+        repo['importers'][importer_id] = importer
+        repo_coll.save(repo, safe=True)
+
+    def add_distributor(self, repo_id, distributor_type_id, distributor_config,
+                        auto_distribute, distributor_id=None):
+        """
+        Adds an association from the given repository to a distributor. The
+        association will be tracked through the distributor_id; each distributor
+        on a given repository must have a unique ID. If this is not specified,
+        one will be generated. If a distributor already exists on the repo for
+        the given ID, the existing one will be removed and replaced with the
+        newly configured one.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_type_id: identifies the distributor; must correspond
+                                    to a distributor loaded at server startup
+        @type  distributor_type_id: str
+
+        @param distributor_config: configuration the repo will use with this
+                                   distributor; may be None
+        @type distributor_config:  dict
+
+        @param auto_distribute: if true, this distributor will be invoked at
+                                the end of every sync
+        @type  auto_distribute: bool
+
+        @param distributor_id: unique ID to refer to this distributor for this repo
+        @type  distributor_id: str
+
+        @return: ID assigned to the distributor (only valid in conjunction with the repo)
+
+        @raises MissingRepo: if the given repo_id does not refer to a valid repo
+        @raises MissingDistributor: if the given distributor type ID does not
+                                    refer to a valid distributor
+        """
+
+        repo_coll = Repo.get_collection()
+        distributor_coll = RepoDistributor.get_collection()
+
+        # Validation
+        repo = repo_coll.find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        if not content_manager.is_valid_distributor(distributor_type_id):
+            raise MissingDistributor(distributor_type_id)
+
+        # Determine the ID for this distributor on this repo; will be
+        # unique for all distributors on this repository but not globally
+        if distributor_id is None:
+            distributor_id = str(uuid.uuid4())
+
+        # If a distributor already exists at that ID, remove it from the database
+        # as it will be replaced in this method
+        if distributor_id in repo['distributors']:
+            delete_me = repo['distributors'][distributor_id]
+            distributor_coll.remove(delete_me, safe=True)
+
+        # Database Update
+        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, distributor_config, auto_distribute)
+        distributor_coll.save(distributor, safe=True)
+
+        repo['distributors'][distributor_id] = distributor
+        repo_coll.save(repo)
+
+        return distributor_id
+
+# -- functions ----------------------------------------------------------------
 
 def is_repo_id_valid(repo_id):
     """
