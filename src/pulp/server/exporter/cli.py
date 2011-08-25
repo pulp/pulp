@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
+import shutil
 import sys
 from optparse import Option, OptionParser
 from pulp.server.exporter.base import BaseExporter
@@ -52,13 +53,22 @@ class ExporterCLI:
 
     def validate_options(self):
         """
-         Validate command line inputs and exit with relevant errors
+         Validate command line inputs and exit with relevant errors.
+         * If target dir doesn't exists, create one
+         * If target dir exists and not empty; if forced remove and create a fresh one, else exit
+         * dir, repoid are required
         """
         self.target_dir = self.options.dir
         if not self.target_dir:
             system_exit(os.EX_USAGE, "Error: save directory not specified. Please use -d or --dir")
+        if not os.path.exists(self.target_dir):
+            os.mkdir(self.target_dir)
         if os.listdir(self.target_dir):
-            system_exit(os.EX_DATAERR, "Error: Target directory already has content; must use --force to override.")
+            if self.options.force:
+                shutil.rmtree(self.target_dir)
+                os.mkdir(self.target_dir)
+            else:
+                system_exit(os.EX_DATAERR, "Error: Target directory already has content; must use --force to overwrite.")
         self.repoid = self.options.repoid
         if not self.repoid:
            system_exit(os.EX_USAGE, "Error: repository not specified. Please use -r or --repoid")
@@ -69,7 +79,7 @@ class ExporterCLI:
 
     def _load_exporter_plugins(self):
         """
-        Discover and load available plugins in the exporter plugins directory
+        Discover and load available plugins from the exporter plugins directory
         @rtype: list
         @return: return list of exporter plugin modules that are subclasses of BaseExporter
         """
@@ -100,7 +110,7 @@ class ExporterCLI:
         """
         for module in self._load_exporter_plugins():
             exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
-                              end_date=self.end_date, force=self.force)
+                              end_date=self.end_date)
             exporter.export()
             exporter.get_progress()
         self.create_isos()
