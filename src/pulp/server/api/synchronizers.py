@@ -686,7 +686,7 @@ class YumSynchronizer(BaseSynchronizer):
                         pkglist.append(pkg)
                         break
         else:
-            pkglist = unfiltered_pkglist
+            pkglist = list(unfiltered_pkglist)
 
         if blacklist_packages:
             to_remove = []
@@ -752,7 +752,8 @@ class YumSynchronizer(BaseSynchronizer):
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
         existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
-        source_pkgs = [os.path.basename(p) for p in pkglist]
+        source_pkgs = [os.path.basename(p) for p in unfiltered_pkglist]
+
         if progress_callback is not None:
             log.debug("Updating progress to %s" % (ProgressReport.PurgeOrphanedPackages))
             self.progress["step"] = ProgressReport.PurgeOrphanedPackages
