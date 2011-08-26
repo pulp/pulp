@@ -33,10 +33,10 @@ class MockDistributor:
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
+class RepoManagerTests(testutil.PulpTest):
 
     def setUp(self):
-        super(RepoManagerCreateAndInitializeTests, self).setUp()
+        testutil.PulpTest.setUp(self)
 
         content_manager._create_manager()
 
@@ -44,15 +44,18 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         content_manager._MANAGER.add_importer('MockImporter', 1, MockImporter, None)
         content_manager._MANAGER.add_distributor('MockDistributor', 1, MockDistributor, None)
 
+        # Create the manager instance to test
+        self.manager = repo_manager.RepoManager()
+
     def tearDown(self):
-        super(RepoManagerCreateAndInitializeTests, self).tearDown()
+        testutil.PulpTest.tearDown(self)
 
         # Reset content manager
         content_manager._MANAGER.remove_importer('MockImporter', 1)
         content_manager._MANAGER.remove_distributor('MockDistributor', 1)
 
     def clean(self):
-        super(RepoManagerCreateAndInitializeTests, self).clean()
+        testutil.PulpTest.clean(self)
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -69,8 +72,7 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         notes = {'note1' : 'value1'}
 
         # Test
-        manager = repo_manager.RepoManager()
-        manager.create_repo(id, name, description, notes)
+        self.manager.create_repo(id, name, description, notes)
 
         # Verify
         repos = list(Repo.get_collection().find())
@@ -88,8 +90,7 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Test
-        manager = repo_manager.RepoManager()
-        manager.create_repo('repo_1')
+        self.manager.create_repo('repo_1')
 
         # Verify
         repos = list(Repo.get_collection().find())
@@ -105,9 +106,8 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Test
-        manager = repo_manager.RepoManager()
         try:
-            manager.create_repo('bad id')
+            self.manager.create_repo('bad id')
             self.fail('Invalid ID did not raise an exception')
         except repo_manager.InvalidRepoId, e:
             self.assertEqual(e.invalid_repo_id, 'bad id')
@@ -121,13 +121,11 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
 
         # Setup
         id = 'duplicate'
-        manager = repo_manager.RepoManager()
-
-        manager.create_repo(id)
+        self.manager.create_repo(id)
 
         # Test
         try:
-            manager.create_repo(id)
+            self.manager.create_repo(id)
             self.fail('Repository with an existing ID did not raise an exception')
         except repo_manager.DuplicateRepoId, e:
             self.assertEqual(e.duplicate_id, id)
@@ -144,10 +142,8 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         notes = 'not a dict'
 
         # Test
-        manager = repo_manager.RepoManager()
-
         try:
-            manager.create_repo(id, notes=notes)
+            self.manager.create_repo(id, notes=notes)
             self.fail('Invalid notes did not cause create to raise an exception')
         except repo_manager.InvalidRepoMetadata, e:
             self.assertEqual(e.invalid_data, notes)
@@ -160,11 +156,10 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
 
         # Setup
         id = 'doomed'
-        manager = repo_manager.RepoManager()
-        manager.create_repo(id)
+        self.manager.create_repo(id)
 
         # Test
-        manager.delete_repo(id)
+        self.manager.delete_repo(id)
 
         # Verify
         repos = list(Repo.get_collection().find({'id' : id}))
@@ -176,8 +171,7 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Test
-        manager = repo_manager.RepoManager()
-        manager.delete_repo('fake repo')
+        self.manager.delete_repo('fake repo')
 
     def test_set_importer(self):
         """
@@ -185,13 +179,12 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('importer-test')
+        self.manager.create_repo('importer-test')
 
         importer_config = {'foo' : 'bar'}
 
         # Test
-        manager.set_importer('importer-test', 'MockImporter', importer_config)
+        self.manager.set_importer('importer-test', 'MockImporter', importer_config)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'importer-test'})
@@ -211,10 +204,8 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Test
-        manager = repo_manager.RepoManager()
-
         try:
-            manager.set_importer('fake', 'MockImporter', None)
+            self.manager.set_importer('fake', 'MockImporter', None)
         except repo_manager.MissingRepo, e:
             self.assertEqual(e.repo_id, 'fake')
             print(e) # for coverage
@@ -225,12 +216,11 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('real-repo')
+        self.manager.create_repo('real-repo')
 
         # Test
         try:
-            manager.set_importer('real-repo', 'fake-importer', None)
+            self.manager.set_importer('real-repo', 'fake-importer', None)
         except repo_manager.MissingImporter, e:
             self.assertEqual(e.importer_name, 'fake-importer')
             print(e) # for coverage
@@ -246,13 +236,11 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
 
         content_manager._MANAGER.add_importer('MockImporter2', 1, MockImporter2, None)
 
-        manager = repo_manager.RepoManager()
-        manager.create_repo('change_me')
-
-        manager.set_importer('change_me', 'MockImporter', None)
+        self.manager.create_repo('change_me')
+        self.manager.set_importer('change_me', 'MockImporter', None)
 
         # Test
-        manager.set_importer('change_me', 'MockImporter2', None)
+        self.manager.set_importer('change_me', 'MockImporter2', None)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'change_me'})
@@ -269,13 +257,12 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('test_me')
+        self.manager.create_repo('test_me')
 
         config = {'foo' : 'bar'}
 
         # Test
-        manager.add_distributor('test_me', 'MockDistributor', config, True, distributor_id='my_dist')
+        self.manager.add_distributor('test_me', 'MockDistributor', config, True, distributor_id='my_dist')
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'test_me'})
@@ -300,13 +287,11 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
             pass
         content_manager._MANAGER.add_distributor('MockDistributor2', 1, MockDistributor2, None)
 
-        manager = repo_manager.RepoManager()
-        manager.create_repo('test_me')
-
-        manager.add_distributor('test_me', 'MockDistributor', None, True, distributor_id='dist_1')
+        self.manager.create_repo('test_me')
+        self.manager.add_distributor('test_me', 'MockDistributor', None, True, distributor_id='dist_1')
 
         # Test
-        manager.add_distributor('test_me', 'MockDistributor2', None, True, distributor_id='dist_2')
+        self.manager.add_distributor('test_me', 'MockDistributor2', None, True, distributor_id='dist_2')
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'test_me'})
@@ -327,14 +312,13 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('test_me')
+        self.manager.create_repo('test_me')
 
-        manager.add_distributor('test_me', 'MockDistributor', None, True, distributor_id='dist_1')
+        self.manager.add_distributor('test_me', 'MockDistributor', None, True, distributor_id='dist_1')
 
         # Test
         config = {'foo' : 'bar'}
-        manager.add_distributor('test_me', 'MockDistributor', config, False, distributor_id='dist_1')
+        self.manager.add_distributor('test_me', 'MockDistributor', config, False, distributor_id='dist_1')
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'test_me'})
@@ -352,11 +336,10 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('happy-repo')
+        self.manager.create_repo('happy-repo')
 
         # Test
-        generated_id = manager.add_distributor('happy-repo', 'MockDistributor', None, True)
+        generated_id = self.manager.add_distributor('happy-repo', 'MockDistributor', None, True)
 
         # Verify - distributor ID will be random,
         repo = Repo.get_collection().find_one({'id' : 'happy-repo'})
@@ -372,10 +355,9 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Test
-        manager = repo_manager.RepoManager()
-
         try:
-            manager.add_distributor('fake', 'MockDistributor', None, True)
+            self.manager.add_distributor('fake', 'MockDistributor', None, True)
+            self.fail('No exception thrown for an invalid repo ID')
         except repo_manager.MissingRepo, e:
             self.assertEqual(e.repo_id, 'fake')
             print(e) # for coverage
@@ -386,12 +368,12 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('real-repo')
+        self.manager.create_repo('real-repo')
 
         # Test
         try:
-            manager.add_distributor('real-repo', 'fake-distributor', None, True)
+            self.manager.add_distributor('real-repo', 'fake-distributor', None, True)
+            self.fail('No exception thrown for an invalid distributor type')
         except repo_manager.MissingDistributor, e:
             self.assertEqual(e.distributor_name, 'fake-distributor')
             print(e) # for coverage
@@ -402,13 +384,13 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('repo')
+        self.manager.create_repo('repo')
 
         # Test
         bad_id = '!@#$%^&*()'
         try:
-            manager.add_distributor('repo', 'MockDistributor', None, True, bad_id)
+            self.manager.add_distributor('repo', 'MockDistributor', None, True, bad_id)
+            self.fail('No exception thrown for an invalid distributor ID')
         except repo_manager.InvalidDistributorId, e:
             self.assertEqual(bad_id, e.invalid_distributor_id)
             print(e) # for coverage
@@ -419,12 +401,11 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('dist-repo')
-        manager.add_distributor('dist-repo', 'MockDistributor', None, True, distributor_id='doomed')
+        self.manager.create_repo('dist-repo')
+        self.manager.add_distributor('dist-repo', 'MockDistributor', None, True, distributor_id='doomed')
 
         # Test
-        manager.remove_distributor('dist-repo', 'doomed')
+        self.manager.remove_distributor('dist-repo', 'doomed')
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'dist-repo'})
@@ -440,11 +421,10 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Setup
-        manager = repo_manager.RepoManager()
-        manager.create_repo('empty')
+        self.manager.create_repo('empty')
 
         # Test
-        manager.remove_distributor('empty', 'non-existent') # shouldn't error
+        self.manager.remove_distributor('empty', 'non-existent') # shouldn't error
 
     def test_remove_distributor_no_repo(self):
         """
@@ -453,9 +433,9 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
         """
 
         # Test
-        manager = repo_manager.RepoManager()
         try:
-            manager.remove_distributor('fake-repo', 'irrelevant')
+            self.manager.remove_distributor('fake-repo', 'irrelevant')
+            self.fail('No exception thrown for an invalid repo ID')
         except repo_manager.MissingRepo, e:
             self.assertEqual(e.repo_id, 'fake-repo')
             print(e) # for coverage

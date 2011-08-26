@@ -269,6 +269,7 @@ class RepoManager:
         @raises MissingRepo: if the given repo_id does not refer to a valid repo
         @raises MissingDistributor: if the given distributor type ID does not
                                     refer to a valid distributor
+        @raises InvalidDistributorId: if the distributor ID is provided and unacceptable
         """
 
         repo_coll = Repo.get_collection()
@@ -322,6 +323,8 @@ class RepoManager:
         @param unpublish: if true, the distributor's unpublish call will be done
                           automatically by this call
         @type  unpublish: bool
+
+        @raises MissingRepo: if repo_id doesn't correspond to a valid repo
         """
 
         repo_coll = Repo.get_collection()
