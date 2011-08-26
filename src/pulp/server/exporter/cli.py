@@ -93,6 +93,7 @@ class ExporterCLI:
                 try:
                     if issubclass(attr, BaseExporter):
                         if attr == BaseExporter:
+                            # BaseExporter can be a subclass of itself
                             continue
                         plugins.append(attr)
                 except TypeError:

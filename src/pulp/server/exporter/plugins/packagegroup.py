@@ -11,9 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
-import shutil
-from pulp.server import comps_util
 import pulp.server.util
+from pulp.server import comps_util
 from pulp.server.exporter.base import BaseExporter
 from pulp.server.exporter.logutil import getLogger
 

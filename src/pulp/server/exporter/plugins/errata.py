@@ -12,9 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import shutil
+import pulp.server.util
 from pulp.server import updateinfo
 from pulp.server.compat import chain
-import pulp.server.util
 from pulp.server.exporter.base import BaseExporter
 from pulp.server.exporter.logutil import getLogger
 

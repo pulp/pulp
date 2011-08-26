@@ -57,6 +57,7 @@ class DistributionExporter(BaseExporter):
                 break
         if not os.path.exists(src_tree_file):
             # no distributions found
+            log.info("Could not find a treeinfo file; No distributions found")
             return
         else:
             shutil.copy(src_tree_file, dst_tree_file)
