@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.227
+Version:        0.0.228
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -488,6 +488,24 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.228-1
+- Added stub managers for repo clone and query (jason.dobies@redhat.com)
+- Minor documentation updates and test refactoring (jason.dobies@redhat.com)
+- Added remove_distributor call and ID validation to add_distributor
+  (jason.dobies@redhat.com)
+- 727564 - Send global cert content instead of file names. (jortel@redhat.com)
+- 733312 - modified code to compare already synced packages in a pulp repo
+  against unfiltered source packages instead of filtered code packages
+  (skarmark@redhat.com)
+- Added importer and distributor addition calls (jason.dobies@redhat.com)
+- 732540 - Validate erratum IDs on install on consumer group.
+  (jortel@redhat.com)
+- 732522 - replaced system_exit() with utils.system_exit(). (jortel@redhat.com)
+- fixing yum plugin to use new consumerconfig (pkilambi@redhat.com)
+-  fixing pulp profile plugin that was broken with client refactor
+  (pkilambi@redhat.com)
+- Adding an alternate usage of OpenSSL C APIs, this is closer to what we are
+  attempting with M2Crypto (jmatthews@redhat.com)
 * Wed Aug 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.227-1
 - Website updates (jslagle@redhat.com)
 - 728326 - list errata consumer web services call moved to GET instead of post
