@@ -25,18 +25,24 @@ do so may indirectly break other tests.
 import copy
 
 from repo import RepoManager
+from repo_clone import RepoCloneManager
+from repo_query import RepoQueryManager
 
 # -- constants ----------------------------------------------------------------
 
 # Keys used to look up a specific manager
-TYPE_REPO    = 'repo-manager'
-TYPE_CONTENT = 'content-manager'
-TYPE_CDS     = 'cds-manager'
+TYPE_CDS        = 'cds-manager'
+TYPE_CONTENT    = 'content-manager'
+TYPE_REPO       = 'repo-manager'
+TYPE_REPO_CLONE = 'repo-clone-manager'
+TYPE_REPO_QUERY = 'repo-query-manager'
 
 # Defaults for a normal running Pulp server (used to reset the state of the
 # factory between runs)
 _DEFAULTS = {
     TYPE_REPO : RepoManager,
+    TYPE_REPO_CLONE : RepoCloneManager,
+    TYPE_REPO_QUERY : RepoQueryManager,
 }
 
 # Mapping of key to class that will be instantiated in the factory method
