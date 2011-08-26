@@ -396,6 +396,70 @@ class RepoManagerCreateAndInitializeTests(testutil.PulpTest):
             self.assertEqual(e.distributor_name, 'fake-distributor')
             print(e) # for coverage
 
+    def test_add_distributor_invalid_id(self):
+        """
+        Tests adding a distributor with an invalid ID raises the correct error.
+        """
+
+        # Setup
+        manager = repo_manager.RepoManager()
+        manager.create_repo('repo')
+
+        # Test
+        bad_id = '!@#$%^&*()'
+        try:
+            manager.add_distributor('repo', 'MockDistributor', None, True, bad_id)
+        except repo_manager.InvalidDistributorId, e:
+            self.assertEqual(bad_id, e.invalid_distributor_id)
+            print(e) # for coverage
+
+    def test_remove_distributor(self):
+        """
+        Tests removing an existing distributor from a repository.
+        """
+
+        # Setup
+        manager = repo_manager.RepoManager()
+        manager.create_repo('dist-repo')
+        manager.add_distributor('dist-repo', 'MockDistributor', None, True, distributor_id='doomed')
+
+        # Test
+        manager.remove_distributor('dist-repo', 'doomed')
+
+        # Verify
+        repo = Repo.get_collection().find_one({'id' : 'dist-repo'})
+        self.assertEqual(0, len(repo['distributors']))
+
+        distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'dist-repo', 'id' : 'doomed'})
+        self.assertTrue(distributor is None)
+
+    def test_remove_distributor_no_distributor(self):
+        """
+        Tests that no exception is raised when requested to remove a distributor
+        that doesn't exist.
+        """
+
+        # Setup
+        manager = repo_manager.RepoManager()
+        manager.create_repo('empty')
+
+        # Test
+        manager.remove_distributor('empty', 'non-existent') # shouldn't error
+
+    def test_remove_distributor_no_repo(self):
+        """
+        Tests the proper exception is raised when removing a distributor from
+        a repo that doesn't exist.
+        """
+
+        # Test
+        manager = repo_manager.RepoManager()
+        try:
+            manager.remove_distributor('fake-repo', 'irrelevant')
+        except repo_manager.MissingRepo, e:
+            self.assertEqual(e.repo_id, 'fake-repo')
+            print(e) # for coverage
+
 class UtilityMethodsTests(testutil.PulpTest):
 
     def test_is_repo_id_valid(self):

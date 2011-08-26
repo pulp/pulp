@@ -26,6 +26,7 @@ import pulp.server.content.manager as content_manager
 # -- constants ----------------------------------------------------------------
 
 _REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
 
 _LOG = logging.getLogger(__name__)
 
@@ -41,6 +42,17 @@ class InvalidRepoId(Exception):
 
     def __str__(self):
         return _('Invalid repository ID [%(repo_id)s]') % {'repo_id' : self.invalid_repo_id}
+
+class InvalidDistributorId(Exception):
+    """
+    Indicates a given distributor ID was invalid.
+    """
+    def __init__(self, invalid_distributor_id):
+        Exception.__init__(self)
+        self.invalid_distributor_id = invalid_distributor_id
+
+    def __str__(self):
+        return _('Invalid distributor ID [%(id)s]' % {'id' : self.invalid_distributor_id})
 
 class InvalidRepoMetadata(Exception):
     """
@@ -106,6 +118,8 @@ class RepoManager:
     Performs repository related functions relating to both CRUD operations and
     actions performed on or by repositories.
     """
+
+    # -- creation and configuration -------------------------------------------
 
     def create_repo(self, repo_id, display_name=None, description=None, notes=None):
         """
@@ -272,6 +286,10 @@ class RepoManager:
         # unique for all distributors on this repository but not globally
         if distributor_id is None:
             distributor_id = str(uuid.uuid4())
+        else:
+            # Validate if one was passed in
+            if not is_distributor_id_valid(distributor_id):
+                raise InvalidDistributorId(distributor_id)
 
         # If a distributor already exists at that ID, remove it from the database
         # as it will be replaced in this method
@@ -288,6 +306,45 @@ class RepoManager:
 
         return distributor_id
 
+    def remove_distributor(self, repo_id, distributor_id, unpublish=True):
+        """
+        Removes a distributor from a repository, optionally requesting the
+        distributor to unpublish the repository first. If there is no
+        distributor with the given ID on the repository, this call has no effect
+        and will not raise an error.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the distributor to delete
+        @type  distributor_id: str
+
+        @param unpublish: if true, the distributor's unpublish call will be done
+                          automatically by this call
+        @type  unpublish: bool
+        """
+
+        repo_coll = Repo.get_collection()
+        distributor_coll = RepoDistributor.get_collection()
+
+        # Validation
+        repo = repo_coll.find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        if distributor_id not in repo['distributors']:
+            return
+
+        distributor = repo['distributors'][distributor_id]
+
+        # TODO: add call to unpublish on the distributor if indicated
+
+        # Database Update
+        distributor_coll.remove(distributor, safe=True)
+
+        repo['distributors'].pop(distributor_id)
+        repo_coll.save(repo, safe=True)
+
 # -- functions ----------------------------------------------------------------
 
 def is_repo_id_valid(repo_id):
@@ -296,4 +353,12 @@ def is_repo_id_valid(repo_id):
     @rtype:  bool
     """
     result = _REPO_ID_REGEX.match(repo_id) is not None
+    return result
+
+def is_distributor_id_valid(distributor_id):
+    """
+    @return: true if the distributor ID is valid; false otherwise
+    @rtype:  bool
+    """
+    result = _DISTRIBUTOR_ID_REGEX.match(distributor_id) is not None
     return result
