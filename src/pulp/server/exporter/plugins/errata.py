@@ -67,7 +67,7 @@ class ErrataExporter(BaseExporter):
         for eid in self.errataids:
             eobj = self.errata_api.erratum(eid)
             for pkgobj in eobj['pkglist']:
-                for pkg in pkgobj   ['packages']:
+                for pkg in pkgobj['packages']:
                     checksum_type, checksum = pkg['sum']
                     name, version, release, arch = pkg['name'], pkg['version'], pkg['release'], pkg['arch']
                     src_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), name, version, release, arch, checksum[:3], pkg['filename'])
