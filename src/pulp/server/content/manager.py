@@ -619,6 +619,35 @@ def list_content_types():
     """
     return database.all_type_collection_names()
 
+
+def list_importer_types(name, version=None):
+    """
+    List the types an importer supports.
+    @type name: str
+    @param name: importer name
+    @type version: None or int
+    @param version: importer version, None means use highest version
+    """
+    assert _MANAGER is not None
+    cls = _MANAGER.get_importer_class_by_name(name, version)
+    types = cls.metadata().get('types', ())
+    return types
+
+
+def list_distributor_types(name, version=None):
+    """
+    List the types a distributor supports.
+    @type name: str
+    @param name: distributor name
+    @type version: None or int
+    @param version: distributor version, None means use highest version
+    """
+    assert _MANAGER is not None
+    cls = _MANAGER.get_distributor_class_by_name(name, version)
+    types = cls.metadata().get('types', ())
+    return types
+
+
 def is_valid_importer(name):
     """
     @return: true if there is an importer class defined for the given name;
@@ -627,6 +656,7 @@ def is_valid_importer(name):
     """
     assert _MANAGER is not None
     return _MANAGER.get_importer_class_by_name(name) is not None
+
 
 def is_valid_distributor(name):
     """
