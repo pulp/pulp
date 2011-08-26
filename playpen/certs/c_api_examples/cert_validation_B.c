@@ -18,10 +18,10 @@ void handle_error(const char *file, int lineno, const char *msg)
 }
 #define int_error(msg) handle_error(__FILE__, __LINE__, msg)
 
-#define CA_FILE     "./certs/Pulp_CA.cert"
-#define CA_DIR      "./certs/"
-#define CRL_FILE    "./certs/Pulp_CRL.pem"
-#define CLIENT_CERT "./certs/Pulp_client.cert"
+#define CA_FILE     "../certs/Pulp_CA.cert"
+#define CA_DIR      "../certs/"
+#define CRL_FILE    "../certs/Pulp_CRL.pem"
+#define CLIENT_CERT "../certs/Pulp_client.cert"
 
 int verify_callback(int ok, X509_STORE_CTX *stor) {
     if (!ok) {
