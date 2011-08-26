@@ -11,18 +11,16 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.server.content.plugin.base import ContentPlugin
 
-class Importer(object):
+
+class Distributor(ContentPlugin):
 
     def __init__(self, config):
-        self.config = config
+        super(Distributor, self).__init__(config)
 
-    @classmethod
-    def metadata(cls):
-        return {}
-
-    def sync(self, repo_data, importer_config, sync_config, sync_hook):
+    def publish(self, distributor_config, publish_config, publish_hook):
         raise NotImplementedError()
 
-    def delete_repo(self, repo_data, importer_config, delete_config, delete_hook):
+    def unpublish(self, distributor_config, unpublish_config, unpublish_hook):
         raise NotImplementedError()

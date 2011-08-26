@@ -19,8 +19,8 @@ import sys
 from ConfigParser import SafeConfigParser
 from gettext import gettext as _
 
-from pulp.server.content.distributor.base import Distributor
-from pulp.server.content.importer.base import Importer
+from pulp.server.content.plugin.distributor.base import Distributor
+from pulp.server.content.plugin.importer.base import Importer
 from pulp.server.content.types import database, parser
 from pulp.server.content.types.model import TypeDescriptor
 from pulp.server.pexceptions import PulpException
@@ -41,11 +41,11 @@ _TOP_LEVEL_CONFIGS_DIR = '/etc/pulp'
 _IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importer')
 _DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributor')
 
-_TOP_LEVEL_PLUGINS_DIR = os.path.dirname(__file__)
+_TOP_LEVEL_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'plugin')
 _IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importer')
 _DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributor')
 
-_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content'
+_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content.plugin'
 _IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importer'))
 _DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributor'))
 
