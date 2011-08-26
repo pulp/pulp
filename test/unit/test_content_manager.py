@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../c
 import testutil
 
 from pulp.server.content import manager
-from pulp.server.content.distributor.base import Distributor
-from pulp.server.content.importer.base import Importer
+from pulp.server.content.plugin.distributor.base import Distributor
+from pulp.server.content.plugin.importer.base import Importer
 
 # test data and data generation api --------------------------------------------
 
