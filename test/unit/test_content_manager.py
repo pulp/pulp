@@ -31,7 +31,7 @@ from pulp.server.content.plugin.importer.base import Importer
 # test data
 
 excellent_importer = '''
-from pulp.server.content.importer import base
+from pulp.server.content.plugin.importer import base
 class ExcellentImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -43,7 +43,7 @@ class ExcellentImporter(base.Importer):
 '''
 
 less_excellent_importer = '''
-from pulp.server.content.importer import base
+from pulp.server.content.plugin.importer import base
 class LessExcellentImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -54,7 +54,7 @@ class LessExcellentImporter(base.Importer):
 '''
 
 not_excellent_importer = '''
-from pulp.server.content.importer import base
+from pulp.server.content.plugin.importer import base
 class NotExcellentImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -65,7 +65,7 @@ class NotExcellentImporter(base.Importer):
 '''
 
 bogus_importer_1 = '''
-from pulp.server.content.importer import base
+from pulp.server.content.plugin.importer import base
 class BogusOneImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -73,7 +73,7 @@ class BogusOneImporter(base.Importer):
 '''
 
 bogus_importer_2 = '''
-from pulp.server.content.importer import base
+from pulp.server.content.plugin.importer import base
 class BogusTwoImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -91,7 +91,7 @@ enabled = false
 '''
 
 http_distibutor = '''
-from pulp.server.content.distributor import base
+from pulp.server.content.plugin.distributor import base
 class HTTPDistributor(base.Distributor):
     @classmethod
     def metadata(cls):
