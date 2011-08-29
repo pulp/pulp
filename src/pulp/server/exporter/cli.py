@@ -134,6 +134,7 @@ class ExporterCLI(object):
                 continue
             print('%s/%s %s' %
                   (report['num_success'], report['count_total'], report['step']))
+        print("\nRepository content can now be found in Target directory [%s]" % self.target_dir)
 
     def print_errors(self, progress):
         errors = []
