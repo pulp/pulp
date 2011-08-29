@@ -1,0 +1,220 @@
+diff -up M2Crypto-0.20.2/SWIG/_evp.i.fips M2Crypto-0.20.2/SWIG/_evp.i
+--- M2Crypto-0.20.2/SWIG/_evp.i.fips	2010-05-19 07:06:44.029090567 +0200
++++ M2Crypto-0.20.2/SWIG/_evp.i	2010-05-19 07:06:44.049115516 +0200
+@@ -250,7 +250,10 @@ PyObject *hmac_init(HMAC_CTX *ctx, PyObj
+     if (m2_PyObject_AsReadBufferInt(key, &kbuf, &klen) == -1)
+         return NULL;
+ 
+-    HMAC_Init(ctx, kbuf, klen, md);
++    if (!HMAC_Init(ctx, kbuf, klen, md)) {
++        PyErr_SetString(_evp_err, "HMAC_Init failed");
++        return NULL;
++    }
+     Py_INCREF(Py_None);
+     return Py_None;
+ }
+@@ -262,7 +265,10 @@ PyObject *hmac_update(HMAC_CTX *ctx, PyO
+     if (PyObject_AsReadBuffer(blob, &buf, &len) == -1)
+         return NULL;
+ 
+-    HMAC_Update(ctx, buf, len);
++    if (!HMAC_Update(ctx, buf, len)) {
++        PyErr_SetString(_evp_err, "HMAC_Update failed");
++        return NULL;
++    }
+     Py_INCREF(Py_None);
+     return Py_None;
+ }
+@@ -276,7 +282,10 @@ PyObject *hmac_final(HMAC_CTX *ctx) {
+         PyErr_SetString(PyExc_MemoryError, "hmac_final");
+         return NULL;
+     }
+-    HMAC_Final(ctx, blob, (unsigned int *)&blen);
++    if (!HMAC_Final(ctx, blob, (unsigned int *)&blen)) {
++        PyErr_SetString(_evp_err, "HMAC_Final failed");
++        return NULL;
++    }
+     ret = PyString_FromStringAndSize(blob, blen);
+     PyMem_Free(blob);
+     return ret;
+diff -up M2Crypto-0.20.2/SWIG/_rsa.i.fips M2Crypto-0.20.2/SWIG/_rsa.i
+--- M2Crypto-0.20.2/SWIG/_rsa.i.fips	2010-05-19 07:06:44.030090773 +0200
++++ M2Crypto-0.20.2/SWIG/_rsa.i	2010-05-19 07:06:44.038095292 +0200
+@@ -423,15 +423,17 @@ void genrsa_callback(int p, int n, void 
+     Py_XDECREF(ret);
+ }
+ 
+-RSA *rsa_generate_key(int bits, unsigned long e, PyObject *pyfunc) {
++PyObject *rsa_generate_key(int bits, unsigned long e, PyObject *pyfunc) {
+     RSA *rsa;
+ 
+     Py_INCREF(pyfunc);
+     rsa = RSA_generate_key(bits, e, genrsa_callback, (void *)pyfunc);
+     Py_DECREF(pyfunc);
+-    if (!rsa) 
++    if (!rsa) {
+         PyErr_SetString(_rsa_err, ERR_reason_error_string(ERR_get_error()));
+-    return rsa;
++	return NULL;
++    }
++    return SWIG_NewPointerObj((void *)rsa, SWIGTYPE_p_RSA, 0);
+ }
+ 
+ int rsa_type_check(RSA *rsa) {
+diff -up M2Crypto-0.20.2/tests/test_evp.py.fips M2Crypto-0.20.2/tests/test_evp.py
+--- M2Crypto-0.20.2/tests/test_evp.py.fips	2009-10-07 06:24:44.000000000 +0200
++++ M2Crypto-0.20.2/tests/test_evp.py	2010-05-19 07:06:44.039121270 +0200
+@@ -97,7 +97,7 @@ class EVPTestCase(unittest.TestCase):
+         """
+         Testing retrieving the RSA key from the PKey instance.
+         """
+-        rsa = RSA.gen_key(512, 3, callback=self._gen_callback)
++        rsa = RSA.gen_key(1024, 3, callback=self._gen_callback)
+         assert isinstance(rsa, RSA.RSA)
+         pkey = EVP.PKey()
+         pkey.assign_rsa(rsa) 
+@@ -130,7 +130,7 @@ class EVPTestCase(unittest.TestCase):
+         pkey = EVP.PKey()
+         self.assertRaises(ValueError, pkey.get_modulus)
+ 
+-        rsa = RSA.gen_key(512, 3, callback=self._gen_callback)
++        rsa = RSA.gen_key(1024, 3, callback=self._gen_callback)
+         pkey.assign_rsa(rsa)
+         mod = pkey.get_modulus()
+         assert len(mod) > 0, mod
+@@ -373,21 +373,21 @@ class PBKDF2TestCase(unittest.TestCase):
+ 
+ class HMACTestCase(unittest.TestCase):
+     data1=['', 'More text test vectors to stuff up EBCDIC machines :-)', \
+-           h2b("e9139d1e6ee064ef8cf514fc7dc83e86")]
++           h2b("b760e92d6662d351eb3801057695ac0346295356")]
+ 
+     data2=[h2b('0b'*16), "Hi There", \
+-           h2b("9294727a3638bb1c13f48ef8158bfc9d")]
++           h2b("675b0b3a1b4ddf4e124872da6c2f632bfed957e9")]
+ 
+     data3=['Jefe', "what do ya want for nothing?", \
+-           h2b("750c783e6ab0b503eaa86e310a5db738")]
++           h2b("effcdf6ae5eb2fa2d27416d5f184df9c259a7c79")]
+ 
+     data4=[h2b('aa'*16), h2b('dd'*50), \
+-           h2b("0x56be34521d144c88dbb8c733f0e8b3f6")]
++           h2b("d730594d167e35d5956fd8003d0db3d3f46dc7bb")]
+ 
+     data=[data1, data2, data3, data4]
+ 
+     def test_simple(self):
+-        algo = 'md5'
++        algo = 'sha1'
+         for d in self.data:
+             h = EVP.HMAC(d[0], algo)
+             h.update(d[1])
+diff -up M2Crypto-0.20.2/tests/test_rc4.py.fips M2Crypto-0.20.2/tests/test_rc4.py
+--- M2Crypto-0.20.2/tests/test_rc4.py.fips	2009-10-07 06:24:39.000000000 +0200
++++ M2Crypto-0.20.2/tests/test_rc4.py	2010-05-19 07:08:10.754839354 +0200
+@@ -8,12 +8,16 @@ import unittest
+ from binascii import hexlify
+ from M2Crypto import RC4
+ 
++from fips import fips_mode
++
+ class RC4TestCase(unittest.TestCase):
+ 
+     def test_vectors(self):
+         """
+         Test with test vectors from Wikipedia: http://en.wikipedia.org/wiki/Rc4
+         """
++        if fips_mode:
++            return
+         vectors = (('Key', 'Plaintext', 'BBF316E8D940AF0AD3'),
+                    ('Wiki', 'pedia', '1021BF0420'),
+                    ('Secret', 'Attack at dawn', '45A01F645FC35B383552544B9BF5'))
+@@ -26,6 +30,8 @@ class RC4TestCase(unittest.TestCase):
+         self.assertEqual(rc4.final(), '')
+     
+     def test_bad(self):
++        if fips_mode:
++            return
+         rc4 = RC4.RC4('foo')
+         self.assertNotEqual(hexlify(rc4.update('bar')).upper(), '45678')
+         
+diff -up M2Crypto-0.20.2/tests/test_rsa.py.fips M2Crypto-0.20.2/tests/test_rsa.py
+--- M2Crypto-0.20.2/tests/test_rsa.py.fips	2009-10-07 06:26:42.000000000 +0200
++++ M2Crypto-0.20.2/tests/test_rsa.py	2010-05-19 07:06:44.039121270 +0200
+@@ -8,6 +8,8 @@ import unittest
+ import sha, md5, os, sys
+ from M2Crypto import RSA, BIO, Rand, m2, EVP, X509
+ 
++from fips import fips_mode
++
+ class RSATestCase(unittest.TestCase):
+ 
+     errkey = 'tests/dsa.priv.pem'
+@@ -187,9 +189,10 @@ class RSATestCase(unittest.TestCase):
+         
+             else:
+                 import hashlib
+-                algos = {'sha1': 43, 
+-                         'ripemd160': 43,
+-                         'md5': 47}
++                algos = {'sha1': 43}
++                if not fips_mode:
++                    algos['md5'] = 47
++                    algos['ripemd160'] = 43
+         
+                 if m2.OPENSSL_VERSION_NUMBER >= 0x90800F:
+                     algos['sha224'] = 35
+@@ -217,7 +220,7 @@ class RSATestCase(unittest.TestCase):
+         """
+         rsa = RSA.load_key(self.privkey)
+         message = "This is the message string"
+-        digest = md5.md5(message).digest() 
++        digest = 'a' * 16
+         self.assertRaises(ValueError, rsa.sign, 
+                           digest, 'bad_digest_method') 
+     
+@@ -227,7 +230,7 @@ class RSATestCase(unittest.TestCase):
+         """
+         rsa = RSA.load_key(self.privkey)
+         message = "This is the message string"
+-        digest = md5.md5(message).digest() 
++        digest = 'a' * 16
+         signature = rsa.sign(digest, 'sha1')
+         self.assertRaises(ValueError, rsa.verify,
+                           digest, signature, 'bad_digest_method') 
+diff -up M2Crypto-0.20.2/tests/test_smime.py.fips M2Crypto-0.20.2/tests/test_smime.py
+--- M2Crypto-0.20.2/tests/test_smime.py.fips	2010-05-19 07:06:44.035105357 +0200
++++ M2Crypto-0.20.2/tests/test_smime.py	2010-05-19 07:06:44.040120779 +0200
+@@ -219,7 +219,7 @@ class WriteLoadTestCase(unittest.TestCas
+         buf = BIO.MemoryBuffer()
+         assert SMIME.load_pkcs7(self.filename).write_der(buf) == 1
+         s = buf.read()
+-        assert len(s) in (1204, 1243), len(s)
++        assert len(s) in (1188, 1204, 1243), len(s)
+         
+     def test_load_pkcs7(self):
+         assert SMIME.load_pkcs7(self.filename).type() == SMIME.PKCS7_SIGNED
+diff -up M2Crypto-0.20.2/tests/test_ssl.py.fips M2Crypto-0.20.2/tests/test_ssl.py
+--- M2Crypto-0.20.2/tests/test_ssl.py.fips	2010-05-19 07:06:44.019113781 +0200
++++ M2Crypto-0.20.2/tests/test_ssl.py	2010-05-19 07:06:44.040120779 +0200
+@@ -51,7 +51,7 @@ class VerifyCB:
+     def __call__(self, ok, store):
+         return verify_cb_new_function(ok, store)
+ 
+-sleepTime = float(os.getenv('M2CRYPTO_TEST_SSL_SLEEP', 0.5))
++sleepTime = float(os.getenv('M2CRYPTO_TEST_SSL_SLEEP', 1.5))
+ 
+ def find_openssl():
+     if os.name == 'nt' or sys.platform == 'cygwin':
+diff -up M2Crypto-0.20.2/tests/test_x509.py.fips M2Crypto-0.20.2/tests/test_x509.py
+--- M2Crypto-0.20.2/tests/test_x509.py.fips	2010-05-19 07:06:44.019113781 +0200
++++ M2Crypto-0.20.2/tests/test_x509.py	2010-05-19 07:06:44.040120779 +0200
+@@ -394,7 +394,7 @@ class X509TestCase(unittest.TestCase):
+         return
+     
+     def test_load_request_bio(self):
+-        (req, _) = self.mkreq(512)
++        (req, _) = self.mkreq(1024)
+ 
+         r1 = X509.load_request_der_string(req.as_der())
+         r2 = X509.load_request_string(req.as_der(), X509.FORMAT_DER)
