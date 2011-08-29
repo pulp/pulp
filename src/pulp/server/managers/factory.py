@@ -27,6 +27,7 @@ import copy
 from repo import RepoManager
 from repo_clone import RepoCloneManager
 from repo_query import RepoQueryManager
+from repo_sync import RepoSyncManager
 
 # -- constants ----------------------------------------------------------------
 
@@ -36,6 +37,7 @@ TYPE_CONTENT    = 'content-manager'
 TYPE_REPO       = 'repo-manager'
 TYPE_REPO_CLONE = 'repo-clone-manager'
 TYPE_REPO_QUERY = 'repo-query-manager'
+TYPE_REPO_SYNC  = 'repo-sync-manager'
 
 # Defaults for a normal running Pulp server (used to reset the state of the
 # factory between runs)
@@ -43,6 +45,7 @@ _DEFAULTS = {
     TYPE_REPO : RepoManager,
     TYPE_REPO_CLONE : RepoCloneManager,
     TYPE_REPO_QUERY : RepoQueryManager,
+    TYPE_REPO_SYNC: RepoSyncManager,
 }
 
 # Mapping of key to class that will be instantiated in the factory method

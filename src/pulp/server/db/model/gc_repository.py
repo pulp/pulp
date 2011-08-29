@@ -63,11 +63,15 @@ class RepoImporter(Model):
         # Generate a UUID for _id
         Model.__init__(self)
 
+        # General
         self.repo_id = repo_id
         self.id = id
-
         self.importer_type_id = importer_type_id
         self.config = config
+
+        # Sync
+        self.sync_in_progress = False
+        self.last_sync = None
 
 class RepoDistributor(Model):
     """
