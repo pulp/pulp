@@ -48,7 +48,7 @@ class ContentPlugin(object):
 
 # config override decorator ----------------------------------------------------
 
-def allow_config_override(method):
+def config_override(method):
     @wraps(method)
     def _config_override_decorator(self, *args, **kwargs):
         override_config = kwargs.get('config', {})

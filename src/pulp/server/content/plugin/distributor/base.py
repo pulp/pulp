@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.content.plugin.base import ContentPlugin, allow_config_override
+from pulp.server.content.plugin.base import ContentPlugin, config_override
 
 
 class Distributor(ContentPlugin):
@@ -22,7 +22,7 @@ class Distributor(ContentPlugin):
     def __init__(self, config):
         super(Distributor, self).__init__(config)
 
-    @allow_config_override
+    @config_override
     def publish(self, publish_api, config=None, options=None):
         """
         Publish a repository.
@@ -35,7 +35,7 @@ class Distributor(ContentPlugin):
         """
         raise NotImplementedError()
 
-    @allow_config_override
+    @config_override
     def unpublish(self, unpublish_api, config=None, options=None):
         """
         Unpublish a repository.

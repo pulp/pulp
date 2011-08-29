@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.content.plugin.base import ContentPlugin, allow_config_override
+from pulp.server.content.plugin.base import ContentPlugin, config_override
 
 
 class Importer(ContentPlugin):
@@ -22,7 +22,7 @@ class Importer(ContentPlugin):
     def __init__(self, config):
         super(Importer, self).__init__(config)
 
-    @allow_config_override
+    @config_override
     def sync(self, repo_data, sync_api, config=None, options=None):
         """
         Sync content into a repository.
@@ -37,7 +37,7 @@ class Importer(ContentPlugin):
         """
         raise NotImplementedError()
 
-    @allow_config_override
+    @config_override
     def pre_import_unit(self, repo_data, unit_data, config=None, options=None):
         """
         Optional content unit pre-processing before it is imported into a
@@ -55,7 +55,7 @@ class Importer(ContentPlugin):
         """
         pass
 
-    @allow_config_override
+    @config_override
     def import_unit(self, repo_data, unit_data, temp_location, config=None, options=None):
         """
         Import a unit of content into a repository.
@@ -72,7 +72,7 @@ class Importer(ContentPlugin):
         """
         raise NotImplementedError()
 
-    @allow_config_override
+    @config_override
     def delete_repo(self, repo_data, delete_api, config=None, options=None):
         """
         Delete a repository and its content.
@@ -87,7 +87,7 @@ class Importer(ContentPlugin):
         """
         raise NotImplementedError()
 
-    @allow_config_override
+    @config_override
     def clone_repo(self, repo_data, clone_data, clone_api, config=None, options=None):
         """
         Clone a repository.
