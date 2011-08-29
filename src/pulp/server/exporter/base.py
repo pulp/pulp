@@ -11,8 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
+import sys
 import logging
 import shutil
+import string
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
@@ -46,16 +48,11 @@ class BaseExporter(object):
         self.force = force
         self.progress = {
             'status': 'running',
-            'item_name': None,
-            'item_type': None,
-            'items_total': 0,
-            'items_remaining': 0,
+            'count_total': 0,
+            'count_remaining': 0,
             'num_error': 0,
             'num_success': 0,
-            'num_exported': 0,
-            'step': "STARTING",
         }
-        self.callback = None
         self.init_pulp()
         
     def init_pulp(self):
@@ -89,9 +86,6 @@ class BaseExporter(object):
         """
         raise NotImplementedError()
 
-    def set_callback(self, callback):
-        self.callback = callback
-
     def validate_target_path(self):
         """
         Validate target directory path:
@@ -106,5 +100,51 @@ class BaseExporter(object):
             shutil.rmtree(self.target_dir)
             os.mkdir(self.target_dir)
 
-    def print_progress(self, progress):
-        print '* %s' % progress['step']
+    def get_report(self):
+        raise NotImplementedError()
+
+    def write(self, current, prev=None):
+        """ Use information of number of columns to guess if the terminal
+        will wrap the text, at which point we need to add an extra 'backup line'
+        """
+        lines = 0
+        if prev:
+            lines = prev.count('\n')
+            if prev.rstrip(' ')[-1] != '\n':
+                lines += 1 # Compensate for the newline we inject in this method at end
+            lines += self.count_linewraps(prev)
+        # Move up 'lines' lines and move cursor to left
+        sys.stdout.write('\033[%sF' % (lines))
+        sys.stdout.write('\033[J')  # Clear screen cursor down
+        sys.stdout.write(current)
+        # In order for this to work in various situations
+        # We are requiring a new line to be entered at the end of
+        # the current string being printed.
+        if current.rstrip(' ')[-1] != '\n':
+            sys.stdout.write("\n")
+        sys.stdout.flush()
+
+    def terminal_size(self):
+        import fcntl, termios, struct
+        h, w, hp, wp = struct.unpack('HHHH',
+            fcntl.ioctl(0, termios.TIOCGWINSZ,
+                struct.pack('HHHH', 0, 0, 0, 0)))
+        return w, h
+
+    def count_linewraps(self, data):
+        linewraps = 0
+        width = height = 0
+        try:
+            width, height = self.terminal_size()
+        except:
+            # Unable to query terminal for size
+            # so default to 0 and skip this
+            # functionality
+            return 0
+        for line in data.split('\n'):
+            count = 0
+            for d in line:
+                if d in string.printable:
+                    count += 1
+            linewraps += count / width
+        return linewraps

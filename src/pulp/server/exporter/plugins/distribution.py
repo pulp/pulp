@@ -37,6 +37,7 @@ class DistributionExporter(BaseExporter):
         BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
         self.export_count = 0
         self.errataids = None
+        self.progress['step'] = 'Distribution files '
 
     def export(self):
         """
@@ -44,7 +45,6 @@ class DistributionExporter(BaseExporter):
          Distribution image files are looked up and copied over to
          the target dir along with .treeinfo files.
         """
-        self.progress['step'] = 'Exporting Distribution'
         self.validate_target_path()
         repo = self.get_repository()
         distributions = repo['distributionid']
@@ -57,7 +57,7 @@ class DistributionExporter(BaseExporter):
                 break
         if not os.path.exists(src_tree_file):
             # no distributions found
-            log.info("Could not find a treeinfo file; No distributions found")
+            log.info("Could not find a treeinfo file @ %s; No distributions found" % src_tree_file)
             return
         else:
             shutil.copy(src_tree_file, dst_tree_file)
@@ -66,9 +66,13 @@ class DistributionExporter(BaseExporter):
         if not os.path.exists(image_dir):
             os.mkdir(image_dir)
         skip_copy = False
+        export_count = 0
         for distroid in distributions:
             distro = self.distribution_api.distribution(distroid)
-            for src_dist_file in distro['files']:
+            self.progress['count_total'] = len(distro['files'])
+            for count, src_dist_file in enumerate(distro['files']):
+                if count % 500:
+                    self.write("Step: Exporting %s %s/%s" % (self.progress['step'], count, len(repo['files'])))
                 dst_file_path = "%s/%s" % (image_dir, os.path.basename(src_dist_file) )
                 if os.path.exists(dst_file_path):
                     dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
@@ -82,9 +86,9 @@ class DistributionExporter(BaseExporter):
                         os.makedirs(file_dir)
                     shutil.copy(src_dist_file, dst_file_path)
                     log.info("exported %s" % src_dist_file)
-
-    def get_progress(self):
-        return self.print_progress(self.progress)
+                export_count += 1
+                self.progress['num_success'] = export_count
+        return self.progress
 
 if __name__== '__main__':
     pe = DistributionExporter("testfedora", target_dir="/tmp/myexport")

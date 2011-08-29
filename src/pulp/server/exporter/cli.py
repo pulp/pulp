@@ -21,7 +21,7 @@ _TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.exporter'
 _EXPORTER_PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'plugins')
 _EXPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'plugins'))
 
-class ExporterCLI:
+class ExporterCLI(object):
     """
      Pulp Exporter Commandline wrapper class
     """
@@ -87,8 +87,8 @@ class ExporterCLI:
         plugins = []
         for plugin in glob.glob(os.path.join(_EXPORTER_PLUGINS_PATH, '*.py')):
             # import the module 
-            module = __import__(_EXPORTER_PLUGINS_PACKAGE + '.' + os.path.basename(plugin).split('.')[0],
-                                fromlist = ["*"])
+            module = __import__(_EXPORTER_PLUGINS_PACKAGE + '.' + \
+                                os.path.basename(plugin).split('.')[0], fromlist = ["*"])
             for name, attr in module.__dict__.items():
                 try:
                     if issubclass(attr, BaseExporter):
@@ -108,12 +108,32 @@ class ExporterCLI:
         """
         Execute the exporter
         """
-        for module in self._load_exporter_plugins():
+        plugins = self._load_exporter_plugins()
+        plugins.sort(reverse=1)
+        progress = []
+        print("Export Operation on repository [%s] in progress.." % self.repoid)
+        for module in plugins:
             exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
                               end_date=self.end_date)
-            exporter.export()
-            exporter.get_progress()
+            progress.append(exporter.export())
         self.create_isos()
+        self.print_report(progress)
+
+    def print_report(self, progress):
+        # Output result
+        print '\n'
+        print "+-------------------------------------------+"
+        print ('Exporter Report for repository [%s]' % self.repoid)
+        print "+-------------------------------------------+"
+        for report in progress:
+            if not report:
+                continue
+            print('%s/%s %s' %
+                  (report['num_success'], report['count_total'], report['step']))
+
+    def print_errors(self, progress):
+        pass
+
 
 def system_exit(code, msgs=None):
     """

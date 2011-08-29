@@ -39,6 +39,7 @@ class ErrataExporter(BaseExporter):
         BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
         self.export_count = 0
         self.errataids = None
+        self.progress['step'] = 'Errata'
 
     def export(self):
         """
@@ -47,17 +48,24 @@ class ErrataExporter(BaseExporter):
         packages associated with each errata are also processed and
         and metadata is updated with new updateinfo xml.
         """
-        self.progress['step'] = 'Exporting Errata'
         self.validate_target_path()
         repo = self.get_repository()
         self.errataids = list(chain.from_iterable(repo['errata'].values()))
+        self.progress['count_total'] = len(self.errataids)
         self.__process_errata_packages()
         log.info("generating updateinfo.xml file for exported errata")
-        updateinfo_path = updateinfo.updateinfo(self.errataids, self.target_dir)
-        if updateinfo_path:
-            log.debug("Modifying repo for updateinfo")
-            pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
-                updateinfo_path)
+        try:
+            updateinfo_path = updateinfo.updateinfo(self.errataids, self.target_dir)
+            if updateinfo_path:
+                log.debug("Modifying repo for updateinfo")
+                self.write("Step: Modifying repo to add updateinfo")
+                pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
+                    updateinfo_path)
+            # either all pass or all error in this case
+            self.progress['num_success'] = self.progress['count_total']
+        except:
+            self.progress['num_error'] += self.progress['count_total']
+        return self.progress
 
     def __process_errata_packages(self):
         """
@@ -90,9 +98,6 @@ class ErrataExporter(BaseExporter):
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except:
             log.error("Unable to generate metadata for exported packages in target directory %s" % self.target_dir)
-
-    def get_progress(self):
-        return self.print_progress(self.progress)
                     
 if __name__== '__main__':
     pe = ErrataExporter("testrepo", target_dir="/tmp/myexport")

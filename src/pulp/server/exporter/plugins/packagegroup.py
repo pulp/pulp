@@ -35,7 +35,8 @@ class CompsExporter(BaseExporter):
         @type end_date: date
         """
         BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
-
+        self.progress['step'] = 'Package Group/Category '
+        
     def export(self):
         """
         Export package group/category associated with a repository object.
@@ -44,9 +45,9 @@ class CompsExporter(BaseExporter):
         """
         self.validate_target_path()
         repo = self.get_repository()
-        self.progress['step'] = 'Exporting Package Group/Category'
         xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
+        self.progress['count_total'] = len(repo['packagegroups']) + len(repo['packagegroupcategories'])
         if not xml:
             # no comps xml data found
             log.info("No comps data found in repo %s" % repo['id'])
@@ -56,15 +57,18 @@ class CompsExporter(BaseExporter):
             f = open(comps_file_path, 'w')
             f.write(xml.encode("utf8"))
             f.close()
+            log.debug("Modifying repo for comps groups")
+            self.write("Step: Modifying repo to add Package Groups/Categories")
+            pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
+                    comps_file_path)
+            # either all pass or all error in this case
+            self.progress['num_success'] = self.progress['count_total']
         except Exception,e:
+            self.progress['num_error'] += self.progress['count_total']
             log.error("Error occurred while storing the comps data %s" % e)
-            return
-        log.debug("Modifying repo for comps groups")
-        pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
-                comps_file_path)
 
-    def get_progress(self):
-        return self.print_progress(self.progress)
+        return self.progress
+
 
 if __name__== '__main__':
     pe = CompsExporter("testdep", target_dir="/tmp/myexport")

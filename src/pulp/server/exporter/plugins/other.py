@@ -35,6 +35,7 @@ class OtherExporter(BaseExporter):
         @type end_date: date
         """
         BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
+        self.progress['step'] = 'Custom Metadata '
 
     def export(self):
         """
@@ -43,25 +44,31 @@ class OtherExporter(BaseExporter):
         """
         self.validate_target_path()
         repo = self.get_repository()
-        self.progress['step'] = 'Exporting Custom Metadata'
+
         repo_path = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path'])
         src_repodata_file = os.path.join(repo_path, "repodata/repomd.xml")
         src_repodata_dir  = os.path.dirname(src_repodata_file)
         tgt_repodata_dir  = os.path.join(self.target_dir, 'repodata')
         ftypes = pulp.server.util.get_repomd_filetypes(src_repodata_file)
-        base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db', 'updateinfo', 'comps']
+        base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db',
+                       'updateinfo', 'comps', 'group_gz', 'group']
         for ftype in ftypes:
             if ftype in base_ftypes:
                 # no need to process these again
                 continue
+            self.progress['count_total'] += 1
             filetype_path = os.path.join(src_repodata_dir, os.path.basename(pulp.server.util.get_repomd_filetype_path(src_repodata_file, ftype)))
             # modifyrepo uses filename as mdtype, rename to type.<ext>
             renamed_filetype_path = os.path.join(tgt_repodata_dir, \
                                          ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
-            shutil.copy(filetype_path,  renamed_filetype_path)
-            if os.path.isfile(renamed_filetype_path):
-                log.info("Modifying repo for %s metadata" % ftype)
-                pulp.server.util.modify_repo(tgt_repodata_dir, renamed_filetype_path)
+            try:
+                shutil.copy(filetype_path,  renamed_filetype_path)
+                if os.path.isfile(renamed_filetype_path):
+                    log.info("Modifying repo for %s metadata" % ftype)
+                    self.write("Step: Modifying repo to add custom metadata %s" % ftype)
+                    pulp.server.util.modify_repo(tgt_repodata_dir, renamed_filetype_path)
+                self.progress['num_success'] += 1
+            except:
+                self.progress['num_error'] += 1
 
-    def get_progress(self):
-        return self.print_progress(self.progress)
+        return self.progress
