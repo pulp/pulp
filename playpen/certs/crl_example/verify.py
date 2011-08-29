@@ -4,7 +4,7 @@ import os
 import sys
 from optparse import OptionParser
 
-sys.path.insert(0, "/shared/repo/m2crypto/m2crypto/build/lib.linux-x86_64-2.7")
+#sys.path.insert(0, "/shared/repo/m2crypto/m2crypto/build/lib.linux-x86_64-2.7")
 import M2Crypto
 
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
