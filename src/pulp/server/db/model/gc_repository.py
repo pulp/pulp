@@ -71,7 +71,7 @@ class RepoImporter(Model):
 
         # Sync
         self.sync_in_progress = False
-        self.last_sync = None
+        self.last_sync = None # ISO8601 formatted string (see dateutils)
 
 class RepoDistributor(Model):
     """
