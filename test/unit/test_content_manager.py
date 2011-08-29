@@ -81,13 +81,11 @@ class BogusTwoImporter(base.Importer):
 '''
 
 excellent_importer_config_1 = '''
-[Excellent]
-enabled = true
+{"enabled": true}
 '''
 
 excellent_importer_config_2 = '''
-[Excellent]
-enabled = false
+{"enabled": false}
 '''
 
 http_distibutor = '''
@@ -103,8 +101,7 @@ class HTTPDistributor(base.Distributor):
 '''
 
 http_conf = '''
-[HTTPDistributor]
-enabled: yes
+{"enabled": true}
 '''
 # delete the generated data
 
