@@ -52,6 +52,7 @@ class BaseExporter(object):
             'count_remaining': 0,
             'num_error': 0,
             'num_success': 0,
+            'errors': [],
         }
         self.init_pulp()
         

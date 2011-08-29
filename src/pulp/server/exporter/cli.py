@@ -111,17 +111,21 @@ class ExporterCLI(object):
         plugins = self._load_exporter_plugins()
         plugins.sort(reverse=1)
         progress = []
-        print("Export Operation on repository [%s] in progress.." % self.repoid)
-        for module in plugins:
-            exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
-                              end_date=self.end_date)
-            progress.append(exporter.export())
+        try:
+#            print("Export Operation on repository [%s] in progress.." % self.repoid)
+            print(" ")
+            for module in plugins:
+                exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
+                                  end_date=self.end_date)
+                progress.append(exporter.export())
+        except Exception,e:
+            system_exit(-1, str(e))
         self.create_isos()
         self.print_report(progress)
+        self.print_errors(progress)
 
     def print_report(self, progress):
         # Output result
-        print '\n'
         print "+-------------------------------------------+"
         print ('Exporter Report for repository [%s]' % self.repoid)
         print "+-------------------------------------------+"
@@ -132,7 +136,15 @@ class ExporterCLI(object):
                   (report['num_success'], report['count_total'], report['step']))
 
     def print_errors(self, progress):
-        pass
+        errors = []
+        for report in progress:
+            if not report:
+                continue
+            errors += report['errors']
+        if not errors:
+            return
+        print '\n Exceptions:'
+        print '\n'.join(errors[:])
 
 
 def system_exit(code, msgs=None):

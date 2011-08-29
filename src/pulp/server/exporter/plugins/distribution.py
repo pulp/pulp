@@ -79,15 +79,21 @@ class DistributionExporter(BaseExporter):
                     src_file_checksum = pulp.server.util.get_file_checksum(filename=src_dist_file)
                     if src_file_checksum == dst_file_checksum:
                         log.info("file %s already exists with same checksum. skip import" % os.path.basename(src_dist_file))
-                        skip_copy = True
-                if not skip_copy:
+                        self.progress['num_success'] += 1
+                        continue
+                try:
                     file_dir = os.path.dirname(dst_file_path)
                     if not os.path.exists(file_dir):
                         os.makedirs(file_dir)
                     shutil.copy(src_dist_file, dst_file_path)
                     log.info("exported %s" % src_dist_file)
-                export_count += 1
-                self.progress['num_success'] = export_count
+                    self.progress['num_success'] += 1
+                except IOError:
+                    msg = "Failed to export distribution file %s" % src_dist_file
+                    self.progress['errors'].append(msg)
+                    self.progress['num_error'] += 1
+                    log.error(msg)
+                    
         return self.progress
 
 if __name__== '__main__':

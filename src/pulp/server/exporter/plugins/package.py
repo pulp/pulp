@@ -64,8 +64,11 @@ class PackageExporter(BaseExporter):
                     shutil.copy(pkg_path, dst_file_path)
                     self.export_count += 1
                     log.info("copied package %s @ location %s" % (os.path.basename(pkg_path), dst_file_path))
-                except:
+                except IOError:
+                    msg = "Failed to export package %s" % pkg
+                    self.progress['errors'].append(msg)
                     self.progress['num_error'] += 1
+                    log.error(msg)
                     continue
             else:
                 self.export_count += 1
@@ -76,8 +79,10 @@ class PackageExporter(BaseExporter):
             self.write("Step: Generating metadata for exported packages", )
             pulp.server.util.create_repo(self.target_dir)
             log.info("metadata generation complete at target location %s" % self.target_dir)
-        except:
-            log.error("Unable to generate metadata for exported packages in target directory %s" % self.target_dir)
+        except pulp.server.util.CreateRepoError:
+            msg = "Unable to generate metadata for exported packages in target directory %s" % self.target_dir
+            self.progress['errors'].append(msg)
+            log.error(msg)
 
         return self.progress
 

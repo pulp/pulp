@@ -57,16 +57,24 @@ class CompsExporter(BaseExporter):
             f = open(comps_file_path, 'w')
             f.write(xml.encode("utf8"))
             f.close()
+        except Exception,e:
+            msg = "Error occurred while storing the comps data %s" % str(e)
+            self.progress['errors'].append(msg)
+            self.progress['num_error'] += self.progress['count_total']
+            log.error(msg)
+
+        try:
             log.debug("Modifying repo for comps groups")
             self.write("Step: Modifying repo to add Package Groups/Categories")
             pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     comps_file_path)
             # either all pass or all error in this case
             self.progress['num_success'] = self.progress['count_total']
-        except Exception,e:
+        except pulp.server.util.CreateRepoError:
+            msg = "Unable to modify metadata with exported package groups/categories"
+            self.progress['errors'].append(msg)
             self.progress['num_error'] += self.progress['count_total']
-            log.error("Error occurred while storing the comps data %s" % e)
-
+            log.error(msg)
         return self.progress
 
 
