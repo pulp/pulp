@@ -343,11 +343,9 @@ fi
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
-pushd %{_sysconfdir}/rc.d/init.d
 if [ "$1" = "1" ]; then
-  ln -s goferd pulp-agent
+  ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
-popd
 
 %postun
 # Clean up after package removal
