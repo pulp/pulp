@@ -50,7 +50,7 @@ class PackageExporter(BaseExporter):
         self.progress['count_total'] = len(repo['packages'])
         for count, pkg in enumerate(repo['packages']):
             if count % 500:
-                self.write("Step: Exporting %s %s/%s\n" % (self.progress['step'], count, len(repo['packages'])))
+                self.write("Step: Exporting %s (%s/%s)\n" % (self.progress['step'], count, len(repo['packages'])))
             package_obj = self.package_api.package(pkg)
             pkg_path = pulp.server.util.get_shared_package_path(package_obj['name'], package_obj['version'], package_obj['release'],
                                                     package_obj['arch'], package_obj['filename'], package_obj['checksum'])
