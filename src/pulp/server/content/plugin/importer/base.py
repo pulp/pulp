@@ -18,7 +18,7 @@ class Importer(ContentPlugin):
     def __init__(self, config):
         super(Importer, self).__init__(config)
 
-    def sync(self, repo_data, importer_config, sync_config, sync_hook):
+    def sync(self, repo_data, importer_config, sync_config, sync_conduit):
         raise NotImplementedError()
 
     def pre_import_unit(self, repo_data, importer_config, unit_data):
@@ -27,5 +27,5 @@ class Importer(ContentPlugin):
     def import_unit(self, importer_config, unit_data, unit_temp_dir):
         raise NotImplementedError()
 
-    def delete_repo(self, repo_data, importer_config, delete_config, delete_hook):
+    def delete_repo(self, repo_data, importer_config, delete_config, delete_conduit):
         raise NotImplementedError()
