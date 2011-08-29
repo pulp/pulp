@@ -858,6 +858,18 @@ class YumSynchronizer(BaseSynchronizer):
                     log.info("Skipping package imports from sync process")
 
                 # compute and import repo image files
+                src_tree_file = dst_tree_file = None
+                for tree_info_name in ['treeinfo', '.treeinfo']:
+                    src_tree_file = src_repo_dir + tree_info_name
+                    if os.path.exists(src_tree_file):
+                        dst_tree_file = "%s/%s" % (dst_repo_dir, tree_info_name)
+                        break
+                if not os.path.exists(src_tree_file):
+                    # no distributions found
+                    log.info("Could not find a treeinfo file %s; No distributions found" % src_tree_file)
+                else:
+                    shutil.copy(src_tree_file, dst_tree_file)
+                    log.info("successfully copied treeinfo file")
                 imlist = self.list_tree_files(src_repo_dir)
                 if not imlist:
                     log.info("No image files to import")
