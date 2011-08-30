@@ -38,8 +38,7 @@ class TestExporterApi(testutil.PulpAsyncTest):
     def clean(self):
         testutil.PulpAsyncTest.clean(self)
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
-        pass
-    
+
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
         my_dir = os.path.abspath(os.path.dirname(__file__))
@@ -73,7 +72,6 @@ class TestExporterApi(testutil.PulpAsyncTest):
         found_3 = self.repo_api.repository('test_import_repo_errata')
         errata_3 = found_3['errata']
         self.assertEquals(len(errata_1), len(errata_3))
-        print "CCCCCCCCCC %s %s" % (errata_1, errata_3)
 
         # test distribution export
         distribution_1 = self.found_1['distributionid']
@@ -91,7 +89,6 @@ class TestExporterApi(testutil.PulpAsyncTest):
         oe = OtherExporter('test_export_repo', target_dir=tgt_dir)
         oe.export()
         repomd_path = os.path.join(tgt_dir, 'repodata/repomd.xml')
-        print "GGGGGGGGGGGGGg",repomd_path, os.path.exists(repomd_path)
         assert(os.path.exists(repomd_path))
         ftypes = util.get_repomd_filetypes(repomd_path)
         assert('product' in ftypes)
