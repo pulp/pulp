@@ -31,10 +31,14 @@ import pulp.server.managers.repo as repo_manager
 
 class MockImporter(Importer):
 
+    # Last call state
     repo_data = None
     importer_config = None
     sync_config = None
     sync_conduit = None
+
+    # Call behavior
+    raise_error = False
 
     def sync(self, repo_data, importer_config, sync_config, sync_conduit):
 
@@ -46,12 +50,17 @@ class MockImporter(Importer):
         MockImporter.sync_config = sync_config
         MockImporter.sync_conduit = sync_conduit
 
+        if MockImporter.raise_error:
+            raise Exception('Something bad happened during sync')
+
     @classmethod
     def reset(cls):
         MockImporter.repo_data = None
         MockImporter.importer_config = None
         MockImporter.sync_config = None
         MockImporter.sync_conduit = None
+
+        MockImporter.raise_error = False
 
 # -- test cases ---------------------------------------------------------------
 
@@ -210,6 +219,31 @@ class RepoSyncManagerTests(testutil.PulpTest):
         except repo_sync_manager.NoImporter, e:
             self.assertEqual('good-repo', e.repo_id)
             print(e) # for coverage
+
+    def test_sync_with_error(self):
+        """
+        Tests a sync when the plugin raises an error.
+        """
+
+        # Setup
+        MockImporter.raise_error = True
+
+        self.repo_manager.create_repo('gonna-bail')
+        self.repo_manager.set_importer('gonna-bail', 'MockImporter', None)
+
+        # Test
+        try:
+            self.sync_manager.sync('gonna-bail')
+        except repo_sync_manager.RepoSyncException, e:
+            self.assertEqual('gonna-bail', e.repo_id)
+            print(e) # for coverage
+
+        # Verify
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'MockImporter'})
+
+        self.assertTrue(not repo_importer['sync_in_progress'])
+        self.assertTrue(repo_importer['last_sync'] is not None)
+        self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
 # -- testing utilities --------------------------------------------------------
 

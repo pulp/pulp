@@ -139,14 +139,22 @@ class RepoSyncManager:
         except Exception:
             # I really wish python 2.4 supported except and finally together
             repo_importer['sync_in_progress'] = False
+            repo_importer['last_sync'] = _sync_finished_timestamp()
             importer_coll.save(repo_importer, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
             raise RepoSyncException(repo_id)
 
-        now = datetime.datetime.now(dateutils.local_tz())
-        now_in_iso_format = dateutils.format_iso8601_datetime(now)
 
         repo_importer['sync_in_progress'] = False
-        repo_importer['last_sync'] = now_in_iso_format
+        repo_importer['last_sync'] = _sync_finished_timestamp()
         importer_coll.save(repo_importer, safe=True)
+
+def _sync_finished_timestamp():
+    """
+    @return: timestamp suitable for indicating when a sync completed.
+    @rtype:  str
+    """
+    now = datetime.datetime.now(dateutils.local_tz())
+    now_in_iso_format = dateutils.format_iso8601_datetime(now)
+    return now_in_iso_format
