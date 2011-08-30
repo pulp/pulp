@@ -307,7 +307,7 @@ class RepoManager:
 
         return distributor_id
 
-    def remove_distributor(self, repo_id, distributor_id, unpublish=True):
+    def remove_distributor(self, repo_id, distributor_id):
         """
         Removes a distributor from a repository, optionally requesting the
         distributor to unpublish the repository first. If there is no
@@ -319,10 +319,6 @@ class RepoManager:
 
         @param distributor_id: identifies the distributor to delete
         @type  distributor_id: str
-
-        @param unpublish: if true, the distributor's unpublish call will be done
-                          automatically by this call
-        @type  unpublish: bool
 
         @raises MissingRepo: if repo_id doesn't correspond to a valid repo
         """
