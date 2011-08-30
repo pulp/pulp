@@ -21,6 +21,27 @@ def get_parser(ca_cert, good_cert, revoked_cert, crl):
     parser.add_option("--crl", action="store", help="CRL, default value %s" % (crl), default=crl)
     return parser
 
+def get_crl_issuer(crl_path):
+    # Note:
+    # Scope of issuer and CRL are related
+    # If CRL goes out of scope, issuer does too!
+    # This means: you can not return 'issuer' from this function
+    crl = M2Crypto.X509.load_crl(crl_path)
+    issuer = crl.get_issuer()
+    name = str(issuer)
+    issuer_hash = issuer.as_hash()
+    return (name, issuer_hash)
+
+def get_cert_issuer(cert_path):
+    # Note:
+    # Scope of issuer and Cert are related
+    # If Cert goes out of scope, issuer does too!
+    cert = M2Crypto.X509.load_cert(cert_path)
+    issuer = cert.get_issuer()
+    name = str(issuer)
+    issuer_hash = issuer.as_hash()
+    return (name, issuer_hash)
+
 def pulp_verify(ca_cert, client_cert, crl):
     repo_utils = RepoCertUtils(config.config)
     return repo_utils.validate_certificate(client_cert, ca_cert)
@@ -66,9 +87,9 @@ def verify_no_trusted_no_crl(ca_cert_path, client_cert_path):
 def verify_empty_trusted_with_crl(ca_cert_path, client_cert_path, crl_path):
     """
     For our purposes:
-    cacert is the issuer of cert
-    cacert created crl
-    crl is revoking cert
+    ca_cert_path is the issuer of client_cert_path
+    ca_cert_path created crl
+    crl_path is revoking client_cert_path
     We want to verify the certificate and see it was revoked
     """
     # Read in cacert, cert, and crl
@@ -93,9 +114,9 @@ def verify_empty_trusted_with_crl(ca_cert_path, client_cert_path, crl_path):
 def verify(ca_cert_path, client_cert_path, crl_path):
     """
     For our purposes:
-    cacert is the issuer of cert
-    cacert created crl
-    crl is revoking cert
+    ca_cert_path is the issuer of client_cert_path
+    ca_cert_path created crl
+    crl_path is revoking client_cert_path
     We want to verify the certificate and see it was revoked
     """
     # Read in cacert, cert, and crl
@@ -127,6 +148,17 @@ if __name__ == "__main__":
     revoked_cert = opts.revoked_cert
     good_cert = opts.good_cert
     crl = opts.crl
+
+    crl_issuer_name, crl_issuer_hash = get_crl_issuer(crl)
+    good_cert_issuer_name, good_cert_issuer_hash = get_cert_issuer(good_cert)
+    revoked_cert_issuer_name, revoked_cert_issuer_hash = get_cert_issuer(revoked_cert)
+    ca_issuer_name, ca_issuer_hash = get_cert_issuer(ca_cert)
+
+    print "CA Issuer:           %s, Hash: %s" % (ca_issuer_name, ca_issuer_hash)
+    print "CRL Issuer:          %s, Hash: %s" % (crl_issuer_name, crl_issuer_hash)
+    print "Good Cert Issuer:    %s, Hash: %s" % (good_cert_issuer_name, good_cert_issuer_hash)
+    print "Revoked Cert Issuer: %s, Hash: %s" % (revoked_cert_issuer_name, revoked_cert_issuer_hash)
+
 
     test_empty_CRL_Stack()
     status = crl_verify(ca_cert, crl)

@@ -1,4 +1,8 @@
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
+%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+%endif
+
 
 # Keep this value in sync with the definition in openssl.spec.
 %global multilib_arches %{ix86} ia64 ppc ppc64 s390 s390x x86_64 sparc sparcv9 sparc64
@@ -28,8 +32,12 @@ URL: http://wiki.osafoundation.org/bin/view/Projects/MeTooCrypto
 BuildRequires: openssl-devel, python2-devel
 BuildRequires: perl, pkgconfig, swig, which
 
+
+# we don't want to provide private python extension libs
+%{?filter_setup:
 %filter_provides_in %{python_sitearch}/M2Crypto/__m2crypto.so
 %filter_setup
+}
 
 %description
 This package allows you to call OpenSSL functions from python scripts.
