@@ -419,3 +419,15 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
  int x509_store_load_locations(X509_STORE *store, const char *file) {
      return X509_STORE_load_locations(store, file, NULL);
  }
+diff -Naur M2Crypto-0.21.1.orig/tests/test_x509.py M2Crypto-0.21.1.pulp/tests/test_x509.py
+--- M2Crypto-0.21.1.orig/tests/test_x509.py	2011-08-29 11:00:49.302946499 -0400
++++ M2Crypto-0.21.1.pulp/tests/test_x509.py	2011-08-30 16:08:08.570226499 -0400
+@@ -142,7 +142,7 @@
+         cn.set_data("Hello There!")
+         assert cn.get_data().as_text() == "Hello There!", cn.get_data().as_text()
+ 
+-        assert n.as_hash() == 1697185131
++        assert n.as_hash() == 333998119
+         
+         self.assertRaises(IndexError, lambda: n[100])
+         self.assert_(n[10])
