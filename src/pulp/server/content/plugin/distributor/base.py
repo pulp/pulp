@@ -33,11 +33,11 @@ class Distributor(ContentPlugin):
         pass
 
     @config_override
-    def publish(self, publish_hook, config=None, options=None):
+    def publish(self, publish_conduit, config=None, options=None):
         """
         Publish a repository.
-        @param publish_hook: api instance that provides limited pulp functionality
-        @type publish_hook: L{PluginAPI} instance
+        @param publish_conduit: api instance that provides limited pulp functionality
+        @type publish_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
@@ -46,11 +46,11 @@ class Distributor(ContentPlugin):
         raise NotImplementedError()
 
     @config_override
-    def unpublish(self, unpublish_hook, config=None, options=None):
+    def unpublish(self, unpublish_conduit, config=None, options=None):
         """
         Unpublish a repository.
-        @param unpublish_hook: api instance that provides limited pulp functionality
-        @type unpublish_hook: L{ContentPluginHook} instance
+        @param unpublish_conduit: api instance that provides limited pulp functionality
+        @type unpublish_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
