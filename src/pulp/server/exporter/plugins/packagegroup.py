@@ -58,7 +58,7 @@ class CompsExporter(BaseExporter):
         comps_file_path = "%s/%s" % (self.target_dir, "comps.xml")
         try:
             f = open(comps_file_path, 'w')
-            f.write(xml.encode("utf8"))
+            f.write(xml.encode("utf-8"))
             f.close()
         except Exception,e:
             msg = "Error occurred while storing the comps data %s" % str(e)
