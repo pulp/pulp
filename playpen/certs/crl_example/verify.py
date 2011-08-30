@@ -154,10 +154,10 @@ if __name__ == "__main__":
     revoked_cert_issuer_name, revoked_cert_issuer_hash = get_cert_issuer(revoked_cert)
     ca_issuer_name, ca_issuer_hash = get_cert_issuer(ca_cert)
 
-    print "CA Issuer:           %s, Hash: %s" % (ca_issuer_name, ca_issuer_hash)
-    print "CRL Issuer:          %s, Hash: %s" % (crl_issuer_name, crl_issuer_hash)
-    print "Good Cert Issuer:    %s, Hash: %s" % (good_cert_issuer_name, good_cert_issuer_hash)
-    print "Revoked Cert Issuer: %s, Hash: %s" % (revoked_cert_issuer_name, revoked_cert_issuer_hash)
+    print "CA Issuer:           %s, Hash: %x" % (ca_issuer_name, ca_issuer_hash)
+    print "CRL Issuer:          %s, Hash: %x" % (crl_issuer_name, crl_issuer_hash)
+    print "Good Cert Issuer:    %s, Hash: %x" % (good_cert_issuer_name, good_cert_issuer_hash)
+    print "Revoked Cert Issuer: %s, Hash: %x" % (revoked_cert_issuer_name, revoked_cert_issuer_hash)
 
 
     test_empty_CRL_Stack()

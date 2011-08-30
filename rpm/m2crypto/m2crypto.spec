@@ -117,7 +117,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Aug 29 2011 John Matthews <jmatthews@redhat.com> - 0.21.1.pulp-1
-- Adding patch for CRL verification
+- Adding patch for CRL verification through X509_Store_Context
+- Changing default X509_NAME_hash from using old version to current
+  this allows python code to match same hash reported from openssl CLI
 
 * Mon Mar 28 2011 Miloslav Trmač <mitr@volny.cz> - 0.21.1-3
 - Fix S/MIME documentation and examples

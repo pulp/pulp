@@ -257,7 +257,7 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_ssl.i M2Crypto-0.21.1.pulp/SWIG/_ssl.i
  %threadallow i2d_ssl_session;
 diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
 --- M2Crypto-0.21.1.orig/SWIG/_x509.i	2011-08-29 11:00:49.304947501 -0400
-+++ M2Crypto-0.21.1.pulp/SWIG/_x509.i	2011-08-30 14:11:01.231738999 -0400
++++ M2Crypto-0.21.1.pulp/SWIG/_x509.i	2011-08-30 15:34:51.679244001 -0400
 @@ -12,6 +12,7 @@
  %{
  #include <openssl/x509.h>
@@ -304,7 +304,34 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
  %rename(x509_get_verify_error) X509_verify_cert_error_string;
  extern const char *X509_verify_cert_error_string(long);
  
-@@ -231,6 +242,14 @@
+@@ -152,6 +163,18 @@
+ %rename(x509_name_print_ex_fp) X509_NAME_print_ex_fp;
+ extern int X509_NAME_print_ex_fp(FILE *, X509_NAME *, int, unsigned long);
+ 
++/* JWM: Desire is for x509_name_hash to match up to openssl's version.
++   If the old version is desired, call it expliticlty.
++*/
++%rename(x509_name_hash) X509_NAME_hash;
++extern unsigned long X509_NAME_hash(X509_NAME *);
++
++#if OPENSSL_VERSION_NUMBER >= 0x10000000L
++%rename(x509_name_hash_old) X509_NAME_hash_old;
++extern unsigned long X509_NAME_hash_old(X509_NAME *);
++#endif
++
++/*
+ #if OPENSSL_VERSION_NUMBER >= 0x10000000L
+ %rename(x509_name_hash) X509_NAME_hash_old;
+ extern unsigned long X509_NAME_hash_old(X509_NAME *);
+@@ -159,6 +182,7 @@
+ %rename(x509_name_hash) X509_NAME_hash;
+ extern unsigned long X509_NAME_hash(X509_NAME *);
+ #endif
++*/
+ 
+ %rename(x509_name_get_index_by_nid) X509_NAME_get_index_by_NID;
+ extern int X509_NAME_get_index_by_NID(X509_NAME *, int, int);
+@@ -231,6 +255,14 @@
  %rename(x509_store_add_cert) X509_STORE_add_cert;
  extern int X509_STORE_add_cert(X509_STORE *, X509 *);
  
@@ -319,7 +346,7 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
  %rename(x509_store_ctx_get_current_cert) X509_STORE_CTX_get_current_cert;
  extern X509 *X509_STORE_CTX_get_current_cert(X509_STORE_CTX *);
  %rename(x509_store_ctx_get_error) X509_STORE_CTX_get_error;
-@@ -315,6 +334,27 @@
+@@ -315,6 +347,27 @@
              XN_FLAG_DN_REV | \
              XN_FLAG_DUMP_UNKNOWN_FIELDS);
  
@@ -347,7 +374,7 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
  /* Cribbed from rsa.h. */
  %constant int RSA_3                           = 0x3L;
  %constant int RSA_F4                          = 0x10001L;
-@@ -419,6 +459,10 @@
+@@ -419,6 +472,10 @@
      return X509_sign(x, pkey, md);
  }
  
@@ -358,7 +385,7 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
  /* XXX The first parameter is really ASN1_TIME, does it matter? */
  ASN1_TIME *x509_gmtime_adj(ASN1_UTCTIME *s, long adj) {
      return X509_gmtime_adj(s, adj);
-@@ -464,6 +508,11 @@
+@@ -464,6 +521,11 @@
      return sk_X509_new_null();
  }
  
@@ -370,7 +397,7 @@ diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
  /* sk_X509_free() is a macro. */
  void sk_x509_free(STACK_OF(X509) *stack) {
      sk_X509_free(stack);
-@@ -479,6 +528,21 @@
+@@ -479,6 +541,21 @@
      return sk_X509_pop(stack);
  }
  
