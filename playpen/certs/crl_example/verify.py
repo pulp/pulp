@@ -71,6 +71,19 @@ def crl_verify(ca_cert_path, crl_path):
     crl = M2Crypto.X509.load_crl(crl_path)
     return crl.verify(cacert.get_pubkey())
 
+def test_load_crl_string(ca_cert_path, crl_path):
+    f = open(crl_path)
+    crl_data = f.read()
+    f.close()
+    f = open(ca_cert_path)
+    ca_data = f.read()
+    f.close()
+    crl = M2Crypto.X509.load_crl_string(crl_data)
+    ca = M2Crypto.X509.load_cert_string(ca_data)
+    assert crl.verify(ca.get_pubkey())
+    return (crl.get_issuer().as_hash() == ca.get_issuer().as_hash())
+
+
 
 def verify_no_trusted_no_crl(ca_cert_path, client_cert_path):
     # Read in cacert, cert, and crl
@@ -162,6 +175,9 @@ if __name__ == "__main__":
 
     test_empty_CRL_Stack()
     status = crl_verify(ca_cert, crl)
+    assert(status == 1)
+
+    status = test_load_crl_string(ca_cert, crl)
     assert(status == 1)
 
     # Good Cert & Revoked Cert came from same CA

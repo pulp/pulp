@@ -1,6 +1,6 @@
 diff -Naur M2Crypto-0.21.1.orig/M2Crypto/X509.py M2Crypto-0.21.1.pulp/M2Crypto/X509.py
 --- M2Crypto-0.21.1.orig/M2Crypto/X509.py	2011-08-29 11:00:49.316953499 -0400
-+++ M2Crypto-0.21.1.pulp/M2Crypto/X509.py	2011-08-30 14:10:44.210232501 -0400
++++ M2Crypto-0.21.1.pulp/M2Crypto/X509.py	2011-08-30 17:23:21.955158000 -0400
 @@ -234,7 +234,7 @@
          else:
              self.x509_name = m2.x509_name_new ()
@@ -207,10 +207,10 @@ diff -Naur M2Crypto-0.21.1.orig/M2Crypto/X509.py M2Crypto-0.21.1.pulp/M2Crypto/X
 +    def get_issuer(self):
 +        """
 +        Return the Issuer Name
-+
+ 
 +        @rtype: X509_Name
 +        @return: X509_Name of the issuer
- 
++
 +        Warning: X509_Name is tied to the CRL.  If the CRL goes out of scope
 +        so does the underlying X509_Name of the issuer
 +        """
@@ -225,6 +225,27 @@ diff -Naur M2Crypto-0.21.1.orig/M2Crypto/X509.py M2Crypto-0.21.1.pulp/M2Crypto/X
  
  def load_crl(file):
      """
+@@ -1101,4 +1242,20 @@
+         raise X509Error(Err.get_error())
+     return CRL(cptr, 1)
+ 
++def load_crl_string(crl_string):
++    """
++    Load CRL from a string.
++
++    @type string: string
++    @param string: String containing a CRL in PEM format.
++
++    @rtype: M2Crypto.X509.X509_CRL
++    @return: M2Crypto.X509.X509_CRL object.
++    """
++    bio = BIO.MemoryBuffer(crl_string)
++    cptr=m2.x509_crl_read_pem(bio._ptr())
++    if cptr is None:
++        raise X509Error(Err.get_error())
++    return CRL(cptr, 1)
++
+ 
 diff -Naur M2Crypto-0.21.1.orig/SWIG/_ssl.i M2Crypto-0.21.1.pulp/SWIG/_ssl.i
 --- M2Crypto-0.21.1.orig/SWIG/_ssl.i	2011-08-29 11:00:49.305948002 -0400
 +++ M2Crypto-0.21.1.pulp/SWIG/_ssl.i	2011-08-29 12:18:14.903476499 -0400
