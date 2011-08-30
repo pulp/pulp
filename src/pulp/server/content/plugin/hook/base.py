@@ -13,4 +13,8 @@
 
 
 class ContentPluginHook(object):
+    """
+    Base class for providing limited hook api instances into Pulp's
+    functionality for use in content plugins.
+    """
     pass
