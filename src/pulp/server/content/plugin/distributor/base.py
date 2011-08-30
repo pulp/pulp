@@ -22,6 +22,16 @@ class Distributor(ContentPlugin):
     def __init__(self, config):
         super(Distributor, self).__init__(config)
 
+    def associate_repo(self, repo_data):
+        """
+        Called when a repo is associated with distributors of this type. This
+        allows the distributor to do any repo initialization that is needed.
+
+        @param repo_data: metadata that describes a pulp repository
+        @type  repo_data: dict
+        """
+        pass
+
     @config_override
     def publish(self, publish_hook, config=None, options=None):
         """
