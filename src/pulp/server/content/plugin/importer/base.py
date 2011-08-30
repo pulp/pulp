@@ -90,7 +90,7 @@ class Importer(ContentPlugin):
         @type delete_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
-        @param options: individual import_unit call options
+        @param options: individual delete_repo call options
         @type options: None or dict
         """
         raise NotImplementedError()
@@ -107,7 +107,7 @@ class Importer(ContentPlugin):
         @type clone_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
-        @param options: individual import_unit call options
+        @param options: individual clone_repo call options
         @type options: None or dict
         """
         raise NotImplementedError()
