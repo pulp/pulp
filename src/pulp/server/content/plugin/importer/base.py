@@ -23,13 +23,13 @@ class Importer(ContentPlugin):
         super(Importer, self).__init__(config)
 
     @config_override
-    def sync(self, repo_data, sync_hook, config=None, options=None):
+    def sync(self, repo_data, sync_conduit, config=None, options=None):
         """
         Sync content into a repository.
         @param repo_data: metadata that describes a pulp repository
         @type repo_data: dict
-        @param sync_hook: api instance that provides limited pulp functionality
-        @type sync_hook: L{ContentPluginHook} instance
+        @param sync_conduit: api instance that provides limited pulp functionality
+        @type sync_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
         @param options: individual sync call options
@@ -46,8 +46,6 @@ class Importer(ContentPlugin):
         @type repo_data: dict
         @param unit_data: metadata that describes a content unit
         @type unit_data: dict
-        @param temp_location: full path to content unit on disk
-        @type temp_location: str
         @param config: configuration override for importer instance
         @type options: None or dict
         @param options: individual pre_import_unit call options
@@ -72,14 +70,24 @@ class Importer(ContentPlugin):
         """
         raise NotImplementedError()
 
+    def associate_repo(self, repo_data):
+        """
+        Called when a repo is associated with importers of this type. This
+        allows the importer to do any repo initialization that is needed.
+
+        @param repo_data: metadata that describes a pulp repository
+        @type  repo_data: dict
+        """
+        pass
+
     @config_override
-    def delete_repo(self, repo_data, delete_hook, config=None, options=None):
+    def delete_repo(self, repo_data, delete_conduit, config=None, options=None):
         """
         Delete a repository and its content.
         @param repo_data: metadata that describes a pulp repository
         @type repo_data: dict
-        @param delete_hook: api instance that provides limited pulp functionality
-        @type delete_hook: L{ContentPluginHook} instance
+        @param delete_conduit: api instance that provides limited pulp functionality
+        @type delete_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
@@ -88,15 +96,15 @@ class Importer(ContentPlugin):
         raise NotImplementedError()
 
     @config_override
-    def clone_repo(self, repo_data, clone_data, clone_hook, config=None, options=None):
+    def clone_repo(self, repo_data, clone_data, clone_conduit, config=None, options=None):
         """
         Clone a repository.
         @param repo_data: metadata that describes a pulp repository
         @type repo_data: dict
         @param clone_data: metadata that describes a pulp repository
         @type clone_data: dict
-        @param clone_hook: api instance that provides limited pulp functionality
-        @type clone_hook: L{ContentPluginHook} instance
+        @param clone_conduit: api instance that provides limited pulp functionality
+        @type clone_conduit: ?
         @param config: configuration override for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
