@@ -22,6 +22,8 @@ class OtherExporter(BaseExporter):
     """
      other exporter plugin to export repository's custom metadata from pulp to target directory
     """
+    __priority__ = 5
+
     def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize other metadata exporter

@@ -22,6 +22,9 @@ class CompsExporter(BaseExporter):
     """
      Package group and category exporter plugin to export repository comps groups from pulp to target directory
     """
+
+    __priority__ = 2
+
     def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize package group exporter

@@ -22,6 +22,8 @@ class PackageExporter(BaseExporter):
     """
      Package exporter plugin to export repository packages from pulp to target directory
     """
+    __priority__ = 1
+
     def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize package exporter

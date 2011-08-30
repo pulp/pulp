@@ -24,6 +24,8 @@ class ErrataExporter(BaseExporter):
     """
      Errata exporter plugin to export repository errata from pulp to target directory
     """
+    __priority__ = 3
+
     def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize errata exporter

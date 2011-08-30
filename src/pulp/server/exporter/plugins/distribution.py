@@ -22,6 +22,8 @@ class DistributionExporter(BaseExporter):
     """
      Distributor exporter plugin to export repository distribution from pulp to target directory
     """
+    __priority__ = 4
+    
     def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
         """
         initialize distribution exporter

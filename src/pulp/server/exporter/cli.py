@@ -98,6 +98,7 @@ class ExporterCLI(object):
                         plugins.append(attr)
                 except TypeError:
                     continue
+
         return plugins
 
     def create_isos(self):
@@ -108,13 +109,10 @@ class ExporterCLI(object):
         """
         Execute the exporter
         """
-        plugins = self._load_exporter_plugins()
-        plugins.sort(reverse=1)
         progress = []
         try:
-#            print("Export Operation on repository [%s] in progress.." % self.repoid)
             print(" ")
-            for module in plugins:
+            for module in sorted(self._load_exporter_plugins(), key=lambda mod: mod.__priority__):
                 exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
                                   end_date=self.end_date)
                 progress.append(exporter.export())
