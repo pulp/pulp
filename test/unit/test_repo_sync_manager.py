@@ -40,7 +40,7 @@ class MockImporter(Importer):
     # Call behavior
     raise_error = False
 
-    def sync(self, repo_data, importer_config, sync_config, sync_conduit):
+    def sync(self, repo_data, sync_conduit, importer_config, sync_config):
 
         # Store the contents of what was passed to the sync call at the class
         # level since the content manager factory will return a new instance
@@ -117,10 +117,9 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         #   Verify call into the importer
         self.assertEqual(repo['id'], MockImporter.repo_data['id'])
-        # XXX (jconnor) some confusion on my part: config in the db?
-        #self.assertEqual(importer_config, MockImporter.importer_config)
-        #self.assertTrue(MockImporter.sync_config is None)
-        #self.assertTrue(MockImporter.sync_conduit is not None)
+        self.assertEqual(importer_config, MockImporter.importer_config)
+        self.assertTrue(MockImporter.sync_config is None)
+        self.assertTrue(MockImporter.sync_conduit is not None)
 
     def test_sync_with_individual_config(self):
         """
@@ -147,10 +146,9 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         #   Verify call into the importer
         self.assertEqual(repo['id'], MockImporter.repo_data['id'])
-        # XXX (jconnr) some confusion on my part: config from db?
-        #self.assertEqual(importer_config, MockImporter.importer_config)
-        #self.assertEqual(individual_sync_config, MockImporter.sync_config)
-        #self.assertTrue(MockImporter.sync_conduit is not None)
+        self.assertEqual(importer_config, MockImporter.importer_config)
+        self.assertEqual(individual_sync_config, MockImporter.sync_config)
+        self.assertTrue(MockImporter.sync_conduit is not None)
 
 
     def test_sync_missing_repo(self):
