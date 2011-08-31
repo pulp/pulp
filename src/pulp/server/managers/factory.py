@@ -31,26 +31,19 @@ from repo_sync import RepoSyncManager
 
 # -- constants ----------------------------------------------------------------
 
-# Keys used to look up a specific manager
-TYPE_CDS        = 'cds-manager'
-TYPE_CONTENT    = 'content-manager'
-TYPE_REPO       = 'repo-manager'
-TYPE_REPO_CLONE = 'repo-clone-manager'
-TYPE_REPO_QUERY = 'repo-query-manager'
-TYPE_REPO_SYNC  = 'repo-sync-manager'
-
-# Defaults for a normal running Pulp server (used to reset the state of the
-# factory between runs)
-_DEFAULTS = {
-    TYPE_REPO : RepoManager,
-    TYPE_REPO_CLONE : RepoCloneManager,
-    TYPE_REPO_QUERY : RepoQueryManager,
-    TYPE_REPO_SYNC: RepoSyncManager,
-}
+# Keys used to look up a specific builtin manager
+TYPE_CDS            = 'cds-manager'
+TYPE_CONTENT        = 'content-manager'
+TYPE_CONTENT_QUERY  = 'content-query-manager'
+TYPE_CONTENT_UPLOAD = 'content-upload-manager'
+TYPE_REPO           = 'repo-manager'
+TYPE_REPO_CLONE     = 'repo-clone-manager'
+TYPE_REPO_QUERY     = 'repo-query-manager'
+TYPE_REPO_SYNC      = 'repo-sync-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
-_CLASSES = copy.copy(_DEFAULTS)
+_CLASSES = {}
 
 # -- exceptions ---------------------------------------------------------------
 
@@ -67,6 +60,29 @@ class InvalidType(Exception):
         return 'Invalid manager type requested [%s]' % self.type_key
 
 # -- public api ---------------------------------------------------------------
+
+def initialize():
+    # imports for individual managers to prevent circular imports
+    from pulp.server.managers.content.core import ContentManager
+    from pulp.server.managers.content.query import ContentQueryManager
+    from pulp.server.managers.content.upload import ContentUploadManager
+    from pulp.server.managers.repo import RepoManager
+    from pulp.server.managers.repo_clone import RepoCloneManager
+    from pulp.server.managers.repo_query import RepoQueryManager
+    from pulp.server.managers.repo_sync import RepoSyncManager
+    # Builtins for a normal running Pulp server (used to reset the state of the
+    # factory between runs)
+    builtins = {
+        TYPE_CONTENT: ContentManager,
+        TYPE_CONTENT_QUERY: ContentQueryManager,
+        TYPE_CONTENT_UPLOAD: ContentUploadManager,
+        TYPE_REPO: RepoManager,
+        TYPE_REPO_CLONE: RepoCloneManager,
+        TYPE_REPO_QUERY: RepoQueryManager,
+        TYPE_REPO_SYNC: RepoSyncManager,
+    }
+    _CLASSES.update(builtins)
+
 
 def get_manager(type_key):
     """
@@ -114,4 +130,5 @@ def reset():
     """
 
     global _CLASSES
-    _CLASSES = copy.copy(_DEFAULTS)
+    _CLASSES = {}
+    initialize()
