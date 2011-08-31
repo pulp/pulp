@@ -369,12 +369,9 @@ class RepoCertUtils:
         crl_stack = X509.CRL_Stack()
         if not crl_dir:
             crl_dir = self._crl_directory()
-        print "crl_dir = %s" % (crl_dir)
         if os.path.exists(crl_dir):
             search_path = "%s/%x.r*" % (crl_dir, issuer_hash)
-            print "Will search: %s" % (search_path)
             crl_paths = glob(search_path)
-            print "Found: %s" % (crl_paths)
             for c in crl_paths:
                 try:
                     crl = X509.load_crl(c)
@@ -382,7 +379,6 @@ class RepoCertUtils:
                 except:
                     LOG.exception("Unable to load CRL file: %s" % (c))
         return crl_stack
-
 
     # -- private ----------------------------------------------------------------------------
 
