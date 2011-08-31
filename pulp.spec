@@ -53,7 +53,6 @@ Requires: python-BeautifulSoup
 Requires: grinder >= 0.0.110
 Requires: httpd
 Requires: mod_ssl
-Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
 Requires: python-gofer >= 0.45
@@ -63,6 +62,11 @@ Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
+%if 0%{?rhel} == 5
+Requires: m2crypto
+%else
+Requires: m2crypto = 0.21.1.pulp
+%endif
 
 %if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
@@ -162,7 +166,11 @@ Requires:       grinder
 Requires:       httpd
 Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires:       mod_ssl
-Requires:       m2crypto
+%if 0%{?rhel} == 5
+Requires: m2crypto
+%else
+Requires: m2crypto = 0.21.1.pulp
+%endif
 
 %if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
