@@ -52,8 +52,10 @@ def config_override(method):
     @wraps(method)
     def _config_override_decorator(self, *args, **kwargs):
         override_config = kwargs.get('config', {})
-        self.set_current_config(override_config)
-        return_value = method(self, *args, **kwargs)
-        self.unset_current_config()
+        try:
+            self.set_current_config(override_config)
+            return_value = method(self, *args, **kwargs)
+        finally:
+            self.unset_current_config()
         return return_value
     return _config_override_decorator
