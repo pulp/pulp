@@ -20,6 +20,7 @@ need to execute syncs asynchronously must be handled at a higher layer.
 import datetime
 from gettext import gettext as _
 import logging
+import sys
 
 from pulp.common import dateutils
 import pulp.server.content.manager as plugin_manager
@@ -117,9 +118,10 @@ class RepoSyncManager:
                        {'i' : importer_id, 'r' : repo_id})
             raise NoImporter(repo_id)
 
-        importer_instance, importer_config = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
-        if importer_instance is None:
-            raise MissingImporterPlugin(repo_id)
+        try:
+            importer_instance, importer_config = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
+        except plugin_manager.PluginNotFound:
+            raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
 
