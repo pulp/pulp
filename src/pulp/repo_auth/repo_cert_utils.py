@@ -291,9 +291,9 @@ class RepoCertUtils:
         '''
         ca_cert = X509.load_cert_string(ca_pem)
         cert = X509.load_cert_string(cert_pem)
-        crl_stack = X509.CRL_Stack()
         if not M2CRYPTO_HAS_CRL_SUPPORT:
-            return cert.verify(ca.get_pubkey())
+            return cert.verify(ca_cert.get_pubkey())
+        crl_stack = X509.CRL_Stack()
         if check_crls:
             ca_hash = ca_cert.get_issuer().as_hash()
             crl_stack = self.get_crl_stack(ca_hash, crl_dir=crl_dir)
