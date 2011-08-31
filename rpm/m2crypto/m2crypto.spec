@@ -10,7 +10,7 @@
 Summary: Support for using OpenSSL in python scripts
 Name: m2crypto
 Version: 0.21.1.pulp
-Release: 2%{?dist}
+Release: 3%{?dist}
 Source0: http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-%{version}.tar.gz
 # https://bugzilla.osafoundation.org/show_bug.cgi?id=2341
 Patch0: m2crypto-0.21.1-timeouts.patch
@@ -116,6 +116,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/M2Crypto-*.egg-info
 
 %changelog
+* Wed Aug 31 2011 John Matthews <jmatthews@redhat.com> 0.21.1.pulp-3
+- WIP for M2Crypto rpm to build with tito (jmatthews@redhat.com)
+
 * Wed Aug 31 2011 John Matthews <jmatthews@redhat.com> 0.21.1.pulp-2
 - new package built with tito
 
