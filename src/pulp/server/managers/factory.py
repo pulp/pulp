@@ -34,7 +34,6 @@ from repo_sync import RepoSyncManager
 # Keys used to look up a specific builtin manager
 TYPE_CDS            = 'cds-manager'
 TYPE_CONTENT        = 'content-manager'
-TYPE_CONTENT_QUERY  = 'content-query-manager'
 TYPE_CONTENT_UPLOAD = 'content-upload-manager'
 TYPE_REPO           = 'repo-manager'
 TYPE_REPO_CLONE     = 'repo-clone-manager'
@@ -63,8 +62,7 @@ class InvalidType(Exception):
 
 def initialize():
     # imports for individual managers to prevent circular imports
-    from pulp.server.managers.content.core import ContentManager
-    from pulp.server.managers.content.query import ContentQueryManager
+    from pulp.server.managers.content.crud import ContentManager
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.repo import RepoManager
     from pulp.server.managers.repo_clone import RepoCloneManager
@@ -74,7 +72,6 @@ def initialize():
     # factory between runs)
     builtins = {
         TYPE_CONTENT: ContentManager,
-        TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_CLONE: RepoCloneManager,
