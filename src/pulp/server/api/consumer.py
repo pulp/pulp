@@ -504,6 +504,8 @@ class ConsumerApi(BaseApi):
             applicable_errata = self._applicable_errata(consumer, types)
             rlist = []
             for eid in errataids:
+                if self.errataapi.erratum(eid) is None:
+                    raise Exception('Erratum [%s], not found' % eid)
                 if eid not in applicable_errata.keys():
                     log.error("ErrataId %s is not part of applicable errata. Skipping" % eid)
                     continue
