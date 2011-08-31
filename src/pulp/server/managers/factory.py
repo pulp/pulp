@@ -22,12 +22,6 @@ in the test clean up to restore the mappings to the defaults. Failing to
 do so may indirectly break other tests.
 """
 
-import copy
-
-from repo import RepoManager
-from repo_clone import RepoCloneManager
-from repo_query import RepoQueryManager
-from repo_sync import RepoSyncManager
 
 # -- constants ----------------------------------------------------------------
 
@@ -61,6 +55,10 @@ class InvalidType(Exception):
 # -- public api ---------------------------------------------------------------
 
 def initialize():
+    """
+    Initialize the manager factory by importing and setting Pulp's builtin
+    (read: default) managers.
+    """
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.content.crud import ContentManager
     from pulp.server.managers.content.upload import ContentUploadManager
