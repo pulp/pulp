@@ -11,47 +11,34 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.content.plugin.base import ContentPlugin, config_override
 
-
-class Distributor(ContentPlugin):
+class Distributor(object):
     """
     Base class for distributor plugin development.
     """
 
-    def __init__(self, config):
-        super(Distributor, self).__init__(config)
+    @classmethod
+    def metadata(cls):
+        return {}
 
-    def associate_repo(self, repo_data):
-        """
-        Called when a repo is associated with distributors of this type. This
-        allows the distributor to do any repo initialization that is needed.
-
-        @param repo_data: metadata that describes a pulp repository
-        @type  repo_data: dict
-        """
-        pass
-
-    @config_override
-    def publish(self, publish_conduit, config=None, options=None):
+    def publish(self, publish_hook, config=None, options=None):
         """
         Publish a repository.
-        @param publish_conduit: api instance that provides limited pulp functionality
-        @type publish_conduit: ?
-        @param config: configuration override for importer instance
+        @param publish_hook: api instance that provides limited pulp functionality
+        @type publish_hook: L{PluginAPI} instance
+        @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
         @type options: None or dict
         """
         raise NotImplementedError()
 
-    @config_override
-    def unpublish(self, unpublish_conduit, config=None, options=None):
+    def unpublish(self, unpublish_hook, config=None, options=None):
         """
         Unpublish a repository.
-        @param unpublish_conduit: api instance that provides limited pulp functionality
-        @type unpublish_conduit: ?
-        @param config: configuration override for importer instance
+        @param unpublish_hook: api instance that provides limited pulp functionality
+        @type unpublish_hook: L{ContentPluginHook} instance
+        @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
         @type options: None or dict

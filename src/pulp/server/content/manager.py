@@ -23,8 +23,8 @@ try:
 except ImportError:
     import simplejson as json
 
-from pulp.server.content.plugin.distributor.base import Distributor
-from pulp.server.content.plugin.importer.base import Importer
+from pulp.server.content.distributor.base import Distributor
+from pulp.server.content.importer.base import Importer
 from pulp.server.content.types import database, parser
 from pulp.server.content.types.model import TypeDescriptor
 from pulp.server.pexceptions import PulpException
@@ -73,6 +73,13 @@ class ConflictingPluginError(ManagerException):
     """
     Raised when two or more plugins try to handle the same content or
     distribution type(s).
+    """
+    pass
+
+
+class PluginNotFound(ManagerException):
+    """
+    Raised when a plugin cannot be found by a factory method.
     """
     pass
 
@@ -682,17 +689,17 @@ def get_importer_by_name(name, version=None):
     @param name: name of the importer instance to get
     @type version: None or int
     @param version: optional version, None means to use the latest version
-    @rtype: L{Importer} instance or None
-    @return: importer for the given name and version, None if one isn't found
+    @rtype: tuple of L{Importer} instance, dict
+    @return: importer and configuration for the given name and version
     """
     assert isinstance(_MANAGER, Manager)
     cls = _MANAGER.get_importer_class_by_name(name, version)
     if cls is None:
-        return None
+        raise PluginNotFound(_('No importer %s, version %s') % (name, version))
     cfg = _MANAGER.get_importer_config_by_name(name, version)
-    cpy = copy.copy(cfg)
-    importer = cls(cpy)
-    return importer
+    cpy = copy.deepcopy(cfg)
+    importer = cls()
+    return (importer, cpy)
 
 
 def get_distributor_by_name(name, version=None):
@@ -702,14 +709,14 @@ def get_distributor_by_name(name, version=None):
     @param name: name of the distributor instance to get
     @type version: None or int
     @param version: optional version, None means to use the latest version
-    @rtype: L{Distributor} instance or None
-    @return: distributor for the given name and version, None if one isn't found
+    @rtype: tuple of L{Distributor} instance, dict
+    @return: distributor and configuration for the given name and version
     """
     assert isinstance(_MANAGER, Manager)
     cls = _MANAGER.get_distributor_class_by_name(name, version)
     if cls is None:
-        return None
+        raise PluginNotFound(_('No distributor %s, version %s') % (name, version))
     cfg = _MANAGER.get_distributor_config_by_name(name, version)
-    cpy = copy.copy(cfg)
-    distributor = cls(cpy)
-    return distributor
+    cpy = copy.deepcopy(cfg)
+    distributor = cls()
+    return (distributor, cpy)

@@ -22,7 +22,7 @@ import testutil
 
 from pulp.common import dateutils
 import pulp.server.content.manager as content_manager
-from pulp.server.content.plugin.importer.base import Importer
+from pulp.server.content.importer.base import Importer
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.repo_sync as repo_sync_manager
 import pulp.server.managers.repo as repo_manager
@@ -120,7 +120,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertEqual(importer_config, MockImporter.importer_config)
         self.assertTrue(MockImporter.sync_config is None)
         self.assertTrue(MockImporter.sync_conduit is not None)
-        
+
     def test_sync_with_individual_config(self):
         """
         Tests a sync when passing in an individual config of override options.
@@ -177,7 +177,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         except repo_sync_manager.NoImporter, e:
             self.assertEqual('importer-less', e.repo_id)
             print(e) # for coverage
-            
+
     def test_sync_bad_importer(self):
         """
         Tests the proper error is raised when an importer is set on the repo but

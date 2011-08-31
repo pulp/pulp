@@ -23,15 +23,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../c
 import testutil
 
 from pulp.server.content import manager
-from pulp.server.content.plugin.distributor.base import Distributor
-from pulp.server.content.plugin.importer.base import Importer
+from pulp.server.content.distributor.base import Distributor
+from pulp.server.content.importer.base import Importer
 
 # test data and data generation api --------------------------------------------
 
 # test data
 
 excellent_importer = '''
-from pulp.server.content.plugin.importer import base
+from pulp.server.content.importer import base
 class ExcellentImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -43,7 +43,7 @@ class ExcellentImporter(base.Importer):
 '''
 
 less_excellent_importer = '''
-from pulp.server.content.plugin.importer import base
+from pulp.server.content.importer import base
 class LessExcellentImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -54,7 +54,7 @@ class LessExcellentImporter(base.Importer):
 '''
 
 not_excellent_importer = '''
-from pulp.server.content.plugin.importer import base
+from pulp.server.content.importer import base
 class NotExcellentImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -65,7 +65,7 @@ class NotExcellentImporter(base.Importer):
 '''
 
 bogus_importer_1 = '''
-from pulp.server.content.plugin.importer import base
+from pulp.server.content.importer import base
 class BogusOneImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -73,7 +73,7 @@ class BogusOneImporter(base.Importer):
 '''
 
 bogus_importer_2 = '''
-from pulp.server.content.plugin.importer import base
+from pulp.server.content.importer import base
 class BogusTwoImporter(base.Importer):
     @classmethod
     def metadata(cls):
@@ -89,7 +89,7 @@ excellent_importer_config_2 = '''
 '''
 
 http_distibutor = '''
-from pulp.server.content.plugin.distributor import base
+from pulp.server.content.distributor import base
 class HTTPDistributor(base.Distributor):
     @classmethod
     def metadata(cls):
@@ -293,13 +293,13 @@ class ManagerAPITest(ManagerTest):
         self.manager.add_importer_config_path(path)
         self.manager.load_importers()
         manager._MANAGER = self.manager
-        importer = manager.get_importer_by_name('Excellent')
+        importer, cfg = manager.get_importer_by_name('Excellent')
         self.assertTrue(isinstance(importer, Importer))
+        self.assertTrue(isinstance(cfg, dict))
 
     def test_get_non_existent_importer(self):
         manager._MANAGER = self.manager
-        importer = manager.get_distributor_by_name('Bogus')
-        self.assertTrue(importer is None)
+        self.assertRaises(manager.PluginNotFound, manager.get_distributor_by_name, 'Bogus')
 
     def test_get_distributor(self):
         path = gen_http_distributor()
@@ -307,13 +307,13 @@ class ManagerAPITest(ManagerTest):
         self.manager.add_distributor_config_path(path)
         self.manager.load_distributors()
         manager._MANAGER = self.manager
-        distributor = manager.get_distributor_by_name('HTTP')
+        distributor, cfg = manager.get_distributor_by_name('HTTP')
         self.assertTrue(distributor, Distributor)
+        self.assertTrue(isinstance(cfg, dict))
 
     def test_get_non_existent_distributor(self):
         manager._MANAGER = self.manager
-        distributor = manager.get_distributor_by_name('HTTPS')
-        self.assertTrue(distributor is None)
+        self.assertRaises(manager.PluginNotFound, manager.get_distributor_by_name, 'HTTPS')
 
     def test_is_valid_importer(self):
         path = gen_excellent_importer(enabled=True)

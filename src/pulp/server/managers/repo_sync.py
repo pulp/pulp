@@ -117,7 +117,7 @@ class RepoSyncManager:
                        {'i' : importer_id, 'r' : repo_id})
             raise NoImporter(repo_id)
 
-        importer_instance = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
+        importer_instance, importer_config = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
         if importer_instance is None:
             raise MissingImporterPlugin(repo_id)
 
