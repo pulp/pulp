@@ -240,7 +240,7 @@ class RepoCertUtils:
 
     # -- validate calls ----------------------------------------------------------------
 
-    def validate_certificate_no_crl(self, cert_filename, ca_filename):
+    def validate_certificate(self, cert_filename, ca_filename):
         '''
         Validates a certificate against a CA certificate.
         Input expects filenames.

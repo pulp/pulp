@@ -356,13 +356,13 @@ class TestCertVerify(testutil.PulpAsyncTest):
         '''
         Tests that verifying a cert with its signing CA returns true.
         '''
-        self.assertTrue(self.utils.validate_certificate_no_crl(CERT, VALID_CA))
+        self.assertTrue(self.utils.validate_certificate(CERT, VALID_CA))
 
     def test_invalid(self):
         '''
         Tests that verifying a cert with an incorrect CA returns false.
         '''
-        self.assertTrue(not self.utils.validate_certificate_no_crl(CERT, INVALID_CA))
+        self.assertTrue(not self.utils.validate_certificate(CERT, INVALID_CA))
 
     def test_valid_pem(self):
         '''
