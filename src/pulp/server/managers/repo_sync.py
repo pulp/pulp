@@ -107,17 +107,12 @@ class RepoSyncManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
-        if len(repo['importers']) is 0:
+        repo_importers = list(importer_coll.find_one({'repo_id' : repo_id}))
+
+        if len(repo_importers) is 0:
             raise NoImporter(repo_id)
 
-        importer_id = repo['importers'].keys()[0]
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id, 'id' : importer_id})
-
-        if repo_importer is None:
-            _LOG.error(_('Database inconsistency: importer [%(i)s] configured for repo [%(r)s] not found in importer collection') % \
-                       {'i' : importer_id, 'r' : repo_id})
-            raise NoImporter(repo_id)
-
+        repo_importer = repo_importers[0]
         try:
             importer_instance, importer_config = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
         except plugin_manager.PluginNotFound:
