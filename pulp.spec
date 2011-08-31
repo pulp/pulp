@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.228
+Version:        0.0.229
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -490,6 +490,39 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Aug 31 2011 Jeff Ortel <jortel@redhat.com> 0.0.229-1
+- Added a check in bootstrap for what version of M2Crypto we are running
+  (jmatthews@redhat.com)
+- pylint cleanup (jconnor@redhat.com)
+- renamed hooks to conduits (jconnor@redhat.com)
+- Add requires for m2crypto 0.21.1.pulp to pulp.spec (for el6 & fedora only)
+  (jmatthews@redhat.com)
+- WIP for M2Crypto rpm to build with tito (jmatthews@redhat.com)
+- Method name change, reverted back to validate_certificate
+  (jmatthews@redhat.com)
+- Repo auth config file change and data for unit tests (jmatthews@redhat.com)
+- Repo auth fix for running without M2Crypto patch (jmatthews@redhat.com)
+- Add CRL support to repo_cert_utils (jmatthews@redhat.com)
+- M2Crypto patch: Add load CRL from PEM encoded string (jmatthews@redhat.com)
+- Remove 'pulp' deps on pulp-admin and pulp-consumer. (jortel@redhat.com)
+- Raise descriptive exception instead of AssertionError when bundle does not
+  contain both key and cert. (jortel@redhat.com)
+- Remove pushd/popd from %%post script. (jortel@redhat.com)
+- M2Crypto patch: updating hash value for unit test (jmatthews@redhat.com)
+- M2Crypto patch: updated X509_NAME_hash to match openssl CLI calls m2crypto
+  was using X509_NAME_hash_old and defining it to X509_NAME_hash, thefore
+  determining the issuer hash was not matching CLI tools.
+  (jmatthews@redhat.com)
+- M2Crypto patch: add get_issuer() to CRL (jmatthews@redhat.com)
+- make sure to sync treeinfo for distributions when doing alocal sync
+  (pkilambi@redhat.com)
+- Changed m2crypto CRL example script to use the installed m2crypto
+  (jmatthews@redhat.com)
+- Adding m2crypto 0.21.1 with patch for certificate verification against a CA
+  with CRLs (jmatthews@redhat.com)
+- Update of M2Crypto patch, fixed crash with verify_cert()
+  (jmatthews@redhat.com)
+
 * Fri Aug 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.228-1
 - Added stub managers for repo clone and query (jason.dobies@redhat.com)
 - Minor documentation updates and test refactoring (jason.dobies@redhat.com)
