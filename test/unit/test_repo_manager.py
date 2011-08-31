@@ -187,10 +187,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.set_importer('importer-test', 'MockImporter', importer_config)
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'importer-test'})
-        self.assertEqual(1, len(repo['importers']))
-        self.assertTrue('MockImporter' in repo['importers'])
-
         importer = RepoImporter.get_collection().find_one({'repo_id' : 'importer-test', 'id' : 'MockImporter'})
         self.assertEqual('importer-test', importer['repo_id'])
         self.assertEqual('MockImporter', importer['id'])
@@ -243,10 +239,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.set_importer('change_me', 'MockImporter2', None)
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'change_me'})
-        self.assertEqual(1, len(repo['importers']))
-        self.assertTrue('MockImporter2' in repo['importers'])
-
         all_importers = list(RepoImporter.get_collection().find())
         self.assertEqual(1, len(all_importers))
         self.assertEqual(all_importers[0]['id'], 'MockImporter2')
@@ -265,10 +257,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.add_distributor('test_me', 'MockDistributor', config, True, distributor_id='my_dist')
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'test_me'})
-        self.assertEqual(1, len(repo['distributors']))
-        self.assertTrue('my_dist' in repo['distributors'])
-
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
         self.assertEqual('my_dist', all_distributors[0]['id'])
@@ -294,11 +282,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.add_distributor('test_me', 'MockDistributor2', None, True, distributor_id='dist_2')
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'test_me'})
-        self.assertEqual(2, len(repo['distributors']))
-        self.assertTrue('dist_1' in repo['distributors'])
-        self.assertTrue('dist_2' in repo['distributors'])
-
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(2, len(all_distributors))
 
@@ -321,10 +304,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.add_distributor('test_me', 'MockDistributor', config, False, distributor_id='dist_1')
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'test_me'})
-        self.assertEqual(1, len(repo['distributors']))
-        self.assertTrue('dist_1' in repo['distributors'])
-
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
         self.assertTrue(not all_distributors[0]['auto_distribute'])
@@ -341,11 +320,7 @@ class RepoManagerTests(testutil.PulpTest):
         # Test
         generated_id = self.manager.add_distributor('happy-repo', 'MockDistributor', None, True)
 
-        # Verify - distributor ID will be random,
-        repo = Repo.get_collection().find_one({'id' : 'happy-repo'})
-        self.assertEqual(1, len(repo['distributors']))
-        self.assertTrue(generated_id in repo['distributors'])
-
+        # Verify
         distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'happy-repo', 'id' : generated_id})
         self.assertTrue(distributor is not None)
 
@@ -408,9 +383,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.remove_distributor('dist-repo', 'doomed')
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'dist-repo'})
-        self.assertEqual(0, len(repo['distributors']))
-
         distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'dist-repo', 'id' : 'doomed'})
         self.assertTrue(distributor is None)
 

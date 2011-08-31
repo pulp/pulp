@@ -221,20 +221,16 @@ class RepoManager:
             raise MissingImporter(importer_type_name)
 
         # Remove old importer if one exists
-        if len(repo['importers']) > 0:
-            for importer in repo['importers'].values():
+        existing_repo_importers = list(importer_coll.find({'repo_id' : repo_id}))
+        if len(existing_repo_importers) > 0:
+            for importer in existing_repo_importers:
                 importer_coll.remove(importer, safe=True)
-
-        repo['importers'].clear()
 
         # Database Update
         importer_id = importer_type_name # use the importer name as its repo ID
 
         importer = RepoImporter(repo_id, importer_id, importer_type_name, importer_config)
         importer_coll.save(importer, safe=True)
-
-        repo['importers'][importer_id] = importer
-        repo_coll.save(repo, safe=True)
 
     def add_distributor(self, repo_id, distributor_type_id, distributor_config,
                         auto_distribute, distributor_id=None):
@@ -294,16 +290,13 @@ class RepoManager:
 
         # If a distributor already exists at that ID, remove it from the database
         # as it will be replaced in this method
-        if distributor_id in repo['distributors']:
-            delete_me = repo['distributors'][distributor_id]
-            distributor_coll.remove(delete_me, safe=True)
+        existing_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        if existing_distributor is not None:
+            distributor_coll.remove(existing_distributor, safe=True)
 
         # Database Update
         distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, distributor_config, auto_distribute)
         distributor_coll.save(distributor, safe=True)
-
-        repo['distributors'][distributor_id] = distributor
-        repo_coll.save(repo)
 
         return distributor_id
 
@@ -331,18 +324,12 @@ class RepoManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
-        if distributor_id not in repo['distributors']:
-            return
-
-        distributor = repo['distributors'][distributor_id]
+        distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
 
         # TODO: add call to unpublish on the distributor if indicated
 
         # Database Update
         distributor_coll.remove(distributor, safe=True)
-
-        repo['distributors'].pop(distributor_id)
-        repo_coll.save(repo, safe=True)
 
 # -- functions ----------------------------------------------------------------
 

@@ -76,22 +76,14 @@ class Repo(Model):
         self.clone_filters = []
 
         # Units
-        # TODO: track when this association was updated per unit
-        # TODO: more important, figure out what this relationship looks like
-        self.content_units = []
         self.content_unit_count = 0
 
         # Timeline
         # TODO: figure out how to track repo modified states
 
-        # Importers
-        #   While the APIs only allow for single importer per repo, we store
-        #   them as a mapping of ID to importer for future compatibility if
-        #   we lift that restriction
-        self.importers = {} # importer ID to RepoImporter instance
-
-        # Distributors
-        self.distributors = {} # distributor id to RepoDistributor instance
+        # Importers, Distributors, and Content Units are not referenced from
+        # repo instances. They are retrieved separately through their respective
+        # collections.
 
 class RepoImporter(Model):
     """
