@@ -21,11 +21,11 @@ class Distributor(object):
     def metadata(cls):
         return {}
 
-    def publish(self, publish_hook, config=None, options=None):
+    def publish(self, publish_conduit, config=None, options=None):
         """
         Publish a repository.
-        @param publish_hook: api instance that provides limited pulp functionality
-        @type publish_hook: L{PluginAPI} instance
+        @param publish_conduit: api instance that provides limited pulp functionality
+        @type publish_conduit: L{PluginAPI} instance
         @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual import_unit call options
@@ -33,11 +33,11 @@ class Distributor(object):
         """
         raise NotImplementedError()
 
-    def unpublish(self, unpublish_hook, config=None, options=None):
+    def unpublish(self, unpublish_conduit, config=None, options=None):
         """
         Unpublish a repository.
-        @param unpublish_hook: api instance that provides limited pulp functionality
-        @type unpublish_hook: L{ContentPluginHook} instance
+        @param unpublish_conduit: api instance that provides limited pulp functionality
+        @type unpublish_conduit: L{ContentPluginHook} instance
         @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual import_unit call options

@@ -21,13 +21,13 @@ class Importer(object):
     def metadata(cls):
         return {}
 
-    def sync(self, repo_data, sync_hook, config=None, options=None):
+    def sync(self, repo_data, sync_conduit, config=None, options=None):
         """
         Sync content into a repository.
         @param repo_data: metadata that describes a pulp repository
         @type repo_data: dict
-        @param sync_hook: api instance that provides limited pulp functionality
-        @type sync_hook: L{ContentPluginHook} instance
+        @param sync_conduit: api instance that provides limited pulp functionality
+        @type sync_conduit: L{ContentPluginHook} instance
         @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual sync call options
@@ -66,13 +66,13 @@ class Importer(object):
         """
         raise NotImplementedError()
 
-    def delete_repo(self, repo_data, delete_hook, config=None, options=None):
+    def delete_repo(self, repo_data, delete_conduit, config=None, options=None):
         """
         Delete a repository and its content.
         @param repo_data: metadata that describes a pulp repository
         @type repo_data: dict
-        @param delete_hook: api instance that provides limited pulp functionality
-        @type delete_hook: L{ContentPluginHook} instance
+        @param delete_conduit: api instance that provides limited pulp functionality
+        @type delete_conduit: L{ContentPluginHook} instance
         @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual delete_repo call options
@@ -80,15 +80,15 @@ class Importer(object):
         """
         raise NotImplementedError()
 
-    def clone_repo(self, repo_data, clone_data, clone_hook, config=None, options=None):
+    def clone_repo(self, repo_data, clone_data, clone_conduit, config=None, options=None):
         """
         Clone a repository.
         @param repo_data: metadata that describes a pulp repository
         @type repo_data: dict
         @param clone_data: metadata that describes a pulp repository
         @type clone_data: dict
-        @param clone_hook: api instance that provides limited pulp functionality
-        @type clone_hook: L{ContentPluginHook} instance
+        @param clone_conduit: api instance that provides limited pulp functionality
+        @type clone_conduit: L{ContentPluginHook} instance
         @param config: configuration for importer instance
         @type config: None or dict
         @param options: individual clone_repo call options
