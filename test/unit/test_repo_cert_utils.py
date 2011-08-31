@@ -16,11 +16,13 @@
 import shutil
 import sys
 import os
+from M2Crypto import X509
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.repo_auth import repo_cert_utils
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 # -- constants -----------------------------------------------------------------------
 
@@ -32,6 +34,8 @@ INVALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_
 
 # Test certificate
 CERT = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/cert.crt'
+
+CRL_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl'
 
 # -- test cases ----------------------------------------------------------------------
 
@@ -352,13 +356,13 @@ class TestCertVerify(testutil.PulpAsyncTest):
         '''
         Tests that verifying a cert with its signing CA returns true.
         '''
-        self.assertTrue(self.utils.validate_certificate(CERT, VALID_CA))
+        self.assertTrue(self.utils.validate_certificate_no_crl(CERT, VALID_CA))
 
     def test_invalid(self):
         '''
         Tests that verifying a cert with an incorrect CA returns false.
         '''
-        self.assertTrue(not self.utils.validate_certificate(CERT, INVALID_CA))
+        self.assertTrue(not self.utils.validate_certificate_no_crl(CERT, INVALID_CA))
 
     def test_valid_pem(self):
         '''
@@ -393,3 +397,54 @@ class TestCertVerify(testutil.PulpAsyncTest):
 
         # Test
         self.assertTrue(not self.utils.validate_certificate_pem(cert, ca))
+
+    def test_get_crl_stack(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        ca = X509.load_cert(ca_path)
+        ca_hash = ca.get_issuer().as_hash()
+        crls = self.utils.get_crl_stack(ca_hash, crl_dir=CRL_TEST_DATA)
+        self.assertEquals(len(crls), 1)
+        crl = crls.pop()
+        crl_hash = crl.get_issuer().as_hash()
+        self.assertEquals(crl_hash, ca_hash)
+
+    def test_cert_with_crl(self):
+        '''
+        Tests that verifying a valid PEM encoded cert string with a CA and CRL returns true.
+        '''
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        good_cert_path = os.path.join(CRL_TEST_DATA, "ok/Pulp_client.cert")
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(good_cert_path)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertTrue(self.utils.validate_certificate_pem(cert, ca))
+
+    def test_revoked_cert_with_crl(self):
+        '''
+        Tests that verifying a revoked PEM encoded cert string with a CA and CRL returns false.
+        '''
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        revoked_cert_path = os.path.join(CRL_TEST_DATA, "revoked/Pulp_client.cert")
+        
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(revoked_cert_path)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertFalse(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_TEST_DATA))
