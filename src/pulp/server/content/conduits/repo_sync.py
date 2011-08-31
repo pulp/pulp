@@ -17,6 +17,15 @@ interacting with the Pulp server during a repo sync.
 """
 
 from gettext import gettext as _
+import logging
+import os
+from threading import RLock
+
+from pulp.server.constants import LOCAL_STORAGE
+
+# -- constants ---------------------------------------------------------------
+
+_LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
@@ -26,10 +35,140 @@ class RepoSyncConduit:
     a repo sync. Instances of this class should *not* be cached between repo
     sync runs. Each sync will be issued it's own conduit instance that is scoped
     to that sync alone.
+
+    Instances of this class are thread-safe. The importer implementation is
+    allowed to do whatever threading makes sense to optimize its sync process.
+    Calls into this instance do not have to be coordinated for thread safety,
+    the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id):
+    # Used to protect the cache of type to its unique index list
+    _TYPE_INDEX_CACHE_LOCK = RLock()
+
+    def __init__(self, repo_id, progress_callback=None):
         self.repo_id = repo_id
+        
+        self.__progress_callback = progress_callback
 
     def __str__(self):
         return _('RepoSyncConduit for repository [%(r)s]') % {'r' : self.repo_id}
+
+    # -- public ---------------------------------------------------------------
+
+    def set_progress(self, current_step, total_steps, message):
+        """
+        Informs the server of the current state of the sync operation. The
+        granularity of what a "step" is is dependent on how the importer
+        implementation chooses to divide up the sync process.
+
+        If the step data being set is invalid, this method will do nothing. No
+        error will be thrown in the case of invalid step data.
+
+        @param current_step: indicates where in the total process the sync is;
+                             must be less than total_steps, greater than 0
+        @type  current_step: int
+
+        @param total_steps: indicates how much total work is needed; must be
+                            greater than 0
+        @type  total_steps: int
+
+        @param message: message to make available to the user describing where
+                        in the sync process the actual sync run is
+        @type  message: str
+        """
+
+        # Validation
+        if current_step < 1 or total_steps < 1 or current_step > total_steps:
+            _LOG.warn('Invalid step data [current: %d, total: %d], set_progress aborting' % (current_step, total_steps))
+            return
+
+        # TODO: add hooks into tasking subsystem
+
+        _LOG.info('Progress for repo [%s] sync: %s - %d/%d' % (self.repo_id, message, current_step, total_steps))
+
+    def request_unit_filename(self, relative_path):
+        """
+        Requests the server translate the relative location of where a content
+        unit should be stored into a full path on the local filesystem.
+
+        @param relative_path: the path, as determined by the importer, where the
+                              content unit should be stored
+        @type  relative_path: str
+
+        @return: absolute path where to store the unit
+        @rtype:  str
+        """
+
+        # Ultimately Pulp may do something more fancy, but for now simply stuff
+        # the relative path onto the local storage directory
+
+        path = os.path.join(LOCAL_STORAGE, relative_path)
+        return path
+
+    def add_or_update_content_unit(self, type_id, unit_key, standard_unit_data, custom_unit_data):
+        """
+        Informs the server of a link between a content unit and the repo being
+        syncced. This call does not distinguish between adding a new unit to
+        the server v. updating an existing one; the server will resolve those
+        distinctions. What this call does is ensure that a link exists between
+        the repo being syncced and the given content unit.
+
+        If the content unit already exists in the database (as determined by the
+        pairing of type_id and unit_key), its metadata will be updated with the
+        contents of standard_unit_data and custom_unit_data passed into this call.
+
+        @param type_id: identifies the type of unit being added; this value must
+                        be present in the server at the time of this call or an
+                        error will be raised
+        @type  type_id: str
+
+        @param unit_key: key/value pairs uniquely identifying this unit from all
+                         other units of the same type; the keys in here must
+                         match the unique indexes defined in the type definition
+        @type  unit_key: dict
+
+        @param standard_unit_data: key/value pairs providing the required set of
+                         metadata for describing a content unit
+        @type  standard_unit_data: dict
+
+        @param custom_unit_data: key/value pairs describing any type-specific
+                         metadata for the content unit; no validation will be
+                         performed on the data included here
+        @type  custom_unit_data: dict
+        """
+        pass
+
+    def unassociate_content_unit(self, type_id, unit_key):
+        """
+        Unassociates the given content unit from the repo being syncced. The
+        unit is not deleted from the server's database. If for some reason the
+        content unit is not associated with the repo, this call has no effect.
+
+        @param type_id: identifies the type of unit being associated
+        @type  type_id: str
+
+        @param unit_key: key/value pairs uniquely identifying this unit from all
+                         other units of the same type; the keys in here must
+                         match the unique indexes defined in the type definition
+        @type  unit_key: dict
+        """
+        pass
+
+    def get_unit_keys_for_repo(self, type_id=None):
+        """
+        Returns a list of keys for units associated with the repo being
+        synchronized. This can be used to determine units that were once
+        associated but were not present in the latest sync.
+
+        @param type_id: optional; if specified, only keys for units of the  
+        """
+        pass
+
+    # -- utility --------------------------------------------------------------
+
+    def _unique_indexes_for_type(self, type_id):
+        """
+        Returns the list of unique indexes for the given type. This call will
+        block on a lock
+        """
+        pass
