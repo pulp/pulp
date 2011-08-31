@@ -23,5 +23,5 @@ class ContentManager(object):
     def update_content(self, content_type, content_id, content_delta):
         pass
 
-    def delete_content(self, content_type, content_id):
+    def remove_content(self, content_type, content_id):
         pass
