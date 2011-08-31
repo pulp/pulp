@@ -20,6 +20,12 @@ class ContentManager(object):
     def list_content(self, content_type, db_spec=None, model_fields=None):
         pass
 
+    def get_content_unit_keys(self, content_type, content_ids):
+        pass
+
+    def get_content_unit_ids(self, content_type, content_keys):
+        pass
+
     def update_content(self, content_type, content_id, content_delta):
         pass
 
