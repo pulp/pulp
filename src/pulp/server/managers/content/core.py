@@ -13,4 +13,15 @@
 
 
 class ContentManager(object):
-    pass
+
+    def add_content(self, content_type, content_id, content_metadata, content_path):
+        pass
+
+    def list_content(self, content_type, db_spec=None, model_fields=None):
+        pass
+
+    def update_content(self, content_type, content_id, content_delta):
+        pass
+
+    def delete_content(self, content_type, content_id):
+        pass
