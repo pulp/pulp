@@ -162,3 +162,42 @@ class RepoDistributor(Model):
         self.config = config
 
         self.auto_distribute = auto_distribute
+
+class RepoContentUnit(Model):
+    """
+    Each instance represents a mapping between a content unit and a repo. The
+    unit's metadata is stored in its appropriate type collection. A content
+    unit is uniquely identified by its type (says which collection it is stored
+    in) and its ID within the type collection.
+
+    Not every content unit will have a mapping document in this collection. The
+    same content unit may be mapped to multiple repos, in which case there will
+    be multiple documents in this collection that reference the same unit.
+
+    @ivar repo_id: identifies the repo
+    @type repo_id: str
+
+    @ivar unit_id: ID (_id) of the content unit in its type collection
+    @type unit_id: str
+
+    @ivar unit_type_id: identifies the type of content unit being associated
+    @type unit_type_id: str
+    """
+
+    collection_name = 'gc_repo_content_unit'
+    unique_indicies = ( ('repo_id', 'unit_id', 'unit_type_id'), )
+
+    def __init__(self, repo_id, unit_id, unit_type_id):
+
+        # Generate a UUID for _id
+        Model.__init__(self)
+
+        # Mapping Identity Information
+        self.repo_id = repo_id
+        self.unit_id = unit_id
+        self.unit_type_id = unit_type_id
+
+        # Association Metadata
+        #   We can add extra information about the relationship between the
+        #   repo and the content unit in this collection. For instance, if
+        #   we want to track when the association was made.
