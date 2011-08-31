@@ -107,7 +107,7 @@ class RepoSyncManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
-        repo_importers = list(importer_coll.find_one({'repo_id' : repo_id}))
+        repo_importers = list(importer_coll.find({'repo_id' : repo_id}))
 
         if len(repo_importers) is 0:
             raise NoImporter(repo_id)
