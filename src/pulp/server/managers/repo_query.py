@@ -33,7 +33,7 @@ class RepoQueryManager:
     returned SON objects from the database.
     """
 
-    def find_all(self, include_plugin_configs=False):
+    def find_all(self):
         """
         Returns serialized versions of all repositories in the database.
         If there are no repositories defined, an empty list is returned.
@@ -44,12 +44,12 @@ class RepoQueryManager:
         all_repos = list(Repo.get_collection().find())
         serialized_repos = []
         for r in all_repos:
-            serialized = _serialize_repo(r, include_plugin_configs)
+            serialized = _serialize_repo(r)
             serialized_repos.append(serialized)
 
         return serialized_repos
 
-    def find_by_id(self, repo_id, include_plugin_configs=False):
+    def find_by_id(self, repo_id):
         """
         Returns a serialized version of the given repository if it exists.
         If a repo cannot be found with the given ID, None is returned.
@@ -59,11 +59,11 @@ class RepoQueryManager:
         """
         repo = Repo.get_collection().find_one({'id' : repo_id})
         if repo is not None:
-            repo = _serialize_repo(repo, include_plugin_configs)
+            repo = _serialize_repo(repo)
 
         return repo
             
-    def find_by_id_list(self, repo_id_list, include_plugin_configs=False):
+    def find_by_id_list(self, repo_id_list):
         """
         Returns serialized versions of all of the given repositories. Any
         IDs that do not refer to valid repositories are ignored and will not
@@ -78,7 +78,7 @@ class RepoQueryManager:
         repos = Repo.get_collection().find({'id' : {'$in' : repo_id_list}})
         serialized_repos = []
         for r in repos:
-            serialized = _serialize_repo(r, include_plugin_configs)
+            serialized = _serialize_repo(r)
             serialized_repos.append(serialized)
 
         return serialized_repos
@@ -92,7 +92,7 @@ class RepoQueryManager:
     def find_by_content_unit(self, unit_id):
         pass
 
-def _serialize_repo(repo, include_plugin_configs):
+def _serialize_repo(repo):
     """
     Takes a Pulp repository SON object and converts it to a standard query
     result format.
@@ -113,33 +113,5 @@ def _serialize_repo(repo, include_plugin_configs):
         'clone_filters' : repo['clone_filters'],
         'content_unit_count' : repo['content_unit_count']
     }
-
-    importers = {}
-    for importer in repo['importers'].values():
-        details = {
-            'id' : importer['id'],
-            'type_name' : importer['importer_type_id'],
-        }
-
-        if include_plugin_configs:
-            details['config'] = importer['config']
-
-        importers[importer['id']] = details
-
-    distributors = {}
-    for distributor in repo['distributors'].values():
-        details = {
-            'id' : distributor['id'],
-            'type_name' : distributor['distributor_type_id'],
-            'auto_distribute' : distributor['auto_distribute']
-        }
-
-        if include_plugin_configs:
-            details['config'] = distributor['config']
-
-        distributors[distributor['id']] = details
-
-    summary['importers'] = importers
-    summary['distributors'] = distributors
 
     return summary

@@ -19,18 +19,9 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-import pulp.server.content.manager as content_manager
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo as repo_manager
 import pulp.server.managers.repo_query as query_manager
-
-# -- mocks --------------------------------------------------------------------
-
-class MockImporter:
-    pass
-
-class MockDistributor:
-    pass
 
 # -- test cases ---------------------------------------------------------------
 
@@ -46,21 +37,12 @@ class RepoQueryManagerTests(testutil.PulpTest):
     def setUp(self):
         testutil.PulpTest.setUp(self)
 
-        # Configure content manager
-        content_manager._create_manager()
-        content_manager._MANAGER.add_importer('MockImporter', 1, MockImporter, None)
-        content_manager._MANAGER.add_distributor('MockDistributor', 1, MockDistributor, None)
-                
         self.repo_manager = repo_manager.RepoManager()
         self.query_manager = query_manager.RepoQueryManager()
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
 
-        # Reset content manager
-        content_manager._MANAGER.remove_importer('MockImporter', 1)
-        content_manager._MANAGER.remove_distributor('MockDistributor', 1)
-                
     def test_find_all(self):
         """
         Tests finding all repos when there are results to return.
@@ -71,7 +53,7 @@ class RepoQueryManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('repo-2')
 
         # Test
-        results = self.query_manager.find_all(include_plugin_configs=False)
+        results = self.query_manager.find_all()
 
         # Verify
         self.assertTrue(results is not None)
@@ -81,29 +63,6 @@ class RepoQueryManagerTests(testutil.PulpTest):
         self.assertTrue('repo-1' in ids)
         self.assertTrue('repo-2' in ids)
 
-    def test_find_all_with_plugin_config(self):
-        """
-        Tests finding all repos with their plugin configs.
-        """
-
-        # Setup
-        importer_config, distributor_config = self._populate_repo_with_plugins()
-
-        # Test
-        results = self.query_manager.find_all(include_plugin_configs=True)
-
-        # Verify
-        self.assertEqual(1, len(results))
-        repo = results[0]
-
-        self.assertEqual(1, len(repo['importers']))
-        self.assertEqual('MockImporter', repo['importers']['MockImporter']['type_name'])
-        self.assertEqual(importer_config, repo['importers']['MockImporter']['config'])
-
-        self.assertEqual(1, len(repo['distributors']))
-        self.assertEqual('MockDistributor', repo['distributors']['dist-1']['type_name'])
-        self.assertEqual(distributor_config, repo['distributors']['dist-1']['config'])
-
     def test_find_all_no_results(self):
         """
         Tests that finding all repos when none are present does not error and
@@ -111,7 +70,7 @@ class RepoQueryManagerTests(testutil.PulpTest):
         """
 
         # Test
-        results = self.query_manager.find_all(include_plugin_configs=False)
+        results = self.query_manager.find_all()
 
         # Verify
         self.assertTrue(results is not None)
@@ -127,7 +86,7 @@ class RepoQueryManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('repo-2')
 
         # Test
-        repo = self.query_manager.find_by_id('repo-2', include_plugin_configs=False)
+        repo = self.query_manager.find_by_id('repo-2')
 
         # Verify
         self.assertTrue(repo is not None)
@@ -143,32 +102,10 @@ class RepoQueryManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('repo-1')
 
         # Test
-        repo = self.query_manager.find_by_id('not-there', include_plugin_configs=False)
+        repo = self.query_manager.find_by_id('not-there')
 
         # Verify
         self.assertTrue(repo is None)
-
-    def test_find_by_id_with_plugin_config(self):
-        """
-        Tests finding repos by ID with the plugin config is successful.
-        """
-
-        # Setup
-        importer_config, distributor_config = self._populate_repo_with_plugins()
-
-        # Test
-        repo = self.query_manager.find_by_id('repo-1', include_plugin_configs=True)
-
-        # Verify
-        self.assertTrue(repo is not None)
-
-        self.assertEqual(1, len(repo['importers']))
-        self.assertEqual('MockImporter', repo['importers']['MockImporter']['type_name'])
-        self.assertEqual(importer_config, repo['importers']['MockImporter']['config'])
-
-        self.assertEqual(1, len(repo['distributors']))
-        self.assertEqual('MockDistributor', repo['distributors']['dist-1']['type_name'])
-        self.assertEqual(distributor_config, repo['distributors']['dist-1']['config'])
 
     def test_find_by_id_list(self):
         """
@@ -182,7 +119,7 @@ class RepoQueryManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('repo-d')
 
         # Test
-        repos = self.query_manager.find_by_id_list(['repo-b', 'repo-c'], include_plugin_configs=False)
+        repos = self.query_manager.find_by_id_list(['repo-b', 'repo-c'])
 
         # Verify
         self.assertEqual(2, len(repos))
@@ -190,38 +127,3 @@ class RepoQueryManagerTests(testutil.PulpTest):
         ids = [r['id'] for r in repos]
         self.assertTrue('repo-b' in ids)
         self.assertTrue('repo-c' in ids)
-
-    def test_find_by_id_list_with_plugin_configs(self):
-        """
-        Tests finding by ID list with plugin configs correctly returns them.
-        """
-
-        # Setup
-        importer_config, distributor_config = self._populate_repo_with_plugins()
-        self.repo_manager.create_repo('repo-b')
-
-        # Test
-        repos = self.query_manager.find_by_id_list(['repo-1'], include_plugin_configs=True)
-
-        # Verify
-        self.assertEqual(1, len(repos))
-        repo = repos[0]
-
-        self.assertEqual(1, len(repo['importers']))
-        self.assertEqual('MockImporter', repo['importers']['MockImporter']['type_name'])
-        self.assertEqual(importer_config, repo['importers']['MockImporter']['config'])
-
-        self.assertEqual(1, len(repo['distributors']))
-        self.assertEqual('MockDistributor', repo['distributors']['dist-1']['type_name'])
-        self.assertEqual(distributor_config, repo['distributors']['dist-1']['config'])
-                
-    def _populate_repo_with_plugins(self):
-        self.repo_manager.create_repo('repo-1')
-
-        importer_config = {'ifoo' : 'ibar'}
-        self.repo_manager.set_importer('repo-1', 'MockImporter', importer_config)
-
-        distributor_config = {'dfoo' : 'dbar'}
-        self.repo_manager.add_distributor('repo-1', 'MockDistributor', distributor_config, True, distributor_id='dist-1')
-
-        return importer_config, distributor_config
