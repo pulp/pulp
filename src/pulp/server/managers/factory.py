@@ -26,13 +26,14 @@ do so may indirectly break other tests.
 # -- constants ----------------------------------------------------------------
 
 # Keys used to look up a specific builtin manager
-TYPE_CDS            = 'cds-manager'
-TYPE_CONTENT        = 'content-manager'
-TYPE_CONTENT_UPLOAD = 'content-upload-manager'
-TYPE_REPO           = 'repo-manager'
-TYPE_REPO_CLONE     = 'repo-clone-manager'
-TYPE_REPO_QUERY     = 'repo-query-manager'
-TYPE_REPO_SYNC      = 'repo-sync-manager'
+TYPE_CDS              = 'cds-manager'
+TYPE_CONTENT          = 'content-manager'
+TYPE_CONTENT_UPLOAD   = 'content-upload-manager'
+TYPE_REPO             = 'repo-manager'
+TYPE_REPO_ASSOCIATION = 'repo-association-manager'
+TYPE_REPO_CLONE       = 'repo-clone-manager'
+TYPE_REPO_QUERY       = 'repo-query-manager'
+TYPE_REPO_SYNC        = 'repo-sync-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
@@ -63,6 +64,7 @@ def initialize():
     from pulp.server.managers.content.crud import ContentManager
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.repo import RepoManager
+    from pulp.server.managers.repo_unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo_clone import RepoCloneManager
     from pulp.server.managers.repo_query import RepoQueryManager
     from pulp.server.managers.repo_sync import RepoSyncManager
@@ -72,6 +74,7 @@ def initialize():
         TYPE_CONTENT: ContentManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_REPO: RepoManager,
+        TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_CLONE: RepoCloneManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,

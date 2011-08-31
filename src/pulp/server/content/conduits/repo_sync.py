@@ -19,13 +19,22 @@ interacting with the Pulp server during a repo sync.
 from gettext import gettext as _
 import logging
 import os
-from threading import RLock
+import sys
 
 from pulp.server.constants import LOCAL_STORAGE
 
 # -- constants ---------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
+
+# -- exceptions --------------------------------------------------------------
+
+class RepoSyncConduitException(Exception):
+    """
+    General exception that wraps any server exception coming out of a conduit
+    call.
+    """
+    pass
 
 # -- classes -----------------------------------------------------------------
 
@@ -42,12 +51,22 @@ class RepoSyncConduit:
     the instance will take care of it itself.
     """
 
-    # Used to protect the cache of type to its unique index list
-    _TYPE_INDEX_CACHE_LOCK = RLock()
+    def __init__(self, repo_id, repo_association_manager, progress_callback=None):
+        """
+        @param repo_id: identifies the repo being synchronized
+        @type  repo_id: str
 
-    def __init__(self, repo_id, progress_callback=None):
+        @param repo_association_manager: server manager instance for manipulating
+                   repo to content unit associations
+        @type  repo_association_manager: L{RepoUnitAssociationManager}
+
+        @param progress_callback: used to update the server's knowledge of the
+                   sync progress
+        @type  progress_callback: ?
+        """
         self.repo_id = repo_id
-        
+
+        self.__association_manager = repo_association_manager
         self.__progress_callback = progress_callback
 
     def __str__(self):
@@ -138,6 +157,25 @@ class RepoSyncConduit:
         """
         pass
 
+    def associate_content_unit(self, type_id, unit_key):
+        """
+        Creates a relationship between the repo being synchronized and the
+        content unit identified by the given key. The unit must have been
+        previously added to the server through the add_or_update_content_unit
+        call.
+
+        @param type_id: identifies the type of content unit being associated
+        @type  type_id: str
+
+        @param unit_key: identifies the content unit itself
+        @type  unit_key: dict
+        """
+        try:
+            self.__association_manager.associate_unit_by_key(self.repo_id, type_id, unit_key)
+        except:
+            _LOG.exception(_('Content unit association failed'))
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+
     def unassociate_content_unit(self, type_id, unit_key):
         """
         Unassociates the given content unit from the repo being syncced. The
@@ -152,7 +190,11 @@ class RepoSyncConduit:
                          match the unique indexes defined in the type definition
         @type  unit_key: dict
         """
-        pass
+        try:
+            self.__association_manager.unassociate_unit_by_key(self.repo_id, type_id, unit_key)
+        except:
+            _LOG.exception(_('Content unit unassociation failed'))
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
     def get_unit_keys_for_repo(self, type_id=None):
         """
@@ -162,13 +204,7 @@ class RepoSyncConduit:
 
         @param type_id: optional; if specified, only keys for units of the  
         """
-        pass
-
-    # -- utility --------------------------------------------------------------
-
-    def _unique_indexes_for_type(self, type_id):
-        """
-        Returns the list of unique indexes for the given type. This call will
-        block on a lock
-        """
-        pass
+        try:
+            self.__association_manager.unit_keys_for_repo(self.repo_id)
+        except:
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]

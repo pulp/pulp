@@ -26,6 +26,7 @@ from pulp.common import dateutils
 import pulp.server.content.manager as plugin_manager
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
+import pulp.server.managers.factory as manager_factory
 
 # -- constants ----------------------------------------------------------------
 
@@ -125,8 +126,10 @@ class RepoSyncManager:
         # from the database directly to the plugin. Ultimately this should be
         # done before we declare that we support user-written plugins.
 
+        association_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_ASSOCIATION)
+        conduit = RepoSyncConduit(repo_id, association_manager)
+
         importer_config = repo_importer['config']
-        conduit = RepoSyncConduit(repo_id)
 
         # Perform the sync
         try:
