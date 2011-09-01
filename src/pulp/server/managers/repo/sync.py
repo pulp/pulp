@@ -144,7 +144,7 @@ class RepoSyncManager:
         try:
             repo_importer['sync_in_progress'] = True
             importer_coll.save(repo_importer, safe=True)
-            importer_instance.sync(repo, conduit, importer_config, sync_config)
+            importer_instance.sync_repo(repo, conduit, importer_config, sync_config)
         except Exception:
             # I really wish python 2.4 supported except and finally together
             repo_importer['sync_in_progress'] = False

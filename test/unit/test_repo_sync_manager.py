@@ -41,7 +41,7 @@ class MockImporter(Importer):
     # Call behavior
     raise_error = False
 
-    def sync(self, repo_data, sync_conduit, importer_config, sync_config):
+    def sync_repo(self, repo_data, sync_conduit, importer_config, sync_config):
 
         # Store the contents of what was passed to the sync call at the class
         # level since the content manager factory will return a new instance

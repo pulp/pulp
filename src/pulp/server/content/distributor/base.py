@@ -21,7 +21,7 @@ class Distributor(object):
     def metadata(cls):
         return {}
 
-    def publish(self, publish_conduit, distributor_config=None, repo_config=None):
+    def publish_repo(self, publish_conduit, distributor_config=None, repo_config=None):
         """
         Publish a repository.
         @param publish_conduit: api instance that provides limited pulp functionality
@@ -33,7 +33,7 @@ class Distributor(object):
         """
         raise NotImplementedError()
 
-    def unpublish(self, unpublish_conduit, distributor_config=None, repo_config=None):
+    def unpublish_repo(self, unpublish_conduit, distributor_config=None, repo_config=None):
         """
         Unpublish a repository.
         @param unpublish_conduit: api instance that provides limited pulp functionality

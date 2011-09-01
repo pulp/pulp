@@ -21,7 +21,7 @@ class Importer(object):
     def metadata(cls):
         return {}
 
-    def sync(self, repo_data, sync_conduit, importer_config=None, repo_config=None):
+    def sync_repo(self, repo_data, sync_conduit, importer_config=None, repo_config=None):
         """
         Sync content into a repository.
         @param repo_data: metadata that describes a pulp repository
