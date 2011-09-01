@@ -87,4 +87,3 @@ class CompsExporter(BaseExporter):
 if __name__== '__main__':
     pe = CompsExporter("testdep", target_dir="/tmp/myexport")
     pe.export()
-    print "Comps exporter"

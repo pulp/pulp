@@ -23,6 +23,8 @@ from pulp.server.api.repo import RepoApi
 
 log = logging.getLogger(__name__)
 
+# --------- Base exporter module --------------------#
+
 class BaseExporter(object):
     """
      Base Exporter module with common methods
@@ -83,7 +85,9 @@ class BaseExporter(object):
     
     def export(self):
         """
-         Implemented in the subclass
+         Implement the export logic in the plugin
+         @rtype: dict
+         @return: progress information
         """
         raise NotImplementedError()
 

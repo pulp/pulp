@@ -17,6 +17,8 @@ import sys
 from optparse import Option, OptionParser
 from pulp.server.exporter.base import BaseExporter
 
+# --------------- constants ---------------------------#
+
 _TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.exporter'
 _EXPORTER_PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'plugins')
 _EXPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'plugins'))
@@ -102,6 +104,10 @@ class ExporterCLI(object):
         return plugins
 
     def create_isos(self):
+        """
+         calculate the maximum size and wrap the exported content into iso files.
+         supported types: CD, DVD, Blu-ray.
+        """
         if not self.make_isos:
             return
 
