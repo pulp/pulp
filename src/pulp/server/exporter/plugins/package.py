@@ -45,6 +45,9 @@ class PackageExporter(BaseExporter):
         Export packages associated with a repository object.
         Packages are copied to the target dir if not alreay exists
         and new metadata is generated.
+        
+        @rtype: dict
+        @return: progress information for the plugin
         """
         self.validate_target_path()
         repo = self.get_repository()

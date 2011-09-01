@@ -111,8 +111,9 @@ class ExporterCLI(object):
         """
         progress = []
         try:
+            modules = sorted(self._load_exporter_plugins(), key=lambda mod: mod.__priority__)
             print(" ")
-            for module in sorted(self._load_exporter_plugins(), key=lambda mod: mod.__priority__):
+            for module in modules:
                 exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
                                   end_date=self.end_date)
                 progress.append(exporter.export())
@@ -123,6 +124,11 @@ class ExporterCLI(object):
         self.print_errors(progress)
 
     def print_report(self, progress):
+        """
+         Prints the exporter report
+         @type progress: list
+         @param progress: progress information for all plugins
+        """
         # Output result
         print "+-------------------------------------------+"
         print ('Exporter Report for repository [%s]' % self.repoid)
@@ -135,6 +141,11 @@ class ExporterCLI(object):
         print("\nRepository content can now be found in Target directory [%s]" % self.target_dir)
 
     def print_errors(self, progress):
+        """
+         Prints the any exceptions caught during exports
+         @type progress: list
+         @param progress: progress (error) information for all plugins
+        """
         errors = []
         for report in progress:
             if not report:

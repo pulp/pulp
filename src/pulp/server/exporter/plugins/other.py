@@ -43,6 +43,9 @@ class OtherExporter(BaseExporter):
         """
         Export cutom metadata associated to the repository
         and metadata is updated with new custom file.
+
+        @rtype: dict
+        @return: progress information for the plugin
         """
         self.validate_target_path()
         repo = self.get_repository()
@@ -81,3 +84,7 @@ class OtherExporter(BaseExporter):
                 self.progress['errors'].append(msg)
                 log.error(msg)
         return self.progress
+
+if __name__== '__main__':
+    pe = OtherExporter("testfedora", target_dir="/tmp/myexport")
+    pe.export()      

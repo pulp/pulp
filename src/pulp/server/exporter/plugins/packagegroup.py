@@ -45,6 +45,9 @@ class CompsExporter(BaseExporter):
         Export package group/category associated with a repository object.
         Packages groups/categories are looked up and comps.xml is generated
         and metadata is updated with new comps file.
+        
+        @rtype: dict
+        @return: progress information for the plugin
         """
         self.validate_target_path()
         repo = self.get_repository()

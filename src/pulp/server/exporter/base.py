@@ -104,6 +104,8 @@ class BaseExporter(object):
     def get_report(self):
         raise NotImplementedError()
 
+    # ----------- progress status utility methods -----------------#
+
     def write(self, current, prev=None):
         """ Use information of number of columns to guess if the terminal
         will wrap the text, at which point we need to add an extra 'backup line'

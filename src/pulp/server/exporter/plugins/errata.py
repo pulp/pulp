@@ -49,6 +49,9 @@ class ErrataExporter(BaseExporter):
         Errata is looked up in pulp db and updateinfo.xml is generated,
         packages associated with each errata are also processed and
         and metadata is updated with new updateinfo xml.
+
+        @rtype: dict
+        @return: progress information for the plugin
         """
         self.validate_target_path()
         repo = self.get_repository()

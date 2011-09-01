@@ -46,6 +46,9 @@ class DistributionExporter(BaseExporter):
          Export distribution files associated to a repository.
          Distribution image files are looked up and copied over to
          the target dir along with .treeinfo files.
+         
+         @rtype: dict
+         @return: progress information for the plugin
         """
         self.validate_target_path()
         repo = self.get_repository()
