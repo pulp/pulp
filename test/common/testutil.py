@@ -56,6 +56,7 @@ from pulp.server.db import connection
 from pulp.server.db.model import Delta
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.logs import start_logging, stop_logging
+import pulp.server.managers.factory as manager_factory
 from pulp.server.util import random_string
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.tasking.taskqueue import queue
@@ -166,6 +167,8 @@ class PulpTest(unittest.TestCase):
             mocks.install()
 
         self.setup_async()
+
+        manager_factory.initialize()
 
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()

@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
+import copy
 import datetime
 import os
 import sys
@@ -99,12 +100,12 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        importer_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
         self.repo_manager.create_repo('repo-1')
-        self.repo_manager.set_importer('repo-1', 'MockImporter', importer_config)
+        self.repo_manager.set_importer('repo-1', 'MockImporter', sync_config)
 
         # Test
-        self.sync_manager.sync('repo-1', individual_sync_config=None)
+        self.sync_manager.sync('repo-1', sync_config_override=None)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -117,11 +118,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         #   Verify call into the importer
         self.assertEqual(repo['id'], MockImporter.repo_data['id'])
-        self.assertEqual(importer_config, MockImporter.importer_config)
-        self.assertTrue(MockImporter.sync_config is None)
+        self.assertEqual(sync_config, MockImporter.sync_config)
         self.assertTrue(MockImporter.sync_conduit is not None)
 
-    def test_sync_with_individual_config(self):
+    def test_sync_with_sync_config_override(self):
         """
         Tests a sync when passing in an individual config of override options.
         """
@@ -132,8 +132,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.repo_manager.set_importer('repo-1', 'MockImporter', importer_config)
 
         # Test
-        individual_sync_config = {'clint' : 'hawkeye'}
-        self.sync_manager.sync('repo-1', individual_sync_config=individual_sync_config)
+        sync_config_override = {'clint' : 'hawkeye'}
+        self.sync_manager.sync('repo-1', sync_config_override=sync_config_override)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -146,10 +146,11 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         #   Verify call into the importer
         self.assertEqual(repo['id'], MockImporter.repo_data['id'])
-        self.assertEqual(importer_config, MockImporter.importer_config)
-        self.assertEqual(individual_sync_config, MockImporter.sync_config)
         self.assertTrue(MockImporter.sync_conduit is not None)
 
+        merged = copy.copy(importer_config)
+        merged.update(sync_config_override)
+        self.assertEqual(merged, MockImporter.sync_config)
 
     def test_sync_missing_repo(self):
         """
@@ -229,7 +230,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         MockImporter.raise_error = True
 
         self.repo_manager.create_repo('gonna-bail')
-        self.repo_manager.set_importer('gonna-bail', 'MockImporter', None)
+        self.repo_manager.set_importer('gonna-bail', 'MockImporter', {})
 
         # Test
         try:

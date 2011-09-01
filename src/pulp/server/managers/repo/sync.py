@@ -17,6 +17,7 @@ operations. All classes and functions in this module run synchronously; any
 need to execute syncs asynchronously must be handled at a higher layer.
 """
 
+import copy
 import datetime
 from gettext import gettext as _
 import logging
@@ -75,7 +76,7 @@ class RepoSyncManager:
     Manager used to handle sync and sync query operations.
     """
 
-    def sync(self, repo_id, individual_sync_config=None):
+    def sync(self, repo_id, sync_config_override=None):
         """
         Performs a synchronize operation on the given repository.
 
@@ -92,9 +93,9 @@ class RepoSyncManager:
         @param repo_id: identifies the repo to sync
         @type  repo_id: str
 
-        @param individual_sync_config: optional config containing values to use
-                                       for this sync only
-        @type  individual_sync_config: dict
+        @param sync_config_override: optional config containing values to use
+                                     for this sync only
+        @type  sync_config_override: dict
 
         @raises MissingRepo: if repo_id does not refer to a valid repo
         @raises NoImporter: if the given repo does not have an importer set
@@ -120,22 +121,20 @@ class RepoSyncManager:
             raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
-
-        # I feel like we should munge the repo SON returned from the database
-        # into some standard format; I don't like exposing the internal representation
-        # from the database directly to the plugin. Ultimately this should be
-        # done before we declare that we support user-written plugins.
-
         association_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_ASSOCIATION)
         conduit = RepoSyncConduit(repo_id, association_manager)
 
-        importer_config = repo_importer['config']
+        # Take the repo's default sync config and merge in the override values
+        # for this sync alone (don't store it back to the DB)
+        sync_config = dict(repo_importer['config'])
+        if sync_config_override is not None:
+            sync_config.update(sync_config_override)
 
         # Perform the sync
         try:
             repo_importer['sync_in_progress'] = True
             importer_coll.save(repo_importer, safe=True)
-            importer_instance.sync(repo, conduit, importer_config, individual_sync_config)
+            importer_instance.sync(repo, conduit, importer_config, sync_config)
         except Exception:
             # I really wish python 2.4 supported except and finally together
             repo_importer['sync_in_progress'] = False
@@ -144,7 +143,6 @@ class RepoSyncManager:
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
             raise RepoSyncException(repo_id)
-
 
         repo_importer['sync_in_progress'] = False
         repo_importer['last_sync'] = _sync_finished_timestamp()
