@@ -63,11 +63,11 @@ def initialize():
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.content.crud import ContentManager
     from pulp.server.managers.content.upload import ContentUploadManager
-    from pulp.server.managers.repo import RepoManager
-    from pulp.server.managers.repo_unit_association import RepoUnitAssociationManager
-    from pulp.server.managers.repo_clone import RepoCloneManager
-    from pulp.server.managers.repo_query import RepoQueryManager
-    from pulp.server.managers.repo_sync import RepoSyncManager
+    from pulp.server.managers.repo.cud import RepoManager
+    from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
+    from pulp.server.managers.repo.clone import RepoCloneManager
+    from pulp.server.managers.repo.query import RepoQueryManager
+    from pulp.server.managers.repo.sync import RepoSyncManager
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {

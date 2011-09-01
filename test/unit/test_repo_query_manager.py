@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
-import pulp.server.managers.repo as repo_manager
-import pulp.server.managers.repo_query as query_manager
+import pulp.server.managers.repo.cud as repo_manager
+import pulp.server.managers.repo.query as query_manager
 
 # -- test cases ---------------------------------------------------------------
 

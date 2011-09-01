@@ -21,7 +21,7 @@ import testutil
 
 import pulp.server.content.manager as content_manager
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
-import pulp.server.managers.repo as repo_manager
+import pulp.server.managers.repo.cud as repo_manager
 
 # -- mocks --------------------------------------------------------------------
 

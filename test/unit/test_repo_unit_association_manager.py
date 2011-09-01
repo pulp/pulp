@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.db.model.gc_repository import RepoContentUnit
-import pulp.server.managers.repo_unit_association as association_manager
+import pulp.server.managers.repo.unit_association as association_manager
 
 # -- test cases ---------------------------------------------------------------
 

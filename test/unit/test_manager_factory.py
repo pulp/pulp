@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.managers import factory
-from pulp.server.managers.repo import RepoManager
+from pulp.server.managers.repo.cud import RepoManager
 
 # -- test cases --------------------------------------------------------------
 
