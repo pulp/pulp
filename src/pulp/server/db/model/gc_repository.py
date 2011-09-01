@@ -105,6 +105,13 @@ class RepoImporter(Model):
 
     @ivar config: importer config passed to the plugin when it is invoked
     @type config: dict
+
+    @ivar sync_in_progress: holds the state of the importer
+    @type sync_in_progress: bool
+
+    @ivar last_sync: timestamp of the last sync (regardless of success or failure)
+                     in ISO8601 format
+    @type last_sync: str
     """
 
     collection_name = 'gc_repo_importers'
@@ -123,7 +130,7 @@ class RepoImporter(Model):
 
         # Sync
         self.sync_in_progress = False
-        self.last_sync = None # ISO8601 formatted string (see dateutils)
+        self.last_sync = None
 
 class RepoDistributor(Model):
     """
@@ -145,6 +152,17 @@ class RepoDistributor(Model):
 
     @ivar config: distributor config passed to the plugin when it is invoked
     @type config: dict
+
+    @ivar auto_distribute: indicates if the distributor should automatically
+                           publish the repo on the tail end of a successful sync
+    @type auto_distribute: bool
+
+    @ivar publish_in_progress: holds the state of the distributor
+    @type publish_in_progress: bool
+
+    @ivar last_publish: timestamp of the last publish (regardless of success or failure)
+                        in ISO8601 format
+    @type last_publish: str
     """
 
     collection_name = 'gc_repo_distributors'
@@ -162,6 +180,10 @@ class RepoDistributor(Model):
         self.config = config
 
         self.auto_distribute = auto_distribute
+
+        # Publish
+        self.publish_in_progress = False
+        self.last_publish = None
 
 class RepoContentUnit(Model):
     """
