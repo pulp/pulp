@@ -14,20 +14,23 @@
 
 class ContentManager(object):
 
-    def add_content(self, content_type, content_id, content_metadata, content_path):
+    def add_content_unit(self, content_type, unit_id, unit_metadata, unit_path):
         pass
 
-    def list_content(self, content_type, db_spec=None, model_fields=None):
+    def list_content_units(self, content_type, db_spec=None, model_fields=None):
         pass
 
-    def get_content_unit_keys(self, content_type, content_ids):
+    def get_content_unit_keys(self, content_type, unit_ids):
         pass
 
-    def get_content_unit_ids(self, content_type, content_keys):
+    def get_content_unit_ids(self, content_type, unit_keys):
         pass
 
-    def update_content(self, content_type, content_id, content_delta):
+    def get_root_content_dir(self, content_type):
         pass
 
-    def remove_content(self, content_type, content_id):
+    def update_content_unit(self, content_type, unit_id, unit_metadata_delta):
+        pass
+
+    def remove_content_unit(self, content_type, unit_id):
         pass
