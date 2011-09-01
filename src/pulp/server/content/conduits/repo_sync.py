@@ -42,7 +42,7 @@ class RepoSyncConduit:
     """
     Used to communicate back into the Pulp server while an importer performs
     a repo sync. Instances of this class should *not* be cached between repo
-    sync runs. Each sync will be issued it's own conduit instance that is scoped
+    sync runs. Each sync will be issued its own conduit instance that is scoped
     to that sync alone.
 
     Instances of this class are thread-safe. The importer implementation is

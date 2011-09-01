@@ -246,6 +246,28 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
+    def test_sync_in_progress(self):
+        """
+        Tests that trying to sync while one is in progress raises the correct
+        error.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('busy')
+        self.repo_manager.set_importer('busy', 'MockImporter', {})
+
+        #   Trick the database into thinking it's synccing
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'busy'})
+        repo_importer['sync_in_progress'] = True
+        RepoImporter.get_collection().save(repo_importer)
+
+        # Test
+        try:
+            self.sync_manager.sync('busy')
+        except repo_sync_manager.SyncInProgress, e:
+            self.assertEqual('busy', e.repo_id)
+            print(e) # for coverage
+
 # -- testing utilities --------------------------------------------------------
 
 def assert_last_sync_time(time_in_iso):

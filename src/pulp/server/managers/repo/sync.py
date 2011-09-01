@@ -69,6 +69,13 @@ class MissingImporterPlugin(RepoSyncException):
     """
     pass
 
+class SyncInProgress(RepoSyncException):
+    """
+    Indicates a sync was requested for a repo already in the process of
+    synchronizing the repo.
+    """
+    pass
+
 # -- manager ------------------------------------------------------------------
 
 class RepoSyncManager:
@@ -113,8 +120,11 @@ class RepoSyncManager:
 
         if len(repo_importers) is 0:
             raise NoImporter(repo_id)
-
         repo_importer = repo_importers[0]
+
+        if repo_importer['sync_in_progress']:
+            raise SyncInProgress(repo_id)
+
         try:
             importer_instance, importer_config = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
         except plugin_manager.PluginNotFound:
@@ -142,7 +152,7 @@ class RepoSyncManager:
             importer_coll.save(repo_importer, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
-            raise RepoSyncException(repo_id)
+            raise RepoSyncException(repo_id), None, sys.exc_info()[2]
 
         repo_importer['sync_in_progress'] = False
         repo_importer['last_sync'] = _sync_finished_timestamp()
@@ -150,7 +160,7 @@ class RepoSyncManager:
 
 def _sync_finished_timestamp():
     """
-    @return: timestamp suitable for indicating when a sync completed.
+    @return: timestamp suitable for indicating when a sync completed
     @rtype:  str
     """
     now = datetime.datetime.now(dateutils.local_tz())
