@@ -76,8 +76,8 @@ class CompsExporter(BaseExporter):
                     comps_file_path)
             # either all pass or all error in this case
             self.progress['num_success'] = self.progress['count_total']
-        except pulp.server.util.CreateRepoError:
-            msg = "Unable to modify metadata with exported package groups/categories"
+        except pulp.server.util.CreateRepoError, cre:
+            msg = "Unable to modify metadata with exported package groups/categories; Error: %s" % str(cre)
             self.progress['errors'].append(msg)
             self.progress['num_error'] += self.progress['count_total']
             log.error(msg)

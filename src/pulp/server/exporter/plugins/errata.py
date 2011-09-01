@@ -68,9 +68,9 @@ class ErrataExporter(BaseExporter):
                     updateinfo_path)
             # either all pass or all error in this case
             self.progress['num_success'] = self.progress['count_total']
-        except pulp.server.util.CreateRepoError:
+        except pulp.server.util.CreateRepoError, cre:
             self.progress['num_error'] += self.progress['count_total']
-            msg = "Unable to modify metadata with exported errata "
+            msg = "Unable to modify metadata with exported errata; Error: %s " % str(cre)
             self.progress['errors'].append(msg)
             log.error(msg)
         return self.progress
@@ -96,8 +96,8 @@ class ErrataExporter(BaseExporter):
                         try:
                             shutil.copy(src_pkg_path, dst_pkg_path)
                             errata_pkg_count += 1
-                        except IOError:
-                            msg = "Unable to export errata package %s to target directory %s" % pkg['filename']
+                        except IOError, io:
+                            msg = "Unable to export errata package %s to target directory %s; Error: %s" % (pkg['filename'], str(io))
                             log.error(msg)
                             self.progress['errors'].append(msg)
                     else:
@@ -109,8 +109,8 @@ class ErrataExporter(BaseExporter):
         try:
             pulp.server.util.create_repo(self.target_dir)
             log.info("metadata generation complete at target location %s" % self.target_dir)
-        except pulp.server.util.CreateRepoError:
-            msg = "Unable to generate metadata for exported errata packages in target directory %s" % self.target_dir
+        except pulp.server.util.CreateRepoError, cre:
+            msg = "Unable to generate metadata for exported errata packages in target directory %s; Error: %s" % (self.target_dir, str(cre))
             log.error(msg)
             self.progress['errors'].append(msg)
 

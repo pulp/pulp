@@ -73,14 +73,14 @@ class OtherExporter(BaseExporter):
                     self.write("Step: Modifying repo to add custom metadata %s" % ftype)
                     pulp.server.util.modify_repo(tgt_repodata_dir, renamed_filetype_path)
                 self.progress['num_success'] += 1
-            except IOError:
+            except IOError, io:
                 self.progress['num_error'] += 1
-                msg = "Unable to copy the custom metadata file to target directory %s" % renamed_filetype_path
+                msg = "Unable to copy the custom metadata file to target directory %s; Error: %s" % (renamed_filetype_path, str(io))
                 self.progress['errors'].append(msg)
                 log.error(msg)
-            except pulp.server.util.CreateRepoError:
+            except pulp.server.util.CreateRepoError, cre:
                 self.progress['num_error'] += 1
-                msg = "Unable to modify repo metadata with custom file %s " % renamed_filetype_path
+                msg = "Unable to modify repo metadata with custom file %s; Error: %s " % (renamed_filetype_path, str(cre))
                 self.progress['errors'].append(msg)
                 log.error(msg)
         return self.progress

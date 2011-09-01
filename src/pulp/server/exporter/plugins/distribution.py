@@ -91,8 +91,8 @@ class DistributionExporter(BaseExporter):
                     shutil.copy(src_dist_file, dst_file_path)
                     log.info("exported %s" % src_dist_file)
                     self.progress['num_success'] += 1
-                except IOError:
-                    msg = "Failed to export distribution file %s" % src_dist_file
+                except IOError,io:
+                    msg = "Failed to export distribution file %s; Error: %s" % (src_dist_file, str(io))
                     self.progress['errors'].append(msg)
                     self.progress['num_error'] += 1
                     log.error(msg)

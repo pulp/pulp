@@ -23,6 +23,8 @@ _TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.exporter'
 _EXPORTER_PLUGINS_PATH = os.path.join(os.path.dirname(__file__), 'plugins')
 _EXPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'plugins'))
 
+#------------- commandline user interface --------------#
+
 class ExporterCLI(object):
     """
      Pulp Exporter Commandline wrapper class

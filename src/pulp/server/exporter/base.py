@@ -23,6 +23,31 @@ from pulp.server.api.repo import RepoApi
 
 log = logging.getLogger(__name__)
 
+# --------- Exceptions ---------------------#
+
+class ExportException(Exception):
+    """
+    Base exception class for exporter
+    """
+    def __init__(self, value, *args):
+        Exception.__init__(self, value, *args)
+        self.value = value % args
+
+    def __str__(self):
+        return repr(self.value)
+
+class MetadataException(ExportException):
+    """
+    raised when an error occurs generating metadata
+    """
+    pass
+
+class WriteException(ExportException):
+    """
+    raised when exported content fails to write to the target location
+    """
+    pass
+
 # --------- Base exporter module --------------------#
 
 class BaseExporter(object):
@@ -49,7 +74,7 @@ class BaseExporter(object):
         self.end_date = end_date
         self.force = force
         self.progress = {
-            'status': 'running',
+            'step': 'base',
             'count_total': 0,
             'count_remaining': 0,
             'num_error': 0,
