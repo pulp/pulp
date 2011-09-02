@@ -12,35 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import uuid
 
 from pulp.server.constants import LOCAL_STORAGE
 from pulp.server.content.types import database as content_types_db
-from pulp.server.pexceptions import PulpException
+from pulp.server.managers.content.exceptions import (
+    ContentTypeNotFound, ContentUnitNotFound)
 
 
-class ContentUnitNotFound(PulpException):
-    pass
-
-
-class ContentTypeNotFound(PulpException):
-    pass
-
-
-class ContentManager(object):
+class ContentQueryManager(object):
     """
     """
-
-    def add_content_unit(self, content_type, unit_id, unit_metadata):
-        """
-        """
-        collection = content_types_db.type_units_collection(content_type)
-        if unit_id is None:
-            unit_id = str(uuid.uuid4())
-        unit_model = {'_id': unit_id}
-        unit_model.update(unit_metadata)
-        collection.insert(unit_model)
-        return unit_id
 
     def list_content_units(self, content_type, db_spec=None, model_fields=None, start=0, limit=None):
         """
@@ -114,23 +95,6 @@ class ContentManager(object):
         """
         """
         return os.path.join(self.get_root_content_dir(content_type), relative_path)
-
-    def update_content_unit(self, content_type, unit_id, unit_metadata_delta):
-        """
-        """
-        collection = content_types_db.type_units_collection(content_type)
-        content_unit = collection.find_one({'_id': unit_id})
-        if content_unit is None:
-            raise ContentUnitNotFound()
-        content_unit = dict(content_unit)
-        content_unit.update(unit_metadata_delta)
-        collection.save(content_unit)
-
-    def remove_content_unit(self, content_type, unit_id):
-        """
-        """
-        collection = content_types_db.type_units_collection(content_type)
-        collection.remove({'_id': unit_id})
 
 # utility methods --------------------------------------------------------------
 
