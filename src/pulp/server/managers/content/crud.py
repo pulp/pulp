@@ -23,6 +23,10 @@ class ContentUnitNotFound(PulpException):
     pass
 
 
+class ContentTypeNotFound(PulpException):
+    pass
+
+
 class ContentManager(object):
     """
     """
@@ -30,36 +34,75 @@ class ContentManager(object):
     def add_content_unit(self, content_type, unit_id, unit_metadata):
         """
         """
-        # XXX we should store the TypeDefinitions in their own collection in
-        # the db so that we can validate the metadata
-        collection = _get_type_collection(content_type)
+        collection = content_types_db.type_units_collection(content_type)
         if unit_id is None:
             unit_id = str(uuid.uuid4())
         unit_model = {'_id': unit_id}
         unit_model.update(unit_metadata)
         collection.insert(unit_model)
+        return unit_id
 
-    def list_content_units(self, content_type, db_spec=None, model_fields=None):
+    def list_content_units(self, content_type, db_spec=None, model_fields=None, start=0, limit=None):
         """
         """
-        collection = _get_type_collection(content_type)
+        collection = content_types_db.type_units_collection(content_type)
         cursor = collection.find(db_spec, fields=model_fields)
-        # delima: retrun the cursor itself?
+        if start > 0:
+            cursor.skip(start)
+        if limit is not None:
+            cursor.limit(limit)
+        return tuple(cursor)
+
+    def get_content_unit_by_keys(self, content_type, content_keys):
+        """
+        """
+        units = self.get_multiple_units_by_keys(content_type, (content_keys,))
+        if not units:
+            raise ContentUnitNotFound()
+        return units[0]
+
+    def get_content_unit_by_id(self, content_type, content_id):
+        """
+        """
+        units = self.get_multiple_units_by_ids(content_type, (content_id,))
+        if not units:
+            raise ContentUnitNotFound()
+        return units[0]
+
+    def get_multiple_units_by_keys(self, content_type, unit_keys, model_fields=None):
+        """
+        """
+        collection = content_types_db.type_units_collection(content_type)
+        spec = _build_muti_keys_spec(content_type, unit_keys)
+        cursor = collection.find(spec, fields=model_fields)
+        return tuple(cursor)
+
+    def get_multiple_units_by_ids(self, content_type, unit_ids, model_fields=None):
+        """
+        """
+        collection = content_types_db.type_units_collection(content_type)
+        cursor = collection.find({'_id': {'$in': unit_ids}}, fields=model_fields)
         return tuple(cursor)
 
     def get_content_unit_keys(self, content_type, unit_ids):
         """
         """
-        collection = _get_type_collection(content_type)
-        # do the content_unit_keys_dict correspond to the unique indexes?
-        return []
+        key_fields = content_types_db.type_units_unique_indexes(content_type)
+        if key_fields is None:
+            raise ContentTypeNotFound()
+        collection = content_types_db.type_units_collection(content_type)
+        cursor = collection.find({'_id': {'$in': unit_ids}}, fields=key_fields)
+        if cursor.count() == 0:
+            return tuple()
+        return tuple(cursor)
 
     def get_content_unit_ids(self, content_type, unit_keys):
         """
         """
-        collection = _get_type_collection(content_type)
-        # do the content_unit_keys_dict correspond to the unique indexes?
-        return []
+        collection = content_types_db.type_units_collection(content_type)
+        spec = _build_muti_keys_spec(content_type, unit_keys)
+        cursor = collection.find(spec, fields=['_id'])
+        return tuple(cursor)
 
     def get_root_content_dir(self, content_type):
         """
@@ -75,9 +118,7 @@ class ContentManager(object):
     def update_content_unit(self, content_type, unit_id, unit_metadata_delta):
         """
         """
-        # XXX we should store the TypeDefinitions in their own collection in
-        # the db so that we can validate the metadata delta
-        collection = _get_type_collection(content_type)
+        collection = content_types_db.type_units_collection(content_type)
         content_unit = collection.find_one({'_id': unit_id})
         if content_unit is None:
             raise ContentUnitNotFound()
@@ -88,13 +129,23 @@ class ContentManager(object):
     def remove_content_unit(self, content_type, unit_id):
         """
         """
-        collection = _get_type_collection(content_type)
+        collection = content_types_db.type_units_collection(content_type)
         collection.remove({'_id': unit_id})
 
 # utility methods --------------------------------------------------------------
 
-def _get_type_collection(type_id):
+def _build_muti_keys_spec(content_type, unit_keys):
     """
     """
-    collection = content_types_db.type_units_collection(type_id)
-    return collection
+    key_fields = content_types_db.type_units_unique_indexes(content_type)
+    spec_template = dict([(f, set()) for f in key_fields])
+    for key in unit_keys:
+        found_k = 0
+        for k, v in key.items():
+            if k not in spec_template:
+                raise ValueError()
+            spec_template[k].add(v)
+            found_k += 1
+        if found_k != len(key_fields):
+            raise ValueError()
+    return dict([(k, {'$in': list(v)}) for k, v in spec_template])
