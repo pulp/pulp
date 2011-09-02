@@ -170,7 +170,6 @@ class RepoApi(BaseApi):
         for r in found:
             self.delete(r["id"])
 
-    @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
