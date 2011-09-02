@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.229
+Version:        0.0.230
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -490,6 +490,18 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Sep 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-1
+- bump gofer to: 0.47 for project alignment. (jortel@redhat.com)
+- 704194 - Fix broken repo created events. (jortel@redhat.com)
+- Move pulp-migrate to main 'pulp' package. (jortel@redhat.com)
+- 734839 - Fixed errata list --consumerid to work without specifying type
+  (skarmark@redhat.com)
+- 734449 - fixed typo in help for filters (skarmark@redhat.com)
+- Ensure a sync isn't already in progress before triggering another one
+  (jason.dobies@redhat.com)
+- 732540 - Validate errata IDs on --consumerid install as well.
+  (jortel@redhat.com)
+
 * Wed Aug 31 2011 Jeff Ortel <jortel@redhat.com> 0.0.229-1
 - Added a check in bootstrap for what version of M2Crypto we are running
   (jmatthews@redhat.com)
