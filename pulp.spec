@@ -403,6 +403,7 @@ fi
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
+%{_bindir}/pulp-migrate
 %if %{pulp_selinux}
 # SELinux
 %doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
@@ -455,7 +456,6 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/admin
 %{_bindir}/pulp-admin
-%{_bindir}/pulp-migrate
 %config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/task.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/job.conf
