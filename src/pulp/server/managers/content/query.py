@@ -24,8 +24,31 @@ class ContentQueryManager(object):
     """
     """
 
-    def list_content_units(self, content_type, db_spec=None, model_fields=None, start=0, limit=None):
+    def list_content_units(self,
+                           content_type,
+                           db_spec=None,
+                           model_fields=None,
+                           start=0,
+                           limit=None):
         """
+        List the content units in a content type collection.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param db_spec: spec document used to filter the results,
+                        None means no filter
+        @type db_spec: None or dict
+        @param model_fields: fields of each content unit to report,
+                             None means all fields
+        @type model_fields: None or list of str's
+        @param start: offset from the beginnig of the results to return as the
+                      first element
+        @type start: non-negative int
+        @param limit: the maximum number of results to return,
+                      None means no limit
+        @type limit: None or non-negative int
+        @return: list of content units in the content type collection that
+                 matches the parameters
+        @rtype: (possibly empty) tuple of dicts
         """
         collection = content_types_db.type_units_collection(content_type)
         cursor = collection.find(db_spec, fields=model_fields)
@@ -35,32 +58,92 @@ class ContentQueryManager(object):
             cursor.limit(limit)
         return tuple(cursor)
 
-    def get_content_unit_by_keys(self, content_type, content_keys):
+    def get_content_unit_by_keys_dict(self, content_type, unit_keys_dict, model_fields=None):
         """
+        Look up an individual content unit in the corresponding content type
+        collection using the given keys dictionary.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param unit_keys_dict: dictionary of key, value pairs that can uniquely
+                               identify a content unit
+        @type unit_keys_dict: dict
+        @param model_fields: fields of each content unit to report,
+                             None means all fields
+        @type model_fields: None or list of str's
+        @return: content unit from the content type collection that matches the
+                 keys dict
+        @rtype: dict
+        @raise: ValueError if the unit_keys_dict is invalid
+        @raise: L{ContentUnitNotFound} if no content unit in the content type
+                collection matches the keys dict
         """
-        units = self.get_multiple_units_by_keys(content_type, (content_keys,))
+        units = self.get_multiple_units_by_keys_dicts(content_type,
+                                                      (unit_keys_dict,),
+                                                      model_fields)
         if not units:
             raise ContentUnitNotFound()
         return units[0]
 
-    def get_content_unit_by_id(self, content_type, content_id):
+    def get_content_unit_by_id(self, content_type, unit_id, model_fields=None):
         """
+        Look up an individual content unit in the corresponding content type
+        collection using the given id.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param unit_id: unique id of content unit
+        @type unit_id: str
+        @param model_fields: fields of each content unit to report,
+                             None means all fields
+        @type model_fields: None or list of str's
+        @return: content unit from the content type collection that matches the
+                 given id
+        @rtype: dict
+        @raise: L{ContentUnitNotFound} if no content unit in the content type
+                collection matches the id
         """
-        units = self.get_multiple_units_by_ids(content_type, (content_id,))
+        units = self.get_multiple_units_by_ids(content_type,
+                                               (unit_id,),
+                                               model_fields)
         if not units:
             raise ContentUnitNotFound()
         return units[0]
 
-    def get_multiple_units_by_keys(self, content_type, unit_keys, model_fields=None):
+    def get_multiple_units_by_keys_dicts(self, content_type, unit_keys_dicts, model_fields=None):
         """
+        Look up multiple content units in the collection for the given content
+        type collection that match the list of keys dictionaries.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param unit_keys_dicts: list of dictionaries whose key, value pairs can
+                                uniquely identify a content unit
+        @type unit_keys_dicts: list of dict's
+        @param model_fields: fields of each content unit to report,
+                             None means all fields
+        @type model_fields: None or list of str's
+        @return: tuple of content units found in the content type collection
+                 that match the given unit keys dictionaries
+        @rtype: (possibly empty) tuple of dict's
+        @raise ValueError if any of the keys dictionaries are invalid
         """
         collection = content_types_db.type_units_collection(content_type)
-        spec = _build_muti_keys_spec(content_type, unit_keys)
+        spec = _build_muti_keys_spec(content_type, unit_keys_dicts)
         cursor = collection.find(spec, fields=model_fields)
         return tuple(cursor)
 
     def get_multiple_units_by_ids(self, content_type, unit_ids, model_fields=None):
         """
+        Look up multiple content units in the collection for the given content
+        type collection that match the list of ids.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param unit_ids: list of unique content unit ids
+        @type unit_ids: list of str's
+        @param model_fields: fields of each content unit to report,
+                             None means all fields
+        @type model_fields: None or list of str's
+        @return: tuple of content units found in the content type collection
+                 that match the given ids
+        @rtype: (possibly empty) tuple of dict's
         """
         collection = content_types_db.type_units_collection(content_type)
         cursor = collection.find({'_id': {'$in': unit_ids}}, fields=model_fields)
