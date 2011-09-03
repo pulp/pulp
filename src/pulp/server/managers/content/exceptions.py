@@ -14,13 +14,22 @@
 from pulp.server.pexceptions import PulpException
 
 
-class ContentUnitNotFound(PulpException):
+class ContentManagerException(PulpException):
     """
+    Base exception class thrown by content managers.
     """
     pass
 
 
-class ContentTypeNotFound(PulpException):
+class ContentUnitNotFound(ContentManagerException):
     """
+    Exception raised when an individual content unit cannot be located.
+    """
+    pass
+
+
+class ContentTypeNotFound(ContentManagerException):
+    """
+    Exception raise when an unsupported content type is used.
     """
     pass
