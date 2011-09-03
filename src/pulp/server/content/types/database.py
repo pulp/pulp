@@ -198,6 +198,14 @@ def unit_collection_name(type_id):
 
 
 def type_units_unique_indexes(type_id):
+    """
+    Get the unique indices for a given content type collection.
+    @param type_id: unique content type identifier
+    @type type_id: str
+    @return: list of indices that can uniquely identify a document in the
+             content type collection
+    @rtype: list of str's
+    """
     collection = ContentType.get_collection()
     type_def = collection.find_one(type_id)
     if type_def is None:
