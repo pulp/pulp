@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+from gettext import gettext as _
 
 from pulp.server.constants import LOCAL_STORAGE
 from pulp.server.content.types import database as content_types_db
@@ -67,49 +68,132 @@ class ContentQueryManager(object):
 
     def get_content_unit_keys(self, content_type, unit_ids):
         """
+        Return the keys and values that will uniquely identify the content units
+        that match the given unique ids.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param unit_ids: list of unique content unit ids
+        @type unit_ids: list of str's
+        @return: tuples of id, dictionary that uniquely identify the documents
+                 for the given id
+        @rtype: (possibly empty) list of (str, dict) tuples
         """
         key_fields = content_types_db.type_units_unique_indexes(content_type)
         if key_fields is None:
             raise ContentTypeNotFound()
+        all_fields = ['_id']
+        all_fields.extend(key_fields)
         collection = content_types_db.type_units_collection(content_type)
-        cursor = collection.find({'_id': {'$in': unit_ids}}, fields=key_fields)
-        if cursor.count() == 0:
-            return tuple()
-        return tuple(cursor)
+        cursor = collection.find({'_id': {'$in': unit_ids}}, fields=all_fields)
+        keys_dicts = [(d.pop('_id'), dict(d)) for d in cursor]
+        return keys_dicts
 
-    def get_content_unit_ids(self, content_type, unit_keys):
+    def get_content_unit_ids(self, content_type, units_keys):
         """
+        Return the ids that uniquely identify the content units that match the
+        given unique keys dictionaries.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param unit_keys: list of keys dictionaries that uniquely identify
+                          content units in the given content type collection
+        @type unit_keys: list of dict's
+        @return: tuples of id, key dict for the given content units keys
+        @rtype: (possibly empty) list of (str, dict) tuples
         """
+        assert units_keys
         collection = content_types_db.type_units_collection(content_type)
-        spec = _build_muti_keys_spec(content_type, unit_keys)
-        cursor = collection.find(spec, fields=['_id'])
-        return tuple(cursor)
+        spec = _build_muti_keys_spec(content_type, units_keys)
+        fields = ['_id']
+        fields.append(units_keys[0].keys()) # requires assertion
+        cursor = collection.find(spec, fields=fields)
+        ids = [(d.pop('_id'), dict(d)) for d in cursor]
+        return ids
 
     def get_root_content_dir(self, content_type):
         """
+        Get the full path to Pulp's root conent directory for a given content
+        type.
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @return: file system path for content type's root directory
+        @rtype: str
         """
         # I'm paritioning the content on the file system based on content type
-        return os.path.join(LOCAL_STORAGE, content_type)
+        root = os.path.join(LOCAL_STORAGE, content_type)
+        if not os.path.exists(root):
+            os.makedirs(root)
+        return root
 
     def request_content_unit_file_path(self, content_type, relative_path):
         """
+        @param content_type: unique id of content collection
+        @type content_type: str
+        @param relative_path: on disk path of a content unit relative to the
+                              root directory for the given content type
+        @type relative_path: str
+        @return: full file system path for given relative path
+        @rtype: str
         """
-        return os.path.join(self.get_root_content_dir(content_type), relative_path)
+        unit_path = os.path.join(self.get_root_content_dir(content_type), relative_path)
+        unit_dir = os.path.dirname(unit_path)
+        if not os.path.exists(unit_dir):
+            os.makedirs(unit_dir)
+        return unit_path
 
 # utility methods --------------------------------------------------------------
 
-def _build_muti_keys_spec(content_type, unit_keys):
+def _build_muti_keys_spec(content_type, unit_keys_dicts):
     """
+    Build a mongo db spec document for a query on the given content_type
+    collection out of multiple content unit key dictionaries.
+    @param content_type: unique id of the content type collection
+    @type content_type: str
+    @param unit_key_dict: list of key dictionaries whose key, value pairs can be
+                          used as unique identifiers for a single content unit
+    @return: mongo db spec document for locating documents in a collection
+    @rtype: dict
+    @raise: ValueError if any of the key dictionaries do not match the unique
+            fields of the collection
     """
+    # NOTE this is just about the coolest mongo db query construction method
+    # you'll find in this entire code base. Not only is it correct in the sense
+    # that it builds a spec doc that will find at most 1 content unit per keys
+    # dictionary passed in, but it does duplicate value elimination and key
+    # validation on every single key and value found in every keys dictionary.
+    # The spec document returned allows us to find multiple documents in a
+    # content type collection with only a single query to the database.
+
+    # I will buy a meal (including drinks if wanted) for the first person that
+    # explains to me why the returned spec document is correct. Here's a hint:
+    # explain why the spec document finds at most one document per keys dict and
+    # explain when the spec will fail to find a document for an arbitrary keys
+    # dict.
+
+    # keys dicts validation constants
     key_fields = content_types_db.type_units_unique_indexes(content_type)
+    key_fields_set = set(key_fields)
+    extra_keys_msg = _('keys dictionary found with superfluous keys %(a)s, valid keys are %(b)s')
+    missing_keys_msg = _('keys dictionary missing keys %(a)s, required keys are %(b)s')
+    keys_errors = []
+    # spec document valid keys and valid values, used as template to generate
+    # actual spec document for mongo db queries
     spec_template = dict([(f, set()) for f in key_fields])
-    for key in unit_keys:
-        found_k = 0
-        for k, v in key.items():
-            if k not in spec_template:
-                raise ValueError()
+    for keys_dict in unit_keys_dicts:
+        # keys dict validation
+        keys_dict_set = set(keys_dict)
+        extra_keys = keys_dict_set.difference(key_fields_set)
+        if extra_keys:
+            keys_errors.append(extra_keys_msg % {'a': ','.join(extra_keys), 'b': ','.join(key_fields)})
+        missing_keys = key_fields_set.difference(keys_dict_set)
+        if missing_keys:
+            keys_errors.append(missing_keys_msg % {'a': ','.join(missing_keys), 'b': ','.join(key_fields)})
+        if extra_keys or missing_keys:
+            continue
+        # validation passed, store the keys and values in the template
+        for k, v in keys_dict.items():
             spec_template[k].add(v)
-            found_k += 1
-        if found_k != len(key_fields):
-            raise ValueError()
-    return dict([(k, {'$in': list(v)}) for k, v in spec_template])
+    if keys_errors:
+        value_error_msg = '\n'.join(keys_errors)
+        raise ValueError(value_error_msg)
+    spec = dict([(k, {'$in': list(v)}) for k, v in spec_template.items()])
+    return spec
