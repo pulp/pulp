@@ -28,6 +28,7 @@ do so may indirectly break other tests.
 # Keys used to look up a specific builtin manager
 TYPE_CDS              = 'cds-manager'
 TYPE_CONTENT          = 'content-manager'
+TYPE_CONTENT_QUERY    = 'content-query-manager'
 TYPE_CONTENT_UPLOAD   = 'content-upload-manager'
 TYPE_REPO             = 'repo-manager'
 TYPE_REPO_ASSOCIATION = 'repo-association-manager'
@@ -61,7 +62,8 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
-    from pulp.server.managers.content.crud import ContentManager
+    from pulp.server.managers.content.cud import ContentManager
+    from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
@@ -72,6 +74,7 @@ def initialize():
     # factory between runs)
     builtins = {
         TYPE_CONTENT: ContentManager,
+        TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
