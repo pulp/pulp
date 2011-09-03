@@ -14,7 +14,6 @@
 import uuid
 
 from pulp.server.content.types import database as content_types_db
-from pulp.server.managers.content.exceptions import ContentUnitNotFound
 
 
 class ContentManager(object):
@@ -54,12 +53,7 @@ class ContentManager(object):
         @type unit_metadata_delta: dict
         """
         collection = content_types_db.type_units_collection(content_type)
-        content_unit = collection.find_one({'_id': unit_id})
-        if content_unit is None:
-            raise ContentUnitNotFound()
-        content_unit = dict(content_unit)
-        content_unit.update(unit_metadata_delta)
-        collection.save(content_unit)
+        collection.update({'_id': unit_id}, {'$set': unit_metadata_delta}, safe=True)
 
     def remove_content_unit(self, content_type, unit_id):
         """
