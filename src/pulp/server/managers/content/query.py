@@ -51,6 +51,8 @@ class ContentQueryManager(object):
         @rtype: (possibly empty) tuple of dicts
         """
         collection = content_types_db.type_units_collection(content_type)
+        if db_spec is None:
+            db_spec = {}
         cursor = collection.find(db_spec, fields=model_fields)
         if start > 0:
             cursor.skip(start)
