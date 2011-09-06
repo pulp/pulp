@@ -5,6 +5,7 @@
 [[BR]]
 '''Task object fields''': 
  * '''id''' <str> ''unique id (usually a uuid) for the task''
+ * '''job_id''' <str> ''associate job id''
  * '''class_name''' <str> ''name of the class, if the task's method is an instance method''
  * '''method_name''' <str> ''name of the pulp library method that was called''
  * '''state''' <str> ''one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended''
@@ -15,7 +16,6 @@
  * '''traceback''' <str or nil> ''a string print out of the trace back for the exception, if any''
  * '''progress''' <object or nil> ''object representing the pulp library call's progress, nill if no information is available''
  * '''scheduled_time''' <str or nil> ''time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks''
- * '''status_path''' <str> ''complete uri path to poll for the task's progress using http GET''
  * '''snapshot_id''' <str> ''id of task's snapshot, if it has one''
 '''TaskSnapshot object fields''': 
  * '''id''' <str> ''unique task id''
@@ -36,6 +36,24 @@
  * '''result''' <str> ''pickled result of the task call''
  * '''exception''' <str> ''pickled error, if one occurred''
  * '''traceback''' <str> ''pickled traceback, if one occured''
+
+----
+
+== Cancel A Task ==
+''Cancel a waiting or running task.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /tasks/<id>/cancel/ [[BR]]
+[[BR]]
+'''permission''': Super User Only [[BR]]
+[[BR]]
+'''success response''': 202 Accepted [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found [[BR]]
+[[BR]]
+'''return''': Task object [[BR]]
+[[BR]]
 
 ----
 

@@ -50,7 +50,6 @@
  * '''traceback''' <str or nil> ''a string print out of the trace back for the exception, if any''
  * '''progress''' <object or nil> ''object representing the pulp library call's progress, nill if no information is available''
  * '''scheduled_time''' <str or nil> ''time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks''
- * '''status_path''' <str> ''complete uri path to poll for the task's progress using http GET''
 '''Progress object fields''': 
  * '''step''' <str> ''name of the step the pulp library call is on''
  * '''items_total''' <int> ''the total number of items to be processed by the call''
@@ -114,6 +113,7 @@
  * '''arch''' <str> ''repository contect architecture''
  * '''groupid''' <str> ''repository group id''
  * '''relative_path''' <str> ''repository's on disk path''
+ * '''notes''' <str of dict> ''repository notes''
 [[BR]]
 
 == Create a Repository ==
@@ -145,6 +145,7 @@
  * '''gpgkeys''' ''(optional)'' <list of str> ''list of gpg keys used for signing content''
  * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
  * '''notes''' ''(optional)'' <dict> ''additional information in the form of key-value pairs''
+ * '''preserve_metadata''' ''(optional)'' <bool> ''will not regenerate metadata and treats the repo as a mirror''
 [[BR]]
 
 ----
@@ -197,42 +198,6 @@
 '''return''': a Repo object [[BR]]
 [[BR]]
 '''parameters''': any field of a Repo object except id [[BR]]
-[[BR]]
-
-----
-
-== Cancel A Task ==
-[[BR]]
-'''method''': DELETE [[BR]]
-[[BR]]
-'''path''': /repositories/<id>/<action name>/<task id>/ [[BR]]
-[[BR]]
-'''permission''': READ [[BR]]
-[[BR]]
-'''success response''': 
- 202 Accepted [[BR]]
- 204 No Content if the task has already finished [[BR]]
-[[BR]]
-'''failure response''': 404 Not Found if the task id does nat match a task for the repository [[BR]]
-[[BR]]
-'''return''': Task object on 202 [[BR]]
-[[BR]]
-
-== Action Status ==
-''Check the status of a previously returned task.'' [[BR]]
-''This url path should match the status_uri of a Task object.'' [[BR]]
-[[BR]]
-'''method''': GET [[BR]]
-[[BR]]
-'''path''': /repositories/<id>/<action name>/<task id>/ [[BR]]
-[[BR]]
-'''permission''': EXECUTE [[BR]]
-[[BR]]
-'''success response''': 200 OK [[BR]]
-[[BR]]
-'''failure response''': 404 Not Found if the task id does not match a task for the repository [[BR]]
-[[BR]]
-'''return''': Task object [[BR]]
 [[BR]]
 
 ----
@@ -354,6 +319,26 @@
 [[BR]]
 '''parameters''': 
  * '''addgrp''' <str> ''group id''
+[[BR]]
+
+== add a custom metadata filetype to Repository Metadata ==
+''adds a metadata filetype to existing repository metadata(this runs modifyrepo underneath).'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/add_metadata/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 Accepted [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
+[[BR]]
+'''return''': True [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''filetype''' <str> ''filetype name to lookup in the metadata''
+ * '''filedata''' <str> ''file data to be stored''
 [[BR]]
 
 == Add A Package ==
@@ -633,6 +618,45 @@
  * '''categoryid''' <str> ''package group category id''
 [[BR]]
 
+== download custom metadata filetype from Repository Metadata ==
+''download an xml file for the filetype specified'' [[BR]]
+''if exists in a repository metadata; else None.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/download_metadata/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 Accepted [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
+[[BR]]
+'''return''': True [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''filetype''' <str> ''filetype name to lookup in the metadata''
+[[BR]]
+
+== Repository Metadata generation ==
+''spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/generate_metadata/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 202 Accepted [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not Found if the id does not match a repository [[BR]]
+ 406 Not Acceptable if the repository does not have a source [[BR]]
+ 409 Conflict if a metadata is already in progress for the repository [[BR]]
+[[BR]]
+'''return''': a Task object [[BR]]
+[[BR]]
+
 == Get Package By File Name ==
 ''Get packages from the repository by specifying the file names.'' [[BR]]
 [[BR]]
@@ -690,23 +714,21 @@
  * xml comps file body
 [[BR]]
 
-== Repository Metadata generation ==
-''spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create'' [[BR]]
+== list metadata filetype information from a Repository ==
+''lists information about all the filetypes present in metadata'' [[BR]]
+''and their info such as size, checksum, path etc.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
-'''path''': /repositories/<id>/metadata/ [[BR]]
+'''path''': /repositories/<id>/list_metadata/ [[BR]]
 [[BR]]
 '''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response''': 202 Accepted [[BR]]
+'''success response''': 200 Accepted [[BR]]
 [[BR]]
-'''failure response''': 
- 404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source [[BR]]
- 409 Conflict if a metadata is already in progress for the repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return''': a Task object [[BR]]
+'''return''': dict or None [[BR]]
 [[BR]]
 
 == Remove File ==
@@ -764,6 +786,26 @@
 [[BR]]
 '''parameters''': 
  * '''rmgrp''' <str> ''group id''
+[[BR]]
+
+== remove metadata filetype from Repository Metadata ==
+''remove the specified metadata filetype'' [[BR]]
+''if exists from a repository metadata; else None.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/remove_metadata/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 Accepted [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
+[[BR]]
+'''return''': True [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''filetype''' <str> ''filetype name to lookup in the metadata''
 [[BR]]
 
 == Remove Keys ==
