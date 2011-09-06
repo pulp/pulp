@@ -97,7 +97,7 @@ class ErrataExporter(BaseExporter):
                             shutil.copy(src_pkg_path, dst_pkg_path)
                             errata_pkg_count += 1
                         except IOError, io:
-                            msg = "Unable to export errata package %s to target directory %s; Error: %s" % (pkg['filename'], str(io))
+                            msg = "Unable to export errata package %s to target directory; Error: %s" % (pkg['filename'], str(io))
                             log.error(msg)
                             self.progress['errors'].append(msg)
                     else:
