@@ -22,6 +22,7 @@ from pulp.server.managers.content.exceptions import (
 
 class ContentQueryManager(object):
     """
+    Query operations for content types and and individual content units.
     """
 
     def list_content_units(self,
