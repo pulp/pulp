@@ -57,7 +57,7 @@ from gettext import gettext as _
 from pulp.server import async
 from pulp.server.api import task_history
 from pulp.server.db.model.persistence import TaskSnapshot
-from pulp.server.auth.authorization import READ
+from pulp.server.auth.authorization import READ, UPDATE
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -75,7 +75,7 @@ class Tasks(JSONController):
         description: Get a list of all tasks currently in the tasking system
         method: GET
         path: /tasks/
-        permission: Super User Only
+        permission: READ
         success response: 200 OK
         failure response: None
         return: list of task objects
@@ -121,7 +121,7 @@ class Task(JSONController):
         description: Get a Task object for a specific task
         method: GET
         path: /tasks/<id>/
-        permission: Super User Only
+        permission: READ
         success response: 200 OK
         failure response: 404 Not Found if no such task
         return: Task object
@@ -176,7 +176,7 @@ class Task(JSONController):
 class CancelTask(JSONController):
 
     @error_handler
-    @auth_required(super_user_only=True)
+    @auth_required(UPDATE)
     def POST(self, id):
         """
         [[wiki]]
@@ -184,7 +184,7 @@ class CancelTask(JSONController):
         description: Cancel a waiting or running task.
         method: POST
         path: /tasks/<id>/cancel/
-        permission: Super User Only
+        permission: UPDATE
         success response: 202 Accepted
         failure response: 404 Not Found
         return: Task object
