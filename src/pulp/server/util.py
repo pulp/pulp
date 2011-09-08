@@ -462,7 +462,7 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
         #check if presto metadata exist in the backup
         repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
         ftypes = get_repomd_filetypes(repodata_file)
-        base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db']
+        base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db', 'group', 'group_gz']
         for ftype in ftypes:
             if ftype in base_ftypes:
                 # no need to process these again
