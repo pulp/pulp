@@ -1076,7 +1076,7 @@ class FileSynchronizer(BaseSynchronizer):
         self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
-            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'])
 
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
