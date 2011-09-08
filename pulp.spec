@@ -490,6 +490,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Sep 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-3
+- Bump to release 3. (jortel@redhat.com)
+- 736855 - invoke agent (RMI) Consumer.unregistered() before consumer is
+  deleted. (jortel@redhat.com)
 * Thu Sep 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-2
 - Bump to release 2. (jortel@redhat.com)
 - 735433 - Added fix for cloning through API with relative_path not placing
