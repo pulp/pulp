@@ -816,7 +816,7 @@ class YumSynchronizer(BaseSynchronizer):
         self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
-            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'])
             self.repo_dir = dst_repo_dir
             # Process repo filters if any
             if repo['filters']:

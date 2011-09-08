@@ -53,7 +53,7 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     Run a repo clone asynchronously.
     """
     task = run_async(_clone,
-                    [id, clone_id, clone_name, feed, groupid, relative_path, filters],
+                    [id, clone_id, clone_name, feed, relative_path, groupid, filters],
                     {},
                     timeout=timeout)
     if feed in ('feedless', 'parent'):
@@ -64,7 +64,7 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
 
 
 
-def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None,
+def _clone(id, clone_id, clone_name, feed='parent', relative_path=None, groupid=None, 
             filters=(), progress_callback=None):
     repo = repo_api.repository(id)
     if repo is None:
@@ -236,6 +236,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
             synchronizer.set_callback(progress_callback)
         log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip_dict))
         start_sync_items = time.time()
+        
         sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip_dict,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()

@@ -539,6 +539,8 @@ class Clone(RepoProgressAction):
                                help=_("common repository name for cloned repo"))
         self.parser.add_option("--feed", dest="feed",
                                help=_("feed of cloned_repo: parent/origin/none"))
+        self.parser.add_option("--relativepath", dest="relativepath",
+                               help=_("relative path where the repository is stored and exposed to clients; this defaults to clone_id if not specified"))
         self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--timeout", dest="timeout",
@@ -592,8 +594,10 @@ class Clone(RepoProgressAction):
         groupid = self.opts.groupid
         timeout = self.opts.timeout
         filters = self.opts.filters or []
+        relative_path = self.opts.relativepath
+
         task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
-                                groupid=groupid, timeout=timeout, filters=filters)
+                                relative_path=relative_path, groupid=groupid, timeout=timeout, filters=filters)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
         return task
 
