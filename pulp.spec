@@ -19,8 +19,8 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.231
-Release:        1%{?dist}
+Version:        0.0.230
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -490,7 +490,7 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
-* Thu Sep 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.231-1
+* Thu Sep 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-2
 - Bump to release 2. (jortel@redhat.com)
 - 735433 - Added fix for cloning through API with relative_path not placing
   RPMs into the relative_path dir and added cli option for specifying
