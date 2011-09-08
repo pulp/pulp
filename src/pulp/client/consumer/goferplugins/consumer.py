@@ -68,18 +68,14 @@ class Consumer(PulpGoferPlugin):
                      bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
 
     @remote(secret=getsecret)
-    def deleted(self, digest):
+    def unregistered(self):
         """
-        Notification that the consumer has been deleted.
+        Notification that the consumer has been unregistered.
         Clean up associated artifacts.
-        @param digest: The SHA-1 of the associated x.509 credentials.
-        @type digest: str
         """
-        if self.bundle.digest() != digest:
-            log.warn('Artifacts NOT deleted')
-            return
         try:
+            log.info('Unregistered')
             self.consumer.unregister.delete_files(self.bundle)
-        except:
-            log.error('Repo delete, failed', exc_info=1)
+        except Exception:
+            log.exception('Artifact clean up, failed')
         log.info('Artifacts deleted')
