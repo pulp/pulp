@@ -490,6 +490,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Sep 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-2
+- Bump to release 2. (jortel@redhat.com)
+- 735433 - Added fix for cloning through API with relative_path not placing
+  RPMs into the relative_path dir and added cli option for specifying
+  relative_path while cloning (skarmark@redhat.com)
+- 735433 - Added similar fix for file based syncs as well (skarmark@redhat.com)
+- 728568 - We are modifying repo metadata of type 'group' and storing a gzipped
+  file, instead of a plaintext file. (jmatthews@redhat.com)
+
 * Fri Sep 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-1
 - bump gofer to: 0.47 for project alignment. (jortel@redhat.com)
 - 704194 - Fix broken repo created events. (jortel@redhat.com)
