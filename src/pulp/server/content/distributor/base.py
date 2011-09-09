@@ -13,16 +13,34 @@
 
 
 class Distributor(object):
-
-    def __init__(self, config):
-        self.config = config
+    """
+    Base class for distributor plugin development.
+    """
 
     @classmethod
     def metadata(cls):
         return {}
 
-    def publish(self, distributor_config, publish_config, publish_hook):
+    def publish_repo(self, publish_conduit, distributor_config=None, repo_config=None):
+        """
+        Publish a repository.
+        @param publish_conduit: api instance that provides limited pulp functionality
+        @type publish_conduit: L{PluginAPI} instance
+        @param distributor_config: configuration for distributor instance
+        @type distributor_config: None or dict
+        @param repo_config: configuration for a specific repo
+        @type repo_config: None or dict
+        """
         raise NotImplementedError()
 
-    def unpublish(self, distributor_config, unpublish_config, unpublish_hook):
+    def unpublish_repo(self, unpublish_conduit, distributor_config=None, repo_config=None):
+        """
+        Unpublish a repository.
+        @param unpublish_conduit: api instance that provides limited pulp functionality
+        @type unpublish_conduit: L{ContentPluginHook} instance
+        @param distributor_config: configuration for distributor instance
+        @type distributor_config: None or dict
+        @param repo_config: configuration for a specific repo
+        @type repo_config: None or dict
+        """
         raise NotImplementedError()

@@ -13,7 +13,9 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+import logging
 
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server.logs import start_logging
 from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.agent import HeartbeatListener
@@ -23,6 +25,10 @@ from gofer.messaging.broker import Broker
 
 # start logging
 start_logging()
+LOG = logging.getLogger(__name__)
+
+if not M2CRYPTO_HAS_CRL_SUPPORT:
+    LOG.warning("M2Crypto lacks needed CRL functionality, therefore CRL checking will be disabled.")
 
 # configure AMQP broker
 url = config.get('messaging', 'url')

@@ -279,9 +279,12 @@ class ConsumerDeferredFields(JSONController):
         @param id: consumer id
         """
         valid_filters = ('types')
-        filters = self.filters(valid_filters)
-        types = filters.pop('types')
-        return self.ok(consumer_api.listerrata(id, types=[types,]))
+        types = self.filters(valid_filters).get('type', [])
+        if types == []:
+            errataids = consumer_api.listerrata(id)
+        else:
+            errataids = consumer_api.listerrata(id, [types])
+        return self.ok(errataids)
 
     @error_handler
     @auth_required(READ)

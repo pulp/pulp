@@ -1,0 +1,33 @@
+diff -up M2Crypto-0.20.2/M2Crypto/SSL/Connection.py.check M2Crypto-0.20.2/M2Crypto/SSL/Connection.py
+--- M2Crypto-0.20.2/M2Crypto/SSL/Connection.py.check	2010-07-09 00:05:56.000000000 +0200
++++ M2Crypto-0.20.2/M2Crypto/SSL/Connection.py	2010-07-09 00:08:20.677169899 +0200
+@@ -54,6 +54,10 @@ class Connection:
+ 
+         self.ssl_close_flag = m2.bio_noclose
+ 
++        if self.ctx.post_connection_check is not None:
++            self.set_post_connection_check_callback \
++                (self.ctx.post_connection_check)
++
+         
+     def __del__(self):
+         if getattr(self, 'sslbio', None):
+diff -up M2Crypto-0.20.2/M2Crypto/SSL/Context.py.check M2Crypto-0.20.2/M2Crypto/SSL/Context.py
+--- M2Crypto-0.20.2/M2Crypto/SSL/Context.py.check	2009-10-07 06:24:28.000000000 +0200
++++ M2Crypto-0.20.2/M2Crypto/SSL/Context.py	2010-07-09 00:06:47.551169489 +0200
+@@ -36,12 +36,14 @@ class Context:
+ 
+     m2_ssl_ctx_free = m2.ssl_ctx_free
+ 
+-    def __init__(self, protocol='sslv23', weak_crypto=None):
++    def __init__(self, protocol='sslv23', weak_crypto=None,
++                 post_connection_check=None):
+         proto = getattr(m2, protocol + '_method', None)
+         if proto is None:
+             raise ValueError, "no such protocol '%s'" % protocol
+         self.ctx = m2.ssl_ctx_new(proto())
+         self.allow_unknown_ca = 0
++        self.post_connection_check = post_connection_check
+         map()[long(self.ctx)] = self
+         m2.ssl_ctx_set_cache_size(self.ctx, 128L)
+         if weak_crypto is None:

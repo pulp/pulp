@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.226
+Version:        0.0.230
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -53,16 +53,20 @@ Requires: python-BeautifulSoup
 Requires: grinder >= 0.0.110
 Requires: httpd
 Requires: mod_ssl
-Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.45
+Requires: python-gofer >= 0.47
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
+%if 0%{?rhel} == 5
+Requires: m2crypto
+%else
+Requires: m2crypto = 0.21.1.pulp
+%endif
 
 %if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
@@ -88,10 +92,6 @@ Requires: nss >= 3.12.9
 Requires: curl => 7.19.7
 %endif
 
-# newer pulp builds should require same client version
-Requires: %{name}-consumer >= %{version}
-Requires: %{name}-admin >= %{version}
-
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp-cds
@@ -109,7 +109,7 @@ Requires:       python-simplejson
 Requires:       python-isodate >= 0.4.4
 Requires:       m2crypto
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.45
+Requires:       gofer >= 0.47
 %if !0%{?fedora}
 # RHEL
 Requires:       python-hashlib
@@ -161,12 +161,16 @@ Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.45
+Requires:       gofer >= 0.47
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires:       mod_ssl
-Requires:       m2crypto
+%if 0%{?rhel} == 5
+Requires: m2crypto
+%else
+Requires: m2crypto = 0.21.1.pulp
+%endif
 
 %if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
@@ -343,11 +347,9 @@ fi
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
-pushd %{_sysconfdir}/rc.d/init.d
 if [ "$1" = "1" ]; then
-  ln -s goferd pulp-agent
+  ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
-popd
 
 %postun
 # Clean up after package removal
@@ -401,6 +403,7 @@ fi
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
+%{_bindir}/pulp-migrate
 %if %{pulp_selinux}
 # SELinux
 %doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
@@ -453,7 +456,6 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/admin
 %{_bindir}/pulp-admin
-%{_bindir}/pulp-migrate
 %config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/task.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/job.conf
@@ -488,6 +490,78 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Sep 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-1
+- bump gofer to: 0.47 for project alignment. (jortel@redhat.com)
+- 704194 - Fix broken repo created events. (jortel@redhat.com)
+- Move pulp-migrate to main 'pulp' package. (jortel@redhat.com)
+- 734839 - Fixed errata list --consumerid to work without specifying type
+  (skarmark@redhat.com)
+- 734449 - fixed typo in help for filters (skarmark@redhat.com)
+- Ensure a sync isn't already in progress before triggering another one
+  (jason.dobies@redhat.com)
+- 732540 - Validate errata IDs on --consumerid install as well.
+  (jortel@redhat.com)
+
+* Wed Aug 31 2011 Jeff Ortel <jortel@redhat.com> 0.0.229-1
+- Added a check in bootstrap for what version of M2Crypto we are running
+  (jmatthews@redhat.com)
+- pylint cleanup (jconnor@redhat.com)
+- renamed hooks to conduits (jconnor@redhat.com)
+- Add requires for m2crypto 0.21.1.pulp to pulp.spec (for el6 & fedora only)
+  (jmatthews@redhat.com)
+- WIP for M2Crypto rpm to build with tito (jmatthews@redhat.com)
+- Method name change, reverted back to validate_certificate
+  (jmatthews@redhat.com)
+- Repo auth config file change and data for unit tests (jmatthews@redhat.com)
+- Repo auth fix for running without M2Crypto patch (jmatthews@redhat.com)
+- Add CRL support to repo_cert_utils (jmatthews@redhat.com)
+- M2Crypto patch: Add load CRL from PEM encoded string (jmatthews@redhat.com)
+- Remove 'pulp' deps on pulp-admin and pulp-consumer. (jortel@redhat.com)
+- Raise descriptive exception instead of AssertionError when bundle does not
+  contain both key and cert. (jortel@redhat.com)
+- Remove pushd/popd from %%post script. (jortel@redhat.com)
+- M2Crypto patch: updating hash value for unit test (jmatthews@redhat.com)
+- M2Crypto patch: updated X509_NAME_hash to match openssl CLI calls m2crypto
+  was using X509_NAME_hash_old and defining it to X509_NAME_hash, thefore
+  determining the issuer hash was not matching CLI tools.
+  (jmatthews@redhat.com)
+- M2Crypto patch: add get_issuer() to CRL (jmatthews@redhat.com)
+- make sure to sync treeinfo for distributions when doing alocal sync
+  (pkilambi@redhat.com)
+- Changed m2crypto CRL example script to use the installed m2crypto
+  (jmatthews@redhat.com)
+- Adding m2crypto 0.21.1 with patch for certificate verification against a CA
+  with CRLs (jmatthews@redhat.com)
+- Update of M2Crypto patch, fixed crash with verify_cert()
+  (jmatthews@redhat.com)
+
+* Fri Aug 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.228-1
+- Added stub managers for repo clone and query (jason.dobies@redhat.com)
+- Minor documentation updates and test refactoring (jason.dobies@redhat.com)
+- Added remove_distributor call and ID validation to add_distributor
+  (jason.dobies@redhat.com)
+- 727564 - Send global cert content instead of file names. (jortel@redhat.com)
+- 733312 - modified code to compare already synced packages in a pulp repo
+  against unfiltered source packages instead of filtered code packages
+  (skarmark@redhat.com)
+- Added importer and distributor addition calls (jason.dobies@redhat.com)
+- 732540 - Validate erratum IDs on install on consumer group.
+  (jortel@redhat.com)
+- 732522 - replaced system_exit() with utils.system_exit(). (jortel@redhat.com)
+- fixing yum plugin to use new consumerconfig (pkilambi@redhat.com)
+-  fixing pulp profile plugin that was broken with client refactor
+  (pkilambi@redhat.com)
+- Adding an alternate usage of OpenSSL C APIs, this is closer to what we are
+  attempting with M2Crypto (jmatthews@redhat.com)
+* Wed Aug 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.227-1
+- Website updates (jslagle@redhat.com)
+- 728326 - list errata consumer web services call moved to GET instead of post
+  and type field is optional (skarmark@redhat.com)
+- Openssl C API example for verifying a revoked certification
+  (jmatthews@redhat.com)
+- 731159 - Fixed repo clone not setting gpg keys correctly because of change in
+  location (skarmark@redhat.com)
+
 * Fri Aug 19 2011 Jeff Ortel <jortel@redhat.com> 0.0.226-1
 - Simplified openssl conf entries for revoking a cert (jmatthews@redhat.com)
 - Simplify certs scripts, specify CN as -subj CLI option and limit need for

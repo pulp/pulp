@@ -120,7 +120,9 @@ class ConsumerAPI(PulpAPI):
 
     def errata(self, id, types=None):
         path = "/consumers/%s/errata/" % id
-        queries = [('types', types)]
+        queries = []
+        if types:
+            queries = [('types', types)]
         return self.server.GET(path, queries)[1]
 
     def package_updates(self, id):

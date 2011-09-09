@@ -533,7 +533,7 @@ class CdsApi(BaseApi):
         repo_base_url = '%s/%s' % (server_url, repo_relative_url)
 
         # Global cert bundle, if any (repo cert bundles are handled above)
-        global_cert_bundle = repo_cert_utils.global_cert_bundle_filenames()
+        global_cert_bundle = repo_cert_utils.read_global_cert_bundle()
 
         # Assemble the list of CDS hostnames in the same cluster
         if cds['cluster_id'] is not None:

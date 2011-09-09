@@ -119,17 +119,15 @@ class ConsumerApi(BaseApi):
             consumerids.remove(consumer['id'])
             consumergroup['consumerids'] = consumerids
             consumergroup_db.save(consumergroup, safe=True)
+            
+        # notify agent
+        agent = PulpAgent(consumer, async=True)
+        agent_consumer = agent.Consumer()
+        agent_consumer.unregistered()
 
         self.collection.remove(dict(id=id), safe=True)
         self.consumer_history_api.consumer_deleted(id)
-        credentials = consumer.get('credentials')
-        if credentials:
-            sha = hashlib.sha256()
-            for s in credentials:
-                sha.update(s)
-            agent = PulpAgent(consumer, async=True)
-            consumer = agent.Consumer()
-            consumer.deleted(sha.hexdigest())
+
 
     def find_consumergroup_with_conflicting_keyvalues(self, id, key, value):
         """
@@ -367,8 +365,8 @@ class ConsumerApi(BaseApi):
 
         # Send the bind request over to the consumer
         agent = PulpAgent(consumer, async=True)
-        agent_repolib = agent.Consumer()
-        agent_repolib.bind(repoid, bind_data)
+        agent_consumer = agent.Consumer()
+        agent_consumer.bind(repoid, bind_data)
 
         # Return the bind data to the caller
         return bind_data
@@ -403,8 +401,8 @@ class ConsumerApi(BaseApi):
         self.collection.save(consumer, safe=True)
 
         agent = PulpAgent(consumer, async=True)
-        agent_repolib = agent.Consumer()
-        agent_repolib.unbind(repo_id)
+        agent_consumer = agent.Consumer()
+        agent_consumer.unbind(repo_id)
 
         self.consumer_history_api.repo_unbound(id, repo_id)
 
@@ -504,6 +502,8 @@ class ConsumerApi(BaseApi):
             applicable_errata = self._applicable_errata(consumer, types)
             rlist = []
             for eid in errataids:
+                if self.errataapi.erratum(eid) is None:
+                    raise Exception('Erratum [%s], not found' % eid)
                 if eid not in applicable_errata.keys():
                     log.error("ErrataId %s is not part of applicable errata. Skipping" % eid)
                     continue

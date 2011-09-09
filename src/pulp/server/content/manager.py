@@ -12,15 +12,17 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
-import itertools
 import logging
 import os
 import re
 import sys
-from ConfigParser import SafeConfigParser
 from gettext import gettext as _
 
-from pulp.server import config
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 from pulp.server.content.distributor.base import Distributor
 from pulp.server.content.importer.base import Importer
 from pulp.server.content.types import database, parser
@@ -40,22 +42,29 @@ _TYPES_DIRECTORY = '/var/lib/pulp'
 # initial plugin and configuration file conventions
 
 _TOP_LEVEL_CONFIGS_DIR = '/etc/pulp'
-_IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importers')
-_DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributors')
+_IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importer')
+_DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributor')
 
-_TOP_LEVEL_PLUGINS_DIR = os.path.dirname(__file__)
-_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importers')
-_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributors')
+_TOP_LEVEL_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'plugin')
+_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importer')
+_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributor')
 
-_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content'
-_IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importers'))
-_DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributors'))
+_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content.plugin'
+_IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importer'))
+_DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributor'))
 
 # exceptions -------------------------------------------------------------------
 
 class ManagerException(PulpException):
     """
     Base manager exception class.
+    """
+    pass
+
+
+class PluginLoadError(ManagerException):
+    """
+    Raised when errors are encountered while loading plugins.
     """
     pass
 
@@ -68,10 +77,9 @@ class ConflictingPluginError(ManagerException):
     pass
 
 
-class MalformedPluginError(ManagerException):
+class PluginNotFound(ManagerException):
     """
-    Raised when a plugin does not provide required information or pass a sanity
-    check.
+    Raised when a plugin cannot be found by a factory method.
     """
     pass
 
@@ -95,18 +103,21 @@ def _load_configs(config_paths):
     @type config_paths: list of strs
     @params config_paths: list of directories
     @rtype: dict
-    @return: map of config name to SafeConfigParser instance
+    @return: map of config name to dict instance
     """
     configs = {}
     files_regex = re.compile('.*\.conf$')
-    for path in config_paths:
-        files = os.listdir(path)
+    for path in sorted(config_paths):
+        files = sorted(os.listdir(path))
         for file_name in filter(files_regex.match, files):
             if file_name in configs:
-                raise ConflictingPluginError(_('More than one configuration file found for %s') % file_name)
-            parser = SafeConfigParser()
-            parser.read(os.path.join(path, file_name))
-            configs[file_name] = parser
+                raise ConflictingPluginError(_('More than one configuration file found for %s') %
+                                             file_name)
+            file_path = os.path.join(path, file_name)
+            fp = open(file_path, 'r')
+            cfg = json.load(fp)
+            fp.close()
+            configs[file_name] = cfg
     return configs
 
 
@@ -129,8 +140,8 @@ def _import_module(name):
 def _load_modules(plugin_paths, skip=None):
     """
     Load python modules from the list of plugin directories.
-    @type plugin_paths: tuple or list of strs
-    @param plugin_paths: list of directories
+    @type plugin_paths: dict
+    @param plugin_paths: dictionary of directory: package name
     @type skip: tuple or list of strs
     @param skip: optional list of module names to skip
     @rtype: list of modeule instances
@@ -139,8 +150,8 @@ def _load_modules(plugin_paths, skip=None):
     skip = skip or ('__init__', 'base') # don't load package or base modules
     files_regex = re.compile('.*(?!(%s))\.py$' % '|'.join(skip))
     modules = []
-    for path, package_name in plugin_paths.items():
-        files = os.listdir(path)
+    for path, package_name in sorted(plugin_paths.items()):
+        files = sorted(os.listdir(path))
         for file_name in filter(files_regex.match, files):
             name = file_name.rsplit('.', 1)[0]
             if package_name:
@@ -152,21 +163,22 @@ def _load_modules(plugin_paths, skip=None):
     return modules
 
 
-def _is_plugin_enabled(plugin_name, config):
+def _is_plugin_enabled(config):
     """
     Grok through a config parser and see if the plugin is not disabled.
-    @type config: SafeConfigParser instance
+    @type config:  dict
     @param config: plugin config
     @rtype: bool
     @return: True if the plugin is enabled, False otherwise
     """
     if config is None:
         return True
-    if not config.has_section(plugin_name):
+    if not isinstance(config, dict):
         return True
-    if not config.has_option(plugin_name, 'enabled'):
+    try:
+        return bool(config.get('enabled', True))
+    except ValueError:
         return True
-    return config.getboolean(plugin_name, 'enabled')
 
 
 def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
@@ -186,6 +198,7 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
     """
     configs = _load_configs(config_paths)
     modules = _load_modules(plugin_paths)
+    errors = 0
     for module in modules:
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
@@ -193,27 +206,37 @@ def _load_plugins(cls, plugin_paths, config_paths, plugin_dict, config_dict):
                 continue
             metadata = attr.metadata()
             if not isinstance(metadata, dict):
-                raise MalformedPluginError(_('%s metadata() did not return a dict: %s') %
-                                           (cls.__name__, attr.__name__))
+                errors += 1
+                _LOG.critical(_('%s metadata() did not return a dict: %s') %
+                              (cls.__name__, attr.__name__))
+                continue
             name = metadata.get('name', None)
             version = metadata.get('version', None)
             types = metadata.get('types', ())
             conf_file = metadata.get('conf_file', None)
             if name is None:
-                raise MalformedPluginError(_('%s discoverd with no name metadata: %s') %
-                                           (cls.__name__, attr.__name__))
+                errors += 1
+                _LOG.critical(_('%s discoverd with no name metadata: %s') %
+                              (cls.__name__, attr.__name__))
+                continue
             cfg = configs.get(conf_file, None)
-            if not _is_plugin_enabled(name, cfg):
+            if not _is_plugin_enabled(cfg):
+                _LOG.info(_('%s %s version %d, discovered, but disabled. Not loading.') %
+                          (cls.__name__, name, version))
                 continue
             plugin_versions = plugin_dict.setdefault(name, {})
             if version in plugin_versions:
-                raise ConflictingPluginError(_('Two %s plugins %s version %s found') %
-                                             (cls.__name__, name, str(version)))
+                errors += 1
+                _LOG.critical(_('Two %s plugins %s version %s found') %
+                              (cls.__name__, name, str(version)))
             plugin_versions[version] = attr
             config_versions = config_dict.setdefault(name, {})
-            config_versions[version] = cfg or SafeConfigParser()
+            config_versions[version] = cfg or {}
             _LOG.info(_('%s plugin %s version %s loaded for content types: %s') %
                       (cls.__name__, name, str(version), ','.join(types)))
+    if errors:
+        raise PluginLoadError(_('Errors while loading %ss, see log file for info') %
+                              cls.__name__)
 
 
 def _get_versioned_dict_value(d, key, version=None):
@@ -294,6 +317,96 @@ class Manager(object):
         """
         _check_path(path)
         self.distributor_plugin_paths[path] = package_name or ''
+
+    # direct plugin management
+
+    def add_importer(self, name, version, cls, cfg):
+        """
+        Add an Importer class to the manager.
+        @type name: str
+        @param name: name of the importer
+        @type version: int or None
+        @param version: version of the importer
+        @type cls: L{Importer} class
+        @param cls: importer class to add
+        @type cfg: dict or None
+        @param cfg: importer configuration instance, None will cause an empty
+                    dict to be created
+        """
+        if name in self.importer_plugins and version in self.importer_plugins[name]:
+            raise ConflictingPluginError(_('Importer %s, version %s already loaded') %
+                                         (name, version))
+        if name in self.importer_plugins:
+            self.importer_plugins[name][version] = cls
+        else:
+            self.importer_plugins[name] = {version: cls}
+        cfg = cfg or {}
+        if name in self.importer_configs:
+            self.importer_configs[name][version] = cfg
+        else:
+            self.importer_configs[name] = {version: cfg}
+
+    def remove_importer(self, name, version):
+        """
+        Remove an Importer from the manager.
+        @type name: str
+        @param name: name of the importer
+        @type version: int or None
+        @param version: version of the importer
+        """
+        if name not in self.importer_plugins:
+            return
+        if version not in self.importer_plugins[name]:
+            return
+        del self.importer_plugins[name][version]
+        del self.importer_configs[name][version]
+        if not self.importer_plugins[name]:
+            del self.importer_plugins[name]
+            del self.importer_configs[name]
+
+    def add_distributor(self, name, version, cls, cfg):
+        """
+        Add a Distributor to the manager.
+        @type name: str
+        @param name: name of the distributor
+        @type version: int or None
+        @param version: version of the distributor
+        @type cls: L{Distributor} class
+        @param cls: distributor class to add
+        @type cfg: dict or None
+        @param cfg: distributor configuration instance, None will cause an empty
+                    dict to be created
+        """
+        if name in self.distributor_plugins and version in self.distributor_plugins[name]:
+            raise ConflictingPluginError(_('Distributor %s, version %s already loaded') %
+                                         (name, version))
+        if name in self.distributor_plugins:
+            self.distributor_plugins[name][version] = cls
+        else:
+            self.distributor_plugins[name] = {version: cls}
+        cfg = cfg or {}
+        if name in self.distributor_configs:
+            self.distributor_configs[name][version] = cfg
+        else:
+            self.distributor_configs[name] = {version: cfg}
+
+    def remove_distributor(self, name, version):
+        """
+        Remove a Distributor from the manager.
+        @type name: str
+        @param name: name of the distributor
+        @type version: int or None
+        @param version: version of the distributor
+        """
+        if name not in self.distributor_plugins:
+            return
+        if version not in self.distributor_plugins[name]:
+            return
+        del self.distributor_plugins[name][version]
+        del self.distributor_configs[name][version]
+        if not self.distributor_plugins[name]:
+            del self.distributor_plugins[name]
+            del self.distributor_configs[name]
 
     # plugin discovery
 
@@ -437,7 +550,7 @@ def _load_type_definitions(descriptors):
 
 def _load_content_types():
     _check_path(_TYPES_DIRECTORY)
-    descriptors = _load_descriptors(_TYPES_DIRECTORY)
+    descriptors = _load_type_descriptors(_TYPES_DIRECTORY)
     _load_type_definitions(descriptors)
 
 
@@ -458,8 +571,8 @@ def _add_importer_and_distributor_paths():
                                          _DISTRIBUTOR_PLUGINS_PACKAGE)
 
 
-def _load_importers_and_distributors():
-    _MANAGER.load_importers(validate=True)
+def _load_importers_and_distributors(validate=True):
+    _MANAGER.load_importers(validate)
     _MANAGER.load_distributors()
 
 # manager api ------------------------------------------------------------------
@@ -471,7 +584,6 @@ def initialize():
     # NOTE this is broken down into the the utility functions: _create_manager,
     # _add_paths, and _load_plugins to facilitate testing and other alternate
     # control flows on startup
-    global _MANAGER
     assert _MANAGER is None
     _load_content_types()
     _create_manager()
@@ -520,6 +632,54 @@ def list_content_types():
     """
     return database.all_type_collection_names()
 
+
+def list_importer_types(name, version=None):
+    """
+    List the types an importer supports.
+    @type name: str
+    @param name: importer name
+    @type version: None or int
+    @param version: importer version, None means use highest version
+    """
+    assert _MANAGER is not None
+    cls = _MANAGER.get_importer_class_by_name(name, version)
+    types = cls.metadata().get('types', ())
+    return types
+
+
+def list_distributor_types(name, version=None):
+    """
+    List the types a distributor supports.
+    @type name: str
+    @param name: distributor name
+    @type version: None or int
+    @param version: distributor version, None means use highest version
+    """
+    assert isinstance(_MANAGER, Manager)
+    cls = _MANAGER.get_distributor_class_by_name(name, version)
+    types = cls.metadata().get('types', ())
+    return types
+
+
+def is_valid_importer(name):
+    """
+    @return: true if there is an importer class defined for the given name;
+             false otherwise
+    @rtype:  bool
+    """
+    assert isinstance(_MANAGER, Manager)
+    return _MANAGER.get_importer_class_by_name(name) is not None
+
+
+def is_valid_distributor(name):
+    """
+    @return: true if there is a distributor class defined for the given name;
+             false otherwise
+    @rtype:  bool
+    """
+    assert isinstance(_MANAGER, Manager)
+    return _MANAGER.get_distributor_class_by_name(name) is not None
+
 # plugin api -------------------------------------------------------------------
 
 def get_importer_by_name(name, version=None):
@@ -529,17 +689,17 @@ def get_importer_by_name(name, version=None):
     @param name: name of the importer instance to get
     @type version: None or int
     @param version: optional version, None means to use the latest version
-    @rtype: L{Importer} instance or None
-    @return: importer for the given name and version, None if one isn't found
+    @rtype: tuple of L{Importer} instance, dict
+    @return: importer and configuration for the given name and version
     """
-    assert _MANAGER is not None
+    assert isinstance(_MANAGER, Manager)
     cls = _MANAGER.get_importer_class_by_name(name, version)
     if cls is None:
-        return None
+        raise PluginNotFound(_('No importer %s, version %s') % (name, version))
     cfg = _MANAGER.get_importer_config_by_name(name, version)
-    cpy = copy.copy(cfg)
-    importer = cls(cpy)
-    return importer
+    cpy = copy.deepcopy(cfg)
+    importer = cls()
+    return (importer, cpy)
 
 
 def get_distributor_by_name(name, version=None):
@@ -549,14 +709,14 @@ def get_distributor_by_name(name, version=None):
     @param name: name of the distributor instance to get
     @type version: None or int
     @param version: optional version, None means to use the latest version
-    @rtype: L{Distributor} instance or None
-    @return: distributor for the given name and version, None if one isn't found
+    @rtype: tuple of L{Distributor} instance, dict
+    @return: distributor and configuration for the given name and version
     """
-    assert _MANAGER is not None
+    assert isinstance(_MANAGER, Manager)
     cls = _MANAGER.get_distributor_class_by_name(name, version)
     if cls is None:
-        return None
+        raise PluginNotFound(_('No distributor %s, version %s') % (name, version))
     cfg = _MANAGER.get_distributor_config_by_name(name, version)
-    cpy = copy.copy(cfg)
-    distributor = cls(cpy)
-    return distributor
+    cpy = copy.deepcopy(cfg)
+    distributor = cls()
+    return (distributor, cpy)

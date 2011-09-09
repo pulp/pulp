@@ -28,18 +28,6 @@ from pulp.server.content.importer.base import Importer
 
 # test data and data generation api --------------------------------------------
 
-# delete the generated data
-
-_generated_paths = []
-
-def _delete_generated_paths():
-    for p in _generated_paths:
-        if p in sys.path:
-            sys.path.remove(p)
-        shutil.rmtree(p)
-
-atexit.register(_delete_generated_paths)
-
 # test data
 
 excellent_importer = '''
@@ -93,13 +81,11 @@ class BogusTwoImporter(base.Importer):
 '''
 
 excellent_importer_config_1 = '''
-[Excellent]
-enabled = true
+{"enabled": true}
 '''
 
 excellent_importer_config_2 = '''
-[Excellent]
-enabled = false
+{"enabled": false}
 '''
 
 http_distibutor = '''
@@ -115,16 +101,32 @@ class HTTPDistributor(base.Distributor):
 '''
 
 http_conf = '''
-[HTTPDistributor]
-enabled: yes
+{"enabled": true}
 '''
+# delete the generated data
+
+_generated_paths = []
+
+
+def _delete_generated_paths():
+    for p in _generated_paths:
+        if p in sys.path:
+            sys.path.remove(p)
+        shutil.rmtree(p)
+
+atexit.register(_delete_generated_paths)
 
 # test file(s) generation
 
-def gen_excellent_importer(enabled=True):
+def _gen_mod_conf_path():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
     _generated_paths.append(path)
+    return path
+
+
+def gen_excellent_importer(enabled=True):
+    path = _gen_mod_conf_path()
     mod_handle = open(os.path.join(path, 'excellent.py'), 'w')
     mod_handle.write(excellent_importer)
     mod_handle.close()
@@ -138,9 +140,7 @@ def gen_excellent_importer(enabled=True):
 
 
 def gen_less_excellent_importer():
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     handle = open(os.path.join(path, 'less_excellent.py'), 'w')
     handle.write(less_excellent_importer)
     handle.close()
@@ -148,9 +148,7 @@ def gen_less_excellent_importer():
 
 
 def gen_not_excellent_importer():
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     handle = open(os.path.join(path, 'not_excellent.py'), 'w')
     handle.write(not_excellent_importer)
     handle.close()
@@ -158,9 +156,7 @@ def gen_not_excellent_importer():
 
 
 def gen_bogus_importer(version=1):
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     handle = open(os.path.join(path, 'bogus_%d.py' % version), 'w')
     if version == 1:
         handle.write(bogus_importer_1)
@@ -173,9 +169,7 @@ def gen_bogus_importer(version=1):
 
 
 def gen_http_distributor():
-    path = tempfile.mkdtemp()
-    sys.path.insert(0, path)
-    _generated_paths.append(path)
+    path = _gen_mod_conf_path()
     mod_handle = open(os.path.join(path, 'http_distributor.py'), 'w')
     mod_handle.write(http_distibutor)
     mod_handle.close()
@@ -195,15 +189,18 @@ class ManagerInstanceTest(testutil.PulpTest):
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
 
-class ManagerPathTest(testutil.PulpTest):
+class ManagerTest(testutil.PulpTest):
 
     def setUp(self):
-        super(ManagerPathTest, self).setUp()
+        super(ManagerTest, self).setUp()
         self.manager = manager.Manager()
 
     def tearDown(self):
-        super(ManagerPathTest, self).tearDown()
+        super(ManagerTest, self).tearDown()
         self.manager = None
+
+
+class ManagerPathTest(ManagerTest):
 
     def test_add_valid_path(self):
         path = tempfile.mkdtemp()
@@ -218,17 +215,21 @@ class ManagerPathTest(testutil.PulpTest):
         self.assertTrue(path in self.manager.distributor_config_paths)
 
     def test_non_existent_path(self):
-        non_existent = '/asdf/jkl'
+        non_existent = tempfile.mkdtemp()
+        os.rmdir(non_existent)
         self.assertRaises(ValueError, self.manager.add_importer_plugin_path, non_existent)
 
     def test_bad_permissions_path(self):
+        # NOTE this test fails if run by root
+        if os.getuid() == 0:
+            return
         cant_read = tempfile.mkdtemp()
         os.chmod(cant_read, 0300)
         self.assertRaises(ValueError, self.manager.add_distributor_plugin_path, cant_read)
         os.rmdir(cant_read)
 
 
-class ManagerLoadTest(ManagerPathTest):
+class ManagerLoadTest(ManagerTest):
 
     def test_enabled_importer(self):
         path = gen_excellent_importer(enabled=True)
@@ -256,24 +257,24 @@ class ManagerLoadTest(ManagerPathTest):
         self.manager.load_importers()
         self.assertTrue(len(self.manager.importer_plugins['Excellent']) == 2)
 
-    def test_conflicting_excellent_importers(self):
+    def test_conflicting_importers(self):
         path = gen_excellent_importer(enabled=True)
         self.manager.add_importer_plugin_path(path)
         self.manager.add_importer_config_path(path)
         path = gen_not_excellent_importer()
         self.manager.add_importer_plugin_path(path)
         self.manager.add_importer_config_path(path)
-        self.assertRaises(manager.ConflictingPluginError, self.manager.load_importers)
+        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
 
     def test_missing_metadata_plugin(self):
         path = gen_bogus_importer(version=1)
         self.manager.add_importer_plugin_path(path)
-        self.assertRaises(manager.MalformedPluginError, self.manager.load_importers)
+        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
 
     def test_malformed_metadata_plugin(self):
         path = gen_bogus_importer(version=2)
         self.manager.add_importer_plugin_path(path)
-        self.assertRaises(manager.MalformedPluginError, self.manager.load_importers)
+        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
 
     def test_distributor(self):
         path = gen_http_distributor()
@@ -284,7 +285,7 @@ class ManagerLoadTest(ManagerPathTest):
         self.assertTrue('HTTP' in self.manager.distributor_configs)
 
 
-class ManagerAPITest(ManagerPathTest):
+class ManagerAPITest(ManagerTest):
 
     def test_get_importer(self):
         path = gen_excellent_importer()
@@ -292,8 +293,13 @@ class ManagerAPITest(ManagerPathTest):
         self.manager.add_importer_config_path(path)
         self.manager.load_importers()
         manager._MANAGER = self.manager
-        importer = manager.get_importer_by_name('Excellent')
+        importer, cfg = manager.get_importer_by_name('Excellent')
         self.assertTrue(isinstance(importer, Importer))
+        self.assertTrue(isinstance(cfg, dict))
+
+    def test_get_non_existent_importer(self):
+        manager._MANAGER = self.manager
+        self.assertRaises(manager.PluginNotFound, manager.get_distributor_by_name, 'Bogus')
 
     def test_get_distributor(self):
         path = gen_http_distributor()
@@ -301,5 +307,28 @@ class ManagerAPITest(ManagerPathTest):
         self.manager.add_distributor_config_path(path)
         self.manager.load_distributors()
         manager._MANAGER = self.manager
-        distributor = manager.get_distributor_by_name('HTTP')
+        distributor, cfg = manager.get_distributor_by_name('HTTP')
         self.assertTrue(distributor, Distributor)
+        self.assertTrue(isinstance(cfg, dict))
+
+    def test_get_non_existent_distributor(self):
+        manager._MANAGER = self.manager
+        self.assertRaises(manager.PluginNotFound, manager.get_distributor_by_name, 'HTTPS')
+
+    def test_is_valid_importer(self):
+        path = gen_excellent_importer(enabled=True)
+        self.manager.add_importer_plugin_path(path)
+        self.manager.add_importer_config_path(path)
+        self.manager.load_importers()
+        manager._MANAGER = self.manager
+        self.assertTrue(manager.is_valid_importer('Excellent'))
+        self.assertTrue(not manager.is_valid_importer('Fake'))
+
+    def __test_is_valid_distributor(self):
+        path = gen_http_distributor()
+        self.manager.add_distributor_plugin_path(path)
+        self.manager.add_distributor_config_path(path)
+        self.manager.load_distributors()
+        manager._MANAGER = self.manager
+        self.assertTrue(manager.is_valid_distributor('HTTPDistributor'))
+        self.assertTrue(not manager.is_valid_distributor('Fake'))

@@ -43,12 +43,22 @@ The validate_cert_bundle method is used to ensure that only these keys are prese
 in a cert bundle dict.
 '''
 
+
 import logging
 import shutil
 from threading import RLock
 import os
 
+from glob import glob
 from M2Crypto import X509
+
+LOG = logging.getLogger(__name__)
+try:
+    from M2Crypto.X509 import CRL_Stack
+    M2CRYPTO_HAS_CRL_SUPPORT = True
+except:
+    M2CRYPTO_HAS_CRL_SUPPORT = False
+    LOG.warning("**M2Crypto<%s> lacks patch for using Certificate Revocation Lists**")
 
 
 # -- constants ----------------------------------------------------------------------------
@@ -61,9 +71,6 @@ EMPTY_BUNDLE = dict([(key, None) for key in VALID_BUNDLE_KEYS])
 WRITE_LOCK = RLock()
 
 GLOBAL_BUNDLE_PREFIX = 'pulp-global-repo'
-
-LOG = logging.getLogger(__name__)
-
 
 class RepoCertUtils:
 
@@ -236,7 +243,8 @@ class RepoCertUtils:
     def validate_certificate(self, cert_filename, ca_filename):
         '''
         Validates a certificate against a CA certificate.
-
+        Input expects filenames.
+        
         @param cert_filename: full path to the PEM encoded certificate to validate
         @type  cert_filename: str
 
@@ -246,14 +254,22 @@ class RepoCertUtils:
         @return: true if the certificate was signed by the given CA; false otherwise
         @rtype:  boolean
         '''
+        f = open(ca_filename)
+        try:
+            ca_data = f.read()
+        finally:
+            f.close()
+        f = open(cert_filename)
+        try:
+            cert_data = f.read()
+        finally:
+            f.close()
+        return self.validate_certificate_pem(cert_data, ca_data)
 
-        ca = X509.load_cert(ca_filename)
-        cert = X509.load_cert(cert_filename)
-        return cert.verify(ca.get_pubkey())
-
-    def validate_certificate_pem(self, cert_pem, ca_pem):
+    def validate_certificate_pem(self, cert_pem, ca_pem, crl_pems=None, check_crls=True, crl_dir=None):
         '''
-        Validates a certificate against a CA certificate.
+        Validates a certificate against a CA certificate and CRLs if they exist.
+        Input expects PEM encoded strings.
 
         @param cert_pem: PEM encoded certificate
         @type  cert_pem: str
@@ -261,12 +277,57 @@ class RepoCertUtils:
         @param ca_pem: PEM encoded CA certificate
         @type  ca_pem: str
 
+        @param crl_pems: List of CRLs, each CRL is a PEM encoded string
+        @type  crl_pems: List[str]
+
+        @param check_crls: Defaults to True, if False will skip CRL check
+        @type  check_crls: boolean
+
+        @param crl_dir: Path to search for CRLs, default is None which defaults to configuration file parameter
+        @type  crl_dir: str
+
         @return: true if the certificate was signed by the given CA; false otherwise
         @rtype:  boolean
         '''
-        ca = X509.load_cert_string(ca_pem)
+        ca_cert = X509.load_cert_string(ca_pem)
         cert = X509.load_cert_string(cert_pem)
-        return cert.verify(ca.get_pubkey())
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return cert.verify(ca_cert.get_pubkey())
+        crl_stack = X509.CRL_Stack()
+        if check_crls:
+            ca_hash = ca_cert.get_issuer().as_hash()
+            crl_stack = self.get_crl_stack(ca_hash, crl_dir=crl_dir)
+            if crl_pems:
+                for c in crl_pems:
+                    crl_stack.push(c)
+        return self.x509_verify_cert(cert, ca_cert, crl_stack)
+
+    def x509_verify_cert(self, cert, ca_cert, crl_stack=None):
+        """
+        Validates a Certificate against a CA Certificate and a Stack of CRLs
+
+        @param  cert:  Client certificate to verify
+        @type   cert:  M2Crypto.X509.X509
+
+        @param  ca_cert:  CA certificate
+        @type   ca_cert: M2Crypto.X509.X509
+
+        @param  crl_stack: Stack of CRLs, default is None
+        @type   crl_stack: M2Crypto.X509.CRL_Stack
+
+        @return: true if the certificate was signed by the given CA and has not been revoked; false otherwise
+        @rtype:  boolean
+        """
+        store = X509.X509_Store()
+        store.add_cert(ca_cert)
+        if crl_stack and len(crl_stack) > 0:
+            store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
+                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, cert)
+        if crl_stack and len(crl_stack) > 0:
+            store_ctx.add_crls(crl_stack)
+        return store_ctx.verify_cert()
 
     def validate_cert_bundle(self, bundle):
         '''
@@ -294,6 +355,30 @@ class RepoCertUtils:
         if len(extra_keys) > 0:
             raise ValueError('Unexpected items in cert bundle [%s]' % ', '.join(extra_keys))
 
+    def get_crl_stack(self, issuer_hash, crl_dir=None):
+        """
+        @param issuer_hash: Hash value of the issuing certificate
+        @type  issuer_hash: unsigned long
+
+        @param crl_dir: Path to search for CRLs, default is None which defaults to configuration file parameter
+        @type  crl_dir: str
+
+        @return CRL_Stack of any CRLs issued by the issuer_hash
+        @rtype: CRL_Stack: M2Crypto.X509.CRL_Stack
+        """
+        crl_stack = X509.CRL_Stack()
+        if not crl_dir:
+            crl_dir = self._crl_directory()
+        if os.path.exists(crl_dir):
+            search_path = "%s/%x.r*" % (crl_dir, issuer_hash)
+            crl_paths = glob(search_path)
+            for c in crl_paths:
+                try:
+                    crl = X509.load_crl(c)
+                    crl_stack.push(crl)
+                except:
+                    LOG.exception("Unable to load CRL file: %s" % (c))
+        return crl_stack
 
     # -- private ----------------------------------------------------------------------------
 
@@ -381,3 +466,13 @@ class RepoCertUtils:
         '''
         global_cert_location = self.config.get('repos', 'global_cert_location')
         return global_cert_location
+
+    def _crl_directory(self):
+        '''
+        Returns the absolute path to the directory in which
+        Certificate Revocation Lists (CRLs) are stored
+
+        @return: absolute path to a directory that may not exist
+        @rtype:  str
+        '''
+        return self.config.get('crl', 'location')

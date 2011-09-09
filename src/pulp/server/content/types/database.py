@@ -46,6 +46,7 @@ class UpdateFailed(Exception):
     def __str__(self):
         return 'UpdateFailed [%s]' % ', '.join([t.id for t in self.type_definitions])
 
+
 class MissingDefinitions(Exception):
     """
     Raised when one or more type collections previously existed in the database
@@ -92,7 +93,7 @@ def update_database(definitions, error_on_missing_definitions=False):
 
         if error_on_missing_definitions:
             raise MissingDefinitions(missing)
-        
+
     # For each type definition, update the corresponding collection in the database
     error_defs = []
 
@@ -128,7 +129,8 @@ def update_database(definitions, error_on_missing_definitions=False):
 
     if len(error_defs) > 0:
         raise UpdateFailed(error_defs)
-    
+
+
 def clean():
     """
     Purges the database of all types and their associated collections. This
@@ -150,6 +152,7 @@ def clean():
     type_collection = ContentType.get_collection()
     type_collection.remove(safe=True)
 
+
 def type_units_collection(type_id):
     """
     Returns a reference to the collection used to store units of the given type.
@@ -163,6 +166,7 @@ def type_units_collection(type_id):
     collection_name = unit_collection_name(type_id)
     collection = pulp_db.get_collection(collection_name, create=False)
     return collection
+
 
 def all_type_collection_names():
     """
@@ -179,6 +183,7 @@ def all_type_collection_names():
 
     return type_collection_names
 
+
 def unit_collection_name(type_id):
     """
     Returns the name of the collection used to store units of the given type.
@@ -190,6 +195,22 @@ def unit_collection_name(type_id):
     @rtype:  str
     """
     return TYPE_COLLECTION_PREFIX + type_id
+
+
+def type_units_unique_indexes(type_id):
+    """
+    Get the unique indices for a given content type collection.
+    @param type_id: unique content type identifier
+    @type type_id: str
+    @return: list of indices that can uniquely identify a document in the
+             content type collection
+    @rtype: list of str's
+    """
+    collection = ContentType.get_collection()
+    type_def = collection.find_one(type_id)
+    if type_def is None:
+        return None
+    return type_def['unique_indexes']
 
 # -- private -----------------------------------------------------------------
 
@@ -206,6 +227,7 @@ def _create_or_update_type(type_def):
     content_type = ContentType(type_def.id, type_def.display_name, type_def.description,
                                type_def.unique_indexes, type_def.search_indexes)
     ContentType.get_collection().save(content_type, safe=True)
+
 
 def _update_indexes(type_def, unique):
 
@@ -236,16 +258,20 @@ def _update_indexes(type_def, unique):
         else:
             LOG.info('Index already existed on type definition [%s]' % type_def.id)
 
+
 def _update_unique_indexes(type_def):
     _update_indexes(type_def, True)
 
+
 def _update_search_indexes(type_def):
     _update_indexes(type_def, False)
+
 
 def _drop_indexes(type_def):
     collection_name = unit_collection_name(type_def.id)
     collection = pulp_db.get_collection(collection_name, create=False)
     collection.drop_indexes()
+
 
 def _create_index_keypair(index):
     """

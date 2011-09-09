@@ -121,7 +121,9 @@ class PackageSearch(JSONController):
         checksum = None
         if data.has_key("checksum"):
             checksum = data["checksum"]
-        regex = data["regex"]
+        regex = False
+        if data.has_key("regex"):
+            regex = data["regex"]
         start_time = time.time()
         pkgs = papi.packages(name=name, epoch=epoch, version=version,
             release=release, arch=arch, filename=filename, checksum=checksum,

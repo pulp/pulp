@@ -1,0 +1,393 @@
+Index: M2Crypto/X509.py
+===================================================================
+--- M2Crypto/X509.py	(revision 739)
++++ M2Crypto/X509.py	(working copy)
+@@ -560,7 +560,7 @@
+             return m2.x509_verify(self.x509, pkey.pkey)
+         else:
+             return m2.x509_verify(self.x509, self.get_pubkey().pkey)
+-            
++    
+     def check_ca(self):
+         """
+         Check if the certificate is a Certificate Authority (CA) certificate.
+@@ -677,17 +677,21 @@
+ 
+     m2_x509_store_ctx_free = m2.x509_store_ctx_free
+ 
+-    def __init__(self, x509_store_ctx, _pyfree=0):
+-        self.ctx = x509_store_ctx
+-        self._pyfree = _pyfree
+-        
++    def __init__(self, x509_store_ctx=None, _pyfree=0):
++        if x509_store_ctx is not None:
++            self.ctx = x509_store_ctx
++            self._pyfree = _pyfree
++        else:
++            self.ctx = m2.x509_store_ctx_new()
++            self._pyfree = 1
++
+     def __del__(self):
+-        if self._pyfree:
++        if getattr(self, '_pyfree', 0):
+             self.m2_x509_store_ctx_free(self.ctx)
+-            
++
+     def _ptr(self):
+         return self.ctx
+-            
++
+     def get_current_cert(self):
+         """
+         Get current X.509 certificate.
+@@ -718,8 +722,45 @@
+         @rtype:  X509_Stack
+         """
+         return X509_Stack(m2.x509_store_ctx_get1_chain(self.ctx), 1, 1)
+-        
++   
++    def init(self, store, cert, untrusted=None):
++        """
++        Initialization context to allow certificate verification 
+ 
++        @type store: X509_Store
++        @param store: X509_Store containing CA and flags set for verification
++
++        @type cert: X509
++        @param cert: X509 certificate to add to context for verification
++
++        @type untrusted: X509_Stack 
++        @param untrusted: untrusted chain, default None
++        """
++        assert isinstance(store, X509_Store)
++        assert isinstance(cert, X509)
++        untrusted_ptr = None
++        if untrusted:
++            assert isinstance(untrusted, X509_Stack)
++            untrusted_ptr = untrusted._ptr()
++        ret = m2.x509_store_ctx_init(self.ctx, store._ptr(), cert._ptr(), untrusted_ptr)
++        if ret < 1:
++            raise X509Error(Err.get_error())
++
++    def add_crls(self, crls):
++        """
++        Add CRLs to this context
++        @type crls: CRL_Stack
++        @param crls: Stack of CRLs
++        """
++        assert isinstance(crls, CRL_Stack)
++        m2.x509_store_ctx_set0_crls(self.ctx, crls._ptr())
++
++    def verify_cert(self):
++        """
++        Verify certificate
++        """
++        return m2.x509_verify_cert(self.ctx)
++
+ class X509_Store:
+     """
+     X509 Store
+@@ -754,6 +795,19 @@
+         assert isinstance(x509, X509)
+         return m2.x509_store_add_cert(self.store, x509._ptr())
+         
++    def add_crl(self, crl):
++        assert isinstance(crl, CRL)
++        ret = m2.x509_store_add_crl(self.store, crl._ptr())
++        if ret < 1:
++            raise X509Error(Err.get_error())
++        return ret
++
++    def set_flags(self, flags):
++        ret = m2.x509_store_set_flags(self.store, flags)
++        if ret < 1:
++            raise X509Error(Err.get_error())
++        return ret
++        
+     add_cert = add_x509
+ 
+ 
+@@ -845,7 +899,76 @@
+         raise X509Error(Err.get_error())
+     return X509_Stack(stack_ptr, 1, 1)
+ 
++class CRL_Stack:
++    """
++    A 'CRL Stack', maps to STACK_OF(X509_CRL)
+ 
++    @warning: Do not modify the underlying OpenSSL stack
++    except through this interface, or use any OpenSSL functions that do so
++    indirectly. Doing so will get the OpenSSL stack and the internal pystack
++    of this class out of sync, leading to python memory leaks, exceptions
++    or even python crashes!
++    """
++    
++    m2_sk_x509_crl_free = m2.sk_x509_crl_free
++
++    def __init__(self, stack=None, _pyfree=0, _pyfree_x509_crl=0):
++        if stack is not None:
++            self.stack = stack
++            self._pyfree = _pyfree
++            self.pystack = [] # This must be kept in sync with self.stack
++            num = m2.sk_x509_crl_num(self.stack)
++            for i in range(num):
++                self.pystack.append(CRL(m2.sk_x509_crl_value(self.stack, i),
++                                         _pyfree=_pyfree_x509_crl))
++        else:
++            self.stack = m2.sk_x509_crl_new_null()
++            self._pyfree = 1
++            self.pystack = [] # This must be kept in sync with self.stack
++    
++    def __del__(self):
++        if getattr(self, '_pyfree', 0):
++            self.m2_sk_x509_crl_free(self.stack)
++    
++    def __len__(self):
++        assert m2.sk_x509_crl_num(self.stack) == len(self.pystack)
++        return len(self.pystack)
++
++    def __getitem__(self, idx):
++        return self.pystack[idx]
++    
++    def __iter__(self):
++        return iter(self.pystack)
++
++    def _ptr(self):
++        return self.stack
++    
++    def push(self, crl):
++        """
++        push a CRL certificate onto the stack.
++        
++        @param crl: CRL object.
++        @return: The number of CRL objects currently on the stack.
++        """
++        assert isinstance(crl, CRL)
++        self.pystack.append(crl)
++        ret = m2.sk_x509_crl_push(self.stack, crl._ptr())
++        assert ret == len(self.pystack)
++        return ret
++
++    def pop(self):
++        """
++        pop a CRL from the stack.
++        
++        @return: CRL object that was popped, or None if there is nothing
++        to pop. 
++        """
++        crl_ptr = m2.sk_x509_crl_pop(self.stack)
++        if crl_ptr is None:
++            assert len(self.pystack) == 0
++            return None
++        return self.pystack.pop()
++
+ class Request:
+     """
+     X509 Certificate Request.
+@@ -1067,7 +1190,7 @@
+         else:
+             self.crl = m2.x509_crl_new()
+             self._pyfree = 1
+-            
++
+     def __del__(self):
+         if getattr(self, '_pyfree', 0):
+             self.m2_x509_crl_free(self.crl)
+@@ -1083,7 +1206,12 @@
+         m2.x509_crl_print(buf.bio_ptr(), self.crl)
+         return buf.read_all()
+ 
++    def _ptr(self):
++        return self.crl
+ 
++    def verify(self, pkey):
++        return m2.x509_crl_verify(self.crl, pkey.pkey)
++
+ def load_crl(file):
+     """
+     Load CRL from file.
+Index: SWIG/_evp.i
+===================================================================
+--- SWIG/_evp.i	(revision 739)
++++ SWIG/_evp.i	(working copy)
+@@ -9,7 +9,7 @@
+ 
+ */
+ 
+-%include <openssl/opensslconf.h>
++%include <openssl/opensslconf-x86_64.h>
+ 
+ %{
+ #include <assert.h>
+Index: SWIG/_ssl.i
+===================================================================
+--- SWIG/_ssl.i	(revision 739)
++++ SWIG/_ssl.i	(working copy)
+@@ -21,7 +21,10 @@
+ %apply Pointer NONNULL { SSL * };
+ %apply Pointer NONNULL { SSL_CIPHER * };
+ %apply Pointer NONNULL { STACK_OF(SSL_CIPHER) * };
+-%apply Pointer NONNULL { STACK_OF(X509) * };
++/* X509_STORE_CTX_init uses a NULL STACK_OF(X509) to 
++   signify no untrusted chain will be used
++*/
++/* %apply Pointer NONNULL { STACK_OF(X509) * };*/
+ %apply Pointer NONNULL { BIO * };
+ %apply Pointer NONNULL { DH * };
+ %apply Pointer NONNULL { RSA * };
+@@ -694,6 +697,13 @@
+ X509 *sk_x509_value(STACK_OF(X509) *stack, int idx) {
+     return sk_X509_value(stack, idx);
+ }
++int sk_x509_crl_num(STACK_OF(X509_CRL) *stack) {
++    return sk_X509_CRL_num(stack);
++}
++
++X509_CRL *sk_x509_crl_value(STACK_OF(X509_CRL) *stack, int idx) {
++    return sk_X509_CRL_value(stack, idx);
++}
+ %}
+ 
+ %threadallow i2d_ssl_session;
+Index: SWIG/_x509.i
+===================================================================
+--- SWIG/_x509.i	(revision 739)
++++ SWIG/_x509.i	(working copy)
+@@ -12,6 +12,7 @@
+ %{
+ #include <openssl/x509.h>
+ #include <openssl/x509v3.h>
++#include <openssl/x509_vfy.h>
+ %}
+ 
+ %apply Pointer NONNULL { BIO * };
+@@ -20,6 +21,8 @@
+ %apply Pointer NONNULL { X509_REQ * };
+ %apply Pointer NONNULL { X509_NAME * };
+ %apply Pointer NONNULL { X509_NAME_ENTRY * };
++%apply Pointer NONNULL { X509_STORE * };
++%apply Pointer NONNULL { X509_STORE_CTX * };
+ %apply Pointer NONNULL { EVP_PKEY * };
+ 
+ #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+@@ -37,6 +40,10 @@
+ extern void X509_CRL_free(X509_CRL *);
+ %rename(x509_crl_new) X509_CRL_new;
+ extern X509_CRL * X509_CRL_new();
++%rename(x509_store_ctx_new) X509_STORE_CTX_new;
++extern X509_STORE_CTX *X509_STORE_CTX_new( void );
++%rename(x509_store_ctx_init) X509_STORE_CTX_init;
++extern int X509_STORE_CTX_init( X509_STORE_CTX *, X509_STORE *, X509 *, STACK_OF(X509) *);
+ 
+ %rename(x509_print) X509_print;
+ %threadallow X509_print;
+@@ -108,6 +115,8 @@
+ 
+ %rename(x509_verify) X509_verify;
+ extern int X509_verify(X509 *a, EVP_PKEY *r);
++%rename(x509_verify_cert) X509_verify_cert;
++extern int X509_verify_cert(X509_STORE_CTX *ctx);
+ %rename(x509_get_verify_error) X509_verify_cert_error_string;
+ extern const char *X509_verify_cert_error_string(long);
+ 
+@@ -231,6 +240,14 @@
+ %rename(x509_store_add_cert) X509_STORE_add_cert;
+ extern int X509_STORE_add_cert(X509_STORE *, X509 *);
+ 
++%rename(x509_store_add_crl) X509_STORE_add_crl;
++extern int X509_STORE_add_crl(X509_STORE*, X509_CRL* );
++%rename(x509_store_set_flags) X509_STORE_set_flags;
++extern int X509_STORE_set_flags(X509_STORE*, unsigned int );
++%rename(x509_store_ctx_set0_crls) X509_STORE_CTX_set0_crls;
++extern void X509_STORE_CTX_set0_crls(X509_STORE_CTX *ctx, STACK_OF(X509_CRL) *);
++
++
+ %rename(x509_store_ctx_get_current_cert) X509_STORE_CTX_get_current_cert;
+ extern X509 *X509_STORE_CTX_get_current_cert(X509_STORE_CTX *);
+ %rename(x509_store_ctx_get_error) X509_STORE_CTX_get_error;
+@@ -315,6 +332,27 @@
+             XN_FLAG_DN_REV | \
+             XN_FLAG_DUMP_UNKNOWN_FIELDS);
+ 
++/* x509_vfy.h */
++%constant int X509_V_FLAG_CB_ISSUER_CHECK             = 0x1;
++%constant int X509_V_FLAG_USE_CHECK_TIME              = 0x2;
++%constant int X509_V_FLAG_CRL_CHECK                   = 0x4;
++%constant int X509_V_FLAG_CRL_CHECK_ALL               = 0x8;
++%constant int X509_V_FLAG_IGNORE_CRITICAL             = 0x10;
++%constant int X509_V_FLAG_X509_STRICT                 = 0x20;
++%constant int X509_V_FLAG_ALLOW_PROXY_CERTS           = 0x40;
++%constant int X509_V_FLAG_POLICY_CHECK                = 0x80;
++%constant int X509_V_FLAG_EXPLICIT_POLICY             = 0x100;
++%constant int X509_V_FLAG_INHIBIT_ANY                 = 0x200;
++%constant int X509_V_FLAG_INHIBIT_MAP                 = 0x400;
++%constant int X509_V_FLAG_NOTIFY_POLICY               = 0x800;
++
++%constant int X509_VP_FLAG_DEFAULT                    = 0x1;
++%constant int X509_VP_FLAG_OVERWRITE                  = 0x2;
++%constant int X509_VP_FLAG_RESET_FLAGS                = 0x4;
++%constant int X509_VP_FLAG_LOCKED                     = 0x8;
++%constant int X509_VP_FLAG_ONCE                       = 0x10;
++
++
+ /* Cribbed from rsa.h. */
+ %constant int RSA_3                           = 0x3L;
+ %constant int RSA_F4                          = 0x10001L;
+@@ -419,6 +457,10 @@
+     return X509_sign(x, pkey, md);
+ }
+ 
++/* x509_CRL_verify() is a macro */
++int x509_crl_verify(X509_CRL *crl, EVP_PKEY *pkey){
++    return X509_CRL_verify(crl, pkey);
++}
+ /* XXX The first parameter is really ASN1_TIME, does it matter? */
+ ASN1_TIME *x509_gmtime_adj(ASN1_UTCTIME *s, long adj) {
+     return X509_gmtime_adj(s, adj);
+@@ -464,6 +506,11 @@
+     return sk_X509_new_null();
+ }
+ 
++/* sk_X509_crl_new_null() is a macro returning "STACK_OF(X509_CRL) *". */
++STACK_OF(X509_CRL) *sk_x509_crl_new_null(void) {
++    return sk_X509_CRL_new_null();
++}
++
+ /* sk_X509_free() is a macro. */
+ void sk_x509_free(STACK_OF(X509) *stack) {
+     sk_X509_free(stack);
+@@ -479,6 +526,21 @@
+     return sk_X509_pop(stack);
+ }
+ 
++/* sk_X509_CRL_free() is a macro. */
++void sk_x509_crl_free(STACK_OF(X509_CRL) *stack) {
++    sk_X509_CRL_free(stack);
++}
++
++/* sk_X509_CRL_push() is a macro. */
++int sk_x509_crl_push(STACK_OF(X509_CRL) *stack, X509_CRL *crl) {
++    return sk_X509_CRL_push(stack, crl);
++}
++
++/* sk_X509_CRL_pop() is a macro. */
++X509_CRL *sk_x509_crl_pop(STACK_OF(X509_CRL) *stack) {
++    return sk_X509_CRL_pop(stack);
++}
++
+ int x509_store_load_locations(X509_STORE *store, const char *file) {
+     return X509_STORE_load_locations(store, file, NULL);
+ }
+Index: SWIG/_ec.i
+===================================================================
+--- SWIG/_ec.i	(revision 739)
++++ SWIG/_ec.i	(working copy)
+@@ -4,7 +4,7 @@
+  Most code originally from _dsa.i, _rsa.i and _dh.i and adjusted for EC use.
+ */
+ 
+-%include <openssl/opensslconf.h>
++%include <openssl/opensslconf-x86_64.h>
+ 
+ #if OPENSSL_VERSION_NUMBER < 0x0090800fL || defined(OPENSSL_NO_EC)
+ #undef OPENSSL_NO_EC

@@ -1,0 +1,156 @@
+diff -ur M2Crypto-0.21.1/SWIG/_lib.h M2Crypto/SWIG/_lib.h
+--- M2Crypto-0.21.1/SWIG/_lib.h	2011-01-15 20:10:06.000000000 +0100
++++ M2Crypto/SWIG/_lib.h	2011-01-19 19:56:37.622364336 +0100
+@@ -7,6 +7,18 @@
+ #define PY_SSIZE_T_MIN INT_MIN
+ #endif
+ 
++#if PY_VERSION_HEX < 0x02060000
++struct Py_buffer /* Only a subset */
++{
++  void *buf;
++  Py_ssize_t len;
++};
++
++#define PyBUF_CONTIG_RO 0
++static int PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags);
++static void PyBuffer_Release(Py_buffer *view);
++#endif /* PY_VERSION_HEX < 0x02060000 */
++
+ typedef struct _blob {
+ 	unsigned char *data;
+ 	int len;
+@@ -18,6 +30,7 @@
+ 
+ static int m2_PyObject_AsReadBufferInt(PyObject *obj, const void **buffer,
+                                        int *buffer_len);
++static int m2_PyObject_GetBufferInt(PyObject *obj, Py_buffer *view, int flags);
+ static int m2_PyString_AsStringAndSizeInt(PyObject *obj, char **s, int *len);
+ 
+ void gen_callback(int p, int n, void *arg);
+diff -ur M2Crypto-0.21.1/SWIG/_lib.i M2Crypto/SWIG/_lib.i
+--- M2Crypto-0.21.1/SWIG/_lib.i	2011-01-15 20:10:06.000000000 +0100
++++ M2Crypto/SWIG/_lib.i	2011-01-19 19:49:21.537145465 +0100
+@@ -47,9 +47,34 @@
+ /* Python helpers. */
+ 
+ %}
++%ignore PyObject_GetBuffer;
++%ignore PyBuffer_Release;
+ %ignore m2_PyObject_AsReadBufferInt;
++%ignore m2_PyObject_GetBufferInt;
+ %ignore m2_PyString_AsStringAndSizeInt;
+ %{
++
++#if PY_VERSION_HEX < 0x02060000
++static int
++PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
++{
++    const void *buf;
++    int ret;
++
++    (void)flags;
++
++    ret = PyObject_AsReadBuffer(obj, &buf, &view->len);
++    if (ret == 0)
++	view->buf = (void *)buf;
++    return ret;
++}
++
++static void PyBuffer_Release(Py_buffer *view)
++{
++    (void)view;
++}
++#endif /* PY_VERSION_HEX < 0x02060000 */
++
+ static int
+ m2_PyObject_AsReadBufferInt(PyObject *obj, const void **buffer,
+                 int *buffer_len)
+@@ -69,6 +94,22 @@
+ }
+ 
+ static int
++m2_PyObject_GetBufferInt(PyObject *obj, Py_buffer *view, int flags)
++{
++    int ret;
++
++    ret = PyObject_GetBuffer(obj, view, flags);
++    if (ret)
++	return ret;
++    if (view->len > INT_MAX) {
++        PyErr_SetString(PyExc_ValueError, "object too large");
++	PyBuffer_Release(view);
++        return -1;
++    }
++    return 0;
++}
++
++static int
+ m2_PyString_AsStringAndSizeInt(PyObject *obj, char **s, int *len)
+ {
+     int ret;
+diff -ur M2Crypto-0.21.1/SWIG/_ssl.i M2Crypto/SWIG/_ssl.i
+--- M2Crypto-0.21.1/SWIG/_ssl.i	2011-01-19 19:06:57.940560864 +0100
++++ M2Crypto/SWIG/_ssl.i	2011-01-19 19:56:51.957338576 +0100
+@@ -700,12 +700,12 @@
+ }
+ 
+ int ssl_write(SSL *ssl, PyObject *blob, double timeout) {
+-    const void *buf;
+-    int len, r, ssl_err, ret;
++    Py_buffer buf;
++    int r, ssl_err, ret;
+     struct timeval tv;
+ 
+ 
+-    if (m2_PyObject_AsReadBufferInt(blob, &buf, &len) == -1) {
++    if (m2_PyObject_GetBufferInt(blob, &buf, PyBUF_CONTIG_RO) == -1) {
+         return -1;
+     }
+ 
+@@ -713,7 +713,7 @@
+         gettimeofday(&tv, NULL);
+  again:
+     Py_BEGIN_ALLOW_THREADS
+-    r = SSL_write(ssl, buf, len);
++    r = SSL_write(ssl, buf.buf, buf.len);
+     ssl_err = SSL_get_error(ssl, r);
+     Py_END_ALLOW_THREADS
+ 
+@@ -741,22 +741,22 @@
+             ret = -1;
+     }
+     
+-    
++    PyBuffer_Release(&buf);
+     return ret;
+ }
+ 
+ int ssl_write_nbio(SSL *ssl, PyObject *blob) {
+-    const void *buf;
+-    int len, r, err, ret;
++    Py_buffer buf;
++    int r, err, ret;
+ 
+ 
+-    if (m2_PyObject_AsReadBufferInt(blob, &buf, &len) == -1) {
++    if (m2_PyObject_GetBufferInt(blob, &buf, PyBUF_CONTIG_RO) == -1) {
+         return -1;
+     }
+ 
+     
+     Py_BEGIN_ALLOW_THREADS
+-    r = SSL_write(ssl, buf, len);
++    r = SSL_write(ssl, buf.buf, buf.len);
+     Py_END_ALLOW_THREADS
+     
+     
+@@ -785,7 +785,7 @@
+             ret = -1;
+     }
+     
+-    
++    PyBuffer_Release(&buf);
+     return ret;
+ }
+ 

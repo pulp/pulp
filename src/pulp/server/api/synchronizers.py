@@ -241,8 +241,8 @@ class BaseSynchronizer(object):
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
+                    log.info("Loading comps group info from: %s" % (group_xml_path))
                     self.sync_groups_data(groupfile, repo)
-                    log.info("Loaded group info from %s" % (group_xml_path))
                 else:
                     log.info("Group info not found at file: %s" % (group_xml_path))
             if "group_gz" in ftypes:
@@ -686,7 +686,7 @@ class YumSynchronizer(BaseSynchronizer):
                         pkglist.append(pkg)
                         break
         else:
-            pkglist = unfiltered_pkglist
+            pkglist = list(unfiltered_pkglist)
 
         if blacklist_packages:
             to_remove = []
@@ -752,7 +752,8 @@ class YumSynchronizer(BaseSynchronizer):
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
         existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
-        source_pkgs = [os.path.basename(p) for p in pkglist]
+        source_pkgs = [os.path.basename(p) for p in unfiltered_pkglist]
+
         if progress_callback is not None:
             log.debug("Updating progress to %s" % (ProgressReport.PurgeOrphanedPackages))
             self.progress["step"] = ProgressReport.PurgeOrphanedPackages
@@ -815,7 +816,7 @@ class YumSynchronizer(BaseSynchronizer):
         self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
-            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'])
             self.repo_dir = dst_repo_dir
             # Process repo filters if any
             if repo['filters']:
@@ -1075,7 +1076,7 @@ class FileSynchronizer(BaseSynchronizer):
         self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
-            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'])
 
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)

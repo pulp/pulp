@@ -24,6 +24,8 @@ DIRS = (
     '/etc/pulp',
     '/etc/pulp/admin',
     '/etc/pulp/consumer',
+    '/etc/pulp/distributor',
+    '/etc/pulp/importer',
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
@@ -142,7 +144,7 @@ def install(opts):
     if not os.path.exists('/var/www/pub'):
         os.symlink('/var/lib/pulp/published', '/var/www/pub')
 
-    # Grant apache write access to the pulp tools log file and pulp 
+    # Grant apache write access to the pulp tools log file and pulp
     # packages dir
     os.system('setfacl -m user:apache:rwx /var/log/pulp')
     os.system('setfacl -m user:apache:rwx /var/lib/pulp')

@@ -78,7 +78,7 @@ class Create(RoleAction):
 
 class Delete(RoleAction):
 
-    name = "Delete"
+    name = "delete"
     description = _('delete an existing role')
 
     def setup_parser(self):
@@ -92,7 +92,7 @@ class Delete(RoleAction):
 
 class Add(RoleAction):
 
-    name = "Add"
+    name = "add"
     description = _('add a user to a role')
 
     def setup_parser(self):
