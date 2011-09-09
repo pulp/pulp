@@ -46,7 +46,6 @@ setup(
         '../bin/pulp-admin',
         '../bin/pulp-consumer',
         '../bin/pulp-migrate',
-        '../bin/pulp-exporter',
     ],
     include_package_data=False,
     data_files=[],
