@@ -17,11 +17,11 @@ operations. All classes and functions in this module run synchronously; any
 need to execute syncs asynchronously must be handled at a higher layer.
 """
 
-import copy
 import datetime
 from gettext import gettext as _
 import logging
 import sys
+import traceback
 
 from pulp.common import dateutils
 import pulp.server.content.manager as plugin_manager
@@ -76,6 +76,21 @@ class PublishInProgress(RepoPublishException):
     """
     pass
 
+class AutoPublishException(Exception):
+    """
+    Raised when the automatic publishing of a repository results in an error
+    for at least one of the distributors. This exception will 
+    """
+    def __init__(self, repo_id, dist_traceback_tuples):
+        Exception.__init__(self)
+        self.repo_id = repo_id
+        self.dist_traceback_tuples = dist_traceback_tuples
+
+    def __str__(self):
+        dist_ids = [d[0] for d in self.dist_traceback_tuples]
+        return _('Exception [%(e)s] raised for repository [%(r)s] on distributors [%(d)s]' % \
+               {'e' : self.__class__.__name__, 'r' : self.repo_id, 'd' : ', '.join(dist_ids)})
+    
 # -- manager ------------------------------------------------------------------
 
 class RepoPublishManager:
@@ -152,6 +167,51 @@ class RepoPublishManager:
     def unpublish(self, repo_id, distributor_id):
         pass
 
+    def auto_publish_for_repo(self, repo_id):
+        """
+        Calls publish on all distributors that are configured to be automatically
+        called for the given repo. Each distributor is called serially. The order
+        in which they are executed is determined simply by distributor ID (sorted
+        ascending alphabetically).
+
+        All automatic distributors will be called, regardless of whether or not
+        one raises an error. All failed publish calls will be collaborated into
+        a single exception.
+
+        If no distributors are configured for automatic publishing, this call
+        does nothing.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @raises AutoPublishException: if one or more of the distributors errors
+                during publishing; the exception will contain information on all
+                failures
+        """
+
+        # Retrieve all auto publish distributors for the repo
+        auto_distributors = _auto_distributors(repo_id)
+
+        if len(auto_distributors) is 0:
+            return
+
+        # Call publish on each matching distributor, keeping a running track
+        # of failed calls
+        error_runs = [] # contains tuple of dist_id and error string
+        for dist in auto_distributors:
+            dist_id = dist['id']
+            try:
+                self.publish(repo_id, dist_id, None)
+            except Exception:
+                _LOG.exception('Exception on auto distribute call for repo [%s] distributor [%s]' % (repo_id, dist_id))
+                error_string = traceback.format_exc()
+                error_runs.append( (dist_id, error_string) )
+
+        if len(error_runs) > 0:
+            raise AutoPublishException(repo_id, error_runs)
+
+# -- utilities ----------------------------------------------------------------
+
 def _publish_finished_timestamp():
     """
     @return: timestamp suitable for indicating when a publish completed
@@ -160,3 +220,12 @@ def _publish_finished_timestamp():
     now = datetime.datetime.now(dateutils.local_tz())
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
+
+def _auto_distributors(repo_id):
+    """
+    Returns all distributors for the given repo that are configured for automatic
+    publishing.
+    """
+    dist_coll = RepoDistributor.get_collection()
+    auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_distribute' : True}))
+    return auto_distributors

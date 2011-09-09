@@ -52,6 +52,7 @@ class MockDistributor1(Distributor):
 
     @classmethod
     def reset(cls):
+        MockDistributor1.repo_data = None
         MockDistributor1.publish_conduit = None
         MockDistributor1.distributor_config = None
         MockDistributor1.repo_config = None
@@ -84,6 +85,7 @@ class MockDistributor2(Distributor):
 
     @classmethod
     def reset(cls):
+        MockDistributor2.repo_data = None
         MockDistributor2.publish_conduit = None
         MockDistributor2.distributor_config = None
         MockDistributor2.repo_config = None
@@ -182,6 +184,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.publish_manager.publish('not-here', 'doesnt-matter', None)
+            self.fail('Expected exception was not raised')
         except publish_manager.MissingRepo, e:
             self.assertEqual('not-here', e.repo_id)
             print(e) # for coverage
@@ -197,6 +200,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.publish_manager.publish('no-dist', 'fake-dist')
+            self.fail('Expected exception was not raised')
         except publish_manager.NoDistributor, e:
             self.assertEqual('no-dist', e.repo_id)
             print(e) # for coverage
@@ -217,6 +221,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.publish_manager.publish('repo', 'dist-1', None)
+            self.fail('Expected exception was not raised')
         except publish_manager.MissingDistributorPlugin, e:
             self.assertEqual('repo', e.repo_id)
             print(e) # for coverage
@@ -236,6 +241,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.publish_manager.publish('repo', 'dist-1')
+            self.fail('Expected exception was not raised')
         except publish_manager.NoDistributor, e:
             self.assertEqual('repo', e.repo_id)
             print(e) # for coverage
@@ -254,6 +260,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.publish_manager.publish('gonna-bail', 'bad-dist')
+            self.fail('Expected exception was not raised')
         except publish_manager.RepoPublishException, e:
             self.assertEqual('gonna-bail', e.repo_id)
             print(e) # for coverage
@@ -283,9 +290,96 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.publish_manager.publish('busy', 'dist-1')
+            self.fail('Expected exception was not raised')
         except publish_manager.PublishInProgress, e:
             self.assertEqual('busy', e.repo_id)
             print(e) # for coverage
+
+    def test_auto_publish_for_repo(self):
+        """
+        Tests automatically publishing for a repo that has both auto and non-auto
+        distributors configured.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('publish-me')
+        self.repo_manager.add_distributor('publish-me', 'MockDistributor1', {}, True, 'auto')
+        self.repo_manager.add_distributor('publish-me', 'MockDistributor2', {}, False, 'manual')
+
+        # Test
+        self.publish_manager.auto_publish_for_repo('publish-me')
+
+        # Verify
+        self.assertTrue(MockDistributor1.repo_data is not None)
+        self.assertTrue(MockDistributor2.repo_data is None)
+
+    def test_auto_publish_no_repo(self):
+        """
+        Tests that calling auto publish on a repo that doesn't exist or one that
+        doesn't have any distributors assigned will not error.
+        """
+
+        # Test
+        self.publish_manager.auto_publish_for_repo('non-existent') # should not error
+
+    def test_auto_publish_with_error(self):
+        """
+        Tests that if one auto distributor raises an error the other is still
+        invoked and the error properly conveys the results.
+        """
+
+        # Setup
+        MockDistributor1.raise_error = True
+
+        self.repo_manager.create_repo('publish-me')
+        self.repo_manager.add_distributor('publish-me', 'MockDistributor1', {}, True, 'auto-1')
+        self.repo_manager.add_distributor('publish-me', 'MockDistributor2', {}, True, 'auto-2')
+
+        # Test
+        try:
+            self.publish_manager.auto_publish_for_repo('publish-me')
+            self.fail('Expected exception was not raised')
+        except publish_manager.AutoPublishException, e:
+            self.assertEqual('publish-me', e.repo_id)
+            self.assertEqual(1, len(e.dist_traceback_tuples))
+            self.assertEqual('auto-1', e.dist_traceback_tuples[0][0])
+            self.assertTrue(e.dist_traceback_tuples[0][1] is not None)
+            print(e) # for coverage
+            print(e.dist_traceback_tuples[0][1]) # for curiosity of the exception format
+
+    # -- utility tests --------------------------------------------------------
+
+    def test_auto_distributors(self):
+        """
+        Tests that the query for distributors on a repo that are configured for
+        automatic distribution is correct.
+        """
+
+        # Setup
+        dist_coll = RepoDistributor.get_collection()
+
+        dist_coll.save(RepoDistributor('repo-1', 'dist-1', 'type', None, True))
+        dist_coll.save(RepoDistributor('repo-1', 'dist-2', 'type', None, True))
+        dist_coll.save(RepoDistributor('repo-1', 'dist-3', 'type', None, False))
+        dist_coll.save(RepoDistributor('repo-2', 'dist-1', 'type', None, True))
+        dist_coll.save(RepoDistributor('repo-2', 'dist-2', 'type', None, False))
+
+        # Test
+        repo1_dists = publish_manager._auto_distributors('repo-1')
+        repo2_dists = publish_manager._auto_distributors('repo-2')
+        repo3_dists = publish_manager._auto_distributors('repo-3')
+
+        # Verify
+        self.assertEqual(2, len(repo1_dists))
+        repo1_dist_ids = [d['id'] for d in repo1_dists]
+        self.assertTrue('dist-1' in repo1_dist_ids)
+        self.assertTrue('dist-2' in repo1_dist_ids)
+
+        self.assertEqual(1, len(repo2_dists))
+        repo2_dist_ids = [d['id'] for d in repo2_dists]
+        self.assertTrue('dist-1' in repo2_dist_ids)
+
+        self.assertEqual(0, len(repo3_dists))
 
 # -- testing utilities --------------------------------------------------------
 
