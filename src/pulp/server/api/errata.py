@@ -91,7 +91,11 @@ class ErrataApi(BaseApi):
         @return: True if referenced
         @rtype: bool
         """
-        type = self.erratum(id)["type"]
+        erratum = self.erratum(id)
+        if erratum is None:
+            return False
+
+        type = erratum["type"]
         collection = model.Repo.get_collection()
         query = "errata.%s" % type
         repo = collection.find_one({query:id}, fields=["id"])
