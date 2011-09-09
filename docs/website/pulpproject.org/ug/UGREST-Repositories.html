@@ -46,14 +46,13 @@
 <a href="UGREST-Repositories.html#DeleteARepository">Delete A Repository</a></li><li class="active">
 <a href="UGREST-Repositories.html#GetARepository">Get A Repository</a></li><li class="active">
 <a href="UGREST-Repositories.html#UpdateARepository">Update A Repository</a></li><li class="active">
-<a href="UGREST-Repositories.html#CancelATask">Cancel A Task</a></li><li class="active">
-<a href="UGREST-Repositories.html#ActionStatus">Action Status</a></li><li class="active">
 <a href="UGREST-Repositories.html#ListActions">List Actions</a></li><li class="active">
 <a href="UGREST-Repositories.html#RepositorySychronization">Repository Sychronization</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddErrata">Add Errata</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddFile">Add File</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddFilters">Add Filters</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddGroup">Add Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#addacustommetadatafiletypetoRepositoryMetadata">add a custom metadata filetype to Repository Metadata</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddAPackage">Add A Package</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddPackageGroupToCategory">Add Package Group To Category</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddPackagesToPackageGroup">Add Packages To Package Group</a></li><li class="active">
@@ -67,13 +66,16 @@
 <a href="UGREST-Repositories.html#DeleteAPackageGroup">Delete A Package Group</a></li><li class="active">
 <a href="UGREST-Repositories.html#DeletePackageGroupFromCategory">Delete Package Group From Category</a></li><li class="active">
 <a href="UGREST-Repositories.html#DeletePackageGroupCategory">Delete Package Group Category</a></li><li class="active">
+<a href="UGREST-Repositories.html#downloadcustommetadatafiletypefromRepositoryMetadata">download custom metadata filetype from Repository Metadata</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryMetadatageneration">Repository Metadata generation</a></li><li class="active">
 <a href="UGREST-Repositories.html#GetPackageByFileName">Get Package By File Name</a></li><li class="active">
 <a href="UGREST-Repositories.html#GetPackageByNVREA">Get Package By NVREA</a></li><li class="active">
 <a href="UGREST-Repositories.html#ImportComps">Import Comps</a></li><li class="active">
-<a href="UGREST-Repositories.html#RepositoryMetadatageneration">Repository Metadata generation</a></li><li class="active">
+<a href="UGREST-Repositories.html#listmetadatafiletypeinformationfromaRepository">list metadata filetype information from a Repository</a></li><li class="active">
 <a href="UGREST-Repositories.html#RemoveFile">Remove File</a></li><li class="active">
 <a href="UGREST-Repositories.html#RemoveFilters">Remove Filters</a></li><li class="active">
 <a href="UGREST-Repositories.html#RemoveGroup">Remove Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#removemetadatafiletypefromRepositoryMetadata">remove metadata filetype from Repository Metadata</a></li><li class="active">
 <a href="UGREST-Repositories.html#RemoveKeys">Remove Keys</a></li><li class="active">
 <a href="UGREST-Repositories.html#RepositorySychronization1">Repository Sychronization</a></li><li class="active">
 <a href="UGREST-Repositories.html#UpdatePublish">Update Publish</a></li><li class="active">
@@ -127,7 +129,6 @@
 </li><li><strong>distributionid</strong> &lt;list of str&gt; <i>list of distribution ids this repository belongs to [deferred fields]</i>
 </li><li><strong>checksum_type</strong> &lt;str&gt; <i>name of the algorithm used for checksums of the repository's content</i>
 </li><li><strong>filters</strong> &lt;list of str&gt; <i>list of filter ids associated with the repository</i>
-</li><li><strong>preserve_metadata</strong> &lt;bool&gt; <i>will not regenerate metadata and treats the repo as a mirror</i>
 </li></ul><p>
 <strong>RepoSource object fields</strong>: 
 </p>
@@ -147,7 +148,6 @@
 </li><li><strong>traceback</strong> &lt;str or nil&gt; <i>a string print out of the trace back for the exception, if any</i>
 </li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
 </li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <i>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</i>
-</li><li><strong>status_path</strong> &lt;str&gt; <i>complete uri path to poll for the task's progress using http GET</i>
 </li></ul><p>
 <strong>Progress object fields</strong>: 
 </p>
@@ -218,6 +218,7 @@
 </li><li><strong>arch</strong> &lt;str&gt; <i>repository contect architecture</i>
 </li><li><strong>groupid</strong> &lt;str&gt; <i>repository group id</i>
 </li><li><strong>relative_path</strong> &lt;str&gt; <i>repository's on disk path</i>
+</li><li><strong>notes</strong> &lt;str of dict&gt; <i>repository notes</i>
 </li></ul><p>
 <br />
 </p>
@@ -308,49 +309,6 @@
 <strong>return</strong>: a Repo object <br />
 <br />
 <strong>parameters</strong>: any field of a Repo object except id <br />
-<br />
-</p>
-<hr />
-<h2 id="CancelATask">Cancel A Task</h2>
-<p>
-<br />
-<strong>method</strong>: DELETE <br />
-<br />
-<strong>path</strong>: /repositories/&lt;id&gt;/&lt;action name&gt;/&lt;task id&gt;/ <br />
-<br />
-<strong>permission</strong>: READ <br />
-<br />
-<strong>success response</strong>: 
-</p>
-<blockquote>
-<p>
-202 Accepted <br />
-204 No Content if the task has already finished <br />
-</p>
-</blockquote>
-<p>
-<br />
-<strong>failure response</strong>: 404 Not Found if the task id does nat match a task for the repository <br />
-<br />
-<strong>return</strong>: Task object on 202 <br />
-<br />
-</p>
-<h2 id="ActionStatus">Action Status</h2>
-<p>
-<i>Check the status of a previously returned task.</i> <br />
-<i>This url path should match the status_uri of a Task object.</i> <br />
-<br />
-<strong>method</strong>: GET <br />
-<br />
-<strong>path</strong>: /repositories/&lt;id&gt;/&lt;action name&gt;/&lt;task id&gt;/ <br />
-<br />
-<strong>permission</strong>: EXECUTE <br />
-<br />
-<strong>success response</strong>: 200 OK <br />
-<br />
-<strong>failure response</strong>: 404 Not Found if the task id does not match a task for the repository <br />
-<br />
-<strong>return</strong>: Task object <br />
 <br />
 </p>
 <hr />
@@ -492,6 +450,29 @@
 <strong>parameters</strong>: 
 </p>
 <ul><li><strong>addgrp</strong> &lt;str&gt; <i>group id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="addacustommetadatafiletypetoRepositoryMetadata">add a custom metadata filetype to Repository Metadata</h2>
+<p>
+<i>adds a metadata filetype to existing repository metadata(this runs modifyrepo underneath).</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_metadata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 Accepted <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: True <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>filetype</strong> &lt;str&gt; <i>filetype name to lookup in the metadata</i>
+</li><li><strong>filedata</strong> &lt;str&gt; <i>file data to be stored</i>
 </li></ul><p>
 <br />
 </p>
@@ -865,6 +846,55 @@
 </li></ul><p>
 <br />
 </p>
+<h2 id="downloadcustommetadatafiletypefromRepositoryMetadata">download custom metadata filetype from Repository Metadata</h2>
+<p>
+<i>download an xml file for the filetype specified</i> <br />
+<i>if exists in a repository metadata; else None.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/download_metadata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 Accepted <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: True <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>filetype</strong> &lt;str&gt; <i>filetype name to lookup in the metadata</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryMetadatageneration">Repository Metadata generation</h2>
+<p>
+<i>spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/generate_metadata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository <br />
+406 Not Acceptable if the repository does not have a source <br />
+409 Conflict if a metadata is already in progress for the repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: a Task object <br />
+<br />
+</p>
 <h2 id="GetPackageByFileName">Get Package By File Name</h2>
 <p>
 <i>Get packages from the repository by specifying the file names.</i> <br />
@@ -931,30 +961,22 @@
 </li></ul><p>
 <br />
 </p>
-<h2 id="RepositoryMetadatageneration">Repository Metadata generation</h2>
+<h2 id="listmetadatafiletypeinformationfromaRepository">list metadata filetype information from a Repository</h2>
 <p>
-<i>spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create</i> <br />
+<i>lists information about all the filetypes present in metadata</i> <br />
+<i>and their info such as size, checksum, path etc.</i> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
-<strong>path</strong>: /repositories/&lt;id&gt;/metadata/ <br />
+<strong>path</strong>: /repositories/&lt;id&gt;/list_metadata/ <br />
 <br />
 <strong>permission</strong>: EXECUTE <br />
 <br />
-<strong>success response</strong>: 202 Accepted <br />
+<strong>success response</strong>: 200 Accepted <br />
 <br />
-<strong>failure response</strong>: 
-</p>
-<blockquote>
-<p>
-404 Not Found if the id does not match a repository <br />
-406 Not Acceptable if the repository does not have a source <br />
-409 Conflict if a metadata is already in progress for the repository <br />
-</p>
-</blockquote>
-<p>
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
 <br />
-<strong>return</strong>: a Task object <br />
+<strong>return</strong>: dict or None <br />
 <br />
 </p>
 <h2 id="RemoveFile">Remove File</h2>
@@ -1020,6 +1042,29 @@
 <strong>parameters</strong>: 
 </p>
 <ul><li><strong>rmgrp</strong> &lt;str&gt; <i>group id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="removemetadatafiletypefromRepositoryMetadata">remove metadata filetype from Repository Metadata</h2>
+<p>
+<i>remove the specified metadata filetype</i> <br />
+<i>if exists from a repository metadata; else None.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/remove_metadata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 Accepted <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: True <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>filetype</strong> &lt;str&gt; <i>filetype name to lookup in the metadata</i>
 </li></ul><p>
 <br />
 </p>
