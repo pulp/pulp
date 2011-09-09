@@ -115,7 +115,7 @@ class RepoImporter(Model):
     """
 
     collection_name = 'gc_repo_importers'
-    unique_indicies = ( ('repo_id', 'id'), )
+    unique_indices = ( ('repo_id', 'id'), )
 
     def __init__(self, repo_id, id, importer_type_id, config):
 
@@ -207,7 +207,7 @@ class RepoContentUnit(Model):
     """
 
     collection_name = 'gc_repo_content_unit'
-    unique_indicies = ( ('repo_id', 'unit_id', 'unit_type_id'), )
+    unique_indices = ( ('repo_id', 'unit_id', 'unit_type_id'), )
 
     def __init__(self, repo_id, unit_id, unit_type_id):
 

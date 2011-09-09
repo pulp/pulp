@@ -26,7 +26,7 @@ class TaskSnapshot(Model):
     """
 
     collection_name = "task_snapshots"
-    unique_indicies = ('id',) # forces only 1 snapshot per task
+    unique_indices = ('id',) # forces only 1 snapshot per task
 
     def __init__(self, serialized_task=None):
         """
@@ -71,7 +71,7 @@ class TaskHistory(Model):
     """
 
     collection_name = 'task_history'
-    unique_indicies = ()
+    unique_indices = ()
 
     def __init__(self, task):
         super(TaskHistory, self).__init__()

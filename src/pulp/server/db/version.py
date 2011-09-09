@@ -38,7 +38,7 @@ class DataModelVersion(Model):
     """
 
     collection_name = 'data_model'
-    unique_indicies = ('version',)
+    unique_indices = ('version',)
 
     def __init__(self, version):
         """

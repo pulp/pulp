@@ -23,7 +23,7 @@ class Event(Model):
     """
 
     collection_name = 'events'
-    other_indicies = ('timestamp', 'principal', 'api')
+    search_indices = ('timestamp', 'principal', 'api')
 
     def __init__(self, principal, action, api=None, method=None, params=[]):
         super(Event, self).__init__()

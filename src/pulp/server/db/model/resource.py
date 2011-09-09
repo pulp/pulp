@@ -24,8 +24,8 @@ from pulp.server.tasking.scheduler import IntervalScheduler
 class Consumer(Model):
 
     collection_name = 'consumers'
-    unique_indicies = ('id',)
-    other_indicies = ('package_profile.name', 'repoids', 'key_value_pairs',
+    unique_indices = ('id',)
+    search_indices = ('package_profile.name', 'repoids', 'key_value_pairs',
                       'consumer_id', 'type_name', 'timestamp')
 
     def __init__(self, id, description, key_value_pairs={}):
@@ -41,7 +41,7 @@ class Consumer(Model):
 class ConsumerGroup(Model):
 
     collection_name = 'consumergroups'
-    other_indicies = ('consumerids',)
+    search_indices = ('consumerids',)
 
     def __init__(self, id, description, consumerids=[], key_value_pairs={}):
         self._id = id
@@ -71,7 +71,7 @@ class Distribution(Model):
      Distribution Model to represent kickstart trees
     """
     collection_name = 'distribution'
-    other_indicies = ('files', 'relativepath')
+    search_indices = ('files', 'relativepath')
 
     def __init__(self, id, description, relativepath, files=[]):
         Model.__init__(self)
@@ -90,7 +90,7 @@ class Errata(Model):
     """
 
     collection_name = 'errata'
-    other_indicies = ('title', 'description', 'version', 'release', 'type',
+    search_indices = ('title', 'description', 'version', 'release', 'type',
                       'status', 'updated', 'issued', 'pushcount', 'from_str',
                       'reboot_suggested')
 
@@ -128,9 +128,9 @@ class Errata(Model):
 class Package(Model):
 
     collection_name = 'packages'
-    unique_indicies = (('name', 'epoch', 'version', 'release', 'arch',
+    unique_indices = (('name', 'epoch', 'version', 'release', 'arch',
                         'filename', 'checksum'),)
-    other_indicies = ('name', 'filename', 'checksum', 'epoch', 'version',
+    search_indices = ('name', 'filename', 'checksum', 'epoch', 'version',
                       'release', 'arch', 'description')
 
     def __init__(self, name, epoch, version, release, arch, description,
@@ -204,7 +204,7 @@ class File(Model):
     """
 
     collection_name = 'file'
-    unique_indicies = (('filename', 'checksum'),)
+    unique_indices = (('filename', 'checksum'),)
 
     def __init__(self, filename, checksum_type,
                  checksum, size, description=None, repo_defined=False):
@@ -224,8 +224,8 @@ class Filter(Model):
     Class represents a blacklist or whitelist filter that can be applied when syncing a local repository
     """
     collection_name = 'filters'
-    unique_indicies = ('id',)
-    other_indicies = ('type')
+    unique_indices = ('id',)
+    search_indices = ('type')
 
     def __init__(self, id, type, description=None, package_list=None):
         self._id = id
@@ -245,7 +245,7 @@ class Repo(Model):
     SUPPORTED_CONTENT_TYPES = ['yum', 'file']
 
     collection_name = 'repos'
-    other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
+    search_indices = ('packages', 'packagegroups', 'packagegroupcategories')
 
     def __init__(self, id, name, arch, source=None, notes=None, content_types=None):
         self._id = id
