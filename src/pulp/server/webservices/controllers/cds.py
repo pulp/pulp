@@ -34,6 +34,7 @@ from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
+from pulp.server.webservices.timeout import iso8601_duration_to_timeout
 from pulp.server.agent import CdsAgent
 
 
@@ -245,7 +246,7 @@ class CdsSyncActions(JSONController):
         params = self.params()
         timeout = None
         if 'timeout' in params:
-            timeout = dateutils.parse_iso8601_duration(params['timeout'])
+            timeout = iso8601_duration_to_timeout(params['timeout'])
 
         # Kick off the async task
         task = async.run_async(cds_api.cds_sync, [id], timeout=timeout, unique=True)

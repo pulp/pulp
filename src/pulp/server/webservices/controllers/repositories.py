@@ -96,7 +96,7 @@ from gettext import gettext as _
 
 import web
 
-from pulp.common.dateutils import format_iso8601_datetime, parse_iso8601_duration
+from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import async
 from pulp.server.api import repo_sync
 from pulp.server.api import scheduled_sync
@@ -112,6 +112,7 @@ from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler, collection_query)
+from pulp.server.webservices.timeout import iso8601_duration_to_timeout
 
 # globals ---------------------------------------------------------------------
 
@@ -610,7 +611,7 @@ class RepositoryActions(JSONController):
 
         # Check for valid timeout values
         if timeout:
-            timeout = parse_iso8601_duration(timeout)
+            timeout = iso8601_duration_to_timeout(timeout)
             if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
         limit = repo_params.get('limit', None)
