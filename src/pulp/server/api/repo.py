@@ -131,7 +131,7 @@ class RepoApi(BaseApi):
             return len(os.listdir(path))
         except:
             return 0
-        
+
     def _consolidate_bundle(self, data):
         """
         Consolidate key & certificate.
@@ -269,7 +269,7 @@ class RepoApi(BaseApi):
         created = self.repository(r["id"])
         self.__created(r)
         return created
-    
+
     @event(subject='repo.created')
     def __created(self, repo):
         """
@@ -669,6 +669,9 @@ class RepoApi(BaseApi):
                     repo['source'] = ds
                 continue
             # sync_schedule changed
+	    # NOTE the following calls have the side effects of updating the
+	    # repo's schedule in the database, this causes an update to be
+	    # non-atomic
             if key == 'sync_schedule':
                 if value:
                     update_repo_schedule(repo, value)
@@ -829,7 +832,7 @@ class RepoApi(BaseApi):
         if repo['preserve_metadata']:
             msg = "Metadata for repo [%s] is set to be preserved. Cannot add new content" % repoid
             log.info(msg)
-            raise PulpException(msg) 
+            raise PulpException(msg)
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
@@ -965,7 +968,7 @@ class RepoApi(BaseApi):
         if repo['preserve_metadata']:
             msg = "Metadata for repo [%s] is set to be preserved. Cannot remove new content" % repoid
             log.info(msg)
-            raise PulpException(msg) 
+            raise PulpException(msg)
         for pkg in pkgobjs:
             if pkg['id'] not in repo['packages']:
                 log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"], repoid))
@@ -1937,7 +1940,7 @@ class RepoApi(BaseApi):
         if repo['preserve_metadata']:
             msg = "Metadata for repo [%s] is set to be preserved. Cannot re-generate metadata" % id
             log.info(msg)
-            raise PulpException(msg) 
+            raise PulpException(msg)
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
