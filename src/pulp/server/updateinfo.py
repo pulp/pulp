@@ -111,12 +111,20 @@ def generate_updateinfo(repo):
     @param repo:  repo object with errata to generate updateinfo.xml
     @type repo:  repository object
     """
-    um = UpdateMetadata()
-    eapi = ErrataApi()
     if not repo['errata']:
         #no errata to process, return
         return
     errataids = list(chain.from_iterable(repo['errata'].values()))
+    repo_dir = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path'])
+    updateinfo_path = updateinfo(errataids, repo_dir)
+    if updateinfo_path:
+        log.debug("Modifying repo for updateinfo")
+        pulp.server.util.modify_repo(os.path.join(repo_dir, "repodata"),
+                updateinfo_path)
+
+def updateinfo(errataids, save_location):
+    um = UpdateMetadata()
+    eapi = ErrataApi()
     for eid in errataids:
         un = UpdateNotice()
         e = eapi.erratum(eid)
@@ -143,22 +151,19 @@ def generate_updateinfo(repo):
         }
         un._md = _md
         um.add_notice(un)
-    repo_dir = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path']) 
+
     if not um._notices:
         # nothing to do return
         return
     updateinfo_path = None
     try:
-        updateinfo_path = "%s/%s" % (repo_dir, "updateinfo.xml")
+        updateinfo_path = "%s/%s" % (save_location, "updateinfo.xml")
         updateinfo_xml = um.xml(fileobj=open(updateinfo_path, 'wt'))
         log.info("updateinfo.xml generated and written to file %s" % updateinfo_path)
     except:
         log.error("Error writing updateinfo.xml to path %s" % updateinfo_path)
-    if updateinfo_path:
-        log.debug("Modifying repo for updateinfo")
-        pulp.server.util.modify_repo(os.path.join(repo_dir, "repodata"),
-                updateinfo_path)
-    
+    return updateinfo_path
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "Usage: %s <PATH_TO/updateinfo.xml>"
