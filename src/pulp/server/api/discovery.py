@@ -62,7 +62,7 @@ class BaseDiscovery(object):
         self.callback(self.progress)
 
     def setup(self, url, ca=None, cert=None, key=None, sslverify=False):
-        '''
+        """
         setup for discovery
         @param url: url link to be discovered
         @type url: string
@@ -74,7 +74,7 @@ class BaseDiscovery(object):
         @type key: string
         @param sslverify: use this to enforce ssl verification of the server cert
         @type sslverify: boolean
-        '''
+        """
         proto = urlparse.urlparse(url)[0]
         if proto not in ['http', 'https', 'ftp']:
              raise InvalidDiscoveryInput("Invalid input url %s" % url)
@@ -85,15 +85,15 @@ class BaseDiscovery(object):
         self.sslverify = sslverify
 
     def _get_header(self, buf):
-        '''
+        """
         callback function for pycurl.HEADERFUNCTION to get
         the header info and parse the location.
-        '''
+        """
         if buf.lower().startswith('location:'):
             self._redirected = buf[9:].strip()
 
     def _request(self, url=None, handle_redirect=False):
-        '''
+        """
          Initialize the curl object; loads the url and fetches the page.
          in case of redirects[301,302], the redirection is followed and
          new url is set.
@@ -101,7 +101,7 @@ class BaseDiscovery(object):
          @type url: string
          @return: html page source
          @rtype: string
-        '''
+        """
         if not url:
             url = self.url
         page_info = StringIO.StringIO()
@@ -142,8 +142,8 @@ class BaseDiscovery(object):
         finds matching sub urls.
         @param url: url link to be parse.
         @type url: string
-        @param regex: regular expression to match ythe url.
-        @type regex: string
+        @param handle_redirect: handle 302 redirects
+        @type handle_redirect: boolean
         @return: list of matching urls
         @rtype: list
         """
@@ -188,20 +188,20 @@ class BaseDiscovery(object):
                 except:
                     log.error("Unable to remove temporary cert file [%s]" % crt)
 
-    def discover(self):
+    def discover(self, progress_callback=None):
         raise NotImplementedError('base discovery class method called')
 
 class YumDiscovery(BaseDiscovery):
-    '''
-    Yum discovery class to perform 
-    '''
+    """
+    Yum discovery class to perform
+    """
     def discover(self, progress_callback=None):
-        '''
+        """
         Takes a root url and traverses the tree to find all the sub urls
         that has repodata in them.
         @return: list of matching urls
         @rtype: list
-        '''
+        """
         repourls = []
         urls = self.parse_url(self.url, handle_redirect=True)
         while urls:
@@ -237,12 +237,12 @@ def discovery_progress_callback(progress):
     return progress
 
 def get_discovery(type):
-    '''
+    """
     Returns an instance of a Discovery object
     @param type: discovery type
     @type type: string
     Returns an instance of a Discovery object
-    '''
+    """
     if type not in DISCOVERY_MAP:
         raise InvalidDiscoveryInput('Could not find Discovery for type [%s]', type)
     discovery = DISCOVERY_MAP[type]()
