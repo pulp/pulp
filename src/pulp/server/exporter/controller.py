@@ -13,26 +13,25 @@
 import glob
 import os
 import shutil
-import sys
-from optparse import Option, OptionParser
+from logging import getLogger
 from pulp.server.exporter.base import BaseExporter, ExportException
 
+log = getLogger(__name__)
 # --------------- constants ---------------------------#
 
 _TOP_LEVEL_PACKAGE = 'pulp.server.exporter'
 _EXPORTER_MODULES_PATH = os.path.dirname(__file__)
 
-#------------- commandline user interface --------------#
-
 class ExportController(object):
     """
      Pulp Exporter controller class
     """
-    def __init__(self, repo_object, target_directory, generate_iso=False, overwrite=False):
+    def __init__(self, repo_object, target_directory, generate_iso=False, overwrite=False, progress_callback=None):
         self.repo = repo_object
         self.target_dir = target_directory
         self.overwrite = overwrite
         self.generate_iso = generate_iso
+        self.progress_callback = progress_callback
 
     def validate_options(self):
         """
@@ -79,15 +78,15 @@ class ExportController(object):
         """
         Execute the exporter
         """
-        progress = []
-        try:
-            modules = sorted(self._load_exporter_plugins(), key=lambda mod: mod.__priority__)
-            for module in modules:
-                exporter = module(self.repoid, target_dir=self.target_dir, start_date=self.start_date,
-                                  end_date=self.end_date)
-                progress.append(exporter.export())
-        except Exception,e:
-            raise ExportException(str(e))
+        self.validate_options()
+        modules = sorted(self._load_exporter_plugins(), key=lambda mod: mod.__priority__)
+        for module in modules:
+            try:
+                exporter = module(self.repo, target_dir=self.target_dir)
+                exporter.export(progress_callback=self.progress_callback)
+            except Exception,e:
+                log.error("Error occured processing module %s; Error:%s" % (module, str(e)))
+                continue
         self.create_isos()
 
     def create_isos(self):

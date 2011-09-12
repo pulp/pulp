@@ -14,7 +14,7 @@ import os
 import pulp.server.util
 from pulp.server import comps_util
 from pulp.server.exporter.base import BaseExporter
-from pulp.server.exporter.logutil import getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -25,11 +25,11 @@ class CompsExporter(BaseExporter):
 
     __priority__ = 2
 
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
         """
         initialize package group exporter
-        @param repoid: repository Id
-        @type repoid: string
+        @param repo: repository object
+        @type repo: Repo object
         @param target_dir: target directory where exported content is written
         @type target_dir: string
         @param start_date: optional start date from which the content needs to be exported
@@ -37,10 +37,10 @@ class CompsExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
         self.progress['step'] = 'Package Group/Category '
         
-    def export(self):
+    def export(self, progress_callback=None):
         """
         Export package group/category associated with a repository object.
         Packages groups/categories are looked up and comps.xml is generated
@@ -50,13 +50,12 @@ class CompsExporter(BaseExporter):
         @return: progress information for the plugin
         """
         self.validate_target_path()
-        repo = self.get_repository()
-        xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
-                repo['packagegroups'])
-        self.progress['count_total'] = len(repo['packagegroups']) + len(repo['packagegroupcategories'])
+        xml = comps_util.form_comps_xml(self.repo['packagegroupcategories'],
+                self.repo['packagegroups'])
+        self.progress['count_total'] = len(self.repo['packagegroups']) + len(self.repo['packagegroupcategories'])
         if not xml:
             # no comps xml data found
-            log.info("No comps data found in repo %s" % repo['id'])
+            log.info("No comps data found in repo %s" % self.repo['id'])
             return
         comps_file_path = "%s/%s" % (self.target_dir, "comps.xml")
         try:
@@ -70,8 +69,7 @@ class CompsExporter(BaseExporter):
             log.error(msg)
 
         try:
-            log.debug("Modifying repo for comps groups")
-            self.write("Step: Modifying repo to add Package Groups/Categories")
+            log.debug("Modifying repo to add Package Groups/Categories")
             pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     comps_file_path)
             # either all pass or all error in this case

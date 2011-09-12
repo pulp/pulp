@@ -14,9 +14,8 @@ import os
 import shutil
 import pulp.server.util
 from pulp.server.exporter.base import BaseExporter
-from pulp.server.exporter.logutil import getLogger
-
-log = getLogger(__name__)
+import logging
+log = logging.getLogger(__name__)
 
 class PackageExporter(BaseExporter):
     """
@@ -24,11 +23,11 @@ class PackageExporter(BaseExporter):
     """
     __priority__ = 1
 
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
         """
         initialize package exporter
-        @param repoid: repository Id
-        @type repoid: string
+        @param repo: repository object
+        @type repo: Repo object
         @param target_dir: target directory where exported content is written
         @type target_dir: string
         @param start_date: optional start date from which the content needs to be exported
@@ -36,11 +35,11 @@ class PackageExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
         self.export_count = 0
         self.progress['step'] = 'Packages'
 
-    def export(self):
+    def export(self, progress_callback=None):
         """
         Export packages associated with a repository object.
         Packages are copied to the target dir if not alreay exists
@@ -50,13 +49,16 @@ class PackageExporter(BaseExporter):
         @return: progress information for the plugin
         """
         self.validate_target_path()
-        repo = self.get_repository()
-        hashtype = repo['checksum_type']
-        self.progress['count_total'] = len(repo['packages'])
-        for count, pkg in enumerate(repo['packages']):
+        hashtype = self.repo['checksum_type']
+        package_count = len(self.repo['packages'])
+        self.progress['count_total'] = package_count
+        for count, pkg in enumerate(self.repo['packages']):
             if count % 500:
-                self.write("Step: Exporting %s (%s/%s)\n" % (self.progress['step'], count, len(repo['packages'])))
+                msg = "Step: Exporting %s (%s/%s)\n" % (self.progress['step'], count, package_count)
+                log.debug(msg)
             package_obj = self.package_api.package(pkg)
+            if not package_obj:
+                continue
             pkg_path = pulp.server.util.get_shared_package_path(package_obj['name'], package_obj['version'], package_obj['release'],
                                                     package_obj['arch'], package_obj['filename'], package_obj['checksum'])
             if not os.path.exists(pkg_path):
@@ -81,7 +83,6 @@ class PackageExporter(BaseExporter):
             self.progress['num_success'] = self.export_count
         # generate metadata
         try:
-            self.write("Step: Generating metadata for exported packages", )
             pulp.server.util.create_repo(self.target_dir)
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except pulp.server.util.CreateRepoError, cre:

@@ -14,7 +14,7 @@ import os
 import shutil
 import pulp.server.util
 from pulp.server.exporter.base import BaseExporter
-from pulp.server.exporter.logutil import getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -24,11 +24,11 @@ class DistributionExporter(BaseExporter):
     """
     __priority__ = 4
     
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
         """
         initialize distribution exporter
-        @param repoid: repository Id
-        @type repoid: string
+        @param repo: repository object
+        @type repo: Repo object
         @param target_dir: target directory where exported content is written
         @type target_dir: string
         @param start_date: optional start date from which the content needs to be exported
@@ -36,12 +36,12 @@ class DistributionExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
         self.export_count = 0
         self.errataids = None
         self.progress['step'] = 'Distribution files '
 
-    def export(self):
+    def export(self, progress_callback=None):
         """
          Export distribution files associated to a repository.
          Distribution image files are looked up and copied over to
@@ -51,9 +51,8 @@ class DistributionExporter(BaseExporter):
          @return: progress information for the plugin
         """
         self.validate_target_path()
-        repo = self.get_repository()
-        distributions = repo['distributionid']
-        tree_info_path = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path'])
+        distributions = self.repo['distributionid']
+        tree_info_path = "%s/%s/" % (pulp.server.util.top_repos_location(), self.repo['relative_path'])
         src_tree_file = dst_tree_file = None
         for tree_info_name in ['treeinfo', '.treeinfo']:
             src_tree_file = tree_info_path + tree_info_name
@@ -75,7 +74,7 @@ class DistributionExporter(BaseExporter):
             self.progress['count_total'] = len(distro['files'])
             for count, src_dist_file in enumerate(distro['files']):
                 if count % 500:
-                    self.write("Step: Exporting %s (%s/%s)" % (self.progress['step'], count, len(distro['files'])))
+                    log.debug("Step: Exporting %s (%s/%s)" % (self.progress['step'], count, len(distro['files'])))
                 dst_file_path = "%s/%s" % (image_dir, os.path.basename(src_dist_file) )
                 if os.path.exists(dst_file_path):
                     dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)

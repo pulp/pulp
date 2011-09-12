@@ -16,7 +16,7 @@ import pulp.server.util
 from pulp.server import updateinfo
 from pulp.server.compat import chain
 from pulp.server.exporter.base import BaseExporter
-from pulp.server.exporter.logutil import getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -26,11 +26,11 @@ class ErrataExporter(BaseExporter):
     """
     __priority__ = 3
 
-    def __init__(self, repoid, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
         """
         initialize errata exporter
-        @param repoid: repository Id
-        @type repoid: string
+        @param repo: repository Object
+        @type repo: Repo object
         @param target_dir: target directory where exported content is written
         @type target_dir: string
         @param start_date: optional start date from which the content needs to be exported
@@ -38,12 +38,12 @@ class ErrataExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repoid, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
         self.export_count = 0
         self.errataids = None
         self.progress['step'] = 'Errata'
 
-    def export(self):
+    def export(self, progress_callback=None):
         """
         Export errata associated with a repository object.
         Errata is looked up in pulp db and updateinfo.xml is generated,
@@ -54,8 +54,7 @@ class ErrataExporter(BaseExporter):
         @return: progress information for the plugin
         """
         self.validate_target_path()
-        repo = self.get_repository()
-        self.errataids = list(chain.from_iterable(repo['errata'].values()))
+        self.errataids = list(chain.from_iterable(self.repo['errata'].values()))
         self.progress['count_total'] = len(self.errataids)
         self.__process_errata_packages()
         log.info("generating updateinfo.xml file for exported errata")
@@ -63,7 +62,6 @@ class ErrataExporter(BaseExporter):
             updateinfo_path = updateinfo.updateinfo(self.errataids, self.target_dir)
             if updateinfo_path:
                 log.debug("Modifying repo for updateinfo")
-                self.write("Step: Modifying repo to add updateinfo")
                 pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     updateinfo_path)
             # either all pass or all error in this case
@@ -82,6 +80,8 @@ class ErrataExporter(BaseExporter):
         errata_pkg_count = 0
         for eid in self.errataids:
             eobj = self.errata_api.erratum(eid)
+            if not eobj:
+                continue
             for pkgobj in eobj['pkglist']:
                 for pkg in pkgobj['packages']:
                     checksum_type, checksum = pkg['sum']
