@@ -20,21 +20,14 @@ from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.db import connection
 from pulp.server.api.repo import RepoApi
+from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
 # --------- Exceptions ---------------------#
 
-class ExportException(Exception):
-    """
-    Base exception class for exporter
-    """
-    def __init__(self, value, *args):
-        Exception.__init__(self, value, *args)
-        self.value = value % args
-
-    def __str__(self):
-        return repr(self.value)
+class ExportException(PulpException):
+    pass
 
 class MetadataException(ExportException):
     """
@@ -132,51 +125,3 @@ class BaseExporter(object):
 
     def get_report(self):
         raise NotImplementedError()
-
-    # ----------- progress status utility methods -----------------#
-
-    def write(self, current, prev=None):
-        """ Use information of number of columns to guess if the terminal
-        will wrap the text, at which point we need to add an extra 'backup line'
-        """
-        lines = 0
-        if prev:
-            lines = prev.count('\n')
-            if prev.rstrip(' ')[-1] != '\n':
-                lines += 1 # Compensate for the newline we inject in this method at end
-            lines += self.count_linewraps(prev)
-        # Move up 'lines' lines and move cursor to left
-        sys.stdout.write('\033[%sF' % (lines))
-        sys.stdout.write('\033[J')  # Clear screen cursor down
-        sys.stdout.write(current)
-        # In order for this to work in various situations
-        # We are requiring a new line to be entered at the end of
-        # the current string being printed.
-        if current.rstrip(' ')[-1] != '\n':
-            sys.stdout.write("\n")
-        sys.stdout.flush()
-
-    def terminal_size(self):
-        import fcntl, termios, struct
-        h, w, hp, wp = struct.unpack('HHHH',
-            fcntl.ioctl(0, termios.TIOCGWINSZ,
-                struct.pack('HHHH', 0, 0, 0, 0)))
-        return w, h
-
-    def count_linewraps(self, data):
-        linewraps = 0
-        width = height = 0
-        try:
-            width, height = self.terminal_size()
-        except:
-            # Unable to query terminal for size
-            # so default to 0 and skip this
-            # functionality
-            return 0
-        for line in data.split('\n'):
-            count = 0
-            for d in line:
-                if d in string.printable:
-                    count += 1
-            linewraps += count / width
-        return linewraps

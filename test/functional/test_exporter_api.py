@@ -21,11 +21,11 @@ import unittest
 import shutil
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
-from pulp.server.exporter.plugins.package import PackageExporter
-from pulp.server.exporter.plugins.packagegroup import CompsExporter
-from pulp.server.exporter.plugins.distribution import DistributionExporter
-from pulp.server.exporter.plugins.errata import ErrataExporter
-from pulp.server.exporter.plugins.other import OtherExporter
+from pulp.server.exporter.package import PackageExporter
+from pulp.server.exporter.packagegroup import CompsExporter
+from pulp.server.exporter.distribution import DistributionExporter
+from pulp.server.exporter.errata import ErrataExporter
+from pulp.server.exporter.other import OtherExporter
 from pulp.server.api import repo_sync
 from pulp.server.tasking import task
 from pulp.server import async, constants, util
@@ -49,7 +49,7 @@ class TestExporterApi(testutil.PulpAsyncTest):
         self._perform_sync(repo_1)
         self.found_1 = self.repo_api.repository('test_export_repo')
 
-    def test_repo_exporter(self):
+    def _test_repo_exporter(self):
         # test package export
         packages_1 = self.found_1['packages']
         pe = PackageExporter('test_export_repo', target_dir='/tmp/pulp/myexport/')
