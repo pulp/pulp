@@ -49,16 +49,20 @@ class RepoPublishConduit:
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, progress_callback=None):
+    def __init__(self, repo_id, distributor_id, progress_callback=None):
         """
         @param repo_id: identifies the repo being published
         @type  repo_id: str
+
+        @param distributor_id: identifies the distributor being published
+        @type  distributor_id: str
 
         @param progress_callback: used to update the server's knowledge of the
                                   publish progress
         @type  progress_callback: ?
         """
         self.repo_id = repo_id
+        self.distributor_id = distributor_id
         
         self.__progress_callback = progress_callback
 

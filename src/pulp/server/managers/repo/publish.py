@@ -137,7 +137,7 @@ class RepoPublishManager:
             raise MissingDistributorPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish
-        conduit = RepoPublishConduit(repo_id)
+        conduit = RepoPublishConduit(repo_id, distributor_id)
 
         # Take the repo's default publish config and merge in the override values
         # for this run alone (don't store it back to the DB)
@@ -209,6 +209,16 @@ class RepoPublishManager:
 
         if len(error_runs) > 0:
             raise AutoPublishException(repo_id, error_runs)
+
+    def last_publish(self, repo_id):
+        """
+        Returns the timestamp of the last publish call, regardless of its
+        success or failure. If the repo has never been published, returns None.
+
+        @return: timestamp of the last publish
+        @rtype:  datetime or None
+        """
+
 
 # -- utilities ----------------------------------------------------------------
 
