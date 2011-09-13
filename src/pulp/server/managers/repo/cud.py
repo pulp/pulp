@@ -186,6 +186,10 @@ class RepoManager:
         # Database Update
         Repo.get_collection().remove({'id' : repo_id})
 
+        # Remove all importers and distributors from the repo
+        RepoDistributor.get_collection().remove({'repo_id' : repo_id})
+        RepoImporter.get_collection().remove({'repo_id' : repo_id})
+
     def set_importer(self, repo_id, importer_type_name, importer_config):
         """
         Configures an importer to be used for the given repository.

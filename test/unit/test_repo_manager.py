@@ -171,7 +171,28 @@ class RepoManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.manager.delete_repo('fake repo')
+        self.manager.delete_repo('fake repo') # should not error
+
+    def test_delete_with_plugins(self):
+        """
+        Tests that deleting a repo that has importers and distributors configured deletes them as well.
+        """
+
+        # Setup
+        self.manager.create_repo('doomed')
+        self.manager.set_importer('doomed', 'MockImporter', {})
+        self.manager.add_distributor('doomed', 'MockDistributor', {}, True, distributor_id='dist-1')
+        self.manager.add_distributor('doomed', 'MockDistributor', {}, True, distributor_id='dist-2')
+
+        self.assertEqual(1, len(list(RepoImporter.get_collection().find({'repo_id' : 'doomed'}))))
+        self.assertEqual(2, len(list(RepoDistributor.get_collection().find({'repo_id' : 'doomed'}))))
+
+        # Test
+        self.manager.delete_repo('doomed')
+
+        # Verify
+        self.assertEqual(0, len(list(RepoImporter.get_collection().find({'repo_id' : 'doomed'}))))
+        self.assertEqual(0, len(list(RepoDistributor.get_collection().find({'repo_id' : 'doomed'}))))
 
     def test_set_importer(self):
         """
