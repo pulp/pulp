@@ -157,7 +157,7 @@ class RepoSyncConduit:
         """
         pass
 
-    def associate_content_unit(self, type_id, unit_key):
+    def associate_content_unit(self, type_id, unit_id):
         """
         Creates a relationship between the repo being synchronized and the
         content unit identified by the given key. The unit must have been
@@ -167,16 +167,16 @@ class RepoSyncConduit:
         @param type_id: identifies the type of content unit being associated
         @type  type_id: str
 
-        @param unit_key: identifies the content unit itself
-        @type  unit_key: dict
+        @param unit_id: identifies the content unit itself
+        @type  unit_id: str
         """
         try:
-            self.__association_manager.associate_unit_by_key(self.repo_id, type_id, unit_key)
+            self.__association_manager.associate_unit_by_id(self.repo_id, type_id, unit_id)
         except:
             _LOG.exception(_('Content unit association failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
-    def unassociate_content_unit(self, type_id, unit_key):
+    def unassociate_content_unit(self, type_id, unit_id):
         """
         Unassociates the given content unit from the repo being syncced. The
         unit is not deleted from the server's database. If for some reason the
@@ -185,13 +185,11 @@ class RepoSyncConduit:
         @param type_id: identifies the type of unit being associated
         @type  type_id: str
 
-        @param unit_key: key/value pairs uniquely identifying this unit from all
-                         other units of the same type; the keys in here must
-                         match the unique indexes defined in the type definition
-        @type  unit_key: dict
+        @param unit_id: identifies the content unit itself
+        @type  unit_id: str
         """
         try:
-            self.__association_manager.unassociate_unit_by_key(self.repo_id, type_id, unit_key)
+            self.__association_manager.unassociate_unit_by_id(self.repo_id, type_id, unit_id)
         except:
             _LOG.exception(_('Content unit unassociation failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
@@ -202,9 +200,7 @@ class RepoSyncConduit:
         synchronized. This can be used to determine units that were once
         associated but were not present in the latest sync.
 
-        @param type_id: optional; if specified, only keys for units of the  
+        @param type_id: optional; if specified, only keys for units of the
+                        given type are returned
         """
-        try:
-            self.__association_manager.unit_keys_for_repo(self.repo_id)
-        except:
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+        pass
