@@ -74,7 +74,8 @@ class DistributionExporter(BaseExporter):
             self.progress['count_total'] = len(distro['files'])
             for count, src_dist_file in enumerate(distro['files']):
                 if count % 500:
-                    log.debug("Step: Exporting %s (%s/%s)" % (self.progress['step'], count, len(distro['files'])))
+                    msg = "Step: Exporting %s (%s/%s)" % self.progress['step']
+                    log.debug(msg)
                 dst_file_path = "%s/%s" % (image_dir, os.path.basename(src_dist_file) )
                 if os.path.exists(dst_file_path):
                     dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
@@ -95,7 +96,8 @@ class DistributionExporter(BaseExporter):
                     self.progress['errors'].append(msg)
                     self.progress['num_error'] += 1
                     log.error(msg)
-                    
+            if progress_callback is not None:
+                progress_callback(self.progress)
         return self.progress
 
 if __name__== '__main__':

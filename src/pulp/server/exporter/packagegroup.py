@@ -69,7 +69,11 @@ class CompsExporter(BaseExporter):
             log.error(msg)
 
         try:
-            log.debug("Modifying repo to add Package Groups/Categories")
+            msg = "Modifying repo to add Package Groups/Categories"
+            log.debug(msg)
+            if progress_callback is not None:
+                self.progress["step"] = msg
+                progress_callback(self.progress)
             pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     comps_file_path)
             # either all pass or all error in this case

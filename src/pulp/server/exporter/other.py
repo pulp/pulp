@@ -67,7 +67,11 @@ class OtherExporter(BaseExporter):
             try:
                 shutil.copy(filetype_path,  renamed_filetype_path)
                 if os.path.isfile(renamed_filetype_path):
-                    log.info("Modifying repo for %s metadata" % ftype)
+                    msg = "Modifying repo for %s metadata" % ftype
+                    log.info(msg)
+                    if progress_callback is not None:
+                        self.progress["step"] = msg
+                        progress_callback(self.progress)
                     pulp.server.util.modify_repo(tgt_repodata_dir, renamed_filetype_path)
                 self.progress['num_success'] += 1
             except IOError, io:

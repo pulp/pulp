@@ -54,8 +54,9 @@ class PackageExporter(BaseExporter):
         self.progress['count_total'] = package_count
         for count, pkg in enumerate(self.repo['packages']):
             if count % 500:
-                msg = "Step: Exporting %s (%s/%s)\n" % (self.progress['step'], count, package_count)
+                msg = "Step: Exporting %s\n" % self.progress['step'] #, count, package_count)
                 log.debug(msg)
+
             package_obj = self.package_api.package(pkg)
             if not package_obj:
                 continue
@@ -81,8 +82,14 @@ class PackageExporter(BaseExporter):
                 self.export_count += 1
                 log.info("file %s already exists with same checksum. skip export" % os.path.basename(pkg_path))
             self.progress['num_success'] = self.export_count
+            if progress_callback is not None:
+                #self.progress["step"] = msg
+                progress_callback(self.progress)
         # generate metadata
         try:
+            if progress_callback is not None:
+                self.progress["step"] = "Running Createrepo at target location %s" % self.target_dir
+                progress_callback(self.progress)
             pulp.server.util.create_repo(self.target_dir)
             log.info("metadata generation complete at target location %s" % self.target_dir)
         except pulp.server.util.CreateRepoError, cre:

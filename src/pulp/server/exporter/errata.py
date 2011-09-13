@@ -61,7 +61,11 @@ class ErrataExporter(BaseExporter):
         try:
             updateinfo_path = updateinfo.updateinfo(self.errataids, self.target_dir)
             if updateinfo_path:
-                log.debug("Modifying repo for updateinfo")
+                msg = "Running modifyrepo to add updateinfo information"
+                log.debug(msg)
+                if progress_callback is not None:
+                    self.progress["step"] = msg
+                    progress_callback(self.progress)
                 pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     updateinfo_path)
             # either all pass or all error in this case
