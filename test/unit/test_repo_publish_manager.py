@@ -366,6 +366,21 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Verify
         self.assertEqual(expected, last)
 
+    def test_last_publish_never_published(self):
+        """
+        Tests getting the last publish date for an unpublished repo.
+        """
+
+        # Setup
+        dist = RepoDistributor('repo-1', 'dist-1', 'type-1', None, True)
+        RepoDistributor.get_collection().save(dist)
+
+        # Test
+        last = self.publish_manager.last_publish('repo-1', 'dist-1') # should not error
+
+        # Verify
+        self.assertTrue(last is None)
+
     # -- utility tests --------------------------------------------------------
 
     def test_auto_distributors(self):

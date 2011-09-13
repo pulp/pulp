@@ -49,7 +49,7 @@ class RepoPublishConduit:
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, distributor_id, progress_callback=None):
+    def __init__(self, repo_id, distributor_id, repo_publish_manager, progress_callback=None):
         """
         @param repo_id: identifies the repo being published
         @type  repo_id: str
@@ -63,7 +63,8 @@ class RepoPublishConduit:
         """
         self.repo_id = repo_id
         self.distributor_id = distributor_id
-        
+
+        self.__repo_publish_manager = repo_publish_manager
         self.__progress_callback = progress_callback
 
     def __str__(self):
@@ -80,7 +81,8 @@ class RepoPublishConduit:
         @return: timestamp instance describing the last publish
         @rtype:  datetime or None
         """
-        pass
+        last = self.__repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
+        return last
 
     def query(self):
         # Placeholder - jconnor to implement
