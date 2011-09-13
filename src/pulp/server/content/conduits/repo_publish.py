@@ -67,4 +67,17 @@ class RepoPublishConduit:
 
     # -- public ---------------------------------------------------------------
 
-    
+    def last_publish(self):
+        """
+        Returns the timestamp of the last time this repo was published,
+        regardless of the success or failure of the publish. If
+        the repo was never published, this call returns None.
+
+        @return: timestamp instance describing the last publish
+        @rtype:  datetime or None
+        """
+        pass
+
+    def query(self):
+        # Placeholder - jconnor to implement
+        pass
