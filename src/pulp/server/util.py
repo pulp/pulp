@@ -71,6 +71,35 @@ class ModifyRepoError(CreateRepoError):
 class RegularExpressionError(PulpException):
     pass
 
+class Package:
+    """
+    Package data object used so the YumRepository and associated
+    package sack(s) can be closed.
+    """
+
+    __slots__ = \
+    ('relativepath',
+     'checksum',
+     'name',
+     'epoch',
+     'version',
+     'release',
+     'arch',
+     'description',
+     'buildhost',
+     'size',
+     'group',
+     'license',
+     'vendor',
+     'requires',
+     'provides',)
+
+    def __init__(self, p):
+        for k in self.__slots__:
+            v = getattr(p, k)
+            setattr(self, k, v)
+
+
 def top_repos_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "repos")
 
@@ -250,9 +279,12 @@ def get_repo_package(repo_path, package_filename):
 
 def get_repo_packages(path):
     """
+    Get a list of packages in the yum repo.
+    A list of L{Package} data objects are returned so that the repo
+    and associated resources can be closed.
     @param path: path to repo's base (not the repodatadir, this api 
     expects a path/repodata underneath this path)
-    @return: List of available packages objects in the repo.  
+    @return: List of available packages (data) objects in the repo.
     """
     temp_path = tempfile.mkdtemp(prefix="temp_pulp_repo")
     # We want to limit yum operations to 1 per process.
@@ -262,13 +294,18 @@ def get_repo_packages(path):
     # Bug 695743 - Multiple concurrent calls to util.get_repo_packages() results in Segmentation fault
     __yum_lock.acquire()
     try:
+        packages = []
         r = _get_yum_repomd(path, temp_path=temp_path)
         if not r:
             return []
-        r.sack.populate(r, 'metadata', None, 0)
-        return r.getPackageSack().returnPackages()
+        sack = r.getPackageSack()
+        sack.populate(r, 'metadata', None, 0)
+        for p in sack.returnPackages():
+            packages.append(Package(p))
+        return packages
     finally:
         __yum_lock.release()
+        r.close()
         try:
             shutil.rmtree(temp_path)
         except Exception, e:
