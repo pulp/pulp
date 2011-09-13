@@ -78,21 +78,21 @@ class Package:
     """
 
     __slots__ = \
-    ('relativepath',
-     'checksum',
-     'name',
-     'epoch',
-     'version',
-     'release',
-     'arch',
-     'description',
-     'buildhost',
-     'size',
-     'group',
-     'license',
-     'vendor',
-     'requires',
-     'provides',)
+        ('relativepath',
+         'checksum',
+         'name',
+         'epoch',
+         'version',
+         'release',
+         'arch',
+         'description',
+         'buildhost',
+         'size',
+         'group',
+         'license',
+         'vendor',
+         'requires',
+         'provides',)
 
     def __init__(self, p):
         for k in self.__slots__:
