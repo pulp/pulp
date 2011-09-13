@@ -93,12 +93,13 @@ Details object fields:
 import itertools
 import logging
 from gettext import gettext as _
+import os
 
 import web
 
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import async
-from pulp.server.api import repo_sync
+from pulp.server.api import repo_sync, exporter
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
 from pulp.server.api.errata import ErrataApi
@@ -582,6 +583,7 @@ class RepositoryActions(JSONController):
         'download_metadata',
         'list_metadata',
         'remove_metadata',
+        'export',
     )
 
     def sync(self, id):
@@ -643,6 +645,51 @@ class RepositoryActions(JSONController):
 
     # XXX hack to make the web services unit tests work
     _sync = sync
+
+    def export(self, id):
+        """
+        [[wiki]]
+        title: Repository Content Export
+        description: Export the repository's content into target directory from its source.
+        method: POST
+        path: /repositories/<id>/export/
+        permission: EXECUTE
+        success response: 202 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+                          406 Not Acceptable if the repository does not have a source
+                          409 Conflict if a export is already in progress for the repository
+        return: a Task object
+        parameters:
+         * target_location, str, target location on the server filesystem where the content needs to be exported
+         * generate_isos?, boolean, wrap the exported content into iso image files.
+         * overwrite?, boolean, overwrite the content in target location if not empty
+        """
+        if api.repository(id, default_fields) is None:
+           return self.not_found('A repository with the id, %s, does not exist' % id)
+        export_params = self.params()
+        target_location = export_params.get('target_location', None)
+        generate_isos = export_params.get('generate_isos', False)
+        overwrite = export_params.get('overwrite', False)
+
+        # Check for valid target_location values
+        if os.path.exists(target_location):
+            if os.listdir(target_location) and not overwrite:
+                return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
+
+        timeout = export_params.get('timeout', None)
+        # Check for valid timeout values
+        if timeout:
+            try:
+                timeout = iso8601_duration_to_timeout(timeout)
+            except UnsupportedTimeoutInterval, e:
+                return self.bad_request(msg=e.args[0])
+            if not timeout:
+                raise PulpException("Invalid timeout value: %s, see --help" % export_params['timeout'])
+        task = exporter.export(id, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite, timeout=timeout)
+        if not task:
+            return self.conflict('Export already in process for repo [%s]' % id)
+        task_info = self._task_to_dict(task)
+        return self.accepted(task_info)
 
     def generate_metadata(self, id):
         """
@@ -1386,6 +1433,8 @@ class RepositoryActions(JSONController):
             'clone': '_clone',
             '_clone': '_clone',
             'generate_metadata' : '_generate_metadata',
+            'export': '_export',
+            '_export' : '_export',
         }
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %

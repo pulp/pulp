@@ -365,3 +365,18 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/remove_metadata/" % repoid
         fileinfo = {'filetype' : filetype}
         return self.server.POST(path, fileinfo)[1]
+
+    def export(self, repoid, target_location, generate_isos=False, overwrite=False, timeout=None):
+        path = "/repositories/%s/export/" % repoid
+        params = {"target_location" : target_location,
+                  "generate_isos" : generate_isos,
+                  "overwrite" : overwrite,
+                  "timeout":timeout, }
+        return self.server.POST(path, params)[1]
+
+    def export_list(self, repoid):
+        path = '/repositories/%s/export/' % repoid
+        try:
+            return self.server.GET(path)[1]
+        except ServerRequestError:
+            return []

@@ -1447,7 +1447,6 @@ class AddFiles(AdminRepoAction):
             try:
                 self.repository_api.add_file(id, [fobj['id']])
             except Exception:
-                raise
                 print _("Unable to associate package [%s] to repo [%s]" % (fname, id))
                 continue
             print _("Successfully associated packages %s to repo [%s]." % (fname, id))
@@ -1509,7 +1508,6 @@ class RemoveFiles(AdminRepoAction):
             try:
                 self.repository_api.remove_file(id, [fid])
             except Exception:
-                raise
                 utils.system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
 
@@ -1681,6 +1679,49 @@ class Discovery(RepoProgressAction):
             else:
                 print "(-)  [%s] %-5s" % (index+1, url)
 
+class Export(RepoProgressAction):
+
+    name = "export"
+    description = _('export repository content')
+
+    def setup_parser(self):
+        super(Export, self).setup_parser()
+        self.parser.add_option("-t", "--target_dir", dest="target",
+                               help=_("target location to write the exported content"))
+        self.parser.add_option(  "--make-isos", action="store_true", dest="make_isos", default=False,
+                               help=_("wrap exported content into iso images (optional)"))
+        self.parser.add_option(  "--overwrite", action="store_true", dest="overwrite", default=False,
+                               help=_("overwrite existing content in target location"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        if not self.opts.target:
+            utils.system_exit(os.EX_USAGE, _("Error: Target location is required to export content"))
+        task =None
+        try:
+            task = self.repository_api.export(repoid, self.opts.target, generate_isos=self.opts.make_isos, overwrite=self.opts.overwrite)
+        except Exception,e:
+            utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
+        print task['progress']
+        while not task_end(task):
+            self.print_exporter_progress(task['progress'])
+            time.sleep(0.25)
+            task = self.task_api.info(task['id'])
+
+    def print_exporter_progress(self, progress):
+        current = ""
+        if progress and progress.has_key("num_success") and progress["num_success"]:
+            current += _("Step: Exporting %s (%s/%s)(%s)\n") % \
+                       (progress['step'], progress['num_success'], progress['count_total'], self.get_wait_symbol())
+            self._previous_step = progress["num_success"]
+        elif progress and not progress["num_success"]:
+            current += _("Step: %s (%s)\n") % (progress['step'], self.get_wait_symbol())
+            self._previous_step = progress["step"]
+        else:
+            current +=  _("Step: Export in progress (%s)\n") %  self.get_wait_symbol()
+            self._previous_step = None
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
 
 class KeyReader:
 
@@ -1744,7 +1785,8 @@ class AdminRepo(Repo):
                 ListMetadata,
                 DownloadMetadata,
                 RemoveMetadata,
-                Discovery ]
+                Discovery,
+                Export]
 
 # repo plugin ----------------------------------------------------------------
 
