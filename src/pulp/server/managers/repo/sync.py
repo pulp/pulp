@@ -17,12 +17,13 @@ operations. All classes and functions in this module run synchronously; any
 need to execute syncs asynchronously must be handled at a higher layer.
 """
 
-import copy
+# Python
 import datetime
 from gettext import gettext as _
 import logging
 import sys
 
+# Pulp
 from pulp.common import dateutils
 import pulp.server.content.manager as plugin_manager
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
@@ -157,6 +158,14 @@ class RepoSyncManager:
         repo_importer['sync_in_progress'] = False
         repo_importer['last_sync'] = _sync_finished_timestamp()
         importer_coll.save(repo_importer, safe=True)
+
+        # Request any auto-distributors publish (if we're here, the sync was successful)
+        publish_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_PUBLISH)
+        try:
+            publish_manager.auto_publish_for_repo(repo_id)
+        except Exception:
+            _LOG.exception('Exception automatically publishing distributors for repo [%s]' % repo_id)
+            raise
 
 def _sync_finished_timestamp():
     """

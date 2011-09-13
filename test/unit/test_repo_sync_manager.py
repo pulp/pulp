@@ -25,7 +25,9 @@ from pulp.common import dateutils
 import pulp.server.content.manager as content_manager
 from pulp.server.content.importer.base import Importer
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
+import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
+import pulp.server.managers.repo.publish as repo_publish_manager
 import pulp.server.managers.repo.sync as repo_sync_manager
 
 # -- mocks --------------------------------------------------------------------
@@ -63,6 +65,25 @@ class MockImporter(Importer):
 
         MockImporter.raise_error = False
 
+class MockRepoPublishManager:
+
+    # Last call state
+    repo_id = None
+
+    # Call behavior
+    raise_error = False
+
+    def auto_publish_for_repo(self, repo_id):
+        MockRepoPublishManager.repo_id = repo_id
+
+        if MockRepoPublishManager.raise_error:
+            raise repo_publish_manager.AutoPublishException(repo_id, [])
+
+    @classmethod
+    def reset(cls):
+        MockRepoPublishManager.repo_id = None
+        MockRepoPublishManager.raise_error = False
+
 # -- test cases ---------------------------------------------------------------
 
 class RepoSyncManagerTests(testutil.PulpTest):
@@ -85,6 +106,9 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Reset content manager
         content_manager._MANAGER.remove_importer('MockImporter', 1)
 
+        # Reset the manager factory
+        manager_factory.reset()
+
     def clean(self):
         testutil.PulpTest.clean(self)
         Repo.get_collection().remove()
@@ -92,6 +116,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Reset the state of the mock's tracker variables
         MockImporter.reset()
+        MockRepoPublishManager.reset()
 
     def test_sync(self):
         """
@@ -267,6 +292,44 @@ class RepoSyncManagerTests(testutil.PulpTest):
         except repo_sync_manager.SyncInProgress, e:
             self.assertEqual('busy', e.repo_id)
             print(e) # for coverage
+
+    def test_sync_with_auto_distribute(self):
+        """
+        Tests that the autodistribute call is properly called at the tail end
+        of a successful sync.
+        """
+
+        # Setup
+        manager_factory.register_manager(manager_factory.TYPE_REPO_PUBLISH, MockRepoPublishManager)
+
+        self.repo_manager.create_repo('repo')
+        self.repo_manager.set_importer('repo', 'MockImporter', {})
+
+        # Test
+        self.sync_manager.sync('repo')
+
+        # Verify
+        self.assertEqual('repo', MockRepoPublishManager.repo_id)
+
+    def test_sync_with_auto_distribute_error(self):
+        """
+        Tests that the autodistribute exception is propagated when one or more
+        auto publish calls fail.
+        """
+
+        # Setup
+        manager_factory.register_manager(manager_factory.TYPE_REPO_PUBLISH, MockRepoPublishManager)
+        MockRepoPublishManager.raise_error = True
+
+        self.repo_manager.create_repo('doa')
+        self.repo_manager.set_importer('doa', 'MockImporter', {})
+
+        # Test
+        try:
+            self.sync_manager.sync('doa')
+            self.fail('Expected exception not thrown')
+        except repo_publish_manager.AutoPublishException, e:
+            self.assertEqual('doa', e.repo_id)
 
 # -- testing utilities --------------------------------------------------------
 

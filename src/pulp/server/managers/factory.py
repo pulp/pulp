@@ -33,6 +33,7 @@ TYPE_CONTENT_UPLOAD   = 'content-upload-manager'
 TYPE_REPO             = 'repo-manager'
 TYPE_REPO_ASSOCIATION = 'repo-association-manager'
 TYPE_REPO_CLONE       = 'repo-clone-manager'
+TYPE_REPO_PUBLISH     = 'repo-publish-manager'
 TYPE_REPO_QUERY       = 'repo-query-manager'
 TYPE_REPO_SYNC        = 'repo-sync-manager'
 
@@ -68,6 +69,7 @@ def initialize():
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.clone import RepoCloneManager
+    from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
     # Builtins for a normal running Pulp server (used to reset the state of the
@@ -79,6 +81,7 @@ def initialize():
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_CLONE: RepoCloneManager,
+        TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
     }
