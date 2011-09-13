@@ -87,10 +87,9 @@ class RepoImporters(JSONController):
 
         return self.ok(True)
 
-class RepoDistributors(JSONController):
+class RepoDistributor(JSONController):
 
     # POST:   Add Distributor
-    # DELETE: Remove Distributor
 
     @error_handler
     @auth_required(CREATE)
@@ -110,6 +109,10 @@ class RepoDistributors(JSONController):
         repo_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
 
         return self.ok(True)
+
+class RepoDistributors(JSONController):
+
+    # DELETE: Remove Distributor
 
     @error_handler
     @auth_required(DELETE)
@@ -159,8 +162,8 @@ class RepoPublish(JSONController):
 
 urls = (
     '/([^/]+)/$', 'RepoCreateDelete',
-    '/([^/]+)/importers/$', 'RepoImporters',
-    '/([^/]+)/distributors/$', 'RepoDistributors',
+    '/([^/]+)/importer/$', 'RepoImporters',
+    '/([^/]+)/distributors/$', 'RepoDistributor',
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributors',
     '/([^/]+)/sync/$', 'RepoSync',
     '/([^/]+)/publish/([^/]+)/$', 'RepoPublish',
