@@ -55,7 +55,69 @@ class InvalidType(Exception):
     def __str__(self):
         return 'Invalid manager type requested [%s]' % self.type_key
 
-# -- public api ---------------------------------------------------------------
+# -- manager retrieval --------------------------------------------------------
+
+# When adding these syntactic sugar methods, please use the @rtype tag to make
+# sure IDEs can correctly guess at the returned type and provide auto-complete.
+
+# Be sure to add an entry to test_syntactic_sugar_methods in test_manager_factory.py
+# to verify the correct type of manager is returned.
+
+def repo_manager():
+    """
+    @rtype: L{RepoManager}
+    """
+    return get_manager(TYPE_REPO)
+
+def repo_unit_association_manager():
+    """
+    @rtype: L{RepoUnitAssociationManager}
+    """
+    return get_manager(TYPE_REPO_ASSOCIATION)
+
+def repo_clone_manager():
+    """
+    @rtype: L{RepoCloneManager}
+    """
+    return get_manager(TYPE_REPO_CLONE)
+
+def repo_publish_manager():
+    """
+    @rtype: L{RepoPublishManager}
+    """
+    return get_manager(TYPE_REPO_PUBLISH)
+
+def repo_query_manager():
+    """
+    @rtype: L{RepoQueryManager}
+    """
+    return get_manager(TYPE_REPO_QUERY)
+
+def repo_sync_manager():
+    """
+    @rtype: L{RepoSyncManager}
+    """
+    return get_manager(TYPE_REPO_SYNC)
+
+def content_manager():
+    """
+    @rtype: L{ContentManager}
+    """
+    return get_manager(TYPE_CONTENT)
+
+def content_query_manager():
+    """
+    @rtype: L{ContentQueryManager}
+    """
+    return get_manager(TYPE_CONTENT_QUERY)
+
+def content_upload_manager():
+    """
+    @rtype: L{ContentUploadManager}
+    """
+    return get_manager(TYPE_CONTENT_UPLOAD)
+
+# -- other --------------------------------------------------------------------
 
 def initialize():
     """
@@ -87,11 +149,13 @@ def initialize():
     }
     _CLASSES.update(builtins)
 
-
 def get_manager(type_key):
     """
     Returns a manager instance of the given type according to the current
     manager class mappings.
+
+    This can be called directly, but the preferred method for retrieving managers
+    is to use the syntactic sugar methods in this module.
 
     @param type_key: identifies the manager being requested; should be one of
                      the TYPE_* constants in this module

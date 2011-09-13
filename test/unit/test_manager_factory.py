@@ -20,7 +20,16 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.managers import factory
+from pulp.server.managers.content.cud import ContentManager
+from pulp.server.managers.content.query import ContentQueryManager
+from pulp.server.managers.content.upload import ContentUploadManager
 from pulp.server.managers.repo.cud import RepoManager
+from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
+from pulp.server.managers.repo.clone import RepoCloneManager
+from pulp.server.managers.repo.publish import RepoPublishManager
+from pulp.server.managers.repo.query import RepoQueryManager
+from pulp.server.managers.repo.sync import RepoSyncManager
+
 
 # -- test cases --------------------------------------------------------------
 
@@ -29,6 +38,22 @@ class FactoryTests(testutil.PulpTest):
     def clean(self):
         super(FactoryTests, self).clean()
         factory.reset()
+
+    def test_syntactic_sugar_methods(self):
+        """
+        Tests the syntactic sugar methods for retrieving specific managers.
+        """
+
+        # Test
+        self.assertTrue(isinstance(factory.repo_manager(), RepoManager))
+        self.assertTrue(isinstance(factory.repo_unit_association_manager(), RepoUnitAssociationManager))
+        self.assertTrue(isinstance(factory.repo_clone_manager(), RepoCloneManager))
+        self.assertTrue(isinstance(factory.repo_publish_manager(), RepoPublishManager))
+        self.assertTrue(isinstance(factory.repo_query_manager(), RepoQueryManager))
+        self.assertTrue(isinstance(factory.repo_sync_manager(), RepoSyncManager))
+        self.assertTrue(isinstance(factory.content_manager(), ContentManager))
+        self.assertTrue(isinstance(factory.content_query_manager(), ContentQueryManager))
+        self.assertTrue(isinstance(factory.content_upload_manager(), ContentUploadManager))
 
     def test_get_manager(self):
         """
