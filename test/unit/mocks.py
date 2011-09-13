@@ -39,7 +39,7 @@ def all():
 
 class Consumer(object):
 
-    def deleted(self):
+    def unregistered(self):
         pass
 
     def bind(self, repoid, data):
