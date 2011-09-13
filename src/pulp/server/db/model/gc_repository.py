@@ -58,7 +58,7 @@ class Repo(Model):
     """
 
     collection_name = 'gc_repositories'
-    unique_indicies = ('id',)
+    unique_indices = ('id',)
 
     def __init__(self, id, display_name, description=None, notes=None):
 
@@ -166,7 +166,7 @@ class RepoDistributor(Model):
     """
 
     collection_name = 'gc_repo_distributors'
-    unique_indicies = ( ('repo_id', 'id'), )
+    unique_indices = ( ('repo_id', 'id'), )
 
     def __init__(self, repo_id, id, distributor_type_id, config, auto_distribute):
 

@@ -210,15 +210,39 @@ class RepoPublishManager:
         if len(error_runs) > 0:
             raise AutoPublishException(repo_id, error_runs)
 
-    def last_publish(self, repo_id):
+    def last_publish(self, repo_id, distributor_id):
         """
         Returns the timestamp of the last publish call, regardless of its
         success or failure. If the repo has never been published, returns None.
 
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the repo's distributor
+        @type  distributor_id: str
+
         @return: timestamp of the last publish
         @rtype:  datetime or None
+
+        @raises NoDistributor: if there is no distributor identified by the
+                given repo ID and distributor ID
         """
 
+        # Validation
+        coll = RepoDistributor.get_collection()
+        repo_distributor = coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+
+        if repo_distributor is None:
+            raise NoDistributor(repo_id)
+
+        # Convert to datetime instance
+        date_str = repo_distributor['last_publish']
+
+        if date_str is None:
+            return date_str
+        else:
+            instance = dateutils.parse_iso8601_datetime(date_str)
+            return instance
 
 # -- utilities ----------------------------------------------------------------
 

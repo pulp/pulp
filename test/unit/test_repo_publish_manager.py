@@ -347,12 +347,30 @@ class RepoSyncManagerTests(testutil.PulpTest):
             print(e) # for coverage
             print(e.dist_traceback_tuples[0][1]) # for curiosity of the exception format
 
+    def test_last_publish(self):
+        """
+        Tests retrieving the last publish instance.
+        """
+
+        # Setup
+        expected = datetime.datetime(year=2020, month=4, day=12, hour=0, minute=23)
+        date_str = dateutils.format_iso8601_datetime(expected)
+
+        dist = RepoDistributor('repo-1', 'dist-1', 'type-1', None, True)
+        dist['last_publish'] = date_str
+        RepoDistributor.get_collection().save(dist)
+
+        # Test
+        last = self.publish_manager.last_publish('repo-1', 'dist-1')
+
+        # Verify
+        self.assertEqual(expected, last)
+
     # -- utility tests --------------------------------------------------------
 
     def test_auto_distributors(self):
         """
-        Tests that the query for distributors on a repo that are configured for
-        automatic distribution is correct.
+        Tests that the query for distributors on a repo that are configured for automatic distribution is correct.
         """
 
         # Setup
