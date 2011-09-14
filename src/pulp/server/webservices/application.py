@@ -24,7 +24,6 @@ from pulp.server.db import connection
 
 # We need to initialize the db connection and auditing prior to any other
 # imports, since some of the imports will invoke setup methods
-from pulp.server.webservices.controllers.consumers import repo_api
 
 connection.initialize()
 
@@ -36,8 +35,8 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
-    filters, orphaned, packages, permissions, repositories, roles, services,
-    tasks, users, jobs)
+    filters, jobs, orphaned, packages, permissions, repositories, roles,
+    services, tasks, users)
 
 
 urls = (# alphabetical order, please
@@ -49,6 +48,7 @@ urls = (# alphabetical order, please
     '/errata', errata.application,
     '/events', audit.application,
     '/filters', filters.application,
+    '/jobs', jobs.application,
     '/orphaned', orphaned.application,
     '/packages', packages.application,
     '/permissions', permissions.application,
@@ -56,7 +56,6 @@ urls = (# alphabetical order, please
     '/roles', roles.application,
     '/services', services.application,
     '/tasks', tasks.application,
-    '/jobs', jobs.application,
     '/users', users.application,
 )
 
