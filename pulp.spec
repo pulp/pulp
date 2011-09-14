@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.230
+Version:        0.0.231
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -490,6 +490,102 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Sep 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.231-1
+- require gofer 0.48 for project alignment. (jortel@redhat.com)
+- Removed clone ID from repo serialization (jason.dobies@redhat.com)
+- Added support for tracking repo-wide metadata about its content
+  (jason.dobies@redhat.com)
+- Wired up bulk calls to the conduit (jason.dobies@redhat.com)
+- Added bulk associate/unassociate calls (jason.dobies@redhat.com)
+- Removed importer API methods we don't expect to be using
+  (jason.dobies@redhat.com)
+- 733508 - replaced old logic with new one to detect if sync for parent repo is
+  in progress before starting repo clone (skarmark@redhat.com)
+-  exporter changes: * export api to invoke repo exports in an async task * web
+  services calls to expose export calls * client proxy updates * cli changes to
+  support pulp-admin repo export (pkilambi@redhat.com)
+- Fix unit test mocks for Consumer.deleted() renamed to Consumer.unregistered.
+  (jortel@redhat.com)
+- First pass at GC repo APIs (jason.dobies@redhat.com)
+- 737531 - close YumRepository after getting package lists. (jortel@redhat.com)
+- Flushed out manager retrieval methods and added unit tests for them.
+  (jason.dobies@redhat.com)
+- Added removal of importers/distributors on a repo delete
+  (jason.dobies@redhat.com)
+- adding progress callback to exporter modules (pkilambi@redhat.com)
+- Added last_publish call to publish manager and conduit
+  (jason.dobies@redhat.com)
+- Added last_publish query (jason.dobies@redhat.com)
+- Added the distributor ID to the conduit for tracking
+  (jason.dobies@redhat.com)
+- Updated publish conduit with results from design discussion
+  (jason.dobies@redhat.com)
+- Changed APIs to use IDs instead of keys (jason.dobies@redhat.com)
+- Removed queries; these will live in the query manager
+  (jason.dobies@redhat.com)
+- Hooked up auto-publish to the end of repo sync (jason.dobies@redhat.com)
+- cleaning up obsolete logic in exporter to fix server side api
+  (pkilambi@redhat.com)
+- added better error reporting for services using timeout wrapper
+  (jconnor@redhat.com)
+- 729496 - added timeout validation wrapper on the server side that disallows
+  intervals containing months and years (jconnor@redhat.com)
+- Implemented auto distributor publish logic (jason.dobies@redhat.com)
+- renamed model fields: unique_indicies to unique_indices and other_indicies to
+  search_indices (jconnor@redhat.com)
+- 733716 - fixing add_package to lookup dependency list correctly
+  (pkilambi@redhat.com)
+- Changed spelling of "indices" to match what's in base
+  (jason.dobies@redhat.com)
+- Implementation of repo publish (jason.dobies@redhat.com)
+- removing obsolete script from setup.py (pkilambi@redhat.com)
+- removing obsolete export client (pkilambi@redhat.com)
+- 714253 - Added safety in case the erratum being checked isn't there.
+  (jason.dobies@redhat.com)
+- 736855 - invoke agent (RMI) Consumer.unregistered() before consumer is
+  deleted. (jortel@redhat.com)
+- 733756 - Corrected capitalization (jason.dobies@redhat.com)
+- 735393 - pulp package search via api fails with error (and solution isn't
+  documented) (jmatthews@redhat.com)
+- 728568 - We are modifying repo metadata of type 'group' and storing a gzipped
+  file, instead of a plaintext file. (jmatthews@redhat.com)
+- 735433 - Added similar fix for file based syncs as well (skarmark@redhat.com)
+- 735433 - Added fix for cloning through API with relative_path not placing
+  RPMs into the relative_path dir and added cli option for specifying
+  relative_path while cloning (skarmark@redhat.com)
+- Relax perms on (task) web services. (jortel@redhat.com)
+- refactored query methods and exceptions out into their own modules
+  (jconnor@redhat.com)
+- make sure to sync treeinfo for distributions when doing alocal sync
+  (pkilambi@redhat.com)
+- Adding plugin priority to load modules in a priority sequence
+  (pkilambi@redhat.com)
+- use distro files for count (pkilambi@redhat.com)
+- Updating exporter report with message (pkilambi@redhat.com)
+- Tracking error in the progress report to inform user (pkilambi@redhat.com)
+- Adding some progress reporting to exporter (pkilambi@redhat.com)
+- Exporter: Adding custom metadata export support and some minor clean up
+  (pkilambi@redhat.com)
+- fixing yum plugin to use new consumerconfig (pkilambi@redhat.com)
+- fixing pulp profile plugin that was broken with client refactor
+  (pkilambi@redhat.com)
+- Exporter: lookup plugins by glob; adding some more doc strings
+  (pkilambi@redhat.com)
+- Exporter: Adding more validation around target directory
+  (pkilambi@redhat.com)
+- Exporter: *  pulp-exporter wrapper to invoke the command * minor clean up and
+  adding some docs (pkilambi@redhat.com)
+- moving the modules to plugin dir and auto load the plugins
+  (pkilambi@redhat.com)
+-  Exporter: * Support for package group and category exports * adding some
+  basic progress info (pkilambi@redhat.com)
+-  Exporter: * Add a cli module to glue other exporter types * add errata
+  package processing * add logging support to log export info to exporter.log
+  (pkilambi@redhat.com)
+- Exporter: * distribution export support * integration test script * minor
+  clean up (pkilambi@redhat.com)
+- Exporter: * Errata export support * enhance generate updateinfo for exporter
+  (pkilambi@redhat.com)
 * Fri Sep 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.230-1
 - bump gofer to: 0.47 for project alignment. (jortel@redhat.com)
 - 704194 - Fix broken repo created events. (jortel@redhat.com)
