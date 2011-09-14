@@ -109,8 +109,6 @@ def _serialize_repo(repo):
         'display_name' : repo['display_name'],
         'description' : repo['description'],
         'notes' : repo['notes'],
-        'clone_ids' : repo['clone_ids'],
-        'clone_filters' : repo['clone_filters'],
         'content_unit_count' : repo['content_unit_count']
     }
 
