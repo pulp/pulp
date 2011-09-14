@@ -12,8 +12,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import uuid
+from gettext import gettext as _
 
 from pulp.server.content.types import database as content_types_db
+from pulp.server.managers.content.exceptions import ContentUnitNotFound
 
 
 class ContentManager(object):
@@ -66,3 +68,48 @@ class ContentManager(object):
         """
         collection = content_types_db.type_units_collection(content_type)
         collection.remove({'_id': unit_id}, safe=True)
+
+    def link_child_content_unit(self, parent_type, parent_id, child_type, child_ids):
+        """
+        Link children content units to a parent.
+        @param parent_type: unique id of the parent content collection
+        @type parent_type: str
+        @param parent_id: unique id of the parent content unit
+        @type parent_id: str
+        @child_type: unique id of the child content collection
+        @type child_type: str
+        @param child_ids: list of unique ids of child content units
+        @types child_ids: tuple of list
+        """
+        collection = content_types_db.type_units_collection(parent_type)
+        parent = collection.find_one({'_id': parent_id})
+        if parent is None:
+            msg = _('%(t)s content unit with id %(p) not found')
+            raise ContentTypeNotFound(msg % {'t': parent_type, 'p': parent_id})
+        # TODO validate the child type can be associated with the parent
+        # XXX validate the child actually exists?
+        children = parent.setdefault('_%s_children' % child_type, [])
+        children.extend(child_ids)
+        collection.update(parent, safe=True)
+
+    def unlink_child_content_units(self, parent_type, parent_id, child_type, child_ids):
+        """
+        Unlink children content units from a parent.
+        @param parent_type: unique id of the parent content collection
+        @type parent_type: str
+        @param parent_id: unique id of the parent content unit
+        @type parent_id: str
+        @child_type: unique id of the child content collection
+        @type child_type: str
+        @param child_ids: list of unique ids of child content units
+        @types child_ids: tuple of list
+        """
+        collection = content_types_db.type_units_collection(parent_type)
+        parent = collection.find_one({'_id': parent_id})
+        if parent is None:
+            msg = _('%(t)s content unit with id %(p) not found')
+            raise ContentTypeNotFound(msg % {'t': parent_type, 'p': parent_id})
+        key = '_%s_children' % child_type
+        children = set(parent.get(key, []))
+        parent[key] = list(children.difference(child_ids))
+        collection.update(parent, safe=True)
