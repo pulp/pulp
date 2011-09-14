@@ -132,8 +132,9 @@ class RepoSyncManager:
             raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
-        association_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_ASSOCIATION)
-        conduit = RepoSyncConduit(repo_id, association_manager)
+        association_manager = manager_factory.repo_unit_association_manager()
+        repo_manager = manager_factory.repo_manager()
+        conduit = RepoSyncConduit(repo_id, repo_manager, association_manager)
 
         # Take the repo's default sync config and merge in the override values
         # for this sync alone (don't store it back to the DB)

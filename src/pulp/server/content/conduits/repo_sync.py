@@ -51,10 +51,13 @@ class RepoSyncConduit:
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, repo_association_manager, progress_callback=None):
+    def __init__(self, repo_id, repo_cud_manager, repo_association_manager, progress_callback=None):
         """
         @param repo_id: identifies the repo being synchronized
         @type  repo_id: str
+
+        @param repo_cud_manager: server manager instance for manipulating repos
+        @type  repo_cud_manager: L{RepoManager}
 
         @param repo_association_manager: server manager instance for manipulating
                    repo to content unit associations
@@ -66,6 +69,7 @@ class RepoSyncConduit:
         """
         self.repo_id = repo_id
 
+        self.__repo_manager = repo_cud_manager
         self.__association_manager = repo_association_manager
         self.__progress_callback = progress_callback
 
@@ -228,6 +232,37 @@ class RepoSyncConduit:
             self.__association_manager.unassociate_all_by_ids(self.repo_id, type_id, unit_id_list)
         except:
             _LOG.exception(_('Multiple unit unassociations failed'))
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+
+    def add_repo_metadata_values(self, values_dict):
+        """
+        Adds or updates metadata on the repo itself to further describe its
+        contents. Existing values that are not included in the argument to this
+        call are left unchanged.
+
+        @param values_dict: pairing of keys/values to add to the repo
+        @type  values_dict: dict
+        """
+
+        try:
+            self.__repo_manager.add_metadata_values(self.repo_id, values_dict)
+        except:
+            _LOG.exception(_('Error adding metadata values to repo'))
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+
+    def remove_repo_metadata_values(self, value_keys):
+        """
+        Removes repo metadata stored at the given keys. If there is no metadata
+        entry for a given key, nothing is done and no error is raised.
+
+        @param value_keys: list of keys to remove from the repo's metadata
+        @type  value_keys: list of str
+        """
+
+        try:
+            self.__repo_manager.remove_metadata_values(self.repo_id, value_keys)
+        except:
+            _LOG.exception(_('Exception removing metadata values from repo'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
     def get_unit_keys_for_repo(self, type_id=None):
