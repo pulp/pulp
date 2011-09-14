@@ -176,6 +176,24 @@ class RepoSyncConduit:
             _LOG.exception(_('Content unit association failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
+    def associate_content_units(self, type_id, unit_id_list):
+        """
+        Bulk operation to create multiple associations. This call is optimized
+        for multiple associations and is preferred to looping over multiple
+        calls to associate_content_unit.
+
+        @param type_id: identifies the type of content unit being associated
+        @type  type_id: str
+
+        @param unit_id_list: list of unit IDs to associate
+        @type  unit_id_list: list of str
+        """
+        try:
+            self.__association_manager.associate_all_by_ids(self.repo_id, type_id, unit_id_list)
+        except:
+            _LOG.exception(_('Multiple unit association failed'))
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+
     def unassociate_content_unit(self, type_id, unit_id):
         """
         Unassociates the given content unit from the repo being syncced. The
@@ -192,6 +210,24 @@ class RepoSyncConduit:
             self.__association_manager.unassociate_unit_by_id(self.repo_id, type_id, unit_id)
         except:
             _LOG.exception(_('Content unit unassociation failed'))
+            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+
+    def unassociate_content_units(self, type_id, unit_id_list):
+        """
+        Bulk operation for removing multiple associations. This call is optimized
+        for multiple association removals and is preferred to looping over
+        multiple calls to unassociate_content_unit.
+
+        @param type_id: identifies the type of content unit being associated
+        @type  type_id: str
+
+        @param unit_id_list: list of unit IDs to unassociate
+        @type  unit_id_list: list of str
+        """
+        try:
+            self.__association_manager.unassociate_all_by_ids(self.repo_id, type_id, unit_id_list)
+        except:
+            _LOG.exception(_('Multiple unit unassociations failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
     def get_unit_keys_for_repo(self, type_id=None):
