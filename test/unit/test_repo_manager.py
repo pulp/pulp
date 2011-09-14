@@ -409,8 +409,7 @@ class RepoManagerTests(testutil.PulpTest):
 
     def test_remove_distributor_no_distributor(self):
         """
-        Tests that no exception is raised when requested to remove a distributor
-        that doesn't exist.
+        Tests that no exception is raised when requested to remove a distributor that doesn't exist.
         """
 
         # Setup
@@ -421,8 +420,7 @@ class RepoManagerTests(testutil.PulpTest):
 
     def test_remove_distributor_no_repo(self):
         """
-        Tests the proper exception is raised when removing a distributor from
-        a repo that doesn't exist.
+        Tests the proper exception is raised when removing a distributor from a repo that doesn't exist.
         """
 
         # Test
@@ -432,6 +430,90 @@ class RepoManagerTests(testutil.PulpTest):
         except repo_manager.MissingRepo, e:
             self.assertEqual(e.repo_id, 'fake-repo')
             print(e) # for coverage
+
+    def test_add_metadata_values(self):
+        """
+        Tests adding metadata to a repo under normal working conditions.
+        """
+
+        # Setup
+        self.manager.create_repo('repo')
+
+        # Test
+        values_1 = {'key_1' : 'orig_1', 'key_2' : 'orig_2'}
+        self.manager.add_metadata_values('repo', values_1)
+
+        values_2 = {'key_2' : 'new_2', 'key_3' : 'new_3'}
+        self.manager.add_metadata_values('repo', values_2)
+
+        # Verify
+        repo = Repo.get_collection().find_one({'id' : 'repo'})
+        metadata = repo['metadata']
+
+        self.assertTrue('key_1' in metadata)
+        self.assertTrue('key_2' in metadata)
+        self.assertTrue('key_3' in metadata)
+
+        self.assertEqual('orig_1', metadata['key_1'])
+        self.assertEqual('new_2', metadata['key_2'])
+        self.assertEqual('new_3', metadata['key_3'])
+        
+    def test_add_metadata_values_no_repo(self):
+        """
+        Tests the correct error is raised when adding metadata to a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.manager.add_metadata_values('not-there', {1 : 2})
+        except repo_manager.MissingRepo, e:
+            self.assertEqual('not-there', e.repo_id)
+            print(e) # for coverage
+
+    def test_add_metadata_values_bad_values(self):
+        """
+        Tests the correct error is raised when passing in a bad argument for values.
+        """
+
+        # Setup
+        self.manager.create_repo('repo')
+
+        # Test
+        try:
+            self.manager.add_metadata_values('repo', 'bad-values')
+        except repo_manager.InvalidRepoMetadata, e:
+            self.assertEqual('bad-values', e.invalid_data)
+            print(e) # for coverage
+
+    def test_remove_metadata_values(self):
+        """
+        Tests removing metadata under normal working conditions.
+        """
+
+        # Setup
+        self.manager.create_repo('repo')
+        self.manager.add_metadata_values('repo', {'key_1' : 'value_1', 'key_2' : 'value_2'})
+
+        # Test
+        self.manager.remove_metadata_values('repo', ['key_1', 'non_existent'])
+
+        # Verify
+        repo = Repo.get_collection().find_one({'id' : 'repo'})
+        metadata = repo['metadata']
+
+        self.assertEqual(1, len(metadata))
+        self.assertEqual('value_2', metadata['key_2'])
+
+    def test_remove_metadata_values_no_repo(self):
+        """
+        Tests the correct error is raised when specifying a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.manager.remove_metadata_values('not-here', ['irrelevant'])
+        except repo_manager.MissingRepo, e:
+            self.assertEqual('not-here', e.repo_id)
 
 class UtilityMethodsTests(testutil.PulpTest):
 

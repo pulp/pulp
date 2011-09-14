@@ -30,15 +30,16 @@ class Repo(Model):
     @ivar description: free form text provided by the user to describe the repo
     @type description: str
 
-    @ivar notes: arbitrary key-value pairs programmatically describing the repo
+    @ivar notes: arbitrary key-value pairs programmatically describing the repo;
+                 these are intended as a way to describe the repo usage or
+                 organizational purposes and should not vary depending on the
+                 actual content of the repo
     @type notes: dict
 
-    @ivar clone_ids: list of repo IDs for repos cloned from this instance
-    @type clone_ids: list of str
-
-    @ivar clone_filters: list of filters applied when cloning this repo; each
-                         entry is the ID of a document in the Filter collection
-    @type clone_filters: list of str
+    @ivar metadata: arbitrary data that describes the contents of the repo;
+                    the values may change as the contents of the repo change,
+                    either set by the user or by an importer or distributor
+    @type metadata: dict
 
     @ivar content_units: list of references from this repo to content units in it
     @type content_units: to be determined
@@ -71,12 +72,9 @@ class Repo(Model):
         self.description = description
         self.notes = notes or {}
 
-        # Cloning
-        self.clone_ids = []
-        self.clone_filters = []
-
-        # Units
+        # Content
         self.content_unit_count = 0
+        self.metadata = {}
 
         # Timeline
         # TODO: figure out how to track repo modified states

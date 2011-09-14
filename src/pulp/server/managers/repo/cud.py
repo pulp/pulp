@@ -335,6 +335,62 @@ class RepoManager:
         # Database Update
         distributor_coll.remove(distributor, safe=True)
 
+    def add_metadata_values(self, repo_id, values_dict):
+        """
+        Adds or updates the repo metadata key/value pairs for the given repo.
+        Existing metadata values that are not included in this call are left
+        unchanged.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param values_dict: pairing of keys/values to add to the repo
+        @type  values_dict: dict
+        """
+
+        repo_coll = Repo.get_collection()
+
+        # Validation
+        repo = repo_coll.find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        if values_dict is None or not isinstance(values_dict, dict):
+            raise InvalidRepoMetadata(values_dict)
+
+        # Merge in the provided values
+        metadata_dict = repo['metadata'] or {}
+        metadata_dict.update(values_dict)
+        repo['metadata'] = metadata_dict
+
+        repo_coll.save(repo, safe=True)
+
+    def remove_metadata_values(self, repo_id, value_keys):
+        """
+        Removes one or more entries from the repo's metadata. If there is no
+        metadata entry for a given key, nothing is done (no error is thrown).
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param value_keys: list of metadata keys to remove
+        @type  value_keys: list of str
+        """
+
+        repo_coll = Repo.get_collection()
+
+        # Validation
+        repo = repo_coll.find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        # Remove each entry if it exists
+        metadata = repo['metadata']
+        for key in value_keys:
+            metadata.pop(key, None)
+
+        repo_coll.save(repo, safe=True)
+            
 # -- functions ----------------------------------------------------------------
 
 def is_repo_id_valid(repo_id):
