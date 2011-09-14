@@ -45,6 +45,15 @@ class RepoUnitAssociationManager:
         Both repo and unit must exist in the database prior to this call,
         however this call will not verify that for performance reasons. Care
         should be taken by the caller to preserve the data integrity.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param unit_type_id: identifies the type of unit being added
+        @type  unit_type_id: str
+
+        @param unit_id: uniquely identifies the unit within the given type
+        @type  unit_id: str
         """
 
         # If the association already exists, no need to do anything else
@@ -54,7 +63,30 @@ class RepoUnitAssociationManager:
 
         # Create the database entry
         association = RepoContentUnit(repo_id, unit_id, unit_type_id)
-        RepoContentUnit.get_collection().save(association)
+        RepoContentUnit.get_collection().save(association, safe=True)
+
+    def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list):
+        """
+        Creates multiple associations between the given repo and content units.
+
+        See associate_unit_by_id for semantics.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param unit_type_id: identifies the type of unit being added
+        @type  unit_type_id: str
+
+        @param unit_id_list: list of unique identifiers for units within the given type
+        @type  unit_id_list: list of str
+        """
+
+        # There may be a way to batch this in mongo which would be ideal for a
+        # bulk operation like this. But for deadline purposes, this call will
+        # simply loop and call the single method.
+
+        for unit_id in unit_id_list:
+            self.associate_unit_by_id(repo_id, unit_type_id, unit_id)
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id):
         """
@@ -62,5 +94,32 @@ class RepoUnitAssociationManager:
 
         If no association exists between the repo and unit, this call has no
         effect.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param unit_type_id: identifies the type of unit being removed
+        @type  unit_type_id: str
+
+        @param unit_id: uniquely identifies the unit within the given type
+        @type  unit_id: str
         """
-        RepoContentUnit.get_collection().remove({'repo_id' : repo_id, 'unit_id' : unit_id, 'unit_type_id' : unit_type_id})
+        unit_coll = RepoContentUnit.get_collection()
+        unit_coll.remove({'repo_id' : repo_id, 'unit_id' : unit_id, 'unit_type_id' : unit_type_id}, safe=True)
+
+    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list):
+        """
+        Removes the association between a repo and a number of units.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param unit_type_id: identifies the type of units being removed
+        @type  unit_type_id: str
+
+        @param unit_id_list: list of unique identifiers for units within the given type
+        @type  unit_id_list: list of str
+        """
+        unit_coll = RepoContentUnit.get_collection()
+        unit_coll.remove({'repo_id' : repo_id, 'unit_type_id' : unit_type_id, 'unit_id' : {'$in' : unit_id_list}}, safe=True)
+        

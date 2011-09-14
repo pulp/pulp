@@ -67,17 +67,20 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertEqual(1, len(repo_units))
         self.assertEqual('unit-1', repo_units[0]['unit_id'])
 
-    def test_associate_by_key(self):
+    def test_associate_all(self):
         """
-        Tests creating a new association by unit key.
+        Tests making multiple associations in a single call.
         """
-        pass
 
-    def test_associate_by_key_existing(self):
-        """
-        Tests attempting to create a new association where one already exists.
-        """
-        pass
+        # Test
+        ids = ['foo', 'bar', 'baz']
+        self.manager.associate_all_by_ids('repo-1', 'type-1', ids)
+
+        # Verify
+        repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(len(ids), len(repo_units))
+        for unit in repo_units:
+            self.assertTrue(unit['unit_id'] in ids)
 
     def test_unassociate_by_id(self):
         """
@@ -103,3 +106,28 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
         # Test - Make sure this does not raise an error
         self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1')
+
+    def test_unassociate_all(self):
+        """
+        Tests unassociating multiple units in a single call.
+        """
+
+        # Setup
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-3')
+        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-1')
+        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-2')
+
+        unit_coll = RepoContentUnit.get_collection()
+        self.assertEqual(5, len(list(unit_coll.find({'repo_id' : 'repo-1'}))))
+
+        # Test
+        self.manager.unassociate_all_by_ids('repo-1', 'type-1', ['unit-1', 'unit-2'])
+
+        # Verify
+        self.assertEqual(3, len(list(unit_coll.find({'repo_id' : 'repo-1'}))))
+
+        self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-1', 'unit_id' : 'unit-3'}) is not None)
+        self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-1'}) is not None)
+        self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-2'}) is not None)
