@@ -230,6 +230,35 @@ class TypesDatabaseTests(testutil.PulpTest):
         self.assertTrue(names is not None)
         self.assertEqual(0, len(names))
 
+    def test_type_units_unique_indexes(self):
+        """
+        Tests the syntactic sugar method for retrieving unique indexes on a type.
+        """
+
+        # Setup
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['unique_1', 'unique_2'], ['name'], [])
+        types_db._create_or_update_type(type_def)
+
+        # Test
+        indexes = types_db.type_units_unique_indexes('rpm')
+
+        # Verify
+        self.assertTrue(indexes is not None)
+        self.assertEqual(2, len(indexes))
+        self.assertTrue('unique_1' in indexes)
+        self.assertTrue('unique_2' in indexes)
+
+    def test_type_units_unique_indexes_missing_def(self):
+        """
+        Tests no error is raised when requesting the indexes on a type that does not exist.
+        """
+
+        # Test
+        indexes = types_db.type_units_unique_indexes('not_there')
+
+        # Verify
+        self.assertTrue(indexes is None)
+
     # -- utility method tests ------------------------------------------------
 
     def test_create_or_update_type_collection(self):

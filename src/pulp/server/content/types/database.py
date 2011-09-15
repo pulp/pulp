@@ -199,12 +199,14 @@ def unit_collection_name(type_id):
 
 def type_units_unique_indexes(type_id):
     """
-    Get the unique indices for a given content type collection.
+    Get the unique indices for a given content type collection. If no type
+    definition is found for the given ID, None is returned
+
     @param type_id: unique content type identifier
     @type type_id: str
     @return: list of indices that can uniquely identify a document in the
              content type collection
-    @rtype: list of str's
+    @rtype: list of str or None
     """
     collection = ContentType.get_collection()
     type_def = collection.find_one(type_id)
@@ -225,9 +227,8 @@ def _create_or_update_type(type_def):
 
     # Add an entry to the types list
     content_type = ContentType(type_def.id, type_def.display_name, type_def.description,
-                               type_def.unique_indexes, type_def.search_indexes)
+                               type_def.unique_indexes, type_def.search_indexes, type_def.child_types)
     ContentType.get_collection().save(content_type, safe=True)
-
 
 def _update_indexes(type_def, unique):
 
