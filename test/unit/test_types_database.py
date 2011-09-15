@@ -27,13 +27,13 @@ import pulp.server.db.connection as pulp_db
 # -- constants -----------------------------------------------------------------
 
 DEF_1 = TypeDefinition('def_1', 'Definition 1', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
 DEF_2 = TypeDefinition('def_2', 'Definition 2', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
 DEF_3 = TypeDefinition('def_3', 'Definition 3', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
 DEF_4 = TypeDefinition('def_4', 'Definition 4', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'])
+                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
 
 # -- test cases ----------------------------------------------------------------
 
@@ -154,7 +154,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Setup
-        busted = TypeDefinition('!@#$%^&*()', 'Busted', 'Busted', None, None)
+        busted = TypeDefinition('!@#$%^&*()', 'Busted', 'Busted', None, None, [])
         defs = [DEF_1, busted]
 
         # Tests
@@ -173,7 +173,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Setup
-        busted = TypeDefinition('busted', 'Busted', 'Busted', ['bad..dot..notation'], None)
+        busted = TypeDefinition('busted', 'Busted', 'Busted', ['bad..dot..notation'], None, [])
         defs = [busted, DEF_1]
 
         # Tests
@@ -191,7 +191,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Setup
-        busted = TypeDefinition('busted', 'Busted', 'Busted', None, ['bad..dot..notation'])
+        busted = TypeDefinition('busted', 'Busted', 'Busted', None, ['bad..dot..notation'], [])
         defs = [busted, DEF_1]
 
         # Tests
@@ -208,7 +208,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Setup
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'])
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'], [])
         types_db._create_or_update_type(type_def)
 
         # Test
@@ -238,7 +238,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Setup
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'])
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'], [])
 
         # Test
         types_db._create_or_update_type(type_def)
@@ -267,7 +267,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Setup
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'])
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['name'], ['name'], [])
         types_db._create_or_update_type(type_def)
 
         # Test
@@ -306,7 +306,7 @@ class TypesDatabaseTests(testutil.PulpTest):
             ['compound_1', 'compound_2'],
             'individual_1'
         ]
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', unique_indexes, None)
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', unique_indexes, None, [])
 
         # Test
         types_db._update_unique_indexes(type_def)
@@ -351,7 +351,7 @@ class TypesDatabaseTests(testutil.PulpTest):
             ['compound_1', 'compound_2'],
             'individual_1'
         ]
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', None, search_indexes)
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', None, search_indexes, [])
 
         # Test
         types_db._update_search_indexes(type_def)
@@ -395,7 +395,7 @@ class TypesDatabaseTests(testutil.PulpTest):
             ['compound_1', 'compound_2'],
             'individual_1'
         ]
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', old_indexes, None)
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', old_indexes, None, [])
         types_db._update_unique_indexes(type_def)
 
         # Test

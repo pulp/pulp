@@ -40,7 +40,7 @@ class TypeDefinition:
     describe the types to be loaded.
     """
 
-    def __init__(self, id, display_name, description, unique_indexes, search_indexes):
+    def __init__(self, id, display_name, description, unique_indexes, search_indexes, child_types):
         self.id = id
         self.display_name = display_name
         self.description = description
@@ -51,5 +51,9 @@ class TypeDefinition:
         if not isinstance(search_indexes, list) and not isinstance(search_indexes, tuple):
             search_indexes = [search_indexes]
 
+        if not isinstance(child_types, list) and not isinstance(child_types, tuple):
+            child_types = [child_types]
+
         self.unique_indexes = unique_indexes
         self.search_indexes = search_indexes
+        self.child_types = child_types

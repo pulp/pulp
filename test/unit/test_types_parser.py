@@ -48,7 +48,7 @@ VALID_DESCRIPTOR_2 = model.TypeDescriptor('valid_descriptor_2',
      ],
      "search_indexes" : [
          ["name", "filename"], "filename"
-     ]}
+ ]}
    ]}
 """)
 
@@ -61,11 +61,38 @@ MULTI_TYPE_DESCRIPTOR = model.TypeDescriptor('multi_descriptor',
    ]}
 """)
 
+CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('child_descriptor',
+"""{"types": [
+    {"id" : "aaa", "display_name" : "A", "description" : "A",
+     "child_types" : ["ccc"]},
+    {"id" : "bbb", "display_name" : "B", "description" : "B",
+     "child_types" : "ccc"},
+    {"id" : "ccc", "display_name" : "C", "description" : "C"}
+   ]}
+""")
 
+BAD_CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('bad_children',
+"""{"types": [
+    {"id" : "a", "display_name" : "A", "description" : "A",
+     "unique_indexes" : "i", "search_indexes" : "i", "child_types" : ["not_there"]}
+   ]}
+""")
 
 # -- test cases --------------------------------------------------------------
 
 class ParserTest(testutil.PulpTest):
+
+    def clean(self):
+        super(ParserTest, self).clean()
+
+        # Reset to the pre-parsed state
+        VALID_DESCRIPTOR_1.parsed = None
+        VALID_DESCRIPTOR_2.parsed = None
+        MULTI_TYPE_DESCRIPTOR.parsed = None
+        CHILD_TYPES_DESCRIPTOR.parsed = None
+        BAD_CHILD_TYPES_DESCRIPTOR.parsed = None
+
+    # -- parse tests ----------------------------------------------------------
 
     def test_parse_single_descriptor_single_type(self):
         """
@@ -122,6 +149,29 @@ class ParserTest(testutil.PulpTest):
         self.assertEqual('rpm', definitions[0].id)
         self.assertEqual('deb', definitions[1].id)
 
+    def test_parse_with_children(self):
+        """
+        Tests parsing a descriptor with valid children definitions.
+        """
+
+        # Test
+        definitions = parser.parse([CHILD_TYPES_DESCRIPTOR])
+
+        # Verify
+        self.assertTrue(definitions is not None)
+        self.assertEqual(3, len(definitions))
+
+        aaa_def = [d for d in definitions if d.id == 'aaa'][0]
+        self.assertEqual(1, len(aaa_def.child_types))
+        self.assertTrue('ccc' in aaa_def.child_types)
+
+        bbb_def = [d for d in definitions if d.id == 'bbb'][0]
+        self.assertEqual(1, len(bbb_def.child_types))
+        self.assertTrue('ccc' in bbb_def.child_types)
+
+        ccc_def = [d for d in definitions if d.id == 'ccc'][0]
+        self.assertEqual(0, len(ccc_def.child_types))
+        
     def test_parse_invalid_descriptor(self):
         """
         Tests the proper exception is thrown when a descriptor cannot be parsed.
@@ -236,6 +286,34 @@ class ParserTest(testutil.PulpTest):
         except parser.DuplicateType, e:
             self.assertEqual(1, len(e.type_ids))
             self.assertEqual('rpm', e.type_ids[0])
+
+    def test_parse_bad_children(self):
+        """
+        Tests the correct error is raised when a type definition has undefined child IDs referenced.
+        """
+
+        # Test
+        try:
+            parser.parse([BAD_CHILD_TYPES_DESCRIPTOR])
+            self.fail('Bad children did not raise an exception')
+        except parser.UndefinedChildIds, e:
+            self.assertEqual(1, len(e.missing_child_ids))
+            self.assertTrue('not_there' in e.missing_child_ids)
+
+    # -- utility tests --------------------------------------------------------
+
+    def test_all_child_type_ids(self):
+        """
+        Tests retrieving all child type IDs for all types.
+        """
+
+        # Test
+        parser._parse_descriptors([CHILD_TYPES_DESCRIPTOR])
+        child_ids = parser._all_child_type_ids([CHILD_TYPES_DESCRIPTOR])
+
+        # Verify
+        self.assertEqual(1, len(child_ids))
+        self.assertTrue('ccc' in child_ids)
 
     def test_valid_id(self):
         """
