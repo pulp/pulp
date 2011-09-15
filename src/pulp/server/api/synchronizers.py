@@ -416,6 +416,8 @@ class YumSynchronizer(BaseSynchronizer):
                     (limit_in_KB, num_threads))
         if self.stopped:
             raise CancelException()
+
+
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert,
                                 packages_location=pulp.server.util.top_package_location(),
@@ -428,7 +430,15 @@ class YumSynchronizer(BaseSynchronizer):
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
         else:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
-        report = self.yum_repo_grinder.fetchYumRepo(store_path, callback=progress_callback)
+        self.repo_dir = store_path
+
+        verify_options = {}
+        verify_options["size"] = config.config.getboolean('yum', "verify_size")
+        verify_options["checksum"] = config.config.getboolean('yum', "verify_checksum")
+        log.info("Fetching repo to <%s> with verify_options <%s>" % (store_path, verify_options))
+        report = self.yum_repo_grinder.fetchYumRepo(store_path, 
+                                                    callback=progress_callback,
+                                                    verify_options=verify_options)
         if self.stopped:
             raise CancelException()
         self.progress = yum_rhn_progress_callback(report.last_progress)
