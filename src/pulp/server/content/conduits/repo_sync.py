@@ -275,3 +275,19 @@ class RepoSyncConduit:
                         given type are returned
         """
         pass
+
+    def get_scratchpad(self):
+        """
+        Returns the value set in the scratchpad for this repository. If no
+        value has been set, None is returned.
+        """
+        return self.__repo_manager.get_importer_scratchpad(self.repo_id)
+
+    def set_scratchpad(self, value):
+        """
+        Saves the given value to the scratchpad for this repository. It can later
+        be retrieved in subsequent syncs through get_scratchpad. The type for
+        the given value is anything that can be stored in the database (string,
+        list, dict, etc.).
+        """
+        self.__repo_manager.set_importer_scratchpad(self.repo_id, value)

@@ -515,6 +515,84 @@ class RepoManagerTests(testutil.PulpTest):
         except repo_manager.MissingRepo, e:
             self.assertEqual('not-here', e.repo_id)
 
+    def test_get_set_importer_scratchpad(self):
+        """
+        Tests the retrieval and setting of a repo importer's scratchpad.
+        """
+
+        # Setup
+        self.manager.create_repo('repo')
+        self.manager.set_importer('repo', 'MockImporter', {})
+
+        # Test - Unset Scratchpad
+        scratchpad = self.manager.get_importer_scratchpad('repo')
+        self.assertTrue(scratchpad is None)
+
+        # Test - Set
+        contents = ['yendor', 'sokoban']
+        self.manager.set_importer_scratchpad('repo', contents)
+
+        # Test - Get
+        scratchpad = self.manager.get_importer_scratchpad('repo')
+        self.assertEqual(contents, scratchpad)
+
+    def test_get_set_importer_scratchpad_missing(self):
+        """
+        Tests no error is raised when getting or setting the scratchpad for missing cases.
+        """
+
+        # Setup
+        self.manager.create_repo('empty')
+
+        # Test - Get
+        scratchpad = self.manager.get_importer_scratchpad('empty')
+        self.assertTrue(scratchpad is None)
+
+        # Test - Set No Importer
+        self.manager.set_importer_scratchpad('empty', 'foo') # should not error
+
+        # Test - Set Fake Repo
+        self.manager.set_importer_scratchpad('fake', 'bar') # should not error
+
+    def test_get_set_distributor_scratchpad(self):
+        """
+        Tests the retrieval and setting of a repo distributor's scratchpad.
+        """
+
+        # Setup
+        self.manager.create_repo('repo')
+        self.manager.add_distributor('repo', 'MockDistributor', {}, True, distributor_id='dist')
+
+        # Test - Unset Scratchpad
+        scratchpad = self.manager.get_distributor_scratchpad('repo', 'dist')
+        self.assertTrue(scratchpad is None)
+
+        # Test - Set
+        contents = 'gnomish mines'
+        self.manager.set_distributor_scratchpad('repo', 'dist', contents)
+
+        # Test - Get
+        scratchpad = self.manager.get_distributor_scratchpad('repo', 'dist')
+        self.assertEqual(contents, scratchpad)
+
+    def test_get_set_distributor_scratchpad_missing(self):
+        """
+        Tests no error is raised when getting or setting the scratchpad for missing cases.
+        """
+
+        # Setup
+        self.manager.create_repo('empty')
+
+        # Test - Get
+        scratchpad = self.manager.get_distributor_scratchpad('empty', 'not_there')
+        self.assertTrue(scratchpad is None)
+
+        # Test - Set No Distributor
+        self.manager.set_distributor_scratchpad('empty', 'fake_distributor', 'stuff')
+
+        # Test - Set No Repo
+        self.manager.set_distributor_scratchpad('fake', 'irrelevant', 'blah')
+
 class UtilityMethodsTests(testutil.PulpTest):
 
     def test_is_repo_id_valid(self):

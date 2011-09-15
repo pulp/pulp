@@ -390,7 +390,110 @@ class RepoManager:
             metadata.pop(key, None)
 
         repo_coll.save(repo, safe=True)
-            
+
+    def get_importer_scratchpad(self, repo_id):
+        """
+        Returns the contents of the importer's scratchpad for the given repo.
+        If there is no importer or the scratchpad has not been set, None is
+        returned.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @return: value set for the importer's scratchpad
+        @rtype:  anything that can be saved in the database
+        """
+
+        importer_coll = RepoImporter.get_collection()
+
+        # Validation
+        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        if repo_importer is None:
+            return None
+
+        scratchpad = repo_importer.get('scratchpad', None)
+        return scratchpad
+
+    def set_importer_scratchpad(self, repo_id, contents):
+        """
+        Sets the value of the scratchpad for the given repo and saves it to
+        the database. If there is a previously saved value it will be replaced.
+
+        If the repo has no importer associated with it, this call does nothing.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param contents: value to write to the scratchpad field
+        @type  contents: anything that can be saved in the database
+        """
+
+        importer_coll = RepoImporter.get_collection()
+
+        # Validation
+        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        if repo_importer is None:
+            return
+
+        # Update
+        repo_importer['scratchpad'] = contents
+        importer_coll.save(repo_importer, safe=True)
+
+    def get_distributor_scratchpad(self, repo_id, distributor_id):
+        """
+        Returns the contents of the distributor's scratchpad for the given repo.
+        If there is no such distributor or the scratchpad has not been set, None
+        is returned.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the distributor on the repo
+        @type  distributor_id: str
+
+        @return: value set for the distributor's scratchpad
+        @rtype:  anything that can be saved in the database
+        """
+
+        distributor_coll = RepoDistributor.get_collection()
+
+        # Validatoin
+        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        if repo_distributor is None:
+            return None
+
+        scratchpad = repo_distributor.get('scratchpad', None)
+        return scratchpad
+
+    def set_distributor_scratchpad(self, repo_id, distributor_id, contents):
+        """
+        Sets the value of the scratchpad for the given repo and saves it to the
+        database. If there is a previously saved value it will be replaced.
+
+        If there is no distributor with the given ID on the repo, this call does
+        nothing.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the distributor on the repo
+        @type  distributor_id: str
+
+        @param contents: value to write to the scratchpad field
+        @type  contents: anything that can be saved in the database
+        """
+
+        distributor_coll = RepoDistributor.get_collection()
+
+        # Validation
+        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        if repo_distributor is None:
+            return
+
+        # Update
+        repo_distributor['scratchpad'] = contents
+        distributor_coll.save(repo_distributor, safe=True)
+
 # -- functions ----------------------------------------------------------------
 
 def is_repo_id_valid(repo_id):

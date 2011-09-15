@@ -137,7 +137,8 @@ class RepoPublishManager:
             raise MissingDistributorPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish
-        conduit = RepoPublishConduit(repo_id, distributor_id, self)
+        repo_manager = manager_factory.repo_manager()
+        conduit = RepoPublishConduit(repo_id, distributor_id, repo_manager, self)
 
         # Take the repo's default publish config and merge in the override values
         # for this run alone (don't store it back to the DB)

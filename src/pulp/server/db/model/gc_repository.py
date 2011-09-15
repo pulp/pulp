@@ -104,6 +104,11 @@ class RepoImporter(Model):
     @ivar config: importer config passed to the plugin when it is invoked
     @type config: dict
 
+    @ivar scratchpad: free-form field for the importer plugin to use to store
+                      whatever it needs (keep in mind this instance is scoped to
+                      a particular repo)
+    @type scratchpad: anything pickle-able
+
     @ivar sync_in_progress: holds the state of the importer
     @type sync_in_progress: bool
 
@@ -125,6 +130,7 @@ class RepoImporter(Model):
         self.id = id
         self.importer_type_id = importer_type_id
         self.config = config
+        self.scratchpad = None
 
         # Sync
         self.sync_in_progress = False
@@ -151,6 +157,11 @@ class RepoDistributor(Model):
     @ivar config: distributor config passed to the plugin when it is invoked
     @type config: dict
 
+    @ivar scratchpad: free-form field for the distributor plugin to use to store
+                      whatever it needs (keep in mind this instance is scoped to
+                      a particular repo)
+    @type scratchpad: anything pickle-able
+
     @ivar auto_distribute: indicates if the distributor should automatically
                            publish the repo on the tail end of a successful sync
     @type auto_distribute: bool
@@ -173,11 +184,10 @@ class RepoDistributor(Model):
 
         self.repo_id = repo_id
         self.id = id
-
         self.distributor_type_id = distributor_type_id
         self.config = config
-
         self.auto_distribute = auto_distribute
+        self.scratchpad = None
 
         # Publish
         self.publish_in_progress = False

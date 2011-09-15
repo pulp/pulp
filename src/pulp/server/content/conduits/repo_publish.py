@@ -49,13 +49,19 @@ class RepoPublishConduit:
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, distributor_id, repo_publish_manager, progress_callback=None):
+    def __init__(self, repo_id, distributor_id, repo_manager, repo_publish_manager, progress_callback=None):
         """
         @param repo_id: identifies the repo being published
         @type  repo_id: str
 
         @param distributor_id: identifies the distributor being published
         @type  distributor_id: str
+
+        @param repo_manager: repo CUD manager used by the conduit
+        @type  repo_manager: L{RepoManager}
+
+        @param repo_publish_manager: repo publish manager used by this conduit
+        @type  repo_publish_manager: L{RepoPublishManager}
 
         @param progress_callback: used to update the server's knowledge of the
                                   publish progress
@@ -64,6 +70,7 @@ class RepoPublishConduit:
         self.repo_id = repo_id
         self.distributor_id = distributor_id
 
+        self.__repo_manager = repo_manager
         self.__repo_publish_manager = repo_publish_manager
         self.__progress_callback = progress_callback
 
@@ -87,3 +94,19 @@ class RepoPublishConduit:
     def query(self):
         # Placeholder - jconnor to implement
         pass
+
+    def get_scratchpad(self):
+        """
+        Returns the value set in the scratchpad for this repository. If no
+        value has been set, None is returned.
+        """
+        return self.__repo_manager.get_distributor_scratchpad(self.repo_id, self.distributor_id)
+
+    def set_scratchpad(self, value):
+        """
+        Saves the given value to the scratchpad for this repository. It can later
+        be retrieved in subsequent syncs through get_scratchpad. The type for
+        the given value is anything that can be stored in the database (string,
+        list, dict, etc.).
+        """
+        self.__repo_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
