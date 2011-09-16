@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.231
+Version:        0.0.232
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -490,6 +490,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Sep 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.232-1
+- Added scratchpad support so importers/distributors can save information for a
+  repo between runs. (jason.dobies@redhat.com)
+- Config option for existing file checksum/size check (jmatthews@redhat.com)
+- Added child types persistence for type definitions. (jason.dobies@redhat.com)
+- Added child type support to type def parser (jason.dobies@redhat.com)
+
 * Wed Sep 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.231-1
 - require gofer 0.48 for project alignment. (jortel@redhat.com)
 - Removed clone ID from repo serialization (jason.dobies@redhat.com)
