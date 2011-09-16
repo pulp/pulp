@@ -37,9 +37,12 @@ from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
     filters, jobs, orphaned, packages, permissions, repositories, roles,
     services, tasks, users)
+from pulp.server.webservices.controllers import (
+    gc_repositories)
 
 
-urls = (# alphabetical order, please
+urls = (
+    # alphabetical order, please
     '/cds', cds.application,
     '/consumergroups', consumergroups.application,
     '/consumers', consumers.application,
@@ -57,6 +60,26 @@ urls = (# alphabetical order, please
     '/services', services.application,
     '/tasks', tasks.application,
     '/users', users.application,
+    # version 1 api
+    '/v1/cds', cds.application,
+    '/v1/consumergroups', consumergroups.application,
+    '/v1/consumers', consumers.application,
+    '/v1/content', content.application,
+    '/v1/distribution', distribution.application,
+    '/v1/errata', errata.application,
+    '/v1/events', audit.application,
+    '/v1/filters', filters.application,
+    '/v1/jobs', jobs.application,
+    '/v1/orphaned', orphaned.application,
+    '/v1/packages', packages.application,
+    '/v1/permissions', permissions.application,
+    '/v1/repositories', repositories.application,
+    '/v1/roles', roles.application,
+    '/v1/services', services.application,
+    '/v1/tasks', tasks.application,
+    '/v1/users', users.application,
+    # version 2 api
+    '/v2/repositories', gc_repositories.application,
 )
 
 _stacktrace_dumper = None
