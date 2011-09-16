@@ -43,6 +43,7 @@ from pulp.server.webservices.controllers import (
 
 urls = (
     # alphabetical order, please
+    # default version (currently 1) api
     '/cds', cds.application,
     '/consumergroups', consumergroups.application,
     '/consumers', consumers.application,
