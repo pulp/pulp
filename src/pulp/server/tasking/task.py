@@ -209,7 +209,7 @@ class Task(object):
                     'state', 'progress', 'consecutive_failures',
                     'cancel_attempts', 'job_id',)
 
-    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout_delta',
+    _pickle_fields = ('callable', 'args', 'kwargs', 'timeout_delta',
                       'schedule_threshold', '_progress_callback', 'start_time',
                       'finish_time', 'result', 'exception', 'traceback', 'job_id',)
 
@@ -252,6 +252,14 @@ class Task(object):
             setattr(task, field, snapshot[field])
         for field in task._pickle_fields:
             setattr(task, field, pickle.loads(snapshot[field]))
+        # NOTEL Ok, so this is tricky, but we no longer pickle the scheduler
+        # field. This is because tasks are only snapshot-ed when they are
+        # running, and since only snapshots are re-constituted into tasks on
+        # start up, this means the tasks were running on shutdown. Therefore we
+        # set the scheduler to an immediate scheduler, so the interrupted tasks
+        # are resumed immediately. If the task was scheduled, the scheduling on
+        # startup will create a new, different task for that.
+        task.scheduler = ImmediateScheduler()
         # reset the progress callback
         if task._progress_callback is not None:
             task.set_progress('progress_callback', task._progress_callback)
