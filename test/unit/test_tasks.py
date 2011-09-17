@@ -623,7 +623,7 @@ class PersistentTaskTester(unittest.TestCase):
         task1 = Task(noop, scheduler=AtScheduler(now + then))
         snapshot = task1.snapshot()
         task2 = snapshot.to_task()
-        self.assertTrue(isinstance(task2.scheduler, AtScheduler))
+        self.assertTrue(isinstance(task2.scheduler, ImmediateScheduler))
 
     def test_task_with_interval_scheduler_deserialization(self):
         now = datetime.now(dateutils.local_tz())
@@ -638,7 +638,9 @@ class PersistentTaskTester(unittest.TestCase):
         task1 = Task(noop, scheduler=IntervalScheduler(then, now + then, 1))
         snapshot = task1.snapshot()
         task2 = snapshot.to_task()
-        self.assertTrue(isinstance(task2.scheduler, IntervalScheduler))
+        self.assertTrue(isinstance(task2.scheduler, ImmediateScheduler),
+                        'deserialized interval task with %s scheduler' %
+                        str(type(task2.scheduler)))
 
     def test_task_equality(self):
         task1 = Task(noop)
