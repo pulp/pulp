@@ -609,6 +609,47 @@ class PersistentTaskTester(testutil.PulpAsyncTest):
         task2 = snapshot.to_task()
         self.assertTrue(isinstance(task2, Task))
 
+    def test_task_with_immediate_scheduler_serialization(self):
+        task = Task(noop, scheduler=ImmediateScheduler())
+        snapshot = task.snapshot()
+        self.assertTrue(isinstance(snapshot, TaskSnapshot))
+
+    def test_task_with_immediate_scheduler_deserialization(self):
+        task1 = Task(noop, scheduler=ImmediateScheduler())
+        snapshot = task1.snapshot()
+        task2 = snapshot.to_task()
+        self.assertTrue(isinstance(task2.scheduler, ImmediateScheduler))
+
+    def test_task_with_at_scheduler_serialization(self):
+        now = datetime.now(dateutils.local_tz())
+        then = timedelta(seconds=10)
+        task = Task(noop, scheduler=AtScheduler(now + then))
+        snapshot = task.snapshot()
+        self.assertTrue(isinstance(snapshot, TaskSnapshot))
+
+    def test_task_with_at_scheduler_serialization(self):
+        now = datetime.now(dateutils.local_tz())
+        then = timedelta(seconds=10)
+        task1 = Task(noop, scheduler=AtScheduler(now + then))
+        snapshot = task1.snapshot()
+        task2 = snapshot.to_task()
+        self.assertTrue(isinstance(task2.scheduler, AtScheduler))
+
+    def test_task_with_interval_scheduler_deserialization(self):
+        now = datetime.now(dateutils.local_tz())
+        then = timedelta(seconds=10)
+        task = Task(noop, scheduler=IntervalScheduler(then, now + then, 1))
+        snapshot = task.snapshot()
+        self.assertTrue(isinstance(snapshot, TaskSnapshot))
+
+    def test_task_with_interval_scheduler_deserialization(self):
+        now = datetime.now(dateutils.local_tz())
+        then = timedelta(seconds=10)
+        task1 = Task(noop, scheduler=IntervalScheduler(then, now + then, 1))
+        snapshot = task1.snapshot()
+        task2 = snapshot.to_task()
+        self.assertTrue(isinstance(task2.scheduler, IntervalScheduler))
+
     def test_task_equality(self):
         task1 = Task(noop)
         snapshot = task1.snapshot()
