@@ -24,8 +24,8 @@ from pymongo.errors import DuplicateKeyError
 
 from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
 from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
-from pulp.server.tasking.exception import DuplicateSnapshotError
-from pulp.server.tasking.scheduler import AtScheduler, ImmediateScheduler
+from pulp.server.tasking.exception import (
+    DuplicateSnapshotError, SnapshotFailure)
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
@@ -176,13 +176,21 @@ def _pickle_method(method):
 
 
 def _unpickle_method(func_name, obj, cls):
+    func = None
+    # handle public, protected, and private method names
+    lookup = func_name
+    if func_name.startswith('__'):
+        lookup = '_%s%s' % (cls.__name__, func_name)
     for cls in cls.mro():
         try:
-            func = cls.__dict__[func_name]
+            func = cls.__dict__[lookup]
         except KeyError:
             pass
         else:
             break
+    if func is None:
+        raise SnapshotFailure(_('Cannot convert snaphot to task: method %s not found in class %s') %
+                              (func_name, cls.__name__))
     return func.__get__(obj, cls)
 
 # snapshot storage class -------------------------------------------------------
@@ -225,8 +233,7 @@ class SnapshotStorage(VolatileStorage):
     def enqueue_waiting(self, task):
         # create and keep a snapshot of the task that can be loaded from the
         # database and executed across reboots, server restarts, etc.
-        if isinstance(task.scheduler, (AtScheduler, ImmediateScheduler)):
-            self._snapshot_task(task)
+        self._snapshot_task(task)
         super(SnapshotStorage, self).enqueue_waiting(task)
 
     # storage methods
