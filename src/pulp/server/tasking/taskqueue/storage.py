@@ -15,7 +15,6 @@ import copy_reg
 import datetime
 import heapq
 import itertools
-import logging
 import sys
 import types
 from gettext import gettext as _
@@ -26,10 +25,6 @@ from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
 from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
 from pulp.server.tasking.exception import (
     DuplicateSnapshotError, SnapshotFailure)
-from pulp.server.tasking.task import (
-    task_running, task_ready_states, task_complete_states, task_waiting,
-    task_states)
-from pulp.server.util import Singleton
 
 # base storage class -----------------------------------------------------------
 
@@ -63,9 +58,9 @@ class Storage(object):
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
-                    break;
+                    break
                 if getattr(task, attr) != value:
-                    break;
+                    break
                 matches += 1
             if matches == num_criteria:
                 tasks.append(task)
@@ -83,7 +78,7 @@ class Storage(object):
         raise NotImplementedError(_('Base Storage class method called'))
 
     def peek_waiting(self):
-        raise NotImplemented(_('Base Storage class method called'))
+        raise NotImplementedError(_('Base Storage class method called'))
 
     # task storage
 
@@ -109,6 +104,7 @@ class VolatileStorage(Storage):
     In memory queue storage class.
     """
     def __init__(self):
+        super(VolatileStorage, self).__init__()
         self.__waiting_tasks = []
         self.__running_tasks = []
         self.__complete_tasks = []
