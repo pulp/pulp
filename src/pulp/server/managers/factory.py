@@ -25,11 +25,12 @@ do so may indirectly break other tests.
 
 # -- constants ----------------------------------------------------------------
 
-# Keys used to look up a specific builtin manager
+# Keys used to look up a specific builtin manager (please alphabetize)
 TYPE_CDS              = 'cds-manager'
 TYPE_CONTENT          = 'content-manager'
 TYPE_CONTENT_QUERY    = 'content-query-manager'
 TYPE_CONTENT_UPLOAD   = 'content-upload-manager'
+TYPE_PLUGIN_MANAGER   = 'plugin-manager'
 TYPE_REPO             = 'repo-manager'
 TYPE_REPO_ASSOCIATION = 'repo-association-manager'
 TYPE_REPO_CLONE       = 'repo-clone-manager'
@@ -65,58 +66,64 @@ class InvalidType(Exception):
 
 def repo_manager():
     """
-    @rtype: L{RepoManager}
+    @rtype: L{pulp.server.managers.repo.cud.RepoManager}
     """
     return get_manager(TYPE_REPO)
 
 def repo_unit_association_manager():
     """
-    @rtype: L{RepoUnitAssociationManager}
+    @rtype: L{pulp.server.managers.repo.unit_association.RepoUnitAssociationManager}
     """
     return get_manager(TYPE_REPO_ASSOCIATION)
 
 def repo_clone_manager():
     """
-    @rtype: L{RepoCloneManager}
+    @rtype: L{pulp.server.managers.repo.clone.RepoCloneManager}
     """
     return get_manager(TYPE_REPO_CLONE)
 
 def repo_publish_manager():
     """
-    @rtype: L{RepoPublishManager}
+    @rtype: L{pulp.server.managers.repo.publish.RepoPublishManager}
     """
     return get_manager(TYPE_REPO_PUBLISH)
 
 def repo_query_manager():
     """
-    @rtype: L{RepoQueryManager}
+    @rtype: L{pulp.server.managers.repo.query.RepoQueryManager}
     """
     return get_manager(TYPE_REPO_QUERY)
 
 def repo_sync_manager():
     """
-    @rtype: L{RepoSyncManager}
+    @rtype: L{pulp.server.managers.repo.sync.RepoSyncManager}
     """
     return get_manager(TYPE_REPO_SYNC)
 
 def content_manager():
     """
-    @rtype: L{ContentManager}
+    @rtype: L{pulp.server.managers.content.cud.ContentManager}
     """
     return get_manager(TYPE_CONTENT)
 
 def content_query_manager():
     """
-    @rtype: L{ContentQueryManager}
+    @rtype: L{pulp.server.managers.content.query.ContentQueryManager}
     """
     return get_manager(TYPE_CONTENT_QUERY)
 
 def content_upload_manager():
     """
-    @rtype: L{ContentUploadManager}
+    @rtype: L{pulp.server.managers.content.upload.ContentUploadManager}
     """
     return get_manager(TYPE_CONTENT_UPLOAD)
 
+def plugin_manager():
+    """
+    @rtype: L{pulp.server.managers.plugin.PluginManager}
+    """
+    return get_manager(TYPE_PLUGIN_MANAGER)
+    
 # -- other --------------------------------------------------------------------
 
 def initialize():
@@ -128,6 +135,7 @@ def initialize():
     from pulp.server.managers.content.cud import ContentManager
     from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
+    from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.clone import RepoCloneManager
@@ -140,6 +148,7 @@ def initialize():
         TYPE_CONTENT: ContentManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
+        TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_CLONE: RepoCloneManager,
