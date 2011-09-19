@@ -21,6 +21,7 @@ from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.agent import HeartbeatListener
 from pulp.server.async import ReplyHandler, WatchDog
 from pulp.server.config import config
+import pulp.server.managers.factory as manager_factory
 from gofer.messaging.broker import Broker
 
 # start logging
@@ -52,3 +53,6 @@ replyHandler.start(watchdog)
 # start agent heartbeat listener
 heartbeatListener = HeartbeatListener(url)
 heartbeatListener.start()
+
+# Initialize the manager factory class mappings
+manager_factory.initialize()
