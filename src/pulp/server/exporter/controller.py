@@ -33,29 +33,11 @@ class ExportController(object):
         self.generate_iso = generate_iso
         self.progress_callback = progress_callback
 
-    def validate_options(self):
+    def _load_exporter(self):
         """
-         Validate
-         * If target dir doesn't exists, create one
-         * If target dir exists and not empty; if forced remove and create a fresh one, else exit
-         * dir, repoid are required
-        """
-        if not self.target_dir:
-            raise ExportException("Error: target directory not specified")
-        if not os.path.exists(self.target_dir):
-            os.mkdir(self.target_dir)
-        if os.listdir(self.target_dir):
-            if self.overwrite:
-                shutil.rmtree(self.target_dir)
-                os.mkdir(self.target_dir)
-            else:
-                raise ExportException("Error: Target directory already has content; must use force to overwrite.")
-
-    def _load_exporter_plugins(self):
-        """
-        Discover and load available plugins from the exporter plugins directory
+        Discover and load available types of content to export
         @rtype: list
-        @return: return list of exporter plugin modules that are subclasses of BaseExporter
+        @return: return list of exporter type modules that are subclasses of BaseExporter
         """
         plugins = []
         for plugin in glob.glob(os.path.join(_EXPORTER_MODULES_PATH, '*.py')):
@@ -78,8 +60,7 @@ class ExportController(object):
         """
         Execute the exporter
         """
-        self.validate_options()
-        modules = sorted(self._load_exporter_plugins(), key=lambda mod: mod.__priority__)
+        modules = sorted(self._load_exporter(), key=lambda mod: mod.__priority__)
         for module in modules:
             try:
                 exporter = module(self.repo, target_dir=self.target_dir)

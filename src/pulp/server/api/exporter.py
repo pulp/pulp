@@ -11,17 +11,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import logging
+import os
+import shutil
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async, run_async
 from pulp.server.exporter.controller import ExportController
-from pulp.server.exporter.base import exporter_progress_callback
+from pulp.server.exporter.base import exporter_progress_callback, ExportException, TargetExistsException
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from gettext import gettext as _
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
-        
+
 def export(repoid, target_directory, generate_isos=False, overwrite=False, timeout=None):
     """
     Run a repo export asynchronously.
@@ -36,7 +38,8 @@ def export(repoid, target_directory, generate_isos=False, overwrite=False, timeo
     repo = repo_api._get_existing_repo(repoid)
     if repo is None:
         raise PulpException(_("A Repo with id %s does not exist" % id))
-
+    # validate target directory
+    validate_target_path(target_directory, overwrite=overwrite)
     if list_exports(repoid):
         # exporter task already pending; task not created
         return None
@@ -71,3 +74,29 @@ def list_exports(id):
     return [task
             for task in find_async(method='_export')
             if id in task.args]
+
+def validate_target_path(target_dir, overwrite=False):
+    """
+    Validate
+         * If target dir doesn't exists, create one
+         * If target dir exists and not empty; if forced remove and create a fresh one, else exit
+    """
+    if not target_dir:
+        raise ExportException("Error: target directory not specified")
+    try:
+        if not os.path.exists(target_dir):
+            os.mkdir(target_dir)
+        if os.listdir(target_dir):
+            if overwrite:
+                shutil.rmtree(target_dir)
+                os.mkdir(target_dir)
+            else:
+                raise TargetExistsException("Error: Target directory already has content; must use force to overwrite.")
+    except OSError, oe:
+        raise ExportException("Error occurred creating target path [%s]" % str(oe))
+    except ExportException, ee:
+        log.error(ee)
+        raise ee
+    except Exception, e:
+        log.error(e)
+        raise e

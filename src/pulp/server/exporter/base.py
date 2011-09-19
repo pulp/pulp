@@ -32,6 +32,12 @@ class MetadataException(ExportException):
     """
     pass
 
+class TargetExistsException(ExportException):
+    """
+     raised when target directory already has content and overwrite is false
+    """
+    pass
+
 # --------- Base exporter module --------------------#
 
 class BaseExporter(object):

@@ -107,6 +107,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auth.authorization import grant_automatic_permissions_for_created_resource
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.exporter.base import ExportException, TargetExistsException
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
@@ -670,12 +671,13 @@ class RepositoryActions(JSONController):
         target_location = export_params.get('target_location', None)
         generate_isos = export_params.get('generate_isos', False)
         overwrite = export_params.get('overwrite', False)
-
         # Check for valid target_location values
-        if os.path.exists(target_location):
-            if os.listdir(target_location) and not overwrite:
-                return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
-
+        try:
+            exporter.validate_target_path(target_dir=target_location, overwrite=overwrite)
+        except TargetExistsException:
+            return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
+        except ExportException, ee:
+            raise PulpException(str(ee))
         timeout = export_params.get('timeout', None)
         # Check for valid timeout values
         if timeout:
