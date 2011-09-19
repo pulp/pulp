@@ -234,7 +234,7 @@ class Task(object):
                 raise SnapshotFailure('\n'.join((msg, e.args[0]))), None, sys.exc_info()[2]
         # restore groomed state
         if callback is not None:
-            self.progress_callback(callback)
+            self.set_progress('progress_callback', callback)
         # build the snapshot
         snapshot = model.TaskSnapshot(data)
         self.snapshot_id = snapshot._id
@@ -252,7 +252,7 @@ class Task(object):
             setattr(task, field, snapshot[field])
         for field in task._pickle_fields:
             setattr(task, field, pickle.loads(snapshot[field]))
-        # NOTEL Ok, so this is tricky, but we no longer pickle the scheduler
+        # NOTE: Ok, so this is tricky, but we no longer pickle the scheduler
         # field. This is because tasks are only snapshot-ed when they are
         # running, and since only snapshots are re-constituted into tasks on
         # start up, this means the tasks were running on shutdown. Therefore we
