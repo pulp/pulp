@@ -230,6 +230,21 @@ class TypesDatabaseTests(testutil.PulpTest):
         self.assertTrue(names is not None)
         self.assertEqual(0, len(names))
 
+    def test_all_type_definitions(self):
+        """
+        Tests retrieving all type definitions from the database.
+        """
+
+        # Setup
+        defs = [DEF_1, DEF_2, DEF_3, DEF_4]
+        types_db.update_database(defs)
+
+        # Test
+        all_defs = types_db.all_type_definitions()
+
+        # Verify
+        self.assertEqual(4, len(all_defs))
+
     def test_type_units_unique_indexes(self):
         """
         Tests the syntactic sugar method for retrieving unique indexes on a type.

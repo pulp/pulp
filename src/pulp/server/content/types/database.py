@@ -184,6 +184,17 @@ def all_type_collection_names():
     return type_collection_names
 
 
+def all_type_definitions():
+    """
+    @return: list of all type definitions in the database (mongo SON objects)
+    @rtype:  list of dict
+    """
+
+    coll = ContentType.get_collection()
+    types = list(coll.find())
+    return types
+
+
 def unit_collection_name(type_id):
     """
     Returns the name of the collection used to store units of the given type.
