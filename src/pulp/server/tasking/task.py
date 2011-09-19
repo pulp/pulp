@@ -232,7 +232,7 @@ class Task(object):
                 raise SnapshotFailure('\n'.join((msg, e.args[0]))), None, sys.exc_info()[2]
         # restore groomed state
         if callback is not None:
-            self.progress_callback(callback)
+            self.set_progress(callback)
         # build the snapshot
         snapshot = model.TaskSnapshot(data)
         self.snapshot_id = snapshot._id
