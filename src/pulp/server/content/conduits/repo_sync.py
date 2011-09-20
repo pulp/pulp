@@ -297,7 +297,10 @@ class RepoSyncConduit:
         @param type_id: optional; if specified, only keys for units of the
                         given type are returned
         """
-        pass
+        # XXX this only works if the type_id is not None
+        unit_ids = self.__association_manager.get_unit_ids(self.repo_id, type_id)
+        unit_keys = self.__content_query_manager.get_content_unit_keys(type_id, unit_ids)
+        return unit_keys
 
     def get_scratchpad(self):
         """

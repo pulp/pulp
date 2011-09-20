@@ -122,4 +122,26 @@ class RepoUnitAssociationManager:
         """
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove({'repo_id' : repo_id, 'unit_type_id' : unit_type_id, 'unit_id' : {'$in' : unit_id_list}}, safe=True)
+
+    # -- association queries --------------------------------------------------
+
+    def get_unit_ids(self, repo_id, unit_type_id=None):
+        """
+        Get the ids of the content units associated with the repo.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param unit_type_id: optional; if specified only unit ids of the
+                             specified type are returned
+
+        @return: list of content unit ids
+        @rtype:  list of str
+        """
+        collection = RepoContentUnit.get_collection()
+        spec_doc = {'repo_id': repo_id}
+        if unit_type_id is not None:
+            spec_doc['unit_type_id'] = unit_type_id
+        cursor = collection.find(spec_doc)
+        return [d['unit_id'] for d in cursor]
         
