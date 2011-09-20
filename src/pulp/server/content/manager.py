@@ -582,8 +582,9 @@ def initialize():
     Initialize importer/distributor plugin discovery and association.
     """
     # NOTE this is broken down into the the utility functions: _create_manager,
-    # _add_paths, and _load_plugins to facilitate testing and other alternate
-    # control flows on startup
+    # _add_importer_and_distributor_paths, _load_importers_and_distributors to
+    # facilitate testing and other alternate control flows on startup
+    global _MANAGER
     assert _MANAGER is None
     _load_content_types()
     _create_manager()
