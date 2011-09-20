@@ -39,9 +39,9 @@ class ContentManager(object):
         collection = content_types_db.type_units_collection(content_type)
         if unit_id is None:
             unit_id = str(uuid.uuid4())
-        unit_model = {'_id': unit_id}
-        unit_model.update(unit_metadata)
-        collection.insert(unit_model, safe=True)
+        unit_doc = {'_id': unit_id, '_content_type_id': content_type}
+        unit_doc.update(unit_metadata)
+        collection.insert(unit_doc, safe=True)
         return unit_id
 
     def update_content_unit(self, content_type, unit_id, unit_metadata_delta):
