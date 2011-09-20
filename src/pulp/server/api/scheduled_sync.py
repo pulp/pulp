@@ -105,8 +105,8 @@ def _add_repo_scheduled_sync_task(repo):
                            local_progress_callback, yum_rhn_progress_callback)
     task = RepoSyncTask(_sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    content_type = repo['content_types']
-    synchronizer = get_synchronizer(content_type)
+    source_type = repo['source']['type']
+    synchronizer = get_synchronizer(source_type)
     task.set_synchronizer(synchronizer)
     source_type = repo['source']['type']
     if source_type == 'remote':
