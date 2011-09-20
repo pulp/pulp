@@ -261,7 +261,7 @@ class RepoApi(BaseApi):
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
         if content_types in ("yum"):
-            pulp.server.util.create_repo(repo_path)
+            pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
