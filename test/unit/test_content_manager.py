@@ -17,6 +17,7 @@ import shutil
 import sys
 import tempfile
 import traceback
+from types import NoneType
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../common')))
 
@@ -287,6 +288,10 @@ class ManagerLoadTest(ManagerTest):
 
 class ManagerAPITest(ManagerTest):
 
+    def tearDown(self):
+        super(ManagerAPITest, self).tearDown()
+        manager._MANAGER = None
+
     def test_get_importer(self):
         path = gen_excellent_importer()
         self.manager.add_importer_plugin_path(path)
@@ -332,3 +337,25 @@ class ManagerAPITest(ManagerTest):
         manager._MANAGER = self.manager
         self.assertTrue(manager.is_valid_distributor('HTTPDistributor'))
         self.assertTrue(not manager.is_valid_distributor('Fake'))
+
+
+class ManagerModuleTest(testutil.PulpTest):
+
+    def tearDown(self):
+        super(ManagerModuleTest, self).tearDown()
+        manager._MANAGER = None
+
+    def test_create_manager_instance(self):
+        manager._create_manager()
+        self.assertTrue(isinstance(manager._MANAGER, manager.Manager))
+
+    # XXX currently relies on the existence of directories that are not created
+    # by default
+    def __test_initialize_manager_instance(self):
+        manager.initialize()
+        self.assertTrue(isinstance(manager._MANAGER, manager.Manager))
+
+    def test_finalize_manager_instance(self):
+        manager._create_manager()
+        manager.finalize()
+        self.assertTrue(isinstance(manager._MANAGER, NoneType))
