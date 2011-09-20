@@ -101,12 +101,13 @@ def _add_repo_scheduled_sync_task(repo):
     @param repo: repo to add sync task for
     """
     # hack to avoid circular imports
-    from repo_sync import local_progress_callback, yum_rhn_progress_callback
+    from repo_sync import get_synchronizer, local_progress_callback, yum_rhn_progress_callback
     task = RepoSyncTask(repo_sync._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    source_type = repo['source']['type']
-    synchronizer = repo_sync.get_synchronizer(source_type)
+    content_type = repo['content_types']
+    synchronizer = get_synchronizer(content_type)
     task.set_synchronizer(synchronizer)
+    source_type = repo['source']['type']
     if source_type == 'remote':
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     elif source_type == 'local':
@@ -168,7 +169,7 @@ def update_repo_schedule(repo, new_schedule):
     @param new_schedule: dictionary representing new schedule
     """
     if repo['source'] is None:
-        raise PulpException(_('Cannot add schedule to repository with out sync source'))
+        raise PulpException(_('Cannot add schedule to repository without sync source'))
     repo['sync_schedule'] = validate_schedule(new_schedule)
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
