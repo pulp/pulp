@@ -45,11 +45,11 @@ _TOP_LEVEL_CONFIGS_DIR = '/var/lib/pulp/plugins'
 _IMPORTER_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'importers')
 _DISTRIBUTOR_CONFIGS_DIR = os.path.join(_TOP_LEVEL_CONFIGS_DIR, 'distributors')
 
-_TOP_LEVEL_PLUGINS_DIR = os.path.join(os.path.dirname(__file__), 'plugin')
-_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importers')
-_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributors')
+_TOP_LEVEL_PLUGINS_DIR = os.path.dirname(__file__)
+_IMPORTER_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'importer')
+_DISTRIBUTOR_PLUGINS_DIR = os.path.join(_TOP_LEVEL_PLUGINS_DIR, 'distributor')
 
-_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content.plugin'
+_TOP_LEVEL_PLUGINS_PACKAGE = 'pulp.server.content'
 _IMPORTER_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'importer'))
 _DISTRIBUTOR_PLUGINS_PACKAGE = '.'.join((_TOP_LEVEL_PLUGINS_PACKAGE, 'distributor'))
 
