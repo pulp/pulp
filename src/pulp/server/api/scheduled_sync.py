@@ -101,8 +101,9 @@ def _add_repo_scheduled_sync_task(repo):
     @param repo: repo to add sync task for
     """
     # hack to avoid circular imports
-    from repo_sync import get_synchronizer, local_progress_callback, yum_rhn_progress_callback
-    task = RepoSyncTask(repo_sync._sync, [repo['id']])
+    from repo_sync import (_sync, get_synchronizer,
+                           local_progress_callback, yum_rhn_progress_callback)
+    task = RepoSyncTask(_sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     content_type = repo['content_types']
     synchronizer = get_synchronizer(content_type)
