@@ -15,7 +15,7 @@ import uuid
 from gettext import gettext as _
 
 from pulp.server.content.types import database as content_types_db
-from pulp.server.managers.content.exceptions import ContentUnitNotFound
+from pulp.server.managers.content.exception import ContentUnitNotFound
 
 
 class ContentManager(object):

@@ -16,7 +16,7 @@ from gettext import gettext as _
 
 from pulp.server.constants import LOCAL_STORAGE
 from pulp.server.content.types import database as content_types_db
-from pulp.server.managers.content.exceptions import (
+from pulp.server.managers.content.exception import (
     ContentTypeNotFound, ContentUnitNotFound)
 
 
