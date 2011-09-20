@@ -24,7 +24,7 @@ class DistributionExporter(BaseExporter):
     """
     __priority__ = 4
     
-    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, progress=None):
         """
         initialize distribution exporter
         @param repo: repository object
@@ -36,10 +36,10 @@ class DistributionExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date, progress)
         self.export_count = 0
         self.errataids = None
-        self.progress['step'] = 'Distribution files '
+        self.progress = progress
 
     def export(self, progress_callback=None):
         """
@@ -50,7 +50,7 @@ class DistributionExporter(BaseExporter):
          @rtype: dict
          @return: progress information for the plugin
         """
-        self.validate_target_path()
+        self.progress['step'] = self.report.distribution
         distributions = self.repo['distributionid']
         tree_info_path = "%s/%s/" % (pulp.server.util.top_repos_location(), self.repo['relative_path'])
         src_tree_file = dst_tree_file = None
@@ -71,10 +71,11 @@ class DistributionExporter(BaseExporter):
             os.mkdir(image_dir)
         for distroid in distributions:
             distro = self.distribution_api.distribution(distroid)
-            self.progress['count_total'] = len(distro['files'])
+            #self.progress['details']['distribution']['count_total'] = len(distro['files'])
+            self._progress_details('distribution', len(distro['files']))
             for count, src_dist_file in enumerate(distro['files']):
                 if count % 500:
-                    msg = "Step: Exporting %s (%s/%s)" % self.progress['step']
+                    msg = "Step: Exporting %s" % self.progress['step']
                     log.debug(msg)
                 dst_file_path = "%s/%s" % (image_dir, os.path.basename(src_dist_file) )
                 if os.path.exists(dst_file_path):
@@ -82,7 +83,7 @@ class DistributionExporter(BaseExporter):
                     src_file_checksum = pulp.server.util.get_file_checksum(filename=src_dist_file)
                     if src_file_checksum == dst_file_checksum:
                         log.info("file %s already exists with same checksum. skip import" % os.path.basename(src_dist_file))
-                        self.progress['num_success'] += 1
+                        self.progress['details']['distribution']['num_success'] += 1
                         continue
                 try:
                     file_dir = os.path.dirname(dst_file_path)
@@ -90,11 +91,11 @@ class DistributionExporter(BaseExporter):
                         os.makedirs(file_dir)
                     shutil.copy(src_dist_file, dst_file_path)
                     log.info("exported %s" % src_dist_file)
-                    self.progress['num_success'] += 1
+                    self.progress['details']['distribution']['num_success'] += 1
                 except IOError,io:
                     msg = "Failed to export distribution file %s; Error: %s" % (src_dist_file, str(io))
                     self.progress['errors'].append(msg)
-                    self.progress['num_error'] += 1
+                    self.progress['details']['distribution']['num_error'] += 1
                     log.error(msg)
             if progress_callback is not None:
                 progress_callback(self.progress)

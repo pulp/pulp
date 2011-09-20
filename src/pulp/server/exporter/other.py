@@ -24,7 +24,7 @@ class OtherExporter(BaseExporter):
     """
     __priority__ = 5
 
-    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, progress=None):
         """
         initialize other metadata exporter
         @param repo: repository object
@@ -36,8 +36,8 @@ class OtherExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
-        self.progress['step'] = 'Custom Metadata '
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date, progress)
+        self.progress = progress
 
     def export(self, progress_callback=None):
         """
@@ -47,19 +47,22 @@ class OtherExporter(BaseExporter):
         @rtype: dict
         @return: progress information for the plugin
         """
-        self.validate_target_path()
+        self.progress['step'] = self.report.custom
         repo_path = "%s/%s/" % (pulp.server.util.top_repos_location(), self.repo['relative_path'])
         src_repodata_file = os.path.join(repo_path, "repodata/repomd.xml")
         src_repodata_dir  = os.path.dirname(src_repodata_file)
         tgt_repodata_dir  = os.path.join(self.target_dir, 'repodata')
         ftypes = pulp.server.util.get_repomd_filetypes(src_repodata_file)
         base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db',
-                       'updateinfo', 'comps', 'group_gz', 'group']
+                       'updateinfo', 'group_gz', 'group']
+        process_ftypes = []
         for ftype in ftypes:
-            if ftype in base_ftypes:
+            if ftype not in base_ftypes:
                 # no need to process these again
-                continue
-            self.progress['count_total'] += 1
+                process_ftypes.append(ftype)
+        #self.progress['details']['custom']['count_total'] = len(process_ftypes)
+        self._progress_details('custom', len(process_ftypes))
+        for ftype in process_ftypes:
             filetype_path = os.path.join(src_repodata_dir, os.path.basename(pulp.server.util.get_repomd_filetype_path(src_repodata_file, ftype)))
             # modifyrepo uses filename as mdtype, rename to type.<ext>
             renamed_filetype_path = os.path.join(tgt_repodata_dir,
@@ -73,14 +76,14 @@ class OtherExporter(BaseExporter):
                         self.progress["step"] = msg
                         progress_callback(self.progress)
                     pulp.server.util.modify_repo(tgt_repodata_dir, renamed_filetype_path)
-                self.progress['num_success'] += 1
+                self.progress['details']['custom']['num_success'] += 1
             except IOError, io:
-                self.progress['num_error'] += 1
+                self.progress['details']['custom']['num_error'] += 1
                 msg = "Unable to copy the custom metadata file to target directory %s; Error: %s" % (renamed_filetype_path, str(io))
                 self.progress['errors'].append(msg)
                 log.error(msg)
             except pulp.server.util.CreateRepoError, cre:
-                self.progress['num_error'] += 1
+                self.progress['details']['custom']['num_error'] += 1
                 msg = "Unable to modify repo metadata with custom file %s; Error: %s " % (renamed_filetype_path, str(cre))
                 self.progress['errors'].append(msg)
                 log.error(msg)

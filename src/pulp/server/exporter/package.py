@@ -23,7 +23,7 @@ class PackageExporter(BaseExporter):
     """
     __priority__ = 1
 
-    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, progress=None):
         """
         initialize package exporter
         @param repo: repository object
@@ -35,9 +35,10 @@ class PackageExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date, progress)
         self.export_count = 0
-        self.progress['step'] = 'Packages'
+        self.progress = progress
+
 
     def export(self, progress_callback=None):
         """
@@ -48,15 +49,14 @@ class PackageExporter(BaseExporter):
         @rtype: dict
         @return: progress information for the plugin
         """
-        self.validate_target_path()
+        self.progress['step'] = self.report.rpm
         hashtype = self.repo['checksum_type']
         package_count = len(self.repo['packages'])
-        self.progress['count_total'] = package_count
+        self._progress_details('rpm', package_count)
         for count, pkg in enumerate(self.repo['packages']):
             if count % 500:
-                msg = "Step: Exporting %s\n" % self.progress['step'] #, count, package_count)
+                msg = "Step: Exporting %s (%s/%s)\n" % (self.progress['step'], count, package_count)
                 log.debug(msg)
-
             package_obj = self.package_api.package(pkg)
             if not package_obj:
                 continue
@@ -64,6 +64,10 @@ class PackageExporter(BaseExporter):
                                                     package_obj['arch'], package_obj['filename'], package_obj['checksum'])
             if not os.path.exists(pkg_path):
                 # package not found on filesystem, continue
+                msg = "Package %s does not exists; skipping" % pkg
+                self.progress['errors'].append(msg)
+                self.progress['details']['rpm']['items_left'] -= 1
+                self.progress['details']['rpm']['num_error'] += 1
                 continue
             src_file_checksum = pulp.server.util.get_file_checksum(hashtype=hashtype, filename=pkg_path)
             dst_file_path = os.path.join(self.target_dir, os.path.basename(pkg_path))
@@ -76,14 +80,19 @@ class PackageExporter(BaseExporter):
                     msg = "Failed to export package %s; Error: %s" % (pkg, str(io))
                     self.progress['errors'].append(msg)
                     self.progress['num_error'] += 1
+                    self.progress['details']['rpm']['num_error'] += 1
+                    self.progress['details']['rpm']['items_left'] -= 1
                     log.error(msg)
                     continue
             else:
                 self.export_count += 1
                 log.info("file %s already exists with same checksum. skip export" % os.path.basename(pkg_path))
             self.progress['num_success'] = self.export_count
+            self.progress['details']['rpm']['num_success'] = self.export_count
+            self.progress['details']['rpm']['items_left'] -= 1
+
             if progress_callback is not None:
-                #self.progress["step"] = msg
+#                self.progress["step"] = msg
                 progress_callback(self.progress)
         # generate metadata
         try:

@@ -12,9 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import glob
 import os
-import shutil
+import pulp.server.util
 from logging import getLogger
-from pulp.server.exporter.base import BaseExporter, ExportException
+from pulp.server.exporter.base import BaseExporter, ExporterReport
 
 log = getLogger(__name__)
 # --------------- constants ---------------------------#
@@ -32,6 +32,18 @@ class ExportController(object):
         self.overwrite = overwrite
         self.generate_iso = generate_iso
         self.progress_callback = progress_callback
+        self.progress = {
+            'status': 'running',
+            'item_name': None,
+            'item_type': None,
+            'count_total': 0,
+            'count_remaining': 0,
+            'num_error': 0,
+            'num_success': 0,
+            'details':{},
+            'errors':[],
+            'step': "STARTING",
+        }
 
     def _load_exporter(self):
         """
@@ -61,14 +73,16 @@ class ExportController(object):
         Execute the exporter
         """
         modules = sorted(self._load_exporter(), key=lambda mod: mod.__priority__)
+        #progress = self.progress
         for module in modules:
             try:
-                exporter = module(self.repo, target_dir=self.target_dir)
-                exporter.export(progress_callback=self.progress_callback)
+                exporter = module(self.repo, target_dir=self.target_dir, progress=self.progress)
+                self.progress = exporter.export(progress_callback=self.progress_callback)
             except Exception,e:
                 log.error("Error occured processing module %s; Error:%s" % (module, str(e)))
                 continue
         self.create_isos()
+        self.progress['step'] = ExporterReport().done
 
     def create_isos(self):
         """

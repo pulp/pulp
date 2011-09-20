@@ -25,7 +25,7 @@ class CompsExporter(BaseExporter):
 
     __priority__ = 2
 
-    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, progress=None):
         """
         initialize package group exporter
         @param repo: repository object
@@ -37,8 +37,8 @@ class CompsExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
-        self.progress['step'] = 'Package Group/Category '
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date, progress)
+        self.progress = progress
         
     def export(self, progress_callback=None):
         """
@@ -49,14 +49,20 @@ class CompsExporter(BaseExporter):
         @rtype: dict
         @return: progress information for the plugin
         """
-        self.validate_target_path()
+        self.progress['step'] = self.report.comps
+        if not (len(self.repo['packagegroups']) or len(self.repo['packagegroupcategories'])):
+            # no comps xml data found
+            msg = "No comps groups found in repo %s" % self.repo['id']
+            log.info(msg)
+            self.progress['errors'].append(msg)
+            self.progress['num_error'] += 1
+            self.progress['details']['packagegroup']['num_error'] += 1
+            self.progress['details']['packagegroup']['items_left'] = 0
+            return
+        pg_count = len(self.repo['packagegroups']) + len(self.repo['packagegroupcategories'])
+        self._progress_details('packagegroup', pg_count)
         xml = comps_util.form_comps_xml(self.repo['packagegroupcategories'],
                 self.repo['packagegroups'])
-        self.progress['count_total'] = len(self.repo['packagegroups']) + len(self.repo['packagegroupcategories'])
-        if not xml:
-            # no comps xml data found
-            log.info("No comps data found in repo %s" % self.repo['id'])
-            return
         comps_file_path = "%s/%s" % (self.target_dir, "comps.xml")
         try:
             f = open(comps_file_path, 'w')
@@ -77,11 +83,13 @@ class CompsExporter(BaseExporter):
             pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     comps_file_path)
             # either all pass or all error in this case
-            self.progress['num_success'] = self.progress['count_total']
+            self.progress['num_success'] += self.progress['count_total']
+            self.progress['details']['packagegroup']['num_success'] = pg_count
         except pulp.server.util.CreateRepoError, cre:
             msg = "Unable to modify metadata with exported package groups/categories; Error: %s" % str(cre)
             self.progress['errors'].append(msg)
             self.progress['num_error'] += self.progress['count_total']
+            self.progress['details']['packagegroup']['items_left'] = 0
             log.error(msg)
         return self.progress
 

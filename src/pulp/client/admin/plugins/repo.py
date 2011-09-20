@@ -1707,16 +1707,20 @@ class Export(RepoProgressAction):
         except Exception,e:
             utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
+        progress_details = {}
         while not task_end(task):
             self.print_exporter_progress(task['progress'])
+            #self.print_progress(task['progress'])
             time.sleep(0.25)
             task = self.task_api.info(task['id'])
+        self.print_final_report(task['progress'])
+        self.print_error_report(task['progress'])
 
     def print_exporter_progress(self, progress):
         current = ""
         if progress and progress.has_key("num_success") and progress["num_success"]:
-            current += _("Step: Exporting %s (%s/%s)(%s)\n") % \
-                       (progress['step'], progress['num_success'], progress['count_total'], self.get_wait_symbol())
+            current += _("Step: %s (%s)\n") % \
+                       (progress['step'], self.get_wait_symbol())
             self._previous_step = progress["num_success"]
         elif progress and not progress["num_success"]:
             current += _("Step: %s (%s)\n") % (progress['step'], self.get_wait_symbol())
@@ -1726,6 +1730,17 @@ class Export(RepoProgressAction):
             self._previous_step = None
         self.write(current, self._previous_progress)
         self._previous_progress = current
+
+    def print_final_report(self, progress):
+        print_header(_("Exporter Summary"))
+        for type, details in progress['details'].items():
+            print("%s : \t\t\t%s/%s" % (type, details['num_success'], details['items_total']))
+
+    def print_error_report(self, progress):
+        if not len(progress['errors']):
+            return
+        print_header(_("Errors:"))
+        print '\n'.join(progress['errors'])
 
 class KeyReader:
 

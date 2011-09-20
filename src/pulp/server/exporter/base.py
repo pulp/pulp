@@ -13,6 +13,7 @@
 import os
 import logging
 import shutil
+import pulp.server.util
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
@@ -44,7 +45,7 @@ class BaseExporter(object):
     """
      Base Exporter module with common methods
     """
-    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, overwrite=False):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, overwrite=False, progress=None):
         """
         initialize exporter
         @param repo: repository object
@@ -63,14 +64,19 @@ class BaseExporter(object):
         self.start_date = start_date
         self.end_date = end_date
         self.overwrite = overwrite
-        self.progress = {
+        self.progress = progress
+
+        self.old_progress = {
             'step': 'base',
             'count_total': 0,
             'count_remaining': 0,
             'num_error': 0,
             'num_success': 0,
             'errors': [],
+            'status' : 'running',
+            'details' : {}
         }
+        self.report = ExporterReport()
         self.setup()
         
     def setup(self):
@@ -104,26 +110,31 @@ class BaseExporter(object):
         """
         raise NotImplementedError()
 
-    def validate_target_path(self):
-        """
-        Validate target directory path:
-          * If path doesn't exists, create one
-          * If path exists and not empty; if forced remove and create a fresh one.
-        """
-        if not os.path.exists(self.target_dir):
-            log.info("Path %s does not exists; creating" % self.target_dir)
-            os.mkdir(self.target_dir)
-        if os.listdir(self.target_dir) and self.overwrite:
-            log.info("Target directory has content and force is set; cleaning up the directory for new export.")
-            shutil.rmtree(self.target_dir)
-            os.mkdir(self.target_dir)
-
-    
     def get_report(self):
         raise NotImplementedError()
+
+    def _progress_details(self, item_type, num_items):
+        if not self.progress["details"].has_key(item_type):
+            self.progress["details"][item_type] = {}
+        self.progress['count_total'] += num_items
+        self.progress['details'][item_type]["items_left"] = num_items
+        self.progress['details'][item_type]["items_total"] = num_items
+        self.progress['details'][item_type]["num_success"] = 0
+        self.progress['details'][item_type]["num_error"] = 0
+
+
 
 def exporter_progress_callback(progress):
     """
     This method will report exporter progress
     """
     return progress
+
+class ExporterReport(object):
+    rpm = "Exporting rpms"
+    comps = "Exporting packagegroups metadata"
+    distribution = "Exporting Distribution files"
+    errata = "Exporting errata metadata"
+    custom = "exporting custom metadata files"
+    start  = "Starting"
+    done = "Finished"

@@ -26,7 +26,7 @@ class ErrataExporter(BaseExporter):
     """
     __priority__ = 3
 
-    def __init__(self, repo, target_dir="./", start_date=None, end_date=None):
+    def __init__(self, repo, target_dir="./", start_date=None, end_date=None, progress=None):
         """
         initialize errata exporter
         @param repo: repository Object
@@ -38,10 +38,10 @@ class ErrataExporter(BaseExporter):
         @param end_date: optional end date from which the content needs to be exported
         @type end_date: date
         """
-        BaseExporter.__init__(self, repo, target_dir, start_date, end_date)
+        BaseExporter.__init__(self, repo, target_dir, start_date, end_date, progress)
         self.export_count = 0
+        self.progress = progress
         self.errataids = None
-        self.progress['step'] = 'Errata'
 
     def export(self, progress_callback=None):
         """
@@ -53,9 +53,10 @@ class ErrataExporter(BaseExporter):
         @rtype: dict
         @return: progress information for the plugin
         """
-        self.validate_target_path()
+        self.progress['step'] = self.report.errata
         self.errataids = list(chain.from_iterable(self.repo['errata'].values()))
-        self.progress['count_total'] = len(self.errataids)
+        #self.progress['details']['errata']['count_total'] = len(self.errataids)
+        self._progress_details('errata', len(self.errataids))
         self.__process_errata_packages()
         log.info("generating updateinfo.xml file for exported errata")
         try:
@@ -69,9 +70,9 @@ class ErrataExporter(BaseExporter):
                 pulp.server.util.modify_repo(os.path.join(self.target_dir, "repodata"),
                     updateinfo_path)
             # either all pass or all error in this case
-            self.progress['num_success'] = self.progress['count_total']
+            self.progress['details']['errata']['num_success'] = len(self.errataids)
         except pulp.server.util.CreateRepoError, cre:
-            self.progress['num_error'] += self.progress['count_total']
+            self.progress['details']['errata']['num_error'] = len(self.errataids)
             msg = "Unable to modify metadata with exported errata; Error: %s " % str(cre)
             self.progress['errors'].append(msg)
             log.error(msg)
