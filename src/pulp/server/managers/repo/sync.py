@@ -134,7 +134,10 @@ class RepoSyncManager:
         # Assemble the data needed for the sync
         association_manager = manager_factory.repo_unit_association_manager()
         repo_manager = manager_factory.repo_manager()
-        conduit = RepoSyncConduit(repo_id, repo_manager, association_manager)
+        content_manager = manager_factory.content_manager()
+        content_query_manager = manager_factory.content_query_manager()
+        conduit = RepoSyncConduit(repo_id, repo_manager, association_manager,
+                                  content_manager, content_query_manager)
 
         # Take the repo's default sync config and merge in the override values
         # for this sync alone (don't store it back to the DB)

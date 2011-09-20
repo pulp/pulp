@@ -51,7 +51,13 @@ class RepoSyncConduit:
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, repo_cud_manager, repo_association_manager, progress_callback=None):
+    def __init__(self,
+                 repo_id,
+                 repo_cud_manager,
+                 repo_association_manager,
+                 content_manager,
+                 content_query_manager,
+                 progress_callback=None):
         """
         @param repo_id: identifies the repo being synchronized
         @type  repo_id: str
@@ -63,6 +69,14 @@ class RepoSyncConduit:
                    repo to content unit associations
         @type  repo_association_manager: L{RepoUnitAssociationManager}
 
+        @param content_manager: server manager instance for manipulating content
+                                types and units
+        @type  content_manager: L{ContentManager}
+
+        @param content_query_manager: server manager instance for querying
+                                      content types and units
+        @type  content_query_manager: L{ContentQueryManager}
+
         @param progress_callback: used to update the server's knowledge of the
                    sync progress
         @type  progress_callback: ?
@@ -71,6 +85,8 @@ class RepoSyncConduit:
 
         self.__repo_manager = repo_cud_manager
         self.__association_manager = repo_association_manager
+        self.__content_manager = content_manager
+        self.__content_query_manager = content_query_manager
         self.__progress_callback = progress_callback
 
     def __str__(self):
@@ -109,10 +125,13 @@ class RepoSyncConduit:
 
         _LOG.info('Progress for repo [%s] sync: %s - %d/%d' % (self.repo_id, message, current_step, total_steps))
 
-    def request_unit_filename(self, relative_path):
+    def request_unit_filename(self, content_type, relative_path):
         """
         Requests the server translate the relative location of where a content
         unit should be stored into a full path on the local filesystem.
+
+        @param content_type: the unique id of the content type
+        @type  content_type: str
 
         @param relative_path: the path, as determined by the importer, where the
                               content unit should be stored
@@ -122,10 +141,7 @@ class RepoSyncConduit:
         @rtype:  str
         """
 
-        # Ultimately Pulp may do something more fancy, but for now simply stuff
-        # the relative path onto the local storage directory
-
-        path = os.path.join(LOCAL_STORAGE, relative_path)
+        path = self.__content_query_manager.request_content_unit_file_path(content_type, relative_path)
         return path
 
     def add_or_update_content_unit(self, type_id, unit_key, standard_unit_data, custom_unit_data):
@@ -159,7 +175,14 @@ class RepoSyncConduit:
                          performed on the data included here
         @type  custom_unit_data: dict
         """
-        pass
+        unit_ids = self.__content_query_manager.get_content_unit_ids(type_id, [unit_key])
+        if len(unit_ids) != 1:
+            # TODO raise an appropriate error
+            pass
+        consolidated_data = {}
+        consolidated_data.update(standard_unit_data)
+        consolidated_data.update(custom_unit_data)
+        self.__content_manager.add_content_unit(type_id, unit_ids[0], consolidated_data)
 
     def associate_content_unit(self, type_id, unit_id):
         """
