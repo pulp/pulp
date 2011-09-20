@@ -258,7 +258,7 @@ class RepoApi(BaseApi):
             pulp.server.util.top_repos_location(), r['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
-        pulp.server.util.create_repo(repo_path)
+        pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
