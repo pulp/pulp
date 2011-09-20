@@ -64,7 +64,7 @@ class Unparsable(SyntaxException):
     One or more descriptors could not be parsed.
     """
     pass
-        
+
 class MissingRoot(SyntaxException):
     """
     A descriptor does not contain the necessary root element.
@@ -292,6 +292,8 @@ def _all_types(descriptors):
     @return: list of type dicts for all types in each descriptor
     @rtype:  list of dict
     """
+    if not descriptors:
+        return []
     return reduce(operator.add, [descriptor.parsed['types'] for descriptor in descriptors])
 
 def _all_type_ids(descriptors):
