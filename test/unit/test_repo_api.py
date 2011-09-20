@@ -48,7 +48,7 @@ from pulp.server.db.model import RepoSource
 from pulp.server.db.model import persistence
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import random_string
-from pulp.server.util import get_rpm_information
+from pulp.server.util import get_rpm_information, get_repomd_filetype_dump
 from pulp.client.lib.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
 from pulp.server.auth.cert_generator import SerialNumber
@@ -1379,6 +1379,21 @@ class TestRepoApi(testutil.PulpAsyncTest):
         except ConflictingOperationException, e:
             caught = True
         self.assertTrue(caught)
+
+    def test_repo_create_with_checksum_type(self):
+        checksum_type = 'sha1'
+        id = 'some-id-no-feed-checksum-type'
+        repo = self.repo_api.create(id, 'some name', 'i386', checksum_type=checksum_type)
+        repo = self.repo_api.repository(id)
+        assert(repo is not None)
+        assert(repo['checksum_type'] == checksum_type)
+        repodata_file = "%s/%s/%s/%s" % (top_repos_location(),
+                                         repo['relative_path'],
+                                         'repodata', 'repomd.xml')
+        file_type_dump = get_repomd_filetype_dump(repodata_file)
+        # validate if checksum types match the specified type
+        for ftype, data in file_type_dump.items():
+            assert(data['checksum'][0] == checksum_type)
 
 if __name__ == '__main__':
     unittest.main()
