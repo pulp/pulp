@@ -76,7 +76,7 @@ class ContentManager(object):
         @type parent_type: str
         @param parent_id: unique id of the parent content unit
         @type parent_id: str
-        @child_type: unique id of the child content collection
+        @param child_type: unique id of the child content collection
         @type child_type: str
         @param child_ids: list of unique ids of child content units
         @types child_ids: tuple of list
@@ -99,7 +99,7 @@ class ContentManager(object):
         @type parent_type: str
         @param parent_id: unique id of the parent content unit
         @type parent_id: str
-        @child_type: unique id of the child content collection
+        @param child_type: unique id of the child content collection
         @type child_type: str
         @param child_ids: list of unique ids of child content units
         @types child_ids: tuple of list
