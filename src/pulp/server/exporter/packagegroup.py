@@ -54,10 +54,6 @@ class CompsExporter(BaseExporter):
             # no comps xml data found
             msg = "No comps groups found in repo %s" % self.repo['id']
             log.info(msg)
-            self.progress['errors'].append(msg)
-            self.progress['num_error'] += 1
-            self.progress['details']['packagegroup']['num_error'] += 1
-            self.progress['details']['packagegroup']['items_left'] = 0
             return
         pg_count = len(self.repo['packagegroups']) + len(self.repo['packagegroupcategories'])
         self._progress_details('packagegroup', pg_count)
