@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.232
+Version:        0.0.233
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -490,6 +490,40 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Sep 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.233-1
+- Removing content manager init until the RPM changes are in
+  (jason.dobies@redhat.com)
+- if a repo has no comps, just log the message but dont treat it as an error
+  (pkilambi@redhat.com)
+- minor clean up on export api params (pkilambi@redhat.com)
+- Adding progress callback and reporting to export task lookup and display the
+  summary on client. (pkilambi@redhat.com)
+- 740010 - use the checksum type when creating initial metadata
+  (pkilambi@redhat.com)
+- fixed bug that was causing reduce to puke when recieving an empty list
+  (jconnor@redhat.com)
+- fixed a bug in the re-setting of the progress callback after a snapshot
+  (jconnor@redhat.com)
+- Added plugin-related REST API calls (not fully tested yet)
+  (jason.dobies@redhat.com)
+- Added plugin manager to factory (jason.dobies@redhat.com)
+- Added call to start content manager on bootstrap, though calls into it don't
+  work yet (jason.dobies@redhat.com)
+- Added manager-level operations for retrieving the server's plugin state
+  (jason.dobies@redhat.com)
+- Consolidating location of plugins (jason.dobies@redhat.com)
+- moving the target path validation outside the controller sp exceptions
+  propogate to ws layer (pkilambi@redhat.com)
+- Added ability to retrieve all type definitions from the database
+  (jason.dobies@redhat.com)
+- 736140 - Add formatter to cds log handler. (jortel@redhat.com)
+- Initialize the manager factory on bootstrap (jason.dobies@redhat.com)
+- removed pickling of task scheduler and added immediate scheduler on re-
+  creation from snapshot (jconnor@redhat.com)
+- now creating snapshots for all task, not just un-scheduled ones will rely on
+  conflicting task detection to resolve conflicts on startup
+  (jconnor@redhat.com)
+
 * Fri Sep 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.232-1
 - Added scratchpad support so importers/distributors can save information for a
   repo between runs. (jason.dobies@redhat.com)
