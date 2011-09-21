@@ -204,7 +204,7 @@ class ContentQueryManager(object):
         @return: file system path for content type's root directory
         @rtype: str
         """
-        # I'm paritioning the content on the file system based on content type
+        # I'm partitioning the content on the file system based on content type
         root = os.path.join(LOCAL_STORAGE, content_type)
         if not os.path.exists(root):
             os.makedirs(root)
