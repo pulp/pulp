@@ -135,13 +135,18 @@ class RepoUnitAssociationManager:
         @param unit_type_id: optional; if specified only unit ids of the
                              specified type are returned
 
-        @return: list of content unit ids
-        @rtype:  list of str
+        @return: dict of unit type id: list of content unit ids
+        @rtype:  dict of str: list of str
         """
+        unit_ids = {}
         collection = RepoContentUnit.get_collection()
         spec_doc = {'repo_id': repo_id}
         if unit_type_id is not None:
             spec_doc['unit_type_id'] = unit_type_id
         cursor = collection.find(spec_doc)
-        return [d['unit_id'] for d in cursor]
+        if cursor.count() > 0:
+            for content_unit in cursor:
+                ids = unit_ids.setdefault(content_unit['_content_type_id'], [])
+                ids.append(content_unit['_id'])
+        return unit_ids
         
