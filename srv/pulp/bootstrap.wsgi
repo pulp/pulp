@@ -59,4 +59,4 @@ heartbeatListener.start()
 manager_factory.initialize()
 
 # Initialize the content manager
-content_manager.initialize()
+# content_manager.initialize()
