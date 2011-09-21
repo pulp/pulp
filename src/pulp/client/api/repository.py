@@ -366,12 +366,11 @@ class RepositoryAPI(PulpAPI):
         fileinfo = {'filetype' : filetype}
         return self.server.POST(path, fileinfo)[1]
 
-    def export(self, repoid, target_location, generate_isos=False, overwrite=False, timeout=None):
+    def export(self, repoid, target_location, generate_isos=False, overwrite=False):
         path = "/repositories/%s/export/" % repoid
         params = {"target_location" : target_location,
                   "generate_isos" : generate_isos,
-                  "overwrite" : overwrite,
-                  "timeout":timeout, }
+                  "overwrite" : overwrite, }
         return self.server.POST(path, params)[1]
 
     def export_list(self, repoid):

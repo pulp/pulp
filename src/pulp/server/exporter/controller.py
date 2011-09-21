@@ -53,7 +53,7 @@ class ExportController(object):
         """
         plugins = []
         for plugin in glob.glob(os.path.join(_EXPORTER_MODULES_PATH, '*.py')):
-            # import the module 
+            # import the module
             module = __import__(_TOP_LEVEL_PACKAGE + '.' + \
                                 os.path.basename(plugin).split('.')[0], fromlist = ["*"])
             for name, attr in module.__dict__.items():
@@ -72,14 +72,13 @@ class ExportController(object):
         """
         Execute the exporter
         """
-        modules = sorted(self._load_exporter(), key=lambda mod: mod.__priority__)
-        #progress = self.progress
-        for module in modules:
+        classes = sorted(self._load_exporter(), key=lambda mod: mod.__priority__)
+        for cls in classes:
             try:
-                exporter = module(self.repo, target_dir=self.target_dir, progress=self.progress)
+                exporter = cls(self.repo, target_dir=self.target_dir, progress=self.progress)
                 self.progress = exporter.export(progress_callback=self.progress_callback)
             except Exception,e:
-                log.error("Error occured processing module %s; Error:%s" % (module, str(e)))
+                log.error("Error occured processing module %s; Error:%s" % (cls, str(e)))
                 continue
         self.create_isos()
         self.progress['step'] = ExporterReport().done

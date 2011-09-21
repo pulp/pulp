@@ -678,16 +678,7 @@ class RepositoryActions(JSONController):
             return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
         except ExportException, ee:
             raise PulpException(str(ee))
-        timeout = export_params.get('timeout', None)
-        # Check for valid timeout values
-        if timeout:
-            try:
-                timeout = iso8601_duration_to_timeout(timeout)
-            except UnsupportedTimeoutInterval, e:
-                return self.bad_request(msg=e.args[0])
-            if not timeout:
-                raise PulpException("Invalid timeout value: %s, see --help" % export_params['timeout'])
-        task = exporter.export(id, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite, timeout=timeout)
+        task = exporter.export(id, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite)
         if not task:
             return self.conflict('Export already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
