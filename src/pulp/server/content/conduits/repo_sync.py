@@ -175,7 +175,7 @@ class RepoSyncConduit:
                          performed on the data included here
         @type  custom_unit_data: dict
         """
-        unit_ids = self.__content_query_manager.get_content_unit_ids(type_id, [unit_key])
+        unit_ids = self.__content_query_manager.get_content_unit_ids(type_id, [unit_key])[0]
         if len(unit_ids) != 1:
             # TODO raise an appropriate error
             pass
@@ -300,7 +300,7 @@ class RepoSyncConduit:
         unit_keys = []
         content_ids = self.__association_manager.get_unit_ids(self.repo_id, type_id)
         for content_type_id, unit_ids in content_ids:
-            unit_keys.extend(self.__content_query_manager.get_content_unit_keys(type_id, unit_ids))
+            unit_keys.extend(self.__content_query_manager.get_content_unit_keys(type_id, unit_ids)[1])
         return unit_keys
 
     def get_scratchpad(self):

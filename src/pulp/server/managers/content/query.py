@@ -160,10 +160,9 @@ class ContentQueryManager(object):
         @type content_type: str
         @param unit_ids: list of unique content unit ids
         @type unit_ids: list of str's
-        @return: tuples of id, dictionary that uniquely identify the documents
-                 for the given id
-        @rtype: (possibly empty) list of (str, dict) tuples
-        XXX this return type sucks to work with
+        @return: two tuples of the same length, one of ids the second of key dicts
+                 the same index in each tuple corresponds to a single content unit
+        @rtype: tuple of (possibly empty) tuples
         """
         key_fields = content_types_db.type_units_unique_indexes(content_type)
         if key_fields is None:
@@ -172,8 +171,9 @@ class ContentQueryManager(object):
         _flatten_keys(all_fields, key_fields)
         collection = content_types_db.type_units_collection(content_type)
         cursor = collection.find({'_id': {'$in': unit_ids}}, fields=all_fields)
-        keys_dicts = [(d.pop('_id'), dict(d)) for d in cursor]
-        return keys_dicts
+        dicts = tuple(dict(d) for d in cursor)
+        ids = tuple(d.pop('_id') for d in dicts)
+        return (ids, dicts)
 
     def get_content_unit_ids(self, content_type, units_keys):
         """
@@ -184,9 +184,9 @@ class ContentQueryManager(object):
         @param unit_keys: list of keys dictionaries that uniquely identify
                           content units in the given content type collection
         @type unit_keys: list of dict's
-        @return: tuples of id, key dict for the given content units keys
-        @rtype: (possibly empty) list of (str, dict) tuples
-        XXX this return type sucks to work with
+        @return: two tuples of the same length, one of ids the second of key dicts
+                 the same index in each tuple corresponds to a single content unit
+        @rtype: tuple of (possibly empty) tuples
         """
         assert units_keys
         collection = content_types_db.type_units_collection(content_type)
@@ -194,8 +194,9 @@ class ContentQueryManager(object):
         fields = ['_id']
         fields.append(units_keys[0].keys()) # requires assertion
         cursor = collection.find(spec, fields=fields)
-        ids = [(d.pop('_id'), dict(d)) for d in cursor]
-        return ids
+        dicts = tuple(dict(d) for d in cursor)
+        ids = tuple(d.pop('_id') for d in dicts)
+        return (ids, dicts)
 
     def get_root_content_dir(self, content_type):
         """

@@ -141,21 +141,21 @@ class PulpContentQueryTests(PulpContentTests):
         self.assertEqual(len(units), len(self.type_2_ids))
 
     def test_key_dict(self):
-        unit_keys = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, [self.type_2_ids[0]])
+        unit_ids, unit_keys = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, [self.type_2_ids[0]])
         self.assertEqual(len(unit_keys), 1)
-        unit_id = unit_keys[0][0]
-        unit_dict = unit_keys[0][1]
+        unit_id = unit_ids[0]
+        unit_dict = unit_keys[0]
         unit_model = TYPE_2_UNITS[0]
         self.assertEqual(unit_id, self.type_2_ids[0])
         self.assertEqual(unit_dict['key-2a'], unit_model['key-2a'])
         self.assertEqual(unit_dict['key-2b'], unit_model['key-2b'])
 
     def test_get_by_key_dict(self):
-        key_dict = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, [self.type_2_ids[0]])[0][1]
+        key_dict = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, [self.type_2_ids[0]])[1][0]
         unit = self.query_manager.get_content_unit_by_keys_dict(TYPE_2_DEF.id, key_dict)
         self.assertEqual(unit['_id'], self.type_2_ids[0])
 
     def test_multi_key_dicts(self):
-        key_dicts = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, self.type_2_ids)
-        units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, [d for i,d in key_dicts])
+        ids, key_dicts = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, self.type_2_ids)
+        units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, key_dicts)
         self.assertEqual(len(units), len(self.type_2_ids))
