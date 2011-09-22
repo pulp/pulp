@@ -256,7 +256,7 @@ def _update_indexes(type_def, unique):
 
     for index in index_list:
 
-        if isinstance(index, list):
+        if isinstance(index, (list, tuple)):
             LOG.info('Ensuring index [%s] (unique: %s) on type definition [%s]' % (', '.join(index), unique, type_def.id))
             mongo_index = _create_index_keypair(index)
         else:
