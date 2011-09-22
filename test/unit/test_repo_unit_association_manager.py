@@ -131,3 +131,23 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-1', 'unit_id' : 'unit-3'}) is not None)
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-1'}) is not None)
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-2'}) is not None)
+
+    def test_association_query(self):
+        """
+        Tests that querying associations works.
+        """
+
+        # unit_type: [id, ...]
+        repo_id = 'repo-1'
+        units = {'type-1': ['1-1', '1-2', '1-3'],
+                 'type-2': ['2-1', '2-2', '2-3']}
+        for type_id, unit_ids in units.items():
+            self.manager.associate_all_by_ids(repo_id, type_id, unit_ids)
+
+        type_1_units = self.manager.get_unit_ids(repo_id, 'type-1')
+        self.assertTrue('type-1' in type_1_units)
+        self.assertFalse('type-2' in type_1_units)
+        for id in units['type-1']:
+            self.assertTrue(id in type_1_units['type-1'], '%s not in %s' % (id, ','.join(type_1_units['type-1'])))
+        for id in type_1_units['type-1']:
+            self.assertTrue(id in units['type-1'])
