@@ -168,7 +168,7 @@ class ContentQueryManager(object):
         if key_fields is None:
             raise ContentTypeNotFound()
         all_fields = ['_id']
-        all_fields.extend(key_fields)
+        _flatten_keys(all_fields, key_fields)
         collection = content_types_db.type_units_collection(content_type)
         cursor = collection.find({'_id': {'$in': unit_ids}}, fields=all_fields)
         keys_dicts = [(d.pop('_id'), dict(d)) for d in cursor]
@@ -228,6 +228,17 @@ class ContentQueryManager(object):
 
 # utility methods --------------------------------------------------------------
 
+def _flatten_keys(flat_keys, unique_keys):
+    if not unique_keys:
+        return
+    for key in unique_keys:
+        if isinstance(key, basestring):
+            flat_keys.append(key)
+        else:
+            _flatten_keys(flat_keys, key)
+
+
+
 def _build_muti_keys_spec(content_type, unit_keys_dicts):
     """
     Build a mongo db spec document for a query on the given content_type
@@ -256,7 +267,8 @@ def _build_muti_keys_spec(content_type, unit_keys_dicts):
     # dict.
 
     # keys dicts validation constants
-    key_fields = content_types_db.type_units_unique_indexes(content_type)
+    key_fields = []
+    _flatten_keys(key_fields, content_types_db.type_units_unique_indexes(content_type))
     key_fields_set = set(key_fields)
     extra_keys_msg = _('keys dictionary found with superfluous keys %(a)s, valid keys are %(b)s')
     missing_keys_msg = _('keys dictionary missing keys %(a)s, required keys are %(b)s')
