@@ -163,6 +163,7 @@ class ContentQueryManager(object):
         @return: tuples of id, dictionary that uniquely identify the documents
                  for the given id
         @rtype: (possibly empty) list of (str, dict) tuples
+        XXX this return type sucks to work with
         """
         key_fields = content_types_db.type_units_unique_indexes(content_type)
         if key_fields is None:
@@ -185,6 +186,7 @@ class ContentQueryManager(object):
         @type unit_keys: list of dict's
         @return: tuples of id, key dict for the given content units keys
         @rtype: (possibly empty) list of (str, dict) tuples
+        XXX this return type sucks to work with
         """
         assert units_keys
         collection = content_types_db.type_units_collection(content_type)
@@ -228,10 +230,18 @@ class ContentQueryManager(object):
 
 # utility methods --------------------------------------------------------------
 
-def _flatten_keys(flat_keys, unique_keys):
-    if not unique_keys:
+def _flatten_keys(flat_keys, nested_keys):
+    """
+    Take list of string keys and (possibly) nested sub-lists and flatten it out
+    into an unested list of string keys.
+    @param flat_keys: the flat list to store all of the keys in
+    @type flat_keys: list
+    @param nested_keys: possibly nested list of string keys
+    @type nested_keys: list
+    """
+    if not nested_keys:
         return
-    for key in unique_keys:
+    for key in nested_keys:
         if isinstance(key, basestring):
             flat_keys.append(key)
         else:
