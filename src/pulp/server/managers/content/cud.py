@@ -90,7 +90,7 @@ class ContentManager(object):
         # XXX validate the child actually exists?
         children = parent.setdefault('_%s_children' % child_type, [])
         children.extend(child_ids)
-        collection.update(parent, safe=True)
+        collection.update({'_id': parent_id}, parent, safe=True)
 
     def unlink_child_content_units(self, parent_type, parent_id, child_type, child_ids):
         """
@@ -112,4 +112,4 @@ class ContentManager(object):
         key = '_%s_children' % child_type
         children = set(parent.get(key, []))
         parent[key] = list(children.difference(child_ids))
-        collection.update(parent, safe=True)
+        collection.update({'_id': parent_id}, parent, safe=True)
