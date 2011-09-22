@@ -159,3 +159,10 @@ class PulpContentQueryTests(PulpContentTests):
         ids, key_dicts = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, self.type_2_ids)
         units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, key_dicts)
         self.assertEqual(len(units), len(self.type_2_ids))
+
+    def test_keys_dicts_queyr(self):
+        new_unit = {'key-2a': 'B', 'key-2b': 'B'}
+        unit_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, new_unit)
+        keys_dicts = TYPE_2_UNITS[1:3]
+        units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, keys_dicts)
+        self.assertEqual(len(units), 2)
