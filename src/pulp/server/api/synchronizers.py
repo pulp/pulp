@@ -22,6 +22,7 @@ import shutil
 import sys
 import time
 import traceback
+from threading import Lock
 from urlparse import urlparse
 
 import yum
@@ -513,6 +514,7 @@ class YumSynchronizer(BaseSynchronizer):
     def __init__(self):
         super(YumSynchronizer, self).__init__()
         self.yum_repo_grinder = None
+        self.yum_repo_grinder_lock = Lock()
 
     def remote(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
@@ -552,60 +554,71 @@ class YumSynchronizer(BaseSynchronizer):
         if self.stopped:
             raise CancelException()
 
-
-        self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
+        try:
+            self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert,
                                 packages_location=pulp.server.util.top_package_location(),
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
                                 proxy_url=self.proxy_url, proxy_port=self.proxy_port,
                                 proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
                                 max_speed=limit_in_KB)
-        relative_path = repo['relative_path']
-        if relative_path:
-            store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
-        else:
-            store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
-        self.repo_dir = store_path
+            relative_path = repo['relative_path']
+            if relative_path:
+                store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
+            else:
+                store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+            self.repo_dir = store_path
 
-        verify_options = {}
-        verify_options["size"] = config.config.getboolean('yum', "verify_size")
-        verify_options["checksum"] = config.config.getboolean('yum', "verify_checksum")
-        log.info("Fetching repo to <%s> with verify_options <%s>" % (store_path, verify_options))
-        report = self.yum_repo_grinder.fetchYumRepo(store_path, 
+            verify_options = {}
+            verify_options["size"] = config.config.getboolean('yum', "verify_size")
+            verify_options["checksum"] = config.config.getboolean('yum', "verify_checksum")
+            log.info("Fetching repo to <%s> with verify_options <%s>" % (store_path, verify_options))
+            report = self.yum_repo_grinder.fetchYumRepo(store_path,
                                                     callback=progress_callback,
                                                     verify_options=verify_options)
-        if self.stopped:
-            raise CancelException()
-        self.progress = yum_rhn_progress_callback(report.last_progress)
-        start = time.time()
-        groups_xml_path = None
-        repomd_xml = os.path.join(store_path, "repodata/repomd.xml")
-        if os.path.isfile(repomd_xml):
-            ftypes = pulp.server.util.get_repomd_filetypes(repomd_xml)
-            log.debug("repodata has filetypes of %s" % (ftypes))
-            if "group" in ftypes:
-                g = pulp.server.util.get_repomd_filetype_path(repomd_xml, "group")
-                groups_xml_path = os.path.join(store_path, g)
-        if self.stopped:
-            raise CancelException()
-        if not repo['preserve_metadata']:
-            # re-generate metadata for the repository
-            log.info("Running createrepo, this may take a few minutes to complete.")
-            if progress_callback is not None:
-                self.progress["step"] = "Running Createrepo"
-                progress_callback(self.progress)
-            pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
-            end = time.time()
-            log.info("Createrepo finished in %s seconds" % (end - start))
-        log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
-                % (report.successes, report.downloads, report.errors))
+            if self.stopped:
+                raise CancelException()
+            self.progress = yum_rhn_progress_callback(report.last_progress)
+            start = time.time()
+            groups_xml_path = None
+            repomd_xml = os.path.join(store_path, "repodata/repomd.xml")
+            if os.path.isfile(repomd_xml):
+                ftypes = pulp.server.util.get_repomd_filetypes(repomd_xml)
+                log.debug("repodata has filetypes of %s" % (ftypes))
+                if "group" in ftypes:
+                    g = pulp.server.util.get_repomd_filetype_path(repomd_xml, "group")
+                    groups_xml_path = os.path.join(store_path, g)
+            if self.stopped:
+                raise CancelException()
+            if not repo['preserve_metadata']:
+                # re-generate metadata for the repository
+                log.info("Running createrepo, this may take a few minutes to complete.")
+                if progress_callback is not None:
+                    self.progress["step"] = "Running Createrepo"
+                    progress_callback(self.progress)
+                pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
+                end = time.time()
+                log.info("Createrepo finished in %s seconds" % (end - start))
+            log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
+                    % (report.successes, report.downloads, report.errors))
+            self.yum_repo_grinder_lock.acquire()
+        finally:
+            try:
+                del self.yum_repo_grinder
+                self.yum_repo_grinder = None
+            finally:
+                self.yum_repo_grinder_lock.release()
         return store_path
 
     def stop(self):
         super(YumSynchronizer, self).stop()
-        if self.yum_repo_grinder:
-            log.info("Stop sync is being issued")
-            self.yum_repo_grinder.stop(block=False)
+        self.yum_repo_grinder_lock.acquire()
+        try:
+            if self.yum_repo_grinder:
+                log.info("Stop sync is being issued")
+                self.yum_repo_grinder.stop(block=False)
+        finally:
+            self.yum_repo_grinder_lock.release()
         if self.repo_dir:
             if pulp.server.util.cancel_createrepo(self.repo_dir):
                 log.info("createrepon on %s has been stopped" % (self.repo_dir))
