@@ -144,9 +144,7 @@ class RepoUnitAssociationManager:
         if unit_type_id is not None:
             spec_doc['unit_type_id'] = unit_type_id
         cursor = collection.find(spec_doc)
-        if cursor.count() > 0:
-            for content_unit in cursor:
-                ids = unit_ids.setdefault(content_unit['_content_type_id'], [])
-                ids.append(content_unit['_id'])
+        for content_unit in cursor:
+            ids = unit_ids.setdefault(content_unit['unit_type_id'], [])
+            ids.append(content_unit['unit_id'])
         return unit_ids
-        
