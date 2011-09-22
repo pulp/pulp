@@ -525,7 +525,7 @@ class YumSynchronizer(BaseSynchronizer):
         if repo['feed_cert']:
             clicert = repo['feed_cert'].encode('utf8')
         log.info("cacert = <%s>, cert = <%s>" % (cacert, clicert))
-        remove_old = config.config.getboolean('yum', 'remove_old_packages')
+        remove_old = config.config.getboolean('yum', 'remove_old_versions')
         num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
         # check for proxy settings
         proxy_url = proxy_port = proxy_user = proxy_pass = None
