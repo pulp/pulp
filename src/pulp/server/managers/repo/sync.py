@@ -21,16 +21,20 @@ need to execute syncs asynchronously must be handled at a higher layer.
 import datetime
 from gettext import gettext as _
 import logging
+import os
 import sys
 
 # Pulp
 from pulp.common import dateutils
 import pulp.server.content.manager as plugin_manager
+import pulp.server.constants as pulp_constants
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ----------------------------------------------------------------
+
+REPO_STORAGE_DIR = os.path.join(pulp_constants.LOCAL_STORAGE, 'repos')
 
 _LOG = logging.getLogger(__name__)
 
@@ -136,7 +140,7 @@ class RepoSyncManager:
         repo_manager = manager_factory.repo_manager()
         content_manager = manager_factory.content_manager()
         content_query_manager = manager_factory.content_query_manager()
-        conduit = RepoSyncConduit(repo_id, repo_manager, association_manager,
+        conduit = RepoSyncConduit(repo_id, repo_manager, self, association_manager,
                                   content_manager, content_query_manager)
 
         # Take the repo's default sync config and merge in the override values
@@ -170,6 +174,25 @@ class RepoSyncManager:
         except Exception:
             _LOG.exception('Exception automatically publishing distributors for repo [%s]' % repo_id)
             raise
+
+    def get_repo_storage_directory(self, repo_id):
+        """
+        Returns the directory in which repositories can be stored as they are
+        synchronized. The directory will be created if it does not exist.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @return: full path to the directory in which an importer can store the
+                 given repository as it is synchronized
+        @rtype:  str
+        """
+
+        dir = os.path.join(REPO_STORAGE_DIR, repo_id)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        return dir
 
 def _sync_finished_timestamp():
     """

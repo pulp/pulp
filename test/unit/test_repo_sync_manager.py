@@ -16,6 +16,7 @@
 import copy
 import datetime
 import os
+import shutil
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
@@ -330,6 +331,26 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.fail('Expected exception not thrown')
         except repo_publish_manager.AutoPublishException, e:
             self.assertEqual('doa', e.repo_id)
+
+    def test_get_repo_storage_directory(self):
+        """
+        Tests a repo storage directory can be retrieved and is created in the process.
+        """
+
+        # Setup
+        temp_dir = '/tmp/test-repo-storage-dir'
+
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+
+        repo_sync_manager.REPO_STORAGE_DIR = temp_dir
+
+        # Test
+        dir = self.sync_manager.get_repo_storage_directory('test-repo')
+
+        # Verify
+        self.assertEqual(dir, temp_dir + '/test-repo')
+        self.assertTrue(os.path.exists(dir))
 
 # -- testing utilities --------------------------------------------------------
 

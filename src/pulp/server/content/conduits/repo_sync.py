@@ -54,6 +54,7 @@ class RepoSyncConduit:
     def __init__(self,
                  repo_id,
                  repo_cud_manager,
+                 repo_sync_manager,
                  repo_association_manager,
                  content_manager,
                  content_query_manager,
@@ -64,6 +65,9 @@ class RepoSyncConduit:
 
         @param repo_cud_manager: server manager instance for manipulating repos
         @type  repo_cud_manager: L{RepoManager}
+
+        @param repo_sync_manager: server manager instance for sync-related operations
+        @type  repo_sync_manager: L{RepoSyncManager}
 
         @param repo_association_manager: server manager instance for manipulating
                    repo to content unit associations
@@ -84,6 +88,7 @@ class RepoSyncConduit:
         self.repo_id = repo_id
 
         self.__repo_manager = repo_cud_manager
+        self.__sync_manager = repo_sync_manager
         self.__association_manager = repo_association_manager
         self.__content_manager = content_manager
         self.__content_query_manager = content_query_manager
@@ -143,6 +148,18 @@ class RepoSyncConduit:
 
         path = self.__content_query_manager.request_content_unit_file_path(content_type, relative_path)
         return path
+
+    def get_repo_storage_directory(self):
+        """
+        Returns a unique directory for the repository being synchronized where
+        repository-related data can be stored.
+
+        @return: full path to the directory into which the importer can write
+                 repository files
+        @rtype:  str
+        """
+        dir = self.__sync_manager.get_repo_storage_directory(self.repo_id)
+        return dir
 
     def add_or_update_content_unit(self, type_id, unit_key, standard_unit_data, custom_unit_data):
         """

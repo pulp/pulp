@@ -182,6 +182,7 @@ class RepoManager:
             return
 
         # TODO: call to importer to delete content
+        # TODO: remove storage directory on disk (sync_manager.get_repo_storage_directory)
 
         # Database Update
         Repo.get_collection().remove({'id' : repo_id})
