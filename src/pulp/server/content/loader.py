@@ -70,6 +70,13 @@ class PluginLoadError(PluginLoaderException):
     """
     pass
 
+# derivative classes used for testing
+class InvalidImporter(PluginLoadError): pass
+class MalformedMetadata(PluginLoadError): pass
+class MissingMetadata(PluginLoadError): pass
+class MissingPluginClass(PluginLoadError): pass
+class MissingPluginModule(PluginLoadError): pass
+
 
 class ConflictingPluginError(PluginLoaderException):
     """
@@ -77,6 +84,10 @@ class ConflictingPluginError(PluginLoaderException):
     or progile type(s).
     """
     pass
+
+# derivative classes used for testing
+class ConflictingPluginName(ConflictingPluginError): pass
+class ConflictingPluginTypes(ConflictingPluginError): pass
 
 
 class PluginNotFound(PluginLoaderException):
@@ -504,12 +515,12 @@ class _PluginMap(object):
         """
         if self.has_plugin(name):
             msg = _('Plugin with same name already exists: %(n)s')
-            raise ConflictingPluginError(msg % {'n': name})
+            raise ConflictingPluginName(msg % {'n': name})
         conflicts = self._find_conclicting_types(types)
         if conflicts:
             msg = _('Plugin %(n)s conflicts with the follwing plugins: %(c)s')
             c = '; '.join('name: %s, type: %s' % (n, t) for n, t in conflicts)
-            raise ConflictingPluginError(msg % {'n': name, 'c': c})
+            raise ConflictingPluginTypes(msg % {'n': name, 'c': c})
         self.plugins[name] = cls
         self.configs[name] = cfg
         self.types[name] = tuple(types)
@@ -648,7 +659,7 @@ def _validate_importers():
             if type_ in supported_types:
                 continue
             msg = _('Importer %(i)s: not type definition found for %(t)s')
-            raise PluginLoadError(msg % {'i': plugin_name, 't': type_})
+            raise InvalidImporter(msg % {'i': plugin_name, 't': type_})
 
 # plugin loading
 
@@ -683,8 +694,8 @@ def _get_plugin_metadata_field(plugin_class, field, default=None):
     """
     metadata = plugin_class.metadata()
     if not isinstance(metadata, dict):
-        raise PluginLoadError(_('%(p)s.metadata() did not return a dictionary') %
-                              {'p': plugin_class.__name__})
+        raise MalformedMetadata(_('%(p)s.metadata() did not return a dictionary') %
+                                {'p': plugin_class.__name__})
     value = metadata.get(field, default)
     return value
 
@@ -697,7 +708,7 @@ def _get_plugin_types(plugin_class):
     """
     types = _get_plugin_metadata_field(plugin_class, 'types')
     if types is None:
-        raise PluginLoadError(_('%(p)s does not define any types') %
+        raise MissingMetadata(_('%(p)s does not define any types') %
                               {'p': plugin_class.__name__})
     if isinstance(types, basestring):
         types = [types]
@@ -739,7 +750,7 @@ def _load_plugin(path, base_class, module_name):
     if not module_found:
         msg = _('%(n)s plugin has no module: %(p)s.%(m)s')
         d = {'n': module_name.title(), 'p': package_name, 'm': module_name}
-        raise PluginLoadError(msg % d)
+        raise MissingPluginModule(msg % d)
     # load and return the plugin class and configuration
     cls = _load_plugin_class('.'.join(package_name, module_name), base_class)
     cfg = {}
@@ -772,7 +783,7 @@ def _load_plugin_class(module_name, base_class):
             continue
         return attr
     msg = _('%(m)s modules did not contain a derived class of %(c)s')
-    raise PluginLoadError(msg % {'m': module_name, 'c': base_class.__name__})
+    raise MissingPluginClass(msg % {'m': module_name, 'c': base_class.__name__})
 
 
 def _load_plugins_from_path(path, base_class, plugin_map):
