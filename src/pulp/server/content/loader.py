@@ -93,6 +93,7 @@ def initialize():
     _load_distributors()
     _load_importers()
     _load_profilers()
+    _validatie_importers()
 
 
 def finalize():
@@ -128,7 +129,7 @@ def list_distributor_types(name):
     assert _is_initialized()
     types = _LOADER.get_loaded_distributors().get(name, None)
     if types is None:
-        raise PluginNotFound()
+        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
     return types
 
 
@@ -136,7 +137,7 @@ def list_importer_types(name):
     assert _is_initialized()
     types = _LOADER.get_loaded_importers().get(name, None)
     if types is None:
-        raise PluginNotFound()
+        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
     return types
 
 
@@ -144,7 +145,7 @@ def list_profiler_types(name):
     assert _is_initialized()
     types = _LOADER.get_loaded_profilers().get(name, None)
     if types is None:
-        raise PluginNotFound()
+        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
     return types
 
 
@@ -188,50 +189,10 @@ def get_profiler_by_name(name):
 
 class PluginLoader(object):
 
-    # embedded plugin map class
-
-    class _PluginMap(object):
-
-        def __init__(self):
-            self.configs = {}
-            self.plugins = {}
-            self.types = {}
-
-        def add_plugin(self, name, cls, cfg, types=()):
-            if self.has_plugin(name):
-                raise ConflictingPluginError()
-            self.plugins[name] = cls
-            self.configs[name] = cfg or {}
-            self.types[name] = tuple(types)
-
-        def get_plugin_by_name(self, name):
-            if not self.has_plugin(name):
-                raise PluginNotFound()
-            return (self.plugins[name], copy.deepcopy(self.configs[name]))
-
-        def get_plugin_by_type(self, type_):
-            name = None
-            for name, types in self.types.items():
-                if type_ not in types:
-                    continue
-                return self.get_plugin_by_name(name)
-            raise PluginNotFound()
-
-        def has_plugin(self, name):
-            return name in self.plugins
-
-        def remove_plugin(self, name):
-            if not self.has_plugin(name):
-                return
-            self.plugins.pop(name)
-            self.configs.pop(name)
-            self.types.pop(name)
-
-
     def __init__(self):
-        self.__distributors = self._PluginMap()
-        self.__importers = self._PluginMap()
-        self.__profilers = self._PluginMap()
+        self.__distributors = _PluginMap()
+        self.__importers = _PluginMap()
+        self.__profilers = _PluginMap()
 
     # plugin management api
 
@@ -254,7 +215,7 @@ class PluginLoader(object):
         _load_plugins_from_path(path, Importer, self.__importers)
 
     def load_profilers_from_path(self, path):
-        _LOG.warn(_('Profiler load called, but not implemented'))
+        _LOG.warn(_('Profilers load called, but not implemented'))
 
     def remove_distributor(self, name):
         self.__distributors.remove_plugin(name)
@@ -288,13 +249,69 @@ class PluginLoader(object):
     # plugin query api
 
     def get_loaded_distributors(self):
-        return copy.copy(self.__distributors.types)
+        return copy.deepcopy(self.__distributors.types)
 
     def get_loaded_importers(self):
-        return copy.copy(self.__importers.types)
+        return copy.deepcopy(self.__importers.types)
 
     def get_loaded_profilers(self):
-        return copy.copy(self.__profilers.types)
+        return copy.deepcopy(self.__profilers.types)
+
+# plugin management class
+
+class _PluginMap(object):
+
+    def __init__(self):
+        self.configs = {}
+        self.plugins = {}
+        self.types = {}
+
+    def _find_conclicting_types(self, new_types):
+        conflicts = []
+        for name, types in self.types.items():
+            for type_ in types:
+                if type_ not in new_types:
+                    continue
+                conflicts.append((name, type_))
+        return conflicts
+
+    def add_plugin(self, name, cls, cfg, types=()):
+        if self.has_plugin(name):
+            msg = _('Plugin with same name already exists: %(n)s')
+            raise ConflictingPluginError(msg % {'n': name})
+        conflicts = self._find_conclicting_types(types)
+        if conflicts:
+            msg = _('Plugin %(n)s conflicts with the follwing plugins: %(c)s')
+            c = '; '.join('name: %s, type: %s' % (n, t) for n, t in conflicts)
+            raise ConflictingPluginError(msg % {'n': name, 'c': c})
+        self.plugins[name] = cls
+        self.configs[name] = cfg or {}
+        self.types[name] = tuple(types)
+        _LOG.info(_('Loaded plugin %(p)s for types: %(t)s') %
+                  {'p': name, 't': ','.join(types)})
+        _LOG.debug('class: %s\nconfig: %s' % (cls.__name__, pformat(cfg)))
+
+    def get_plugin_by_name(self, name):
+        if not self.has_plugin(name):
+            raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
+        return (self.plugins[name], copy.deepcopy(self.configs[name]))
+
+    def get_plugin_by_type(self, type_):
+        for name, types in self.types.items():
+            if type_ not in types:
+                continue
+            return self.get_plugin_by_name(name)
+        raise PluginNotFound(_('No plugin found for: %(t)s') % {'t': type_})
+
+    def has_plugin(self, name):
+        return name in self.plugins
+
+    def remove_plugin(self, name):
+        if not self.has_plugin(name):
+            return
+        self.plugins.pop(name)
+        self.configs.pop(name)
+        self.types.pop(name)
 
 # utility methods --------------------------------------------------------------
 
@@ -303,7 +320,7 @@ class PluginLoader(object):
 def _check_path(path):
     if os.access(path, os.F_OK | os.R_OK):
         return
-    raise ValueError(_('Path not found: %s') % path)
+    raise ValueError(_('Path not found: %(p)s') % {'p': path})
 
 
 def _read_content(file_name):
@@ -357,6 +374,17 @@ def _load_type_descriptors(path):
         descriptors.append(descriptor)
     return descriptors
 
+
+def _validatie_importers():
+    assert isinstance(_LOADER, PluginLoader)
+    supported_types = list_content_types()
+    for plugin_name, plugin_types in _LOADER.get_loaded_importers().items():
+        for type_ in plugin_types:
+            if type_ in supported_types:
+                continue
+            msg = _('Importer %(i)s: not type definition found for %(t)s')
+            raise PluginLoadError(msg % {'i': plugin_name, 't': type_})
+
 # plugin loading
 
 def _add_path_to_sys_path(path):
@@ -378,8 +406,8 @@ def _get_plugin_dirs(plugin_root):
 def _get_plugin_metadata_field(plugin_class, field, default=None):
     metadata = plugin_class.metadata()
     if not isinstance(metadata, dict):
-        raise PluginLoadError(_('%s.metadata() did not return a dictionary') %
-                              plugin_class.__name__)
+        raise PluginLoadError(_('%(p)s.metadata() did not return a dictionary') %
+                              {'p': plugin_class.__name__})
     value = metadata.get(field, default)
     return value
 
@@ -387,8 +415,8 @@ def _get_plugin_metadata_field(plugin_class, field, default=None):
 def _get_plugin_types(plugin_class):
     types = _get_plugin_metadata_field(plugin_class, 'types')
     if types is None:
-        raise PluginLoadError(_('%s does not define any types') %
-                              plugin_class.__name__)
+        raise PluginLoadError(_('%(p)s does not define any types') %
+                              {'p': plugin_class.__name__})
     if isinstance(types, basestring):
         types = [types]
     return types
@@ -416,8 +444,9 @@ def _load_plugin(path, base_class, module_name):
             config_path = os.path.join(path, entry)
     # if we can't find the module, error out
     if not module_found:
-        raise PluginLoadError(_('%s plugin has no module: %s.%s') %
-                              (module_name.title(), package_name, module_name))
+        msg = _('%(n)s plugin has no module: %(p)s.%(m)s')
+        d = {'n': module_name.title(), 'p': package_name, 'm': module_name}
+        raise PluginLoadError(msg % d)
     # load and return the plugin class and configuration
     cls = _load_plugin_class('.'.join(package_name, module_name), base_class)
     cfg = None
@@ -440,8 +469,8 @@ def _load_plugin_class(module_name, base_class):
         if not isinstance(attr, type) or not issubclass(attr, base_class):
             continue
         return attr
-    raise PluginLoadError(_('%s did not contain a derived class of %s') %
-                          (module_name, base_class.__name__))
+    msg = _('%(m)s modules did not contain a derived class of %(c)s')
+    raise PluginLoadError(msg % {'m': module_name, 'c': base_class.__name__})
 
 
 def _load_plugins_from_path(path, base_class, plugin_map):
