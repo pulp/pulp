@@ -14,97 +14,21 @@
 import atexit
 import os
 import shutil
+import string
 import sys
-import tempfile
 import traceback
-from types import NoneType
+import tempfile
+from pprint import pprint
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../common')))
 
 import testutil
 
-from pulp.server.content import manager
-from pulp.server.content.distributor.base import Distributor
-from pulp.server.content.importer.base import Importer
+from pulp.server.content import loader
+from pulp.server.content.plugins.distributor import Distributor
+from pulp.server.content.plugins.importer import Importer
 
 # test data and data generation api --------------------------------------------
-
-# test data
-
-excellent_importer = '''
-from pulp.server.content.importer import base
-class ExcellentImporter(base.Importer):
-    @classmethod
-    def metadata(cls):
-        data = {'name': 'Excellent',
-                'version': 1,
-                'types': ['excellent_type'],
-                'conf_file': 'excellent.conf'}
-        return data
-'''
-
-less_excellent_importer = '''
-from pulp.server.content.importer import base
-class LessExcellentImporter(base.Importer):
-    @classmethod
-    def metadata(cls):
-        data = {'name': 'Excellent',
-                'version': 0,
-                'types': ['excellent_type']}
-        return data
-'''
-
-not_excellent_importer = '''
-from pulp.server.content.importer import base
-class NotExcellentImporter(base.Importer):
-    @classmethod
-    def metadata(cls):
-        data = {'name': 'Excellent',
-                'version': 1,
-                'types': ['excellent_type']}
-        return data
-'''
-
-bogus_importer_1 = '''
-from pulp.server.content.importer import base
-class BogusOneImporter(base.Importer):
-    @classmethod
-    def metadata(cls):
-        return {}
-'''
-
-bogus_importer_2 = '''
-from pulp.server.content.importer import base
-class BogusTwoImporter(base.Importer):
-    @classmethod
-    def metadata(cls):
-        return None
-'''
-
-excellent_importer_config_1 = '''
-{"enabled": true}
-'''
-
-excellent_importer_config_2 = '''
-{"enabled": false}
-'''
-
-http_distibutor = '''
-from pulp.server.content.distributor import base
-class HTTPDistributor(base.Distributor):
-    @classmethod
-    def metadata(cls):
-        data = {'name': 'HTTP',
-                'version': 1.1,
-                'types': ['http', 'https'],
-                'conf_file': 'http.conf'}
-        return data
-'''
-
-http_conf = '''
-{"enabled": true}
-'''
-# delete the generated data
 
 _generated_paths = []
 
@@ -115,247 +39,237 @@ def _delete_generated_paths():
             sys.path.remove(p)
         shutil.rmtree(p)
 
-atexit.register(_delete_generated_paths)
+
+#atexit.register(_delete_generated_paths)
 
 # test file(s) generation
 
-def _gen_mod_conf_path():
+def gen_plugin_root():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
     _generated_paths.append(path)
     return path
 
 
-def gen_excellent_importer(enabled=True):
-    path = _gen_mod_conf_path()
-    mod_handle = open(os.path.join(path, 'excellent.py'), 'w')
-    mod_handle.write(excellent_importer)
-    mod_handle.close()
-    cfg_handle = open(os.path.join(path, 'excellent.conf'), 'w')
-    if enabled:
-        cfg_handle.write(excellent_importer_config_1)
-    else:
-        cfg_handle.write(excellent_importer_config_2)
-    cfg_handle.close()
-    return path
+_PLUGIN_TEMPLATE = string.Template('''
+from pulp.server.content.plugins.$BASE_NAME import $BASE_TITLE
+class $PLUGIN_TITLE($BASE_TITLE):
+    @classmethod
+    def metadata(cls):
+        data = {'name': '$PLUGIN_NAME',
+                'types': $TYPE_LIST}
+        return data
+''')
+
+_CONF_TEMPLATE = string.Template('''
+{"enabled": $ENABLED}
+''')
 
 
-def gen_less_excellent_importer():
-    path = _gen_mod_conf_path()
-    handle = open(os.path.join(path, 'less_excellent.py'), 'w')
-    handle.write(less_excellent_importer)
+def gen_plugin(root, type_, name, types, enabled=True):
+    base_name = type_.lower()
+    base_title = type_.title()
+    plugin_name = name.lower()
+    plugin_title = name
+    type_list = '[%s]' % ', '.join('\'%s\'' % t for t in types)
+    # create the directory
+    plugin_dir = os.path.join(root, '%ss' % base_name, plugin_name)
+    os.makedirs(plugin_dir)
+    # write the package module
+    pck_name = os.path.join(plugin_dir, '__init__.py')
+    handle = open(pck_name, 'w')
+    handle.write('\n')
     handle.close()
-    return path
-
-
-def gen_not_excellent_importer():
-    path = _gen_mod_conf_path()
-    handle = open(os.path.join(path, 'not_excellent.py'), 'w')
-    handle.write(not_excellent_importer)
+    # write the plugin module
+    contents = _PLUGIN_TEMPLATE.safe_substitute({'BASE_NAME': base_name,
+                                                 'BASE_TITLE': base_title,
+                                                 'PLUGIN_TITLE': plugin_title,
+                                                 'PLUGIN_NAME': plugin_name,
+                                                 'TYPE_LIST': type_list})
+    mod_name = os.path.join(plugin_dir, '%s.py' % base_name)
+    handle = open(mod_name, 'w')
+    handle.write(contents)
     handle.close()
-    return path
-
-
-def gen_bogus_importer(version=1):
-    path = _gen_mod_conf_path()
-    handle = open(os.path.join(path, 'bogus_%d.py' % version), 'w')
-    if version == 1:
-        handle.write(bogus_importer_1)
-    elif version == 2:
-        handle.write(bogus_importer_2)
-    else:
-        raise Exception('Are you kidding me?')
+    # write plugin config
+    contents = _CONF_TEMPLATE.safe_substitute({'ENABLED': str(enabled).lower()})
+    cfg_name = os.path.join(plugin_dir, '%s.conf' % plugin_name)
+    handle = open(cfg_name, 'w')
+    handle.write(contents)
     handle.close()
-    return path
+    # return the top level directory
+    return os.path.join(root, '%ss' % base_name)
+
+# test classes
+
+class WebDistributor(Distributor):
+    @classmethod
+    def metadata(cls):
+        return {'types': ['http', 'https']}
+
+class ExcellentImporter(Importer):
+    @classmethod
+    def metadata(cls):
+        return {'types': ['excellent_type']}
 
 
-def gen_http_distributor():
-    path = _gen_mod_conf_path()
-    mod_handle = open(os.path.join(path, 'http_distributor.py'), 'w')
-    mod_handle.write(http_distibutor)
-    mod_handle.close()
-    cfg_handle = open(os.path.join(path, 'http_distributor.conf'), 'w')
-    cfg_handle.write(http_conf)
-    cfg_handle.close()
-    return path
+class BogusImporter(Importer):
+    @classmethod
+    def metadata(cls):
+        return {'types': ['excellent_type']}
 
 # unit tests -------------------------------------------------------------------
 
-class ManagerInstanceTest(testutil.PulpTest):
+class PluginMapTests(testutil.PulpTest):
 
-    def test_manager_instantiation(self):
+    def setUp(self):
+        super(PluginMapTests, self).setUp()
+        self.plugin_map = loader._PluginMap()
+
+    def test_add_plugin(self):
+        name = 'excellent'
+        types = ExcellentImporter.metadata()['types']
+        self.plugin_map.add_plugin(name, ExcellentImporter, {}, types)
+        self.assertTrue(name in self.plugin_map.configs)
+        self.assertTrue(name in self.plugin_map.plugins)
+        self.assertTrue(name in self.plugin_map.types)
+
+    def test_add_disabled(self):
+        name = 'disabled'
+        cfg = {'enabled': False}
+        self.plugin_map.add_plugin(name, BogusImporter, cfg)
+        self.assertFalse(name in self.plugin_map.configs)
+        self.assertFalse(name in self.plugin_map.plugins)
+        self.assertFalse(name in self.plugin_map.types)
+
+    def test_conflicting_names(self):
+        name = 'less_excellent'
+        types = ExcellentImporter.metadata()['types']
+        self.plugin_map.add_plugin(name, ExcellentImporter, {}, types)
+        self.assertRaises(loader.ConflictingPluginName,
+                          self.plugin_map.add_plugin,
+                          name, BogusImporter, {}, types)
+
+    def test_conflicting_types(self):
+        types = ExcellentImporter.metadata()['types']
+        self.plugin_map.add_plugin('excellent', ExcellentImporter, {}, types)
+        types = BogusImporter.metadata()['types']
+        self.assertRaises(loader.ConflictingPluginTypes,
+                          self.plugin_map.add_plugin,
+                          'bogus', BogusImporter, {}, types)
+
+    def test_get_plugin_by_name(self):
+        name = 'excellent'
+        self.plugin_map.add_plugin(name, ExcellentImporter, {})
+        cls = self.plugin_map.get_plugin_by_name(name)[0]
+        self.assertIs(cls, ExcellentImporter)
+
+    def test_get_plugin_by_type(self):
+        types = ExcellentImporter.metadata()['types']
+        self.plugin_map.add_plugin('excellent', ExcellentImporter, {}, types)
+        cls = self.plugin_map.get_plugin_by_type(types[0])[0]
+        self.assertIs(cls, ExcellentImporter)
+
+    def test_name_not_found(self):
+        self.assertRaises(loader.PluginNotFound,
+                          self.plugin_map.get_plugin_by_name,
+                          'bogus')
+
+    def test_type_not_found(self):
+        self.assertRaises(loader.PluginNotFound,
+                          self.plugin_map.get_plugin_by_type,
+                          'bogus_type')
+
+    def test_remove_plugin(self):
+        name = 'excellent'
+        self.plugin_map.add_plugin(name, ExcellentImporter, {})
+        self.assertIn(name, self.plugin_map.plugins)
+        self.plugin_map.remove_plugin(name)
+        self.assertNotIn(name, self.plugin_map.plugins)
+
+
+class LoaderInstanceTest(testutil.PulpTest):
+
+    def test_loader_instantiation(self):
         try:
-            m = manager.Manager()
+            l = loader.PluginLoader()
         except Exception, e:
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
 
-class ManagerTest(testutil.PulpTest):
+class LoaderTest(testutil.PulpTest):
 
     def setUp(self):
-        super(ManagerTest, self).setUp()
-        self.manager = manager.Manager()
+        super(LoaderTest, self).setUp()
+        self.loader = loader.PluginLoader()
 
     def tearDown(self):
-        super(ManagerTest, self).tearDown()
-        self.manager = None
+        super(LoaderTest, self).tearDown()
+        self.loader = None
 
 
-class ManagerPathTest(ManagerTest):
-
-    def test_add_valid_path(self):
-        path = tempfile.mkdtemp()
-        _generated_paths.append(path)
-        self.manager.add_importer_plugin_path(path)
-        self.assertTrue(path in self.manager.importer_plugin_paths)
-        self.manager.add_importer_config_path(path)
-        self.assertTrue(path in self.manager.importer_config_paths)
-        self.manager.add_distributor_plugin_path(path)
-        self.assertTrue(path in self.manager.distributor_plugin_paths)
-        self.manager.add_distributor_config_path(path)
-        self.assertTrue(path in self.manager.distributor_config_paths)
-
-    def test_non_existent_path(self):
-        non_existent = tempfile.mkdtemp()
-        os.rmdir(non_existent)
-        self.assertRaises(ValueError, self.manager.add_importer_plugin_path, non_existent)
-
-    def test_bad_permissions_path(self):
-        # NOTE this test fails if run by root
-        if os.getuid() == 0:
-            return
-        cant_read = tempfile.mkdtemp()
-        os.chmod(cant_read, 0300)
-        self.assertRaises(ValueError, self.manager.add_distributor_plugin_path, cant_read)
-        os.rmdir(cant_read)
-
-
-class ManagerLoadTest(ManagerTest):
-
-    def test_enabled_importer(self):
-        path = gen_excellent_importer(enabled=True)
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        self.manager.load_importers()
-        self.assertTrue('Excellent' in self.manager.importer_plugins)
-        self.assertTrue('Excellent' in self.manager.importer_configs)
-
-    def test_disabled_importer(self):
-        path = gen_excellent_importer(enabled=False)
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        self.manager.load_importers()
-        self.assertFalse('Excellent' in self.manager.importer_plugins)
-        self.assertFalse('Excellent' in self.manager.importer_configs)
-
-    def test_multiple_importers(self):
-        path = gen_excellent_importer()
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        path = gen_less_excellent_importer()
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        self.manager.load_importers()
-        self.assertTrue(len(self.manager.importer_plugins['Excellent']) == 2)
-
-    def test_conflicting_importers(self):
-        path = gen_excellent_importer(enabled=True)
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        path = gen_not_excellent_importer()
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
-
-    def test_missing_metadata_plugin(self):
-        path = gen_bogus_importer(version=1)
-        self.manager.add_importer_plugin_path(path)
-        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
-
-    def test_malformed_metadata_plugin(self):
-        path = gen_bogus_importer(version=2)
-        self.manager.add_importer_plugin_path(path)
-        self.assertRaises(manager.PluginLoadError, self.manager.load_importers)
+class LoaderDirectOperationsTests(LoaderTest):
 
     def test_distributor(self):
-        path = gen_http_distributor()
-        self.manager.add_distributor_plugin_path(path)
-        self.manager.add_distributor_config_path(path)
-        self.manager.load_distributors()
-        self.assertTrue('HTTP' in self.manager.distributor_plugins)
-        self.assertTrue('HTTP' in self.manager.distributor_configs)
+        name = 'spidey'
+        types = WebDistributor.metadata()['types']
+        self.loader.add_distributor(name, WebDistributor, {})
+
+        cls = self.loader.get_distributor_by_name(name)[0]
+        self.assertIs(cls, WebDistributor)
+
+        cls = self.loader.get_distributor_by_type(types[0])[0]
+        self.assertIs(cls, WebDistributor)
+
+        cls = self.loader.get_distributor_by_type(types[1])[0]
+        self.assertIs(cls, WebDistributor)
+
+        distributors = self.loader.get_loaded_distributors()
+        self.assertIn(name, distributors)
+
+        self.loader.remove_distributor(name)
+        self.assertRaises(loader.PluginNotFound,
+                          self.loader.get_distributor_by_name,
+                          name)
+
+    def test_importer(self):
+        name = 'bill'
+        types = ExcellentImporter.metadata()['types']
+        self.loader.add_importer(name, ExcellentImporter, {})
+
+        cls = self.loader.get_importer_by_name(name)[0]
+        self.assertIs(cls, ExcellentImporter)
+
+        cls = self.loader.get_importer_by_type(types[0])[0]
+        self.assertIs(cls, ExcellentImporter)
+
+        importers = self.loader.get_loaded_importers()
+        self.assertIn(name, importers)
+
+        self.loader.remove_importer(name)
+        self.assertRaises(loader.PluginNotFound,
+                          self.loader.get_importer_by_name,
+                          name)
 
 
-class ManagerAPITest(ManagerTest):
+class LoaderFileSystemOperationsTests(LoaderTest):
 
-    def tearDown(self):
-        super(ManagerAPITest, self).tearDown()
-        manager._MANAGER = None
-
-    def test_get_importer(self):
-        path = gen_excellent_importer()
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        self.manager.load_importers()
-        manager._MANAGER = self.manager
-        importer, cfg = manager.get_importer_by_name('Excellent')
-        self.assertTrue(isinstance(importer, Importer))
-        self.assertTrue(isinstance(cfg, dict))
-
-    def test_get_non_existent_importer(self):
-        manager._MANAGER = self.manager
-        self.assertRaises(manager.PluginNotFound, manager.get_distributor_by_name, 'Bogus')
-
-    def test_get_distributor(self):
-        path = gen_http_distributor()
-        self.manager.add_distributor_plugin_path(path)
-        self.manager.add_distributor_config_path(path)
-        self.manager.load_distributors()
-        manager._MANAGER = self.manager
-        distributor, cfg = manager.get_distributor_by_name('HTTP')
-        self.assertTrue(distributor, Distributor)
-        self.assertTrue(isinstance(cfg, dict))
-
-    def test_get_non_existent_distributor(self):
-        manager._MANAGER = self.manager
-        self.assertRaises(manager.PluginNotFound, manager.get_distributor_by_name, 'HTTPS')
-
-    def test_is_valid_importer(self):
-        path = gen_excellent_importer(enabled=True)
-        self.manager.add_importer_plugin_path(path)
-        self.manager.add_importer_config_path(path)
-        self.manager.load_importers()
-        manager._MANAGER = self.manager
-        self.assertTrue(manager.is_valid_importer('Excellent'))
-        self.assertTrue(not manager.is_valid_importer('Fake'))
-
-    def __test_is_valid_distributor(self):
-        path = gen_http_distributor()
-        self.manager.add_distributor_plugin_path(path)
-        self.manager.add_distributor_config_path(path)
-        self.manager.load_distributors()
-        manager._MANAGER = self.manager
-        self.assertTrue(manager.is_valid_distributor('HTTPDistributor'))
-        self.assertTrue(not manager.is_valid_distributor('Fake'))
-
-
-class ManagerModuleTest(testutil.PulpTest):
-
-    def tearDown(self):
-        super(ManagerModuleTest, self).tearDown()
-        manager._MANAGER = None
-
-    def test_create_manager_instance(self):
-        manager._create_manager()
-        self.assertTrue(isinstance(manager._MANAGER, manager.Manager))
-
-    # XXX currently relies on the existence of directories that are not created
-    # by default
-    def __test_initialize_manager_instance(self):
-        manager.initialize()
-        self.assertTrue(isinstance(manager._MANAGER, manager.Manager))
-
-    def test_finalize_manager_instance(self):
-        manager._create_manager()
-        manager.finalize()
-        self.assertTrue(isinstance(manager._MANAGER, NoneType))
+    def test_single_distributor(self):
+        plugin_root = gen_plugin_root()
+        print plugin_root
+        types = ['test_type']
+        distributors_root = gen_plugin(plugin_root,
+                                       'distributor',
+                                       'TestDistributor',
+                                       types)
+        print distributors_root
+        self.loader.load_distributors_from_path(distributors_root)
+        try:
+            cls, cfg = self.loader.get_distributor_by_name('testdistributor')
+        except Exception, e:
+            print 'plugins: ',
+            pprint(self.loader._PluginLoader__distributors.plugins)
+            print 'configs: ',
+            pprint(self.loader._PluginLoader__distributors.configs)
+            print 'types: ',
+            pprint(self.loader._PluginLoader__distributors.types)
+            self.fail('\n'.join((repr(e), traceback.format_exc())))
