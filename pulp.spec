@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.233
+Version:        0.0.234
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -490,6 +490,17 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Sep 23 2011 Jeff Ortel <jortel@redhat.com> 0.0.234-1
+- Rename remove_old_packages to: remove_old_versions. (jortel@redhat.com)
+- 740839 - adding ia64 to supported arches, also adding a unitest to validate
+  all supported arches (pkilambi@redhat.com)
+- Added repository storage directory for importers to use when synccing
+  (jason.dobies@redhat.com)
+- Del grinder object after a sync completes (jmatthews@redhat.com)
+- changed the return type of get_content_unit_keys and get_content_unit_ids to
+  (<tuple of ids>, <tuple of key dicts>) (jconnor@redhat.com)
+- initial integration of content managers into repo sync conduit
+  (jconnor@redhat.com)
 * Wed Sep 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.233-1
 - Removing content manager init until the RPM changes are in
   (jason.dobies@redhat.com)
