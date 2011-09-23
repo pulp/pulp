@@ -57,6 +57,9 @@ class MockImporter(Importer):
         if MockImporter.raise_error:
             raise Exception('Something bad happened during sync')
 
+    def validate_config(self, repo_data, importer_config):
+        return True
+
     @classmethod
     def reset(cls):
         MockImporter.repo_data = None
