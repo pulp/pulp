@@ -26,8 +26,8 @@ import sys
 
 # Pulp
 from pulp.common import dateutils
-import pulp.server.content.manager as plugin_manager
 import pulp.server.constants as pulp_constants
+import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
@@ -131,8 +131,8 @@ class RepoSyncManager:
             raise SyncInProgress(repo_id)
 
         try:
-            importer_instance, importer_config = plugin_manager.get_importer_by_name(repo_importer['importer_type_id'])
-        except plugin_manager.PluginNotFound:
+            importer_instance, importer_config = plugin_loader.get_importer_by_name(repo_importer['importer_type_id'])
+        except plugin_loader.PluginNotFound:
             raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync

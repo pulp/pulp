@@ -17,7 +17,7 @@ Contains the manager class and exceptions for all repository related functionali
 
 import logging
 
-import pulp.server.content.manager as plugin_manager
+import pulp.server.content.loader as plugin_loader
 import pulp.server.content.types.database as types_database
 
 # -- constants ----------------------------------------------------------------
@@ -53,7 +53,7 @@ class PluginManager:
         # TODO: Ultimately this call should return all metadata about each importer
         # Currently it will just return their names and versions.
 
-        importers = plugin_manager.list_importers()
+        importers = plugin_loader.list_importers()
         return importers
 
     def distributors(self):
@@ -68,5 +68,5 @@ class PluginManager:
         # TODO: Ultimately this call should return all metadata about each distributor
         # Currently it will just return their names and versions.
 
-        distributors = plugin_manager.list_distributors()
+        distributors = plugin_loader.list_distributors()
         return distributors

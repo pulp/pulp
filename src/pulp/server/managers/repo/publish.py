@@ -24,7 +24,7 @@ import sys
 import traceback
 
 from pulp.common import dateutils
-import pulp.server.content.manager as plugin_manager
+import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.factory as manager_factory
@@ -79,7 +79,7 @@ class PublishInProgress(RepoPublishException):
 class AutoPublishException(Exception):
     """
     Raised when the automatic publishing of a repository results in an error
-    for at least one of the distributors. This exception will 
+    for at least one of the distributors. This exception will
     """
     def __init__(self, repo_id, dist_traceback_tuples):
         Exception.__init__(self)
@@ -90,7 +90,7 @@ class AutoPublishException(Exception):
         dist_ids = [d[0] for d in self.dist_traceback_tuples]
         return _('Exception [%(e)s] raised for repository [%(r)s] on distributors [%(d)s]' % \
                {'e' : self.__class__.__name__, 'r' : self.repo_id, 'd' : ', '.join(dist_ids)})
-    
+
 # -- manager ------------------------------------------------------------------
 
 class RepoPublishManager:
@@ -132,8 +132,8 @@ class RepoPublishManager:
 
         try:
             distributor_instance, distributor_config = \
-                plugin_manager.get_distributor_by_name(repo_distributor['distributor_type_id'])
-        except plugin_manager.PluginNotFound:
+                plugin_loader.get_distributor_by_name(repo_distributor['distributor_type_id'])
+        except plugin_loader.PluginNotFound:
             raise MissingDistributorPlugin(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish

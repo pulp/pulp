@@ -22,7 +22,7 @@ import sys
 import uuid
 
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
-import pulp.server.content.manager as content_manager
+import pulp.server.content.loader as plugin_loader
 
 # -- constants ----------------------------------------------------------------
 
@@ -236,10 +236,10 @@ class RepoManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
-        if not content_manager.is_valid_importer(importer_type_id):
+        if not plugin_loader.is_valid_importer(importer_type_id):
             raise MissingImporter(importer_type_id)
 
-        importer_instance, plugin_config = content_manager.get_importer_by_name(importer_type_id)
+        importer_instance, plugin_config = plugin_loader.get_importer_by_name(importer_type_id)
         try:
             valid_config = importer_instance.validate_config(repo, importer_config)
         except Exception:
@@ -305,7 +305,7 @@ class RepoManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
-        if not content_manager.is_valid_distributor(distributor_type_id):
+        if not plugin_loader.is_valid_distributor(distributor_type_id):
             raise MissingDistributor(distributor_type_id)
 
         # Determine the ID for this distributor on this repo; will be
@@ -317,7 +317,7 @@ class RepoManager:
             if not is_distributor_id_valid(distributor_id):
                 raise InvalidDistributorId(distributor_id)
 
-        distributor_instance, plugin_config = content_manager.get_distributor_by_name(distributor_type_id)
+        distributor_instance, plugin_config = plugin_loader.get_distributor_by_name(distributor_type_id)
         try:
             valid_config = distributor_instance.validate_config(repo, distributor_config)
         except Exception:
