@@ -285,7 +285,7 @@ class _PluginMap(object):
             c = '; '.join('name: %s, type: %s' % (n, t) for n, t in conflicts)
             raise ConflictingPluginError(msg % {'n': name, 'c': c})
         self.plugins[name] = cls
-        self.configs[name] = cfg
+        self.configs[name] = cfg or {}
         self.types[name] = tuple(types)
         _LOG.info(_('Loaded plugin %(p)s for types: %(t)s') %
                   {'p': name, 't': ','.join(types)})
@@ -449,7 +449,7 @@ def _load_plugin(path, base_class, module_name):
         raise PluginLoadError(msg % d)
     # load and return the plugin class and configuration
     cls = _load_plugin_class('.'.join(package_name, module_name), base_class)
-    cfg = {}
+    cfg = None
     if config_path is not None:
         cfg = _load_plugin_config(config_path)
     # TODO log successful loading of plugin
