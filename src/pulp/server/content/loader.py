@@ -54,6 +54,7 @@ _TYPES_DIR = _PLUGINS_ROOT + '/types'
 # plugin loading
 
 _CONFIG_REGEX = re.compile('.*\.(config|conf|cfg)$', re.IGNORECASE)
+_INIT_REGEX = re.compile('__init__.py(c|o)?$')
 
 # exceptions -------------------------------------------------------------------
 
@@ -76,6 +77,7 @@ class MalformedMetadata(PluginLoadError): pass
 class MissingMetadata(PluginLoadError): pass
 class MissingPluginClass(PluginLoadError): pass
 class MissingPluginModule(PluginLoadError): pass
+class MissingPluginPackage(PluginLoadError): pass
 
 
 class ConflictingPluginError(PluginLoaderException):
@@ -747,16 +749,23 @@ def _load_plugin(path, base_class, module_name):
     @rtype: tuple (type, dict)
     @raise: L{PluginLoadError}
     """
+    init_found = False
     module_regex = re.compile('%s\.py(c|o)?$' % module_name)
     module_found = False
     package_name = os.path.split(path)[-1]
     config_path = None
     # grok through the directory looking for plugin module and config
     for entry in os.listdir(path):
-        if module_regex.match(entry):
+        if _INIT_REGEX.match(entry):
+            init_found = True
+        elif module_regex.match(entry):
             module_found = True
-        if _CONFIG_REGEX.match(entry):
+        elif _CONFIG_REGEX.match(entry):
             config_path = os.path.join(path, entry)
+    # if the plugin is not a package, error out
+    if not init_found:
+        msg = _('%(n)s plugin is not a package: no __init__.py found')
+        raise MissingPluginPackage(msg % {'n': package_name})
     # if we can't find the module, error out
     if not module_found:
         msg = _('%(n)s plugin has no module: %(p)s.%(m)s')
