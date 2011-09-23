@@ -327,8 +327,14 @@ class CdsLib(object):
                     feed_ca = bundle['ca'].encode('utf8')
                 feed_cert = bundle['cert'].encode('utf8')
                 ssl_verify = 1
-
-        fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, packages_location=packages_dir)
+        
+        verify_options = {}
+        verify_options["size"] = self.config.getboolean('cds', "verify_size")
+        verify_options["checksum"] = self.config.getboolean('cds', "verify_checksum")
+        fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify,
+                               cacert=feed_ca, clicert=feed_cert,
+                               packages_location=packages_dir,
+                               verify_options=verify_options)
         fetch.fetchYumRepo(repo_path)
 
         log.info('Successfully finished synccing [%s]' % url)
