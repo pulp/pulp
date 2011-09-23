@@ -1395,5 +1395,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
         for ftype, data in file_type_dump.items():
             assert(data['checksum'][0] == checksum_type)
 
+    def test_repo_create_arch(self):
+        arches = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64', 'ia64']
+        for arch in arches:
+            repo = self.repo_api.create('repo-id-%s' % arch, 'some name', \
+            arch, 'http://example.com')
+            assert(repo is not None)
+            assert(repo['arch'] is not arch)
+
 if __name__ == '__main__':
     unittest.main()
