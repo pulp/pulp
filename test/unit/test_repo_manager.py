@@ -26,7 +26,31 @@ import pulp.server.managers.repo.cud as repo_manager
 # -- mocks --------------------------------------------------------------------
 
 class MockImporter:
-    pass
+
+    # Last Call State
+    repo_data = None
+    importer_config = None
+
+    # Call Behavior
+    is_valid_config = True
+    raise_error = False
+
+    def validate_config(self, repo_data, importer_config):
+        MockImporter.repo_data = repo_data
+        MockImporter.importer_config = importer_config
+
+        if MockImporter.raise_error:
+            raise Exception('Simulated exception from importer')
+
+        return MockImporter.is_valid_config
+
+    @classmethod
+    def reset(cls):
+        MockImporter.repo_data = None
+        MockImporter.importer_config = None
+
+        MockImporter.is_valid_config = True
+        MockImporter.raise_error = False
 
 class MockDistributor:
     pass
@@ -59,6 +83,7 @@ class RepoManagerTests(testutil.PulpTest):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        MockImporter.reset()
 
     def test_create(self):
         """
@@ -201,7 +226,6 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         self.manager.create_repo('importer-test')
-
         importer_config = {'foo' : 'bar'}
 
         # Test
@@ -213,7 +237,10 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('MockImporter', importer['id'])
         self.assertEqual('MockImporter', importer['importer_type_id'])
         self.assertEqual(importer_config, importer['config'])
-        
+
+        self.assertEqual(importer_config, MockImporter.importer_config)
+        self.assertEqual('importer-test', MockImporter.repo_data['id'])
+
     def test_set_importer_no_repo(self):
         """
         Tests setting the importer on a repo that doesn't exist correctly
@@ -249,7 +276,8 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         class MockImporter2:
-            pass
+            def validate_config(self, repo_data, importer_config):
+                return True
 
         content_manager._MANAGER.add_importer('MockImporter2', 1, MockImporter2, None)
 
@@ -263,6 +291,40 @@ class RepoManagerTests(testutil.PulpTest):
         all_importers = list(RepoImporter.get_collection().find())
         self.assertEqual(1, len(all_importers))
         self.assertEqual(all_importers[0]['id'], 'MockImporter2')
+
+    def test_set_importer_validate_raises_error(self):
+        """
+        Tests simulating an error coming out of the importer's validate config method.
+        """
+
+        # Setup
+        MockImporter.raise_error = True
+        self.manager.create_repo('repo-1')
+
+        # Test
+        config = {'hobbit' : 'frodo'}
+        try:
+            self.manager.set_importer('repo-1', 'MockImporter', config)
+            self.fail('Exception expected for importer plugin exception')
+        except repo_manager.InvalidImporterConfiguration:
+            pass
+
+    def test_set_importer_invalid_config(self):
+        """
+        Tests the set_importer call properly errors when the config is invalid.
+        """
+
+        # Setup
+        MockImporter.is_valid_config = False
+        self.manager.create_repo('bad_config')
+
+        # Test
+        config = {'elf' : 'legolas'}
+        try:
+            self.manager.set_importer('bad_config', 'MockImporter', config)
+            self.fail('Exception expected for bad config')
+        except repo_manager.InvalidImporterConfiguration:
+            pass
 
     def test_add_distributor(self):
         """

@@ -18,6 +18,7 @@ Contains the manager class and exceptions for all repository related functionali
 from gettext import gettext as _
 import logging
 import re
+import sys
 import uuid
 
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
@@ -100,6 +101,13 @@ class MissingImporter(Exception):
     def __str__(self):
         return _('No importer with name [%(name)s]' % {'name' : self.importer_name})
 
+class InvalidImporterConfiguration(Exception):
+    """
+    Indicates an importer configuration was specified (either at set_importer
+    time or later updated) but the importer plugin indicated it is invalid.
+    """
+    pass
+        
 class MissingDistributor(Exception):
     """
     Indicates a distributor was requested that does not exist.
@@ -191,7 +199,7 @@ class RepoManager:
         RepoDistributor.get_collection().remove({'repo_id' : repo_id})
         RepoImporter.get_collection().remove({'repo_id' : repo_id})
 
-    def set_importer(self, repo_id, importer_type_name, importer_config):
+    def set_importer(self, repo_id, importer_type_id, importer_config):
         """
         Configures an importer to be used for the given repository.
 
@@ -202,16 +210,15 @@ class RepoManager:
         @param repo_id: identifies the repo
         @type  repo_id; str
 
-        @param importer_type_name: identifies the type of importer being added;
-                                   must correspond to an importer loaded at
-                                   server startup
-        @type  importer_type_name: str
+        @param importer_type_id: identifies the type of importer being added;
+                                 must correspond to an importer loaded at server startup
+        @type  importer_type_id: str
 
         @param importer_config: configuration values for the importer; may be None
         @type  importer_config: dict
 
         @raises MissingRepo: if repo_id does not represent a valid repo
-        @raises MissingImporter: if there is no importer with importer_type_name
+        @raises MissingImporter: if there is no importer with importer_type_id
         """
 
         repo_coll = Repo.get_collection()
@@ -222,8 +229,19 @@ class RepoManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
-        if not content_manager.is_valid_importer(importer_type_name):
-            raise MissingImporter(importer_type_name)
+        if not content_manager.is_valid_importer(importer_type_id):
+            raise MissingImporter(importer_type_id)
+
+        importer_instance, plugin_config = content_manager.get_importer_by_name(importer_type_id)
+
+        try:
+            valid_config = importer_instance.validate_config(repo, importer_config)
+        except Exception:
+            _LOG.exception('Exception received from importer [%s] while validating config' % importer_type_id)
+            raise InvalidImporterConfiguration, None, sys.exc_info()[2]
+
+        if not valid_config:
+            raise InvalidImporterConfiguration()
 
         # Remove old importer if one exists
         existing_repo_importers = list(importer_coll.find({'repo_id' : repo_id}))
@@ -232,9 +250,9 @@ class RepoManager:
                 importer_coll.remove(importer, safe=True)
 
         # Database Update
-        importer_id = importer_type_name # use the importer name as its repo ID
+        importer_id = importer_type_id # use the importer name as its repo ID
 
-        importer = RepoImporter(repo_id, importer_id, importer_type_name, importer_config)
+        importer = RepoImporter(repo_id, importer_id, importer_type_id, importer_config)
         importer_coll.save(importer, safe=True)
 
     def add_distributor(self, repo_id, distributor_type_id, distributor_config,
