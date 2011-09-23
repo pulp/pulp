@@ -77,6 +77,9 @@ class MockRepoPublishManager:
     # Call behavior
     raise_error = False
 
+    def validate_config(self, repo_data, distributor_config):
+        return True
+    
     def auto_publish_for_repo(self, repo_id):
         MockRepoPublishManager.repo_id = repo_id
 

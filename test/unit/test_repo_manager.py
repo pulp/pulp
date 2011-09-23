@@ -53,7 +53,31 @@ class MockImporter:
         MockImporter.raise_error = False
 
 class MockDistributor:
-    pass
+
+    # Last Call State
+    repo_data = None
+    distributor_config = None
+
+    # Call Behavior
+    is_valid_config = True
+    raise_error = False
+
+    def validate_config(self, repo_data, distributor_config):
+        MockDistributor.repo_data = repo_data
+        MockDistributor.distributor_config = distributor_config
+
+        if MockDistributor.raise_error:
+            raise Exception('Simulated exception from distributor')
+
+        return MockDistributor.is_valid_config
+
+    @classmethod
+    def reset(cls):
+        MockDistributor.repo_data = None
+        MockDistributor.distributor_config = None
+
+        MockDistributor.is_valid_config = True
+        MockDistributor.raise_error = False
 
 # -- test cases ---------------------------------------------------------------
 
@@ -80,10 +104,13 @@ class RepoManagerTests(testutil.PulpTest):
 
     def clean(self):
         testutil.PulpTest.clean(self)
+
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
+
         MockImporter.reset()
+        MockDistributor.reset()
 
     def test_create(self):
         """
@@ -333,7 +360,6 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         self.manager.create_repo('test_me')
-
         config = {'foo' : 'bar'}
 
         # Test
@@ -348,6 +374,9 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual(config, all_distributors[0]['config'])
         self.assertTrue(all_distributors[0]['auto_distribute'])
 
+        self.assertEqual(config, MockDistributor.distributor_config)
+        self.assertEqual('test_me', MockDistributor.repo_data['id'])
+
     def test_add_distributor_multiple_distributors(self):
         """
         Tests adding a second distributor to a repository.
@@ -355,7 +384,8 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         class MockDistributor2:
-            pass
+            def validate_config(self, repo_data, distributor_config):
+                return True
         content_manager._MANAGER.add_distributor('MockDistributor2', 1, MockDistributor2, None)
 
         self.manager.create_repo('test_me')
@@ -452,6 +482,38 @@ class RepoManagerTests(testutil.PulpTest):
         except repo_manager.InvalidDistributorId, e:
             self.assertEqual(bad_id, e.invalid_distributor_id)
             print(e) # for coverage
+                    
+    def test_add_distributor_raises_error(self):
+        """
+        Tests the correct error is raised when the distributor raises an error during validation.
+        """
+
+        # Setup
+        MockDistributor.raise_error = True
+        self.manager.create_repo('repo')
+
+        # Test
+        try:
+            self.manager.add_distributor('repo', 'MockDistributor', None, True)
+            self.fail('Exception expected for error during validate')
+        except repo_manager.InvalidDistributorConfiguration:
+            pass
+
+    def test_add_distributor_invalid_config(self):
+        """
+        Tests the correct error is raised when the distributor is handed an invalid configuration.
+        """
+
+        # Setup
+        MockDistributor.is_valid_config = False
+        self.manager.create_repo('error_repo')
+
+        # Test
+        try:
+            self.manager.add_distributor('error_repo', 'MockDistributor', None, True)
+            self.fail('Exception expected for invalid configuration')
+        except repo_manager.InvalidDistributorConfiguration:
+            pass
 
     def test_remove_distributor(self):
         """

@@ -107,7 +107,14 @@ class InvalidImporterConfiguration(Exception):
     time or later updated) but the importer plugin indicated it is invalid.
     """
     pass
-        
+
+class InvalidDistributorConfiguration(Exception):
+    """
+    Indicates a distributor configuration was specified (either at add_distributor
+    time or later updated) but the distributor plugin indicated it was invalid.
+    """
+    pass
+
 class MissingDistributor(Exception):
     """
     Indicates a distributor was requested that does not exist.
@@ -233,7 +240,6 @@ class RepoManager:
             raise MissingImporter(importer_type_id)
 
         importer_instance, plugin_config = content_manager.get_importer_by_name(importer_type_id)
-
         try:
             valid_config = importer_instance.validate_config(repo, importer_config)
         except Exception:
@@ -311,6 +317,16 @@ class RepoManager:
             if not is_distributor_id_valid(distributor_id):
                 raise InvalidDistributorId(distributor_id)
 
+        distributor_instance, plugin_config = content_manager.get_distributor_by_name(distributor_type_id)
+        try:
+            valid_config = distributor_instance.validate_config(repo, distributor_config)
+        except Exception:
+            _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
+            raise InvalidDistributorConfiguration()
+
+        if not valid_config:
+            raise InvalidDistributorConfiguration()
+        
         # If a distributor already exists at that ID, remove it from the database
         # as it will be replaced in this method
         existing_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})

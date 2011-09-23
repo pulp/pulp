@@ -21,6 +21,28 @@ class Distributor(object):
     def metadata(cls):
         return {}
 
+    def validate_config(self, repo_data, distributor_config):
+        """
+        Allows the distributor to check the contents of a potential configuration
+        for the given repository. This call is made both for the addition of
+        this distributor to a new repository as well as updating the configuration
+        for this distributor on a previously configured repository. The implementation
+        should use the given repository data to ensure that updating the
+        configuration does not put the repository into an inconsistent state.
+
+        @param repo_data: metadata describing the repository to which the
+                          configuration applies
+        @type  repo_data: dict
+
+        @param distributor_config: proposed configuration used by this distributor for
+                                   the given repo
+        @type  distributor_config: dict
+
+        @return: True if the configuration is valid; False otherwise
+        @rtype:  bool
+        """
+        raise NotImplementedError()
+
     def publish_repo(self, repo_data, publish_conduit, distributor_config=None, repo_config=None):
         """
         Publish a repository.

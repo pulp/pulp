@@ -50,6 +50,9 @@ class MockDistributor1(Distributor):
         if MockDistributor1.raise_error:
             raise Exception('Publish error')
 
+    def validate_config(self, repo_data, distributor_config):
+        return True
+        
     @classmethod
     def reset(cls):
         MockDistributor1.repo_data = None
@@ -82,6 +85,9 @@ class MockDistributor2(Distributor):
 
         if MockDistributor2.raise_error:
             raise Exception('Publish error')
+
+    def validate_config(self, repo_data, distributor_config):
+        return True
 
     @classmethod
     def reset(cls):
