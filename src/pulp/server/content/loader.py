@@ -513,6 +513,9 @@ class _PluginMap(object):
         @type cfg: dict
         @type types: list or tuple
         """
+        if not _is_enabled(cfg):
+            _LOG.info(_('Skipping plugin %(p)s: not enabled') % {'p': name})
+            return
         if self.has_plugin(name):
             msg = _('Plugin with same name already exists: %(n)s')
             raise ConflictingPluginName(msg % {'n': name})
@@ -726,6 +729,14 @@ def _import_module(name):
     for sub in name.split('.')[1:]:
         mod = getattr(mod, sub)
     return mod
+
+
+def _is_enabled(cfg):
+    """
+    @type cfg: dict
+    @rtype: bool
+    """
+    return cfg.get('enabled', True)
 
 
 def _load_plugin(path, base_class, module_name):
