@@ -355,9 +355,8 @@ class CdsLib(object):
         verify_options["checksum"] = self.config.getboolean('cds', "verify_checksum")
         fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify,
                                cacert=feed_ca, clicert=feed_cert,
-                               packages_location=packages_dir,
-                               verify_options=verify_options)
-        fetch.fetchYumRepo(repo_path)
+                               packages_location=packages_dir)
+        fetch.fetchYumRepo(repo_path, verify_options=verify_options)
 
         log.info('Successfully finished synccing [%s]' % url)
 
