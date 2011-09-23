@@ -89,18 +89,25 @@ class PluginNotFound(PluginLoaderException):
 
 # state management
 
-def initialize():
+def initialize(validate=True):
     """
     Initialize the loader module by loading all type definitions and plugins.
+    @param validate: if True, perform post-initialization validation
+    @type validate: bool
     """
     global _LOADER
+    # pre-ininitialzation validation
     assert not _is_initialized()
     _check_path(_PLUGINS_ROOT)
+    # initialization
     _create_loader()
     _load_content_types()
     _load_distributors()
     _load_importers()
     _load_profilers()
+    # post-initialization validation
+    if not validate:
+        return
     _validate_importers()
 
 
@@ -611,7 +618,7 @@ def _load_profilers():
 
 def _load_type_definitions(descriptors):
     """
-    @type descriptors: list [TypeDescriptor, ...]
+    @type descriptors: list [L{TypeDescriptor}, ...]
     """
     definitions = parser.parse(descriptors)
     database.update_database(definitions)
@@ -634,7 +641,7 @@ def _validate_importers():
     """
     @raise: L{PluginLoadError}
     """
-    assert isinstance(_LOADER, PluginLoader)
+    assert _is_initialized()
     supported_types = list_content_types()
     for plugin_name, plugin_types in _LOADER.get_loaded_importers().items():
         for type_ in plugin_types:
