@@ -15,6 +15,7 @@ import os
 import pulp.server.util
 from logging import getLogger
 from pulp.server.exporter.base import BaseExporter, ExporterReport
+from pulp.server.exporter.generate_iso import GenerateIsos
 
 log = getLogger(__name__)
 # --------------- constants ---------------------------#
@@ -26,11 +27,13 @@ class ExportController(object):
     """
      Pulp Exporter controller class
     """
-    def __init__(self, repo_object, target_directory, generate_iso=False, overwrite=False, progress_callback=None):
+    def __init__(self, repo_object, target_directory, generate_iso=False, save_iso_directory="/tmp/" ,
+                 overwrite=False, progress_callback=None):
         self.repo = repo_object
         self.target_dir = target_directory
         self.overwrite = overwrite
         self.generate_iso = generate_iso
+        self.save_iso_directory = save_iso_directory
         self.progress_callback = progress_callback
         self.progress = {
             'status': 'running',
@@ -78,11 +81,9 @@ class ExportController(object):
                 exporter = cls(self.repo, target_dir=self.target_dir, progress=self.progress)
                 self.progress = exporter.export(progress_callback=self.progress_callback)
             except Exception,e:
-                raise
                 log.error("Error occured processing module %s; Error:%s" % (cls, str(e)))
                 continue
         self.create_isos()
-        self.progress['step'] = ExporterReport().done
 
     def create_isos(self):
         """
@@ -91,3 +92,9 @@ class ExportController(object):
         """
         if not self.generate_iso:
             return
+        try:
+            gen_isos = GenerateIsos(self.target_dir, image_type="dvd", output_directory=self.save_iso_directory,
+                                    prefix='pulp-%s' % self.repo['id'])
+            gen_isos.run(progress_callback=self.progress_callback)
+        except Exception, e:
+            log.error(str(e))
