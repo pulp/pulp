@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-import pulp.server.content.manager as content_manager
+import pulp.server.content.loader as plugin_loader
 import pulp.server.content.types.database as types_db
 from pulp.server.content.types.model import TypeDefinition
 import pulp.server.managers.plugin as plugin_manager
@@ -27,10 +27,14 @@ import pulp.server.managers.plugin as plugin_manager
 # -- mocks --------------------------------------------------------------------
 
 class MockImporter:
-    pass
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
 
 class MockDistributor:
-    pass
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
 
 # -- test cases ---------------------------------------------------------------
 
@@ -39,11 +43,11 @@ class PluginManagerTests(testutil.PulpTest):
     def setUp(self):
         testutil.PulpTest.setUp(self)
 
-        content_manager._create_manager()
+        plugin_loader._create_loader()
 
         # Configure content manager
-        content_manager._MANAGER.add_importer('MockImporter', 1, MockImporter, None)
-        content_manager._MANAGER.add_distributor('MockDistributor', 1, MockDistributor, None)
+        plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})
+        plugin_loader._LOADER.add_distributor('MockDistributor', MockDistributor, {})
 
         # Create the manager instance to test
         self.manager = plugin_manager.PluginManager()
@@ -52,8 +56,8 @@ class PluginManagerTests(testutil.PulpTest):
         testutil.PulpTest.tearDown(self)
 
         # Reset content manager
-        content_manager._MANAGER.remove_importer('MockImporter', 1)
-        content_manager._MANAGER.remove_distributor('MockDistributor', 1)
+        plugin_loader._LOADER.remove_importer('MockImporter')
+        plugin_loader._LOADER.remove_distributor('MockDistributor')
 
     def test_types(self):
         """
@@ -114,7 +118,7 @@ class PluginManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        content_manager._MANAGER.remove_importer('MockImporter', 1)
+        plugin_loader._LOADER.remove_importer('MockImporter')
 
         # Test
         found = self.manager.importers()
@@ -142,7 +146,7 @@ class PluginManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        content_manager._MANAGER.remove_distributor('MockDistributor', 1)
+        plugin_loader._LOADER.remove_distributor('MockDistributor')
 
         # Test
         found = self.manager.distributors()

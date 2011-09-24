@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.common import dateutils
-import pulp.server.content.manager as content_manager
-from pulp.server.content.distributor.base import Distributor
+import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.publish as publish_manager
@@ -41,6 +41,10 @@ class MockDistributor1(Distributor):
     # Call behavior
     raise_error = False
 
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type_1']}
+
     def publish_repo(self, repo_data, publish_conduit, distributor_config=None, repo_config=None):
         MockDistributor1.repo_data = repo_data
         MockDistributor1.publish_conduit = publish_conduit
@@ -52,7 +56,7 @@ class MockDistributor1(Distributor):
 
     def validate_config(self, repo_data, distributor_config):
         return True
-        
+
     @classmethod
     def reset(cls):
         MockDistributor1.repo_data = None
@@ -76,6 +80,10 @@ class MockDistributor2(Distributor):
 
     # Call behavior
     raise_error = False
+
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type_2']}
 
     def publish_repo(self, repo_data, publish_conduit, distributor_config=None, repo_config=None):
         MockDistributor2.repo_data = repo_data
@@ -105,11 +113,11 @@ class RepoSyncManagerTests(testutil.PulpTest):
     def setUp(self):
         testutil.PulpTest.setUp(self)
 
-        content_manager._create_manager()
+        plugin_loader._create_loader()
 
         # Configure content manager
-        content_manager._MANAGER.add_distributor('MockDistributor1', 1, MockDistributor1, None)
-        content_manager._MANAGER.add_distributor('MockDistributor2', 1, MockDistributor2, None)
+        plugin_loader._LOADER.add_distributor('MockDistributor1', MockDistributor1, {})
+        plugin_loader._LOADER.add_distributor('MockDistributor2', MockDistributor2, {})
 
         # Create the manager instances for testing
         self.repo_manager = repo_manager.RepoManager()
@@ -119,8 +127,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         testutil.PulpTest.tearDown(self)
 
         # Reset content manager
-        content_manager._MANAGER.remove_distributor('MockDistributor1', 1)
-        content_manager._MANAGER.remove_distributor('MockDistributor2', 1)
+        plugin_loader._LOADER.remove_distributor('MockDistributor1')
+        plugin_loader._LOADER.remove_distributor('MockDistributor2')
 
     def clean(self):
         testutil.PulpTest.clean(self)
@@ -222,7 +230,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.repo_manager.add_distributor('repo', 'MockDistributor1', None, False, distributor_id='dist-1')
 
         #   Simulate bouncing the server and removing the distributor plugin
-        content_manager._MANAGER.remove_distributor('MockDistributor1', 1)
+        plugin_loader._LOADER.remove_distributor('MockDistributor1')
 
         # Test
         try:
@@ -251,7 +259,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         except publish_manager.NoDistributor, e:
             self.assertEqual('repo', e.repo_id)
             print(e) # for coverage
-        
+
     def test_publish_with_error(self):
         """
         Tests a publish when the plugin raises an error.

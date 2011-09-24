@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.common import dateutils
-import pulp.server.content.manager as content_manager
-from pulp.server.content.importer.base import Importer
+import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.importer import Importer
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
@@ -43,6 +43,10 @@ class MockImporter(Importer):
 
     # Call behavior
     raise_error = False
+
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
 
     def sync_repo(self, repo_data, sync_conduit, importer_config, sync_config):
 
@@ -79,7 +83,7 @@ class MockRepoPublishManager:
 
     def validate_config(self, repo_data, distributor_config):
         return True
-    
+
     def auto_publish_for_repo(self, repo_id):
         MockRepoPublishManager.repo_id = repo_id
 
@@ -98,10 +102,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
     def setUp(self):
         testutil.PulpTest.setUp(self)
 
-        content_manager._create_manager()
+        plugin_loader._create_loader()
 
         # Configure content manager
-        content_manager._MANAGER.add_importer('MockImporter', 1, MockImporter, None)
+        plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})
 
         # Create the manager instances for testing
         self.repo_manager = repo_manager.RepoManager()
@@ -111,7 +115,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         testutil.PulpTest.tearDown(self)
 
         # Reset content manager
-        content_manager._MANAGER.remove_importer('MockImporter', 1)
+        plugin_loader._LOADER.remove_importer('MockImporter')
 
         # Reset the manager factory
         manager_factory.reset()
@@ -224,7 +228,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.repo_manager.set_importer('old-repo', 'MockImporter', None)
 
         #   Simulate bouncing the server and removing the importer plugin
-        content_manager._MANAGER.remove_importer('MockImporter', 1)
+        plugin_loader._LOADER.remove_importer('MockImporter')
 
         # Test
         try:

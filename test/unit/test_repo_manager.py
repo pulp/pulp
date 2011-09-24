@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-import pulp.server.content.manager as content_manager
+import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 
@@ -34,6 +34,10 @@ class MockImporter:
     # Call Behavior
     is_valid_config = True
     raise_error = False
+
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
 
     def validate_config(self, repo_data, importer_config):
         MockImporter.repo_data = repo_data
@@ -62,6 +66,10 @@ class MockDistributor:
     is_valid_config = True
     raise_error = False
 
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
+
     def validate_config(self, repo_data, distributor_config):
         MockDistributor.repo_data = repo_data
         MockDistributor.distributor_config = distributor_config
@@ -86,11 +94,11 @@ class RepoManagerTests(testutil.PulpTest):
     def setUp(self):
         testutil.PulpTest.setUp(self)
 
-        content_manager._create_manager()
+        plugin_loader._create_loader()
 
         # Configure content manager
-        content_manager._MANAGER.add_importer('MockImporter', 1, MockImporter, None)
-        content_manager._MANAGER.add_distributor('MockDistributor', 1, MockDistributor, None)
+        plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})
+        plugin_loader._LOADER.add_distributor('MockDistributor', MockDistributor, {})
 
         # Create the manager instance to test
         self.manager = repo_manager.RepoManager()
@@ -99,8 +107,8 @@ class RepoManagerTests(testutil.PulpTest):
         testutil.PulpTest.tearDown(self)
 
         # Reset content manager
-        content_manager._MANAGER.remove_importer('MockImporter', 1)
-        content_manager._MANAGER.remove_distributor('MockDistributor', 1)
+        plugin_loader._LOADER.remove_importer('MockImporter')
+        plugin_loader._LOADER.remove_distributor('MockDistributor')
 
     def clean(self):
         testutil.PulpTest.clean(self)
@@ -151,7 +159,7 @@ class RepoManagerTests(testutil.PulpTest):
 
         #   Assert the display name is defaulted to the id
         self.assertEqual('repo_1', repos[0]['display_name'])
-        
+
     def test_create_invalid_id(self):
         """
         Tests creating a repo with an invalid ID raises the correct error.
@@ -164,7 +172,7 @@ class RepoManagerTests(testutil.PulpTest):
         except repo_manager.InvalidRepoId, e:
             self.assertEqual(e.invalid_repo_id, 'bad id')
             print(e) # for coverage
-        
+
     def test_create_duplicate_id(self):
         """
         Tests creating a repo with an ID already being used by a repo raises
@@ -303,10 +311,13 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         class MockImporter2:
+            @classmethod
+            def metadata(cls):
+                return {'types': ['mock_types_2']}
             def validate_config(self, repo_data, importer_config):
                 return True
 
-        content_manager._MANAGER.add_importer('MockImporter2', 1, MockImporter2, None)
+        plugin_loader._LOADER.add_importer('MockImporter2', MockImporter2, {})
 
         self.manager.create_repo('change_me')
         self.manager.set_importer('change_me', 'MockImporter', None)
@@ -384,9 +395,12 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         class MockDistributor2:
+            @classmethod
+            def metadata(cls):
+                return {'types': ['mock_type_2']}
             def validate_config(self, repo_data, distributor_config):
                 return True
-        content_manager._MANAGER.add_distributor('MockDistributor2', 1, MockDistributor2, None)
+        plugin_loader._LOADER.add_distributor('MockDistributor2', MockDistributor2, {})
 
         self.manager.create_repo('test_me')
         self.manager.add_distributor('test_me', 'MockDistributor', None, True, distributor_id='dist_1')
@@ -482,7 +496,7 @@ class RepoManagerTests(testutil.PulpTest):
         except repo_manager.InvalidDistributorId, e:
             self.assertEqual(bad_id, e.invalid_distributor_id)
             print(e) # for coverage
-                    
+
     def test_add_distributor_raises_error(self):
         """
         Tests the correct error is raised when the distributor raises an error during validation.
@@ -581,7 +595,7 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('orig_1', metadata['key_1'])
         self.assertEqual('new_2', metadata['key_2'])
         self.assertEqual('new_3', metadata['key_3'])
-        
+
     def test_add_metadata_values_no_repo(self):
         """
         Tests the correct error is raised when adding metadata to a repo that doesn't exist.
@@ -734,4 +748,3 @@ class UtilityMethodsTests(testutil.PulpTest):
         self.assertTrue(not repo_manager.is_repo_id_valid('repo 1'))
         self.assertTrue(not repo_manager.is_repo_id_valid('repo#1'))
         self.assertTrue(not repo_manager.is_repo_id_valid('repo!'))
-        
