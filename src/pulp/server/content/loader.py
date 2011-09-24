@@ -823,8 +823,8 @@ def _load_plugins_from_path(path, base_class, plugin_map):
                (path, base_class.__name__))
     plugin_dirs = _get_plugin_dirs(path)
     for dir_ in plugin_dirs:
-        name = os.path.split(dir_)[-1]
         cls, cfg = _load_plugin(dir_, base_class, base_class.__name__.lower())
+        name = _get_plugin_metadata_field(cls, 'name', cls.__name__)
         types = _get_plugin_types(cls)
         plugin_map.add_plugin(name, cls, cfg, types)
 
