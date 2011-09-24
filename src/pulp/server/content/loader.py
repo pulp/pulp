@@ -536,7 +536,7 @@ class _PluginMap(object):
         self.types[name] = tuple(types)
         _LOG.info(_('Loaded plugin %(p)s for types: %(t)s') %
                   {'p': name, 't': ','.join(types)})
-        _LOG.debug('class: %s\nconfig: %s' % (cls.__name__, pformat(cfg)))
+        _LOG.debug('class: %s; config: %s' % (cls.__name__, pformat(cfg)))
 
     def get_plugin_by_name(self, name):
         """
@@ -647,6 +647,7 @@ def _load_type_descriptors(path):
     @type path: str
     @rtype: list [L{TypeDescriptor}, ...]
     """
+    _LOG.debug('Loading type descriptors from: %s' % path)
     descriptors = []
     for file_name in os.listdir(path):
         content = _read_content(file_name)
@@ -674,6 +675,7 @@ def _add_path_to_sys_path(path):
     """
     @type path: str
     """
+    _LOG.debug('Adding path to sys.path: %s' % path)
     if path in sys.path:
         return
     sys.path.append(path)
@@ -684,6 +686,7 @@ def _get_plugin_dirs(plugin_root):
     @type plugin_root: str
     @rtype: list [str, ...]
     """
+    _LOG.debug('Looking for plugin dirs in plugin root: %s' % plugin_root)
     dirs = []
     for entry in os.listdir(plugin_root):
         plugin_dir = os.path.join(plugin_root, entry)
@@ -713,6 +716,7 @@ def _get_plugin_types(plugin_class):
     @rtype: list [str, ...]
     @raise: L{PluginLoadError}
     """
+    _LOG.debug('Getting types for plugin class: %s' % plugin_class.__name__)
     types = _get_plugin_metadata_field(plugin_class, 'types')
     if types is None:
         raise MissingMetadata(_('%(p)s does not define any types') %
@@ -727,6 +731,7 @@ def _import_module(name):
     @type name: str
     @rtype: module
     """
+    _LOG.debug('Importing plugin module: %s' % name)
     if name in sys.modules:
         sys.modules.pop(name)
     mod = __import__(name)
@@ -751,6 +756,8 @@ def _load_plugin(path, base_class, module_name):
     @rtype: tuple (type, dict)
     @raise: L{PluginLoadError}
     """
+    _LOG.debug('Loading plugin: %s, %s, %s' %
+               (path, base_class.__name__, module_name))
     init_found = False
     module_regex = re.compile('%s\.py(c|o)?$' % module_name)
     module_found = False
@@ -786,6 +793,7 @@ def _load_plugin_config(config_file_name):
     @type config_file_name: str
     @rtype: dict
     """
+    _LOG.debug('Loading config file: %s' % config_file_name)
     contents = _read_content(config_file_name)
     cfg = json.loads(contents)
     return cfg
@@ -820,6 +828,8 @@ def _load_plugins_from_path(path, base_class, plugin_map):
     @type base_class: type
     @type plugin_map: L{_PluginMap}
     """
+    _LOG.debug('Loading multiple plugins: %s, %s' %
+               (path, base_class.__name__))
     plugin_dirs = _get_plugin_dirs(path)
     for dir_ in plugin_dirs:
         name = os.path.split(dir_)[-1]
