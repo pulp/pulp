@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import atexit
+import logging
 import os
 import shutil
 import string
@@ -40,7 +41,7 @@ def _delete_generated_paths():
         shutil.rmtree(p)
 
 
-#atexit.register(_delete_generated_paths)
+atexit.register(_delete_generated_paths)
 
 # test file(s) generation
 
@@ -255,17 +256,16 @@ class LoaderFileSystemOperationsTests(LoaderTest):
 
     def test_single_distributor(self):
         plugin_root = gen_plugin_root()
-        print plugin_root
         types = ['test_type']
         distributors_root = gen_plugin(plugin_root,
                                        'distributor',
                                        'TestDistributor',
                                        types)
-        print distributors_root
         self.loader.load_distributors_from_path(distributors_root)
         try:
             cls, cfg = self.loader.get_distributor_by_name('testdistributor')
         except Exception, e:
+            print 'plugin root: %s' % plugin_root
             print 'plugins: ',
             pprint(self.loader._PluginLoader__distributors.plugins)
             print 'configs: ',
@@ -273,3 +273,72 @@ class LoaderFileSystemOperationsTests(LoaderTest):
             print 'types: ',
             pprint(self.loader._PluginLoader__distributors.types)
             self.fail('\n'.join((repr(e), traceback.format_exc())))
+
+    def test_single_importer_with_query(self):
+        plugin_root = gen_plugin_root()
+        types = ['test_type']
+        importers_root = gen_plugin(plugin_root,
+                                    'importer',
+                                    'TestImporter',
+                                    types)
+        self.loader.load_importers_from_path(importers_root)
+        cls, cfg = self.loader.get_importer_by_type(types[0])
+        self.assertTrue(issubclass(cls, Importer))
+
+    def test_multiple_distributors(self):
+        plugin_root = gen_plugin_root()
+        distributors_root_1 = gen_plugin(plugin_root,
+                                         'distributor',
+                                         'FooDistributor',
+                                         ['foo'])
+        distributors_root_2 = gen_plugin(plugin_root,
+                                         'distributor',
+                                         'BarDistributor',
+                                         ['bar'])
+        distributors_root_3 = gen_plugin(plugin_root,
+                                         'distributor',
+                                         'BazDistributor',
+                                         ['baz'])
+        self.assertEqual(distributors_root_1,
+                         distributors_root_2,
+                         distributors_root_3)
+        self.loader.load_distributors_from_path(distributors_root_1)
+
+        cls_1 = self.loader.get_distributor_by_name('foodistributor')[0]
+        self.assertTrue(issubclass(cls_1, Distributor))
+
+        cls_2 = self.loader.get_distributor_by_type('bar')[0]
+        self.assertTrue(issubclass(cls_2, Distributor))
+
+        cls_3 = self.loader.get_distributor_by_name('bazdistributor')[0]
+        self.assertTrue(issubclass(cls_3, Distributor))
+
+
+    def test_multiple_with_disabled(self):
+        plugin_root = gen_plugin_root()
+        distributors_root = gen_plugin(plugin_root,
+                                       'distributor',
+                                       'MyDistributor',
+                                       ['test_distribution'])
+        importer_root_1 = gen_plugin(plugin_root,
+                                     'importer',
+                                     'EnabledImporter',
+                                     ['test_importer'])
+        importer_root_2 = gen_plugin(plugin_root,
+                                     'importer',
+                                     'DisabledImporter',
+                                     ['test_importer'],
+                                     enabled=False)
+        self.assertEqual(importer_root_1, importer_root_2)
+        self.loader.load_distributors_from_path(distributors_root)
+        self.loader.load_importers_from_path(importer_root_1)
+
+        distributor_cls = self.loader.get_distributor_by_name('mydistributor')[0]
+        self.assertTrue(issubclass(distributor_cls, Distributor))
+
+        importer_cls = self.loader.get_importer_by_type('test_importer')[0]
+        self.assertEqual(importer_cls.__name__, 'EnabledImporter')
+
+        self.assertRaises(loader.PluginNotFound,
+                          self.loader.get_importer_by_name,
+                          'disabledimporter')
