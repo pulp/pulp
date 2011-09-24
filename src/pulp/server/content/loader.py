@@ -114,10 +114,10 @@ def initialize(validate=True):
     _check_path(_PLUGINS_ROOT)
     # initialization
     _create_loader()
-    _load_content_types()
-    _load_distributors()
-    _load_importers()
-    _load_profilers()
+    _load_content_types(_TYPES_DIR)
+    _LOADER.load_distributors_from_path(_DISTRIBUTORS_DIR)
+    _LOADER.load_importers_from_path(_IMPORTERS_DIR)
+    _LOADER.load_profilers_from_path(_PROFILERS_DIR)
     # post-initialization validation
     if not validate:
         return
@@ -616,22 +616,13 @@ def _is_initialized():
     return isinstance(_LOADER, PluginLoader)
 
 
-def _load_content_types():
-    _check_path(_TYPES_DIR)
-    descriptors = _load_type_descriptors(_TYPES_DIR)
+def _load_content_types(types_dir):
+    """
+    @type types_dir: str
+    """
+    _check_path(types_dir)
+    descriptors = _load_type_descriptors(types_dir)
     _load_type_definitions(descriptors)
-
-
-def _load_distributors():
-    _LOADER.load_distributors_from_path(_DISTRIBUTORS_DIR)
-
-
-def _load_importers():
-    _LOADER.load_importers_from_path(_IMPORTERS_DIR)
-
-
-def _load_profilers():
-    _LOADER.load_profilers_from_path(_PROFILERS_DIR)
 
 
 def _load_type_definitions(descriptors):
