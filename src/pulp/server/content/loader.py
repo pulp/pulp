@@ -361,6 +361,8 @@ class PluginLoader(object):
         @param path: distributors root directory
         @type path: str
         """
+        _check_path(path)
+        _add_path_to_sys_path(path)
         _load_plugins_from_path(path, Distributor, self.__distributors)
 
     def load_importers_from_path(self, path):
@@ -368,6 +370,8 @@ class PluginLoader(object):
         @param path: importers root directory
         @type path: str
         """
+        _check_path(path)
+        _add_path_to_sys_path(path)
         _load_plugins_from_path(path, Importer, self.__importers)
 
     def load_profilers_from_path(self, path):
@@ -375,6 +379,7 @@ class PluginLoader(object):
         @param path: profilers root directory
         @type path: str
         """
+        _check_path(path)
         _LOG.warn(_('Profilers load called, but not implemented'))
 
     def remove_distributor(self, name):
@@ -618,17 +623,14 @@ def _load_content_types():
 
 
 def _load_distributors():
-    _check_path(_DISTRIBUTORS_DIR)
     _LOADER.load_distributors_from_path(_DISTRIBUTORS_DIR)
 
 
 def _load_importers():
-    _check_path(_IMPORTERS_DIR)
     _LOADER.load_importers_from_path(_IMPORTERS_DIR)
 
 
 def _load_profilers():
-    _check_path(_PROFILERS_DIR)
     _LOADER.load_profilers_from_path(_PROFILERS_DIR)
 
 
@@ -684,9 +686,9 @@ def _get_plugin_dirs(plugin_root):
     """
     dirs = []
     for entry in os.listdir(plugin_root):
-        if not os.path.isdir(entry):
-            continue
         plugin_dir = os.path.join(plugin_root, entry)
+        if not os.path.isdir(plugin_dir):
+            continue
         dirs.append(plugin_dir)
     return dirs
 
@@ -772,7 +774,7 @@ def _load_plugin(path, base_class, module_name):
         d = {'n': module_name.title(), 'p': package_name, 'm': module_name}
         raise MissingPluginModule(msg % d)
     # load and return the plugin class and configuration
-    cls = _load_plugin_class('.'.join(package_name, module_name), base_class)
+    cls = _load_plugin_class('.'.join((package_name, module_name)), base_class)
     cfg = {}
     if config_path is not None:
         cfg = _load_plugin_config(config_path)
@@ -796,10 +798,16 @@ def _load_plugin_class(module_name, base_class):
     @rtype: attr
     @raise: L{PluginLoadError}
     """
+    _LOG.debug('Loading plugin class: %s, %s' %
+               (module_name, base_class.__name__))
     module = _import_module(module_name)
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
-        if not isinstance(attr, type) or not issubclass(attr, base_class):
+        if not isinstance(attr, type):
+            continue
+        if not issubclass(attr, base_class):
+            continue
+        if attr is base_class:
             continue
         return attr
     msg = _('%(m)s modules did not contain a derived class of %(c)s')
