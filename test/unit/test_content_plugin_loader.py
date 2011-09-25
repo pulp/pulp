@@ -162,13 +162,13 @@ class PluginMapTests(testutil.PulpTest):
         name = 'excellent'
         self.plugin_map.add_plugin(name, ExcellentImporter, {})
         cls = self.plugin_map.get_plugin_by_name(name)[0]
-        self.assertIs(cls, ExcellentImporter)
+        self.assertTrue(cls is ExcellentImporter)
 
     def test_get_plugin_by_type(self):
         types = ExcellentImporter.metadata()['types']
         self.plugin_map.add_plugin('excellent', ExcellentImporter, {}, types)
         cls = self.plugin_map.get_plugin_by_type(types[0])[0]
-        self.assertIs(cls, ExcellentImporter)
+        self.assertTrue(cls is ExcellentImporter)
 
     def test_name_not_found(self):
         self.assertRaises(loader.PluginNotFound,
@@ -183,9 +183,9 @@ class PluginMapTests(testutil.PulpTest):
     def test_remove_plugin(self):
         name = 'excellent'
         self.plugin_map.add_plugin(name, ExcellentImporter, {})
-        self.assertIn(name, self.plugin_map.plugins)
+        self.assertTrue(name in self.plugin_map.plugins)
         self.plugin_map.remove_plugin(name)
-        self.assertNotIn(name, self.plugin_map.plugins)
+        self.assertFalse(name in self.plugin_map.plugins)
 
 
 class LoaderInstanceTest(testutil.PulpTest):
@@ -216,16 +216,16 @@ class LoaderDirectOperationsTests(LoaderTest):
         self.loader.add_distributor(name, WebDistributor, {})
 
         cls = self.loader.get_distributor_by_name(name)[0]
-        self.assertIs(cls, WebDistributor)
+        self.assertTrue(cls is WebDistributor)
 
         cls = self.loader.get_distributor_by_type(types[0])[0]
-        self.assertIs(cls, WebDistributor)
+        self.assertTrue(cls is WebDistributor)
 
         cls = self.loader.get_distributor_by_type(types[1])[0]
-        self.assertIs(cls, WebDistributor)
+        self.assertTrue(cls is WebDistributor)
 
         distributors = self.loader.get_loaded_distributors()
-        self.assertIn(name, distributors)
+        self.assertTrue(name in distributors)
 
         self.loader.remove_distributor(name)
         self.assertRaises(loader.PluginNotFound,
@@ -238,13 +238,13 @@ class LoaderDirectOperationsTests(LoaderTest):
         self.loader.add_importer(name, ExcellentImporter, {})
 
         cls = self.loader.get_importer_by_name(name)[0]
-        self.assertIs(cls, ExcellentImporter)
+        self.assertTrue(cls is ExcellentImporter)
 
         cls = self.loader.get_importer_by_type(types[0])[0]
-        self.assertIs(cls, ExcellentImporter)
+        self.assertTrue(cls is ExcellentImporter)
 
         importers = self.loader.get_loaded_importers()
-        self.assertIn(name, importers)
+        self.assertTrue(name in importers)
 
         self.loader.remove_importer(name)
         self.assertRaises(loader.PluginNotFound,
