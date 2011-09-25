@@ -33,6 +33,11 @@ DIRS = (
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',
+    '/var/lib/pulp/plugins',
+    '/var/lib/pulp/plugins/distributors',
+    '/var/lib/pulp/plugins/importers',
+    '/var/lib/pulp/plugins/profilers',
+    '/var/lib/pulp/plugins/types',
     '/var/lib/pulp/published',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi

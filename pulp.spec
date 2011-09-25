@@ -9,7 +9,7 @@
 %endif
 
 %if %{pulp_selinux}
-#SELinux 
+#SELinux
 %define selinux_variants mls strict targeted
 %define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
 %define modulename pulp
@@ -32,7 +32,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
-BuildRequires:  python-nose	
+BuildRequires:  python-nose
 BuildRequires:  rpm-python
 %if %{pulp_selinux}
 BuildRequires:  make
@@ -118,7 +118,7 @@ Requires:       python-rhsm >= 0.96.4
 Obsoletes:      pulp-client <= 0.218
 
 %description client-lib
-A collection of libraries used by by the pulp client tools. 
+A collection of libraries used by by the pulp client tools.
 
 # -- headers - pulp client ---------------------------------------------------
 
@@ -240,6 +240,11 @@ mkdir -p %{buildroot}/etc/pki/content
 
 # Pulp Runtime
 mkdir -p %{buildroot}/var/lib/pulp
+mkdir -p %{buildroot}/var/lib/pulp/plugins
+mkdir -p %{buildroot}/var/lib/pulp/plugins/distributors
+mkdir -p %{buildroot}/var/lib/pulp/plugins/importers
+mkdir -p %{buildroot}/var/lib/pulp/plugins/profilers
+mkdir -p %{buildroot}/var/lib/pulp/plugins/types
 mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
