@@ -22,6 +22,7 @@ from pulp.server.agent import HeartbeatListener
 from pulp.server.async import ReplyHandler, WatchDog
 from pulp.server.config import config
 import pulp.server.content.loader as plugin_loader
+import pulp.server.db.connection as db_connection
 import pulp.server.managers.factory as manager_factory
 from gofer.messaging.broker import Broker
 
@@ -58,5 +59,8 @@ heartbeatListener.start()
 # Initialize the manager factory class mappings
 manager_factory.initialize()
 
+# Initialize the database
+db_connection.initialize()
+
 # Initialize the content manager
-# plugin_loader.initialize()
+plugin_loader.initialize()
