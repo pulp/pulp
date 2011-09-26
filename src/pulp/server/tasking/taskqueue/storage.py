@@ -217,7 +217,7 @@ class SnapshotStorage(VolatileStorage):
         return self.__dict__.setdefault('__history_collection',
                                         TaskHistory.get_collection())
 
-    # wait queueue methods
+    # running task methods
 
     def _snapshot_task(self, task):
         snapshot = task.snapshot()
@@ -226,11 +226,11 @@ class SnapshotStorage(VolatileStorage):
         except DuplicateKeyError:
             raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
 
-    def enqueue_waiting(self, task):
+    def store_running(self, task):
         # create and keep a snapshot of the task that can be loaded from the
         # database and executed across reboots, server restarts, etc.
         self._snapshot_task(task)
-        super(SnapshotStorage, self).enqueue_waiting(task)
+        super(SnapshotStorage, self).store_running(task)
 
     # storage methods
 
