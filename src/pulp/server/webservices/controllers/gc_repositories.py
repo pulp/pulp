@@ -158,9 +158,23 @@ class RepoPublish(JSONController):
         repo_publish_manager = manager_factory.repo_publish_manager()
         repo_publish_manager.publish(repo_id, distributor_id, overrides)
 
+class ListRepositories(JSONController):
+
+    # This is temporary and will be replaced by a more fleshed out repo query mechanism
+
+    # GET:  Retrieve all repositories in the system
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self):
+        repo_query_manager = manager_factory.repo_query_manager()
+        all_repos = repo_query_manager.find_all()
+        return self.ok(all_repos)
+
 # -- web.py application -------------------------------------------------------
 
 urls = (
+    '/', 'ListRepositories',
     '/([^/]+)/$', 'RepoCreateDelete',
     '/([^/]+)/importer/$', 'RepoImporters',
     '/([^/]+)/distributors/$', 'RepoDistributor',
