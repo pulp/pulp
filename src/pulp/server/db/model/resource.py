@@ -73,13 +73,17 @@ class Distribution(Model):
     collection_name = 'distribution'
     search_indices = ('files', 'relativepath')
 
-    def __init__(self, id, description, relativepath, files=[]):
+    def __init__(self, id, description, relativepath, family=None, variant=None, version=None, files=[]):
         Model.__init__(self)
         self._id = id
         self.id = id
         self.description = description
         self.files = files
         self.relativepath = relativepath
+        self.family = family
+        self.variant = variant
+        self.version = version
+
 
 # errata model ----------------------------------------------------------------
 

@@ -56,7 +56,8 @@ class List(DistributionAction):
             system_exit(os.EX_OK, _("No distributions found to list"))
         print_header(_('List of Available Distributions'))
         for distro in distribution:
-            print constants.DISTRO_LIST % (distro['id'], distro['description'], distro['url'])
+            print constants.DISTRO_LIST % (distro['id'], distro['description'], distro['family'],
+                                           distro['variant'], distro['version'], distro['url'])
 
 
 class Info(DistributionAction):

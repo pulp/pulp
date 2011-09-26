@@ -40,7 +40,11 @@ class TestDistribution(testutil.PulpAsyncTest):
                  '/my/test/path/to/distribution/images/install.img',
                  '/my/test/path/to/distribution/images/initrd.img',
                  '/my/test/path/to/distribution/images/vmlinuz']
-        distro = self.distribution_api.create(id, description, relativepath, files=files)
+        family = 'Fedora'
+        variant = 'Fedora'
+        version = 'F14'
+        distro = self.distribution_api.create(id, description, relativepath, family= family,
+                                              variant=variant, version=version, files=files)
         self.assertTrue(distro is not None)
 
     def test_duplicate(self):
@@ -71,7 +75,8 @@ class TestDistribution(testutil.PulpAsyncTest):
     def test_update(self):
         id = 'test_update_distro'
         description = 'test distro typo'
-        distro = self.distribution_api.create(id, description, None, [])
+        distro = self.distribution_api.create(id, description, None,
+                                              family='fedora', variant='fedora', version='15', files=[])
         self.assertTrue(distro is not None)
         found = self.distribution_api.distribution(id)
         self.assertTrue(found is not None)
@@ -81,6 +86,21 @@ class TestDistribution(testutil.PulpAsyncTest):
         found = self.distribution_api.distribution(id)
         self.assertTrue(found is not None)
         self.assertTrue(found['description'] == new_description)
+        new_family = "new fedora"
+        self.distribution_api.update(id, {'family':new_family})
+        found = self.distribution_api.distribution(id)
+        self.assertTrue(found is not None)
+        self.assertTrue(found['family'] == new_family)
+        new_variant = "new fedora"
+        self.distribution_api.update(id, {'variant':new_variant})
+        found = self.distribution_api.distribution(id)
+        self.assertTrue(found is not None)
+        self.assertTrue(found['variant'] == new_variant)
+        new_version = "16"
+        self.distribution_api.update(id, {'version':new_version})
+        found = self.distribution_api.distribution(id)
+        self.assertTrue(found is not None)
+        self.assertTrue(found['version'] == new_version)
         
     def test_add_distro_to_repo(self):
         distroid = 'test_repo_distro'

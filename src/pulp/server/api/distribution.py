@@ -21,7 +21,7 @@ from pulp.server import config
 
 log = logging.getLogger(__name__)
 
-distribution_fields = model.Distribution(None, None, None, []).keys()
+distribution_fields = model.Distribution(None, None, None, None, None, None, []).keys()
 
 
 class DistributionApi(BaseApi):
@@ -30,7 +30,7 @@ class DistributionApi(BaseApi):
         return model.Distribution.get_collection()
 
     @audit(params=["id"])
-    def create(self, id, description, relativepath, files=[]):
+    def create(self, id, description, relativepath, family=None, variant=None, version=None, files=[]):
         """
         Create a new Distribution object and return it
         """
@@ -38,7 +38,7 @@ class DistributionApi(BaseApi):
         if d:
             log.info("Distribution with id %s already exists" % id)
             return d
-        d = model.Distribution(id, description, relativepath, files)
+        d = model.Distribution(id, description, relativepath, family=family, variant=variant, version=version, files=files)
         self.collection.insert(d, safe=True)
         return d
 
@@ -66,7 +66,7 @@ class DistributionApi(BaseApi):
             raise PulpException('Distributon [%s] does not exist', id)
         for key, value in delta.items():
             # simple changes
-            if key in ('description', 'relativepath', 'files',):
+            if key in ('description', 'relativepath', 'files', 'family', 'variant', 'version'):
                 dist[key] = value
                 continue
             # unsupported
