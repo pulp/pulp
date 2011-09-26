@@ -641,7 +641,8 @@ def _load_type_descriptors(path):
     _LOG.debug('Loading type descriptors from: %s' % path)
     descriptors = []
     for file_name in os.listdir(path):
-        content = _read_content(file_name)
+        full_file_name = os.path.join(path, file_name)
+        content = _read_content(full_file_name)
         descriptor = TypeDescriptor(file_name, content)
         descriptors.append(descriptor)
     return descriptors
