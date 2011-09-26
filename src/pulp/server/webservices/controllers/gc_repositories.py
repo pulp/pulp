@@ -102,7 +102,7 @@ class RepoDistributor(JSONController):
         distributor_type = params.get('distributor_type_id', None)
         distributor_config = params.get('distributor_config', None)
         distributor_id = params.get('distributor_id', None)
-        auto_publish = params.get('auto_publish')
+        auto_publish = params.get('auto_publish', False)
 
         # Update the repo
         repo_manager = manager_factory.repo_manager()
