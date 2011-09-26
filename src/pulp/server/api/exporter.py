@@ -48,7 +48,7 @@ def export(repoid, target_directory, generate_isos=False, overwrite=False):
         # exporter task already pending; task not created
         return None
     task = run_async(_export,
-                        [repo, target_directory],
+                        [repoid, target_directory],
                         {'generate_isos': generate_isos,
                          'overwrite':overwrite},)
     if not task:
@@ -57,10 +57,11 @@ def export(repoid, target_directory, generate_isos=False, overwrite=False):
     task.set_progress('progress_callback', exporter_progress_callback)
     return task
     
-def _export(repo, target_directory, generate_isos=False, overwrite=False, progress_callback=None):
+def _export(repoid, target_directory, generate_isos=False, overwrite=False, progress_callback=None):
     """
     Run a repo export asynchronously.
     """
+    repo = repo_api._get_existing_repo(repoid)
     if repo.has_key("sync_in_progress") and repo["sync_in_progress"]:
         raise ConflictingOperationException(_('Sync for repo [%s] in progress; Cannot schedule an export ') % repo['id'])
     export_obj = ExportController(repo, target_directory, generate_isos,

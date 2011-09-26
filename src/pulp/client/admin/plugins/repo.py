@@ -216,7 +216,7 @@ class RepoProgressAction(AdminRepoAction):
             item_details = details[item_type]
             if item_details.has_key("num_success") and \
                 item_details.has_key("total_count"):
-                    result += _("%ss: %s/%s\n") % \
+                    result += _("%s: %s/%s\n") % \
                         (item_type.title(),
                          item_details["num_success"],
                          item_details["total_count"])
@@ -1692,7 +1692,7 @@ class Export(RepoProgressAction):
         super(Export, self).setup_parser()
         self.parser.add_option("-t", "--target_dir", dest="target",
                                help=_("target location to write the exported content"))
-        self.parser.add_option(  "--make-isos", action="store_true", dest="make_isos", default=False,
+        self.parser.add_option(  "--generate-isos", action="store_true", dest="generate_isos", default=False,
                                help=_("wrap exported content into iso images (optional)"))
         self.parser.add_option(  "--overwrite", action="store_true", dest="overwrite", default=False,
                                help=_("overwrite existing content in target location"))
@@ -1703,44 +1703,62 @@ class Export(RepoProgressAction):
             utils.system_exit(os.EX_USAGE, _("Error: Target location is required to export content"))
         task =None
         try:
-            task = self.repository_api.export(repoid, self.opts.target, generate_isos=self.opts.make_isos, overwrite=self.opts.overwrite)
+            task = self.repository_api.export(repoid, self.opts.target, generate_isos=self.opts.generate_isos, overwrite=self.opts.overwrite)
         except Exception,e:
             utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
-        print task['progress']
-        progress_details = {}
-        while not task_end(task):
+        print _('You can safely CTRL+C this current command and it will continue')
+        print ' '
+        try:
+            while not task_end(task):
+                self.print_exporter_progress(task['progress'])
+                time.sleep(0.25)
+                task = self.task_api.info(task['id'])
+            # print the finish line
             self.print_exporter_progress(task['progress'])
-            #self.print_progress(task['progress'])
-            time.sleep(0.25)
-            task = self.task_api.info(task['id'])
-        self.print_final_report(task['progress'])
+            print _("Export completed; Content is written to target location @ %s on server" % self.opts.target)
+        except KeyboardInterrupt:
+            print ''
+            return
         self.print_error_report(task['progress'])
 
     def print_exporter_progress(self, progress):
         current = ""
-        if progress and progress.has_key("num_success") and progress["num_success"]:
+        if progress and progress.has_key("step"):
             current += _("Step: %s (%s)\n") % \
                        (progress['step'], self.get_wait_symbol())
+            current += self.form_progress_item_details(progress['details'])
             self._previous_step = progress["num_success"]
-        elif progress and not progress["num_success"]:
-            current += _("Step: %s (%s)\n") % (progress['step'], self.get_wait_symbol())
-            self._previous_step = progress["step"]
         else:
             current +=  _("Step: Export in progress (%s)\n") %  self.get_wait_symbol()
             self._previous_step = None
         self.write(current, self._previous_progress)
         self._previous_progress = current
 
-    def print_final_report(self, progress):
-        print_header(_("Exporter Summary"))
-        for type, details in progress['details'].items():
-            print("%s : \t\t\t%s/%s" % (type, details['num_success'], details['items_total']))
-
     def print_error_report(self, progress):
         if not len(progress['errors']):
             return
-        print_header(_("Errors:"))
+        print(_("Errors:"))
         print '\n'.join(progress['errors'])
+
+class CancelExport(AdminRepoAction):
+
+    name = "cancel_export"
+    description = _('cancel a running export')
+
+    def run(self):
+        id = self.get_required_option('id')
+        self.get_repo(id)
+        exports = self.repository_api.export_list(id)
+        if not exports:
+            utils.system_exit(os.EX_OK, _('There is no export in progress for this repository'))
+        task = exports[0]
+        if task_end(task):
+            utils.system_exit(os.EX_OK, _('There is no export in progress for this repository'))
+        taskid = task['id']
+        self.task_api.cancel(taskid)
+        print _("Export for repository %s is being canceled") % id
+
+
 
 class KeyReader:
 
@@ -1805,7 +1823,8 @@ class AdminRepo(Repo):
                 DownloadMetadata,
                 RemoveMetadata,
                 Discovery,
-                Export]
+                Export,
+                CancelExport]
 
 # repo plugin ----------------------------------------------------------------
 

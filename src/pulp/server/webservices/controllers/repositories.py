@@ -1428,7 +1428,6 @@ class RepositoryActions(JSONController):
             '_clone': '_clone',
             'generate_metadata' : '_generate_metadata',
             'export': '_export',
-            '_export' : '_export',
         }
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %

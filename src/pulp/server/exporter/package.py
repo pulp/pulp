@@ -54,9 +54,6 @@ class PackageExporter(BaseExporter):
         package_count = len(self.repo['packages'])
         self._progress_details('rpm', package_count)
         for count, pkg in enumerate(self.repo['packages']):
-            if count % 500:
-                msg = "Step: Exporting %s (%s/%s)\n" % (self.progress['step'], count, package_count)
-                log.debug(msg)
             package_obj = self.package_api.package(pkg)
             if not package_obj:
                 continue
@@ -90,10 +87,12 @@ class PackageExporter(BaseExporter):
             self.progress['num_success'] = self.export_count
             self.progress['details']['rpm']['num_success'] = self.export_count
             self.progress['details']['rpm']['items_left'] -= 1
-
+            msg = "Step: Exporting %s (%s/%s)" % (self.progress['step'], count, package_count)
+            log.debug(msg)
             if progress_callback is not None:
 #                self.progress["step"] = msg
                 progress_callback(self.progress)
+
         # generate metadata
         try:
             if progress_callback is not None:

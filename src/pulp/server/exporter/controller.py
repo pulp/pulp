@@ -82,7 +82,10 @@ class ExportController(object):
             except Exception,e:
                 log.error("Error occured processing module %s; Error:%s" % (cls, str(e)))
                 continue
-        self.create_isos()
+        self.progress = self.create_isos()
+
+        self.progress['step'] = ExporterReport.done
+        self.progress_callback(self.progress)
 
     def create_isos(self):
         """
@@ -95,6 +98,6 @@ class ExportController(object):
         try:
             gen_isos = GenerateIsos(self.target_dir, output_directory=save_iso_directory,
                                     prefix='pulp-%s' % self.repo['id'], progress=self.progress)
-            gen_isos.run(progress_callback=self.progress_callback)
+            return gen_isos.run(progress_callback=self.progress_callback)
         except Exception, e:
             log.error(str(e))

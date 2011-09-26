@@ -119,6 +119,7 @@ class BaseExporter(object):
         self.progress['count_total'] += num_items
         self.progress['details'][item_type]["items_left"] = num_items
         self.progress['details'][item_type]["items_total"] = num_items
+        self.progress['details'][item_type]["total_count"] = num_items
         self.progress['details'][item_type]["num_success"] = 0
         self.progress['details'][item_type]["num_error"] = 0
 
@@ -134,7 +135,7 @@ class ExporterReport(object):
     rpm = "Exporting rpms"
     comps = "Exporting packagegroups metadata"
     distribution = "Exporting Distribution files"
-    errata = "Exporting errata metadata"
-    custom = "exporting custom metadata files"
+    errata = "Exporting errata "
+    custom = "Exporting custom metadata files"
     start  = "Starting"
     done = "Finished"
