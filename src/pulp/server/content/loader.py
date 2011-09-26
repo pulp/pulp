@@ -589,7 +589,7 @@ def _check_path(path):
     """
     if os.access(path, os.F_OK | os.R_OK):
         return
-    raise ValueError(_('Path not found: %(p)s') % {'p': path})
+    raise ValueError(_('Path not found or unreadable: %(p)s') % {'p': path})
 
 
 def _read_content(file_name):
