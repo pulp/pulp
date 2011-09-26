@@ -16,12 +16,12 @@ Contains the definitions for all classes related to the importer's API for
 interacting with the Pulp server during a repo sync.
 """
 
-from gettext import gettext as _
+import copy
 import logging
-import os
 import sys
+from gettext import gettext as _
 
-from pulp.server.constants import LOCAL_STORAGE
+from pulp.server.managers.content.exception import ContentUnitNotFound
 
 # -- constants ---------------------------------------------------------------
 
@@ -192,14 +192,17 @@ class RepoSyncConduit:
                          performed on the data included here
         @type  custom_unit_data: dict
         """
-        unit_ids = self.__content_query_manager.get_content_unit_ids(type_id, [unit_key])[0]
-        if len(unit_ids) != 1:
-            # TODO raise an appropriate error
-            pass
-        consolidated_data = {}
-        consolidated_data.update(standard_unit_data)
-        consolidated_data.update(custom_unit_data)
-        self.__content_manager.add_content_unit(type_id, unit_ids[0], consolidated_data)
+        unit_id = None
+        try:
+            unit = self.__content_query_manager.get_content_unit_by_keys_dict(type_id, unit_key)
+            unit_id = unit['_id']
+            self.__content_manager.update_content_unit(type_id, unit_id, custom_unit_data)
+        except ContentUnitNotFound:
+            consolidated_data = copy.copy(standard_unit_data)
+            consolidated_data.update(custom_unit_data)
+            unit_id = consolidated_data.get('_id', None)
+            unit_id = self.__content_manager.add_content_unit(type_id, unit_id, consolidated_data)
+        return unit_id
 
     def associate_content_unit(self, type_id, unit_id):
         """
