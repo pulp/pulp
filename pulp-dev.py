@@ -91,7 +91,7 @@ def parse_cmdline():
 
     parser.set_defaults(install=False,
                         uninstall=False,
-                        debug=False)
+                        debug=True)
 
     opts, args = parser.parse_args()
 
