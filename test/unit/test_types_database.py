@@ -230,6 +230,34 @@ class TypesDatabaseTests(testutil.PulpTest):
         self.assertTrue(names is not None)
         self.assertEqual(0, len(names))
 
+    def test_all_type_ids(self):
+        """
+        Tests listing all type IDs.
+        """
+
+        # Setup
+        types_db._create_or_update_type(TypeDefinition('a', 'A', 'A', [], [], []))
+        types_db._create_or_update_type(TypeDefinition('b', 'B', 'B', [], [], []))
+
+        # Test
+        type_ids = types_db.all_type_ids()
+
+        # Verify
+        self.assertEqual(2, len(type_ids))
+
+    def test_all_type_ids_no_entries(self):
+        """
+        Tests that an empty list (not None) is returned when there are no types.
+        """
+
+        # Test
+        type_ids = types_db.all_type_ids()
+
+        # Verify
+        self.assertTrue(type_ids is not None)
+        self.assertTrue(isinstance(type_ids, list))
+        self.assertEqual(0, len(type_ids))
+
     def test_all_type_definitions(self):
         """
         Tests retrieving all type definitions from the database.

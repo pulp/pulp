@@ -168,6 +168,18 @@ def type_units_collection(type_id):
     return collection
 
 
+def all_type_ids():
+    """
+    @return: list of IDs for all types currently in the database; empty list
+             if there are no IDs in the database
+    @rtype:  list of str
+    """
+
+    collection = ContentType.get_collection()
+    type_ids = list(collection.find(fields={'id' : 1}))
+
+    return type_ids
+
 def all_type_collection_names():
     """
     @return: list of collection names for all types currently in the database
