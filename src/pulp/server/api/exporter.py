@@ -24,13 +24,17 @@ log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
 
-def export(repoid, target_directory, generate_isos=False, overwrite=False, timeout=None):
+def export(repoid, target_directory, generate_isos=False, overwrite=False):
     """
     Run a repo export asynchronously.
     @param repoid: repository id
     @type repoid: string
     @param target_directory: target directory where the content is exported
     @type target_directory: string
+    @param generate_isos: flag to enable iso generation on exported content
+    @type generate_isos: boolean
+    @param overwrite: flag to enable content overwrite at the target directory
+    @type generate_isos: boolean
     @rtype pulp.server.tasking.task or None
     @return on success a task object is returned
             on failure None is returned
@@ -46,8 +50,7 @@ def export(repoid, target_directory, generate_isos=False, overwrite=False, timeo
     task = run_async(_export,
                         [repo, target_directory],
                         {'generate_isos': generate_isos,
-                         'overwrite':overwrite},
-                        timeout=timeout)
+                         'overwrite':overwrite},)
     if not task:
         log.error("Unable to create repo._export task for [%s]" % repoid)
         return task
@@ -57,14 +60,11 @@ def export(repoid, target_directory, generate_isos=False, overwrite=False, timeo
 def _export(repo, target_directory, generate_isos=False, overwrite=False, progress_callback=None):
     """
     Run a repo export asynchronously.
-    @param repo: repository object
-    @type repo: Repo object
-    @param target_directory: target directory where the content is exported
-    @type target_directory: string
     """
     if repo.has_key("sync_in_progress") and repo["sync_in_progress"]:
         raise ConflictingOperationException(_('Sync for repo [%s] in progress; Cannot schedule an export ') % repo['id'])
-    export_obj = ExportController(repo, target_directory, generate_isos, overwrite, progress_callback=progress_callback)
+    export_obj = ExportController(repo, target_directory, generate_isos,
+                                  overwrite=overwrite, progress_callback=progress_callback)
     export_obj.perform_export()
 
 def list_exports(id):

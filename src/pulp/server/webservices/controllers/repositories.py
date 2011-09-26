@@ -647,43 +647,6 @@ class RepositoryActions(JSONController):
     # XXX hack to make the web services unit tests work
     _sync = sync
 
-    def export(self, id):
-        """
-        [[wiki]]
-        title: Repository Content Export
-        description: Export the repository's content into target directory from its source.
-        method: POST
-        path: /repositories/<id>/export/
-        permission: EXECUTE
-        success response: 202 Accepted
-        failure response: 404 Not Found if the id does not match a repository
-                          406 Not Acceptable if the repository does not have a source
-                          409 Conflict if a export is already in progress for the repository
-        return: a Task object
-        parameters:
-         * target_location, str, target location on the server filesystem where the content needs to be exported
-         * generate_isos?, boolean, wrap the exported content into iso image files.
-         * overwrite?, boolean, overwrite the content in target location if not empty
-        """
-        if api.repository(id, default_fields) is None:
-           return self.not_found('A repository with the id, %s, does not exist' % id)
-        export_params = self.params()
-        target_location = export_params.get('target_location', None)
-        generate_isos = export_params.get('generate_isos', False)
-        overwrite = export_params.get('overwrite', False)
-        # Check for valid target_location values
-        try:
-            exporter.validate_target_path(target_dir=target_location, overwrite=overwrite)
-        except TargetExistsException:
-            return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
-        except ExportException, ee:
-            raise PulpException(str(ee))
-        task = exporter.export(id, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite)
-        if not task:
-            return self.conflict('Export already in process for repo [%s]' % id)
-        task_info = self._task_to_dict(task)
-        return self.accepted(task_info)
-
     def generate_metadata(self, id):
         """
         [[wiki]]
@@ -1382,6 +1345,44 @@ class RepositoryActions(JSONController):
         """
         data = self.params()
         return self.ok(api.publish(id, bool(data['state'])))
+
+
+    def export(self, id):
+        """
+        [[wiki]]
+        title: Repository Content Export
+        description: Export the repository's content into target directory from its source.
+        method: POST
+        path: /repositories/<id>/export/
+        permission: EXECUTE
+        success response: 202 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+                          406 Not Acceptable if the repository does not have a source
+                          409 Conflict if a export is already in progress for the repository
+        return: a Task object
+        parameters:
+         * target_location, str, target location on the server filesystem where the content needs to be exported
+         * generate_isos?, boolean, wrap the exported content into iso image files.
+         * overwrite?, boolean, overwrite the content in target location if not empty
+        """
+        if api.repository(id, default_fields) is None:
+           return self.not_found('A repository with the id, %s, does not exist' % id)
+        export_params = self.params()
+        target_location = export_params.get('target_location', None)
+        generate_isos = export_params.get('generate_isos', False)
+        overwrite = export_params.get('overwrite', False)
+        # Check for valid target_location values
+        try:
+            exporter.validate_target_path(target_dir=target_location, overwrite=overwrite)
+        except TargetExistsException:
+            return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
+        except ExportException, ee:
+            raise PulpException(str(ee))
+        task = exporter.export(id, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite)
+        if not task:
+            return self.conflict('Export already in process for repo [%s]' % id)
+        task_info = self._task_to_dict(task)
+        return self.accepted(task_info)
 
     @error_handler
     @auth_required(EXECUTE)

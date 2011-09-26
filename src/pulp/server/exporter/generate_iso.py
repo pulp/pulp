@@ -31,13 +31,11 @@ class GenerateIsos(object):
     """
      Generate iso image files for the exported content.
     """
-    def __init__(self, target_directory, image_type, output_directory, prefix="pulp-repos", progress=None):
+    def __init__(self, target_directory, output_directory, prefix="pulp-repos", progress=None):
         """
         generate isos
         @param target_directory: target content directory to be wrapped into isos
         @type target_directory: str
-        @param image_type: iso image type eg: cd or dvd
-        @type image_type: str
         @param output_directory: destination directory where isos are written
         @type output_directory: str
         @param prefix: prefix for the iso names; usually includes a repo id
@@ -46,30 +44,29 @@ class GenerateIsos(object):
         @type progress: dict
         """
         self.target_dir = target_directory
-        self.type = image_type
         self.output_dir = output_directory
         self.progress = progress
         self.prefix = prefix
 
-    def get_image_type_size(self):
-        if self.type.lower() not in VALID_IMAGE_TYPES:
-            # not a valid image type
-            raise
-        return VALID_IMAGE_TYPES[self.type]
+    def get_image_type_size(self, total_size):
+        if total_size < VALID_IMAGE_TYPES['cd']:
+            return VALID_IMAGE_TYPES['cd']
+        else:
+            return VALID_IMAGE_TYPES['dvd']
 
     def run(self, progress_callback=None):
         """
          get the filelists with sizes and perform iso creation
         """
-        # media size
-        img_size = self.get_image_type_size()
         # get size and filelists of the target directory
         filelist, total_dir_size = list_dir_with_size(self.target_dir)
         log.debug("Total target directory size to create isos %s" % total_dir_size)
+        # media size
+        img_size = self.get_image_type_size(total_dir_size)
         # compute no.of images it takes per media image size
         imgcount = int(math.ceil(total_dir_size/float(img_size)))
         # get the filelists per image by size
-        imgs = self.compute_image_files(filelist, imgcount)
+        imgs = self.compute_image_files(filelist, imgcount, img_size)
         for i in range(imgcount):
             msg = "Generating iso images for exported content (%s/%s)" % (i+1, imgcount)
             log.info(msg)
@@ -87,7 +84,7 @@ class GenerateIsos(object):
             os.unlink(pathfiles)
         return self.progress
 
-    def compute_image_files(self, filelist, imgcount):
+    def compute_image_files(self, filelist, imgcount, imgsize):
         """
         compute file lists to be written to each media image
         by comparing the cumulative size
@@ -99,7 +96,7 @@ class GenerateIsos(object):
             img = []
             sz = 0
             for filepath, size in filelist:
-                if sz + size > self.get_image_type_size():
+                if sz + size > imgsize:
                     # slice the list to process new
                     filelist = filelist[filelist.index((filepath, size)):]
                     break
@@ -131,6 +128,8 @@ class GenerateIsos(object):
         return pathfiles_fd, pathfiles
 
 def get_iso_filename(output_dir, prefix, count):
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     ctime = datetime.datetime.now()
     return "%s/%s-%s-%02d.iso" % (output_dir, prefix, ctime.strftime("%Y%m%d"), count)
 
@@ -167,12 +166,11 @@ def generate_checksum_manifest(iso_dir_path):
 
 if __name__== '__main__':
     import sys
-    if not len(sys.argv) == 4:
-        print "USAGE: python make_iso.py <target_dir> <image_type> <output_dir> "
+    if not len(sys.argv) == 3:
+        print "USAGE: python make_iso.py <target_dir> <output_dir> "
         sys.exit(0)
     target_dir = sys.argv[1]
-    image_type = sys.argv[2]
-    output_dir = sys.argv[3]
-    print target_dir, image_type, output_dir
-    isogen = GenerateIsos(target_dir, image_type=image_type, output_directory=output_dir)
+    output_dir = sys.argv[2]
+    print target_dir, output_dir
+    isogen = GenerateIsos(target_dir, output_directory=output_dir)
     isogen.run()

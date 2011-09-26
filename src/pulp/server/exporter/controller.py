@@ -27,13 +27,12 @@ class ExportController(object):
     """
      Pulp Exporter controller class
     """
-    def __init__(self, repo_object, target_directory, generate_iso=False, save_iso_directory="/tmp/" ,
+    def __init__(self, repo_object, target_directory, generate_iso=False,
                  overwrite=False, progress_callback=None):
         self.repo = repo_object
         self.target_dir = target_directory
         self.overwrite = overwrite
         self.generate_iso = generate_iso
-        self.save_iso_directory = save_iso_directory
         self.progress_callback = progress_callback
         self.progress = {
             'status': 'running',
@@ -92,9 +91,10 @@ class ExportController(object):
         """
         if not self.generate_iso:
             return
+        save_iso_directory = os.path.join(self.target_dir, 'isos')
         try:
-            gen_isos = GenerateIsos(self.target_dir, image_type="dvd", output_directory=self.save_iso_directory,
-                                    prefix='pulp-%s' % self.repo['id'])
+            gen_isos = GenerateIsos(self.target_dir, output_directory=save_iso_directory,
+                                    prefix='pulp-%s' % self.repo['id'], progress=self.progress)
             gen_isos.run(progress_callback=self.progress_callback)
         except Exception, e:
             log.error(str(e))
