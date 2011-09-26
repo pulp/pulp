@@ -176,7 +176,7 @@ class ListRepositories(JSONController):
 urls = (
     '/', 'ListRepositories',
     '/([^/]+)/$', 'RepoCreateDelete',
-    '/([^/]+)/importer/$', 'RepoImporters',
+    '/([^/]+)/importers/$', 'RepoImporters',
     '/([^/]+)/distributors/$', 'RepoDistributor',
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributors',
     '/([^/]+)/sync/$', 'RepoSync',
