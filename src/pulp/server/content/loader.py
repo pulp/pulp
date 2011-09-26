@@ -176,133 +176,133 @@ def list_profilers():
     return sorted(_LOADER.get_loaded_profilers().keys())
 
 
-def list_distributor_types(name):
+def list_distributor_types(id):
     """
-    List the supported distribution types for the given distributor name.
-    @param name: name of the distributor
-    @type name: str
+    List the supported distribution types for the given distributor id.
+    @param id: id of the distributor
+    @type id: str
     @return: tuple of types supported by the distributor
     @rtype: tuple
-    @raise: L{PluginNotFound} if no distributor corresponds to the name
+    @raise: L{PluginNotFound} if no distributor corresponds to the id
     """
     assert _is_initialized()
-    types = _LOADER.get_loaded_distributors().get(name, None)
+    types = _LOADER.get_loaded_distributors().get(id, None)
     if types is None:
-        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
+        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
     return types
 
 
-def list_importer_types(name):
+def list_importer_types(id):
     """
-    List the supported content types for the given importer name.
-    @param name: name of the importer
-    @type name: str
+    List the supported content types for the given importer id.
+    @param id: id of the importer
+    @type id: str
     @return: tuple of types supported by the importer
     @rtype: tuple
-    @raise: L{PluginNotFound} if no importer corresponds to the name
+    @raise: L{PluginNotFound} if no importer corresponds to the id
     """
     assert _is_initialized()
-    types = _LOADER.get_loaded_importers().get(name, None)
+    types = _LOADER.get_loaded_importers().get(id, None)
     if types is None:
-        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
+        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
     return types
 
 
-def list_profiler_types(name):
+def list_profiler_types(id):
     """
-    List the supported profile types for the given profiler name.
-    @param name: name of the profiler
-    @type name: str
+    List the supported profile types for the given profiler id.
+    @param id: id of the profiler
+    @type id: str
     @return: tuple of types supported by the profiler
     @rtype: tuple
-    @raise: L{PluginNotFound} if no profiler corresponds to the name
+    @raise: L{PluginNotFound} if no profiler corresponds to the id
     """
     assert _is_initialized()
-    types = _LOADER.get_loaded_profilers().get(name, None)
+    types = _LOADER.get_loaded_profilers().get(id, None)
     if types is None:
-        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
+        raise PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
     return types
 
 
-def is_valid_distributor(name):
+def is_valid_distributor(id):
     """
-    Check to see that a distributor exists for the given name.
-    @param name: name of the distributor
-    @type name: str
+    Check to see that a distributor exists for the given id.
+    @param id: id of the distributor
+    @type id: str
     @return: True if the distributor exists, False otherwise
     @rtype: bool
     """
     assert _is_initialized()
     plugins = _LOADER.get_loaded_distributors()
-    return name in plugins
+    return id in plugins
 
 
-def is_valid_importer(name):
+def is_valid_importer(id):
     """
-    Check to see that a importer exists for the given name.
-    @param name: name of the importer
-    @type name: str
+    Check to see that a importer exists for the given id.
+    @param id: id of the importer
+    @type id: str
     @return: True if the importer exists, False otherwise
     @rtype: bool
     """
     assert _is_initialized()
     plugins = _LOADER.get_loaded_importers()
-    return name in plugins
+    return id in plugins
 
 
-def is_valid_profiler(name):
+def is_valid_profiler(id):
     """
-    Check to see that a profiler exists for the given name.
-    @param name: name of the profiler
-    @type name: str
+    Check to see that a profiler exists for the given id.
+    @param id: id of the profiler
+    @type id: str
     @return: True if the profiler exists, False otherwise
     @rtype: bool
     """
     assert _is_initialized()
     plugins = _LOADER.get_loaded_profilers()
-    return name in plugins
+    return id in plugins
 
 # plugin api
 
-def get_distributor_by_name(name):
+def get_distributor_by_id(id):
     """
-    Get a distributor instance that corresponds to the given name.
-    @param name: name of the distributor
-    @type name: str
+    Get a distributor instance that corresponds to the given id.
+    @param id: id of the distributor
+    @type id: str
     @return: tuple of L{Distributor} instance and dictionary configuration
     @rtype: tuple (L{Distributor}, dict)
-    @raise: L{PluginNotFound} if no distributor corresponds to the name
+    @raise: L{PluginNotFound} if no distributor corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _LOADER.get_distributor_by_name(name)
+    cls, cfg = _LOADER.get_distributor_by_id(id)
     return (cls(), cfg)
 
 
-def get_importer_by_name(name):
+def get_importer_by_id(id):
     """
-    Get an importer instance that corresponds to the given name.
-    @param name: name of the importer
-    @type name: str
+    Get an importer instance that corresponds to the given id.
+    @param id: id of the importer
+    @type id: str
     @return: tuple of L{Importer} instance and dictionary configuration
     @rtype: tuple (L{Importer}, dict)
-    @raise: L{PluginNotFound} if no importer corresponds to the name
+    @raise: L{PluginNotFound} if no importer corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _LOADER.get_importer_by_name(name)
+    cls, cfg = _LOADER.get_importer_by_id(id)
     return (cls(), cfg)
 
 
-def get_profiler_by_name(name):
+def get_profiler_by_id(id):
     """
-    Get a profiler instance that corresponds to the given name.
-    @param name: name of the profiler
-    @type name: str
+    Get a profiler instance that corresponds to the given id.
+    @param id: id of the profiler
+    @type id: str
     @return: tuple of L{Profiler} instance and dictionary configuration
     @rtype: tuple (L{Profiler}, dict)
-    @raise: L{PluginNotFound} if no profiler corresponds to the name
+    @raise: L{PluginNotFound} if no profiler corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _LOADER.get_profiler_by_name(name)
+    cls, cfg = _LOADER.get_profiler_by_id(id)
     return (cls(), cfg)
 
 # loader class -----------------------------------------------------------------
@@ -320,41 +320,41 @@ class PluginLoader(object):
 
     # plugin management api
 
-    def add_distributor(self, name, cls, cfg):
+    def add_distributor(self, id, cls, cfg):
         """
-        @param name: distributor name
-        @type name: str
+        @param id: distributor id
+        @type id: str
         @param cls: distributor class
         @type cls: type
         @param cfg: distributor configuration
         @type cfg: dict
         """
         types = _get_plugin_types(cls)
-        self.__distributors.add_plugin(name, cls, cfg, types)
+        self.__distributors.add_plugin(id, cls, cfg, types)
 
-    def add_importer(self, name, cls, cfg):
+    def add_importer(self, id, cls, cfg):
         """
-        @param name: importer name
-        @type name: str
+        @param id: importer id
+        @type id: str
         @param cls: importer class
         @type cls: type
         @param cfg: importer configuration
         @type cfg: dict
         """
         types = _get_plugin_types(cls)
-        self.__importers.add_plugin(name, cls, cfg, types)
+        self.__importers.add_plugin(id, cls, cfg, types)
 
-    def add_profiler(self, name, cls, cfg):
+    def add_profiler(self, id, cls, cfg):
         """
-        @param name: profiler name
-        @type name: str
+        @param id: profiler id
+        @type id: str
         @param cls: profiler class
         @type cls: type
         @param cfg: profiler configuration
         @type cfg: dict
         """
         types = _get_plugin_types(cls)
-        self.__profilers.add_plugin(name, cls, cfg, types)
+        self.__profilers.add_plugin(id, cls, cfg, types)
 
     def load_distributors_from_path(self, path):
         """
@@ -382,37 +382,37 @@ class PluginLoader(object):
         _check_path(path)
         _LOG.warn(_('Profilers load called, but not implemented'))
 
-    def remove_distributor(self, name):
+    def remove_distributor(self, id):
         """
-        @param name: distributor name
-        @type name: str
+        @param id: distributor id
+        @type id: str
         """
-        self.__distributors.remove_plugin(name)
+        self.__distributors.remove_plugin(id)
 
-    def remove_importer(self, name):
+    def remove_importer(self, id):
         """
-        @param name: importer name
-        @type name: str
+        @param id: importer id
+        @type id: str
         """
-        self.__importers.remove_plugin(name)
+        self.__importers.remove_plugin(id)
 
-    def remove_profiler(self, name):
+    def remove_profiler(self, id):
         """
-        @param name: profiler name
-        @type name: str
+        @param id: profiler id
+        @type id: str
         """
-        self.__profilers.remove_plugin(name)
+        self.__profilers.remove_plugin(id)
 
     # plugin lookup api
 
-    def get_distributor_by_name(self, name):
+    def get_distributor_by_name(self, id):
         """
-        @param name: distributor name
-        @type name: str
+        @param id: distributor id
+        @type id: str
         @return: tuple of distributor (class, configuration)
         @rtype: tuple (L{Distributor}, dict)
         """
-        return self.__distributors.get_plugin_by_name(name)
+        return self.__distributors.get_plugin_by_id(id)
 
     def get_distributor_by_type(self, distribution_type):
         """
@@ -423,14 +423,14 @@ class PluginLoader(object):
         """
         return self.__distributors.get_plugin_by_type(distribution_type)
 
-    def get_importer_by_name(self, name):
+    def get_importer_by_name(self, id):
         """
-        @param name: importer name
-        @type name: str
+        @param id: importer id
+        @type id: str
         @return: tuple of importer (class, configuration)
         @rtype: tuple (L{Importer}, dict)
         """
-        return self.__importers.get_plugin_by_name(name)
+        return self.__importers.get_plugin_by_id(id)
 
     def get_importer_by_type(self, content_type):
         """
@@ -441,14 +441,14 @@ class PluginLoader(object):
         """
         return self.__importers.get_plugin_by_type(content_type)
 
-    def get_profiler_by_name(self, name):
+    def get_profiler_by_name(self, id):
         """
-        @param name: profiler name
-        @type name: str
+        @param id: profiler id
+        @type id: str
         @return: tuple of profiler (class, configuration)
         @rtype: tuple (L{Profiler}, dict)
         """
-        return self.__profilers.get_plugin_by_name(name)
+        return self.__profilers.get_plugin_by_id(id)
 
     def get_profiler_by_type(self, profile_type):
         """
@@ -463,7 +463,7 @@ class PluginLoader(object):
 
     def get_loaded_distributors(self):
         """
-        @return: dictionary of distributor name: tuple of types
+        @return: dictionary of distributor id: tuple of types
         @rtype: dict {str: tuple}
         """
         # return a copy to avoid persisting external changes
@@ -471,7 +471,7 @@ class PluginLoader(object):
 
     def get_loaded_importers(self):
         """
-        @return: dictionary of importer name: tuple of types
+        @return: dictionary of importer id: tuple of types
         @rtype: dict {str: tuple}
         """
         # return a copy to avoid persisting external changes
@@ -479,7 +479,7 @@ class PluginLoader(object):
 
     def get_loaded_profilers(self):
         """
-        @return: dictionary of profiler name: tuple of types
+        @return: dictionary of profiler id: tuple of types
         @rtype: dict {str: tuple}
         """
         # return a copy to avoid persisting external changes
@@ -506,48 +506,48 @@ class _PluginMap(object):
         @rtype: list
         """
         conflicts = []
-        for name, types in self.types.items():
+        for id, types in self.types.items():
             for type_ in types:
                 if type_ not in new_types:
                     continue
-                conflicts.append((name, type_))
+                conflicts.append((id, type_))
         return conflicts
 
-    def add_plugin(self, name, cls, cfg, types=()):
+    def add_plugin(self, id, cls, cfg, types=()):
         """
-        @type name: str
+        @type id: str
         @type cls: type
         @type cfg: dict
         @type types: list or tuple
         """
         if not _is_enabled(cfg):
-            _LOG.info(_('Skipping plugin %(p)s: not enabled') % {'p': name})
+            _LOG.info(_('Skipping plugin %(p)s: not enabled') % {'p': id})
             return
-        if self.has_plugin(name):
-            msg = _('Plugin with same name already exists: %(n)s')
-            raise ConflictingPluginName(msg % {'n': name})
+        if self.has_plugin(id):
+            msg = _('Plugin with same id already exists: %(n)s')
+            raise ConflictingPluginName(msg % {'n': id})
         conflicts = self._find_conclicting_types(types)
         if conflicts:
             msg = _('Plugin %(n)s conflicts with the follwing plugins: %(c)s')
-            c = '; '.join('name: %s, type: %s' % (n, t) for n, t in conflicts)
-            raise ConflictingPluginTypes(msg % {'n': name, 'c': c})
-        self.plugins[name] = cls
-        self.configs[name] = cfg
-        self.types[name] = tuple(types)
+            c = '; '.join('id: %s, type: %s' % (n, t) for n, t in conflicts)
+            raise ConflictingPluginTypes(msg % {'n': id, 'c': c})
+        self.plugins[id] = cls
+        self.configs[id] = cfg
+        self.types[id] = tuple(types)
         _LOG.info(_('Loaded plugin %(p)s for types: %(t)s') %
-                  {'p': name, 't': ','.join(types)})
+                  {'p': id, 't': ','.join(types)})
         _LOG.debug('class: %s; config: %s' % (cls.__name__, pformat(cfg)))
 
-    def get_plugin_by_name(self, name):
+    def get_plugin_by_id(self, id):
         """
-        @type name: str
+        @type id: str
         @rtype: tuple (type, dict)
         @raises L{PluginNotFound}
         """
-        if not self.has_plugin(name):
-            raise PluginNotFound(_('No plugin found: %(n)s') % {'n': name})
+        if not self.has_plugin(id):
+            raise PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
         # return a deepcopy of the config to avoid persisting external changes
-        return (self.plugins[name], copy.deepcopy(self.configs[name]))
+        return (self.plugins[id], copy.deepcopy(self.configs[id]))
 
     def get_plugin_by_type(self, type_):
         """
@@ -555,28 +555,28 @@ class _PluginMap(object):
         @rtype: tuple (type, dict)
         @raises L{PluginNotFound}
         """
-        for name, types in self.types.items():
+        for id, types in self.types.items():
             if type_ not in types:
                 continue
-            return self.get_plugin_by_name(name)
+            return self.get_plugin_by_id(id)
         raise PluginNotFound(_('No plugin found for: %(t)s') % {'t': type_})
 
-    def has_plugin(self, name):
+    def has_plugin(self, id):
         """
-        @type name: str
+        @type id: str
         @rtype: bool
         """
-        return name in self.plugins
+        return id in self.plugins
 
-    def remove_plugin(self, name):
+    def remove_plugin(self, id):
         """
-        @type name: str
+        @type id: str
         """
-        if not self.has_plugin(name):
+        if not self.has_plugin(id):
             return
-        self.plugins.pop(name)
-        self.configs.pop(name)
-        self.types.pop(name)
+        self.plugins.pop(id)
+        self.configs.pop(id)
+        self.types.pop(id)
 
 # utility methods --------------------------------------------------------------
 
@@ -825,7 +825,7 @@ def _load_plugins_from_path(path, base_class, plugin_map):
     plugin_dirs = _get_plugin_dirs(path)
     for dir_ in plugin_dirs:
         cls, cfg = _load_plugin(dir_, base_class, base_class.__name__.lower())
-        name = _get_plugin_metadata_field(cls, 'name', cls.__name__)
+        id = _get_plugin_metadata_field(cls, 'id', cls.__name__)
         types = _get_plugin_types(cls)
-        plugin_map.add_plugin(name, cls, cfg, types)
+        plugin_map.add_plugin(id, cls, cfg, types)
 

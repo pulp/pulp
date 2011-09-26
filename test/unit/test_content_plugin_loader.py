@@ -161,7 +161,7 @@ class PluginMapTests(testutil.PulpTest):
     def test_get_plugin_by_name(self):
         name = 'excellent'
         self.plugin_map.add_plugin(name, ExcellentImporter, {})
-        cls = self.plugin_map.get_plugin_by_name(name)[0]
+        cls = self.plugin_map.get_plugin_by_id(name)[0]
         self.assertTrue(cls is ExcellentImporter)
 
     def test_get_plugin_by_type(self):
@@ -172,7 +172,7 @@ class PluginMapTests(testutil.PulpTest):
 
     def test_name_not_found(self):
         self.assertRaises(loader.PluginNotFound,
-                          self.plugin_map.get_plugin_by_name,
+                          self.plugin_map.get_plugin_by_id,
                           'bogus')
 
     def test_type_not_found(self):

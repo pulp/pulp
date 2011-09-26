@@ -131,7 +131,7 @@ class RepoSyncManager:
             raise SyncInProgress(repo_id)
 
         try:
-            importer_instance, importer_config = plugin_loader.get_importer_by_name(repo_importer['importer_type_id'])
+            importer_instance, importer_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
         except plugin_loader.PluginNotFound:
             raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
 

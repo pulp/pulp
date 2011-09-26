@@ -239,7 +239,7 @@ class RepoManager:
         if not plugin_loader.is_valid_importer(importer_type_id):
             raise MissingImporter(importer_type_id)
 
-        importer_instance, plugin_config = plugin_loader.get_importer_by_name(importer_type_id)
+        importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
         try:
             valid_config = importer_instance.validate_config(repo, importer_config)
         except Exception:
@@ -317,7 +317,7 @@ class RepoManager:
             if not is_distributor_id_valid(distributor_id):
                 raise InvalidDistributorId(distributor_id)
 
-        distributor_instance, plugin_config = plugin_loader.get_distributor_by_name(distributor_type_id)
+        distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
         try:
             valid_config = distributor_instance.validate_config(repo, distributor_config)
         except Exception:
@@ -326,7 +326,7 @@ class RepoManager:
 
         if not valid_config:
             raise InvalidDistributorConfiguration()
-        
+
         # If a distributor already exists at that ID, remove it from the database
         # as it will be replaced in this method
         existing_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})

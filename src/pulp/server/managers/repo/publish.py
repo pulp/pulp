@@ -132,7 +132,7 @@ class RepoPublishManager:
 
         try:
             distributor_instance, distributor_config = \
-                plugin_loader.get_distributor_by_name(repo_distributor['distributor_type_id'])
+                plugin_loader.get_distributor_by_id(repo_distributor['distributor_type_id'])
         except plugin_loader.PluginNotFound:
             raise MissingDistributorPlugin(repo_id), None, sys.exc_info()[2]
 
