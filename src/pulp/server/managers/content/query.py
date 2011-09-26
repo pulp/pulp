@@ -13,6 +13,7 @@
 
 import os
 from gettext import gettext as _
+from pprint import pformat
 
 from pulp.server.constants import LOCAL_STORAGE
 from pulp.server.content.types import database as content_types_db
@@ -84,7 +85,8 @@ class ContentQueryManager(object):
                                                       (unit_keys_dict,),
                                                       model_fields)
         if not units:
-            raise ContentUnitNotFound()
+            raise ContentUnitNotFound(_('No content unit for keys: %(k)s') %
+                                      {'k': pformat(unit_keys_dict)})
         return units[0]
 
     def get_content_unit_by_id(self, content_type, unit_id, model_fields=None):
@@ -108,7 +110,8 @@ class ContentQueryManager(object):
                                                (unit_id,),
                                                model_fields)
         if not units:
-            raise ContentUnitNotFound()
+            raise ContentUnitNotFound(_('No content unit found for: %(i)') %
+                                      {'i': unit_id})
         return units[0]
 
     def get_multiple_units_by_keys_dicts(self, content_type, unit_keys_dicts, model_fields=None):
@@ -166,7 +169,8 @@ class ContentQueryManager(object):
         """
         key_fields = content_types_db.type_units_unique_indexes(content_type)
         if key_fields is None:
-            raise ContentTypeNotFound()
+            raise ContentTypeNotFound(_('No content type found: %(c)') %
+                                      {'c': content_type})
         all_fields = ['_id']
         _flatten_keys(all_fields, key_fields)
         collection = content_types_db.type_units_collection(content_type)
@@ -228,7 +232,7 @@ class ContentQueryManager(object):
         # hand it in and its presence breaks makedirs
         if relative_path.startswith('/'):
             relative_path = relative_path[1:]
-        
+
         unit_path = os.path.join(self.get_root_content_dir(content_type), relative_path)
         unit_dir = os.path.dirname(unit_path)
         if not os.path.exists(unit_dir):
