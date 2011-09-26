@@ -322,7 +322,7 @@ def _validate_distribution():
     @return: number of errors found during validation
     """
     objectdb = Distribution.get_collection()
-    reference = model.Distribution(u'', u'', u'', [])
+    reference = model.Distribution(u'', u'', u'', None, None, None, [])
     return _validate_model(model.Distribution.__name__, objectdb, reference)
 
 

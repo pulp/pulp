@@ -12,6 +12,7 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+import ConfigParser
 
 import gzip
 import logging
@@ -293,10 +294,22 @@ class BaseSynchronizer(object):
         if not os.path.exists(images_dir):
             log.info("No image files to import to repo..")
             return
+        # compute and import repo image files
+        treecfg = None
+        for tree_info_name in ['treeinfo', '.treeinfo']:
+            treecfg = os.path.join(repodir, tree_info_name)
+            if os.path.exists(treecfg):
+                break
+            else:
+                treecfg = None
+        if not treecfg:
+            return
+        treeinfo = parse_treeinfo(treecfg)
         # Handle distributions that are part of repo syncs
         files = pulp.server.util.listdir(images_dir) or []
         id = description = "ks-" + repo['id'] + "-" + repo['arch']
-        distro = self.distro_api.create(id, description, repo["relative_path"], files)
+        distro = self.distro_api.create(id, description, repo["relative_path"], family=treeinfo['family'],
+                                        variant=treeinfo['variant'], version=treeinfo['version'], files=files)
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
             log.info("Created a distributionID %s" % distro['id'])
@@ -1184,3 +1197,23 @@ class FileSynchronizer(BaseSynchronizer):
             log.info("Stop sync is being issued")
             self.file_repo_grinder.stop(block=False)
 
+def parse_treeinfo(treecfg):
+    """
+     Parse distribution treeinfo config and return general information
+    """
+    fields = ['family', 'variant', 'version',] # 'arch']
+    treeinfo_dict = dict(zip(fields, [None]*len(fields)))
+    cfgparser = ConfigParser.ConfigParser()
+    cfgparser.optionxform = str
+    try:
+        treecfg_fp = open(treecfg)
+        cfgparser.readfp(treecfg_fp)
+    except Exception, e:
+        log.info("Unable to read the tree info config.")
+        log.info(e)
+        return treeinfo_dict
+    if cfgparser.has_section('general'):
+        for field in fields:
+            treeinfo_dict[field] = cfgparser.get('general', field) or None
+    treecfg_fp.close()
+    return treeinfo_dict
