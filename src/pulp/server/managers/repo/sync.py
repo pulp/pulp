@@ -156,6 +156,9 @@ class RepoSyncManager:
             importer_instance.sync_repo(repo, conduit, importer_config, sync_config)
         except Exception:
             # I really wish python 2.4 supported except and finally together
+
+            # Reload the importer in case the plugin edits the scratchpad
+            repo_importer = importer_coll.find_one({'repo_id' : repo_id})
             repo_importer['sync_in_progress'] = False
             repo_importer['last_sync'] = _sync_finished_timestamp()
             importer_coll.save(repo_importer, safe=True)
@@ -163,6 +166,8 @@ class RepoSyncManager:
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
             raise RepoSyncException(repo_id), None, sys.exc_info()[2]
 
+        # Reload the importer in case the plugin edits the scratchpad
+        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
         repo_importer['sync_in_progress'] = False
         repo_importer['last_sync'] = _sync_finished_timestamp()
         importer_coll.save(repo_importer, safe=True)

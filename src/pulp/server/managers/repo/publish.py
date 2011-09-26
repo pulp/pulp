@@ -154,6 +154,8 @@ class RepoPublishManager:
             distributor_coll.save(repo_distributor, safe=True)
             distributor_instance.publish_repo(repo, conduit, distributor_config, publish_config)
         except Exception:
+            # Reload the distributor in case the scratchpad is set by the plugin
+            repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
             repo_distributor['publish_in_progress'] = False
             repo_distributor['last_publish'] = _publish_finished_timestamp()
             distributor_coll.save(repo_distributor, safe=True)
@@ -161,6 +163,8 @@ class RepoPublishManager:
             _LOG.exception(_('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
             raise RepoPublishException(repo_id), None, sys.exc_info()[2]
 
+        # Reload the distributor in case the scratchpad is set by the plugin
+        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         repo_distributor['publish_in_progress'] = False
         repo_distributor['last_publish'] = _publish_finished_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
