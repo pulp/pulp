@@ -192,7 +192,7 @@ class ContentQueryManager(object):
         collection = content_types_db.type_units_collection(content_type)
         spec = _build_muti_keys_spec(content_type, units_keys)
         fields = ['_id']
-        fields.append(units_keys[0].keys()) # requires assertion
+        fields.extend(units_keys[0].keys()) # requires assertion
         cursor = collection.find(spec, fields=fields)
         dicts = tuple(dict(d) for d in cursor)
         ids = tuple(d.pop('_id') for d in dicts)
