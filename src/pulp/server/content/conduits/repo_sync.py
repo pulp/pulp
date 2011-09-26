@@ -191,6 +191,8 @@ class RepoSyncConduit:
                          metadata for the content unit; no validation will be
                          performed on the data included here
         @type  custom_unit_data: dict
+        @return: unique unit id
+        @rtype: str
         """
         unit_id = None
         try:
