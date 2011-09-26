@@ -244,6 +244,8 @@ class TypesDatabaseTests(testutil.PulpTest):
 
         # Verify
         self.assertEqual(2, len(type_ids))
+        self.assertTrue('a' in type_ids)
+        self.assertTrue('b' in type_ids)
 
     def test_all_type_ids_no_entries(self):
         """

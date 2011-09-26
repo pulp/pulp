@@ -176,7 +176,8 @@ def all_type_ids():
     """
 
     collection = ContentType.get_collection()
-    type_ids = list(collection.find(fields={'id' : 1}))
+    type_id_son = list(collection.find(fields={'id' : 1}))
+    type_ids = [t['id'] for t in type_id_son]
 
     return type_ids
 
