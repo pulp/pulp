@@ -139,11 +139,11 @@ def finalize():
 def list_content_types():
     """
     List the supported content types.
-    @return: list of content types
-    @rtype: list
+    @return: list of content type IDs
+    @rtype: list of str
     """
     assert _is_initialized()
-    return database.all_type_collection_names()
+    return database.all_type_ids()
 
 
 def list_distributors():
@@ -658,7 +658,7 @@ def _validate_importers():
         for type_ in plugin_types:
             if type_ in supported_types:
                 continue
-            msg = _('Importer %(i)s: not type definition found for %(t)s')
+            msg = _('Importer %(i)s: no type definition found for %(t)s')
             raise InvalidImporter(msg % {'i': plugin_name, 't': type_})
 
 # plugin loading
