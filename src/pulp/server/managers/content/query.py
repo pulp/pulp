@@ -208,7 +208,7 @@ class ContentQueryManager(object):
         @rtype: str
         """
         # I'm partitioning the content on the file system based on content type
-        root = os.path.join(LOCAL_STORAGE, content_type)
+        root = os.path.join(LOCAL_STORAGE, 'contents', content_type)
         if not os.path.exists(root):
             os.makedirs(root)
         return root
