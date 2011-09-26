@@ -57,7 +57,7 @@ from pulp.server.content.plugins.$BASE_NAME import $BASE_TITLE
 class $PLUGIN_TITLE($BASE_TITLE):
     @classmethod
     def metadata(cls):
-        data = {'name': '$PLUGIN_NAME',
+        data = {'id': '$PLUGIN_NAME',
                 'types': $TYPE_LIST}
         return data
 ''')
@@ -215,7 +215,7 @@ class LoaderDirectOperationsTests(LoaderTest):
         types = WebDistributor.metadata()['types']
         self.loader.add_distributor(name, WebDistributor, {})
 
-        cls = self.loader.get_distributor_by_name(name)[0]
+        cls = self.loader.get_distributor_by_id(name)[0]
         self.assertTrue(cls is WebDistributor)
 
         cls = self.loader.get_distributor_by_type(types[0])[0]
@@ -229,7 +229,7 @@ class LoaderDirectOperationsTests(LoaderTest):
 
         self.loader.remove_distributor(name)
         self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_distributor_by_name,
+                          self.loader.get_distributor_by_id,
                           name)
 
     def test_importer(self):
@@ -237,7 +237,7 @@ class LoaderDirectOperationsTests(LoaderTest):
         types = ExcellentImporter.metadata()['types']
         self.loader.add_importer(name, ExcellentImporter, {})
 
-        cls = self.loader.get_importer_by_name(name)[0]
+        cls = self.loader.get_importer_by_id(name)[0]
         self.assertTrue(cls is ExcellentImporter)
 
         cls = self.loader.get_importer_by_type(types[0])[0]
@@ -248,7 +248,7 @@ class LoaderDirectOperationsTests(LoaderTest):
 
         self.loader.remove_importer(name)
         self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_importer_by_name,
+                          self.loader.get_importer_by_id,
                           name)
 
 
@@ -263,7 +263,7 @@ class LoaderFileSystemOperationsTests(LoaderTest):
                                        types)
         self.loader.load_distributors_from_path(distributors_root)
         try:
-            cls, cfg = self.loader.get_distributor_by_name('testdistributor')
+            cls, cfg = self.loader.get_distributor_by_id('testdistributor')
         except Exception, e:
             print 'plugin root: %s' % plugin_root
             print 'plugins: ',
@@ -304,13 +304,13 @@ class LoaderFileSystemOperationsTests(LoaderTest):
                          distributors_root_3)
         self.loader.load_distributors_from_path(distributors_root_1)
 
-        cls_1 = self.loader.get_distributor_by_name('foodistributor')[0]
+        cls_1 = self.loader.get_distributor_by_id('foodistributor')[0]
         self.assertTrue(issubclass(cls_1, Distributor))
 
         cls_2 = self.loader.get_distributor_by_type('bar')[0]
         self.assertTrue(issubclass(cls_2, Distributor))
 
-        cls_3 = self.loader.get_distributor_by_name('bazdistributor')[0]
+        cls_3 = self.loader.get_distributor_by_id('bazdistributor')[0]
         self.assertTrue(issubclass(cls_3, Distributor))
 
 
@@ -333,12 +333,12 @@ class LoaderFileSystemOperationsTests(LoaderTest):
         self.loader.load_distributors_from_path(distributors_root)
         self.loader.load_importers_from_path(importer_root_1)
 
-        distributor_cls = self.loader.get_distributor_by_name('mydistributor')[0]
+        distributor_cls = self.loader.get_distributor_by_id('mydistributor')[0]
         self.assertTrue(issubclass(distributor_cls, Distributor))
 
         importer_cls = self.loader.get_importer_by_type('test_importer')[0]
         self.assertEqual(importer_cls.__name__, 'EnabledImporter')
 
         self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_importer_by_name,
+                          self.loader.get_importer_by_id,
                           'disabledimporter')

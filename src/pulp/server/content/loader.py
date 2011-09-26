@@ -405,7 +405,7 @@ class PluginLoader(object):
 
     # plugin lookup api
 
-    def get_distributor_by_name(self, id):
+    def get_distributor_by_id(self, id):
         """
         @param id: distributor id
         @type id: str
@@ -423,7 +423,7 @@ class PluginLoader(object):
         """
         return self.__distributors.get_plugin_by_type(distribution_type)
 
-    def get_importer_by_name(self, id):
+    def get_importer_by_id(self, id):
         """
         @param id: importer id
         @type id: str
@@ -441,7 +441,7 @@ class PluginLoader(object):
         """
         return self.__importers.get_plugin_by_type(content_type)
 
-    def get_profiler_by_name(self, id):
+    def get_profiler_by_id(self, id):
         """
         @param id: profiler id
         @type id: str
