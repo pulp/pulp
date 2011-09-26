@@ -223,6 +223,12 @@ class ContentQueryManager(object):
         @return: full file system path for given relative path
         @rtype: str
         """
+
+        # Strip off the leading / if it exists; the importer may be sloppy and
+        # hand it in and its presence breaks makedirs
+        if relative_path.startswith('/'):
+            relative_path = relative_path[1:]
+        
         unit_path = os.path.join(self.get_root_content_dir(content_type), relative_path)
         unit_dir = os.path.dirname(unit_path)
         if not os.path.exists(unit_dir):
