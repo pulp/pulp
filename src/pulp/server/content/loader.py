@@ -89,7 +89,6 @@ class ConflictingPluginError(PluginLoaderException):
 
 # derivative classes used for testing
 class ConflictingPluginName(ConflictingPluginError): pass
-class ConflictingPluginTypes(ConflictingPluginError): pass
 
 
 class PluginNotFound(PluginLoaderException):
@@ -414,14 +413,18 @@ class PluginLoader(object):
         """
         return self.__distributors.get_plugin_by_id(id)
 
-    def get_distributor_by_type(self, distribution_type):
+    def get_distributors_by_type(self, content_type):
         """
-        @param distribution_type: distribution type
-        @type distribution_type: str
-        @return: tuple of distributor (class, configuration)
-        @rtype: tuple (L{Distributor}, dict)
+        @param content_tyep: content type
+        @type content_type: str
+        @return: list of tuples of distributor (class, configuration)
+        @rtype: list [(L{Distributor}, dict)]
         """
-        return self.__distributors.get_plugin_by_type(distribution_type)
+        distributors = []
+        ids = self.__distributors.get_plugin_ids_by_type(content_type)
+        for id in ids:
+            distributors.append(self.get_distributor_by_id(id))
+        return distributors
 
     def get_importer_by_id(self, id):
         """
@@ -432,14 +435,18 @@ class PluginLoader(object):
         """
         return self.__importers.get_plugin_by_id(id)
 
-    def get_importer_by_type(self, content_type):
+    def get_importers_by_type(self, content_type):
         """
         @param content_type: content type
         @type content_type: str
-        @return: tuple of importer (class, configuration)
-        @rtype: tuple (L{Importer}, dict)
+        @return: list of tuples of importer (class, configuration)
+        @rtype: list [(L{Importer}, dict), ...]
         """
-        return self.__importers.get_plugin_by_type(content_type)
+        importers = []
+        ids = self.__importers.get_plugin_ids_by_type(content_type)
+        for id in ids:
+            importers.append(self.get_importer_by_id(id))
+        return importers
 
     def get_profiler_by_id(self, id):
         """
@@ -449,15 +456,6 @@ class PluginLoader(object):
         @rtype: tuple (L{Profiler}, dict)
         """
         return self.__profilers.get_plugin_by_id(id)
-
-    def get_profiler_by_type(self, profile_type):
-        """
-        @param profile_type: profile type
-        @type profile_type: str
-        @return: tuple of profiler (class, configuration)
-        @rtype: tuple (L{Profiler}, dict)
-        """
-        return self.__profilers.get_plugin_by_type(profile_type)
 
     # plugin query api
 
@@ -500,19 +498,6 @@ class _PluginMap(object):
         self.plugins = {}
         self.types = {}
 
-    def _find_conclicting_types(self, new_types):
-        """
-        @type new_types: list
-        @rtype: list
-        """
-        conflicts = []
-        for id, types in self.types.items():
-            for type_ in types:
-                if type_ not in new_types:
-                    continue
-                conflicts.append((id, type_))
-        return conflicts
-
     def add_plugin(self, id, cls, cfg, types=()):
         """
         @type id: str
@@ -526,14 +511,11 @@ class _PluginMap(object):
         if self.has_plugin(id):
             msg = _('Plugin with same id already exists: %(n)s')
             raise ConflictingPluginName(msg % {'n': id})
-        conflicts = self._find_conclicting_types(types)
-        if conflicts:
-            msg = _('Plugin %(n)s conflicts with the following plugins: %(c)s')
-            c = '; '.join('id: %s, type: %s' % (n, t) for n, t in conflicts)
-            raise ConflictingPluginTypes(msg % {'n': id, 'c': c})
         self.plugins[id] = cls
         self.configs[id] = cfg
-        self.types[id] = tuple(types)
+        for type_ in types:
+            plugin_ids = self.types.setdefault(type_, [])
+            plugin_ids.append(id)
         _LOG.info(_('Loaded plugin %(p)s for types: %(t)s') %
                   {'p': id, 't': ','.join(types)})
         _LOG.debug('class: %s; config: %s' % (cls.__name__, pformat(cfg)))
@@ -549,17 +531,16 @@ class _PluginMap(object):
         # return a deepcopy of the config to avoid persisting external changes
         return (self.plugins[id], copy.deepcopy(self.configs[id]))
 
-    def get_plugin_by_type(self, type_):
+    def get_plugin_ids_by_type(self, type_):
         """
         @type type_: str
-        @rtype: tuple (type, dict)
+        @rtype: tuple (str, ...)
         @raises L{PluginNotFound}
         """
-        for id, types in self.types.items():
-            if type_ not in types:
-                continue
-            return self.get_plugin_by_id(id)
-        raise PluginNotFound(_('No plugin found for: %(t)s') % {'t': type_})
+        plugins = self.types.get(type_, [])
+        if not plugins:
+            raise PluginNotFound(_('No plugin found for: %(t)s') % {'t': type_})
+        return tuple(plugins)
 
     def has_plugin(self, id):
         """
@@ -576,7 +557,10 @@ class _PluginMap(object):
             return
         self.plugins.pop(id)
         self.configs.pop(id)
-        self.types.pop(id)
+        for type_, ids in self.types.items():
+            if id not in ids:
+                continue
+            ids.remove(id)
 
 # utility methods --------------------------------------------------------------
 
