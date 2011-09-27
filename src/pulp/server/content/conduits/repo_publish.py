@@ -121,7 +121,7 @@ class RepoPublishConduit:
         # mongo db semantics to the plugin developer
         content_units = []
         associated = self.__association_manager.get_unit_ids(self.repo_id, unit_type_id)
-        for unit_type, unit_ids in associated:
+        for unit_type, unit_ids in associated.item():
             spec = filters or {}
             spec.update({'_id': {'$in': unit_ids}})
             units = self.__content_query_manager.list_content_units(unit_type, spec, fields)
