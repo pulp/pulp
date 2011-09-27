@@ -528,7 +528,7 @@ class _PluginMap(object):
             raise ConflictingPluginName(msg % {'n': id})
         conflicts = self._find_conclicting_types(types)
         if conflicts:
-            msg = _('Plugin %(n)s conflicts with the follwing plugins: %(c)s')
+            msg = _('Plugin %(n)s conflicts with the following plugins: %(c)s')
             c = '; '.join('id: %s, type: %s' % (n, t) for n, t in conflicts)
             raise ConflictingPluginTypes(msg % {'n': id, 'c': c})
         self.plugins[id] = cls
