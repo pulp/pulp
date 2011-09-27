@@ -86,6 +86,7 @@ class DistributionExporter(BaseExporter):
                     if src_file_checksum == dst_file_checksum:
                         log.info("file %s already exists with same checksum. skip import" % os.path.basename(src_dist_file))
                         self.progress['details']['distribution']['num_success'] += 1
+                        self.progress['details']['distribution']['items_left'] -= 1
                         continue
                 try:
                     file_dir = os.path.dirname(dst_file_path)
@@ -94,10 +95,12 @@ class DistributionExporter(BaseExporter):
                     shutil.copy(src_dist_file, dst_file_path)
                     log.info("exported %s" % src_dist_file)
                     self.progress['details']['distribution']['num_success'] += 1
+                    self.progress['details']['distribution']['items_left'] -= 1
                 except IOError,io:
                     msg = "Failed to export distribution file %s; Error: %s" % (src_dist_file, str(io))
                     self.progress['errors'].append(msg)
                     self.progress['details']['distribution']['num_error'] += 1
+                    self.progress['details']['distribution']['items_left'] -= 1
                     log.error(msg)
             if progress_callback is not None:
                 progress_callback(self.progress)

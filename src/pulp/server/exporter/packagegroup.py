@@ -81,6 +81,7 @@ class CompsExporter(BaseExporter):
             # either all pass or all error in this case
             self.progress['num_success'] += self.progress['count_total']
             self.progress['details']['packagegroup']['num_success'] = pg_count
+            self.progress['details']['packagegroup']['items_left'] -= pg_count
         except pulp.server.util.CreateRepoError, cre:
             msg = "Unable to modify metadata with exported package groups/categories; Error: %s" % str(cre)
             self.progress['errors'].append(msg)
