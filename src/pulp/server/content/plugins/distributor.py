@@ -21,7 +21,7 @@ class Distributor(object):
     def metadata(cls):
         return {}
 
-    def validate_config(self, repo_data, distributor_config):
+    def validate_config(self, repo_data, repo_config):
         """
         Allows the distributor to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -34,9 +34,9 @@ class Distributor(object):
                           configuration applies
         @type  repo_data: dict
 
-        @param distributor_config: proposed configuration used by this distributor for
+        @param repo_config: proposed configuration used by this distributor for
                                    the given repo
-        @type  distributor_config: dict
+        @type  repo_config: dict
 
         @return: True if the configuration is valid; False otherwise
         @rtype:  bool

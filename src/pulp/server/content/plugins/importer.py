@@ -21,7 +21,7 @@ class Importer(object):
     def metadata(cls):
         return {}
 
-    def validate_config(self, repo_data, importer_config):
+    def validate_config(self, repo_data, repo_config):
         """
         Allows the importer to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -34,9 +34,9 @@ class Importer(object):
                           configuration applies
         @type  repo_data: dict
 
-        @param importer_config: proposed configuration used by this importer for
+        @param repo_config: proposed configuration used by this importer for
                                 the given repo
-        @type  importer_config: dict
+        @type  repo_config: dict
 
         @return: True if the configuration is valid; False otherwise
         @rtype:  bool
