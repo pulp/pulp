@@ -54,13 +54,16 @@ class OtherExporter(BaseExporter):
         tgt_repodata_dir  = os.path.join(self.target_dir, 'repodata')
         ftypes = pulp.server.util.get_repomd_filetypes(src_repodata_file)
         base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db',
-                       'updateinfo', 'group_gz', 'group']
+                       'updateinfo', 'group_gz', 'group', 'presto']
         process_ftypes = []
         for ftype in ftypes:
             if ftype not in base_ftypes:
                 # no need to process these again
                 process_ftypes.append(ftype)
         #self.progress['details']['custom']['count_total'] = len(process_ftypes)
+        if not len(process_ftypes):
+            log.info("No custom metadata found ")
+            return self.progress
         self._progress_details('custom', len(process_ftypes))
         for ftype in process_ftypes:
             filetype_path = os.path.join(src_repodata_dir, os.path.basename(pulp.server.util.get_repomd_filetype_path(src_repodata_file, ftype)))

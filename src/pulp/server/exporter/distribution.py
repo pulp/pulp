@@ -62,7 +62,7 @@ class DistributionExporter(BaseExporter):
         if not os.path.exists(src_tree_file):
             # no distributions found
             log.info("Could not find a treeinfo file @ %s; No distributions found" % src_tree_file)
-            return
+            return self.progress
         else:
             shutil.copy(src_tree_file, dst_tree_file)
             log.info("Exported treeinfo file")
@@ -71,6 +71,8 @@ class DistributionExporter(BaseExporter):
             os.mkdir(image_dir)
         for distroid in distributions:
             distro = self.distribution_api.distribution(distroid)
+            if not distro:
+                continue
             #self.progress['details']['distribution']['count_total'] = len(distro['files'])
             self._progress_details('distribution', len(distro['files']))
             for count, src_dist_file in enumerate(distro['files']):

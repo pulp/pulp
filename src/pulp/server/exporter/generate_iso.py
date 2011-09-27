@@ -80,7 +80,8 @@ class GenerateIsos(object):
             status, out = run_command(cmd)
             if status != 0:
                 log.error("Error creating iso %s" % filename)
-            log.info("successfully created iso %s; status: %s out: %s" % (filename, status, out))
+            log.info("successfully created iso %s" % filename) 
+	    log.debug("status code: %s; output: %s" % (status, out))
             os.unlink(pathfiles)
         return self.progress
 

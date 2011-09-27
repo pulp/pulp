@@ -80,6 +80,7 @@ class ExportController(object):
                 exporter = cls(self.repo, target_dir=self.target_dir, progress=self.progress)
                 self.progress = exporter.export(progress_callback=self.progress_callback)
             except Exception,e:
+                raise
                 log.error("Error occured processing module %s; Error:%s" % (cls, str(e)))
                 continue
         self.progress = self.create_isos()

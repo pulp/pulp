@@ -56,7 +56,11 @@ class ErrataExporter(BaseExporter):
         self.progress['step'] = self.report.errata
         self.errataids = list(chain.from_iterable(self.repo['errata'].values()))
         #self.progress['details']['errata']['count_total'] = len(self.errataids)
+        if not len(self.errataids):
+            log.info("No errata found in repository to export")
+            return self.progress
         self._progress_details('errata', len(self.errataids))
+        log.info("%s errata found in repository for export" % len(self.errataids))
         self.__process_errata_packages()
         log.info("generating updateinfo.xml file for exported errata")
         try:

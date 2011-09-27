@@ -62,6 +62,7 @@ class PackageExporter(BaseExporter):
             if not os.path.exists(pkg_path):
                 # package not found on filesystem, continue
                 msg = "Package %s does not exists; skipping" % pkg
+                log.error(msg)
                 self.progress['errors'].append(msg)
                 self.progress['details']['rpm']['items_left'] -= 1
                 self.progress['details']['rpm']['num_error'] += 1

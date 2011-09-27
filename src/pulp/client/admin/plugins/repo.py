@@ -1691,11 +1691,11 @@ class Export(RepoProgressAction):
     def setup_parser(self):
         super(Export, self).setup_parser()
         self.parser.add_option("-t", "--target_dir", dest="target",
-                               help=_("target location to write the exported content"))
+                               help=_("target location on server to write the exported content"))
         self.parser.add_option(  "--generate-isos", action="store_true", dest="generate_isos", default=False,
                                help=_("wrap exported content into iso images (optional)"))
         self.parser.add_option(  "--overwrite", action="store_true", dest="overwrite", default=False,
-                               help=_("overwrite existing content in target location"))
+                               help=_("overwrite existing content in target location (optional)"))
 
     def run(self):
         repoid = self.get_required_option('id')
@@ -1715,11 +1715,11 @@ class Export(RepoProgressAction):
                 task = self.task_api.info(task['id'])
             # print the finish line
             self.print_exporter_progress(task['progress'])
+            self.print_error_report(task['progress'])
             print _("Export completed; Content is written to target location @ %s on server" % self.opts.target)
         except KeyboardInterrupt:
             print ''
             return
-        self.print_error_report(task['progress'])
 
     def print_exporter_progress(self, progress):
         current = ""
@@ -1737,8 +1737,8 @@ class Export(RepoProgressAction):
     def print_error_report(self, progress):
         if not len(progress['errors']):
             return
-        print(_("Errors:"))
-        print '\n'.join(progress['errors'])
+        #print '\n'.join(progress['errors'])
+        print(_("No. of Errors: %s ; See /var/log/pulp/pulp.log for more info." % len(progress['errors'])))
 
 class CancelExport(AdminRepoAction):
 
