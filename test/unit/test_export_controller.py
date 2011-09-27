@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 # Python
 import os
+import shutil
 import sys
 import logging
 from pulp.server.compat import chain
@@ -43,10 +44,14 @@ class TestExportController(testutil.PulpAsyncTest):
             'i386', 'file://%s' % repo_url)
         self._perform_sync(repo_1)
         self.found_1 = self.repo_api.repository('test_export_repo')
-        self.ec = ExportController(self.found_1, '/tmp/pulp/myexport/', generate_iso=True)
+        tgt_dir = '/tmp/pulp/myexport/'
+        if not os.path.exists(tgt_dir):
+            os.mkdir(tgt_dir)
+        self.ec = ExportController(self.found_1, tgt_dir, generate_iso=True)
 
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
+        shutil.rmtree("/tmp/pulp/myexport/")
 
     def test_controller_class_load(self):
         classes = self.ec._load_exporter()
@@ -73,17 +78,15 @@ class TestExportController(testutil.PulpAsyncTest):
                self.ec.progress['details']['packagegroup']['num_success'])
         self.assertEquals(0, self.ec.progress['details']['packagegroup']['items_left'])
 
-    def test_custom_metadata(self):
         # custom metadata
         tgt_dir = '/tmp/pulp/myexport/'
         repomd_path = os.path.join(tgt_dir, 'repodata/repomd.xml')
+        
         assert(os.path.exists(repomd_path))
         ftypes = util.get_repomd_filetypes(repomd_path)
         assert('product' in ftypes)
 
-    def test_export_iso_generated(self):
         # validate isos are generated
-        tgt_dir = '/tmp/pulp/myexport/'
         iso_dir = os.path.join(tgt_dir, 'isos')
         assert(os.path.exists(iso_dir))
         iso_list = os.listdir(iso_dir)
