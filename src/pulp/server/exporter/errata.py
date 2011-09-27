@@ -75,6 +75,7 @@ class ErrataExporter(BaseExporter):
                     updateinfo_path)
             # either all pass or all error in this case
             self.progress['details']['errata']['num_success'] = len(self.errataids)
+            self.progress['details']['errata']['items_left'] -= len(self.errataids)
         except pulp.server.util.CreateRepoError, cre:
             self.progress['details']['errata']['num_error'] = len(self.errataids)
             msg = "Unable to modify metadata with exported errata; Error: %s " % str(cre)

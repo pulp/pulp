@@ -86,7 +86,8 @@ class ExportController(object):
         self.progress = self.create_isos()
 
         self.progress['step'] = ExporterReport.done
-        self.progress_callback(self.progress)
+        if self.progress_callback is not None:
+            self.progress_callback(self.progress)
 
     def create_isos(self):
         """
@@ -94,7 +95,7 @@ class ExportController(object):
          supported types: CD, DVD, Blu-ray.
         """
         if not self.generate_iso:
-            return
+            return self.progress
         save_iso_directory = os.path.join(self.target_dir, 'isos')
         try:
             gen_isos = GenerateIsos(self.target_dir, output_directory=save_iso_directory,

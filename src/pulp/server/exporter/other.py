@@ -80,6 +80,7 @@ class OtherExporter(BaseExporter):
                         progress_callback(self.progress)
                     pulp.server.util.modify_repo(tgt_repodata_dir, renamed_filetype_path)
                 self.progress['details']['custom']['num_success'] += 1
+                self.progress['details']['custom']['items_left'] -= 1
             except IOError, io:
                 self.progress['details']['custom']['num_error'] += 1
                 msg = "Unable to copy the custom metadata file to target directory %s; Error: %s" % (renamed_filetype_path, str(io))
