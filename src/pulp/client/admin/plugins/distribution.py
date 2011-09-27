@@ -78,8 +78,7 @@ class Info(DistributionAction):
         if not distribution:
             system_exit(os.EX_OK, _("No distribution found with id [%s]" % distid))
         print_header(_('Distribution Info for %s' % distid))
-        ksurl = self.cfg._sections['cds'].__getitem__('ksurl') + '/' + distribution['relativepath']
-        print constants.DISTRO_INFO % (distribution['id'], distribution['description'], ksurl,
+        print constants.DISTRO_INFO % (distribution['id'], distribution['description'], distribution['url'],
                                        '\n \t\t\t'.join(distribution['files'][:]), distribution['relativepath'])
 
 # distribution command --------------------------------------------------------------

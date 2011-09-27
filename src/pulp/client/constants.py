@@ -120,7 +120,7 @@ Id                    \t%-25s
 Description           \t%-25s 
 URL                   \t%-25s
 Files                 \t%-25s
-relativepath          \t%-25s
+Relativepath          \t%-25s
 """
 
 PACKAGE_INFO = """
