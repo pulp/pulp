@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import glob
 import os
+import sys
 import pulp.server.util
 from logging import getLogger
 from pulp.server.exporter.base import BaseExporter, ExporterReport
@@ -56,8 +57,11 @@ class ExportController(object):
         plugins = []
         for plugin in glob.glob(os.path.join(_EXPORTER_MODULES_PATH, '*.py')):
             # import the module
-            module = __import__(_TOP_LEVEL_PACKAGE + '.' + \
-                                os.path.basename(plugin).split('.')[0], fromlist = ["*"])
+            module_name = _TOP_LEVEL_PACKAGE + '.' + \
+                                os.path.basename(plugin).split('.')[0]
+            module = __import__(module_name)
+            for comp in module_name.split('.')[1:]:
+                module = getattr(module, comp)
             for name, attr in module.__dict__.items():
                 try:
                     if issubclass(attr, BaseExporter):
@@ -67,7 +71,6 @@ class ExportController(object):
                         plugins.append(attr)
                 except TypeError:
                     continue
-
         return plugins
 
     def perform_export(self):
@@ -80,7 +83,6 @@ class ExportController(object):
                 exporter = cls(self.repo, target_dir=self.target_dir, progress=self.progress)
                 self.progress = exporter.export(progress_callback=self.progress_callback)
             except Exception,e:
-                raise
                 log.error("Error occured processing module %s; Error:%s" % (cls, str(e)))
                 continue
         self.progress = self.create_isos()
