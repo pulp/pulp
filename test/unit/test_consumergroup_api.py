@@ -20,7 +20,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.agent import Agent
 
 

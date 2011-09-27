@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 import pymongo.json_util
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.util import random_string

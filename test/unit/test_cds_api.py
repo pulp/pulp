@@ -25,7 +25,7 @@ from pulp.server.cds.dispatcher import CdsTimeoutException
 import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDS, CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.db.model.persistence import TaskHistory, TaskSnapshot
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.agent import Agent, CdsAgent
 
 

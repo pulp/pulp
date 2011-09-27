@@ -55,7 +55,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.synchronizers import BaseSynchronizer
 from pulp.server.compat import json
 from pulp.server.event.dispatcher import event
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 log = logging.getLogger(__name__)

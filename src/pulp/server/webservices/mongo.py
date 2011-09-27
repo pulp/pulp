@@ -18,7 +18,7 @@ Mongo utility module to help pulp web services deal with the mongo db.
 
 import re
 
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 class MalformedFilters(PulpException):

@@ -29,7 +29,7 @@ from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal
 from pulp.server.db.model import Consumer, ConsumerHistoryEvent
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import Task
 

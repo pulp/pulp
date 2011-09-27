@@ -22,7 +22,7 @@ import testutil
 
 import pulp.server.util
 from pulp.server.db import connection
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')

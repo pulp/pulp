@@ -18,7 +18,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 log = logging.getLogger(__name__)

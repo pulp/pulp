@@ -30,7 +30,7 @@ from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.auditing import audit
 from pulp.server.async import run_async
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import top_repos_location
 from pulp.server.util import top_gpg_location

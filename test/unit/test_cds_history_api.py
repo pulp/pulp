@@ -25,7 +25,7 @@ from pulp.common import dateutils
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auth import principal
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent, User
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 class TestCDSHistoryApi(testutil.PulpAsyncTest):
 

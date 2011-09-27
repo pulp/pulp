@@ -44,7 +44,7 @@ from pulp.client.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server import constants
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 import testutil
 
 logging.root.setLevel(logging.ERROR)

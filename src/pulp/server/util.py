@@ -32,7 +32,7 @@ import rpm
 import yum
 
 from pulp.server import config, constants
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
 from grinder import GrinderUtils
 from grinder import RepoFetch

@@ -16,7 +16,7 @@ from gettext import gettext as _
 from isodate import Duration
 
 from pulp.common.dateutils import parse_iso8601_duration
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 class UnsupportedTimeoutInterval(PulpException):

@@ -22,7 +22,7 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 from pulp.server import config
 from pulp.server.compat import wraps
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 # globals ----------------------------------------------------------------------
 

@@ -15,7 +15,7 @@
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db.model import Permission
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 class PermissionAPI(BaseApi):

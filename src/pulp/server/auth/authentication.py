@@ -30,7 +30,7 @@ from pulp.server.auth.password_util import check_password
 from pulp.server.config import config
 from pulp.server.db.model import User
 from pulp.server.LDAPConnection import LDAPConnection
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 _consumer_api = ConsumerApi()

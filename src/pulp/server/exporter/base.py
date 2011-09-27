@@ -18,7 +18,7 @@ from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 log = logging.getLogger(__name__)
 

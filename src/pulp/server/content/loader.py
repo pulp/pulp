@@ -33,7 +33,7 @@ from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.content.plugins.importer import Importer
 from pulp.server.content.types import database, parser
 from pulp.server.content.types.model import TypeDescriptor
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 # constants --------------------------------------------------------------------
 

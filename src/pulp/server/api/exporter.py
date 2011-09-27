@@ -17,7 +17,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async, run_async
 from pulp.server.exporter.controller import ExportController
 from pulp.server.exporter.base import exporter_progress_callback, ExportException, TargetExistsException
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from gettext import gettext as _
 log = logging.getLogger(__name__)

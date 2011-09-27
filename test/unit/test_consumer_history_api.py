@@ -27,7 +27,7 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi
 import pulp.server.api.consumer_history as consumer_history
 from pulp.server.auth import principal
 from pulp.server.db.model import ConsumerHistoryEvent, User
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 class TestConsumerHistoryApi(testutil.PulpAsyncTest):
 

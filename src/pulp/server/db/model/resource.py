@@ -16,7 +16,7 @@ import urlparse
 
 from pulp.common import dateutils
 from pulp.server.db.model.base import Model
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 
 # consumer models -------------------------------------------------------------

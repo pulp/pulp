@@ -52,7 +52,7 @@ from pulp.server.auditing import audit
 from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.tasking.task import task_running, task_waiting
 from pulp.server.agent import PulpAgent

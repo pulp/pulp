@@ -18,7 +18,7 @@ from M2Crypto import X509, EVP, RSA, util
 from threading import RLock
 import subprocess
 
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server import config
 from pulp.server.util import Singleton
 

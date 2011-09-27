@@ -33,7 +33,7 @@ from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
     CdsAuthException, CdsMethodException,)
 from pulp.server.db.model import CDS, Repo
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 # -- constants ----------------------------------------------------------------
 

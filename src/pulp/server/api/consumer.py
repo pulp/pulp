@@ -31,7 +31,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.task import Task
 from pulp.server.util import chunks, compare_packages
 from pulp.server.agent import PulpAgent

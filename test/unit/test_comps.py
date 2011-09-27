@@ -31,7 +31,7 @@ import pulp.server.util
 from pulp.server.api import repo_sync
 from pulp.server.db import model
 from pulp.server.api.synchronizers import BaseSynchronizer
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')

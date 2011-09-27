@@ -41,7 +41,7 @@ from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.server.util import top_repos_location
 from pulp.server import constants
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')

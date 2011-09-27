@@ -108,7 +108,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.auth.authorization import grant_automatic_permissions_for_created_resource
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.exporter.base import ExportException, TargetExistsException
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
