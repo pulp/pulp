@@ -148,3 +148,20 @@ class RepoUnitAssociationManager:
             ids = unit_ids.setdefault(content_unit['unit_type_id'], [])
             ids.append(content_unit['unit_id'])
         return unit_ids
+
+    def get_unit_types(self, repo_id):
+        """
+        Get the ids of the content types associated with the repo.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @return: content type ids of all content associated with the repo
+        @rtype:  tuple (str, ...)
+        """
+        unit_types = set()
+        collection = RepoContentUnit.get_collection()
+        cursor = collection.find({'repo_id': repo_id})
+        for unit in cursor:
+            unit_types.add(unit['unit_type_id'])
+        return tuple(unit_types)
