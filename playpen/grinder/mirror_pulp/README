@@ -1,0 +1,15 @@
+These scripts will allow grinder to essentially mirror a pulp server.
+ - We get a list of the repos from a pulp server
+ - Then run grinder to sync each repo
+
+ Motivation:    We are using these scripts to debug a memory leak.
+                Desire is to isolate the grinder sync portion with the exact repos the pulp repo has been syncing.
+
+
+1) Get a list of repos:  
+  Run "repo_list.sh"  Update for username/password
+2) Convert repo_list.json to a series of id,feed_url,feed_ca,feed_cert
+  Output is: feed_urls
+3) grinder_reproducer_memleak.py feed_urls
+ 
+
