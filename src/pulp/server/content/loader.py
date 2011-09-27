@@ -73,6 +73,7 @@ class PluginLoadError(PluginLoaderException):
 
 # derivative classes used for testing
 class InvalidImporter(PluginLoadError): pass
+class NamespaceCollision(PluginLoadError): pass
 class MalformedMetadata(PluginLoadError): pass
 class MissingMetadata(PluginLoadError): pass
 class MissingPluginClass(PluginLoadError): pass
@@ -808,6 +809,9 @@ def _load_plugins_from_path(path, base_class, plugin_map):
                (path, base_class.__name__))
     plugin_dirs = _get_plugin_dirs(path)
     for dir_ in plugin_dirs:
+        if dir_ in sys.modules:
+            msg =_('Python already has module loaded: %(d)s')
+            raise NamespaceCollision(msg % {'d': dir_})
         cls, cfg = _load_plugin(dir_, base_class, base_class.__name__.lower())
         id = _get_plugin_metadata_field(cls, 'id', cls.__name__)
         types = _get_plugin_types(cls)
