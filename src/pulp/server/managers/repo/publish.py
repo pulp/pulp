@@ -138,7 +138,10 @@ class RepoPublishManager:
 
         # Assemble the data needed for the publish
         repo_manager = manager_factory.repo_manager()
-        conduit = RepoPublishConduit(repo_id, distributor_id, repo_manager, self)
+        association_manager = manager_factory.repo_unit_association_manager()
+        content_query_manager = manager_factory.content_query_manager()
+        conduit = RepoPublishConduit(repo_id, distributor_id, repo_manager, self,
+                                     association_manager, content_query_manager)
 
         # Take the repo's default publish config and merge in the override values
         # for this run alone (don't store it back to the DB)
