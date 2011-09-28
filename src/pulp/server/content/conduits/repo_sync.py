@@ -243,6 +243,13 @@ class RepoSyncConduit:
             _LOG.exception(_('Multiple unit association failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
+    def associate_child_content_unit(self, parent_type, parent_id, child_type, child_id):
+        self.associate_child_content_units(parent_type, parent_id, child_type, [child_id])
+
+    def associate_child_content_units(self, parent_type, parent_id, child_type, child_ids):
+        self.associate_content_units(child_type, child_ids)
+        self.__content_manager.link_child_content_units(parent_type, parent_id, child_type, child_ids)
+
     def unassociate_content_unit(self, type_id, unit_id):
         """
         Unassociates the given content unit from the repo being syncced. The
@@ -278,6 +285,13 @@ class RepoSyncConduit:
         except:
             _LOG.exception(_('Multiple unit unassociations failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
+
+    def unassociate_child_content_unit(self, parent_type, parent_id, child_type, child_id):
+        self.unassociate_child_content_units(parent_type, parent_id, child_type, [child_id])
+
+    def unassociate_child_content_units(self, parent_type, parent_id, child_type, child_ids):
+        self.__content_manager.unlink_child_content_units(parent_type, parent_id, child_type, child_ids)
+        self.unassociate_content_units(child_type, child_ids)
 
     def add_repo_metadata_values(self, values_dict):
         """
