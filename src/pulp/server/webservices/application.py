@@ -37,7 +37,7 @@ from pulp.server.webservices.controllers import (
     filters, jobs, orphaned, packages, permissions, repositories, roles,
     services, tasks, users)
 from pulp.server.webservices.controllers import (
-    gc_repositories, gc_plugins)
+    gc_contents, gc_plugins, gc_repositories)
 
 
 urls = (
@@ -79,8 +79,9 @@ urls = (
     '/v1/tasks', tasks.application,
     '/v1/users', users.application,
     # version 2 api
-    '/v2/repositories', gc_repositories.application,
+    '/v2/contents', gc_contents.application,
     '/v2/plugins', gc_plugins.application,
+    '/v2/repositories', gc_repositories.application,
 )
 
 _stacktrace_dumper = None
