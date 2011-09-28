@@ -372,14 +372,22 @@ def status_conflict():
     """
     _status(httplib.CONFLICT)
 
+
 def status_internal_server_error():
     """
     Set the resonse code to internal server error
     """
     _status(httplib.INTERNAL_SERVER_ERROR)
 
+
+def status_not_implemented():
+    """
+    Set the status reponse code to not implemented
+    """
+    _status(httplib.NOT_IMPLEMENTED)
+
 def status_partial():
-    '''
+    """
     Set the response code to partial content
-    '''
+    """
     _status(httplib.PARTIAL_CONTENT)

@@ -266,3 +266,14 @@ class JSONController(object):
         """
         http.status_internal_server_error()
         return self._output(msg)
+
+    def not_implemented(self, msg=None):
+        """
+        Return a not implemented error.
+        @param msg: optional error message
+        @type msg: None or str
+        @return: JSON encoded response
+        @rtype: str
+        """
+        http.status_not_implemented()
+        return self._output(msg)
