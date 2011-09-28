@@ -38,10 +38,11 @@ def repo_sync(id):
     """
     history = []
     collection = TaskHistory.get_collection()
-    for task in collection.find({'task_type': RepoSyncTask.__name__}):
-        if id not in itertools.chain(task['args'], task['kwargs'].values()):
-            continue
-        history.append(task)
+    # Filter the TaskHistory collection by task_type and by args.  A single
+    # item list of the repo id should always be the value of args for repo
+    # syncs.
+    history = collection.find({'task_type': RepoSyncTask.__name__,
+        'args': [id]}):
     return sorted(history, cmp=_finish_time_cmp, reverse=True)
 
 
