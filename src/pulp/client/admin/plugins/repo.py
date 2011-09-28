@@ -1062,7 +1062,10 @@ class ListKeys(AdminRepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        for key in self.repository_api.listkeys(id):
+        keys = self.repository_api.listkeys(id)
+        if not len(keys):
+            utils.system_exit(os.EX_OK, _("No GPG keys in this repository"))
+        for key in keys:
             print os.path.basename(key)
 
 class Publish(AdminRepoAction):
