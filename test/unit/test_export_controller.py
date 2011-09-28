@@ -85,12 +85,66 @@ class TestExportController(testutil.PulpAsyncTest):
         assert(os.path.exists(repomd_path))
         ftypes = util.get_repomd_filetypes(repomd_path)
         assert('product' in ftypes)
+        #verify updateinfo
+        assert('updateinfo' in ftypes)
 
         # validate isos are generated
         iso_dir = os.path.join(tgt_dir, 'isos')
         assert(os.path.exists(iso_dir))
         iso_list = os.listdir(iso_dir)
         self.assertEquals(len(iso_list), 1)
+
+    def test_package_export(self):
+        # test package export
+        packages_1 = self.found_1['packages']
+        target_dir = '/tmp/pulp/myexport/'
+        pe = PackageExporter(self.found_1, target_dir=target_dir, progress=self.ec.progress)
+        self.assertEquals(pe.target_dir, target_dir)
+        self.assertEquals(pe.export_count, 0)
+        pe.export()
+        self.assertEquals(pe.progress['step'], "Exporting rpms")
+        assert pe.progress['details'].has_key('rpm')
+        self.assertEquals(pe.progress['details']['rpm']['items_total'], len(self.found_1['packages']))
+        self.assertEquals(pe.progress['details']['rpm']['num_success'], len(self.found_1['packages']))
+        self.assertEquals(len(pe.progress['errors']), 0)
+
+    def test_errata_export(self):
+        target_dir = '/tmp/pulp/myexport/'
+        ee = ErrataExporter(self.found_1, target_dir=target_dir, progress=self.ec.progress)
+        self.assertEquals(ee.target_dir, target_dir)
+        self.assertEquals(ee.export_count, 0)
+        ee.export()
+        self.assertEquals(ee.progress['step'].strip(), "Exporting errata")
+        assert ee.progress['details'].has_key('errata')
+        repo_errata = list(chain.from_iterable(self.found_1['errata'].values()))
+        self.assertEquals(ee.progress['details']['errata']['items_total'], len(repo_errata))
+
+    def test_distribution_export(self):
+        target_dir = '/tmp/pulp/myexport/'
+        de = DistributionExporter(self.found_1, target_dir=target_dir, progress=self.ec.progress)
+        self.assertEquals(de.target_dir, target_dir)
+        self.assertEquals(de.export_count, 0)
+        de.export()
+        self.assertEquals(de.progress['step'].strip(), "Exporting Distribution files")
+        assert de.progress['details'].has_key('distribution')
+        distro_files = self.distribution_api.distribution(self.found_1['distributionid'][0])['files']
+        self.assertEquals(len(distro_files), self.ec.progress['details']['distribution']['num_success'])
+        self.assertEquals(0, self.ec.progress['details']['distribution']['items_left'])
+        self.assertEquals(de.progress['details']['distribution']['items_total'], len(distro_files))
+
+    def test_packagegroup_export(self):
+        target_dir = '/tmp/pulp/myexport/'
+        pge = CompsExporter(self.found_1, target_dir=target_dir, progress=self.ec.progress)
+        self.assertEquals(pge.target_dir, target_dir)
+        pge.export()
+        self.assertEquals(pge.progress['step'].strip(), "Exporting packagegroups metadata")
+        assert pge.progress['details'].has_key('packagegroup')
+        pg_count = len(self.found_1['packagegroups']) + len(self.found_1['packagegroupcategories'])
+        self.assertEquals(0, self.ec.progress['details']['packagegroup']['items_left'])
+        self.assertEquals(pge.progress['details']['packagegroup']['items_total'], pg_count)
+        # validate comps path
+        comps_xml_path = os.path.join(target_dir, "comps.xml")
+        assert os.path.exists(comps_xml_path)
 
     def _perform_sync(self, r):
         sync_tasks = []
