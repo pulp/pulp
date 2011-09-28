@@ -1775,7 +1775,7 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'filter_ids'])
     def add_filters(self, id, filter_ids):
         repo = self._get_existing_repo(id)
-        if repo['source']['type'] != 'local':
+        if not repo['source'] or repo['source']['type'] != 'local':
             raise PulpException("Filters can be added to repos with 'local' feed only")
         for filter_id in filter_ids:
             filter = self.filterapi.filter(filter_id)
