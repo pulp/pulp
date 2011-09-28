@@ -149,31 +149,34 @@ def list_content_types():
 def list_distributors():
     """
     List the loaded distributors.
-    @return: list of distributor names
-    @rtype: list
+    @return: dictionary of distributor names -> metadata
+    @rtype: dict {str: dict, ...}
     """
     assert _is_initialized()
-    return sorted(_LOADER.get_loaded_distributors().keys())
+    plugins = _LOADER.get_loaded_distributors()
+    return dict((id_, cls.metadata()) for id_, cls in plugins.items())
 
 
 def list_importers():
     """
     List the loaded importers.
-    @return: list of importer names
-    @rtype: list
+    @return: dictionary of importer names: metadata
+    @rtype: dict {str: dict, ...}
     """
     assert _is_initialized()
-    return sorted(_LOADER.get_loaded_importers().keys())
+    plugins = _LOADER.get_loaded_importers().keys()
+    return dict((id_, cls.metadata()) for id_, cls in plugins.items())
 
 
 def list_profilers():
     """
     List the loaded profilers.
-    @return: list of profiler names
-    @rtype: list
+    @return: dictionary of profiler names: metadata
+    @rtype: dict {str: dict, ...}
     """
     assert _is_initialized()
-    return sorted(_LOADER.get_loaded_profilers().keys())
+    plugins = _LOADER.get_loaded_profilers().keys()
+    return dict((id_, cls.metadata()) for id_, cls in plugins.items())
 
 
 def list_distributor_types(id):

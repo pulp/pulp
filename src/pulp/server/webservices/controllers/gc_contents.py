@@ -85,7 +85,10 @@ class ContentTypeActions(JSONController):
         if action not in self.actions_map:
             return self.not_found(_('Action not defined for %(t)s: %(a)s') %
                                   {'t': type_id, 'a': action})
-        method = getattr(self, self.actions_map[action])
+        method = getattr(self, self.actions_map[action], None)
+        if method is None:
+            return self.not_found(_('Action not implemented for %(t)s: %(a)s') %
+                                  {'t': type_id, 'a': action})
         return method(type_id)
 
 
