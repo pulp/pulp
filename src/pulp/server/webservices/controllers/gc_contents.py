@@ -139,7 +139,7 @@ class ContentUnitResource(JSONController):
 _URLS = ('/$', ContentCollections,
          '([^/]+)/$', ContentTypeResource,
          '([^/]+)/actions/(%s)/$' % '|'.join(ContentTypeActions.actions_map), ContentTypeActions,
-         '([^/]+)/contents/$', ContentUnitCollection,
-         '([^/]+)/contents/([^/]+)/$', ContentUnitResource,)
+         '([^/]+)/units/$', ContentUnitCollection,
+         '([^/]+)/units/([^/]+)/$', ContentUnitResource,)
 
 application = web.application(_URLS, globals())
