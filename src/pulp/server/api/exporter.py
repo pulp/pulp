@@ -40,8 +40,6 @@ def export(repoid, target_directory, generate_isos=False, overwrite=False):
             on failure None is returned
     """
     repo = repo_api._get_existing_repo(repoid)
-    if repo is None:
-        raise PulpException(_("A Repo with id %s does not exist" % id))
     # validate target directory
     validate_target_path(target_directory, overwrite=overwrite)
     if list_exports(repoid):
@@ -93,8 +91,6 @@ def validate_target_path(target_dir, overwrite=False):
                 os.mkdir(target_dir)
             else:
                 raise TargetExistsException("Error: Target directory already has content; must use force to overwrite.")
-    except OSError, oe:
-        raise ExportException("Error occurred creating target path [%s]" % str(oe))
     except ExportException, ee:
         log.error(ee)
         raise ee
