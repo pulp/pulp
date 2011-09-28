@@ -463,26 +463,23 @@ class PluginLoader(object):
     def get_loaded_distributors(self):
         """
         @return: dictionary of distributor id: tuple of types
-        @rtype: dict {str: tuple}
+        @rtype: dict {str: set}
         """
-        # return a copy to avoid persisting external changes
-        return copy.copy(self.__distributors.types)
+        return self.__distributors.get_loaded_plugins()
 
     def get_loaded_importers(self):
         """
         @return: dictionary of importer id: tuple of types
-        @rtype: dict {str: tuple}
+        @rtype: dict {str: set}
         """
-        # return a copy to avoid persisting external changes
-        return copy.copy(self.__importers.types)
+        return self.__importers.get_loaded_plugins()
 
     def get_loaded_profilers(self):
         """
         @return: dictionary of profiler id: tuple of types
-        @rtype: dict {str: tuple}
+        @rtype: dict {str: set}
         """
-        # return a copy to avoid persisting external changes
-        return copy.copy(self.__profilers.types)
+        return self.__profilers.get_loaded_plugins()
 
 # plugin management class
 
@@ -542,6 +539,17 @@ class _PluginMap(object):
         if not plugins:
             raise PluginNotFound(_('No plugin found for: %(t)s') % {'t': type_})
         return tuple(plugins)
+
+    def get_loaded_plugins(self):
+        """
+        @rtype: dict {str: set, ...}
+        """
+        plugins = {}
+        for type_, plugin_ids in self.types.items():
+            for id_ in plugin_ids:
+                types_list = plugins.setdefault(id_, set())
+                types_list.add(type_)
+        return plugins
 
     def has_plugin(self, id):
         """
