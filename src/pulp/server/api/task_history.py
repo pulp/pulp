@@ -42,7 +42,7 @@ def repo_sync(id):
     # item list of the repo id should always be the value of args for repo
     # syncs.
     history = collection.find({'task_type': RepoSyncTask.__name__,
-        'args': [id]}):
+        'args': [id]})
     return sorted(history, cmp=_finish_time_cmp, reverse=True)
 
 
