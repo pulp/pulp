@@ -70,7 +70,7 @@ class ContentManager(object):
         collection = content_types_db.type_units_collection(content_type)
         collection.remove({'_id': unit_id}, safe=True)
 
-    def link_child_content_unit(self, parent_type, parent_id, child_type, child_ids):
+    def link_child_content_units(self, parent_type, parent_id, child_type, child_ids):
         """
         Link children content units to a parent.
         @param parent_type: unique id of the parent content collection

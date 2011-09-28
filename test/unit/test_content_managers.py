@@ -97,14 +97,14 @@ class PulpContentCUDTests(PulpContentTests):
     def test_link_child_unit(self):
         parent_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, TYPE_2_UNITS[0])
         child_id = self.cud_manager.add_content_unit(TYPE_1_DEF.id, None, TYPE_1_UNITS[0])
-        self.cud_manager.link_child_content_unit(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
+        self.cud_manager.link_child_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, parent_id)
         self.assertEqual(parent['_%s_children' % TYPE_1_DEF.id][0], child_id)
 
     def test_unlink_child_unit(self):
         parent_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, TYPE_2_UNITS[0])
         child_id = self.cud_manager.add_content_unit(TYPE_1_DEF.id, None, TYPE_1_UNITS[0])
-        self.cud_manager.link_child_content_unit(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
+        self.cud_manager.link_child_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, parent_id)
         self.assertEqual(len(parent['_%s_children' % TYPE_1_DEF.id]), 1)
         self.cud_manager.unlink_child_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
