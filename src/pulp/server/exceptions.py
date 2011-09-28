@@ -15,11 +15,20 @@
 
 class PulpException(Exception):
     """
-    Base exception class for pulp with C-like printf syntax for the message.
+    Base exception class for Pulp.
     """
-    def __init__(self, value, *args):
-        Exception.__init__(self, value, *args)
-        self.value = value % args
+    pass
 
-    def __str__(self):
-        return repr(self.value)
+
+class PulpRuntimeError(PulpException):
+    """
+    Base exception class for runtime errors in Pulp.
+    """
+    pass
+
+
+class PulpValidationError(PulpException):
+    """
+    Base exception class for data validation failures in Pulp.
+    """
+    pass
