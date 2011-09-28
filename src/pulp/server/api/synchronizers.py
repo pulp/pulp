@@ -614,8 +614,8 @@ class YumSynchronizer(BaseSynchronizer):
                 log.info("Createrepo finished in %s seconds" % (end - start))
             log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
                     % (report.successes, report.downloads, report.errors))
-            self.yum_repo_grinder_lock.acquire()
         finally:
+            self.yum_repo_grinder_lock.acquire()
             try:
                 del self.yum_repo_grinder
                 self.yum_repo_grinder = None
