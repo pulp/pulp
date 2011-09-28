@@ -153,8 +153,7 @@ def list_distributors():
     @rtype: dict {str: dict, ...}
     """
     assert _is_initialized()
-    plugins = _LOADER.get_loaded_distributors()
-    return dict((id_, cls.metadata()) for id_, cls in plugins.items())
+    return _LOADER.get_loaded_distributors()
 
 
 def list_importers():
@@ -164,8 +163,7 @@ def list_importers():
     @rtype: dict {str: dict, ...}
     """
     assert _is_initialized()
-    plugins = _LOADER.get_loaded_importers().keys()
-    return dict((id_, cls.metadata()) for id_, cls in plugins.items())
+    return _LOADER.get_loaded_importers()
 
 
 def list_profilers():
@@ -175,8 +173,7 @@ def list_profilers():
     @rtype: dict {str: dict, ...}
     """
     assert _is_initialized()
-    plugins = _LOADER.get_loaded_profilers().keys()
-    return dict((id_, cls.metadata()) for id_, cls in plugins.items())
+    return _LOADER.get_loaded_profilers()
 
 
 def list_distributor_types(id):
@@ -465,22 +462,22 @@ class PluginLoader(object):
 
     def get_loaded_distributors(self):
         """
-        @return: dictionary of distributor id: tuple of types
-        @rtype: dict {str: set}
+        @return: dictionary of distributor id: metadata dictionary
+        @rtype: dict {str: dict}
         """
         return self.__distributors.get_loaded_plugins()
 
     def get_loaded_importers(self):
         """
-        @return: dictionary of importer id: tuple of types
-        @rtype: dict {str: set}
+        @return: dictionary of importer id: metadata dictionary
+        @rtype: dict {str: dict}
         """
         return self.__importers.get_loaded_plugins()
 
     def get_loaded_profilers(self):
         """
-        @return: dictionary of profiler id: tuple of types
-        @rtype: dict {str: set}
+        @return: dictionary of profiler id: metadata dictionary
+        @rtype: dict {str: dict}
         """
         return self.__profilers.get_loaded_plugins()
 
@@ -545,14 +542,9 @@ class _PluginMap(object):
 
     def get_loaded_plugins(self):
         """
-        @rtype: dict {str: set, ...}
+        @rtype: dict {str: dict, ...}
         """
-        plugins = {}
-        for type_, plugin_ids in self.types.items():
-            for id_ in plugin_ids:
-                types_list = plugins.setdefault(id_, set())
-                types_list.add(type_)
-        return plugins
+        return dict((id, cls.metadata) for id, cls in self.plugins.items())
 
     def has_plugin(self, id):
         """
