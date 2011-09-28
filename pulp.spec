@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.234
+Version:        0.0.235
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -495,6 +495,97 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Sep 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.235-1
+- Fix 'release non-acquired lock' error from repo sync (jmatthews@redhat.com)
+- pushed loading of metadata all the way down into _PluginMap
+  (jconnor@redhat.com)
+- added failsafe to improperly formatted actions dict entries
+  (jconnor@redhat.com)
+- mounting generic contents rest api at /contents (jconnor@redhat.com)
+- mounting content units under units as the whole thing will be mounted under
+  content (jconnor@redhat.com)
+- skeleton generic contents module (jconnor@redhat.com)
+- 740310 - added message for repo --list_keys when there are no gpg keys in the
+  repository (skarmark@redhat.com)
+- 733705 - Added better error handling when trying to add a filter to a file
+  repo (skarmark@redhat.com)
+- idea at hacking wsgi middleware start_response (jconnor@redhat.com)
+- first pass at error handling middleware (jconnor@redhat.com)
+- new middleware package to house wsgi middleware (jconnor@redhat.com)
+- added additional base error classes (jconnor@redhat.com)
+- start of new exception hierarchy (jconnor@redhat.com)
+- 739099 - fixed error when displaying distribution info because of non-
+  existing cds config section (skarmark@redhat.com)
+- removing obsolete tests (pkilambi@redhat.com)
+- fixing export loader to work on python2.4 as it doesnt support keyword
+  arguments (pkilambi@redhat.com)
+- removed uniqueness of types for importers and distributors changed
+  get_X_by_type to return lists (jconnor@redhat.com)
+- create temp export directory and clean it up after test completes
+  (pkilambi@redhat.com)
+- deduct items left count when done on distros and pkggrps
+  (pkilambi@redhat.com)
+- changed conduit creation to pass in new required managers
+  (jconnor@redhat.com)
+- implement get_content_units for repo_publish conduit (jconnor@redhat.com)
+- added query to get content type ids for a given repo (jconnor@redhat.com)
+- 736070 - Adding distribution family, variant and version info: * db changes *
+  migration script * api changes * cli changes * unit test updates
+  (pkilambi@redhat.com)
+- Adding back DB initialize call since for some devs httpd seems to load this
+  script before bootstrap (jason.dobies@redhat.com)
+- moved snapshotting of task from task enqueue to task run (jconnor@redhat.com)
+- Need DB reloads since the plugin may affect their state
+  (jason.dobies@redhat.com)
+- fixed exceptions with no message (jconnor@redhat.com)
+- revamped add_or_update_content_unit to actually add or update the content
+  unit (jconnor@redhat.com)
+- Default inbound value for auto publish to false (jason.dobies@redhat.com)
+- Make the plugin-specified relative path a little safer to work with
+  (jason.dobies@redhat.com)
+- Removed DB initialize (it's in bootstrap now) (jason.dobies@redhat.com)
+- Added database and plugin manager initialization to bootstrap
+  (jason.dobies@redhat.com)
+- Integrate progress information on the client to display to the end user;
+  adding cancel export support plus other fixes (pkilambi@redhat.com)
+- added contents into content units root dir path (jconnor@redhat.com)
+- Added call to retrieve type IDs (jason.dobies@redhat.com)
+- Added temporary GC repo list web service (jason.dobies@redhat.com)
+- integrate make isos to the exporter calls (pkilambi@redhat.com)
+- Changed debug output to true so people can see what's happening. If it's
+  false by default and they forget to pass it, then they lose the record of
+  what happened on that run. If they try to run it again with debug, there's no
+  guarantee the same changes will have been made. (jason.dobies@redhat.com)
+- added plugin directories to developer and rpm installation
+  (jconnor@redhat.com)
+- changed loader to get plugin name from metadata and to fall back to the
+  plugin class name if not provided (jconnor@redhat.com)
+- added package detection for plugins (jconnor@redhat.com)
+- added disabled plugin detection and skipping (jconnor@redhat.com)
+- fixed old manager imports (jconnor@redhat.com)
+- moved responsibility of config type consistency down into _load_plugin
+  (jconnor@redhat.com)
+- moved responsibility of config type consistency down into _load_plugin
+  (jconnor@redhat.com)
+- added validation checking changed all exceptions to use proper
+  internatioalization practices added logging on successul load of plugins
+  (jconnor@redhat.com)
+- whole new implementation of plugin loader (jconnor@redhat.com)
+- renamed "content manager" from plugin to loader (jconnor@redhat.com)
+- moved importer and distributor plugins to plugins package
+  (jconnor@redhat.com)
+- making plugins package (jconnor@redhat.com)
+- re-arranging content so that importers and distributors are not stored here
+  and we are no longer calling it the content manger wich is confusing
+  (jconnor@redhat.com)
+- Fix for verify_options in cdslib (jmatthews@redhat.com)
+- Adding verify_options of checksum/size for CDS sync (jmatthews@redhat.com)
+- Added distributor validation of configs (jason.dobies@redhat.com)
+- Updated for new importer APIs (jason.dobies@redhat.com)
+- Added ability to ask the importer to validate a repo's configuration
+  (jason.dobies@redhat.com)
+- adding create iso to wrap exported content into cd or dvd isos
+  (pkilambi@redhat.com)
 * Fri Sep 23 2011 Jeff Ortel <jortel@redhat.com> 0.0.234-1
 - Rename remove_old_packages to: remove_old_versions. (jortel@redhat.com)
 - 740839 - adding ia64 to supported arches, also adding a unitest to validate
