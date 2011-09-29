@@ -79,6 +79,7 @@ class Info(DistributionAction):
             system_exit(os.EX_OK, _("No distribution found with id [%s]" % distid))
         print_header(_('Distribution Info for %s' % distid))
         print constants.DISTRO_INFO % (distribution['id'], distribution['description'], distribution['url'],
+                                       distribution['family'], distribution['variant'], distribution['version'],
                                        '\n \t\t\t'.join(distribution['files'][:]), distribution['relativepath'])
 
 # distribution command --------------------------------------------------------------

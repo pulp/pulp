@@ -119,6 +119,9 @@ DISTRO_INFO = """
 Id                    \t%-25s
 Description           \t%-25s 
 URL                   \t%-25s
+Family                \t%-25s
+Variant               \t%-25s
+Version               \t%-25s
 Files                 \t%-25s
 Relativepath          \t%-25s
 """
