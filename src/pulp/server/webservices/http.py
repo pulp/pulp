@@ -242,6 +242,14 @@ def extend_uri_path(suffix):
         path += '/'
     return path
 
+def sub_uri_path(*args):
+    num_args = len(args)
+    original = uri_path()
+    prefix = original.rsplit('/', num_args + 1)[0]
+    suffix = '/'.join(args) + '/'
+    suffix = urllib.pathname2url(suffix)
+    return '/'.join(prefix, suffix)
+
 
 def resource_path(path=None):
     """
