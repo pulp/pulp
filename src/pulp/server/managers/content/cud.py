@@ -90,7 +90,10 @@ class ContentManager(object):
         # TODO validate the child type can be associated with the parent
         # XXX validate the child actually exists?
         children = parent.setdefault('_%s_children' % child_type, [])
-        children.extend(child_ids)
+        for id_ in child_ids:
+            if id_ in children:
+                continue
+            children.append(id_)
         collection.update({'_id': parent_id}, parent, safe=True)
 
     def unlink_child_content_units(self, parent_type, parent_id, child_type, child_ids):
