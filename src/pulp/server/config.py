@@ -67,8 +67,7 @@ _default_values = {
         'key_url': '/pulp/gpg',
         'default_login': 'admin',
         'default_password': 'admin',
-        'debugging_mode': 'true', # XXX should change to false,
-                                  # after we find the cause of bz #677735
+        'debugging_mode': 'false',
     },
     'tasking': {
         'max_concurrent': '4',
