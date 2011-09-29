@@ -199,6 +199,24 @@ class ContentUnitResource(JSONController):
         """
         Return information about a content unit.
         """
+        def _child_links(unit):
+            links = {}
+            child_keys = []
+            for key, child_list in unit.items():
+                if not key.endswith('children'):
+                    continue
+                child_keys.append(key)
+                child_type = key.rsplit('_', 1)[0][1:]
+                child_links = []
+                for child_id in child_list:
+                    link = {'child_id': child_id,
+                            'href': http.sub_uri_path(child_type, 'units', child_id)}
+                    child_links.append(link)
+                links[child_type] = child_links
+            for key in child_keys:
+                unit.pop(key)
+            return links
+
         cqm = factory.content_query_manager()
         try:
             unit = cqm.get_content_unit_by_id(type_id, unit_id)
@@ -206,6 +224,7 @@ class ContentUnitResource(JSONController):
             return self.not_found(_('No content unit resource: %(r)s') %
                                   {'r': unit_id})
         resource = {'href': http.uri_path(),
+                    'children': _child_links(unit),
                     'content_unit': unit}
         return self.ok(resource)
 
