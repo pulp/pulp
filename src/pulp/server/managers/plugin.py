@@ -50,11 +50,13 @@ class PluginManager:
         @rtype:  list of tuples (str, list of int)
         """
 
-        # TODO: Ultimately this call should return all metadata about each importer
-        # Currently it will just return their names and versions.
-
-        importers = plugin_loader.list_importers()
-        return importers
+        importer_dicts = plugin_loader.list_importers()
+        result = []
+        for i in importer_dicts:
+            merged = importer_dicts[i]
+            merged['id'] = i
+            result.append(merged)
+        return result
 
     def distributors(self):
         """
@@ -65,8 +67,10 @@ class PluginManager:
         @rtype:  list of tuples (str, list of int)
         """
 
-        # TODO: Ultimately this call should return all metadata about each distributor
-        # Currently it will just return their names and versions.
-
-        distributors = plugin_loader.list_distributors()
-        return distributors
+        distributor_dicts = plugin_loader.list_distributors()
+        result = []
+        for d in distributor_dicts:
+            merged = distributor_dicts[d]
+            merged['id'] = d
+            result.append(merged)
+        return result
