@@ -21,7 +21,7 @@ import re
 import sys
 import uuid
 
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit
 import pulp.server.content.loader as plugin_loader
 
 # -- constants ----------------------------------------------------------------
@@ -200,11 +200,14 @@ class RepoManager:
         # TODO: remove storage directory on disk (sync_manager.get_repo_storage_directory)
 
         # Database Update
-        Repo.get_collection().remove({'id' : repo_id})
+        Repo.get_collection().remove({'id' : repo_id}, safe=True)
 
         # Remove all importers and distributors from the repo
-        RepoDistributor.get_collection().remove({'repo_id' : repo_id})
-        RepoImporter.get_collection().remove({'repo_id' : repo_id})
+        RepoDistributor.get_collection().remove({'repo_id' : repo_id}, safe=True)
+        RepoImporter.get_collection().remove({'repo_id' : repo_id}, safe=True)
+
+        # Remove all associations from the repo
+        RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
 
     def set_importer(self, repo_id, importer_type_id, importer_config):
         """
