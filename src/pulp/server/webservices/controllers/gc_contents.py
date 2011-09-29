@@ -32,7 +32,9 @@ class ContentCollections(JSONController):
         """
         List the available content types.
         """
-        pass
+        cqm = factory.content_query_manager()
+        type_ids = cqm.list_content_types()
+        return self.not_implemented()
 
     @error_handler
     @auth_required(CREATE)
@@ -40,7 +42,7 @@ class ContentCollections(JSONController):
         """
         Create a new content type.
         """
-        pass
+        return self.not_implemented()
 
 
 class ContentTypeResource(JSONController):
@@ -51,7 +53,7 @@ class ContentTypeResource(JSONController):
         """
         Remove a content type.
         """
-        pass
+        return self.not_implemented()
 
     @error_handler
     @auth_required(READ)
@@ -59,7 +61,7 @@ class ContentTypeResource(JSONController):
         """
         Return information about a content type.
         """
-        pass
+        return self.not_implemented()
 
     @error_handler
     @auth_required(UPDATE)
@@ -67,7 +69,7 @@ class ContentTypeResource(JSONController):
         """
         Update a content type.
         """
-        pass
+        return self.not_implemented()
 
 
 class ContentTypeActions(JSONController):
@@ -76,7 +78,8 @@ class ContentTypeActions(JSONController):
         'upload': 'upload_content_unit',
     }
 
-    def upload_content_unit(self, type_id):
+    # XXX currently unimplemented
+    def _upload_content_unit(self, type_id):
         pass
 
     @error_handler
@@ -87,8 +90,8 @@ class ContentTypeActions(JSONController):
                                   {'t': type_id, 'a': action})
         method = getattr(self, self.actions_map[action], None)
         if method is None:
-            return self.not_found(_('Action not implemented for %(t)s: %(a)s') %
-                                  {'t': type_id, 'a': action})
+            return self.not_implemented(_('Action not implemented for %(t)s: %(a)s') %
+                                        {'t': type_id, 'a': action})
         return method(type_id)
 
 
@@ -100,7 +103,7 @@ class ContentUnitCollection(JSONController):
         """
         List all the available content units.
         """
-        pass
+        return self.not_implemented()
 
     @error_handler
     @auth_required(CREATE)
@@ -108,7 +111,7 @@ class ContentUnitCollection(JSONController):
         """
         Create a new content unit.
         """
-        pass
+        return self.not_implemented()
 
 
 class ContentUnitResource(JSONController):
@@ -119,7 +122,7 @@ class ContentUnitResource(JSONController):
         """
         Remove a content unit.
         """
-        pass
+        return self.not_implemented()
 
     @error_handler
     @auth_required(READ)
@@ -127,7 +130,7 @@ class ContentUnitResource(JSONController):
         """
         Return information about a content unit.
         """
-        pass
+        return self.not_implemented()
 
     @error_handler
     @auth_required(CREATE)
@@ -135,7 +138,7 @@ class ContentUnitResource(JSONController):
         """
         Update a content unit.
         """
-        pass
+        return self.not_implemented()
 
 # wsgi application -------------------------------------------------------------
 
