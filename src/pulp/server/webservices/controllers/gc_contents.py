@@ -226,10 +226,10 @@ class ContentUnitResource(JSONController):
 # wsgi application -------------------------------------------------------------
 
 _URLS = ('/$', ContentCollections,
-         '([^/]+)/$', ContentTypeResource,
-         '([^/]+)/actions/$', ContentTypeActionsCollection,
-         '([^/]+)/actions/(%s)/$' % '|'.join(ContentTypeActionResource.actions_map), ContentTypeActionResource,
-         '([^/]+)/units/$', ContentUnitsCollection,
-         '([^/]+)/units/([^/]+)/$', ContentUnitResource,)
+         '/([^/]+)/$', ContentTypeResource,
+         '/([^/]+)/actions/$', ContentTypeActionsCollection,
+         '/([^/]+)/actions/(%s)/$' % '|'.join(ContentTypeActionResource.actions_map), ContentTypeActionResource,
+         '/([^/]+)/units/$', ContentUnitsCollection,
+         '/([^/]+)/units/([^/]+)/$', ContentUnitResource,)
 
 application = web.application(_URLS, globals())
