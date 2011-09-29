@@ -50,7 +50,7 @@ Requires: python-oauth2
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.110
+Requires: grinder >= 0.0.118
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -162,7 +162,7 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.48
-Requires:       grinder
+Requires:       grinder >= 0.0.118
 Requires:       httpd
 Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
 Requires:       mod_ssl
