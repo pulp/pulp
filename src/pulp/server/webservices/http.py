@@ -243,12 +243,20 @@ def extend_uri_path(suffix):
     return path
 
 def sub_uri_path(*args):
+    """
+    Rerturn the current uri path with the last segments substitued by the
+    arguments passed in.
+    @param args: list of strings
+    @type args: list [str, ...]
+    @return: uri with args as suffix
+    @rtype: str
+    """
     num_args = len(args)
     original = uri_path()
     prefix = original.rsplit('/', num_args + 1)[0]
     suffix = '/'.join(args) + '/'
-    suffix = urllib.pathname2url(suffix)
-    return '/'.join(prefix, suffix)
+    url_suffix = urllib.pathname2url(suffix)
+    return '/'.join(prefix, url_suffix)
 
 
 def resource_path(path=None):
