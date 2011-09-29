@@ -73,7 +73,7 @@ _default_values = {
     'tasking': {
         'max_concurrent': '4',
         'schedule_threshold': '5 minutes',
-        'failure_threshold': '5',
+        'failure_threshold': '-1',
     },
     'yum': {
         'threads': '5',
