@@ -249,7 +249,6 @@ def _child_links(unit):
         unit.pop(key)
     return links
 
-
 # wsgi application -------------------------------------------------------------
 
 _URLS = ('/$', ContentCollections,
