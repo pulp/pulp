@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.235
+Version:        0.0.236
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -495,6 +495,23 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Sep 29 2011 Jeff Ortel <jortel@redhat.com> 0.0.236-1
+- first pass at all query controllers (jconnor@redhat.com)
+- added type definition query (jconnor@redhat.com)
+- added db query to get type definition (jconnor@redhat.com)
+- placeholder module for manipulating link objects (jconnor@redhat.com)
+- added some logic to avoid a failure_threshold of 0 bug (jconnor@redhat.com)
+- Script to use grinder with meliae and track down memory usage
+  (jmatthews@redhat.com)
+- Changed to use new plugin loader APIs (jason.dobies@redhat.com)
+- changed importer validation to use new metadata return (jconnor@redhat.com)
+- made metadata call, insteal of direct accesst (jconnor@redhat.com)
+- added ability to list content types (jconnor@redhat.com)
+- added http not implemented error to responses (jconnor@redhat.com)
+- adding new fields to info option (pkilambi@redhat.com)
+- added associate/unassociate of child content unit(s) (jconnor@redhat.com)
+- Filter repo sync tasks by repo id when fetching history (jslagle@redhat.com)
+
 * Wed Sep 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.235-1
 - Fix 'release non-acquired lock' error from repo sync (jmatthews@redhat.com)
 - pushed loading of metadata all the way down into _PluginMap
