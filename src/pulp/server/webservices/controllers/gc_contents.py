@@ -199,28 +199,6 @@ class ContentUnitResource(JSONController):
         """
         Return information about a content unit.
         """
-        def _child_links(unit):
-            links = {}
-            child_keys = []
-            for key, child_list in unit.items():
-                # look for children fields
-                if not key.endswith('children'):
-                    continue
-                child_keys.append(key)
-                # child field key format: _<child type>_children
-                child_type = key.rsplit('_', 1)[0][1:]
-                child_links = []
-                # generate links
-                for child_id in child_list:
-                    link = {'child_id': child_id,
-                            'href': http.sub_uri_path(child_type, 'units', child_id)}
-                    child_links.append(link)
-                links[child_type] = child_links
-            # side effect: remove the child keys
-            for key in child_keys:
-                unit.pop(key)
-            return links
-
         cqm = factory.content_query_manager()
         try:
             unit = cqm.get_content_unit_by_id(type_id, unit_id)
@@ -245,6 +223,31 @@ class ContentUnitResource(JSONController):
         Update a content unit.
         """
         return self.not_implemented()
+
+# utility methods --------------------------------------------------------------
+
+def _child_links(unit):
+    links = {}
+    child_keys = []
+    for key, child_list in unit.items():
+        # look for children fields
+        if not key.endswith('children'):
+            continue
+        child_keys.append(key)
+        # child field key format: _<child type>_children
+        child_type = key.rsplit('_', 1)[0][1:]
+        child_links = []
+        # generate links
+        for child_id in child_list:
+            link = {'child_id': child_id,
+                    'href': http.sub_uri_path(child_type, 'units', child_id)}
+            child_links.append(link)
+        links[child_type] = child_links
+    # side effect: remove the child keys
+    for key in child_keys:
+        unit.pop(key)
+    return links
+
 
 # wsgi application -------------------------------------------------------------
 
