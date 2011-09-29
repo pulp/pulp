@@ -18,6 +18,8 @@ import web
 from pulp.server.auth.authorization import (
     CREATE, READ, UPDATE, DELETE, EXECUTE)
 from pulp.server.managers import factory
+from pulp.server.managers.content.exception import ContentUnitNotFound
+from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -32,9 +34,21 @@ class ContentCollections(JSONController):
         """
         List the available content types.
         """
+        collection = {'href': http.uri_path(),
+                      'content_types': []}
         cqm = factory.content_query_manager()
         type_ids = cqm.list_content_types()
-        return self.not_implemented()
+        for id in type_ids:
+            link = {'type_id': id,
+                    'href': http.extend_uri_path(id)}
+            collection['content_types'].append(link)
+        return self.ok(collection)
+
+    @error_handler
+    def OPTIONS(self):
+        options = {'href': http.uri_path(),
+                   'methods': ['GET', 'POST']}
+        return self.ok(options)
 
     @error_handler
     @auth_required(CREATE)
@@ -61,7 +75,22 @@ class ContentTypeResource(JSONController):
         """
         Return information about a content type.
         """
-        return self.not_implemented()
+        cqm = factory.content_query_manager()
+        type_ = cqm.get_content_type(type_id)
+        if type_ is None:
+            return self.not_found(_('No content type resource: %(r)s') %
+                                  {'r': type_id})
+        resource = {'href': http.uri_path(),
+                    'actions': {'href': http.extend_uri_path('actions')},
+                    'content_units': {'href': http.extend_uri_path('units')},
+                    'content_type': type_}
+        return self.ok(resource)
+
+    @error_handler
+    def OPTIONS(self, type_id):
+        options = {'href': http.uri_path(),
+                   'methods': ['DELETE', 'GET', 'PUT']}
+        return self.ok(options)
 
     @error_handler
     @auth_required(UPDATE)
@@ -72,7 +101,27 @@ class ContentTypeResource(JSONController):
         return self.not_implemented()
 
 
-class ContentTypeActions(JSONController):
+class ContentTypeActionsCollection(JSONController):
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self, type_id):
+        collection = {'href': http.uri_path(),
+                      'actions': []}
+        for action in ContentTypeActionResource.actions_map:
+            link = {'action': action,
+                    'href': http.extend_uri_path(action)}
+            collection['actions'].append(link)
+        return self.ok(collection)
+
+    @error_handler
+    def OPTIONS(self, type_id):
+        options = {'href': http.uri_path(),
+                   'methods': ['GET']}
+        return self.ok(options)
+
+
+class ContentTypeActionResource(JSONController):
 
     actions_map = {
         'upload': 'upload_content_unit',
@@ -81,6 +130,12 @@ class ContentTypeActions(JSONController):
     # XXX currently unimplemented
     def _upload_content_unit(self, type_id):
         pass
+
+    @error_handler
+    def OPTIONS(self, type_id, action):
+        options = {'href': http.uri_path(),
+                   'methods': ['POST']}
+        return self.ok(options)
 
     @error_handler
     @auth_required(EXECUTE)
@@ -95,7 +150,7 @@ class ContentTypeActions(JSONController):
         return method(type_id)
 
 
-class ContentUnitCollection(JSONController):
+class ContentUnitsCollection(JSONController):
 
     @error_handler
     @auth_required(READ)
@@ -103,7 +158,21 @@ class ContentUnitCollection(JSONController):
         """
         List all the available content units.
         """
-        return self.not_implemented()
+        collection = {'href': http.uri_path(),
+                      'content_units': []}
+        cqm = factory.content_query_manager()
+        content_units = cqm.list_content_units(type_id)
+        for unit in content_units:
+            link = {'href': http.extend_uri_path(unit['id']),
+                    'content_unit': unit}
+            collection['content_units'].append(link)
+        return self.ok(collection)
+
+    @error_handler
+    def OPTIONS(self, type_id):
+        options = {'href': http.uri_path(),
+                   'methods': ['GET', 'POST']}
+        return self.ok(options)
 
     @error_handler
     @auth_required(CREATE)
@@ -130,7 +199,21 @@ class ContentUnitResource(JSONController):
         """
         Return information about a content unit.
         """
-        return self.not_implemented()
+        cqm = factory.content_query_manager()
+        try:
+            unit = cqm.get_content_unit_by_id(type_id, unit_id)
+        except ContentUnitNotFound:
+            return self.not_found(_('No content unit resource: %(r)s') %
+                                  {'r': unit_id})
+        resource = {'href': http.uri_path(),
+                    'content_unit': unit}
+        return self.ok(resource)
+
+    @error_handler
+    def OPTIONS(self, type_id, unit_id):
+        options = {'href': http.uri_path(),
+                   'methods': ['DELETE', 'GET', 'PUT']}
+        return self.ok(options)
 
     @error_handler
     @auth_required(CREATE)
@@ -144,8 +227,9 @@ class ContentUnitResource(JSONController):
 
 _URLS = ('/$', ContentCollections,
          '([^/]+)/$', ContentTypeResource,
-         '([^/]+)/actions/(%s)/$' % '|'.join(ContentTypeActions.actions_map), ContentTypeActions,
-         '([^/]+)/units/$', ContentUnitCollection,
+         '([^/]+)/actions/$', ContentTypeActionsCollection,
+         '([^/]+)/actions/(%s)/$' % '|'.join(ContentTypeActionResource.actions_map), ContentTypeActionResource,
+         '([^/]+)/units/$', ContentUnitsCollection,
          '([^/]+)/units/([^/]+)/$', ContentUnitResource,)
 
 application = web.application(_URLS, globals())
