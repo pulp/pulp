@@ -34,6 +34,11 @@ class ContentQueryManager(object):
         """
         return content_types_db.all_type_ids()
 
+    def get_content_type(self, type_id):
+        """
+        """
+        return content_types_db.type_definition(type_id)
+
     def list_content_units(self,
                            content_type,
                            db_spec=None,
