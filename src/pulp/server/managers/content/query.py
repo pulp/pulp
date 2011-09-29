@@ -26,7 +26,7 @@ class ContentQueryManager(object):
     Query operations for content types and and individual content units.
     """
 
-    def list_content_types():
+    def list_content_types(self):
         """
         List the currently defined content type ids.
         @retun: list of content type ids
