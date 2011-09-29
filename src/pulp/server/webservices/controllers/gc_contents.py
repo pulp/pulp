@@ -163,7 +163,7 @@ class ContentUnitsCollection(JSONController):
         cqm = factory.content_query_manager()
         content_units = cqm.list_content_units(type_id)
         for unit in content_units:
-            link = {'href': http.extend_uri_path(unit['id']),
+            link = {'href': http.extend_uri_path(unit['_id']),
                     'content_unit': unit}
             collection['content_units'].append(link)
         return self.ok(collection)
