@@ -207,6 +207,18 @@ def all_type_definitions():
     types = list(coll.find())
     return types
 
+def type_definition(type_id):
+    """
+    Return a type definition
+    @param type_id: unique type id
+    @type type_id: str
+    @return: corresponding type definition, None if not found
+    @rtype: SON or None
+    """
+    collection = ContentType.get_collection()
+    type_ = collection.find_one({'_id': type_id})
+    return type_
+
 
 def unit_collection_name(type_id):
     """
