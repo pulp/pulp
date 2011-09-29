@@ -123,7 +123,7 @@ class ContentQueryManager(object):
                                                (unit_id,),
                                                model_fields)
         if not units:
-            raise ContentUnitNotFound(_('No content unit found for: %(i)') %
+            raise ContentUnitNotFound(_('No content unit found for: %(i)s') %
                                       {'i': unit_id})
         return units[0]
 
