@@ -253,7 +253,7 @@ def sub_uri_path(*args):
     """
     num_args = len(args)
     original = uri_path()
-    prefix = original.rsplit('/', num_args + 1)[0]
+    prefix = original.rsplit('/', num_args)[0]
     suffix = '/'.join(args) + '/'
     url_suffix = urllib.pathname2url(suffix)
     return '/'.join((prefix, url_suffix))
