@@ -84,6 +84,10 @@ def GET(path, **params):
     return _request('GET', path)
 
 
+def OPTIONS(path):
+    return _request('OPTIONS', path)
+
+
 def PUT(path, body):
     return _request('PUT', path, body)
 
