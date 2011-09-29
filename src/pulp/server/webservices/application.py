@@ -79,7 +79,7 @@ urls = (
     '/v1/tasks', tasks.application,
     '/v1/users', users.application,
     # version 2 api
-    '/v2/contents', gc_contents.application,
+    '/v2/content', gc_contents.application,
     '/v2/plugins', gc_plugins.application,
     '/v2/repositories', gc_repositories.application,
 )
