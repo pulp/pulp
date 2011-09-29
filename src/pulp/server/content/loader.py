@@ -544,7 +544,7 @@ class _PluginMap(object):
         """
         @rtype: dict {str: dict, ...}
         """
-        return dict((id, cls.metadata) for id, cls in self.plugins.items())
+        return dict((id, cls.metadata()) for id, cls in self.plugins.items())
 
     def has_plugin(self, id):
         """
