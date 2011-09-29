@@ -148,6 +148,8 @@ def initialize():
     global _queue
     max_concurrent = config.config.getint('tasking', 'max_concurrent')
     failure_threshold = config.config.getint('tasking', 'failure_threshold')
+    if failure_threshold < 1:
+        failure_threshold = None
     schedule_threshold = _configured_schedule_threshold()
     _queue = TaskQueue(max_running=max_concurrent,
                        failure_threshold=failure_threshold,
