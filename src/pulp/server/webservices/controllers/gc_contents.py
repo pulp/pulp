@@ -164,6 +164,7 @@ class ContentUnitsCollection(JSONController):
         content_units = cqm.list_content_units(type_id)
         for unit in content_units:
             link = {'href': http.extend_uri_path(unit['_id']),
+                    'children': _child_links(unit),
                     'content_unit': unit}
             collection['content_units'].append(link)
         return self.ok(collection)
