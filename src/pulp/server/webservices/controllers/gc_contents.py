@@ -203,16 +203,20 @@ class ContentUnitResource(JSONController):
             links = {}
             child_keys = []
             for key, child_list in unit.items():
+                # look for children fields
                 if not key.endswith('children'):
                     continue
                 child_keys.append(key)
+                # child field key format: _<child type>_children
                 child_type = key.rsplit('_', 1)[0][1:]
                 child_links = []
+                # generate links
                 for child_id in child_list:
                     link = {'child_id': child_id,
                             'href': http.sub_uri_path(child_type, 'units', child_id)}
                     child_links.append(link)
                 links[child_type] = child_links
+            # side effect: remove the child keys
             for key in child_keys:
                 unit.pop(key)
             return links
