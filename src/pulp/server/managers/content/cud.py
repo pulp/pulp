@@ -87,8 +87,9 @@ class ContentManager(object):
         if parent is None:
             msg = _('%(t)s content unit with id %(p) not found')
             raise ContentTypeNotFound(msg % {'t': parent_type, 'p': parent_id})
-        # TODO validate the child type can be associated with the parent
-        # XXX validate the child actually exists?
+        parent_type_def = content_types_db.type_definition(parent_type)
+        if child_type not in parent_type_def['child_types']:
+            raise Exception()
         children = parent.setdefault('_%s_children' % child_type, [])
         for id_ in child_ids:
             if id_ in children:
