@@ -642,12 +642,12 @@ def _validate_importers():
     """
     assert _is_initialized()
     supported_types = list_content_types()
-    for plugin_name, plugin_types in _LOADER.get_loaded_importers().items():
-        for type_ in plugin_types:
+    for plugin_id, metadata in _LOADER.get_loaded_importers().items():
+        for type_ in metadata['types']:
             if type_ in supported_types:
                 continue
             msg = _('Importer %(i)s: no type definition found for %(t)s')
-            raise InvalidImporter(msg % {'i': plugin_name, 't': type_})
+            raise InvalidImporter(msg % {'i': plugin_id, 't': type_})
 
 # plugin loading
 
