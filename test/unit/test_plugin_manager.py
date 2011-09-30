@@ -109,7 +109,7 @@ class PluginManagerTests(testutil.PulpTest):
 
         # Verify
         self.assertEqual(1, len(found))
-        self.assertEqual('MockImporter', found.keys()[0])
+        self.assertEqual('MockImporter', found[0]['id'])
 
     def test_importers_no_importers(self):
         """
@@ -123,7 +123,7 @@ class PluginManagerTests(testutil.PulpTest):
         found = self.manager.importers()
 
         # Verify
-        self.assertTrue(isinstance(found, dict))
+        self.assertTrue(isinstance(found, list))
         self.assertEqual(0, len(found))
 
     def test_distributors(self):
@@ -136,7 +136,7 @@ class PluginManagerTests(testutil.PulpTest):
 
         # Verify
         self.assertEqual(1, len(found))
-        self.assertEqual('MockDistributor', found.keys()[0])
+        self.assertEqual('MockDistributor', found[0]['id'])
 
     def test_distributors_no_distributors(self):
         """
@@ -150,5 +150,5 @@ class PluginManagerTests(testutil.PulpTest):
         found = self.manager.distributors()
 
         # Verify
-        self.assertTrue(isinstance(found, dict))
+        self.assertTrue(isinstance(found, list))
         self.assertEqual(0, len(found))
