@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.236
+Version:        0.0.237
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -495,6 +495,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Sep 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-1
+- Require gofer 0.50. (jortel@redhat.com)
+- removing the module imports causing the coverage module to get confused and
+  keeping things simple and load from a static class list (pkilambi@redhat.com)
+- Requires grinder: 0.118 for API compat. (jortel@redhat.com)
+- Delete associations on repo delete (jason.dobies@redhat.com)
 * Thu Sep 29 2011 Jeff Ortel <jortel@redhat.com> 0.0.236-1
 - first pass at all query controllers (jconnor@redhat.com)
 - added type definition query (jconnor@redhat.com)
