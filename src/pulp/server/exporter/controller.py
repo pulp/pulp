@@ -10,10 +10,12 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-import glob
 import os
-import sys
-import pulp.server.util
+from pulp.server.exporter.distribution import DistributionExporter
+from pulp.server.exporter.errata import ErrataExporter
+from pulp.server.exporter.other import OtherExporter
+from pulp.server.exporter.package import PackageExporter
+from pulp.server.exporter.packagegroup import CompsExporter
 from logging import getLogger
 from pulp.server.exporter.base import BaseExporter, ExporterReport
 from pulp.server.exporter.generate_iso import GenerateIsos
@@ -21,8 +23,8 @@ from pulp.server.exporter.generate_iso import GenerateIsos
 log = getLogger(__name__)
 # --------------- constants ---------------------------#
 
-_TOP_LEVEL_PACKAGE = 'pulp.server.exporter'
 _EXPORTER_MODULES_PATH = os.path.dirname(__file__)
+_EXPORT_CLASSES = [PackageExporter, CompsExporter, ErrataExporter, DistributionExporter, OtherExporter]
 
 class ExportController(object):
     """
@@ -48,36 +50,11 @@ class ExportController(object):
             'step': "STARTING",
         }
 
-    def _load_exporter(self):
-        """
-        Discover and load available types of content to export
-        @rtype: list
-        @return: return list of exporter type modules that are subclasses of BaseExporter
-        """
-        plugins = []
-        for plugin in glob.glob(os.path.join(_EXPORTER_MODULES_PATH, '*.py')):
-            # import the module
-            module_name = _TOP_LEVEL_PACKAGE + '.' + \
-                                os.path.basename(plugin).split('.')[0]
-            module = __import__(module_name)
-            for comp in module_name.split('.')[1:]:
-                module = getattr(module, comp)
-            for name, attr in module.__dict__.items():
-                try:
-                    if issubclass(attr, BaseExporter):
-                        if attr == BaseExporter:
-                            # BaseExporter can be a subclass of itself
-                            continue
-                        plugins.append(attr)
-                except TypeError:
-                    continue
-        return plugins
-
     def perform_export(self):
         """
         Execute the exporter
         """
-        classes = sorted(self._load_exporter(), key=lambda mod: mod.__priority__)
+        classes = sorted(_EXPORT_CLASSES, key=lambda mod: mod.__priority__)
         for cls in classes:
             try:
                 exporter = cls(self.repo, target_dir=self.target_dir, progress=self.progress)

@@ -53,12 +53,6 @@ class TestExportController(testutil.PulpAsyncTest):
         testutil.PulpAsyncTest.tearDown(self)
         shutil.rmtree("/tmp/pulp/myexport/")
 
-    def test_controller_class_load(self):
-        classes = self.ec._load_exporter()
-        cls_list = [PackageExporter, CompsExporter, ErrataExporter, OtherExporter, DistributionExporter]
-        for cls in cls_list:
-            assert(cls in classes)
-
     def test_perform_export(self):
         self.ec.perform_export()
         print self.ec.progress
