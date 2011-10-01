@@ -1,4 +1,5 @@
 
+import content
 import repo
 
-__all__ = ['repo']
+__all__ = ['content', 'repo']
