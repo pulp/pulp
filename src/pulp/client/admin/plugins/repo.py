@@ -725,6 +725,8 @@ class Update(AdminRepoAction):
                 interval = start = runs = None
                 if repo[k] is not None:
                     interval, start, runs = parse_iso8601_interval(repo[k])
+                    if not isinstance(interval, timedelta) and start is None:
+                        utils.system_exit('If interval has months or years, a start time must be specified')
                     interval = interval and format_iso8601_duration(interval)
                     start = start and format_iso8601_datetime(start)
                     runs = runs and str(runs)
