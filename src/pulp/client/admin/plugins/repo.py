@@ -16,6 +16,7 @@ import string
 import sys
 import time
 import urlparse
+from datetime import timedelta
 from gettext import gettext as _
 from optparse import OptionGroup
 
@@ -845,7 +846,9 @@ class Sync(RepoProgressAction):
             skip['distribution'] = 1
         timeout = self.opts.timeout
         if timeout is not None:
-            parse_iso8601_duration(timeout)
+            delta = parse_iso8601_duration(timeout)
+            if not isinstance(delta, timedelta):
+                utils.system_exit('Timeout may not contain months or years')
         limit = self.opts.limit
         threads = self.opts.threads
         task = self.repository_api.sync(id, skip, timeout, limit=limit, threads=threads)
