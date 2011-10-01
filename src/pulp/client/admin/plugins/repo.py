@@ -471,7 +471,7 @@ class Create(AdminRepoAction):
                 notes = eval(self.opts.notes)
             except:
                 utils.system_exit(os.EX_USAGE, _("Invalid argument for notes. Notes need to be specified in dictionary form inside a string eg. \"{'key':'value'}\""))
-                
+
         else:
             notes = {}
 
@@ -586,7 +586,7 @@ class Clone(RepoProgressAction):
     def get_task(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-        
+
         # find if sync in progress for parent repo
         tasks = self.repository_api.sync_list(id)
         running = self.repository_api.running_task(tasks)
@@ -726,7 +726,7 @@ class Update(AdminRepoAction):
                 if repo[k] is not None:
                     interval, start, runs = parse_iso8601_interval(repo[k])
                     if not isinstance(interval, timedelta) and start is None:
-                        utils.system_exit('If interval has months or years, a start time must be specified')
+                        utils.system_exit(os.EX_USAGE, 'If interval has months or years, a start time must be specified')
                     interval = interval and format_iso8601_duration(interval)
                     start = start and format_iso8601_datetime(start)
                     runs = runs and str(runs)
@@ -850,7 +850,7 @@ class Sync(RepoProgressAction):
         if timeout is not None:
             delta = parse_iso8601_duration(timeout)
             if not isinstance(delta, timedelta):
-                utils.system_exit('Timeout may not contain months or years')
+                utils.system_exit(os.EX_USAGE, 'Timeout may not contain months or years')
         limit = self.opts.limit
         threads = self.opts.threads
         task = self.repository_api.sync(id, skip, timeout, limit=limit, threads=threads)
