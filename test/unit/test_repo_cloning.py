@@ -44,7 +44,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
         # Try repo cloning default case: feed = parent
         try:
-            repo_sync._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')
+            repo_sync._clone('clone-some-id-parent', repo['id'], 'clone-some-id-parent')
         except Exception, e:
             print "Exception caught: ", e
             self.assertTrue(False)
@@ -61,7 +61,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
         # Try repo cloning with origin feed
         try:
-            repo_sync._clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
+            repo_sync._clone('clone-some-id-origin', repo['id'], 'clone-some-id-origin', feed="origin")
         except Exception:
             self.assertTrue(False)
         # Check that local storage has dir and rpms
@@ -74,7 +74,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
         # Try repo cloning with no feed
         try:
-            repo_sync._clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
+            repo_sync._clone('clone-some-id-none', repo['id'], 'clone-some-id-none', feed="none")
         except Exception:
             self.assertTrue(False)
         # Check that local storage has dir and rpms
@@ -89,7 +89,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
     def test_clone_non_existent_repo(self):
         # Negative case where parent repo does not exist
         try:
-            repo_api._clone('some-random-id', 'clone-some-id-parent', 'clone-some-id-parent')
+            repo_api._clone('clone-some-id-parent', 'some-random-id', 'clone-some-id-parent')
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
