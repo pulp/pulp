@@ -61,5 +61,8 @@ def uri(repo):
     # no cds association: build local uri
     request_uri = http.request_url()
     uri_prefix = request_uri.split(http.API_HREF)[0]
-    uri_ = '/'.join((uri_prefix, REPO_URI_PATH, repo['id']))
+    uri_suffix = repo.get('relative_path', None)
+    if uri_suffix is None:
+        uri_suffix = repo['id']
+    uri_ = '/'.join((uri_prefix, REPO_URI_PATH, uri_suffix))
     return http.ensure_ending_slash(uri_)
