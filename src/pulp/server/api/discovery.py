@@ -244,7 +244,7 @@ class YumDiscovery(BaseDiscovery):
         """
         Takes a root file path and traverses the tree to find all the repos
         that has repodata in them.
-        @return: list of matching urls
+        @return: list of matching filepath urls
         @rtype: list
         """
         proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
@@ -314,13 +314,8 @@ def main():
     print("Discovering urls with yum metadata, This could take sometime..")
     type = sys.argv[1]
     url = sys.argv[2]
-    ca =  None #open(sys.argv[2], 'r').read() #None
-    cert = None # open(sys.argv[3], 'r').read() #None
-    key = None #sys.argv[4]
     d = get_discovery(type)
-    print "CA ",ca
-    print "CERT", cert
-    d.setup(url, ca, cert, key)
+    d.setup(url)
     try:
         repourls = d.discover()
         print('========================')
