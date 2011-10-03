@@ -21,8 +21,8 @@ from threading import Thread
 #    return str(type(o))
 
 
-import meliae
-import meliae.scanner
+#import meliae
+#import meliae.scanner
 
 #from guppy import hpy 
 #HP=hpy()
@@ -80,9 +80,10 @@ class SyncThread(Thread):
 
     def run(self):
         try:
-            meliae.scanner.dump_all_objects('meliae/begin_%s_sync.json' % (self.repo_id))
+            #meliae.scanner.dump_all_objects('meliae/begin_%s_sync.json' % (self.repo_id))
             self.sync(self.repo_id, self.url, self.ca, self.cert)
-            meliae.scanner.dump_all_objects('meliae/complete_%s_sync.json' % (self.repo_id))
+            #meliae.scanner.dump_all_objects('meliae/complete_%s_sync.json' % (self.repo_id))
+            #meliae.scanner.dump_gc_objects('meliae/complete_%s_sync_dump_gc_objects.json' % (self.repo_id))
         except Exception, e:
             print "\n\n\n%s Caught Exception: %s\n\n\n" % (self.repo_id, e)
         self.finished = True
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     print "%s Feed URLs found" % (len(feed_urls))
     #HP.setref()
     threads = []
-    meliae.scanner.dump_all_objects('meliae/begin_sync.json')
+    #meliae.scanner.dump_all_objects('meliae/begin_sync.json')
     for index, repo in enumerate(feed_urls):
         if len(threads) >= MAX_SYNC_JOBS:
             print "Will wait: %s jobs running now" % (len(threads))
@@ -127,7 +128,7 @@ if __name__ == "__main__":
         print "[%s/%s] sync job started." % (index, len(feed_urls))
     wait_for_all_complete(threads)
     #print "End of all syncs: ", HP.heap()
-    meliae.scanner.dump_all_objects('meliae/completed_all_syncs.json')
+    #meliae.scanner.dump_all_objects('meliae/completed_all_syncs.json')
 
 
 

@@ -83,7 +83,9 @@ class SyncThread(Thread):
             meliae.scanner.dump_all_objects('meliae/begin_%s_sync.json' % (self.repo_id))
             self.sync(self.repo_id, self.url, self.ca, self.cert)
             meliae.scanner.dump_all_objects('meliae/complete_%s_sync.json' % (self.repo_id))
-            meliae.scanner.dump_gc_objects('meliae/complete_%s_sync_dump_gc_objects.json' % (self.repo_id))
+            # dump_gc_objects seems to crash sometimes, a core dump created with a backtrace
+            # pointing to an issue with getting a hash on an object
+            #meliae.scanner.dump_gc_objects('meliae/complete_%s_sync_dump_gc_objects.json' % (self.repo_id))
         except Exception, e:
             print "\n\n\n%s Caught Exception: %s\n\n\n" % (self.repo_id, e)
         self.finished = True
