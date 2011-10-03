@@ -16,6 +16,7 @@
 import logging
 import sys
 import os
+import urlparse
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
@@ -71,6 +72,19 @@ class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
         self.repo_api.delete('discover_test_repo')
         r = self.repo_api.repository('discover_test_repo')
         assert(r is None)
+
+    def test_local_discovery(self):
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = my_dir + "/data/repo_for_export/"
+        discover_url = 'file://%s' % datadir
+        d = get_discovery("yum")
+        d.setup(discover_url)
+        repourls = d.discover()
+        print repourls
+        self.assertTrue(len(repourls) != 0)
+        proto, netloc, path, params, query, frag = urlparse.urlparse(repourls[0])
+        assert os.path.exists(path)
+        assert os.path.exists("%s/%s" % (path, "repodata/repomd.xml"))
 
 
   

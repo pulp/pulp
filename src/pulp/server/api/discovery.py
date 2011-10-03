@@ -24,6 +24,7 @@ import types
 import BeautifulSoup
 import logging
 import unicodedata
+import pulp.server.util as util
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class BaseDiscovery(object):
         @type sslverify: boolean
         """
         proto = urlparse.urlparse(url)[0]
-        if proto not in ['http', 'https', 'ftp']:
+        if proto not in ['http', 'https', 'ftp', 'file']:
              raise InvalidDiscoveryInput("Invalid input url %s" % url)
         self.url = url
         self.sslcacert = write_temp_file(ca)
@@ -202,6 +203,22 @@ class YumDiscovery(BaseDiscovery):
         @return: list of matching urls
         @rtype: list
         """
+        proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
+        if proto in ['http', 'https', 'ftp']:
+            repourls = self._remote(progress_callback=progress_callback)
+        elif proto in ['file']:
+            repourls = self._local(progress_callback=progress_callback)
+        else:
+            raise InvalidDiscoveryInput("Invalid input url %s" % self.url)
+        return repourls
+
+    def _remote(self, progress_callback=None):
+        """
+        Takes a root url and traverses the tree to find all the sub urls
+        that has repodata in them.
+        @return: list of matching urls
+        @rtype: list
+        """
         repourls = []
         urls = self.parse_url(self.url, handle_redirect=True)
         while urls:
@@ -223,12 +240,36 @@ class YumDiscovery(BaseDiscovery):
         self.clean()
         return repourls
 
+    def _local(self, progress_callback=None):
+        """
+        Takes a root file path and traverses the tree to find all the repos
+        that has repodata in them.
+        @return: list of matching urls
+        @rtype: list
+        """
+        proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
+        repourls = []
+        for root, dirs, files in os.walk(path):
+            for dir in dirs:
+                fpath = "%s/%s" % (root, dir)
+                self.set_callback(progress_callback)
+                self.progress_callback(num_of_urls=len(repourls))
+                if fpath.endswith("repodata"):
+                    if os.path.exists(os.path.join(fpath, "repomd.xml")):
+                        if fpath.rfind('/repodata') > 0:
+                            result = fpath[:fpath.rfind('/repodata')]
+                            repourls.append("file://" + result)
+                    else:
+                        continue
+        return repourls
+
     def __check_repomd_exists(self, repourls, result):
         try:
             self._request(url="%s/%s" % (result, 'repomd.xml'))
             repourls.append(result[:result.rfind('/repodata/')])
         except:
             log.debug("repomd.xml couldnt be found @ %s" % result)
+
 
 def discovery_progress_callback(progress):
     """
@@ -267,12 +308,12 @@ def write_temp_file(buf):
     return tempfilename
 
 def main():
-    if len(sys.argv) < 2:
-        print "USAGE:python discovery.py <url>"
+    if len(sys.argv) < 3:
+        print "USAGE:python discovery.py <type> <url>"
         sys.exit(0)
     print("Discovering urls with yum metadata, This could take sometime..")
-    type = "yum"
-    url = sys.argv[1]
+    type = sys.argv[1]
+    url = sys.argv[2]
     ca =  None #open(sys.argv[2], 'r').read() #None
     cert = None # open(sys.argv[3], 'r').read() #None
     key = None #sys.argv[4]

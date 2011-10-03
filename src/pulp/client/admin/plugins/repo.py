@@ -1578,7 +1578,7 @@ class Discovery(RepoProgressAction):
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("assume yes; automatically create candidate repos for discovered urls (optional)"))
         self.parser.add_option("-t", "--type", dest="type",
-                               help=_("content type to look for during discovery(required); supported types: ['yum',]"))
+                               help=_("content type to look for during discovery(required); supported types: ['yum', 'local']"))
 
     def print_discovery_progress(self, progress):
         current = ""
