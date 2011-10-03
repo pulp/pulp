@@ -238,21 +238,3 @@ class PackageGroups:
         finally:
             ybcleanup(yb)
         return groups
-
-
-class Shell:
-
-    @remote(secret=getsecret)
-    def run(self, cmd):
-        """
-        Run a shell command.
-        @param cmd: The command & arguments.
-        @type cmd: str
-        @return: The command output.
-        @rtype: str
-        """
-        f = os.popen(cmd)
-        try:
-            return f.read()
-        finally:
-            f.close()
