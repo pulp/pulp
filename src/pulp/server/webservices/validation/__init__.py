@@ -25,4 +25,6 @@ from pulp.server.webservices import validation
 input = validation.repo.update_input()
 """
 
-__all__ = []
+import timeout
+
+__all__ = ['timeout']

@@ -31,11 +31,10 @@ from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDATE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
+from pulp.server.webservices import validation
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
-from pulp.server.webservices.timeout import (
-    iso8601_duration_to_timeout, UnsupportedTimeoutInterval)
 from pulp.server.agent import CdsAgent
 
 
@@ -248,8 +247,8 @@ class CdsSyncActions(JSONController):
         timeout = None
         try:
             if 'timeout' in params:
-                timeout = iso8601_duration_to_timeout(params['timeout'])
-        except UnsupportedTimeoutInterval, e:
+                timeout = validation.timeout.iso8601_duration_to_timeout(params['timeout'])
+        except validation.timeout.UnsupportedTimeoutInterval, e:
             return self.bad_request(msg=e.args[0])
 
         # Kick off the async task

@@ -111,11 +111,10 @@ from pulp.server.exporter.base import ExportException, TargetExistsException
 from pulp.server.exceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
+from pulp.server.webservices import validation
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler, collection_query)
-from pulp.server.webservices.timeout import (
-    iso8601_duration_to_timeout, UnsupportedTimeoutInterval)
 
 # globals ---------------------------------------------------------------------
 
@@ -616,8 +615,8 @@ class RepositoryActions(JSONController):
         # Check for valid timeout values
         if timeout:
             try:
-                timeout = iso8601_duration_to_timeout(timeout)
-            except UnsupportedTimeoutInterval, e:
+                timeout = validation.timeout.iso8601_duration_to_timeout(timeout)
+            except validation.timeout.UnsupportedTimeoutInterval, e:
                 return self.bad_request(msg=e.args[0])
             if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
