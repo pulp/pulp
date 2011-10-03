@@ -111,6 +111,7 @@ from pulp.server.exporter.base import ExportException, TargetExistsException
 from pulp.server.exceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
+from pulp.server.webservices import serialization
 from pulp.server.webservices import validation
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
@@ -188,6 +189,7 @@ class Repositories(JSONController):
 
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
+            repo['uri'] = serialization.repo.uri(repo)
             #repo['package_count'] = api.package_count(repo['id'])
             repo['files_count'] = len(repo['files'])
             for field in RepositoryDeferredFields.exposed_fields:
@@ -295,6 +297,7 @@ class Repository(JSONController):
         for field in RepositoryDeferredFields.exposed_fields:
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
+        repo['uri'] = serialization.repo.uri(repo)
         #repo['package_count'] = api.package_count(id)
         # XXX this was a serious problem with packages
         # why would files be any different
