@@ -14,7 +14,6 @@
 import httplib
 import logging
 import sys
-import traceback
 from gettext import gettext as _
 
 try:
@@ -23,30 +22,10 @@ except ImportError:
     import simplejson as json
 
 from pulp.server.webservices.http import http_responses
+from pulp.server.webservices import serialization
 
 
 _LOG = logging.getLogger(__name__)
-
-
-def serialize_error(e, tb=None):
-    """
-    Serialize a server-side error into a JSON object
-    """
-    assert isinstance(e, Exception)
-    msg = None
-    args = e.args[:]
-    tb = tb or _('traceback available in server log')
-    if isinstance(e.args[0], basestring):
-        msg = args[0]
-        args = args[1:]
-    err = {
-        'http_status': httplib.INTERNAL_SERVER_ERROR,
-        'error_message': msg,
-        'error_args': args,
-        'traceback': tb,
-    }
-    serial_err = json.dumps(err)
-    return serial_err
 
 
 class ErrorHandlerMiddleware(object):
@@ -64,12 +43,12 @@ class ErrorHandlerMiddleware(object):
         try:
             return self.app(enviorn, start_response)
         except Exception, e:
-            exc_info = sys.exc_info()
-            tb = ''.join(traceback.format_exception(*exc_info))
-            _LOG.error(tb)
-            if not self.debug:
-                tb = None
-            serial_err = serialize_error(e, tb)
+            _LOG.exception(_('Unhandled exception'))
+            tb = None
+            if self.debug:
+                tb = sys.exc_info()[2]
+            err_obj = serialization.error.serialize_exception(e, tb)
+            serial_err = json.dumps(err_obj)
             status = httplib.INTERNAL_SERVER_ERROR
             status_str = '%d %s' % (status, http_responses[status])
             start_response(status_str, [('Content-Type', 'application/json'),
