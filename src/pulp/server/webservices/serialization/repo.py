@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2011 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
 Module for repo serialization.
@@ -8,23 +20,37 @@ from pulp.server.webservices import http
 
 # contstants -------------------------------------------------------------------
 
-# XXX these shouls be stored in a common module
-API_HREF = '/pulp/api'
-API_V2_HREF = API_HREF + '/v2'
-
 REPO_URI_PATH = '/pub/repos'
 
-COLLECTION_HREF = API_HREF + '/repositories'
+COLLECTION_HREF = http.API_HREF + '/repositories'
 RESOURCE_HREF = COLLECTION_HREF + '/%s'
 
 # repo serialization api -------------------------------------------------------
 
+# XXX this is all v1 api, not v2
+
 def href(repo):
-    href = RESOURCE_HREF % repo['id']
-    return ensure_ending_slash(href)
+    """
+    Generate the href for the repo.
+    NOTE this is the location of the repo resource in the REST api.
+    @param repo: repo to generate href for
+    @type repo: SON or dict
+    @return: repo's href
+    @rtype: str
+    """
+    href_ = RESOURCE_HREF % repo['id']
+    return http.ensure_ending_slash(href_)
 
 
 def uri(repo):
+    """
+    Generate the uri for the repo.
+    NOTE this is not the location of the repo resource, it is the published uri.
+    @param repo: repo to generate uri for
+    @type repo: SON or dict
+    @return: repo's uri
+    @rtype: str
+    """
     # not published: no repo uri
     if not repo['publish']:
         return None
@@ -34,15 +60,6 @@ def uri(repo):
         return cds['next_permutation'][0]
     # no cds association: build local uri
     request_uri = http.request_url()
-    uri_prefix = request_uri.split(API_HREF)[0]
-    uri = '/'.join((uri_prefix, REPO_URI_PATH, repo['id']))
-    return ensure_ending_slash(uri)
-
-
-# utility methods --------------------------------------------------------------
-
-# XXX this should be stored in a utility module
-def ensure_ending_slash(uri_or_path):
-    if not uri_or_path.endswith('/'):
-        uri_or_path += '/'
-    return uri_or_path
+    uri_prefix = request_uri.split(http.API_HREF)[0]
+    uri_ = '/'.join((uri_prefix, REPO_URI_PATH, repo['id']))
+    return http.ensure_ending_slash(uri_)

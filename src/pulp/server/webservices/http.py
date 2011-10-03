@@ -13,7 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-HTTP utilities to help pulp web services with HTTP using the web.py framework
+HTTP utilities to help Pulp web services with HTTP using the web.py framework
 """
 
 import base64
@@ -23,6 +23,11 @@ import re
 import urllib
 
 import web
+
+# constants --------------------------------------------------------------------
+
+API_HREF = '/pulp/api'
+API_V2_HREF = API_HREF + '/v2'
 
 # python 2.4 compat instead of: httplib.responses
 http_responses = {
@@ -280,6 +285,19 @@ def resource_path(path=None):
     if not parts:
         return '/'
     return '/%s/' % '/'.join(parts)
+
+
+def ensure_ending_slash(uri_or_path):
+    """
+    Utility function to ensure the required ending '/' for paths in the Pulp API
+    @param uri_or_path: uri or path portion of an uri
+    @type uri_or_path: str
+    @return: uri or path that ends with a '/'
+    @rtype: str
+    """
+    if not uri_or_path.endswith('/'):
+        uri_or_path += '/'
+    return uri_or_path
 
 # response functions ----------------------------------------------------------
 
