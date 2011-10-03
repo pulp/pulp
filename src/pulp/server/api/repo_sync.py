@@ -28,9 +28,11 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
     yum_rhn_progress_callback, local_progress_callback, FileSynchronizer
 from pulp.server.api.repo_sync_task import RepoSyncTask
+from pulp.server.api.repo_clone_task import RepoCloneTask
 from pulp.server.auditing import audit
 from pulp.server.async import run_async
 from pulp.server.exceptions import PulpException
+from pulp.server.tasking.exception import CancelException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import top_repos_location
 from pulp.server.util import top_gpg_location
@@ -51,21 +53,37 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
         progress_callback=None, timeout=None, filters=[]):
     """
     Run a repo clone asynchronously.
+    @rtype pulp.server.tasking.task or None
+    @return on success a task object is returned
+            on failure None is returned
+    @return
     """
+    repo = repo_api.repository(id)
     task = run_async(_clone,
-                    [id, clone_id, clone_name, feed, relative_path, groupid, filters],
-                    {},
-                    timeout=timeout)
+                    [clone_id], 
+                    {'id':id, 
+                     'clone_name':clone_name, 
+                     'feed':feed, 
+                     'relative_path':relative_path, 
+                     'groupid':groupid, 
+                     'filters':filters},
+                     timeout=timeout,
+                     task_type=RepoCloneTask)
+    if not task:
+        log.error("Unable to create repo._clone task for [%s]" % (id))
+        return task
     if feed in ('feedless', 'parent'):
         task.set_progress('progress_callback', local_progress_callback)
     else:
         task.set_progress('progress_callback', yum_rhn_progress_callback)
+    content_type = repo['content_types']
+    synchronizer = get_synchronizer(content_type)
+    task.set_synchronizer(synchronizer)    
     return task
 
 
-
-def _clone(id, clone_id, clone_name, feed='parent', relative_path=None, groupid=None, 
-            filters=(), progress_callback=None):
+def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=None, 
+            filters=(), progress_callback=None, synchronizer=None):
     repo = repo_api.repository(id)
     if repo is None:
         raise PulpException("A Repo with id %s does not exist" % id)
@@ -114,7 +132,10 @@ def _clone(id, clone_id, clone_name, feed='parent', relative_path=None, groupid=
 
     # Sync from parent repo
     try:
-        _sync(clone_id, progress_callback=progress_callback)
+        _sync(clone_id, progress_callback=progress_callback, synchronizer=synchronizer)
+    except CancelException, e:
+        log.info(_('Content sync canceled'))
+        raise
     except Exception, e:
         log.error(e)
         log.warn("Traceback: %s" % (traceback.format_exc()))

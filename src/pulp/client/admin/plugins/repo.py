@@ -1810,6 +1810,7 @@ class AdminRepo(Repo):
                 Update,
                 Sync,
                 CancelSync,
+                CancelClone,
                 ListKeys,
                 Publish,
                 AddPackages,

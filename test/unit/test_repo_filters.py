@@ -67,7 +67,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
-        repo_sync._clone('some-id', repoid, repoid)
+        repo_sync._clone(repoid, 'some-id', repoid)
         filter_ids = ["filter-test1", "filter-test2"]
         # Try without creating filters
         try:
@@ -90,7 +90,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
-        repo_sync._clone('some-id', repoid, repoid)
+        repo_sync._clone(repoid, 'some-id', repoid)
         self.filter_api.create('filter-test1', type="blacklist")
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = ["filter-test1", "filter-test2"]
@@ -110,7 +110,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
-        repo_sync._clone('some-id', repoid, repoid)
+        repo_sync._clone(repoid, 'some-id', repoid)
         filters = self.repo_api.list_filters(repoid)
         self.assertTrue(len(filters) == 0)
 
