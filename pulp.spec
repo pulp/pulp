@@ -495,6 +495,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Oct 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-2
+- bump release. (jortel@redhat.com)
+- 707633 - Addition of repo cancel_clone command to cancel running clone
+  gracefully (skarmark@redhat.com)
+- Remove unused, unauthenticated invocation of shell commands as root.
+  (jortel@redhat.com)
+
 * Fri Sep 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-1
 - Require gofer 0.50. (jortel@redhat.com)
 - removing the module imports causing the coverage module to get confused and
