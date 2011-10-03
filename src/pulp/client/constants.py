@@ -17,6 +17,7 @@
 AVAILABLE_REPOS_LIST = """
 Id                 \t%-25s
 Name               \t%-25s
+Repo URL           \t%-25s
 Feed URL           \t%-25s
 Feed Type          \t%-25s
 Content Type       \t%-25s
@@ -79,7 +80,7 @@ Groups              \t%-25s
 
 
 AVAILABLE_USERS_LIST = """
-Login :               \t%-25s    
+Login :               \t%-25s
 Name  :               \t%-25s
 Roles :               \t%-25s
 """
@@ -94,7 +95,7 @@ Package List :               \t%-25s
 ERRATA_INFO = """
 Id                    \t%-25s
 Title                 \t%-25s
-Description           \t%-25s 
+Description           \t%-25s
 Type                  \t%-25s
 Issued                \t%-25s
 Updated               \t%-25s
@@ -117,7 +118,7 @@ URL                   \t%-25s
 
 DISTRO_INFO = """
 Id                    \t%-25s
-Description           \t%-25s 
+Description           \t%-25s
 URL                   \t%-25s
 Family                \t%-25s
 Variant               \t%-25s
