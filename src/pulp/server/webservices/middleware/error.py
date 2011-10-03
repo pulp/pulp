@@ -47,7 +47,7 @@ class ErrorHandlerMiddleware(object):
             tb = None
             if self.debug:
                 tb = sys.exc_info()[2]
-            err_obj = serialization.error.serialize_exception(e, tb)
+            err_obj = serialization.error.exception_obj(e, tb)
             serial_err = json.dumps(err_obj)
             status = httplib.INTERNAL_SERVER_ERROR
             status_str = '%d %s' % (status, http_responses[status])

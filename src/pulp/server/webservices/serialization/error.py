@@ -19,7 +19,7 @@ _ERROR_OBJ_SKEL = {
 }
 
 
-def serialize_exception(e, tb=None, msg=None):
+def exception_obj(e, tb=None, msg=None):
     """
     Serialize an (possibly unhandled) exception.
     @param e: exception
@@ -39,7 +39,7 @@ def serialize_exception(e, tb=None, msg=None):
     return error_obj
 
 
-def serialize_http_error(http_status, msg=None):
+def http_error_obj(http_status, msg=None):
     """
     Serialize an http error.
     @param http_status: valid http status number
