@@ -243,9 +243,7 @@ def extend_uri_path(suffix):
     prefix = uri_path()
     suffix = urllib.pathname2url(suffix)
     path = os.path.normpath(os.path.join(prefix, suffix))
-    if not path.endswith('/'):
-        path += '/'
-    return path
+    return ensure_ending_slash(path)
 
 def sub_uri_path(*args):
     """
@@ -258,7 +256,7 @@ def sub_uri_path(*args):
     """
     original = uri_path()
     prefix = original.rsplit('/', len(args))[0]
-    suffix = '/'.join(args) + '/'
+    suffix = ensure_ending_slash('/'.join(args))
     url_suffix = urllib.pathname2url(suffix)
     return '/'.join((prefix, url_suffix))
 
@@ -280,7 +278,8 @@ def resource_path(path=None):
     if path is None:
         path = uri_path()
     parts = [p for p in path.split('/') if p]
-    while parts and parts[0] in ('pulp', 'api'):
+    href_parts = API_HREF.split('/')[1:]
+    while parts and parts[0] in href_parts:
         parts = parts[1:]
     if not parts:
         return '/'
