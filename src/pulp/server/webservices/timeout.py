@@ -16,10 +16,10 @@ from gettext import gettext as _
 from isodate import Duration
 
 from pulp.common.dateutils import parse_iso8601_duration
-from pulp.server.exceptions import PulpException
+from pulp.server.exceptions import PulpValidationError
 
 
-class UnsupportedTimeoutInterval(PulpException):
+class UnsupportedTimeoutInterval(PulpValidationError):
     """
     Raised when a timeout has months or years specified in it.
     """
