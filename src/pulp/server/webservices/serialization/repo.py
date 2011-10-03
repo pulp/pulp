@@ -20,7 +20,7 @@ from pulp.server.webservices import http
 
 # contstants -------------------------------------------------------------------
 
-REPO_URI_PATH = '/pulp/repos'
+REPO_URI_PATH = 'pulp/repos'
 
 COLLECTION_HREF = http.API_HREF + '/repositories'
 RESOURCE_HREF = COLLECTION_HREF + '/%s'
