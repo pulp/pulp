@@ -80,7 +80,7 @@ class ContentTypeResource(JSONController):
         if content_type is None:
             return self.not_found(_('No content type resource: %(r)s') %
                                   {'r': type_id})
-        resource = serialization.content.serialize_content_type(content_type)
+        resource = serialization.content.content_type_obj(content_type)
         links = {'actions': serialization.link.child_link_obj('actions'),
                  'content_units': serialization.link.child_link_obj('units')}
         resource.update(links)
@@ -162,7 +162,7 @@ class ContentUnitsCollection(JSONController):
         cqm = factory.content_query_manager()
         content_units = cqm.list_content_units(type_id)
         for unit in content_units:
-            resource = serialization.content.serialize_content_unit(unit)
+            resource = serialization.content.content_unit_obj(unit)
             resource.update(serialization.link.child_link_obj(unit['id']))
             resource.update({'children': serialization.content.content_unit_child_links(resource)})
             collection.append(resource)
@@ -205,7 +205,7 @@ class ContentUnitResource(JSONController):
         except ContentUnitNotFound:
             return self.not_found(_('No content unit resource: %(r)s') %
                                   {'r': unit_id})
-        resource = serialization.content.serialize_content_unit(unit)
+        resource = serialization.content.content_unit_obj(unit)
         resource.update({'children': serialization.content.content_unit_child_links(resource)})
         return self.ok(resource)
 

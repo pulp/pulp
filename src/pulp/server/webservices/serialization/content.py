@@ -26,7 +26,7 @@ CONTENT_URI_PATH = http.API_V2_HREF + '/content'
 # serialization api ------------------------------------------------------------
 
 
-def serialize_content_type(content_type):
+def content_type_obj(content_type):
     """
     Serialize a content type.
     """
@@ -34,7 +34,7 @@ def serialize_content_type(content_type):
     return serial
 
 
-def serialize_content_unit(content_unit):
+def content_unit_obj(content_unit):
     """
     Serialize a content unit.
     """
