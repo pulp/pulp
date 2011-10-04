@@ -164,7 +164,7 @@ class ContentUnitsCollection(JSONController):
         for unit in content_units:
             resource = serialization.content.content_unit_obj(unit)
             resource.update(serialization.link.child_link_obj(unit['id']))
-            resource.update({'children': serialization.content.content_unit_child_links(resource)})
+            resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
             collection.append(resource)
         return self.ok(collection)
 
@@ -206,7 +206,7 @@ class ContentUnitResource(JSONController):
             return self.not_found(_('No content unit resource: %(r)s') %
                                   {'r': unit_id})
         resource = serialization.content.content_unit_obj(unit)
-        resource.update({'children': serialization.content.content_unit_child_links(resource)})
+        resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
         return self.ok(resource)
 
     @error_handler

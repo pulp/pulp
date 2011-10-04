@@ -43,7 +43,7 @@ def content_unit_obj(content_unit):
 
 # utility functions ------------------------------------------------------------
 
-def content_unit_child_links(unit):
+def content_unit_child_link_objs(unit):
     """
     Generate child link objects for the associated child content units.
     NOTE: this removes the _<child type>_children fields from the content unit.
