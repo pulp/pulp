@@ -110,6 +110,7 @@ class ContentTypeActionsCollection(JSONController):
         for action in ContentTypeActionResource.actions_map:
             link = serialization.link.child_link_obj(action)
             link.update({'action': action})
+            # NOTE would be cool to add the POST parameters here
             collection.append(link)
         return self.ok(collection)
 
