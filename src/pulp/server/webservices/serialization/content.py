@@ -14,3 +14,58 @@
 """
 Module for content serialization.
 """
+
+from pulp.server.webservices import http
+
+from . import db
+
+# constants --------------------------------------------------------------------
+
+CONTENT_URI_PATH = http.API_V2_HREF + '/content'
+
+# serialization api ------------------------------------------------------------
+
+
+def serialize_content_type(content_type):
+    """
+    Serialize a content type.
+    """
+    serial = db.scrub_mongo_fields(content_type)
+    return serial
+
+
+def serialize_content_unit(content_unit):
+    """
+    Serialize a content unit.
+    """
+    serial = db.scrub_mongo_fields(content_unit)
+    return serial
+
+# utility functions ------------------------------------------------------------
+
+def content_unit_child_links(unit):
+    """
+    Generate child link objects for the associated child content units.
+    NOTE: this removes the _<child type>_children fields from the content unit.
+    """
+    links = {}
+    child_keys = []
+    for key, child_list in unit.items():
+        # look for children fields
+        if not key.endswith('children'):
+            continue
+        child_keys.append(key)
+        # child field key format: _<child type>_children
+        child_type = key.rsplit('_', 1)[0][1:]
+        child_type_links = []
+        # generate links
+        for child_id in child_list:
+            href = '/'.join((CONTENT_URI_PATH, child_type, 'units', child_id))
+            link = {'child_id': child_id,
+                    'href': http.ensure_ending_slash(href)}
+            child_type_links.append(link)
+        links[child_type] = child_type_links
+    # side effect: remove the child keys
+    for key in child_keys:
+        unit.pop(key)
+    return links

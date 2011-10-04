@@ -18,8 +18,9 @@ import web
 from pulp.server.auth.authorization import (
     CREATE, READ, UPDATE, DELETE, EXECUTE)
 from pulp.server.managers import factory
-from pulp.server.managers.content.exception import ContentUnitNotFound
 from pulp.server.webservices import http
+from pulp.server.webservices import serialization
+from pulp.server.managers.content.exception import ContentUnitNotFound
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -34,21 +35,20 @@ class ContentCollections(JSONController):
         """
         List the available content types.
         """
-        collection = {'href': http.uri_path(),
-                      'content_types': []}
+        collection = []
         cqm = factory.content_query_manager()
         type_ids = cqm.list_content_types()
         for id in type_ids:
-            link = {'type_id': id,
-                    'href': http.extend_uri_path(id)}
-            collection['content_types'].append(link)
+            link = serialization.link.child_link_obj(id)
+            link.update({'content_type': id})
+            collection.append(link)
         return self.ok(collection)
 
     @error_handler
     def OPTIONS(self):
-        options = {'href': http.uri_path(),
-                   'methods': ['GET', 'POST']}
-        return self.ok(options)
+        link = serialization.link.current_link_obj()
+        link.update({'methods': ['GET', 'POST']})
+        return self.ok(link)
 
     @error_handler
     @auth_required(CREATE)
@@ -76,21 +76,21 @@ class ContentTypeResource(JSONController):
         Return information about a content type.
         """
         cqm = factory.content_query_manager()
-        type_ = cqm.get_content_type(type_id)
-        if type_ is None:
+        content_type = cqm.get_content_type(type_id)
+        if content_type is None:
             return self.not_found(_('No content type resource: %(r)s') %
                                   {'r': type_id})
-        resource = {'href': http.uri_path(),
-                    'actions': {'href': http.extend_uri_path('actions')},
-                    'content_units': {'href': http.extend_uri_path('units')},
-                    'content_type': type_}
+        resource = serialization.content.serialize_content_type(content_type)
+        links = {'actions': serialization.link.child_link_obj('actions'),
+                 'content_units': serialization.link.child_link_obj('units')}
+        resource.update(links)
         return self.ok(resource)
 
     @error_handler
     def OPTIONS(self, type_id):
-        options = {'href': http.uri_path(),
-                   'methods': ['DELETE', 'GET', 'PUT']}
-        return self.ok(options)
+        link = serialization.link.current_link_obj()
+        link.update({'methods': ['DELETE', 'GET', 'PUT']})
+        return self.ok(link)
 
     @error_handler
     @auth_required(UPDATE)
@@ -106,19 +106,18 @@ class ContentTypeActionsCollection(JSONController):
     @error_handler
     @auth_required(READ)
     def GET(self, type_id):
-        collection = {'href': http.uri_path(),
-                      'actions': []}
+        collection = []
         for action in ContentTypeActionResource.actions_map:
-            link = {'action': action,
-                    'href': http.extend_uri_path(action)}
-            collection['actions'].append(link)
+            link = serialization.link.child_link_obj(action)
+            link.update({'action': action})
+            collection.append(link)
         return self.ok(collection)
 
     @error_handler
     def OPTIONS(self, type_id):
-        options = {'href': http.uri_path(),
-                   'methods': ['GET']}
-        return self.ok(options)
+        link = serialization.link.current_link_obj()
+        link.update({'methods': ['GET']})
+        return self.ok(link)
 
 
 class ContentTypeActionResource(JSONController):
@@ -133,9 +132,9 @@ class ContentTypeActionResource(JSONController):
 
     @error_handler
     def OPTIONS(self, type_id, action):
-        options = {'href': http.uri_path(),
-                   'methods': ['POST']}
-        return self.ok(options)
+        link = serialization.link.current_link_obj()
+        link.update({'methods': ['POST']})
+        return self.ok(link)
 
     @error_handler
     @auth_required(EXECUTE)
@@ -158,22 +157,21 @@ class ContentUnitsCollection(JSONController):
         """
         List all the available content units.
         """
-        collection = {'href': http.uri_path(),
-                      'content_units': []}
+        collection = []
         cqm = factory.content_query_manager()
         content_units = cqm.list_content_units(type_id)
         for unit in content_units:
-            link = {'href': http.extend_uri_path(unit['_id']),
-                    'children': _child_links(unit),
-                    'content_unit': unit}
-            collection['content_units'].append(link)
+            resource = serialization.content.serialize_content_unit(unit)
+            resource.update(serialization.link.child_link_obj(unit['id']))
+            resource.update({'children': serialization.content.content_unit_child_links(resource)})
+            collection.append(resource)
         return self.ok(collection)
 
     @error_handler
     def OPTIONS(self, type_id):
-        options = {'href': http.uri_path(),
-                   'methods': ['GET', 'POST']}
-        return self.ok(options)
+        link = serialization.link.current_link_obj()
+        link.update({'methods': ['GET', 'POST']})
+        return self.ok(link)
 
     @error_handler
     @auth_required(CREATE)
@@ -206,16 +204,15 @@ class ContentUnitResource(JSONController):
         except ContentUnitNotFound:
             return self.not_found(_('No content unit resource: %(r)s') %
                                   {'r': unit_id})
-        resource = {'href': http.uri_path(),
-                    'children': _child_links(unit),
-                    'content_unit': unit}
+        resource = serialization.content.serialize_content_unit(unit)
+        resource.update({'children': serialization.content.content_unit_child_links(resource)})
         return self.ok(resource)
 
     @error_handler
     def OPTIONS(self, type_id, unit_id):
-        options = {'href': http.uri_path(),
-                   'methods': ['DELETE', 'GET', 'PUT']}
-        return self.ok(options)
+        link = serialization.link.current_link_obj()
+        link.update({'methods': ['DELETE', 'GET', 'PUT']})
+        return self.ok(link)
 
     @error_handler
     @auth_required(CREATE)
@@ -224,30 +221,6 @@ class ContentUnitResource(JSONController):
         Update a content unit.
         """
         return self.not_implemented()
-
-# utility methods --------------------------------------------------------------
-
-def _child_links(unit):
-    links = {}
-    child_keys = []
-    for key, child_list in unit.items():
-        # look for children fields
-        if not key.endswith('children'):
-            continue
-        child_keys.append(key)
-        # child field key format: _<child type>_children
-        child_type = key.rsplit('_', 1)[0][1:]
-        child_links = []
-        # generate links
-        for child_id in child_list:
-            link = {'child_id': child_id,
-                    'href': http.sub_uri_path(child_type, 'units', child_id)}
-            child_links.append(link)
-        links[child_type] = child_links
-    # side effect: remove the child keys
-    for key in child_keys:
-        unit.pop(key)
-    return links
 
 # wsgi application -------------------------------------------------------------
 
