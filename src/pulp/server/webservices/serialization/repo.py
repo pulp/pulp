@@ -27,9 +27,7 @@ RESOURCE_HREF = COLLECTION_HREF + '/%s'
 
 # repo serialization api -------------------------------------------------------
 
-# XXX this is all v1 api, not v2
-
-def href(repo):
+def v1_href(repo):
     """
     Generate the href for the repo.
     NOTE this is the location of the repo resource in the REST api.
@@ -42,7 +40,7 @@ def href(repo):
     return http.ensure_ending_slash(href_)
 
 
-def uri(repo):
+def v1_uri(repo):
     """
     Generate the uri for the repo.
     NOTE this is not the location of the repo resource, it is the published uri.
