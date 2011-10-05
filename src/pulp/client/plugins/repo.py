@@ -88,7 +88,7 @@ class List(RepoAction):
                     repo['package_count'], repo['files_count'],
                     ' '.join(repo['distributionid']) or None, repo['publish'],
                     repo['clone_ids'], repo['groupid'] or None, filters,
-                    repo['notes'])
+                    repo['notes'], repo['preserve_metadata'])
 
 # repo command ----------------------------------------------------------------
 

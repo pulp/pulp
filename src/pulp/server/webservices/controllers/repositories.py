@@ -149,7 +149,8 @@ default_fields = [
     'consumer_ca',
     'consumer_key',
     'notes',
-    'content_types'
+    'content_types',
+    'preserve_metadata',
 ]
 
 # restful controllers ---------------------------------------------------------
