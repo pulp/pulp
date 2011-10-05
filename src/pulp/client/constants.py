@@ -32,6 +32,7 @@ Clones             \t%-25s
 Groups             \t%-25s
 Filters            \t%-25s
 Notes              \t%-25s
+Preserve Metadata  \t%-25s 
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """

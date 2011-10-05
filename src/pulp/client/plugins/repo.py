@@ -83,11 +83,12 @@ class List(RepoAction):
             repo['files_count'] = len(self.repository_api.list_files(repo['id']))
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["content_types"],
-                    feed_ca, feed_cert,
-                    consumer_ca, consumer_cert,
-                    repo["arch"], repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
+                    feed_ca, feed_cert, consumer_ca,
+                    consumer_cert, repo["arch"], repo["sync_schedule"],
+                    repo['package_count'], repo['files_count'],
+                    ' '.join(repo['distributionid']) or None, repo['publish'],
+                    repo['clone_ids'], repo['groupid'] or None, filters,
+                    repo['notes'], repo['preserve_metadata'])
 
 # repo command ----------------------------------------------------------------
 
