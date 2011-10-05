@@ -22,14 +22,12 @@ from pulp.server.webservices import http
 from pulp.server.webservices import serialization
 from pulp.server.managers.content.exception import ContentUnitNotFound
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.controllers.decorators import (
-    auth_required, error_handler)
+from pulp.server.webservices.controllers.decorators import auth_required
 
 # controller classes -----------------------------------------------------------
 
 class ContentCollections(JSONController):
 
-    @error_handler
     @auth_required(READ)
     def GET(self):
         """
@@ -44,13 +42,11 @@ class ContentCollections(JSONController):
             collection.append(link)
         return self.ok(collection)
 
-    @error_handler
     def OPTIONS(self):
         link = serialization.link.current_link_obj()
         link.update({'methods': ['GET', 'POST']})
         return self.ok(link)
 
-    @error_handler
     @auth_required(CREATE)
     def POST(self):
         """
@@ -61,7 +57,6 @@ class ContentCollections(JSONController):
 
 class ContentTypeResource(JSONController):
 
-    @error_handler
     @auth_required(DELETE)
     def DELETE(self, type_id):
         """
@@ -69,7 +64,6 @@ class ContentTypeResource(JSONController):
         """
         return self.not_implemented()
 
-    @error_handler
     @auth_required(READ)
     def GET(self, type_id):
         """
@@ -86,13 +80,11 @@ class ContentTypeResource(JSONController):
         resource.update(links)
         return self.ok(resource)
 
-    @error_handler
     def OPTIONS(self, type_id):
         link = serialization.link.current_link_obj()
         link.update({'methods': ['DELETE', 'GET', 'PUT']})
         return self.ok(link)
 
-    @error_handler
     @auth_required(UPDATE)
     def PUT(self, type_id):
         """
@@ -103,7 +95,6 @@ class ContentTypeResource(JSONController):
 
 class ContentTypeActionsCollection(JSONController):
 
-    @error_handler
     @auth_required(READ)
     def GET(self, type_id):
         collection = []
@@ -114,7 +105,6 @@ class ContentTypeActionsCollection(JSONController):
             collection.append(link)
         return self.ok(collection)
 
-    @error_handler
     def OPTIONS(self, type_id):
         link = serialization.link.current_link_obj()
         link.update({'methods': ['GET']})
@@ -131,13 +121,11 @@ class ContentTypeActionResource(JSONController):
     def _upload_content_unit(self, type_id):
         pass
 
-    @error_handler
     def OPTIONS(self, type_id, action):
         link = serialization.link.current_link_obj()
         link.update({'methods': ['POST']})
         return self.ok(link)
 
-    @error_handler
     @auth_required(EXECUTE)
     def POST(self, type_id, action):
         if action not in self.actions_map:
@@ -152,7 +140,6 @@ class ContentTypeActionResource(JSONController):
 
 class ContentUnitsCollection(JSONController):
 
-    @error_handler
     @auth_required(READ)
     def GET(self, type_id):
         """
@@ -168,13 +155,11 @@ class ContentUnitsCollection(JSONController):
             collection.append(resource)
         return self.ok(collection)
 
-    @error_handler
     def OPTIONS(self, type_id):
         link = serialization.link.current_link_obj()
         link.update({'methods': ['GET', 'POST']})
         return self.ok(link)
 
-    @error_handler
     @auth_required(CREATE)
     def POST(self, type_id):
         """
@@ -185,7 +170,6 @@ class ContentUnitsCollection(JSONController):
 
 class ContentUnitResource(JSONController):
 
-    @error_handler
     @auth_required(DELETE)
     def DELETE(self, type_id, unit_id):
         """
@@ -193,7 +177,6 @@ class ContentUnitResource(JSONController):
         """
         return self.not_implemented()
 
-    @error_handler
     @auth_required(READ)
     def GET(self, type_id, unit_id):
         """
@@ -209,13 +192,11 @@ class ContentUnitResource(JSONController):
         resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
         return self.ok(resource)
 
-    @error_handler
     def OPTIONS(self, type_id, unit_id):
         link = serialization.link.current_link_obj()
         link.update({'methods': ['DELETE', 'GET', 'PUT']})
         return self.ok(link)
 
-    @error_handler
     @auth_required(CREATE)
     def PUT(self, type_id, unit_id):
         """

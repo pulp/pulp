@@ -38,6 +38,7 @@ from pulp.server.webservices.controllers import (
     services, tasks, users)
 from pulp.server.webservices.controllers import (
     gc_contents, gc_plugins, gc_repositories)
+from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
 
 
 urls = (
@@ -124,5 +125,7 @@ def wsgi_application():
     @return: wsgi application callable
     """
     application = web.subdir_application(urls)
+    # TODO make debug configurable
+    stack = ErrorHandlerMiddleware(application.wsgifunc(), debug=True)
     _initialize_pulp()
-    return application.wsgifunc()
+    return stack
