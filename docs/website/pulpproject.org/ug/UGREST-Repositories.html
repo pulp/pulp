@@ -88,7 +88,8 @@
 <a href="UGREST-Repositories.html#RepositoryPackageGroupCategories">Repository Package Group Categories</a></li><li class="active">
 <a href="UGREST-Repositories.html#RepositoryPackageGroups">Repository Package Groups</a></li><li class="active">
 <a href="UGREST-Repositories.html#RepositoryPackages">Repository Packages</a></li><li class="active">
-<a href="UGREST-Repositories.html#RepositorySynchronizationSchedules">Repository Synchronization Schedules</a></li></ol></li></ol></div>
+<a href="UGREST-Repositories.html#RepositorySynchronizationSchedules">Repository Synchronization Schedules</a></li><li class="active">
+<a href="UGREST-Repositories.html#ExportRepositorycontent">Export Repository content</a></li></ol></li></ol></div>
 
 </p>
 <h1 id="top">Repositories RESTful Interface</h1>
@@ -129,6 +130,8 @@
 </li><li><strong>distributionid</strong> &lt;list of str&gt; <i>list of distribution ids this repository belongs to [deferred fields]</i>
 </li><li><strong>checksum_type</strong> &lt;str&gt; <i>name of the algorithm used for checksums of the repository's content</i>
 </li><li><strong>filters</strong> &lt;list of str&gt; <i>list of filter ids associated with the repository</i>
+</li><li><strong>preserve_metadata</strong> &lt;bool&gt; <i>will not regenerate metadata and treats the repo as a mirror</i>
+</li><li><strong>content_type</strong> &lt;str&gt; <i>content type allowed in this repository; default:yum; supported: [yum, file]</i>
 </li></ul><p>
 <strong>RepoSource object fields</strong>: 
 </p>
@@ -243,7 +246,7 @@
 <ul><li><strong>id</strong> &lt;str&gt; <i>the repository's unique id</i>
 </li><li><strong>name</strong> &lt;str&gt; <i>a human-friendly name for the repsitory</i>
 </li><li><strong>arch</strong> &lt;str&gt; <i>the main architecture of packages contained in the repository</i>
-</li><li><strong>feed</strong> &lt;str&gt; <i>repository feed in the form of &lt;type&gt;:&lt;url&gt;</i>
+</li><li><strong>feed</strong> &lt;str&gt; <i>repository feed</i>
 </li><li><strong>use_symlinks</strong> <i>(optional)</i> &lt;bool&gt; <i>defaults to false</i>
 </li><li><strong>sync_schedule</strong> <i>(optional)</i> &lt;str&gt; <i>iso8601 recurring interval specifying sync schedule</i>
 </li><li><strong>feed_cert_data</strong> <i>(optional)</i> &lt;dict&gt; <i>certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename</i>
@@ -254,6 +257,7 @@
 </li><li><strong>checksum_type</strong> <i>(optional)</i> &lt;str&gt; <i>name of the algorithm to use for content checksums, defaults to sha256</i>
 </li><li><strong>notes</strong> <i>(optional)</i> &lt;dict&gt; <i>additional information in the form of key-value pairs</i>
 </li><li><strong>preserve_metadata</strong> <i>(optional)</i> &lt;bool&gt; <i>will not regenerate metadata and treats the repo as a mirror</i>
+</li><li><strong>content_type</strong> <i>(optional)</i> &lt;str&gt; <i>content type allowed in this repository; default:yum; supported: [yum, file]</i>
 </li></ul><p>
 <br />
 </p>
@@ -469,7 +473,7 @@
 <br />
 <strong>return</strong>: True <br />
 <br />
-<strong>parameters</strong>:
+<strong>parameters</strong>: 
 </p>
 <ul><li><strong>filetype</strong> &lt;str&gt; <i>filetype name to lookup in the metadata</i>
 </li><li><strong>filedata</strong> &lt;str&gt; <i>file data to be stored</i>
@@ -863,7 +867,7 @@
 <br />
 <strong>return</strong>: True <br />
 <br />
-<strong>parameters</strong>:
+<strong>parameters</strong>: 
 </p>
 <ul><li><strong>filetype</strong> &lt;str&gt; <i>filetype name to lookup in the metadata</i>
 </li></ul><p>
@@ -881,7 +885,7 @@
 <br />
 <strong>success response</strong>: 202 Accepted <br />
 <br />
-<strong>failure response</strong>:
+<strong>failure response</strong>: 
 </p>
 <blockquote>
 <p>
@@ -1062,7 +1066,7 @@
 <br />
 <strong>return</strong>: True <br />
 <br />
-<strong>parameters</strong>:
+<strong>parameters</strong>: 
 </p>
 <ul><li><strong>filetype</strong> &lt;str&gt; <i>filetype name to lookup in the metadata</i>
 </li></ul><p>
@@ -1352,6 +1356,39 @@
 <strong>failure response</strong>: None <br />
 <br />
 <strong>return</strong>: list of object that are mappings of repository id to synchronization schedule <br />
+<br />
+</p>
+<h2 id="ExportRepositorycontent">Export Repository content</h2>
+<p>
+"Export repository content to target location." <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/export/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>Success response</strong>: 202 accepted <br />
+<br />
+<strong>Failure response</strong>: 
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository
+409 Conflict if the parameters match an existing repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>Return</strong>: Task object  <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>repoid</strong>  &lt;str&gt; repository Id to export content
+</li><li><strong>target_dir</strong> &lt;str&gt; target directory on the server to write the exported content.
+</li><li><strong>overwrite</strong> <i>(optional)</i> &lt;boolean&gt;  overwrite the content in target location if not empty.
+</li><li><strong>generate_isos</strong> <i>(optional)</i> &lt;boolean&gt; wrap the exported content into iso image files.
+</li></ul><p>
 <br />
 </p>
 </div>

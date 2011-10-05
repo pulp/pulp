@@ -70,7 +70,7 @@
 </li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <i>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</i>
 </li><li><strong>snapshot_id</strong> &lt;str&gt; <i>id of task's snapshot, if it has one</i>
 </li></ul><p>
-<strong><a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/TaskSnapshot" rel="nofollow">TaskSnapshot?</a> object fields</strong>:
+<strong>TaskSnapshot object fields</strong>: 
 </p>
 <ul><li><strong>id</strong> &lt;str&gt; <i>unique task id</i>
 </li><li><strong>class_name</strong> &lt;str&gt; <i>name of the class, if the task's method is an instance method</i>
@@ -99,7 +99,7 @@
 <br />
 <strong>path</strong>: /tasks/&lt;id&gt;/cancel/ <br />
 <br />
-<strong>permission</strong>: Super User Only <br />
+<strong>permission</strong>: UPDATE <br />
 <br />
 <strong>success response</strong>: 202 Accepted <br />
 <br />
@@ -187,7 +187,7 @@
 <br />
 <strong>path</strong>: /tasks/&lt;id&gt;/ <br />
 <br />
-<strong>permission</strong>: Super User Only <br />
+<strong>permission</strong>: READ <br />
 <br />
 <strong>success response</strong>: 200 OK <br />
 <br />
@@ -205,7 +205,7 @@
 <br />
 <strong>path</strong>: /tasks/ <br />
 <br />
-<strong>permission</strong>: Super User Only <br />
+<strong>permission</strong>: READ <br />
 <br />
 <strong>success response</strong>: 200 OK <br />
 <br />

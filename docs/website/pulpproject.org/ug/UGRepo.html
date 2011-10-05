@@ -727,7 +727,28 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Add GPG keys </td><td> <tt>--addkeys</tt> </td><td> A comma-separated list of GPG public key files to be added. 
 </td></tr><tr><td> Remove GPG keys </td><td> <tt>--rmkeys</tt> </td><td> A comma-separated list of GPG public key files to be removed. 
 </td></tr></table>
-</div>
+<hr />
+<h2 id="export">Export</h2>
+<p>
+Exports repository content to a target location. Optionally the exported content can be wrapped into iso images.
+</p>
+<p>
+The <tt>repo export</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> repository Id to export. 
+</td></tr><tr><td> Target Directory </td><td> <tt>-t</tt> or <tt>--target_dir</tt> </td><td> target location on server to write the exported content 
+</td></tr><tr><td> Generate ISO </td><td> <tt>--generate-isos</tt> </td><td> wrap exported content into iso images (optional). 
+</td></tr><tr><td> Overwrite </td><td>  <tt>--overwrite</tt> </td><td> overwrite existing content in target location (optional). 
+</td></tr></table>
+<h4 id="Example:Exportarepositorytoatargetlocationonserver">Example: Export a repository to a target location on server</h4>
+<pre class="wiki"> $ pulp-admin repo export --id=&lt;repoid&gt; --target_dir /data/myrepo/
+</pre><h4 id="Example:Exportarepositoryandgenerateisos">Example: Export a repository and generate isos</h4>
+<pre class="wiki"> $ pulp-admin repo export --id=&lt;repoid&gt; --target_dir /data/myrepo/ --generate-iso
+</pre><h4 id="Example:Exportarepositoryandgenerateisostoanexistingtargetdirectory">Example: Export a repository and generate isos to an existing target directory</h4>
+<pre class="wiki"> $ pulp-admin repo export --id=&lt;repoid&gt; --target_dir /data/myrepo/ --generate-iso --overwrite
+</pre></div>
    </div>
    
   
