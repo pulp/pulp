@@ -146,6 +146,7 @@
  * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
  * '''notes''' ''(optional)'' <dict> ''additional information in the form of key-value pairs''
  * '''preserve_metadata''' ''(optional)'' <bool> ''will not regenerate metadata and treats the repo as a mirror''
+ * '''content_type''' ''(optional)'' <str> ''content type allowed in this repository; default:yum; supported: [yum, file]''
 [[BR]]
 
 ----
@@ -636,6 +637,30 @@
 [[BR]]
 '''parameters''': 
  * '''filetype''' <str> ''filetype name to lookup in the metadata''
+[[BR]]
+
+== Repository Content Export ==
+''Export the repository's content into target directory from its source.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/export/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 202 Accepted [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not Found if the id does not match a repository [[BR]]
+ 406 Not Acceptable if the repository does not have a source [[BR]]
+ 409 Conflict if a export is already in progress for the repository [[BR]]
+[[BR]]
+'''return''': a Task object [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''target_location''' <str> ''target location on the server filesystem where the content needs to be exported''
+ * '''generate_isos''' ''(optional)'' <boolean> ''wrap the exported content into iso image files.''
+ * '''overwrite''' ''(optional)'' <boolean> ''overwrite the content in target location if not empty''
 [[BR]]
 
 == Repository Metadata generation ==
