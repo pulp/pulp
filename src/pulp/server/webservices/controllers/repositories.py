@@ -226,6 +226,7 @@ class Repositories(JSONController):
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * notes?, dict, additional information in the form of key-value pairs
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
+         * content_type?, str, content type allowed in this repository; default:yum; supported: [yum, file] 
         """
         repo_data = self.params()
 
