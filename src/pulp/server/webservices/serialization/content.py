@@ -17,7 +17,7 @@ Module for content serialization.
 
 from pulp.server.webservices import http
 
-from . import db
+import db
 
 # constants --------------------------------------------------------------------
 
