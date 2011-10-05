@@ -1214,6 +1214,10 @@ def parse_treeinfo(treecfg):
         return treeinfo_dict
     if cfgparser.has_section('general'):
         for field in fields:
-            treeinfo_dict[field] = cfgparser.get('general', field) or None
+            try:
+                treeinfo_dict[field] = cfgparser.get('general', field) or None
+            except:
+                log.error("No field with name [%s] found in treeinfo file; defaulting to None" % field)
+                treeinfo_dict[field] = None
     treecfg_fp.close()
     return treeinfo_dict
