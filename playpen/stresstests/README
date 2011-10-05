@@ -1,0 +1,15 @@
+Example for testing multiple repository syncs in a standalone Pulp (outside of mod_wsgi)
+ sudo ./sync_memory_test.py --feed_urls ./feed_urls_small --num_syncs 1
+
+The input parameter '--feed_urls' is the path to a file of repo information.
+It must be in the format.  
+ Each line:  repo_id, feed_url, feed_ca, feed_cert
+
+ This file can be generated from existing repos in a Pulp server by using:
+  pulp/playpen/grinder/mirror_pulp/repo_list.sh
+    then converting the output to JSON to this format by running:
+  pulp/playpen/grinder/mirror_pulp/convert_repo_list.py
+
+
+
+
