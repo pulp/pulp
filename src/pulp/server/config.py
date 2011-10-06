@@ -156,3 +156,7 @@ def parse_time_delta(value):
     # function correctly and shoot me an email when you're done.
     # Jason L Connor <jconnor@redhat.com> 2011-04-06
     return timedelta(**dict([(u, int(i)) for i, u in zip(parts[::2], parts[1::2])]))
+
+# ------------------------------------------------------------------------------
+
+load_configuration()
