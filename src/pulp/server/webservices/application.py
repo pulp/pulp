@@ -38,7 +38,6 @@ from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.event.dispatcher import EventDispatcher
-from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
     filters, orphaned, packages, permissions, repositories, roles, services,
