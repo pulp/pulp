@@ -736,7 +736,7 @@ class RepositoryActions(JSONController):
         """
         [[wiki]]
         title: Add A Package
-        description: Add a new package to the repository.
+        description: Associates a new package to the repository. This does not update metadata; call generate_metadata after this call.
         method: POST
         path: /repositories/<id>/add_package/
         permission: EXECUTE
@@ -754,7 +754,7 @@ class RepositoryActions(JSONController):
         """
         [[wiki]]
         title: Delete A Package
-        description: Delete a package from the repository.
+        description: Dis-associates a package from the repository. This does not update metadata; call generate_metadata after this call.
         method: POST
         path: /repositories/<id>/delete_package/
         permission: EXECUTE
@@ -1017,7 +1017,7 @@ class RepositoryActions(JSONController):
         """
         [[wiki]]
         title: Add Errata
-        description: Add errata to the repository.
+        description: Add errata to the repository. This does not update metadata; call generate_metadata after this call.
         method: POST
         path: /repositories/<id>/add_errata/
         permission: EXECUTE
@@ -1035,7 +1035,7 @@ class RepositoryActions(JSONController):
         """
         [[wiki]]
         title: Delete Errata
-        description: Delete errata from the repository.
+        description: Delete errata from the repository. This does not update metadata; call generate_metadata after this call.
         method: POST
         path: /repositories/<id>/delete_errata/
         permission: EXECUTE
