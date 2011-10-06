@@ -1036,7 +1036,7 @@ class AddPackages(RepoAction):
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
         if not errors:
-            print _("Successfully added packages %s to repo [%s]." % (pnames, id))
+            print _("Successfully associated packages %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (pnames, id))
         else:
             for e in errors:
                 # Format, [pkg_id, NEVRA, filename, sha256]
@@ -1098,7 +1098,7 @@ class RemovePackages(RepoAction):
         pkg = list(set([p['filename'] for p in pobj]))
         try:
             self.repository_api.remove_package(id, pobj)
-            print _("Successfully removed package %s from repo [%s]." % (pkg, id))
+            print _("Successfully removed package %s from repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (pkg, id))
         except Exception:
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
 
@@ -1171,7 +1171,7 @@ class AddErrata(RepoAction):
             if pids:
                 # add dependencies to repo
                 self.repository_api.add_package(id, pids)
-            print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
+            print _("Successfully associated Errata %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
 
@@ -1231,7 +1231,7 @@ class RemoveErrata(RepoAction):
                 self.repository_api.remove_package(id, pkgdeps)
         except Exception:
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
-        print _("Successfully removed Errata %s from repo [%s]." % (errataids, id))
+        print _("Successfully removed Errata %s from repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
 
 
 class AddFiles(RepoAction):
