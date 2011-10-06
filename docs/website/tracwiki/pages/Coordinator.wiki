@@ -6,12 +6,21 @@ Pulp manages a number of resources such as repositories, consumers, contents,
 etc. It can perform operations on these resources in parallel. Create, read,
 update, and delete operations may occur simaltaniously on the same resource.
 
-The coordinator is a package in Pulp that will track resources and the 
+The '''coordinator''' is a package in Pulp that will track resources and the 
 operations they are currently undergoing. The module will identify conflicting 
 operations and take the appropriate actions.
 
 The coordinator is built on top of Pulp's tasking sub-system and will require 
-enhancements to it in order to fullfill it's purpose.
+enhancements to it in order to fullfill it's purpose. The tasking sub-system is 
+split into 2:
+ 1. an asynchronous '''task queue''' that handles tasks that are scheduled to 
+    run as soon as they are able
+ 1. a '''scheduler''' that handles scheduled tasks by periodicly generating tasks 
+    for the task queue when they are scheduled to run
+
+The coordinator will utilize the task queue to track and handle execution 
+ordering to avoid conflicting operations and the scheduler will utilize the 
+coordinator to detect conflicts.
 
 ----
 
@@ -23,8 +32,8 @@ information when something request an operation on a resource:
  1. the type of the operation
 
 Using this information, the coordinator decerns if any conflicting operations 
-are currently executing against that resource. If conflicting operations are 
-found, the coordinator determines if the conflicts exclude the requested 
+are currently executing against a given resource. If conflicting operations are 
+found, the coordinator determines if the conflicts deny the requested 
 operation or postpones the opertation.
 
 If there are no conclifting operations, the coordinator executes the opertion
@@ -33,14 +42,14 @@ and returns the results.
 If the requested operation is postponed, the coordinator will hand it over to 
 the tasking sub-system and return the task information.
 
-If the requested operation is excluded, the coordinator returns an error 
+If the requested operation is denied, the coordinator returns an error 
 detailing why the operation wasn't allowed to execute. 
 
 The coordinator will also honor executing operations asynchronously in the 
-tasking sub-system on request, regardless of no coflicts. It will will still 
-error if an excluding operation is in progress.
+tasking sub-system on request, regardless of no coflicts. It will still 
+error if an denying operation is in progress.
  
-=== Resource Id and Types ==
+=== Resource Ids and Types ==
 Pulp manages a number or resource types that can be considered ''primitives'' 
 for the purposes of resource tracking. Each resource's id is unique with the 
 set of its type. Rource types refer to the model representing individual 
@@ -59,7 +68,7 @@ All manager API calls in Pulp can be mapped to a set of CRUD operations on the
 resources they're called on. For an arbitrary individual resource, the 
 following table shows how CRUD operations conflict:
 
-|'''Operation'''|'''No Conflict'''|'''Postpones'''|'''Excludes'''|
+|'''Operation'''|'''No Conflict'''|'''Postpones'''|'''Denies'''|
 |Create||Read, Update, Delete|Create|
 |Read|Read|Create, Update, Delete||
 |Update||Create, Read, Update, Delete||
@@ -78,7 +87,7 @@ under the above contraints.
 
 === Coordinator API ===
 
-'''Execution Functions: run, run_async, run_sync'''
+==== Execution Functions ====
 
 {{{
 #!python
@@ -92,13 +101,13 @@ Arguments:
  * `call` - manager API method instance
  * `args` - (optional) list of positional arguments to pass to `call`
  * `kwargs` - (optional) dict of keyword arguments to pass to `call`
- * `resource_map` - dict of resource_type: dict of resource_id: list of operations
+ * `resources_map` - dict of resource_type: dict of resource_id: list of operations
 
 The `run` call does no introspection on any of the first 3 arguments to 
 determine the resources or operations. Instead it relies on the `resource_map` 
 to be explicity told what they are. 
 
-For example a `resource_map` for a repo clone call may look like:
+For example a `resources_map` for a repo clone call may look like:
 {{{
 #!python
 {Repo: {'repo_parent': ['READ'],
@@ -115,6 +124,17 @@ def run_async(call, args, kwargs, resources_map, pre_exec_hook, post_exec_hook, 
 The `run_async` function will run the call asynchronously in the tasking 
 sub-system regardless of there being no postponing operations in progress.
 
+Otherwise it behaves exactly like `run` when conflicts are encountered.
+
+Arguments:
+ * `call`, `args`, `kwargs`, `resources_map` - all the same as in `run`
+ * `pre_exec_hook` - (optional) callback that is called __before__ the task is run
+ * `post_exec_hook` - (optional) callback that is called __after__ the task is run
+ * `cancel_hook` - (optional) callback that is called if the task needs to be cancelled
+ * `timeout_hook` - (optional) callback that is called if the task times out
+
+All the callback methods take only 1 argument: the asynchronous `Task` instance
+
 ----
 
 {{{
@@ -122,9 +142,36 @@ sub-system regardless of there being no postponing operations in progress.
 def run_sync(call, args, kwargs, resources_map, timeout)
 }}}
 
+The `run_sync` function will run the call synchronously. Even if a conflicting 
+operation causes the call to be postponed, the coordinator will wait for the 
+call to execute before returning.
+
+It behaves the same as `run` or `run_async` if an operation denies the call.
+
+Arguments:
+ * `call`, `args`, `kwargs`, `resources_map` - all the same as `run`
+ * `timeout` - (optional) a timedelta timeout that will  cause a return if the 
+   call is executed asynchronously and the timeout is reached.
+
 ----
 
-'''Return Type: execution_state'''
+==== Execution Function Return Type ====
 
-== Proof ==
+All the execution functions return an `execution_report` as a dict with the 
+following keys:
+ * `state` - one of `executed`, `postponed`, or `denied`
+ * `reason` - list of resoure and operation tuples that caused `postponed` or `denied`
+ * `task_id` - id of asynchronous `Task` instance, if any
+ * `job_id` - id of `Job`, if multi-task call
+ * `return` - the return value of the call, if any
+ * `exception` - exception raised during the call, if any
+ * `traceback` - traceback associated with exception, if any
+
+----
+
+==== Query Functions ====
+
+== Scheduler ==
+
+== Task Queue ==
 
