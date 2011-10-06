@@ -32,7 +32,7 @@ from pulp.server.agent import HeartbeatListener
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync
 from pulp.server.api import repo
-from pulp.server.async import ReplyHandler, WatchDog
+from pulp.server.async import ReplyHandler
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.content import loader as plugin_loader
@@ -70,12 +70,10 @@ URLS = (
     '/users', users.application,
 )
 
-_LOG = logging.getLogger(__name__)
 _IS_INITIALIZED = False
 
 BROKER = None
 DISPATCHER = None
-WATCHDOG = None
 REPLY_HANDLER = None
 HEARTBEAT_LISTENER = None
 STACK_TRACER = None
@@ -108,9 +106,6 @@ def _initialize_pulp():
     if config.config.getboolean('events', 'recv_enabled'):
         DISPATCHER = EventDispatcher()
         DISPATCHER.start()
-    # async message timeout watchdog
-    WATCHDOG = WatchDog(url=url)
-    WATCHDOG.start()
     # async task reply handler
     REPLY_HANDLER = ReplyHandler(url)
     REPLY_HANDLER.start(WATCHDOG)
