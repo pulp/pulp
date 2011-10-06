@@ -20,6 +20,8 @@
 
 import optparse
 import os
+import shlex
+import subprocess
 import sys
 import time
 
@@ -78,26 +80,39 @@ def create_repos(repos_to_sync):
                     preserve_metadata=True)
 
 def sync_repos(repos_to_sync):
-    sync_tasks = []
+    completed_tasks = set()
+    incomplete_tasks = set()
+    sync_tasks = set()
     # Create sync tasks for all Repos
     for repo in repos_to_sync:
-        sync_task = repo_sync.sync(repo["id"])
-        if not sync_task:
+        t = repo_sync.sync(repo["id"])
+        if not t:
             print "%s failed to create a repo sync task for: %s" % (time.strftime(TIME_FMT_STR), repo["id"])
-        sync_tasks.append(sync_task)
+        sync_tasks.add(t.id)
     # Wait for all sync tasks to complete
-    wait_for_complete = True
-    while wait_for_complete:
+    incomplete_tasks = set(sync_tasks)
+    waiting_tasks = set(incomplete_tasks)
+    print "%s beginning sync of %s repos" % (time.strftime(TIME_FMT_STR), len(sync_tasks))
+    while len(waiting_tasks) > 0:
         time.sleep(5)
-        wait_for_complete = False
-        for t in sync_tasks:
-            updated_task = async.find_async(id=t.id)
-            if not updated_task or len(updated_task) < 1:
-                print "Error task lookup up: %s" % (t)
+        for task_id in waiting_tasks:
+            found = async.find_async(id=task_id)
+            if not found or len(found) < 1:
+                print "Error task lookup up: %s" % (task_id)
                 continue
             # If any tasks have not completed, wait
-            if updated_task[0].state not in task.task_complete_states:
-                wait_for_complete = True
+            if found[0].state in task.task_complete_states:
+                incomplete_tasks.remove(found[0].id)
+        waiting_tasks = set(incomplete_tasks)
+
+def get_memory_usage():
+    pid = os.getpid()
+    cmd = "pmap -d %s" % (pid)
+    cmd = shlex.split(cmd)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    mem_usage =  out.splitlines()[-1]
+    return mem_usage
 
 if __name__ == "__main__":
     print "%s start sync test" % (time.strftime(TIME_FMT_STR))
@@ -121,15 +136,16 @@ if __name__ == "__main__":
     # Sync repos
     num_syncs = int(opts.num_syncs)
     if num_syncs > 0:
+        print "Will complete %s iterations" % (num_syncs)
         for index in range(0, num_syncs):
-            print "%s %s full iteration" % (time.strftime(TIME_FMT_STR), index)
             sync_repos(repos_to_sync)
-
+            print "Completed iteration <%s> %s %s" % (index, time.strftime(TIME_FMT_STR), get_memory_usage())
     else:
+        print "Will loop over syncs until CTRL-C"
         count = 0
         while True:
-            print "%s %s full iteration" % (time.strftime(TIME_FMT_STR), count)
             sync_repos(repos_to_sync)
             count = count + 1
-
+            print "Completed iteration <%s> %s %s" % (count, time.strftime(TIME_FMT_STR), get_memory_usage())
+            
     print "%s end sync test" % (time.strftime(TIME_FMT_STR))
