@@ -13,6 +13,8 @@ operations and take the appropriate actions.
 The coordinator is built on top of Pulp's tasking sub-system and will require 
 enhancements to it in order to fullfill it's purpose.
 
+----
+
 == Design ==
 The coordinator is a scheduling system. It is given three pieces of 
 information when something request an operation on a resource:
@@ -37,12 +39,12 @@ detailing why the operation wasn't allowed to execute.
 The coordinator will also honor executing operations asynchronously in the 
 tasking sub-system on request, regardless of no coflicts. It will will still 
 error if an excluding operation is in progress.
-
+ 
 === Resource Id and Types ==
 Pulp manages a number or resource types that can be considered ''primitives'' 
 for the purposes of resource tracking. Each resource's id is unique with the 
 set of its type. Rource types refer to the model representing individual 
-resources.
+resources and each resource's id is already unique via database constraints.
 
 Resource types are:
  * CDS
@@ -50,8 +52,10 @@ Resource types are:
  * !ContentUnit
  * Repo
 
+'''XXX''': how do we handle aggregate types like consumer groups?
+
 === Operations ===
-All API calls in Pulp can be mapped to a set of CRUD operations on the 
+All manager API calls in Pulp can be mapped to a set of CRUD operations on the 
 resources they're called on. For an arbitrary individual resource, the 
 following table shows how CRUD operations conflict:
 
@@ -66,7 +70,61 @@ programmer and consideration must be given. Not all mappings are straight
 forward. For example: the repo sync call will be an `Update` operation simply 
 because it changes some fields of the Repo resource as a side-effect.
 
+----
+
 == Implementation ==
+The Coordinator will provide a public API that will execute manager API calls 
+under the above contraints.
+
+=== Coordinator API ===
+
+'''Execution Functions: run, run_async, run_sync'''
+
+{{{
+#!python
+def run(call, args, kwargs, resources_map)
+}}}
+
+The `run` method is the primary method of the coordinator's API and exhibits 
+the behavior detailed above.
+
+Arguments:
+ * `call` - manager API method instance
+ * `args` - (optional) list of positional arguments to pass to `call`
+ * `kwargs` - (optional) dict of keyword arguments to pass to `call`
+ * `resource_map` - dict of resource_type: dict of resource_id: list of operations
+
+The `run` call does no introspection on any of the first 3 arguments to 
+determine the resources or operations. Instead it relies on the `resource_map` 
+to be explicity told what they are. 
+
+For example a `resource_map` for a repo clone call may look like:
+{{{
+#!python
+{Repo: {'repo_parent': ['READ'],
+       {'repo_dolly': ['CREATE'],}
+}}}
+
+----
+
+{{{
+#!python
+def run_async(call, args, kwargs, resources_map, pre_exec_hook, post_exec_hook, cancel_hook, timeout_hook)
+}}}
+
+The `run_async` function will run the call asynchronously in the tasking 
+sub-system regardless of there being no postponing operations in progress.
+
+----
+
+{{{
+#!python
+def run_sync(call, args, kwargs, resources_map, timeout)
+}}}
+
+----
+
+'''Return Type: execution_state'''
 
 == Proof ==
 
