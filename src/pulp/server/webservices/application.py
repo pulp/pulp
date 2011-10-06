@@ -26,7 +26,6 @@ from pulp.server.db import connection as db_connection
 logs.start_logging()
 db_connection.initialize()
 
-from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
 from pulp.server import auditing
 from pulp.server.agent import HeartbeatListener
@@ -95,8 +94,6 @@ def _initialize_pulp():
     _IS_INITIALIZED = True
     # check our db version and other support
     check_version()
-    if not M2CRYPTO_HAS_CRL_SUPPORT:
-        _LOG.warning("M2Crypto lacks needed CRL functionality, therefore CRL checking will be disabled.")
     # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
