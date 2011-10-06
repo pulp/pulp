@@ -1,0 +1,72 @@
+[[TOC]]
+= Coordinator =
+
+== Introduction ==
+Pulp manages a number of resources such as repositories, consumers, contents, 
+etc. It can perform operations on these resources in parallel. Create, read,
+update, and delete operations may occur simaltaniously on the same resource.
+
+The coordinator is a package in Pulp that will track resources and the 
+operations they are currently undergoing. The module will identify conflicting 
+operations and take the appropriate actions.
+
+The coordinator is built on top of Pulp's tasking sub-system and will require 
+enhancements to it in order to fullfill it's purpose.
+
+== Design ==
+The coordinator is a scheduling system. It is given three pieces of 
+information when something request an operation on a resource:
+ 1. the resource's unique id
+ 1. the type of the resource
+ 1. the type of the operation
+
+Using this information, the coordinator decerns if any conflicting operations 
+are currently executing against that resource. If conflicting operations are 
+found, the coordinator determines if the conflicts exclude the requested 
+operation or postpones the opertation.
+
+If there are no conclifting operations, the coordinator executes the opertion
+and returns the results.
+
+If the requested operation is postponed, the coordinator will hand it over to 
+the tasking sub-system and return the task information.
+
+If the requested operation is excluded, the coordinator returns an error 
+detailing why the operation wasn't allowed to execute. 
+
+The coordinator will also honor executing operations asynchronously in the 
+tasking sub-system on request, regardless of no coflicts. It will will still 
+error if an excluding operation is in progress.
+
+=== Resource Id and Types ==
+Pulp manages a number or resource types that can be considered ''primitives'' 
+for the purposes of resource tracking. Each resource's id is unique with the 
+set of its type. Rource types refer to the model representing individual 
+resources.
+
+Resource types are:
+ * CDS
+ * Consumer
+ * !ContentUnit
+ * Repo
+
+=== Operations ===
+All API calls in Pulp can be mapped to a set of CRUD operations on the 
+resources they're called on. For an arbitrary individual resource, the 
+following table shows how CRUD operations conflict:
+
+|'''Operation'''|'''No Conflict'''|'''Postpones'''|'''Excludes'''|
+|Create||Read, Update, Delete|Create|
+|Read|Read|Create, Update, Delete||
+|Update||Create, Read, Update, Delete||
+|Delete||Create|Read, Update, Delete|
+
+Mapping the API calls to resources and operations is the providence of the 
+programmer and consideration must be given. Not all mappings are straight 
+forward. For example: the repo sync call will be an `Update` operation simply 
+because it changes some fields of the Repo resource as a side-effect.
+
+== Implementation ==
+
+== Proof ==
+
