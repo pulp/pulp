@@ -16,14 +16,13 @@ import logging
 
 import web
 
-from pulp.server import config
+from pulp.server import config # automatically loads config
 from pulp.server import logs
 from pulp.server.db import connection as db_connection
 
 # We need to read the config, start the logging, and initialize the db
 #connection prior to any other imports, since some of the imports will invoke
 # setup methods
-config.load_configuration()
 logs.start_logging()
 db_connection.initialize()
 
