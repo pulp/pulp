@@ -50,6 +50,7 @@ Repo object fields:
  * distributionid, list of str, list of distribution ids this repository belongs to [deferred fields]
  * checksum_type, str, name of the algorithm used for checksums of the repository's content
  * filters, list of str, list of filter ids associated with the repository
+ * content_types, str, content type allowed in this repository; default:yum; supported: [yum, file
 !RepoSource object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
@@ -226,7 +227,7 @@ class Repositories(JSONController):
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * notes?, dict, additional information in the form of key-value pairs
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
-         * content_type?, str, content type allowed in this repository; default:yum; supported: [yum, file] 
+         * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file] 
         """
         repo_data = self.params()
 
