@@ -131,6 +131,6 @@ def wsgi_application():
     using the web.py framework.
     @return: wsgi application callable
     """
-    application = web.subdir_application(urls)
+    application = web.subdir_application(URLS)
     _initialize_pulp()
     return application.wsgifunc()
