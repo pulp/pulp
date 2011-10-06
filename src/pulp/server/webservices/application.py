@@ -12,26 +12,36 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import atexit
+import logging
 
 import web
 
+from pulp.server import config
+from pulp.server import logs
+from pulp.server.db import connection as db_connection
+
+# We need to read the config, start the logging, and initialize the db
+#connection prior to any other imports, since some of the imports will invoke
+# setup methods
+config.load_configuration()
+logs.start_logging()
+db_connection.initialize()
+
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
 from pulp.server import auditing
-from pulp.server import config
-from pulp.server.auth.admin import ensure_admin
-from pulp.server.auth.authorization import ensure_builtin_roles
-from pulp.server.db import connection
-
-# We need to initialize the db connection and auditing prior to any other
-# imports, since some of the imports will invoke setup methods
-connection.initialize()
-
+from pulp.server.agent import HeartbeatListener
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync
 from pulp.server.api import repo
+from pulp.server.async import ReplyHandler, WatchDog
+from pulp.server.auth.admin import ensure_admin
+from pulp.server.auth.authorization import ensure_builtin_roles
+from pulp.server.content import loader as plugin_loader
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
-from pulp.server.logs import start_logging
+from pulp.server.event.dispatcher import EventDispatcher
+from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
     filters, jobs, orphaned, packages, permissions, repositories, roles,
@@ -40,8 +50,11 @@ from pulp.server.webservices.controllers import (
     gc_contents, gc_plugins, gc_repositories)
 from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
 
+from gofer.messaging.broker import Broker
 
-urls = (
+# conatants and application globals --------------------------------------------
+
+URLS = (
     # alphabetical order, please
     # default version (currently 1) api
     '/cds', cds.application,
@@ -85,37 +98,70 @@ urls = (
     '/v2/repositories', gc_repositories.application,
 )
 
-_stacktrace_dumper = None
+_LOG = logging.getLogger(__name__)
+_IS_INITIALIZED = False
 
+BROKER = None
+DISPATCHER = None
+WATCHDOG = None
+REPLY_HANDLER = None
+HEARTBEAT_LISTENER = None
+STACK_TRACER = None
+
+# initialization ---------------------------------------------------------------
 
 def _initialize_pulp():
     # XXX ORDERING COUNTS
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
     # over itself on start up. If you do not know where to add something, ASK!
-    global _stacktrace_dumper
-    # start logging and verify we can run
-    start_logging()
+    global _IS_INITIALIZED, BROKER, DISPATCHER, WATCHDOG, REPLY_HANDLER, \
+           HEARTBEAT_LISTENER, STACK_TRACER
+    if _IS_INITIALIZED:
+        return
+    _IS_INITIALIZED = True
+    # check our db version and other support
     check_version()
+    if not M2CRYPTO_HAS_CRL_SUPPORT:
+        _LOG.warning("M2Crypto lacks needed CRL functionality, therefore CRL checking will be disabled.")
     # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
     # clean up previous runs, if needed
     repo.clear_sync_in_progress_flags()
-    # initialize current run
+    # amqp broker
+    url = config.config.get('messaging', 'url')
+    BROKER = Broker(url)
+    BROKER.cacert = config.config.get('messaging', 'cacert')
+    BROKER.clientcert = config.config.get('messaging', 'clientcert')
+    # event dispatcher
+    if config.config.getboolean('events', 'recv_enabled'):
+        DISPATCHER = EventDispatcher()
+        DISPATCHER.start()
+    # async message timeout watchdog
+    WATCHDOG = WatchDog(url=url)
+    WATCHDOG.start()
+    # async task reply handler
+    REPLY_HANDLER = ReplyHandler(url)
+    REPLY_HANDLER.start(WATCHDOG)
+    # agent heartbeat listener
+    HEARTBEAT_LISTENER = HeartbeatListener(url)
+    HEARTBEAT_LISTENER.start()
+    # async subsystem and schedules tasks
     async.initialize()
     # pulp finalization methods, registered via 'atexit'
     atexit.register(async.finalize)
     # setup debugging, if configured
-    if config.config.getboolean('server', 'debugging_mode') and \
-            _stacktrace_dumper is None:
-        _stacktrace_dumper = StacktraceDumper()
-        _stacktrace_dumper.start()
+    if config.config.getboolean('server', 'debugging_mode'):
+        STACK_TRACER = StacktraceDumper()
+        STACK_TRACER.start()
     # setup recurring tasks
     auditing.init_culling_task()
     consumer_history.init_culling_task()
     scheduled_sync.init_scheduled_syncs()
-
+    # pulp generic content initialization
+    manager_factory.initialize()
+    plugin_loader.initialize()
 
 
 def wsgi_application():
@@ -124,7 +170,7 @@ def wsgi_application():
     using the web.py framework.
     @return: wsgi application callable
     """
-    application = web.subdir_application(urls)
+    application = web.subdir_application(URLS)
     # TODO make debug configurable
     stack = ErrorHandlerMiddleware(application.wsgifunc(), debug=True)
     _initialize_pulp()

@@ -30,7 +30,7 @@ class TestOauth(testutil.PulpAsyncTest):
 
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
-        self.web_app = web.subdir_application(application.urls)
+        self.web_app = web.subdir_application(application.URLS)
         self.test_app = TestApp(self.web_app.wsgifunc())
 
         def request_info(key):
