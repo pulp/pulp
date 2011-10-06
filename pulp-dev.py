@@ -19,6 +19,7 @@ import sys
 
 DIRS = (
     '/etc',
+    '/etc/bash_completion.d',
     '/etc/httpd',
     '/etc/httpd/conf.d',
     '/etc/pulp',
@@ -51,6 +52,7 @@ DIRS = (
 # Tuple entry is explicit (src, dst)
 #
 LINKS = (
+    'etc/bash_completion.d/pulp-admin',
     'etc/pulp/pulp.conf',
     'etc/pulp/repo_auth.conf',
     'etc/pulp/admin/admin.conf',
