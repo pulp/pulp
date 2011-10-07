@@ -17,6 +17,7 @@ import ConfigParser
 import gzip
 import logging
 import os
+import random
 import re
 
 import shutil
@@ -325,6 +326,47 @@ class BaseSynchronizer(object):
         pulp.server.util.create_rel_symlink(source_path, link_path)
         log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
 
+    def __import_package_with_retry(self, package, repo_defined=False, num_retries=5):
+        file_name = os.path.basename(package.relativepath)
+        hashtype = "sha256"
+        checksum = package.checksum
+        try:
+            newpkg = self.package_api.create(
+                package.name,
+                package.epoch,
+                package.version,
+                package.release,
+                package.arch,
+                package.description,
+                hashtype,
+                checksum,
+                file_name,
+                repo_defined=repo_defined)
+        except DuplicateKeyError, e:
+            found = self.package_api.packages(
+                name=package.name,
+                epoch=package.epoch,
+                version=package.version,
+                release=package.release,
+                arch=package.arch,
+                filename=file_name,
+                checksum_type=hashtype,
+                checksum=checksum)
+            if not found and num_retries > 0:
+                # https://bugzilla.redhat.com/show_bug.cgi?id=734782
+                # retry for infrequent scenario of getting a DuplicateKeyError
+                # yet the document isn't available yet for a find()
+                time.sleep(random.randrange(1, 10, 1))
+                return self.__safe_import(package, repo_defined, num_retries=num_retries-1)
+            if not found:
+                log.error(e)
+                log.error("Caught DuplicateKeyError yet we didn't find a matching package in database")
+                log.error("Originally tried to create: name=%s, epoch=%s, version=%s, arch=%s, hashtype=%s, checksum=%s, file_name=%s" \
+                    % (package.name, package.epoch, package.version, package.arch, hashtype, checksum, file_name))
+                raise
+            newpkg = found[0]
+        return newpkg
+
     def import_package(self, package, repo_id=None, repo_defined=False):
         """
         @param package - package to add to repo
@@ -335,57 +377,28 @@ class BaseSynchronizer(object):
         """
         try:
             file_name = os.path.basename(package.relativepath)
-            hashtype = "sha256"
-            checksum = package.checksum
-            try:
-                newpkg = self.package_api.create(
-                    package.name,
-                    package.epoch,
-                    package.version,
-                    package.release,
-                    package.arch,
-                    package.description,
-                    hashtype,
-                    checksum,
-                    file_name,
-                    repo_defined=repo_defined)
-            except DuplicateKeyError, e:
-                found = self.package_api.packages(
-                    name=package.name,
-                    epoch=package.epoch,
-                    version=package.version,
-                    release=package.release,
-                    arch=package.arch,
-                    filename=file_name,
-                    checksum_type=hashtype,
-                    checksum=checksum)
-                if not found or len(found) < 1:
-                    log.error(e)
-                    log.error("Caught DuplicateKeyError yet we didn't find a matching package in database")
-                    log.error("Originally tried to create: name=%s, epoch=%s, version=%s, arch=%s, hashtype=%s, checksum=%s, file_name=%s" \
-                        % (package.name, package.epoch, package.version, package.arch, hashtype, checksum, file_name))
-                    all_pkgs = self.package_api.packages(fields=["_id", "id", "name", "epoch", "version", "arch", "filename", "checksum.sha256"])
-                    log.error("<%s> packages are in Database" % (len(all_pkgs)))
-                    log.error(all_pkgs[:100]) # limit how many pkgs we will display
-                    raise
-                return found[0]
+            newpkg = self.__import_package_with_retry(package, repo_defined)
             # update dependencies
             for dep in package.requires:
-                newpkg.requires.append(dep[0])
+                if not newpkg.has_key("requires"):
+                    newpkg["requires"] = []
+                newpkg["requires"].append(dep[0])
             for prov in package.provides:
-                newpkg.provides.append(prov[0])
-            newpkg.buildhost = package.buildhost
-            newpkg.size = package.size
-            newpkg.group = package.group
-            newpkg.license = package.license
-            newpkg.vendor  = package.vendor
+                if not newpkg.has_key("provides"):
+                    newpkg["provides"] = []
+                newpkg["provides"].append(prov[0])
+            newpkg["buildhost"] = package.buildhost
+            newpkg["size"] = package.size
+            newpkg["group"] = package.group
+            newpkg["license"] = package.license
+            newpkg["vendor"]  = package.vendor
             # update filter
             filter = ['requires', 'provides', 'buildhost',
                       'size' , 'group', 'license', 'vendor']
             # set the download URL
             if repo_id:
                 filter.append('download_url')
-                newpkg.download_url = \
+                newpkg["download_url"] = \
                     constants.SERVER_SCHEME \
                     + config.config.get('server', 'server_name') \
                     + "/" \
@@ -396,7 +409,7 @@ class BaseSynchronizer(object):
                     + file_name
             newpkg = pulp.server.util.translate_to_utf8(newpkg)
             delta = Delta(newpkg, filter)
-            self.package_api.update(newpkg.id, delta)
+            self.package_api.update(newpkg["id"], delta)
             return newpkg
         except Exception, e:
             log.error('Package "%s", import failed', package, exc_info=True)
