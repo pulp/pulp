@@ -64,6 +64,8 @@ class Register(ConsumerAction, ConsumerClientActionMixIn):
     def run(self):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', id)
+        if self.consumerid:
+            system_exit(os.EX_DATAERR, _("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid))
         consumer = self.consumer_api.create(id, description)
         crt = self.consumer_api.certificate(id)
         bundle = ConsumerBundle()
