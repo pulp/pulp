@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import os
+import shlex
+import subprocess
 import sys
 import time
 
@@ -6,32 +9,12 @@ from datetime import datetime
 from grinder.RepoFetch import YumRepoGrinder
 from threading import Thread
 
-#import guppy
-
-#Reference for usage of muppy/heapy
-#https://software.sandia.gov/trac/coopr/changeset/4286
-#from pympler import muppy
-#try:
-#    from pympler import refbrowser
-#    from pympler import tracker
-#except:
-#    from pympler.muppy import refbrowser
-#    from pympler.muppy import tracker
-#def output_function(o):
-#    return str(type(o))
-
-
-#import meliae
-#import meliae.scanner
-
-#from guppy import hpy 
-#HP=hpy()
-
 PKGS_DIR="./packages"
 MAX_SYNC_JOBS=4
 THREADS=15
 REPO_DIR="./repos"
 VERIFY_OPTIONS = {"size":False, "checksum":False}
+TIME_FMT_STR = "%b%d_%Y__%l:%M%p"
 
 def parse_feed_urls(file_name):
     feed_urls = []
@@ -58,9 +41,7 @@ class SyncThread(Thread):
         self.finished = False
 
     def sync(self, repo_id, url, ca, cert):
-        print "%s sync(%s, %s)" % (datetime.now(), repo_id, url)
-        #print "%s sync(%s, %s, %s, %s)" % (datetime.now(), repo_id, url, ca, cert)
-        #tr = tracker.SummaryTracker()
+        #print "%s sync(%s, %s)" % (datetime.now(), repo_id, url)
         start = time.time()
         yum_repo_grinder = YumRepoGrinder(repo_id, url, THREADS,
             cacert=ca, clicert=cert, packages_location=PKGS_DIR)
@@ -68,22 +49,13 @@ class SyncThread(Thread):
             "%s/%s" % (REPO_DIR, repo_id),
             verify_options=VERIFY_OPTIONS)
         end = time.time()
-        print ("<%s> reported %s successes, %s downloads, %s errors" \
-                    % (repo_id, report.successes, report.downloads, report.errors))
-        print "<%s> took %s seconds" % (repo_id, end-start)
-        #print HP.heap()
-        #muppy.print_summary()
-        #cb = refbrowser.ConsoleBrowser(root, maxdepth=2, str_func=output_function)
-        #cb.print_tree()
-        #print "SummaryTracker.diff(): "
-        #tr.print_diff()
+        #print ("<%s> reported %s successes, %s downloads, %s errors" \
+        #            % (repo_id, report.successes, report.downloads, report.errors))
+        #print "<%s> took %s seconds" % (repo_id, end-start)
 
     def run(self):
         try:
-            #meliae.scanner.dump_all_objects('meliae/begin_%s_sync.json' % (self.repo_id))
             self.sync(self.repo_id, self.url, self.ca, self.cert)
-            #meliae.scanner.dump_all_objects('meliae/complete_%s_sync.json' % (self.repo_id))
-            #meliae.scanner.dump_gc_objects('meliae/complete_%s_sync_dump_gc_objects.json' % (self.repo_id))
         except Exception, e:
             print "\n\n\n%s Caught Exception: %s\n\n\n" % (self.repo_id, e)
         self.finished = True
@@ -109,27 +81,35 @@ def wait_for_all_complete(threads):
                 continue
             loop_again = True
 
+def get_memory_usage():
+    pid = os.getpid()
+    cmd = "pmap -d %s" % (pid)
+    cmd = shlex.split(cmd)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    mem_usage =  out.splitlines()[-1]
+    return mem_usage
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "Usage: %s FEED_URLS_FILE_LIST" % (sys.argv[0])
         sys.exit(1)
     feed_urls = parse_feed_urls(sys.argv[1])
     print "%s Feed URLs found" % (len(feed_urls))
-    #HP.setref()
-    threads = []
-    #meliae.scanner.dump_all_objects('meliae/begin_sync.json')
-    for index, repo in enumerate(feed_urls):
-        if len(threads) >= MAX_SYNC_JOBS:
-            print "Will wait: %s jobs running now" % (len(threads))
-            threads = wait_till_one_free(threads)
-        t = SyncThread(repo["id"], repo["url"], repo["feed_ca"], repo["feed_cert"])
-        t.start()
-        threads.append(t)
-        print "[%s/%s] sync job started." % (index, len(feed_urls))
-    wait_for_all_complete(threads)
-    #print "End of all syncs: ", HP.heap()
-    #meliae.scanner.dump_all_objects('meliae/completed_all_syncs.json')
-
+    count = 0
+    while True:
+        print "%s iteration %s.   %s" % (time.strftime(TIME_FMT_STR), count, get_memory_usage())
+        threads = []
+        for index, repo in enumerate(feed_urls):
+            if len(threads) >= MAX_SYNC_JOBS:
+                #print "Will wait: %s jobs running now" % (len(threads))
+                threads = wait_till_one_free(threads)
+            t = SyncThread(repo["id"], repo["url"], repo["feed_ca"], repo["feed_cert"])
+            t.start()
+            threads.append(t)
+            #print "[%s/%s] sync job started." % (index, len(feed_urls))
+        wait_for_all_complete(threads)
+        count = count + 1
 
 
 
