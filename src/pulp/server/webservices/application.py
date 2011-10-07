@@ -46,7 +46,7 @@ from pulp.server.webservices.controllers import (
     filters, jobs, orphaned, packages, permissions, repositories, roles,
     services, tasks, users)
 from pulp.server.webservices.controllers import (
-    gc_contents, gc_plugins, gc_repositories)
+    api_v2, gc_contents, gc_plugins, gc_repositories)
 from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
 
 from gofer.messaging.broker import Broker
@@ -92,6 +92,7 @@ URLS = (
     '/v1/tasks', tasks.application,
     '/v1/users', users.application,
     # version 2 api
+    '/v2', api_v2.application,
     '/v2/content', gc_contents.application,
     '/v2/plugins', gc_plugins.application,
     '/v2/repositories', gc_repositories.application,
