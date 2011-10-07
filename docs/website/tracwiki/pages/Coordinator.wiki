@@ -108,6 +108,8 @@ under the above contraints.
 
 === Coordinator API ===
 
+----
+
 ==== Execution Functions ====
 
 TODO: change api to distinguish between running tasks (that operate on 
@@ -213,12 +215,16 @@ the tasks.
 
 === Scheduler API ===
 
+----
+
 {{{
 #!python
 def initialize()
 }}}
 
 Initialize the scheduler. To be called on startup to look for scheduled tasks.
+
+----
 
 {{{
 #!python
@@ -235,6 +241,8 @@ Arguments:
 
 Return:
  * `schedule_id` - unique identifier representing the scheduler's handle on the task
+
+----
 
 {{{
 #!python
@@ -260,6 +268,8 @@ The task queue is a simple priority queue that tracks 2 things:
 The task queue will execute unblocked tasks in the order in which they were 
 enqueued, controlling the number of tasks that can execute concurrently.
 
+----
+
 === Task Management Functions ===
 
 {{{
@@ -272,6 +282,8 @@ Add a task to the queue.
 Arguments:
  * `task` - Task instance
  * `blockers` - list of task ids that block the task's execution
+
+----
 
 {{{
 #!python
@@ -286,6 +298,8 @@ Arguments:
 Return:
  * Task instance if found
  * None if the task is no longer in the queue (either dequeue or completed)
+
+----
 
 === Task Control Functions ===
 There's no guaruntee that these functions will work. The task must have had the 
@@ -306,6 +320,8 @@ Return:
  * True - if the task has a `cancel_hook` and it was called
  * None - if the task does not have a `cancel_hook`
 
+----
+
 {{{
 #!python
 def timeout_task(task_id)
@@ -320,6 +336,8 @@ Return:
  * False - if the task has completed or is not in the queue
  * True - if the task has a `timeout_hook` and it was called
  * None - if the task does not have a `timeout_hook`
+
+----
 
 === Task Query Functions ===
 
@@ -336,6 +354,8 @@ Arguments:
 Return:
  * Task instance, if found
  * None otherwise
+
+----
 
 {{{
 #!python
