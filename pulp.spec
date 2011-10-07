@@ -399,7 +399,6 @@ fi
 %attr(775, apache, apache) %{_sysconfdir}/pulp
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/webservices.wsgi
-%attr(750, apache, apache) /srv/pulp/bootstrap.wsgi
 %attr(750, apache, apache) /srv/pulp/repo_auth.wsgi
 %attr(3775, apache, apache) /var/lib/pulp
 %attr(3775, apache, apache) /var/www/pub
