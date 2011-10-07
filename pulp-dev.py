@@ -67,7 +67,6 @@ LINKS = (
     'etc/yum/pluginconf.d/pulp-profile-update.conf',
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
-    'srv/pulp/bootstrap.wsgi',
     'srv/pulp/repo_auth.wsgi',
     ('src/pulp/client/consumer/goferplugins/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
     ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
