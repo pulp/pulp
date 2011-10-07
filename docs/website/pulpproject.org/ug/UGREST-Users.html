@@ -104,12 +104,12 @@ Response: <strong>200 OK</strong>
   <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'tito'</span></b>,
   <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
   <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Tito Jones'</span></b>,
-  <B><span class="code-string">'cert'</span></b>: <B><span class="code-string">'..x509 certificate..'</span></b>},
+  <B><span class="code-string">'roles'</span></b>: [u<B><span class="code-string">'consumer-users'</span></b>]},
 {<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'10df8a48-e4ec-474d-85c5-a7f657870cb3'</span></b>,
   <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'admin'</span></b>,
   <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
   <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Admin User'</span></b>,
-  <B><span class="code-string">'cert'</span></b>: <B><span class="code-string">'..x509 certificate..'</span></b>}
+  <B><span class="code-string">'roles'</span></b>: [u<B><span class="code-string">'consumer-users'</span></b>]}
 ]
 </pre></div><p>
 Error: None
@@ -117,7 +117,7 @@ Error: None
 <hr />
 <h2 id="Create">Create</h2>
 <p>
-Create a consumer group
+Creates a new user in the Pulp server.
 </p>
 <p>
 Status: <strong>DRAFT</strong>
@@ -126,16 +126,14 @@ Status: <strong>DRAFT</strong>
 Path: <strong>/users/</strong>
 </p>
 <p>
-Method: <strong>PUT</strong>
+Method: <strong>POST</strong>
 </p>
 <p>
 Parameters:
 </p>
-<ul><li>id: <i>optional</i> user id
-</li><li>login: <i>required</i> unique login used to identify this user in human readable cases (CLI, webui)
-</li><li>password: <i>optional</i> Optional password to specificy.  If none is specified user must authenticate with an x509 certificate.
-</li><li>name: <i>optional</i> A human readable name to use for display purposes.
-</li><li>cert: <i>optional</i> Optional x509 certificate identifying this user.  <strong>QUESTION:</strong> Do we really need to store this?
+<ul><li>login: <i>required</i> unique login used to identify this user in human readable cases (CLI, webui)
+</li><li>password: <i>required</i> password to specify
+</li><li>name: <i>required</i> A human readable name to use for display purposes.
 </li></ul><p>
 Authentication:
 </p>
@@ -162,7 +160,7 @@ Headers:
   <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
   <B><span class="code-string">'consumerids'</span></b>: []}]
 </pre></div><p>
-Error: <strong>409 Conflict</strong> if there is an existing user with the same id
+Error: <strong>409 Conflict</strong> if there is an existing user with the same login
 </p>
 <hr />
 <h2 id="Information">Information</h2>
@@ -206,10 +204,10 @@ None
 Response: <strong>200 OK</strong>
 </p>
 <div class="code"><pre>{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span></b>,
-  <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'tito'</span></b>,
-  <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Tito Jones'</span></b>,
-  <B><span class="code-string">'cert'</span></b>: <B><span class="code-string">'..x509 certificate..'</span></b>}
+ <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'tito'</span></b>,
+ <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
+ <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Tito Jones'</span></b>,
+ <B><span class="code-string">'roles'</span></b> : [u<B><span class="code-string">'super-users'</span></b>]}
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such user
 </p>
