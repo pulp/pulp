@@ -43,7 +43,10 @@ class Users(JSONController):
         @return: a list of all users
         """
         # implement filters
-        return self.ok(api.users())
+        users = api.users()
+        for u in users:
+            u.pop('password', None)
+        return self.ok(users)
 
     @error_handler
     @auth_required(CREATE)
@@ -88,7 +91,9 @@ class User(JSONController):
         @param login: user login
         @return: user metadata
         """
-        return self.ok(api.user(login))
+        user = api.user(login)
+        user.pop('password', None)
+        return self.ok(user)
 
     @error_handler
     @auth_required(UPDATE)
@@ -99,7 +104,8 @@ class User(JSONController):
         """
         delta = self.params()
         user = api.update(login, delta)
-        return self.ok(True)
+        user.pop('password', None)
+        return self.ok(user)
 
     @error_handler
     @auth_required(DELETE)
