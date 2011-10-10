@@ -167,6 +167,9 @@ class Upload(ContentAction):
                     if error_message:
                         exit_code = os.EX_DATAERR
                         print "%s" % (error_message)
+                task = self.repository_api.generate_metadata(rid)
+                print _("\n* Metadata generation has been scheduled for repository [%s] with a task id [%s]; use `pulp-admin repo generate_metadata --status` to check the status." % (rid, task['id']))
+
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
             msg = _('Content association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
