@@ -1403,5 +1403,20 @@ class TestRepoApi(testutil.PulpAsyncTest):
             assert(repo is not None)
             assert(repo['arch'] is not arch)
 
+    def test_empty_repo(self):
+        repo1 = self.repo_api.create("test_empty_repo_1", 'some name', 'i386', 'http://example.com', preserve_metadata=True)
+        repodata_file1 = "%s/%s/%s/%s" % (top_repos_location(),
+                                         repo1['relative_path'],
+                                         'repodata', 'repomd.xml')
+        # no metadata should exists as its preserved
+        self.assertEquals(os.path.exists(repodata_file1), False)
+        repo2 = self.repo_api.create("test_empty_repo_2", 'some name', 'i386', 'http://example.com', preserve_metadata=False)
+        repodata_file2 = "%s/%s/%s/%s" % (top_repos_location(),
+                                         repo2['relative_path'],
+                                         'repodata', 'repomd.xml')
+        # metadata should exists
+        self.assertTrue(os.path.exists(repodata_file2))
+
+
 if __name__ == '__main__':
     unittest.main()
