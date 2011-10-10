@@ -78,7 +78,6 @@ _IS_INITIALIZED = False
 
 BROKER = None
 DISPATCHER = None
-REPLY_HANDLER = None
 HEARTBEAT_LISTENER = None
 STACK_TRACER = None
 
@@ -145,7 +144,7 @@ def _initialize_pulp():
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
     # over itself on start up. If you do not know where to add something, ASK!
-    global _IS_INITIALIZED, BROKER, DISPATCHER,  REPLY_HANDLER, \
+    global _IS_INITIALIZED, BROKER, DISPATCHER, \
            HEARTBEAT_LISTENER, STACK_TRACER
     if _IS_INITIALIZED:
         return
@@ -166,7 +165,6 @@ def _initialize_pulp():
     if config.config.getboolean('events', 'recv_enabled'):
         DISPATCHER = EventDispatcher()
         DISPATCHER.start()
-    # async task reply handler
     # agent heartbeat listener
     HEARTBEAT_LISTENER = HeartbeatListener(url)
     HEARTBEAT_LISTENER.start()
