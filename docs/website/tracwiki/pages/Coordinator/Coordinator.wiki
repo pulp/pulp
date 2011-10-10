@@ -4,22 +4,23 @@
 == Introduction ==
 Pulp manages a number of resources such as repositories, consumers, contents, 
 etc. It can perform operations on these resources in parallel. Create, read,
-update, and delete operations may occur simaltaniously on the same resource.
+update, and delete operations may occur simultaneously on the same resource.
 
 The '''coordinator''' is a package in Pulp that will track resources and the 
 operations they are currently undergoing. The module will identify conflicting 
 operations and take the appropriate actions.
 
 The coordinator is built on top of Pulp's tasking sub-system and will require 
-enhancements to it in order to fullfill it's purpose. The tasking sub-system is 
+enhancements to it in order to full-fill it's purpose. The tasking sub-system is 
 split into 2:
  1. an asynchronous '''task queue''' that handles tasks that are scheduled to run as soon as they are able
- 1. a '''scheduler''' that handles scheduled tasks by periodicly generating tasks for the task queue when they are scheduled to run
+ 1. a '''scheduler''' that handles scheduled tasks by periodically generating tasks for the task queue when they are scheduled to run
 
 The coordinator will utilize the task queue to track and handle execution 
 ordering to avoid conflicting operations and the scheduler will utilize the 
 coordinator to detect conflicts.
 
+----
 ----
 
 == Design ==
@@ -29,12 +30,12 @@ information when something request an operation on a resource:
  1. the type of the resource
  1. the type of the operation
 
-Using this information, the coordinator decerns if any conflicting operations 
+Using this information, the coordinator discerns if any conflicting operations 
 are currently executing against a given resource. If conflicting operations are 
 found, the coordinator determines if the conflicts deny the requested 
-operation or postpones the opertation.
+operation or postpones the operation.
 
-If there are no conclifting operations, the coordinator executes the opertion
+If there are no conflicting operations, the coordinator executes the operation
 and returns the results.
 
 If the requested operation is postponed, the coordinator will hand it over to 
@@ -44,8 +45,12 @@ If the requested operation is denied, the coordinator returns an error
 detailing why the operation wasn't allowed to execute. 
 
 The coordinator will also honor executing operations asynchronously in the 
-tasking sub-system on request, regardless of no coflicts. It will still 
+tasking sub-system on request, regardless of no conflicts. It will still 
 error if an denying operation is in progress.
+
+----
+[[Image(coordinator_architecture.jpg)]]
+----
  
 === Resource Ids and Types ==
 Pulp manages a number or resource types that can be considered ''primitives'' 
@@ -55,11 +60,20 @@ resources and each resource's id is already unique via database constraints.
 
 Resource types are:
  * CDS
- * Consumer
- * !ContentUnit
- * Repo
+ * CONSUMER
+ * CONTENT_UNIT
+ * REPOSITORY
+ * ROLE
+ * USER
 
-'''XXX''': how do we handle aggregate types like consumer groups?
+Pulp also manages collections or ''aggregates'' of these individual resources. 
+The coordinator knows how to convert this aggregate resources into their 
+individual component resources.
+
+Aggregate types are:
+ * CONSUMER_GROUP
+ * CONTENT_UNIT_GROUP
+ * REPOSITORY_GROUP
 
 === Operations ===
 All manager API calls in Pulp can be mapped to a set of CRUD operations on the 
@@ -101,27 +115,25 @@ callback that will remove the task's record from the db collection when the
 task completes.
 
 ----
+----
 
 == Implementation ==
 The Coordinator will provide a public API that will execute manager API calls 
-under the above contraints.
+under the above constraints.
 
 === Coordinator API ===
 
 ----
 
-==== Execution Functions ====
+==== Execution Functions: Individual Resources ====
 
-TODO: change api to distinguish between running tasks (that operate on 
-individual resources) and jobs (that operate on aggregate resources)
+The `run_task` method is the primary method of the coordinator's API and exhibits 
+the behavior detailed above. It operates on individual resources.
 
 {{{
 #!python
-def run(call, args, kwargs, resources_map)
+def run_task(call, args, kwargs, resources_map)
 }}}
-
-The `run` method is the primary method of the coordinator's API and exhibits 
-the behavior detailed above.
 
 Arguments:
  * `call` - manager API method instance
@@ -142,15 +154,15 @@ For example a `resources_map` for a repo clone call may look like:
 
 ----
 
-{{{
-#!python
-def run_async(call, args, kwargs, resources_map, pre_exec_hook, post_exec_hook, cancel_hook, timeout_hook)
-}}}
-
-The `run_async` function will run the call asynchronously in the tasking 
+The `run_task_async` function will run the call asynchronously in the tasking 
 sub-system regardless of there being no postponing operations in progress.
 
-Otherwise it behaves exactly like `run` when conflicts are encountered.
+{{{
+#!python
+def run_task_async(call, args, kwargs, resources_map, pre_exec_hook, post_exec_hook, cancel_hook, timeout_hook)
+}}}
+
+Otherwise it behaves exactly like `run_task` when conflicts are encountered.
 
 Arguments:
  * `call`, `args`, `kwargs`, `resources_map` - all the same as in `run`
@@ -163,16 +175,16 @@ All the callback methods take only 1 argument: the asynchronous `Task` instance
 
 ----
 
-{{{
-#!python
-def run_sync(call, args, kwargs, resources_map, timeout)
-}}}
-
-The `run_sync` function will run the call synchronously. Even if a conflicting 
+The `run_task_sync` function will run the call synchronously. Even if a conflicting 
 operation causes the call to be postponed, the coordinator will wait for the 
 call to execute before returning.
 
-It behaves the same as `run` or `run_async` if an operation denies the call.
+{{{
+#!python
+def run_task_sync(call, args, kwargs, resources_map, timeout)
+}}}
+
+It behaves the same as `run_task` or `run_task_async` if an operation denies the call.
 
 Arguments:
  * `call`, `args`, `kwargs`, `resources_map` - all the same as `run`
@@ -181,12 +193,31 @@ Arguments:
 
 ----
 
+==== Execution Functions: Aggregate Resources ====
+
+The `run_job` is the equivalent of `run_task` for an aggregate type. It will 
+launch the call against every member of the aggregate using the the other 
+arguments and resources passed in.
+
+{{{
+#!python
+def run_job(call, args, kwargs, aggregate_tuple, resources_map)
+}}}
+
+Arguments:
+ * `call`, `args`, `kwargs`, `resources_map` - same as `run_task`
+ * `aggregate_map` - tuple of `aggregate_type`, `aggregate_id`, list of operations
+
+----
+
+'''XXX''' `run_job_async` and `run_job_sync`
+
 ==== Execution Function Return Type ====
 
 All the execution functions return an `execution_report` as a dict with the 
 following keys:
  * `state` - one of `executed`, `postponed`, or `denied`
- * `reason` - list of resoure and operation tuples that caused `postponed` or `denied`
+ * `reason` - list of resource and operation tuples that caused `postponed` or `denied`
  * `task_id` - id of asynchronous `Task` instance, if any
  * `job_id` - id of `Job`, if multi-task call
  * `return` - the return value of the call, if any
@@ -197,15 +228,40 @@ following keys:
 
 ==== Query Functions ====
 
-TODO: document query functions
+{{{
+#!python
+def get_task(task_id)
+}}}
 
+----
+
+{{{
+#!python
+def find_task(criteria)
+}}}
+
+----
+
+{{{
+#!python
+def get_job(job_id)
+}}}
+
+----
+
+{{{
+#!python
+def find_job(criteria)
+}}}
+
+----
 ----
 
 == Scheduler ==
 The scheduler has the responsibility of tracking scheduled tasks and 
 dispatching them when they are due to run.
 
-It is implemented as a thread that runs in the background, waking peridoically, 
+It is implemented as a thread that runs in the background, waking periodically, 
 and dispatching any scheduled tasks that are due to run. This thread wakes and 
 sleeps on the course schedule of once every 30 seconds.
 
@@ -217,39 +273,39 @@ the tasks.
 
 ----
 
+Initialize the scheduler. To be called on startup to look for scheduled tasks.
+
 {{{
 #!python
 def initialize()
 }}}
 
-Initialize the scheduler. To be called on startup to look for scheduled tasks.
-
 ----
+
+Add a task to the scheduler.
 
 {{{
 #!python
 def add_scheduled_task(schedule, call, args, kwargs)
 }}}
 
-Add a task to the scheduler.
-
 Arguments:
  * `schedule` - Schedule instance representing the schedule to execute the task on
  * `call` - Manager call to execute
  * `args` - (optional) positional arguments to `call`
- * `kwargs` - (optional) keyword argumenst to `call`
+ * `kwargs` - (optional) keyword arguments to `call`
 
 Return:
  * `schedule_id` - unique identifier representing the scheduler's handle on the task
 
 ----
 
+Remove a task from the scheduler.
+
 {{{
 #!python
 def remove_scheduled_task(schedule_id)
 }}}
-
-Remove a task from the scheduler.
 
 Arguments:
  * `schedule_id` - return value from `add_scheduled_task`
@@ -258,6 +314,7 @@ Return:
  * `schedule_id` - upon successful removal
  * None - if the task wasn't found
 
+----
 ----
 
 == Task Queue ==
@@ -272,12 +329,12 @@ enqueued, controlling the number of tasks that can execute concurrently.
 
 === Task Management Functions ===
 
+Add a task to the queue.
+
 {{{
 #!python
 def enqueue(task, blockers)
 }}}
-
-Add a task to the queue.
 
 Arguments:
  * `task` - Task instance
@@ -285,12 +342,12 @@ Arguments:
 
 ----
 
+Remove a task from the queue.
+
 {{{
 #!python
-dequeue(task_id)
+def dequeue(task_id)
 }}}
-
-Remove a task from the queue.
 
 Arguments:
  * `task_id` - unique identifier of the task
@@ -302,15 +359,17 @@ Return:
 ----
 
 === Task Control Functions ===
-There's no guaruntee that these functions will work. The task must have had the 
+There's no guarantee that these functions will work. The task must have had the 
 appropriate hooks added to it.
+
+----
+
+Cancel a running task.
 
 {{{
 #!python
 def cancel_task(task_id)
 }}}
-
-Cancel a running task.
 
 Arguments:
  * `task_id` - unique identifier of the task to cancel
@@ -322,12 +381,12 @@ Return:
 
 ----
 
+"Timeout" a task.
+
 {{{
 #!python
 def timeout_task(task_id)
 }}}
-
-"Timeout" a task.
 
 Arguments:
  * `task_id` - unique identifier of the task to timeout
@@ -341,12 +400,12 @@ Return:
 
 === Task Query Functions ===
 
+Get the Task instance corresponding to the task_id.
+
 {{{
 #!python
 def get_task(task_id)
 }}}
-
-Get the Task instance corresponding to the task_id.
 
 Arguments:
  * `task_id` - unique identifier of the task
@@ -357,12 +416,12 @@ Return:
 
 ----
 
+Get the Task instance corresponding to the given search criteria.
+
 {{{
 #!python
 def find_task(criteria)
 }}}
-
-Get the Task instance corresponding to the given search criteria.
 
 Arguments:
  * `criteria` - dict of Task fields and the values to match
@@ -371,6 +430,7 @@ Return:
  * (possibly empty) list of Task instances
 
 ----
+----
 
 === Priority Queue ===
 The priority queue is at the heart of this system. It is a binary tree using 
@@ -378,7 +438,7 @@ The priority queue is at the heart of this system. It is a binary tree using
  1. the time in which a task was enqueued
  1. the number of blocking tasks a task has
 
-The tree maintains 2 invarients during all operations:
+The tree maintains 2 invariants during all operations:
  1. the in-order traversal of the tree lists the tasks in the order in which they were enqueued
  1. the heap-order (that is, the order down any path from root to leaf) is an ascending ordering of the tasks by the number of blockers
 
@@ -421,4 +481,6 @@ can displace its parent in the event of a tie in their number of blockers,
 older tasks will always be higher in the tree than younger tasks that tie them. 
 This guarantees that no task will starve, and given two tasks with no blockers, 
 the older one will be executed first.
+
+[[Image(tree_rotation.jpg)]]
 
