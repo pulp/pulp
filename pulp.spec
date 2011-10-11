@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,6 +306,100 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Oct 11 2011 James Slagle <jslagle@redhat.com> 0.0.214-2
+- re-added the reply handler (jconnor@redhat.com)
+- Remove reply handler as well since there is no watchdog. (jslagle@redhat.com)
+- 742230 Add startup code to adjust the repo and cds sync schedule in rhui if
+  necessary (jslagle@redhat.com)
+- 734782 - DuplicateKeyError: E11000 duplicate key error index (from import
+  package) Adding retry logic to work around an infrequent timing issue seen
+  with mongoDB (jmatthews@redhat.com)
+- remove bootstrap by hand because cherry-pick decided to be a super pain in
+  the ass (jconnor@redhat.com)
+- patch from jlaska to remove bootstrap from the rpm spec (jconnor@redhat.com)
+- last fix of botched merge, I frucking hope (jconnor@redhat.com)
+- removed managers import (jconnor@redhat.com)
+- remove content import (jconnor@redhat.com)
+- remove watchdog (jconnor@redhat.com)
+- remove m2crypto import (jconnor@redhat.com)
+- tried to remove autoloading of configuration, but tests too reliant on the
+  behavior (jconnor@redhat.com)
+- no longer using bootstrap.wsgi, removeing (jconnor@redhat.com)
+- 743413 - moved all of pulp initialization into application module and pointed
+  wsgiimportscript to webservices.wsgi (jconnor@redhat.com)
+- changed debugging mode to false (jconnor@redhat.com)
+- added some logic to avoid a failure_threshold of 0 bug (jconnor@redhat.com)
+- made default failure threshold -1 (jconnor@redhat.com)
+- Fix syntax error (jslagle@redhat.com)
+- Filter repo sync tasks by repo id when fetching history (jslagle@redhat.com)
+- moved snapshotting of task from task enqueue to task run (jconnor@redhat.com)
+- Fix for verify_options in cdslib (jmatthews@redhat.com)
+- verify checksum/size defaults to False for CDS syncs (jmatthews@redhat.com)
+- Adding verify_options of checksum/size for CDS sync (jmatthews@redhat.com)
+- Delete grinder object after sync completes (jmatthews@redhat.com)
+- 740010 - use the checksum type when creating initial metadata
+  (pkilambi@redhat.com)
+- fixed a merge gone bad... (jconnor@redhat.com)
+- missed another import (jconnor@redhat.com)
+- missed an import (jconnor@redhat.com)
+- fixed another bug that creating recursion in the progress callback
+  (jconnor@redhat.com)
+- trying to more direct import to circumvent pickling problems
+  (jconnor@redhat.com)
+- fixed a bug in the re-setting of the progress callback after a snapshot
+  (jconnor@redhat.com)
+- Revert "Revert "forgot arg name arg"" (jconnor@redhat.com)
+- Revert "forgot arg name arg" (jconnor@redhat.com)
+- forgot arg name arg (jconnor@redhat.com)
+- wrong call to re-set progress callback (jconnor@redhat.com)
+- changed tests to test that schedulers were all immediate on re-constitution
+  of snapshots (jconnor@redhat.com)
+- removed pickling of task scheduler and added immediate scheduler on re-
+  creation from snapshot (jconnor@redhat.com)
+- added some tests to test the validity of serializing and deserializing
+  different schedulers (jconnor@redhat.com)
+- removed superfluous semicolons and unused imports (jconnor@redhat.com)
+- cherry pickked cded2bdc94ca10c45ac96f0f4e971e7ec7bf09c2 (jconnor@redhat.com)
+- Disable checksum/size check on existing packages (jmatthews@redhat.com)
+- Config option for existing file checksum/size check (jmatthews@redhat.com)
+- 737531 - close YumRepository after getting package lists. (jortel@redhat.com)
+
+* Tue Oct 11 2011 James Slagle <jslagle@redhat.com>
+- 742230 Add startup code to adjust the repo and cds sync schedule in rhui if
+  necessary (jslagle@redhat.com)
+- 734782 - DuplicateKeyError: E11000 duplicate key error index (from import
+  package) Adding retry logic to work around an infrequent timing issue seen
+  with mongoDB (jmatthews@redhat.com)
+- patch from jlaska to remove bootstrap from the rpm spec (jconnor@redhat.com)
+- removed managers import (jconnor@redhat.com)
+- remove content import (jconnor@redhat.com)
+- remove watchdog (jconnor@redhat.com)
+- remove m2crypto import (jconnor@redhat.com)
+- no longer using bootstrap.wsgi, removeing (jconnor@redhat.com)
+- 743413 - moved all of pulp initialization into application module and pointed
+  wsgiimportscript to webservices.wsgi (jconnor@redhat.com)
+- changed debugging mode to false (jconnor@redhat.com)
+- added some logic to avoid a failure_threshold of 0 bug (jconnor@redhat.com)
+- made default failure threshold -1 (jconnor@redhat.com)
+- Filter repo sync tasks by repo id when fetching history (jslagle@redhat.com)
+- moved snapshotting of task from task enqueue to task run (jconnor@redhat.com)
+- Fix for verify_options in cdslib (jmatthews@redhat.com)
+- verify checksum/size defaults to False for CDS syncs (jmatthews@redhat.com)
+- Adding verify_options of checksum/size for CDS sync (jmatthews@redhat.com)
+- Delete grinder object after sync completes (jmatthews@redhat.com)
+- 740010 - use the checksum type when creating initial metadata
+  (pkilambi@redhat.com)
+- changed tests to test that schedulers were all immediate on re-constitution
+  of snapshots (jconnor@redhat.com)
+- removed pickling of task scheduler and added immediate scheduler on re-
+  creation from snapshot (jconnor@redhat.com)
+- added some tests to test the validity of serializing and deserializing
+  different schedulers (jconnor@redhat.com)
+- cherry pickked cded2bdc94ca10c45ac96f0f4e971e7ec7bf09c2 (jconnor@redhat.com)
+- Disable checksum/size check on existing packages (jmatthews@redhat.com)
+- Config option for existing file checksum/size check (jmatthews@redhat.com)
+- 737531 - close YumRepository after getting package lists. (jortel@redhat.com)
+
 * Tue Jul 26 2011 Sayli Karmarkar <skarmark@redhat.com> 0.0.214-1
 - Restricting threads to 4 to avoid memory leak (skarmark@redhat.com)
 - Brought in line with master's version (jason.dobies@redhat.com)
