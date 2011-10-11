@@ -495,6 +495,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Oct 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-4
+- bump release. (jortel@redhat.com)
+- changing the manifest name to match cdn (pkilambi@redhat.com)
+
 * Tue Oct 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-3
 - bump release. (jortel@redhat.com)
 - if repo metadata is set to be preserved, do not generate initial metadata.
