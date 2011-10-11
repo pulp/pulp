@@ -1739,7 +1739,7 @@ class RepoApi(BaseApi):
         """
         fileids = repo['files']
         try:
-            manifest_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "PULP-MANIFEST")
+            manifest_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "PULP_MANIFEST")
             f = open(manifest_path, "w")
             for fileid in fileids:
                 fileobj = self.fileapi.file(fileid)
