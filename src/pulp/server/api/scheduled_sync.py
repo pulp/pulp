@@ -105,6 +105,10 @@ def _add_repo_scheduled_sync_task(repo):
                            local_progress_callback, yum_rhn_progress_callback)
     task = RepoSyncTask(_sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
+    # if no start time is provided, fallback to the last successful sync
+    # otherwise start immediately
+    if task.scheduler.start_time is None and repo['last_sync'] is not None:
+        task.scheduler.start_time = dateutils.parse_iso8601_datetime(repo['last_sync'])
     content_type = repo['content_types']
     synchronizer = get_synchronizer(content_type)
     task.set_synchronizer(synchronizer)
