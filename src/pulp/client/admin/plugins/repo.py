@@ -599,6 +599,10 @@ class Clone(RepoProgressAction):
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
         timeout = self.opts.timeout
+        if timeout is not None:
+            delta = parse_iso8601_duration(timeout)
+            if not isinstance(delta, timedelta):
+                utils.system_exit(os.EX_USAGE, 'Timeout may not contain months or years')
         filters = self.opts.filters or []
         relative_path = self.opts.relativepath
 
