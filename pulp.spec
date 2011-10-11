@@ -495,6 +495,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Oct 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-3
+- bump release. (jortel@redhat.com)
+- if repo metadata is set to be preserved, do not generate initial metadata.
+  Also including a unit test (pkilambi@redhat.com)
+-  exposing preserve metadata info on the client (pkilambi@redhat.com)
+
 * Mon Oct 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-2
 - bump release. (jortel@redhat.com)
 - 707633 - Addition of repo cancel_clone command to cancel running clone
