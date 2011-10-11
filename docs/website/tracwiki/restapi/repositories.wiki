@@ -35,6 +35,7 @@
  * '''distributionid''' <list of str> ''list of distribution ids this repository belongs to [deferred fields]''
  * '''checksum_type''' <str> ''name of the algorithm used for checksums of the repository's content''
  * '''filters''' <list of str> ''list of filter ids associated with the repository''
+ * '''content_types''' <str> ''content type allowed in this repository; default:yum; supported: [yum, file''
 '''!RepoSource object fields''': 
  * '''supported_types''' <list of str> ''list of supported types of repositories''
  * '''type''' <str> ''repository source type''
@@ -146,7 +147,7 @@
  * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
  * '''notes''' ''(optional)'' <dict> ''additional information in the form of key-value pairs''
  * '''preserve_metadata''' ''(optional)'' <bool> ''will not regenerate metadata and treats the repo as a mirror''
- * '''content_type''' ''(optional)'' <str> ''content type allowed in this repository; default:yum; supported: [yum, file]''
+ * '''content_types''' ''(optional)'' <str> ''content type allowed in this repository; default:yum; supported: [yum, file]''
 [[BR]]
 
 ----
@@ -247,7 +248,7 @@
 [[BR]]
 
 == Add Errata ==
-''Add errata to the repository.'' [[BR]]
+''Add errata to the repository. This does not update metadata; call generate_metadata after this call.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -343,7 +344,7 @@
 [[BR]]
 
 == Add A Package ==
-''Add a new package to the repository.'' [[BR]]
+''Associates a new package to the repository. This does not update metadata; call generate_metadata after this call.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -496,7 +497,7 @@
 [[BR]]
 
 == Delete Errata ==
-''Delete errata from the repository.'' [[BR]]
+''Delete errata from the repository. This does not update metadata; call generate_metadata after this call.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -515,7 +516,7 @@
 [[BR]]
 
 == Delete A Package ==
-''Delete a package from the repository.'' [[BR]]
+''Dis-associates a package from the repository. This does not update metadata; call generate_metadata after this call.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
