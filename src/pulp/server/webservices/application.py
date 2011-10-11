@@ -29,7 +29,7 @@ db_connection.initialize()
 
 from pulp.client.core.utils import parse_interval_schedule
 from pulp.common.dateutils import (parse_iso8601_interval,
-    parse_iso8601_duration, format_iso8601_duration, 
+    parse_iso8601_duration, format_iso8601_duration,
     format_iso8601_datetime)
 
 from pulp.server import async
@@ -78,6 +78,7 @@ _IS_INITIALIZED = False
 
 BROKER = None
 DISPATCHER = None
+REPLY_HANDLER = None
 HEARTBEAT_LISTENER = None
 STACK_TRACER = None
 
@@ -144,7 +145,7 @@ def _initialize_pulp():
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
     # over itself on start up. If you do not know where to add something, ASK!
-    global _IS_INITIALIZED, BROKER, DISPATCHER, \
+    global _IS_INITIALIZED, BROKER, DISPATCHER, REPLY_HANDLER, \
            HEARTBEAT_LISTENER, STACK_TRACER
     if _IS_INITIALIZED:
         return
@@ -156,8 +157,9 @@ def _initialize_pulp():
     ensure_admin()
     # clean up previous runs, if needed
     repo.clear_sync_in_progress_flags()
-    # amqp broker
+    # messaging
     url = config.config.get('messaging', 'url')
+    # amqp broker
     BROKER = Broker(url)
     BROKER.cacert = config.config.get('messaging', 'cacert')
     BROKER.clientcert = config.config.get('messaging', 'clientcert')
@@ -165,6 +167,8 @@ def _initialize_pulp():
     if config.config.getboolean('events', 'recv_enabled'):
         DISPATCHER = EventDispatcher()
         DISPATCHER.start()
+    # async task reply handler
+    REPLY_HANDLER = ReplyHandler(url)
     # agent heartbeat listener
     HEARTBEAT_LISTENER = HeartbeatListener(url)
     HEARTBEAT_LISTENER.start()
