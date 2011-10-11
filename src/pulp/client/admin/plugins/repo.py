@@ -879,10 +879,13 @@ class CancelSync(AdminRepoAction):
         id = self.get_required_option('id')
         self.get_repo(id)
         syncs = self.repository_api.sync_list(id)
-        if not syncs:
-            utils.system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
-        task = syncs[0]
-        if task_end(task):
+        task = None
+        for task in syncs:
+            if task['state'] == 'running':
+                break
+            if task['state'] == 'waiting' and task['scheduler'] == 'immediate':
+                break
+        else:
             utils.system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
         taskid = task['id']
         self.task_api.cancel(taskid)
