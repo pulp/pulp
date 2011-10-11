@@ -271,7 +271,7 @@ class BaseSynchronizer(object):
 
     def _process_files(self, repodir, repo):
         log.debug("Processing any files synced as part of the repo")
-        file_metadata = os.path.join(repodir, "PULP-MANIFEST")
+        file_metadata = os.path.join(repodir, "PULP_MANIFEST")
         if not os.path.exists(file_metadata):
             log.info("No metadata for 'File Sync' present; no files to import to repo..")
             return
