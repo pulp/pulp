@@ -133,6 +133,7 @@ def exporter_progress_callback(progress):
 
 class ExporterReport(object):
     rpm = "Exporting rpms"
+    drpm = "Exporting delta rpms"
     comps = "Exporting packagegroups metadata"
     distribution = "Exporting Distribution files"
     errata = "Exporting errata "

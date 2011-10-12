@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
+from pulp.server.exporter.deltarpm import DeltaRPMExporter
 from pulp.server.exporter.distribution import DistributionExporter
 from pulp.server.exporter.errata import ErrataExporter
 from pulp.server.exporter.other import OtherExporter
@@ -24,7 +25,7 @@ log = getLogger(__name__)
 # --------------- constants ---------------------------#
 
 _EXPORTER_MODULES_PATH = os.path.dirname(__file__)
-_EXPORT_CLASSES = [PackageExporter, CompsExporter, ErrataExporter, DistributionExporter, OtherExporter]
+_EXPORT_CLASSES = [PackageExporter, CompsExporter, ErrataExporter, DistributionExporter, OtherExporter, DeltaRPMExporter]
 
 class ExportController(object):
     """
