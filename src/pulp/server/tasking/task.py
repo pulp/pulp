@@ -461,6 +461,17 @@ class AsyncTask(Task):
 
     __current = threading.local()
 
+    def __init__(self,
+                 callable,
+                 args=None,
+                 kwargs=None,
+                 scheduler=None,
+                 timeout=None,
+                 weight=0):
+        # overriden only to provided a different default weight of 0
+        super(AsyncTask, self).__init__(callable, args, kwargs, scheduler,
+                                        timeout, weight)
+
     @classmethod
     def current(cls):
         """

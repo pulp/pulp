@@ -76,6 +76,7 @@ _default_values = {
         'failure_threshold': '-1',
     },
     'yum': {
+        'task_weight': '1',
         'threads': '5',
         'limit_in_KB': '0',
         'verify_size': 'true',

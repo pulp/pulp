@@ -21,7 +21,7 @@ from gettext import gettext as _
 from StringIO import StringIO
 
 from pulp.common import dateutils
-from pulp.server import comps_util
+from pulp.server import comps_util, config
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -60,12 +60,12 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     """
     repo = repo_api.repository(id)
     task = run_async(_clone,
-                    [clone_id], 
-                    {'id':id, 
-                     'clone_name':clone_name, 
-                     'feed':feed, 
-                     'relative_path':relative_path, 
-                     'groupid':groupid, 
+                    [clone_id],
+                    {'id':id,
+                     'clone_name':clone_name,
+                     'feed':feed,
+                     'relative_path':relative_path,
+                     'groupid':groupid,
                      'filters':filters},
                      timeout=timeout,
                      task_type=RepoCloneTask)
@@ -78,11 +78,13 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     content_type = repo['content_types']
     synchronizer = get_synchronizer(content_type)
-    task.set_synchronizer(synchronizer)    
+    task.set_synchronizer(synchronizer)
+    if content_type == 'yum':
+        task.weight = config.config.getint('yum', 'task_weight')
     return task
 
 
-def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=None, 
+def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=None,
             filters=(), progress_callback=None, synchronizer=None):
     repo = repo_api.repository(id)
     if repo is None:
@@ -110,7 +112,7 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
     if repo['consumer_ca'] and repo['consumer_cert']:
         consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
                         'cert' : read_cert_file(repo['consumer_cert'])}
-    
+
     if relative_path is None:
         relative_path = clone_id
     # inherit content types from parent
@@ -166,7 +168,7 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
         keylist.append((fn, content))
         f.close()
     repo_api.addkeys(clone_id, keylist)
-    
+
     # Add files to cloned repo
     repo_api.add_file(repoid=clone_id, fileids=repo["files"])
 
@@ -201,6 +203,8 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
         content_type = repo['content_types']
         synchronizer = get_synchronizer(content_type)
         task.set_synchronizer(synchronizer)
+        if content_type == 'yum':
+            task.weight = config.config.getint('yum', 'task_weight')
     return task
 
 def get_synchronizer(source_type):
@@ -257,7 +261,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
             synchronizer.set_callback(progress_callback)
         log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip_dict))
         start_sync_items = time.time()
-        
+
         sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip_dict,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()

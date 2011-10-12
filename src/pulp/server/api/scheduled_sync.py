@@ -26,7 +26,7 @@ except ImportError:
 from isodate import ISO8601Error
 
 from pulp.common import dateutils
-from pulp.server import async
+from pulp.server import async, config
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
@@ -113,6 +113,8 @@ def _add_repo_scheduled_sync_task(repo):
     synchronizer = get_synchronizer(content_type)
     task.set_synchronizer(synchronizer)
     source_type = repo['source']['type']
+    if content_type == 'yum':
+        task.weight = config.config.getint('yum', 'task_weight')
     if source_type == 'remote':
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     elif source_type == 'local':
