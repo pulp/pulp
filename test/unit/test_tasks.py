@@ -294,7 +294,6 @@ class TaskQueueTester(QueueTester):
         self.assertTrue(task.state == task_finished)
         self.assertTrue(end_time - start_time > delay_seconds)
 
-
     def test_task_find(self):
         task1 = Task(noop)
         self.queue.enqueue(task1)
@@ -412,6 +411,19 @@ class TaskQueueTester(QueueTester):
 
         # Test & Verify
         self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
+
+    def test_weighed_tasks(self):
+        task_1 = Task(wait, [3], weight=2)
+        task_2 = Task(wait, [3], weight=3)
+        self.queue.enqueue(task_1)
+        self.queue.enqueue(task_2)
+        time.sleep(1.0)
+        self.assertTrue(task_1.state is task_running, task_1.state)
+        self.assertTrue(task_2.state is task_waiting, task_2.state)
+        self._wait_for_task(task_1)
+        time.sleep(1.0)
+        self.assertTrue(task_2.state is task_running, task_2.state)
+        self._wait_for_task(task_2)
 
 
 class InterruptQueueTester(QueueTester):
