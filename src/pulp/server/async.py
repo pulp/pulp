@@ -146,12 +146,15 @@ def initialize():
     Explicitly start-up the asynchronous sub-system
     """
     global _queue
-    max_concurrent = config.config.getint('tasking', 'max_concurrent')
+    concurrency_threshold = config.config.getint('tasking', 'concurrency_threshold')
+    if config.config.has_option('tasking', 'max_concurrent'):
+        log.warn(_('The [tasking] max_concurrent configuration option is depricated and will be removed. Use the [tasking] concurrency_threshold option instead'))
+        concurrency_threshold = config.config.getint('tasking', 'max_concurrent')
     failure_threshold = config.config.getint('tasking', 'failure_threshold')
     if failure_threshold < 1:
         failure_threshold = None
     schedule_threshold = _configured_schedule_threshold()
-    _queue = TaskQueue(max_running=max_concurrent,
+    _queue = TaskQueue(max_concurrency=concurrency_threshold,
                        failure_threshold=failure_threshold,
                        schedule_threshold=schedule_threshold,
                        storage=SnapshotStorage(),

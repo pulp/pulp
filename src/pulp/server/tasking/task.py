@@ -71,7 +71,8 @@ class Task(object):
                  args=None,
                  kwargs=None,
                  scheduler=None,
-                 timeout=None):
+                 timeout=None,
+                 weight=1):
         """
         Create a Task for the passed in callable and arguments.
         @type callable: python callable
@@ -86,7 +87,14 @@ class Task(object):
         @type timeout: datetime.timedelta instance or None
         @param timeout: maximum length of time to allow task to run,
                         None means indefinitely
+        @type weight: int
+        @param weight: the weight this task lends toward the task queue's
+                       concurrency threshold
         """
+        if weight < 0:
+            msg = _('Task for %(n)s created with a weight less than 0, reseting to default of 1')
+            _log.error(msg % {'n': callable.__name__})
+            weight = 1
         # identification
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
         self.class_name = None
@@ -101,6 +109,7 @@ class Task(object):
         self.kwargs = kwargs or {}
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout_delta = timeout
+        self.weight = weight
         self._progress_callback = None
 
         # resources managed by the task queue to deliver events
@@ -207,7 +216,7 @@ class Task(object):
 
     _copy_fields = ('id', 'class_name', 'method_name', 'failure_threshold',
                     'state', 'progress', 'consecutive_failures',
-                    'cancel_attempts', 'job_id',)
+                    'cancel_attempts', 'job_id', 'weight')
 
     _pickle_fields = ('callable', 'args', 'kwargs', 'timeout_delta',
                       'schedule_threshold', '_progress_callback', 'start_time',

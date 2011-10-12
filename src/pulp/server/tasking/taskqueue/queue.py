@@ -40,18 +40,18 @@ class TaskQueue(object):
     amount of time.
     """
     def __init__(self,
-                 max_running=4,
+                 max_concurrency=4,
                  finished_lifetime=timedelta(seconds=3600),
                  failure_threshold=None,
                  schedule_threshold=None,
                  storage=None,
                  dispatch_interval=0.5):
         """
-        @type max_running: int
-        @param max_running: maximum number of tasks to run simultaneously
-                        None means indefinitely
+        @type max_concurrency: int
+        @param max_concurrency: maximum sum of task weights to run simultaneously
         @type finished_lifetime: datetime.timedelta instance
         @param finished_lifetime: length of time to keep finished tasks
+                                  None means indefinitely
         @type failures_threhold: int
         @param failure_threshold: number of consecutive failures a task can
                                   have before it will no longer be scheduled
@@ -69,7 +69,7 @@ class TaskQueue(object):
                                   the task dispatcher
         @return: TaskQueue instance
         """
-        self.max_running = max_running
+        self.max_concurrency = max_concurrency
         self.finished_lifetime = finished_lifetime
         self.failure_threshold = failure_threshold
         self.schedule_threshold = schedule_threshold
@@ -77,7 +77,7 @@ class TaskQueue(object):
         self.__lock = threading.RLock()
         self.__condition = threading.Condition(self.__lock)
 
-        self.__running_count = 0
+        self.__running_weight = 0
         self.__storage = storage or VolatileStorage()
         self.__canceled_tasks = []
         self.__exit = False
@@ -132,14 +132,18 @@ class TaskQueue(object):
         Get the next 'n' tasks to run, where n is max - currently running tasks
         """
         ready_tasks = []
-        num_tasks = self.max_running - self.__running_count
+        ready_weight = 0
+        available_weight = self.max_concurrency - self.__running_weight
         now = datetime.now(dateutils.local_tz())
-        while len(ready_tasks) < num_tasks:
+        while ready_weight < available_weight:
             if self.__storage.num_waiting() == 0:
                 break
             task = self.__storage.peek_waiting()
             if task.scheduled_time is not None and task.scheduled_time > now:
                 break
+            if task.weight + ready_weight > available_weight:
+                break
+            ready_weight += task.weight
             ready_tasks.append(self.__storage.dequeue_waiting())
         return ready_tasks
 
@@ -277,7 +281,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            self.__running_count += 1
+            self.__running_weight += task.weight
             self.__storage.store_running(task)
             task.thread = TaskThread(target=task.run)
             task.thread.start()
@@ -292,7 +296,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            self.__running_count -= 1
+            self.__running_weight -= task.weight
             self.__storage.remove_running(task)
             task.thread = None
             task.complete_callback = None

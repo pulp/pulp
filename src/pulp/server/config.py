@@ -71,7 +71,7 @@ _default_values = {
         'debugging_mode': 'true',
     },
     'tasking': {
-        'max_concurrent': '4',
+        'concurrency_threshold': '4',
         'schedule_threshold': '5 minutes',
         'failure_threshold': '-1',
     },
