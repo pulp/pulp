@@ -495,6 +495,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Oct 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-5
+- 743185 - if variant/family or version is not part of treeinfo, defaults to
+  None with a message in the log (pkilambi@redhat.com)
+
 * Tue Oct 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-4
 - bump release. (jortel@redhat.com)
 - changing the manifest name to match cdn (pkilambi@redhat.com)
