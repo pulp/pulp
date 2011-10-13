@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.237
+Version:        0.0.238
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -494,6 +494,101 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Oct 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.238-1
+- 740628 - using new task weights to keep AsyncTask instances from plugging up
+  tasking with tasks that are not actually running on the server
+  (jconnor@redhat.com)
+- weighted task - using new task weights to determine the number of tasks that
+  can execute concurrently instead of simply a number of tastks, see wiki for
+  details (jconnor@redhat.com)
+- adding drpm support to exports (pkilambi@redhat.com)
+- CR17 UG and REST API changes. (jortel@redhat.com)
+- changing the manifest name to match cdn (pkilambi@redhat.com)
+- 743416 for scheduled syncs, using last_sync as the start_time if no
+  start_time is provided (jconnor@redhat.com)
+- 740300 changed search criteris to more accurately idenitfy which task to
+  cancel (jconnor@redhat.com)
+- 740083 added check for months or years in the timeout for clone
+  (jconnor@redhat.com)
+- 705410 - added conversion of ValueErrors from isodata to isdate.ISO8601Error
+  instances, which the command line handles (jconnor@redhat.com)
+- invoke repodata generation when content is uploaded and associated to a repo
+  (pkilambi@redhat.com)
+- Remove unused, unauthenticated invocation of shell commands as root.
+  (jortel@redhat.com)
+- 744206 - removed password field from all returned user instances
+  (jconnor@redhat.com)
+- if repo metadata is set to be preserved, do not generate initial metadata.
+  Also including a unit test (pkilambi@redhat.com)
+- 734782 - DuplicateKeyError: E11000 duplicate key error index (from import
+  package) Adding retry logic to work around an infrequent timing issue seen
+  with mongoDB (jmatthews@redhat.com)
+- Add memory usage info to grinder script under playpen (jmatthews@redhat.com)
+- Update playpen script for standalone memory leak reproducer
+  (jmatthews@redhat.com)
+- Script to sync a list of repos in a standalone mode, Pulp runs outside of
+  Apache (jmatthews@redhat.com)
+- grouping files into a directory (jconnor@redhat.com)
+- added some pictures (jconnor@redhat.com)
+- added more dividers (jconnor@redhat.com)
+- finished first pass at coordinator write up (jconnor@redhat.com)
+- 722543 - adding checks to see if consumer exists before registering a new
+  one, user needs to unregister existing consumer before registering
+  (pkilambi@redhat.com)
+- patch from jlaska to remove bootstrap from the rpm spec (jconnor@redhat.com)
+- added a root level collection discovery for the v2 rest api
+  (jconnor@redhat.com)
+- Add pulp-admin bash completion script (jslagle@redhat.com)
+- tried to remove autoloading of configuration, but tests too reliant on the
+  behavior (jconnor@redhat.com)
+- no longer using bootstrap.wsgi, removeing (jconnor@redhat.com)
+- 743413 - moved all of pulp initialization into application module and pointed
+  wsgiimportscript to webservices.wsgi (jconnor@redhat.com)
+- 738657 - changing add/remove operations to not invoke createrepo and let
+  users call generate_metadata (pkilambi@redhat.com)
+- exposing preserve metadata info on the client (pkilambi@redhat.com)
+- 743185 - if variant/family or version is not part of treeinfo, defaults to
+  None with a message in the log (pkilambi@redhat.com)
+- added error handling wsgi middleware to application stack removed error
+  handler decorator from v2 content rest api (jconnor@redhat.com)
+- serialization is all rest api v2, adding v1_ prefix to exceptions
+  (jconnor@redhat.com)
+- converted generic content content controllers to use new content and link
+  serialization modules (jconnor@redhat.com)
+- added db serialization module for removing/munging mongodb specific fields
+  (jconnor@redhat.com)
+- made link serialzation an automatic import (jconnor@redhat.com)
+- adding discovery support for local filepath based yum repos
+  (pkilambi@redhat.com)
+- fixed uri generation for repos with feeds (jconnor@redhat.com)
+- fixed repo uri path prefix (jconnor@redhat.com)
+- adde repo url to output of repo list commands (jconnor@redhat.com)
+- 735435 - added uri field for the repository uri in both the collection and
+  individual resource (jconnor@redhat.com)
+- changed httpd to utilize new constants and utility function
+  (jconnor@redhat.com)
+- moved timeout validation into validation package (jconnor@redhat.com)
+- changed timeout validation to use new base validation error class
+  (jconnor@redhat.com)
+- moved common uri utilities into http module (jconnor@redhat.com)
+- added validation step for linking of child types (jconnor@redhat.com)
+- simplified sub uri (jconnor@redhat.com)
+- 707633 - Addition of repo cancel_clone command to cancel running clone
+  gracefully (skarmark@redhat.com)
+- changed error handling middleware to use new error serialization
+  (jconnor@redhat.com)
+- new queries package with start of repo reference implementation
+  (jconnor@redhat.com)
+- added error serialization module (jconnor@redhat.com)
+- uri and href implmentations for repo serialization (jconnor@redhat.com)
+- adding content and repo serialization modules (jconnor@redhat.com)
+- adding serialization and validation packages to webservices
+  (jconnor@redhat.com)
+- added missing exit codes (jconnor@redhat.com)
+- 737180 - added check in schedules for months and years in interval without a
+  start time (jconnor@redhat.com)
+- 729496 - added check in sync timeouts for year and month values
+  (jconnor@redhat.com)
 * Fri Sep 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.237-1
 - Require gofer 0.50. (jortel@redhat.com)
 - removing the module imports causing the coverage module to get confused and
