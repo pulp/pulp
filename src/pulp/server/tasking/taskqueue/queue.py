@@ -25,7 +25,9 @@ from pulp.server.tasking.scheduler import (
     AtScheduler, ImmediateScheduler, IntervalScheduler)
 from pulp.server.tasking.taskqueue.taskthread import TaskThread
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
-from pulp.server.tasking.task import task_complete_states, task_running
+from pulp.server.tasking.task import (
+    task_enqueue, task_dequeue, task_exit, task_running, task_finished,
+    task_error, task_timed_out, task_canceled, task_complete_states)
 
 # log file --------------------------------------------------------------------
 
@@ -200,6 +202,18 @@ class TaskQueue(object):
             if now - task.finish_time > self.finished_lifetime:
                 self.__storage.remove_complete(task)
 
+    # task hook execution ------------------------------------------------------
+
+    def _execute_hooks(self, task, key):
+        hook_list = task.hooks.get(key, [])
+        for hook in hook_list:
+            try:
+                hook(task)
+            except Exception, e:
+                msg = _('Task %(t)\nException in task %(k) hook\n%(tb)')
+                _log.critical(msg % {'k': key, 't': str(task),
+                                     'tb': ''.join(traceback.format_exception(*sys.exc_info()))})
+
     # queue operations ---------------------------------------------------------
 
     def _test_uniqueness(self, task, unique):
@@ -254,6 +268,7 @@ class TaskQueue(object):
             if task.schedule_threshold is None:
                 task.schedule_threshold = self.schedule_threshold
             self.__storage.enqueue_waiting(task)
+            self._execute_hooks(task, task_enqueue)
             self.__condition.notify()
         finally:
             self.__lock.release()
@@ -270,6 +285,7 @@ class TaskQueue(object):
                 return
             if task.state not in task_complete_states:
                 self.__storage.remove_waiting(task)
+                self._execute_hooks(task, task_dequeue)
         finally:
             self.__lock.release()
 
@@ -285,6 +301,7 @@ class TaskQueue(object):
             self.__storage.store_running(task)
             task.thread = TaskThread(target=task.run)
             task.thread.start()
+            self._execute_hooks(task, task_running)
         finally:
             self.__lock.release()
 
@@ -300,6 +317,17 @@ class TaskQueue(object):
             self.__storage.remove_running(task)
             task.thread = None
             task.complete_callback = None
+            # execute the task hooks
+            self._execute_hooks(task, task_exit)
+            if task.state is task_canceled:
+                self._execute_hooks(task, task_canceled)
+            elif task.state is task_error:
+                self._execute_hooks(task, task_error)
+            elif task.state is task_finished:
+                self._execute_hooks(task, task_finished)
+            elif task.state is task_timed_out:
+                self._execute_hooks(task, task_timed_out)
+            self._execute_hooks(task, task_dequeue)
             # it is important for completed tasks to be in the completed task
             # storage, however briefly
             self.__storage.store_complete(task)
