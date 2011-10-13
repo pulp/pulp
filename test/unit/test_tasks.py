@@ -32,8 +32,9 @@ from pulp.server.tasking.exception import NonUniqueTaskException
 from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
-    Task, task_waiting, task_running, task_finished, task_error, task_timed_out,
-    task_canceled, task_complete_states)
+    Task, task_enqueue, task_dequeue, task_exit, task_waiting, task_running,
+    task_finished, task_error, task_timed_out, task_canceled,
+    task_complete_states)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import (
     VolatileStorage, _pickle_method, _unpickle_method)
@@ -65,6 +66,14 @@ def wait(seconds=5):
 class Class(object):
     def method(self):
         pass
+
+class Hook(object):
+    def __init__(self):
+        self.called = False
+        self.task = None
+    def __call__(self, task):
+        self.called = True
+        self.task = task
 
 # unittest classes ------------------------------------------------------------
 
@@ -412,7 +421,7 @@ class TaskQueueTester(QueueTester):
         # Test & Verify
         self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
 
-    def test_weighed_tasks(self):
+    def test_weighted_tasks(self):
         task_1 = Task(wait, [3], weight=2)
         task_2 = Task(wait, [3], weight=3)
         self.queue.enqueue(task_1)
@@ -425,6 +434,24 @@ class TaskQueueTester(QueueTester):
         self.assertTrue(task_2.state is task_running, task_2.state)
         self._wait_for_task(task_2)
 
+    def test_equeue_hook(self):
+        task = Task(wait, [2])
+        hook = Hook()
+        task.add_enqeueue_hook(hook)
+        self.queue.enqueue(task)
+        self.assertTrue(hook.called)
+        self.assertTrue(hook.task is task)
+        self._wait_for_task(task)
+
+    def test_dequeue_hook(self):
+        task = Task(wait, [2])
+        hook = Hook()
+        task.add_dequeue_hook(hook)
+        self.queue.enqueue(task)
+        self.assertFalse(hook.called)
+        self._wait_for_task(task)
+        self.assertTrue(hook.called)
+        self.assertTrue(hook.task is task)
 
 class InterruptQueueTester(QueueTester):
 
