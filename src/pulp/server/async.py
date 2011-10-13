@@ -46,13 +46,25 @@ def enqueue(task, unique=True):
     @param unique: whether or not to make sure the task isn't already being run
     @type unique: bool
     """
+    # circular imports...
+    from pulp.server.auth.authorization import (
+        GrantPermissionsForTask, RevokePermissionsForTask)
+    # make sure to set the appropriate permissions for the task
+    grant = GrantPermissionsForTask()
+    revoke = RevokePermissionsForTask()
+    task.add_enqueue_hook(grant)
+    task.add_dequeue_hook(revoke)
     try:
         _queue.enqueue(task, unique)
     except NonUniqueTaskException, e:
         log.error(e.args[0])
+        task.remove_enqueue_hook(grant)
+        task.remove_dequeue_hook(revoke)
         return None
     except DuplicateSnapshotError, e:
         log.error(traceback.format_exc())
+        task.remove_enqueue_hook(grant)
+        task.remove_dequeue_hook(revoke)
         return None
     return task
 
