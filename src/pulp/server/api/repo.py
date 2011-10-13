@@ -804,7 +804,6 @@ class RepoApi(BaseApi):
             return list(cursor)
         return []
 
-    @event(subject='repo.updated.content')
     @audit()
     def add_package(self, repoid, packageids=[]):
         """
@@ -950,7 +949,6 @@ class RepoApi(BaseApi):
         """
         return self.remove_packages(repoid, [p])
 
-    @event(subject='repo.updated.content')
     def remove_packages(self, repoid, pkgobjs=[]):
         """
          Remove one or more packages from a repository
@@ -1927,6 +1925,7 @@ class RepoApi(BaseApi):
         task = run_async(self._generate_metadata, [id], {})
         return task
 
+    @event(subject='repo.updated.content')
     def _generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
