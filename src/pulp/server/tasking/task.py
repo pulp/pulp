@@ -274,7 +274,7 @@ class Task(object):
     _pickle_fields = ('callable', 'args', 'kwargs', 'timeout_delta',
                       'schedule_threshold', '_progress_callback', 'start_time',
                       'finish_time', 'result', 'exception', 'traceback',
-                      'job_id',)
+                      'hooks',)
 
     def snapshot(self):
         """
