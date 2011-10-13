@@ -31,7 +31,15 @@ from pulp.server.tasking.scheduler import ImmediateScheduler
 
 _log = logging.getLogger(__name__)
 
-# task states -----------------------------------------------------------------
+# task events ------------------------------------------------------------------
+
+task_enqueue = 'enqueue'
+task_dequeue = 'dequeue'
+task_exit = 'exit' # task completed in any state
+
+task_events = (task_enqueue, task_dequeue, task_exit)
+
+# task states ------------------------------------------------------------------
 
 task_waiting = 'waiting'
 task_running = 'running'
@@ -91,10 +99,12 @@ class Task(object):
         @param weight: the weight this task lends toward the task queue's
                        concurrency threshold
         """
+        # validation
         if weight < 0:
             msg = _('Task for %(n)s created with a weight less than 0, reseting to default of 1')
             _log.error(msg % {'n': callable.__name__})
             weight = 1
+
         # identification
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
         self.class_name = None
@@ -113,6 +123,7 @@ class Task(object):
         self._progress_callback = None
 
         # resources managed by the task queue to deliver events
+        self.hooks = {}
         self.complete_callback = None
         self.failure_threshold = None
         self.schedule_threshold = None
@@ -185,7 +196,7 @@ class Task(object):
         # put it all together
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
-    # attribute setters ------------------------------------------------------
+    # attribute setters --------------------------------------------------------
 
     def set_progress(self, arg, callback):
         """
@@ -211,6 +222,48 @@ class Task(object):
             _log.error('Exception, %s, in task %s progress callback: %s' %
                        (repr(e), self.id, self._progress_callback.__name__))
             raise
+
+    # hook management ----------------------------------------------------------
+
+    def add_enqeueue_hook(self, hook):
+        """
+        Provide a hook to be called when the task is enqueued.
+        The hook's only argument is the task.
+        @type hook: callable
+        """
+        hook_list = self.hooks.setdefault(task_enqueue, [])
+        hook_list.append(hook)
+
+    def remove_enqueue_hook(self, hook):
+        """
+        Remove a hook to be called when the task is enqueued.
+        @type hook: callable
+        """
+        hook_list = self.hooks.get(task_enqueue, [])
+        try:
+            hook_list.remove(hook)
+        except ValueError:
+            pass
+
+    def add_dequeue_hook(self, hook):
+        """
+        Provide a hook to be called when the task is dequeued.
+        The hook's only argument is the task.
+        @type hook: callable
+        """
+        hook_list = self.hooks.setdefault(task_dequeue, [])
+        hook_list.append(hook)
+
+    def remove_dequeue_hook(self, hook):
+        """
+        Remove a hook to be called when the task is dequeued.
+        @type hook: callable
+        """
+        hook_list = self.hooks.get(task_dequeue, [])
+        try:
+            hook_list.remove(hook)
+        except ValueError:
+            pass
 
     # snapshot methods ---------------------------------------------------------
 
