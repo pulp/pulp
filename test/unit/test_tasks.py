@@ -739,6 +739,18 @@ class PersistentTaskTester(testutil.PulpAsyncTest):
         task2 = snapshot2.to_task()
         self.assertTrue(isinstance(task2, RepoSyncTask))
 
+    def test_snapshot_with_hooks(self):
+        task_1 = Task(noop)
+        hook_1 = Hook()
+        task_1.add_enqeueue_hook(hook_1)
+        snapshot_1 = task_1.snapshot()
+        collection = TaskSnapshot.get_collection()
+        collection.insert(snapshot_1, safe=True)
+        snapshot_2 = TaskSnapshot(collection.find_one({'_id': snapshot_1['_id']}))
+        task_2 = snapshot_2.to_task()
+        hook_2 = task_2.hooks[task_enqueue][0]
+        self.assertTrue(isinstance(hook_2, Hook))
+
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
