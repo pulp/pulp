@@ -139,6 +139,17 @@ class TaskTester(testutil.PulpAsyncTest):
         task.cancel()
         restored_task.cancel()
 
+    def test_add_remove_hook(self):
+        task = Task(noop)
+        hook = Hook()
+        try:
+            task.add_enqueue_hook(hook)
+            task.add_dequeue_hook(hook)
+            task.remove_enqueue_hook(hook)
+            task.remove_dequeue_hook(hook)
+        except:
+            self.fail()
+
 
 class QueueTester(testutil.PulpAsyncTest):
 
