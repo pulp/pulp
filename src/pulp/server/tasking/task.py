@@ -225,7 +225,7 @@ class Task(object):
 
     # hook management ----------------------------------------------------------
 
-    def add_enqeueue_hook(self, hook):
+    def add_enqueue_hook(self, hook):
         """
         Provide a hook to be called when the task is enqueued.
         The hook's only argument is the task.

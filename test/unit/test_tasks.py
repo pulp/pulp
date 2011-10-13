@@ -437,7 +437,7 @@ class TaskQueueTester(QueueTester):
     def test_equeue_hook(self):
         task = Task(wait, [2])
         hook = Hook()
-        task.add_enqeueue_hook(hook)
+        task.add_enqueue_hook(hook)
         self.queue.enqueue(task)
         self.assertTrue(hook.called)
         self.assertTrue(hook.task is task)
@@ -742,7 +742,7 @@ class PersistentTaskTester(testutil.PulpAsyncTest):
     def test_snapshot_with_hooks(self):
         task_1 = Task(noop)
         hook_1 = Hook()
-        task_1.add_enqeueue_hook(hook_1)
+        task_1.add_enqueue_hook(hook_1)
         snapshot_1 = task_1.snapshot()
         collection = TaskSnapshot.get_collection()
         collection.insert(snapshot_1, safe=True)
