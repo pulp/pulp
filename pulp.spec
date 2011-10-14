@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.238
+Version:        0.0.239
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -494,6 +494,19 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Oct 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.239-1
+- added granting and revoking of tasks in async.enque do not circumvent
+  async.enqueue or async.run_async if you want the permissions to be
+  dynamically adjusted (jconnor@redhat.com)
+- added add/remove hooks test (jconnor@redhat.com)
+- added grant and remove functors for task resource permissions
+  (jconnor@redhat.com)
+- added hooks to pickled fields (jconnor@redhat.com)
+- added execution of task hooks into task queue (jconnor@redhat.com)
+- added general hooks and enque/deque hook management (jconnor@redhat.com)
+- move the repo.updated event raise to generate_metadata call. thats when the
+  repo is truly considered updated (pkilambi@redhat.com)
+
 * Wed Oct 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.238-1
 - 740628 - using new task weights to keep AsyncTask instances from plugging up
   tasking with tasks that are not actually running on the server
