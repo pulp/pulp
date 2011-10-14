@@ -1773,7 +1773,53 @@ class CancelExport(AdminRepoAction):
         self.task_api.cancel(taskid)
         print _("Export for repository %s is being canceled") % id
 
+class AddDistribution(AdminRepoAction):
 
+    name = "add_distribution"
+    description = _('associate an already existing distribution to a repository')
+
+    def setup_parser(self):
+        super(AddDistribution, self).setup_parser()
+        self.parser.add_option("-d", "--distributionid", dest="distributionid",
+                help=_("distribution to associate to this repository"))
+        self.parser.add_option("--source", dest="srcrepo",
+            help=_("source repository with specified distributionid to perform association (optional)"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        # check if repos are valid
+        tgt_repo = self.get_repo(id)
+        if not self.opts.distributionid:
+            utils.system_exit(os.EX_USAGE, _("Error: At least one distribution id is required to perform an association."))
+        if self.opts.distributionid in tgt_repo['distributionid']:
+            utils.system_exit(os.EX_OK, _("Distribution id [%s] already exists in repo [%s]." % (self.opts.distributionid, id)))
+        if self.opts.srcrepo:
+            srcrepo = self.get_repo(self.opts.srcrepo)
+            if not self.opts.distributionid in srcrepo['distributionid']:
+                utils.system_exit(os.EX_DATAERR, _(" distribution id [%s] does not exist in source repo [%s]" % (self.opts.distributionid, id)))
+        self.repository_api.add_distribution(id, self.opts.distributionid)
+        print _("Successfully associated distribution id %s to repo [%s]." % (self.opts.distributionid, id))
+
+class RemoveDistribution(AdminRepoAction):
+
+    name = "remove_distribution"
+    description = _('associate an already existing distribution to a repository')
+
+    def setup_parser(self):
+        super(RemoveDistribution, self).setup_parser()
+        self.parser.add_option("-d", "--distributionid", dest="distributionid",
+                help=_("distribution to associate to this repository"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        # check if repos are valid
+        repo = self.get_repo(id)
+        if self.opts.distributionid not in repo['distributionid']:
+            utils.system_exit(os.EX_DATAERR, _("Error: Distribution id [%s] does not exists in repo [%s] to perform a remove" % (self.opts.distributionid, id)))
+        if not self.opts.distributionid:
+            utils.system_exit(os.EX_USAGE, _("Error: At least one distribution id is required to perform an association."))
+        self.repository_api.remove_distribution(id, self.opts.distributionid)
+        print _("Successfully removed distribution id %s to repo [%s]." % (self.opts.distributionid, id))
 
 class KeyReader:
 
@@ -1840,7 +1886,9 @@ class AdminRepo(Repo):
                 RemoveMetadata,
                 Discovery,
                 Export,
-                CancelExport]
+                CancelExport,
+                AddDistribution,
+                RemoveDistribution,]
 
 # repo plugin ----------------------------------------------------------------
 

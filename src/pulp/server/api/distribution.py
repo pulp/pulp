@@ -23,6 +23,12 @@ log = logging.getLogger(__name__)
 
 distribution_fields = model.Distribution(None, None, None, None, None, None, []).keys()
 
+class DistributionHasReferences(Exception):
+
+    MSG = 'distribution [%s] has references, delete not permitted'
+
+    def __init__(self, id):
+        Exception.__init__(self, self.MSG % id)
 
 class DistributionApi(BaseApi):
 
@@ -47,7 +53,21 @@ class DistributionApi(BaseApi):
         """
         Delete distribution object based on "_id" key
         """
+        if self.referenced(id):
+            raise DistributionHasReferences(id)
         self.collection.remove({'id':id}, safe=True)
+
+    def referenced(self, id):
+        """
+        Get whether a distribution is referenced.
+        @param id: A distribution ID.
+        @type id: str
+        @return: True if referenced
+        @rtype: bool
+        """
+        collection = model.Repo.get_collection()
+        repo = collection.find_one({"distributionid":id}, fields=["id"])
+        return (repo is not None)
 
     @audit()
     def update(self, id, delta):

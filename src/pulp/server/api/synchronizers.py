@@ -291,10 +291,6 @@ class BaseSynchronizer(object):
 
     def _process_repo_images(self, repodir, repo):
         log.debug("Processing any images synced as part of the repo")
-        images_dir = os.path.join(repodir, "images")
-        if not os.path.exists(images_dir):
-            log.info("No image files to import to repo..")
-            return
         # compute and import repo image files
         treecfg = None
         for tree_info_name in ['treeinfo', '.treeinfo']:
@@ -304,12 +300,16 @@ class BaseSynchronizer(object):
             else:
                 treecfg = None
         if not treecfg:
+            log.info("No treeinfo file found; assume no distributions to import")
             return
         treeinfo = parse_treeinfo(treecfg)
         # Handle distributions that are part of repo syncs
-        files = pulp.server.util.listdir(images_dir) or []
-        id = description = "ks-" + repo['id'] + "-" + repo['arch']
-        distro = self.distro_api.create(id, description, repo["relative_path"], family=treeinfo['family'],
+        id = description = "ks-%s-%s-%s-%s" % (treeinfo['family'], treeinfo['variant'],
+                                               treeinfo['version'], treeinfo['arch'] or "noarch")
+                                               #"ks-" + repo['id'] + "-" + repo['arch']
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), id)
+        files = pulp.server.util.listdir(distro_path) or []
+        distro = self.distro_api.create(id, description, repo['relative_path'], family=treeinfo['family'],
                                         variant=treeinfo['variant'], version=treeinfo['version'], files=files)
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
@@ -587,7 +587,7 @@ class YumSynchronizer(BaseSynchronizer):
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
                                 proxy_url=self.proxy_url, proxy_port=self.proxy_port,
                                 proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
-                                max_speed=limit_in_KB)
+                                max_speed=limit_in_KB, distro_location=pulp.server.util.top_distribution_location())
             relative_path = repo['relative_path']
             if relative_path:
                 store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
@@ -856,6 +856,78 @@ class YumSynchronizer(BaseSynchronizer):
             if progress_callback is not None:
                 progress_callback(self.progress)
 
+    def _sync_distributions(self, dst_repo_dir, src_repo_dir, progress_callback=None):
+        imlist = self.list_tree_files(src_repo_dir)
+        if not imlist:
+            log.info("No image files to import")
+            return
+        # compute and import treeinfo
+        treecfg = None
+        for tree_info_name in ['treeinfo', '.treeinfo']:
+            treecfg = os.path.join(src_repo_dir, tree_info_name)
+            if os.path.exists(treecfg):
+                break
+            else:
+                treecfg = None
+        if not treecfg:
+            log.info("No treeinfo file found in the source tree; no distributions to process")
+            return
+        treeinfo = parse_treeinfo(treecfg)
+        ks_label = "ks-%s-%s-%s-%s" % (treeinfo['family'], treeinfo['variant'],
+                                               treeinfo['version'], treeinfo['arch'] or "noarch")
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), ks_label)
+        if not os.path.exists(distro_path):
+            os.makedirs(distro_path)
+        dist_tree_path = os.path.join(distro_path, tree_info_name)
+        log.debug("Copying treeinfo file from %s to %s" % (treecfg, dist_tree_path))
+        shutil.copy(treecfg, dist_tree_path)
+        repo_treefile_path = os.path.join(dst_repo_dir, tree_info_name)
+        if not os.path.islink(repo_treefile_path):
+            log.info("creating a symlink for treeinfo file from %s to %s" % (dist_tree_path, repo_treefile_path))
+            pulp.server.util.create_rel_symlink(dist_tree_path, repo_treefile_path)
+        # process ks files associated to distribution
+        for imfile in imlist:
+            try:
+                skip_copy = False
+                rel_file_path = imfile.split('/images/')[-1]
+                dst_file_path = os.path.join(distro_path, rel_file_path)
+                if os.path.exists(dst_file_path):
+                    dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
+                    src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
+                    if src_file_checksum == dst_file_checksum:
+                        log.info("file %s already exists with same checksum. skip import" % rel_file_path)
+                        skip_copy = True
+                if not skip_copy:
+                    file_dir = os.path.dirname(dst_file_path)
+                    if not os.path.exists(file_dir):
+                        os.makedirs(file_dir)
+                    shutil.copy(imfile, dst_file_path)
+                    self.progress['num_download'] += 1
+                    self.progress['details']["tree_file"]["num_success"] += 1
+                    self.progress["num_success"] += 1
+                    log.debug("Imported file %s " % dst_file_path)
+                repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", os.path.basename(dst_file_path))
+                if not os.path.islink(repo_dist_path):
+                    log.info("Creating a symlink to repo location from [%s] to [%s]" % (dst_file_path, repo_dist_path))
+                    pulp.server.util.create_rel_symlink(dst_file_path, repo_dist_path)
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
+                self._add_error_details(imfile, "tree_file", error_info)
+
+            self.progress['step'] = ProgressReport.DownloadItems
+            item_size = self._calculate_bytes(src_repo_dir, [imfile])
+            self.progress['size_left'] -= item_size
+            self.progress['items_left'] -= 1
+            self.progress['details']["tree_file"]["items_left"] -= 1
+            self.progress['details']["tree_file"]["size_left"] -= item_size
+            if progress_callback is not None:
+                progress_callback(self.progress)
+
     def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
@@ -904,64 +976,13 @@ class YumSynchronizer(BaseSynchronizer):
                     log.debug("Completed _sync_drpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
                 else:
                     log.info("Skipping package imports from sync process")
-
-                # compute and import repo image files
-                src_tree_file = dst_tree_file = None
-                for tree_info_name in ['treeinfo', '.treeinfo']:
-                    src_tree_file = src_repo_dir + tree_info_name
-                    if os.path.exists(src_tree_file):
-                        dst_tree_file = "%s/%s" % (dst_repo_dir, tree_info_name)
-                        break
-                if not os.path.exists(src_tree_file):
-                    # no distributions found
-                    log.info("Could not find a treeinfo file %s; No distributions found" % src_tree_file)
+                # process distributions
+                if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
+                    log.debug("Starting _sync_distributions(%s, %s)" % (dst_repo_dir, src_repo_dir))
+                    self._sync_distributions(dst_repo_dir, src_repo_dir, progress_callback)
+                    log.debug("Completed _sync_distributions(%s,%s)" % (dst_repo_dir, src_repo_dir))
                 else:
-                    shutil.copy(src_tree_file, dst_tree_file)
-                    log.info("successfully copied treeinfo file")
-                imlist = self.list_tree_files(src_repo_dir)
-                if not imlist:
-                    log.info("No image files to import")
-                else:
-                    if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
-                        dst_images_dir = os.path.join(dst_repo_dir, "images")
-                        for imfile in imlist:
-                            try:
-                                skip_copy = False
-                                rel_file_path = imfile.split('/images/')[-1]
-                                dst_file_path = os.path.join(dst_images_dir, rel_file_path)
-                                if os.path.exists(dst_file_path):
-                                    dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
-                                    src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
-                                    if src_file_checksum == dst_file_checksum:
-                                        log.info("file %s already exists with same checksum. skip import" % rel_file_path)
-                                        skip_copy = True
-                                if not skip_copy:
-                                    file_dir = os.path.dirname(dst_file_path)
-                                    if not os.path.exists(file_dir):
-                                        os.makedirs(file_dir)
-                                    shutil.copy(imfile, dst_file_path)
-                                    self.progress['num_download'] += 1
-                                self.progress['details']["tree_file"]["num_success"] += 1
-                                self.progress["num_success"] += 1
-                            except (IOError, OSError):
-                                log.error("%s" % (traceback.format_exc()))
-                                error_info = {}
-                                exctype, value = sys.exc_info()[:2]
-                                error_info["error_type"] = str(exctype)
-                                error_info["error"] = str(value)
-                                error_info["traceback"] = traceback.format_exc().splitlines()
-                                self._add_error_details(imfile, "tree_file", error_info)
-                            log.debug("Imported file %s " % dst_file_path)
-                            self.progress['step'] = ProgressReport.DownloadItems
-                            item_size = self._calculate_bytes(src_repo_dir, [imfile])
-                            self.progress['size_left'] -= item_size
-                            self.progress['items_left'] -= 1
-                            self.progress['details']["tree_file"]["items_left"] -= 1
-                            self.progress['details']["tree_file"]["size_left"] -= item_size
-                            if progress_callback is not None:
-                                progress_callback(self.progress)
-                    else:
-                        log.info("Skipping distribution imports from sync process")
+                    log.info("Skipping distribution imports from sync process")
                 groups_xml_path = None
                 updateinfo_path = None
                 prestodelta_path = None
@@ -1214,7 +1235,7 @@ def parse_treeinfo(treecfg):
     """
      Parse distribution treeinfo config and return general information
     """
-    fields = ['family', 'variant', 'version',] # 'arch']
+    fields = ['family', 'variant', 'version', 'arch']
     treeinfo_dict = dict(zip(fields, [None]*len(fields)))
     cfgparser = ConfigParser.ConfigParser()
     cfgparser.optionxform = str

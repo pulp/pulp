@@ -379,3 +379,13 @@ class RepositoryAPI(PulpAPI):
             return self.server.GET(path)[1]
         except ServerRequestError:
             return []
+
+    def add_distribution(self, repoid, distributionid):
+        addinfo = {'repoid': repoid, 'distributionid': distributionid}
+        path = "/repositories/%s/add_distribution/" % repoid
+        return self.server.POST(path, addinfo)[1]
+
+    def remove_distribution(self, repoid, distributionid):
+        delinfo = {'repoid': repoid, 'distributionid': distributionid}
+        path = "/repositories/%s/remove_distribution/" % repoid
+        return self.server.POST(path, delinfo)[1]

@@ -39,7 +39,7 @@ from pulp.server import updateinfo
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
-from pulp.server.api.distribution import DistributionApi
+from pulp.server.api.distribution import DistributionApi, DistributionHasReferences
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
@@ -536,6 +536,7 @@ class RepoApi(BaseApi):
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
 
+                
         #remove files:
         for fileid in repo['files']:
             repos = self.find_repos_by_files(fileid)
@@ -1585,35 +1586,68 @@ class RepoApi(BaseApi):
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
 
     def add_distribution(self, repoid, distroid):
-        '''
+        """
          Associate a distribution to a given repo
          @param repoid: The repo ID.
+         @type repoid: str
          @param distroid: The distribution ID.
-        '''
+         @type distroid: str
+        """
         repo = self._get_existing_repo(repoid)
-        if self.distroapi.distribution(distroid) is None:
+        distro_obj = self.distroapi.distribution(distroid)
+        if distro_obj is None:
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.collection.save(repo, safe=True)
+        repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
+        for imfile in distro_obj['files']:
+            if not os.path.exists(imfile):
+                log.error("distribution file [%s] missing from the filesystem; skipping")
+                continue
+            if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
+                repo_treefile_path = os.path.join(repo_path, os.path.basename(imfile))
+                if not os.path.islink(repo_treefile_path):
+                    pulp.server.util.create_rel_symlink(imfile, repo_treefile_path)
+            else:
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
+                if not os.path.islink(repo_dist_path):
+                    pulp.server.util.create_rel_symlink(imfile, repo_dist_path)
         if repo['publish']:
             self._create_ks_link(repo)
         log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
 
     def remove_distribution(self, repoid, distroid):
-        '''
+        """
          Delete a distribution from a given repo
          @param repoid: The repo ID.
          @param distroid: The distribution ID.
-        '''
+        """
         repo = self._get_existing_repo(repoid)
-        if distroid in repo['distributionid']:
-            del repo['distributionid'][repo['distributionid'].index(distroid)]
-            self.collection.save(repo, safe=True)
-            self.distroapi.delete(distroid)
-            self._delete_ks_link(repo)
-            log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
-        else:
+        if not distroid in repo['distributionid']:
             log.error("No Distribution with ID %s associated to this repo" % distroid)
+        distro_obj = self.distroapi.distribution(distroid)
+        if distro_obj is None:
+            log.error("Distribution ID [%s] does not exist" % distroid)
+            return
+        repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
+        for imfile in distro_obj['files']:
+            if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
+                repo_treefile_path = os.path.join(repo_path, os.path.basename(imfile))
+                if os.path.islink(repo_treefile_path):
+                   os.unlink(repo_treefile_path)
+            else:
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
+                if os.path.islink(repo_dist_path):
+                    os.unlink(repo_dist_path)
+        del repo['distributionid'][repo['distributionid'].index(distroid)]
+        self.collection.save(repo, safe=True)
+        log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
+        self._delete_ks_link(repo)
+        # see if the distribution is orphaned and remove from db
+        try:
+            self.distroapi.delete(distroid)
+        except DistributionHasReferences:
+            log.info("Distribution Id [%s] has other references; leaving it in the db" % distroid)
 
     def _create_ks_link(self, repo):
         if not os.path.isdir(self.distro_path):

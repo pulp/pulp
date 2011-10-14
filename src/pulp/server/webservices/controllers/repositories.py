@@ -590,6 +590,8 @@ class RepositoryActions(JSONController):
         'list_metadata',
         'remove_metadata',
         'export',
+        'add_distribution',
+        'remove_distribution',
     )
 
     def sync(self, id):
@@ -1388,6 +1390,42 @@ class RepositoryActions(JSONController):
             return self.conflict('Export already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
         return self.accepted(task_info)
+
+    def add_distribution(self, id):
+        """
+        [[wiki]]
+        title: Add distributions to Repository
+        description: Add distributions to repositories
+        method: POST
+        path: /repositories/<id>/add_distribution/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
+        return: True on successful add, False otherwise
+        parameters:
+         * distributionid, str, distribution id
+        """
+        data = self.params()
+        api.add_distribution(id, data['distributionid'])
+        return self.ok(True)
+
+    def remove_distribution(self, id):
+        """
+        [[wiki]]
+        title: remove distributions to Repository
+        description: Remove distributions to repositories
+        method: POST
+        path: /repositories/<id>/remove_distribution/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
+        return: True on successful remove, False otherwise
+        parameters:
+         * distributionid, str, distribution id
+        """
+        data = self.params()
+        api.remove_distribution(id, data['distributionid'])
+        return self.ok(True)
 
     @error_handler
     @auth_required(EXECUTE)

@@ -24,7 +24,7 @@ import testutil
 import pulp
 from pulp.server import updateinfo
 from pulp.server.api.repo import RepoApi
-from pulp.server.api.distribution import DistributionApi
+from pulp.server.api.distribution import DistributionApi, DistributionHasReferences
 
 class TestDistribution(testutil.PulpAsyncTest):
 
@@ -111,7 +111,7 @@ class TestDistribution(testutil.PulpAsyncTest):
         self.repo_api.add_distribution(repoid, distroid)
         repo = self.repo_api.repository(repoid)
         assert(distroid in repo['distributionid'])
-        
+         
         self.repo_api.delete(id=repoid)
         repo = self.repo_api.repository(repoid)
         assert(repo is None)
@@ -130,6 +130,34 @@ class TestDistribution(testutil.PulpAsyncTest):
         
         self.repo_api.remove_distribution(repoid, distroid)
         repo = self.repo_api.repository(repoid)
+        found = self.distribution_api.distribution(distroid)
+        self.assertTrue(found is None)
+        assert(distroid not in repo['distributionid'])
+
+    def test_remove_distro_with_references(self):
+        distroid = 'test_repo_distro'
+        distro = self.distribution_api.create(distroid, None, None, [])
+        found = self.distribution_api.distribution(distroid)
+        self.assertTrue(found is not None)
+
+        repoid1 = 'test-repodist'
+        self.repo_api.create(repoid1, 'some name', 'i386', 'http://example.com/test/path')
+        self.repo_api.add_distribution(repoid1, distroid)
+        repo = self.repo_api.repository(repoid1)
+        assert(distroid in repo['distributionid'])
+
+        repoid2 = 'test-repodist-2'
+        self.repo_api.create(repoid2, 'some name', 'i386', 'http://example.com/test/path2')
+        self.repo_api.add_distribution(repoid2, distroid)
+        repo = self.repo_api.repository(repoid2)
+        assert(distroid in repo['distributionid'])
+        self.repo_api.remove_distribution(repoid1, distroid)
+        repo = self.repo_api.repository(repoid1)
+        found = self.distribution_api.distribution(distroid)
+        self.assertTrue(found is not None)
+        assert(distroid not in repo['distributionid'])
+        self.repo_api.remove_distribution(repoid2, distroid)
+        repo = self.repo_api.repository(repoid1)
         found = self.distribution_api.distribution(distroid)
         self.assertTrue(found is None)
         assert(distroid not in repo['distributionid'])
