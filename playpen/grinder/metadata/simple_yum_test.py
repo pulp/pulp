@@ -2,17 +2,18 @@
 
 import os
 import shlex
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
+import yum
 
-from grinder.RepoFetch import RepoFetch
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../utils")
 from memory_usage import MemoryUsage
 
 TIME_FMT_STR = "%b%d_%Y__%l:%M%p"
-
-LOG = open("%s.metadata_parse.output" % (time.strftime(TIME_FMT_STR)), "w")
+LOG = open("%s.simple_yum_test.output" % (time.strftime(TIME_FMT_STR)), "w")
 
 
 def log(msg):
@@ -34,22 +35,27 @@ def parse_feed_urls(file_name):
         feed_urls.append(feed)
     return feed_urls
 
+def setupYum(label, url, cacert=None, clientcert=None):
+    repo = yum.yumRepo.YumRepository(label)
+    repo.basecachedir = tempfile.mkdtemp()
+    repo.cache = 0
+    repo.metadata_expire = 0
+    repo.baseurl = [url]
+    repo.sslcacert = cacert
+    repo.sslclientcert = clientcert
+    repo.sslverify = 1
+    return repo
+
 def parse_metadata(label, url, download_dir, cacert=None, clientcert=None):
+    yum_repo = setupYum(label, url, cacert, clientcert)
     try:
-        yumFetch = RepoFetch(label, repourl=url, \
-            cacert=cacert, clicert=clientcert, \
-            download_dir=download_dir)
-        yumFetch.setupRepo()
-        yumFetch.getRepoData()
-        #pkglist = yumFetch.getPackageList()
-        #return len(pkglist)
+        for ftype in yum_repo.repoXML.fileTypes():
+            ftypefile = yum_repo.retrieveMD(ftype)
         return 0
     finally:
-        # Note, if we don't execute closeRepo() then we will leak memory.
-        # running with closeRepo() and I am not seeing any memory leaked
-        yumFetch.closeRepo()
-        yumFetch.deleteBaseCacheDir()
-        del yumFetch
+        yum_repo.close()
+        shutil.rmtree(yum_repo.basecachedir)
+
 
 def test_from_feed_urls(feed_urls, base_dir="./data"):
     feeds = parse_feed_urls(feed_urls)
@@ -78,32 +84,8 @@ def test_simple_repo(url=None, label=None, download_dir=None):
         log("%s, %s, %s packages, iteration %s" % (memUsage.get_time_memory_stamp(), label, length, count))
         count = count + 1
 
-def test_protected_repo(url=None, label=None, download_dir=None, clientcert=None, cacert=None):
-    if not url:
-        #url = "https://cdn.redhat.com/content/dist/rhel/rhui/server/6/6Server/i386/os"
-        url = "https://cdn.redhat.com/content/dist/rhel/rhui/server/5/5.6/i386/source/SRPMS"
-    if not label:
-        #label = "rhel-server-6-6Server-i386"
-        label = "rhel-server-srpms-5-5.6-i386"
-    if not download_dir:
-        download_dir = "./data/%s" % (label)
-    if not cacert:
-        #cacert = "/etc/pki/content/rhel-server-6-6Server-i386/feed-rhel-server-6-6Server-i386.ca"
-        cacert = "/etc/pki/content/rhel-server-srpms-5-5.6-i386/feed-rhel-server-srpms-5-5.6-i386.ca"
-    if not clientcert:
-        #clientcert = "/etc/pki/content/rhel-server-6-6Server-i386/feed-rhel-server-6-6Server-i386.cert"
-        clientcert = "/etc/pki/content/rhel-server-srpms-5-5.6-i386/feed-rhel-server-srpms-5-5.6-i386.cert"
-    log("Fetching protected metadata for: %s" % (url))
-    count = 0
-    memUsage = MemoryUsage()
-    while True:
-        length = parse_metadata(label, url, download_dir, cacert, clientcert)
-        log("%s, %s, %s packages, iteration %s" % (memUsage.get_time_memory_stamp(), label, length, count))
-        count = count + 1
-
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         test_from_feed_urls(sys.argv[1])
         sys.exit(0)
-    #test_simple_repo()
-    test_protected_repo()
+    test_simple_repo()
