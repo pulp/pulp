@@ -231,6 +231,7 @@ class Task(object):
         The hook's only argument is the task.
         @type hook: callable
         """
+        assert callable(hook)
         hook_list = self.hooks.setdefault(task_enqueue, [])
         hook_list.append(hook)
 
@@ -251,6 +252,7 @@ class Task(object):
         The hook's only argument is the task.
         @type hook: callable
         """
+        assert callable(hook)
         hook_list = self.hooks.setdefault(task_dequeue, [])
         hook_list.append(hook)
 
