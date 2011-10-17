@@ -91,11 +91,16 @@ class TestErrata(testutil.PulpAsyncTest):
         reboot_suggested = 'test_create_reboot_suggested'
         references = ['test_create_references']
         pkglist = [{'packages':{'src':'test_src'}}]
+        severity = "Important"
+        summary = "test"
+        solution = "test solution"
+        rights = "fedora"
         sample_errata = self.errata_api.create(id, title, description, version, release,
                 type, status=status, updated=updated, issued=issued,
                 pushcount=pushcount, from_str=from_str,
                 reboot_suggested=reboot_suggested, references=references,
-                pkglist=pkglist)
+                pkglist=pkglist, severity=severity, solution=solution, 
+                summary=summary, rights=rights)
         assert(sample_errata is not None)
         self.assertTrue(sample_errata["id"] == id)
         self.assertTrue(sample_errata["title"] == title)
@@ -111,6 +116,10 @@ class TestErrata(testutil.PulpAsyncTest):
         self.assertTrue(sample_errata["reboot_suggested"] == reboot_suggested)
         self.assertTrue(sample_errata["references"] == references)
         self.assertTrue(sample_errata["pkglist"] == pkglist)
+        self.assertTrue(sample_errata["severity"] == severity)
+        self.assertTrue(sample_errata["solution"] == solution)
+        self.assertTrue(sample_errata["summary"] == summary)
+        self.assertTrue(sample_errata["rights"] == rights)
 
     def test_duplicate(self):
         id = 'test_duplicate_id'

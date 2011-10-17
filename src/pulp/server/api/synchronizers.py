@@ -484,7 +484,8 @@ class BaseSynchronizer(object):
                             status=e['status'], updated=e['updated'],
                             issued=e['issued'], pushcount=e['pushcount'],
                             from_str=e['from_str'], reboot_suggested=e['reboot_suggested'],
-                            references=e['references'], pkglist=pkglist,
+                            references=e['references'], pkglist=pkglist, severity=e['severity'],
+                            rights=e['rights'], summary=e['summary'], solution=e['solution'],
                             repo_defined=True, immutable=True)
                 except DuplicateKeyError:
                     log.info('errata [%s] already exists' % e['id'])

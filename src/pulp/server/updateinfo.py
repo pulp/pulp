@@ -98,7 +98,7 @@ def _translate_updatenotice_to_erratum(unotice):
         summary = unotice['summary']
     solution = ""
     if unotice.has_key('solution'):
-        severity = unotice['solution']
+        solution = unotice['solution']
     erratum = Errata(id, title, description, version, release, type,
         status, updated, issued, pushcount, from_str, reboot_suggested,
         references, pkglist, severity, rights, summary, solution)
