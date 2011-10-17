@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,6 +306,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Oct 17 2011 James Slagle <jslagle@redhat.com> 0.0.214-3
+- 745945 Switch to using openssl to verify a certificate against a CA so that
+  we can verify against CA chains. (jslagle@redhat.com)
+
 * Tue Oct 11 2011 James Slagle <jslagle@redhat.com> 0.0.214-2
 - 742230 Add startup code to adjust the repo and cds sync schedule in rhui if
   necessary (jslagle@redhat.com)
