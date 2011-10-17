@@ -153,7 +153,7 @@ class OidValidator:
         if not repo_id:
             return None
 
-        bundle = self.repo_cert_utils.read_consumer_cert_bundle(repo_id, ['ca'])
+        bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo_id)
         return bundle
 
     def _check_extensions(self, cert_pem, dest, log_func):

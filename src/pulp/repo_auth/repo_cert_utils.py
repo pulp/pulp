@@ -45,6 +45,7 @@ in a cert bundle dict.
 
 import logging
 import shutil
+import subprocess
 from threading import RLock
 import os
 
@@ -251,22 +252,37 @@ class RepoCertUtils:
         cert = X509.load_cert(cert_filename)
         return cert.verify(ca.get_pubkey())
 
-    def validate_certificate_pem(self, cert_pem, ca_pem):
+    def validate_certificate_pem(self, cert_pem, ca_filename):
         '''
         Validates a certificate against a CA certificate.
 
         @param cert_pem: PEM encoded certificate
         @type  cert_pem: str
 
-        @param ca_pem: PEM encoded CA certificate
-        @type  ca_pem: str
+        @param ca_filename: full path to the PEM encoded CA certificate
+        @type  ca_filename: str
 
         @return: true if the certificate was signed by the given CA; false otherwise
         @rtype:  boolean
         '''
-        ca = X509.load_cert_string(ca_pem)
-        cert = X509.load_cert_string(cert_pem)
-        return cert.verify(ca.get_pubkey())
+
+        cmd = 'openssl verify -CAfile %s' % ca_filename
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Use communicate to pipe the certificate to the verify call
+        stdout, stderr = p.communicate(input=cert_pem)
+
+        result = stdout.rstrip()
+
+        # Successful result example:
+        #   stdin: OK\n
+        # Failed result example:
+        #   stdin: C = US, ST = NC, L = Raleigh, O = Red Hat, CN = localhost
+        #   error 20 at 0 depth lookup:unable to get local issuer certificate\n
+        valid = result.endswith('OK')
+
+        return valid
 
     def validate_cert_bundle(self, bundle):
         '''
