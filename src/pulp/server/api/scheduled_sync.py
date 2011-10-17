@@ -51,7 +51,7 @@ def validate_schedule(schedule):
     try:
         interval, start, runs = dateutils.parse_iso8601_interval(schedule)
     except ISO8601Error:
-        raise PulpException(_('Imporperly formatted schedule: %s') % schedule), None, sys.exc_info()[2]
+        raise PulpException(_('Improperly formatted schedule: %s') % schedule), None, sys.exc_info()[2]
     if not isinstance(interval, datetime.timedelta):
         raise PulpException(_('Invalid type for interval: %s') % str(type(interval)))
     # convert the start time to the local timezone

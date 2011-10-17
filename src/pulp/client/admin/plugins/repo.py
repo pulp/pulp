@@ -16,6 +16,7 @@ import string
 import sys
 import time
 import urlparse
+from isodate import ISO8601Error
 from datetime import timedelta
 from gettext import gettext as _
 from optparse import OptionGroup
@@ -600,7 +601,10 @@ class Clone(RepoProgressAction):
         groupid = self.opts.groupid
         timeout = self.opts.timeout
         if timeout is not None:
-            delta = parse_iso8601_duration(timeout)
+            try:
+                delta = parse_iso8601_duration(timeout)
+            except ISO8601Error:
+                utils.system_exit(os.EX_USAGE, _('Improperly formatted timeout: %s , see --help') % timeout)
             if not isinstance(delta, timedelta):
                 utils.system_exit(os.EX_USAGE, 'Timeout may not contain months or years')
         filters = self.opts.filters or []
@@ -852,7 +856,10 @@ class Sync(RepoProgressAction):
             skip['distribution'] = 1
         timeout = self.opts.timeout
         if timeout is not None:
-            delta = parse_iso8601_duration(timeout)
+            try:
+                delta = parse_iso8601_duration(timeout)
+            except ISO8601Error:
+                utils.system_exit(os.EX_USAGE, _('Improperly formatted timeout: %s , see --help') % timeout)
             if not isinstance(delta, timedelta):
                 utils.system_exit(os.EX_USAGE, 'Timeout may not contain months or years')
         limit = self.opts.limit
