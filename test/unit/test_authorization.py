@@ -22,7 +22,8 @@ import unittest
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.server.auth import authorization
+from pulp.server.auth import authorization, principal
+from pulp.server.tasking.task import Task
 
 
 class TestAuthorization(testutil.PulpAsyncTest):
@@ -30,6 +31,7 @@ class TestAuthorization(testutil.PulpAsyncTest):
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
         authorization.ensure_builtin_roles()
+        principal.clear_principal()
         self.alhpa_num = string.letters + string.digits
 
     # test data generation
@@ -47,6 +49,11 @@ class TestAuthorization(testutil.PulpAsyncTest):
         return '/%s/' % '/'.join(''.join(random.sample(self.alhpa_num,
                                                        random.randint(6, 10)))
                                  for i in range(random.randint(2, 4)))
+
+    def _create_task(self):
+        def _noop():
+            pass
+        return Task(_noop)
 
     # test individual user permissions
 
@@ -378,6 +385,8 @@ class TestAuthorization(testutil.PulpAsyncTest):
         self.assertTrue(authorization.is_authorized(s, u, authorization.DELETE))
         self.assertTrue(authorization.is_authorized(s, u, authorization.EXECUTE))
 
+    # test consumer auto-permissions
+
     def test_consumer_users(self):
         role = self.role_api.role(authorization.consumer_users_role)
         self.assertFalse(role is None)
@@ -406,6 +415,22 @@ class TestAuthorization(testutil.PulpAsyncTest):
         self.assertFalse(authorization.is_authorized(s, u, authorization.UPDATE))
         self.assertFalse(authorization.is_authorized(s, u, authorization.DELETE))
         self.assertFalse(authorization.is_authorized(s, u, authorization.EXECUTE))
+
+    # test task auto-permissions
+
+    def test_task_permissions(self):
+        u = self._create_user()
+        t = self._create_task()
+        r = '/tasks/%s/' % t.id
+        principal.set_principal(u)
+        grant = authorization.GrantPermissionsForTask()
+        grant(t)
+        self.assertTrue(authorization.is_authorized(r, u, authorization.READ))
+        self.assertTrue(authorization.is_authorized(r, u, authorization.DELETE))
+        revoke = authorization.RevokePermissionsForTask()
+        revoke(t)
+        self.assertFalse(authorization.is_authorized(r, u, authorization.READ))
+        self.assertFalse(authorization.is_authorized(r, u, authorization.DELETE))
 
 
 if __name__ == '__main__':
