@@ -1,6 +1,6 @@
 Name:           mod_wsgi
 Version:        3.2
-Release:        3.sslpatch%{?dist}
+Release:        4.pulp%{?dist}
 Summary:        A WSGI interface for Python web applications in Apache
 
 Group:          System Environment/Libraries
@@ -9,6 +9,7 @@ URL:            http://modwsgi.org
 Source0:        http://modwsgi.googlecode.com/files/%{name}-%{version}.tar.gz
 Source1:        wsgi.conf
 Patch0:         mod_wsgi-3.2-mod_ssl.patch
+Patch1:         mod_wsgi-3.2-KeyError.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  httpd-devel
@@ -25,6 +26,7 @@ existing WSGI adapters for mod_python or CGI.
 %prep
 %setup -q
 %patch0 -p2
+%patch1 -p2
 
 
 %build
