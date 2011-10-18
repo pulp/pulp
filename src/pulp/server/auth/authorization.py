@@ -348,14 +348,14 @@ class GrantPermissionsForTask(object):
     """
 
     def __init__(self):
-        self.user = get_principal()
+        self.user_name = get_principal()['login']
 
     def __call__(self, task):
-        if self.user is SystemPrincipal():
+        if self.user_name == SystemPrincipal.LOGIN:
             return
         resource = '/tasks/%s/' % task.id
-        operations = [READ, DELETE]
-        _permission_api.grant(resource, self.user, operations)
+        operations = ['READ', 'DELETE']
+        grant_permission_to_user(resource, self.user_name, operations)
 
 
 class RevokePermissionsForTask(object):
@@ -364,14 +364,14 @@ class RevokePermissionsForTask(object):
     """
 
     def __init__(self):
-        self.user = get_principal()
+        self.user_name = get_principal()['login']
 
     def __call__(self, task):
-        if self.user is SystemPrincipal():
+        if self.user_name == SystemPrincipal.LOGIN:
             return
         resource = '/tasks/%s/' % task.id
-        operations = [READ, DELETE]
-        _permission_api.revoke(resource, self.user, operations)
+        operations = ['READ', 'DELETE']
+        revoke_permission_from_user(resource, self.user_name, operations)
 
 # role api --------------------------------------------------------------------
 
