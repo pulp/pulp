@@ -26,6 +26,7 @@ import time
 import traceback
 from threading import Lock
 from urlparse import urlparse
+import datetime
 
 import yum
 from grinder.BaseFetch import BaseFetch
@@ -33,6 +34,7 @@ from grinder.FileFetch import FileGrinder
 from grinder.GrinderUtils import parseManifest
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
+from pulp.common import dateutils
 from pulp.server.api.file import FileApi
 
 import pulp.server.comps_util
@@ -309,8 +311,12 @@ class BaseSynchronizer(object):
                                                #"ks-" + repo['id'] + "-" + repo['arch']
         distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), id)
         files = pulp.server.util.listdir(distro_path) or []
-        distro = self.distro_api.create(id, description, repo['relative_path'], family=treeinfo['family'],
-                                        variant=treeinfo['variant'], version=treeinfo['version'], files=files)
+        timestamp = None
+        if treeinfo['timestamp']:
+            timestamp = datetime.datetime.fromtimestamp(float(treeinfo['timestamp']))
+        distro = self.distro_api.create(id, description, distro_path, family=treeinfo['family'],
+                                        variant=treeinfo['variant'], version=treeinfo['version'],
+                                        timestamp=timestamp, files=files)
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
             log.info("Created a distributionID %s" % distro['id'])
@@ -1236,7 +1242,7 @@ def parse_treeinfo(treecfg):
     """
      Parse distribution treeinfo config and return general information
     """
-    fields = ['family', 'variant', 'version', 'arch']
+    fields = ['family', 'variant', 'version', 'arch', 'timestamp']
     treeinfo_dict = dict(zip(fields, [None]*len(fields)))
     cfgparser = ConfigParser.ConfigParser()
     cfgparser.optionxform = str

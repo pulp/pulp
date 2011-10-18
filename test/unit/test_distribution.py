@@ -15,8 +15,10 @@
 # Python
 import os
 import sys
+import datetime
 
 from pymongo.errors import DuplicateKeyError
+from pulp.common import dateutils
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
@@ -161,5 +163,17 @@ class TestDistribution(testutil.PulpAsyncTest):
         found = self.distribution_api.distribution(distroid)
         self.assertTrue(found is None)
         assert(distroid not in repo['distributionid'])
+
+    def test_distro_timestamp(self):
+        distroid = 'test_distro'
+        distro = self.distribution_api.create(distroid, None, None, [])
+        found = self.distribution_api.distribution(distroid)
+        self.assertTrue(found is not None)
+        assert(found['timestamp'] is not None)
          
-         
+        distroid = 'test_distro_2'
+        timestamp = 1305315870.87
+        distro = self.distribution_api.create(distroid, None, None, timestamp=datetime.datetime.fromtimestamp(timestamp), files=[])
+        found = self.distribution_api.distribution(distroid)
+        self.assertTrue(found is not None)
+        self.assertTrue(found['timestamp'] == dateutils.format_iso8601_datetime(datetime.datetime.fromtimestamp(timestamp)))

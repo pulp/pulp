@@ -115,6 +115,7 @@ Family                \t%-25s
 Variant               \t%-25s
 Version               \t%-25s
 URL                   \t%-25s
+Timestamp             \t%-25s
 """
 
 DISTRO_INFO = """
@@ -125,7 +126,7 @@ Family                \t%-25s
 Variant               \t%-25s
 Version               \t%-25s
 Files                 \t%-25s
-Relativepath          \t%-25s
+Timestamp             \t%-25s
 """
 
 PACKAGE_INFO = """

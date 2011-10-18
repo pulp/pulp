@@ -91,7 +91,7 @@ class ErrataApi(BaseApi):
         @return: True if referenced
         @rtype: bool
         """
-        erratum = self.erratum(id)
+        erratum = self.erratum(id, fields=['id', 'type'])
         if erratum is None:
             return False
 

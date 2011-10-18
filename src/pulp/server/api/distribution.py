@@ -21,7 +21,7 @@ from pulp.server import config
 
 log = logging.getLogger(__name__)
 
-distribution_fields = model.Distribution(None, None, None, None, None, None, []).keys()
+distribution_fields = model.Distribution(None, None, None, None, None, None, None, []).keys()
 
 class DistributionHasReferences(Exception):
 
@@ -36,7 +36,8 @@ class DistributionApi(BaseApi):
         return model.Distribution.get_collection()
 
     @audit(params=["id"])
-    def create(self, id, description, relativepath, family=None, variant=None, version=None, files=[]):
+    def create(self, id, description, relativepath, family=None, variant=None,
+               version=None, timestamp=None, files=[]):
         """
         Create a new Distribution object and return it
         """
@@ -44,7 +45,8 @@ class DistributionApi(BaseApi):
         if d:
             log.info("Distribution with id %s already exists" % id)
             return d
-        d = model.Distribution(id, description, relativepath, family=family, variant=variant, version=version, files=files)
+        d = model.Distribution(id, description, relativepath, family=family, variant=variant,
+                               version=version, timestamp=timestamp, files=files)
         self.collection.insert(d, safe=True)
         return d
 
@@ -118,7 +120,12 @@ class DistributionApi(BaseApi):
         """
         construct a kickstart url for distribution
         """
+        distribution['url'] = []
         server_name = config.config.get("server", "server_name")
         ks_url = config.config.get("server", "ks_url")
-        distribution['url'] = "%s://%s%s/%s/" % ("https", server_name, ks_url, distribution['relativepath'])
+        collection = model.Repo.get_collection()
+        repos = collection.find({"distributionid":distribution['id']}, fields=["id", "relative_path"])
+        for repo in repos:
+            url = "%s://%s%s/%s/" % ("https", server_name, ks_url, repo['relative_path'])
+            distribution['url'].append(url)
         return distribution

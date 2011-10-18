@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2011 Red Hat, Inc.
@@ -13,34 +12,41 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import logging
 import os
+import datetime
+from pulp.common import dateutils
 from pulp.server.db.model import Distribution
 from pulp.server.api.synchronizers import parse_treeinfo
 import pulp.server.util as pulputil
 _log = logging.getLogger('pulp')
 
-version = 23
+version = 24
 
 def _migrate_distribution():
     collection = Distribution.get_collection()
     for distro in collection.find({}):
+        if distro.has_key('relativepath'):
+            try:
+                if distro['family'] and distro['variant'] and distro['version'] and distro['arch']:
+                    distro_id = "ks-%s-%s-%s-%s" % (distro['family'], distro['variant'], distro['version'], distro['arch'])
+                    distro['id'] = distro_id                    
+                    distro['relativepath'] = u"%s/%s" % (pulputil.top_distribution_location(), distro['id'])
+                else:
+                    distro['relativepath'] = u""
+            except:
+                pass
         treecfg = None
-        try:
-            if distro['family'] and distro['variant'] and distro['version'] and distro['arch']:
-                distro_id = "ks-%s-%s-%s-%s" % (distro['family'], distro['variant'], distro['version'], distro['arch'])
-                distro['id'] = distro_id
-                distro['relativepath'] = u"%s/%s" % (pulputil.top_distribution_location(), distro['id'])
-            else:
-                distro['relativepath'] = u""
-        except:
-            pass
         for tree_info_name in ['treeinfo', '.treeinfo']:
             treecfg = "%s/%s" % (distro['relativepath'], tree_info_name )
             if os.path.exists(treecfg):
                 break
         treeinfo = parse_treeinfo(treecfg)
-        for field in treeinfo.keys():
-            if not distro.has_key(field):
-                distro[field] = treeinfo[field]
+        _log.error("timestamp value %s" % treeinfo['timestamp'])
+        if not distro.has_key("timestamp"):
+            if treeinfo['timestamp']:
+                distro["timestamp"] = datetime.datetime.fromtimestamp(float(treeinfo['timestamp']))
+            else:
+                distro["timestamp"] = datetime.datetime.now(dateutils.local_tz())
+        _log.error("CCCCCCCCCCCc %s" % distro["timestamp"])
         collection.save(distro, safe=True)
 
 def migrate():
@@ -50,4 +56,3 @@ def migrate():
     # So this function is essentially a no-op.
     _log.info('migration to data model version %d started' % version)
     _migrate_distribution()
-    _log.info('migration to data model version %d complete' % version)
