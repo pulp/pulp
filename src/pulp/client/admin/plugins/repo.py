@@ -1810,12 +1810,12 @@ class AddDistribution(AdminRepoAction):
 class RemoveDistribution(AdminRepoAction):
 
     name = "remove_distribution"
-    description = _('associate an already existing distribution to a repository')
+    description = _('remove a distribution from a repository')
 
     def setup_parser(self):
         super(RemoveDistribution, self).setup_parser()
         self.parser.add_option("-d", "--distributionid", dest="distributionid",
-                help=_("distribution to associate to this repository"))
+                help=_("distributionid to remove from this repository"))
 
     def run(self):
         id = self.get_required_option('id')
