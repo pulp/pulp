@@ -245,7 +245,7 @@ class PulpAsyncTest(PulpTest):
     def tearDown(self):
         PulpTest.tearDown(self)
         async._queue._cancel_dispatcher()
-        async.finalize()
+        async._queue = None
 
     def setup_async(self):
         async.config.config = self.config
