@@ -54,6 +54,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Oct 18 2011 James Slagle <jslagle@redhat.com> 3.2-4.pulp
+- Add patch for mod_wsgi to stop KeyError exception on python interpreter
+  shutdown in apache (jslagle@redhat.com)
+
 * Mon Jul 11 2011 James Slagle <jslagle@redhat.com> 3.2-3.sslpatch
 - Don't use epoch after all, use a custom release (jslagle@redhat.com)
 - Reset release to 3 and use epoch to distinguish our mod_wsgi package
