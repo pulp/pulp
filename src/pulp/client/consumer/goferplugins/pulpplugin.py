@@ -184,7 +184,6 @@ class Packages:
         @return: (installed, (reboot requested, performed))
         @rtype: tuple
         """
-        pulpserver()
         installed = []
         try:
             yb = YumBase()
@@ -208,6 +207,30 @@ class Packages:
                 scheduled = True
         return (installed, (reboot, scheduled))
 
+    @remote(secret=getsecret)
+    def uninstall(self, names):
+        """
+        Uninstall (erase) packages by name.
+        @param names: A list of package names to be removed.
+        @type names: list
+        @return: A list of erased packages.
+        @rtype: list
+        """
+        erased = []
+        try:
+            yb = YumBase()
+            log.info('removing packages: %s', names)
+            for info in names:
+                yb.remove(pattern=info)
+            if len(yb.tsInfo):
+                for t in yb.tsInfo:
+                    erased.append(str(t.po))
+                yb.resolveDeps()
+                yb.processTransaction()
+            return erased
+        finally:
+            ybcleanup(yb)
+
     def __schedule_reboot(self):
         interval = cfg.client.reboot_schedule
         os.system("shutdown -r %s &", interval)
@@ -226,7 +249,6 @@ class PackageGroups:
         @param groups: A list of package names.
         @param groups: str
         """
-        pulpserver()
         log.info('installing package groups: %s', groups)
         yb = YumBase()
         try:
@@ -235,6 +257,25 @@ class PackageGroups:
                 log.info("Added '%s' group to transaction, packages: %s", g, pkgs)
             yb.resolveDeps()
             yb.processTransaction()
+            return groups
         finally:
             ybcleanup(yb)
-        return groups
+
+    @remote(secret=getsecret)
+    def uninstall(self, groups):
+        """
+        Uninstall package groups by name.
+        @param groups: A list of package names.
+        @param groups: str
+        """
+        log.info('installing package groups: %s', groups)
+        yb = YumBase()
+        try:
+            for g in groups:
+                pkgs = yb.groupRemove(g)
+                log.info("Added '%s' group to transaction, packages: %s", g, pkgs)
+            yb.resolveDeps()
+            yb.processTransaction()
+            return groups
+        finally:
+            ybcleanup(yb)
