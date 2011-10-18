@@ -52,20 +52,19 @@ def enqueue(task, unique=True):
     # make sure to set the appropriate permissions for the task
     grant = GrantPermissionsForTask()
     revoke = RevokePermissionsForTask()
-    # XXX commenting out until I can figure out this causes the unittests to hang
-    #task.add_enqueue_hook(grant)
-    #task.add_dequeue_hook(revoke)
+    task.add_enqueue_hook(grant)
+    task.add_dequeue_hook(revoke)
     try:
         _queue.enqueue(task, unique)
     except NonUniqueTaskException, e:
         log.error(e.args[0])
-        #task.remove_enqueue_hook(grant)
-        #task.remove_dequeue_hook(revoke)
+        task.remove_enqueue_hook(grant)
+        task.remove_dequeue_hook(revoke)
         return None
     except DuplicateSnapshotError, e:
         log.error(traceback.format_exc())
-        #task.remove_enqueue_hook(grant)
-        #task.remove_dequeue_hook(revoke)
+        task.remove_enqueue_hook(grant)
+        task.remove_dequeue_hook(revoke)
         return None
     return task
 
