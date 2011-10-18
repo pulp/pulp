@@ -113,8 +113,8 @@ class TaskQueue(object):
         Scheduling method that that executes the scheduling hooks.
         """
         self.__lock.acquire()
-        try:
-            while True:
+        while True:
+            try:
                 self.__condition.wait(self.__dispatcher_timeout)
                 if self.__exit: # exit immediately after waking up
                     if self.__lock is not None:
@@ -125,9 +125,9 @@ class TaskQueue(object):
                 self._cancel_tasks()
                 self._timeout_tasks()
                 self._cull_tasks()
-        except Exception:
-            _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
-                          ''.join(traceback.format_exception(*sys.exc_info())))
+            except Exception:
+                _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
+                              ''.join(traceback.format_exception(*sys.exc_info())))
 
     def _get_tasks(self):
         """
