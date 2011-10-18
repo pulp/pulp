@@ -211,6 +211,34 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             last = calls[-1]
             self.assertEqual(last.args[0], packages)
 
+    def test_package_uninstall(self):
+        '''
+        Test package uninstall
+        '''
+        # Setup
+        id = ('A','B')
+        packages = ['zsh',]
+        self.consumer_api.create(id[0], None)
+        self.consumer_api.create(id[1], None)
+        self.consumer_group_api.create(id[0], '')
+        self.consumer_group_api.add_consumer(id[0], id[0])
+        self.consumer_group_api.add_consumer(id[0], id[1])
+
+        # Test
+        job = self.consumer_group_api.uninstallpackages(id[0], packages)
+        self.assertTrue(job is not None)
+        self.assertEqual(len(job.tasks), len(id))
+        for task in job.tasks:
+            task.run()
+
+        # Verify
+        for x in id:
+            agent = Agent(x)
+            pkgproxy = agent.Packages()
+            calls = pkgproxy.uninstall.history()
+            last = calls[-1]
+            self.assertEqual(last.args[0], packages)
+
     def test_packagegrp_install(self):
         '''
         Test package install
@@ -224,17 +252,10 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         self.consumer_group_api.add_consumer(id[0], id[0])
         self.consumer_group_api.add_consumer(id[0], id[1])
 
-        repoid = 'test-repo'
         grpid = 'test-group'
-        grpname = 'test-group'
-        self.repo_api.create(repoid, 'Test Repo', 'noarch')
-        group = self.repo_api.create_packagegroup(repoid, grpid, grpname, '')
-        package = testutil.create_package(self.package_api, packages[0])
-        self.repo_api.add_package(repoid, [package["id"]])
-        self.repo_api.add_packages_to_group(repoid, grpid, [packages[0]], gtype="default")
 
         # Test
-        job = self.consumer_group_api.installpackagegroups(id[0], [grpname,])
+        job = self.consumer_group_api.installpackagegroups(id[0], [grpid,])
         self.assertTrue(job is not None)
         self.assertEqual(len(job.tasks), len(id))
         for task in job.tasks:
@@ -246,4 +267,34 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             proxy = agent.PackageGroups()
             calls = proxy.install.history()
             last = calls[-1]
-            self.assertEqual(last.args[0], [grpname,])
+            self.assertEqual(last.args[0], [grpid,])
+
+    def test_packagegrp_uninstall(self):
+        '''
+        Test package uninstall
+        '''
+        # Setup
+        id = ('A','B')
+        packages = ['zsh',]
+        self.consumer_api.create(id[0], None)
+        self.consumer_api.create(id[1], None)
+        self.consumer_group_api.create(id[0], '')
+        self.consumer_group_api.add_consumer(id[0], id[0])
+        self.consumer_group_api.add_consumer(id[0], id[1])
+
+        grpid = 'test-group'
+
+        # Test
+        job = self.consumer_group_api.uninstallpackagegroups(id[0], [grpid,])
+        self.assertTrue(job is not None)
+        self.assertEqual(len(job.tasks), len(id))
+        for task in job.tasks:
+            task.run()
+
+        # Verify
+        for x in id:
+            agent = Agent(x)
+            proxy = agent.PackageGroups()
+            calls = proxy.uninstall.history()
+            last = calls[-1]
+            self.assertEqual(last.args[0], [grpid,])

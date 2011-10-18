@@ -355,6 +355,46 @@ class ConsumerGroupApi(BaseApi):
         packages = agent.Packages(task, timeout=tm)
         return packages.install(names, reboot, assumeyes)
 
+    @audit()
+    def uninstallpackages(self, id, names=()):
+        """
+        Uninstall packages on the consumers in a consnumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param names: The package names to uninstall.
+        @type names: [str,..]
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        job = Job()
+        for consumerid in consumergroup['consumerids']:
+            consumer = self.consumerApi.consumer(consumerid)
+            if consumer is None:
+                log.error('consumer [%s], not-found', consumerid)
+                continue
+            task = AsyncTask(self.__uninstallpackages, [consumerid, names])
+            job.add(task)
+        return job
+
+    def __uninstallpackages(self, consumerid, names=()):
+        """
+        Task callback.
+        @param consumerid: A consumer id.
+        @type consumerid: str
+        @param names: A list of package names.
+        @type names: list
+        """
+        consumer = self.consumerApi.consumer(consumerid)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', consumerid)
+        secret = PulpAgent.getsecret(consumer)
+        agent = AsyncAgent(consumerid, secret)
+        task = AsyncTask.current()
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        packages = agent.Packages(task, timeout=tm)
+        return packages.uninstall(names)
+
     def __nopackagestoinstall(self, consumerid, names=(), **options):
         return ([], (False, False))
 
@@ -399,6 +439,48 @@ class ConsumerGroupApi(BaseApi):
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         pkgrps = agent.PackageGroups(task, timeout=tm)
         return pkgrps.install(grpids)
+
+    @audit()
+    def uninstallpackagegroups(self, id, grpids):
+        """
+        Task callback to uninstall package groups.
+        @param id: The consumer group ID.
+        @type id: str
+        @param grpids: A list of package group ids.
+        @type grpids: list
+        @return: Whatever the agent returns.
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        job = Job()
+        for consumerid in consumergroup['consumerids']:
+            consumer = self.consumerApi.consumer(consumerid)
+            if consumer is None:
+                log.error('consumer [%s], not-found', consumerid)
+                continue
+            task = AsyncTask(self.__uninstallpackagegroups, [consumerid, grpids])
+            job.add(task)
+        return job
+
+    def __uninstallpackagegroups(self, consumerid, grpids):
+        """
+        Task callback to uninstall package groups.
+        @param consumerid: The consumer ID.
+        @type consumerid: str
+        @param grpids: A list of package group ids.
+        @type grpids: list
+        @return: Whatever the agent returns.
+        """
+        consumer = self.consumerApi.consumer(consumerid)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', consumerid)
+        secret = PulpAgent.getsecret(consumer)
+        agent = AsyncAgent(consumerid, secret)
+        task = AsyncTask.current()
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        pkgrps = agent.PackageGroups(task, timeout=tm)
+        return pkgrps.uninstall(grpids)
 
     def installerrata(self, id, errataids=[], types=[], assumeyes=False):
         """

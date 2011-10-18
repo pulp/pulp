@@ -313,25 +313,38 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         last = calls[-1]
         self.assertEqual(last.args[0], packages)
         
+    def test_package_uninstall(self):
+        '''
+        Test package uninstall
+        '''
+        # Setup
+        id = 'test-consumer'
+        packages = ['zsh',]
+        self.consumer_api.create(id, None)
+
+        # Test
+        task = self.consumer_api.uninstallpackages(id, packages)
+        self.assertTrue(task is not None)
+        task.run()
+
+        # Verify
+        agent = Agent(id)
+        pkgproxy = agent.Packages()
+        calls = pkgproxy.uninstall.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], packages)
+
     def test_pkgrp_install(self):
         '''
         Test package group install
         '''
         # Setup
         id = 'test-consumer'
-        repoid = 'test-repo'
-        pkgname = 'test'
         grpid = 'test-group'
-        grpname = 'test-group'
         self.consumer_api.create(id, None)
-        self.repo_api.create(repoid, 'Test Repo', 'noarch')
-        group = self.repo_api.create_packagegroup(repoid, grpid, grpname, '')
-        package = testutil.create_package(self.package_api, pkgname)
-        self.repo_api.add_package(repoid, [package["id"]])
-        self.repo_api.add_packages_to_group(repoid, grpid, [pkgname], gtype="default")
         
         # Test
-        task = self.consumer_api.installpackagegroups(id, [pkgname])
+        task = self.consumer_api.installpackagegroups(id, [grpid])
         self.assertTrue(task is not None)
         task.run()
         
@@ -340,4 +353,25 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         grpproxy = agent.PackageGroups()
         calls = grpproxy.install.history()
         last = calls[-1]
-        self.assertEqual(last.args[0], [pkgname])
+        self.assertEqual(last.args[0], [grpid])
+
+    def test_pkgrp_uninstall(self):
+        '''
+        Test package group uninstall
+        '''
+        # Setup
+        id = 'test-consumer'
+        grpid = 'test-group'
+        self.consumer_api.create(id, None)
+
+        # Test
+        task = self.consumer_api.uninstallpackagegroups(id, [grpid])
+        self.assertTrue(task is not None)
+        task.run()
+
+        # Verify
+        agent = Agent(id)
+        grpproxy = agent.PackageGroups()
+        calls = grpproxy.uninstall.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], [grpid])
