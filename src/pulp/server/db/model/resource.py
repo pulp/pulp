@@ -86,7 +86,7 @@ class Distribution(Model):
         if timestamp:
             self.timestamp = dateutils.format_iso8601_datetime(timestamp)
         else:
-            self.timestamp = datetime.datetime.now(dateutils.local_tz())
+            self.timestamp = dateutils.format_iso8601_datetime(datetime.datetime.now(dateutils.local_tz()))
 
 
 # errata model ----------------------------------------------------------------

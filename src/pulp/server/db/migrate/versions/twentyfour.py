@@ -41,12 +41,10 @@ def _migrate_distribution():
                 break
         treeinfo = parse_treeinfo(treecfg)
         _log.error("timestamp value %s" % treeinfo['timestamp'])
-        if not distro.has_key("timestamp"):
-            if treeinfo['timestamp']:
-                distro["timestamp"] = datetime.datetime.fromtimestamp(float(treeinfo['timestamp']))
-            else:
-                distro["timestamp"] = datetime.datetime.now(dateutils.local_tz())
-        _log.error("CCCCCCCCCCCc %s" % distro["timestamp"])
+        if treeinfo['timestamp']:
+            distro["timestamp"] = dateutils.format_iso8601_datetime(datetime.datetime.fromtimestamp(float(treeinfo['timestamp'])))
+        else:
+            distro["timestamp"] = dateutils.format_iso8601_datetime(datetime.datetime.now(dateutils.local_tz()))
         collection.save(distro, safe=True)
 
 def migrate():
