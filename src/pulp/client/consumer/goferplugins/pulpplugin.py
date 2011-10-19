@@ -30,6 +30,7 @@ from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.decorators import *
 from yum import YumBase
+from yum.Errors import GroupsError
 
 from logging import getLogger
 
@@ -243,39 +244,45 @@ class PackageGroups:
     """
 
     @remote(secret=getsecret)
-    def install(self, groups):
+    def install(self, names):
         """
         Install package groups by name.
-        @param groups: A list of package names.
-        @param groups: str
+        @param names: A list of package names.
+        @param names: str
         """
-        log.info('installing package groups: %s', groups)
+        installed = {}
         yb = YumBase()
         try:
-            for g in groups:
-                pkgs = yb.selectGroup(g)
-                log.info("Added '%s' group to transaction, packages: %s", g, pkgs)
-            yb.resolveDeps()
-            yb.processTransaction()
-            return groups
+            log.info('installing package groups: %s', names)
+            for name in names:
+                packages = yb.selectGroup(name)
+                if packages:
+                    installed[name] = [str(t.po) for t in packages]
+            if installed:
+                yb.resolveDeps()
+                yb.processTransaction()
+            return installed
         finally:
             ybcleanup(yb)
 
     @remote(secret=getsecret)
-    def uninstall(self, groups):
+    def uninstall(self, names):
         """
         Uninstall package groups by name.
-        @param groups: A list of package names.
-        @param groups: str
+        @param names: A list of package group names.
+        @param names: str
         """
-        log.info('installing package groups: %s', groups)
+        removed = {}
         yb = YumBase()
         try:
-            for g in groups:
-                pkgs = yb.groupRemove(g)
-                log.info("Added '%s' group to transaction, packages: %s", g, pkgs)
-            yb.resolveDeps()
-            yb.processTransaction()
-            return groups
+            log.info('uninstalling package groups: %s', names)
+            for name in names:
+                packages = yb.groupRemove(name)
+                if packages:
+                    removed[name] = [str(t.po) for t in packages]
+            if removed:
+                yb.resolveDeps()
+                yb.processTransaction()
+            return removed
         finally:
             ybcleanup(yb)

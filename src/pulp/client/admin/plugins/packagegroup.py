@@ -345,6 +345,58 @@ class Install(PackageGroupAction):
         return wait
 
 
+class Uninstall(Install):
+
+    name = "uninstall"
+    description = _('schedule a packagegroup uninstall')
+
+    def on_consumer(self, id, grpids):
+        when = parse_at_schedule(self.opts.when)
+        wait = self.getwait([id,])
+        task = self.consumer_api.uninstallpackagegroups(id, grpids, when=when)
+        print _('Created task id: %s') % task['id']
+        if when:
+            print _('Task is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
+        startwait()
+        while not task_end(task):
+            printwait()
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            print _('\n%s uninstalled on %s') % (task['result'], id)
+        else:
+            print("\nUninstall failed: %s" % task['exception'])
+
+    def on_group(self, id, grpids):
+        when = parse_at_schedule(self.opts.when)
+        group = self.consumer_group_api.consumergroup(id)
+        if not group:
+            system_exit(-1,
+                _('Invalid group: %s' % id))
+        wait = self.getwait(group['consumerids'])
+        job = self.consumer_group_api.uninstallpackagegroups(id, grpids, when=when)
+        print _('Created job id: %s') % job['id']
+        if when:
+            print _('Job is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
+        startwait()
+        while not job_end(job):
+            job = self.job_api.info(job['id'])
+            printwait()
+        print _('\nUninstall Summary:')
+        for t in job['tasks']:
+            state = t['state']
+            exception = t['exception']
+            id, packages = t['args']
+            if exception:
+                details = str(exception)
+            else:
+                details = 'groups uninstalled: %s' %  t['result']
+            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+
+
 # --- Package Group Category Operations ---
 class ListCategory(PackageGroupAction):
 
@@ -607,6 +659,7 @@ class PackageGroup(Command):
                 AddPackage,
                 DeletePackage,
                 Install,
+                Uninstall,
                 InstallCategory,
                 ListCategory,
                 InfoCategory,

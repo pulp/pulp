@@ -203,6 +203,61 @@ class Install(PackageAction):
         return wait
 
 
+
+class Uninstall(Install):
+
+    name = "uninstall"
+    description = _('schedule a package uninstall')
+
+    def on_consumer(self, id, pnames):
+        when = parse_at_schedule(self.opts.when)
+        wait = self.getwait([id,])
+        task = self.consumer_api.uninstallpackages(id, pnames, when=when)
+        print _('Created task id: %s') % task['id']
+        if when:
+            print _('Task is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
+        startwait()
+        while not task_end(task):
+            printwait()
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            print _('\n%s uninstalled on %s') % (task['result'], id)
+        else:
+            print _('\nUninstall failed: %s' % task['exception'])
+            system_exit(-1)
+
+    def on_group(self, id, pnames):
+        when = parse_at_schedule(self.opts.when)
+        group = self.consumer_group_api.consumergroup(id)
+        if not group:
+            system_exit(-1,
+                _('Invalid group: %s' % id))
+        wait = self.getwait(group['consumerids'])
+        job = self.consumer_group_api.uninstallpackages(id, pnames, when=when)
+        print _('Created job id: %s') % job['id']
+        if when:
+            print _('Job is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
+        startwait()
+        while not job_end(job):
+            job = self.job_api.info(job['id'])
+            printwait()
+        print _('\nUninstall Summary:')
+        for t in job['tasks']:
+            state = t['state']
+            exception = t['exception']
+            id, packages = t['args']
+            if exception:
+                details = str(exception)
+            else:
+                uninstalled = t['result']
+                details = 'packages uninstalled: %s' % uninstalled
+            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+
+
 class Search(PackageAction):
 
     name = "search"
@@ -324,6 +379,7 @@ class Package(Command):
 
     actions = [ Info,
                 Install,
+                Uninstall,
                 Search,
                 DependencyList ]
 
