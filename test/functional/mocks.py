@@ -57,11 +57,17 @@ class Packages(object):
     def install(self, packageinfo, reboot=False, yes=False):
         pass
 
+    def uninstall(self, names):
+        return names
+
 
 class PackageGroups(object):
 
     def install(self, packagegroupids):
         pass
+
+    def uninstall(self, names):
+        return names
 
 
 class cdsplugin(object):

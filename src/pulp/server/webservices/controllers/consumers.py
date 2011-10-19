@@ -310,7 +310,9 @@ class ConsumerActions(JSONController):
         'delete_key_value_pair',
         'update_key_value_pair',
         'installpackages',
+        'uninstallpackages',
         'installpackagegroups',
+        'uninstallpackagegroups',
         'installpackagegroupcategories',
         'installerrata',
         'history',
@@ -411,6 +413,25 @@ class ConsumerActions(JSONController):
         taskdict = self._task_to_dict(task)
         return self.accepted(taskdict)
 
+    def uninstallpackages(self, id):
+        """
+        Uninstall packages.
+        Body contains a list of package names.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        task = consumer_api.uninstallpackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        if scheduled_time is not None:
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
+            task.scheduler = AtScheduler(scheduled_time)
+        async.enqueue(task, unique=False)
+        taskdict = self._task_to_dict(task)
+        return self.accepted(taskdict)
+
     def installpackagegroups(self, id):
         """
         Install package groups.
@@ -421,6 +442,25 @@ class ConsumerActions(JSONController):
         data = self.params()
         ids = data.get('groupids', [])
         task = consumer_api.installpackagegroups(id, ids)
+        scheduled_time = data.get('scheduled_time', None)
+        if scheduled_time is not None:
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
+            task.scheduler = AtScheduler(scheduled_time)
+        async.enqueue(task, unique=False)
+        taskdict = self._task_to_dict(task)
+        return self.accepted(taskdict)
+
+    def uninstallpackagegroups(self, id):
+        """
+        Unnstall package groups.
+        Body contains a list of package ids.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        ids = data.get('groupids', [])
+        task = consumer_api.uninstallpackagegroups(id, ids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
