@@ -49,7 +49,7 @@ class Errata(JSONController):
         @return: a list of all errata
         """
         # implement filters
-        valid_filters = ('id', 'title', 'type', 'repo_defined', 'bzid', 'cve')
+        valid_filters = ('id', 'title', 'type', 'repo_defined', 'bzid', 'cve', 'severity')
 
         filters = self.filters(valid_filters)
 
@@ -59,7 +59,7 @@ class Errata(JSONController):
         repo_defined = filters.pop('repo_defined', None)
         bzid = filters.pop('bzid', None)
         cve = filters.pop('cve', None)
-
+        severity = filters.pop('severity', None)
         if types:
             types = types[0]
         if id:
@@ -72,8 +72,9 @@ class Errata(JSONController):
             bzid = bzid[0]
         if cve:
             cve = cve[0]
-
-        errata = api.errata(id=id, title=title, type=types, repo_defined=repo_defined, bzid=bzid, cve=cve)
+        if severity:
+            severity = severity[0]
+        errata = api.errata(id=id, title=title, type=types, repo_defined=repo_defined, bzid=bzid, cve=cve, severity=severity)
         return self.ok(errata)
 
     @error_handler
