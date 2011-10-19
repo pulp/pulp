@@ -548,7 +548,7 @@ The <tt>repo discovery</tt> command takes following arguments:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> Base URL to perform discovery (required). 
+</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> Base URL to perform discovery (required). Supports http, https and file based urls 
 </td></tr><tr><td> TYPE </td><td> <tt>-t</tt> or <tt>--type</tt> </td><td>  Content type to look for during discovery (required); supported types: 'yum' 
 </td></tr><tr><td> ASSUMEYES </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically create Pulp repositories for discovered repositories (optional). 
 </td></tr><tr><td> GROUPID   </td><td> <tt>-g</tt> or <tt>--groupid</tt>   </td><td> Group IDs (one or more) to associate the discovered repos (optional). 
@@ -748,7 +748,36 @@ The <tt>repo export</tt> command takes following arguments:
 <pre class="wiki"> $ pulp-admin repo export --id=&lt;repoid&gt; --target_dir /data/myrepo/ --generate-iso
 </pre><h4 id="Example:Exportarepositoryandgenerateisostoanexistingtargetdirectory">Example: Export a repository and generate isos to an existing target directory</h4>
 <pre class="wiki"> $ pulp-admin repo export --id=&lt;repoid&gt; --target_dir /data/myrepo/ --generate-iso --overwrite
-</pre></div>
+</pre><hr />
+<h2 id="distributions">Distributions</h2>
+<h3 id="AddDistribution">Add Distribution</h3>
+<p>
+Distributions can be associated with a repository using the <tt>pulp-admin</tt> script. When add_distribution is invoked, a distribution is selected from a source repository (if specified) or from the Pulp server in general and added to the destination repository. The distribution tree is symlinked to the repo location when add operation is performed.
+The <tt>repo add_distribution</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the target repository to add distributions. 
+</td></tr><tr><td> DistributionID </td><td> <tt>-d</tt> or <tt>--distributionid</tt> </td><td> distribution to associate to this repository. 
+</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified distribution to perform add (optional). 
+</td></tr></table>
+<h4 id="Example:Adddistributionfromsourcetotargetrepository">Example: Add distribution from source to target repository</h4>
+<pre class="wiki">$ pulp-admin repo add_distribution --id testrepo --source mydistrepo -d ks-fedora-14-i386
+</pre><h4 id="Example:Addadistributiontotargetrepository">Example: Add a distribution to target repository</h4>
+<pre class="wiki">$ pulp-admin repo add_distribution --id testrepo -d ks-fedora-14-i386
+</pre><h3 id="RemoveDistribution">Remove Distribution</h3>
+<p>
+The <tt>repo remove_distribution</tt> command is used to remove distributions from a repository.  The distribution tree files are unlinked from repo location. The distribution is not removed from pulp server if it has any references. It takes the following arguments: 
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the target repository to remove distributions. 
+</td></tr><tr><td> DistributionID </td><td> <tt>-d</tt> or <tt>--distributionid</tt> </td><td> distribution to remove from this repository. 
+</td></tr></table>
+<h4 id="Example:removedistributionfromtargetrepository">Example: remove distribution from target repository</h4>
+<pre class="wiki">$ pulp-admin repo remove_distribution --id testrepo -d ks-fedora-14-i386
+</pre><hr />
+</div>
    </div>
    
   

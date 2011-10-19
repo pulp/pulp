@@ -392,7 +392,7 @@ class RepoDiscovery(JSONController):
         '''
         [[wiki]]
         title: Repository Discovery
-        description: Discover repository urls with metadata and create candidate repos.
+        description: Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls
         method: POST
         path: /services/discovery/repo/
         permission: EXECUTE

@@ -89,7 +89,9 @@
 <a href="UGREST-Repositories.html#RepositoryPackageGroupCategories">Repository Package Group Categories</a></li><li class="active">
 <a href="UGREST-Repositories.html#RepositoryPackageGroups">Repository Package Groups</a></li><li class="active">
 <a href="UGREST-Repositories.html#RepositoryPackages">Repository Packages</a></li><li class="active">
-<a href="UGREST-Repositories.html#RepositorySynchronizationSchedules">Repository Synchronization Schedules</a></li></ol></li></ol></div>
+<a href="UGREST-Repositories.html#RepositorySynchronizationSchedules">Repository Synchronization Schedules</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddDistribution">Add Distribution</a></li><li class="active">
+<a href="UGREST-Repositories.html#RemoveDistribution">Remove Distribution</a></li></ol></li></ol></div>
 
 </p>
 <h1 id="top">Repositories RESTful Interface</h1>
@@ -1388,6 +1390,50 @@
 <strong>failure response</strong>: None <br />
 <br />
 <strong>return</strong>: list of object that are mappings of repository id to synchronization schedule <br />
+<br />
+</p>
+<h2 id="AddDistribution">Add Distribution</h2>
+<p>
+<i>Add distributions to Repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_distribution/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>distributionid</strong> &lt;str&gt; <i>distribution id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RemoveDistribution">Remove Distribution</h2>
+<p>
+<i>Remove distribution from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/remove_distribution/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>distributionid</strong> &lt;str&gt; <i>distribution id</i>
+</li></ul><p>
 <br />
 </p>
 </div>

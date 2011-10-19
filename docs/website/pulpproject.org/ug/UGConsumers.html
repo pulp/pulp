@@ -47,7 +47,7 @@ The <tt>pulp-admin</tt> script provides a number of features to remotely adminis
 <p>
 The <tt>pulp-admin</tt> script can be used to unregister consumers from the Pulp server:
 </p>
-<pre class="wiki">$ pulp-admin consumer delete --id test-consumer
+<pre class="wiki">$ pulp-admin consumer unregister --id test-consumer
 </pre><h3 id="Display">Display</h3>
 <p>
 The list of consumers registered to the Pulp server can be retrieved with the <tt>consumer list</tt> command:
@@ -137,6 +137,25 @@ The <tt>package install</tt> command takes the following arguments:
 For example:
 </p>
 <pre class="wiki">$ pulp-admin package install -n emacs --consumerid test-consumer
+</pre><h3 id="Removal1">Removal</h3>
+<p>
+The <tt>package uninstall</tt> command provides a way to remotely trigger package removal on a consumer or a consumer group.
+</p>
+<p>
+The <tt>package uninstall</tt> command takes the following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Names </td><td> <tt>-n</tt> or <tt>--name</tt> </td><td> Name of the package to be uninstalled. Multiple packages can be specified with multiple uses of this flag. 
+</td></tr><tr><td> Future Install Time </td><td> <tt>--when</tt> </td><td> If specified, the removal will take place at a point in the future. Format: yyyy-mm-dd hh:mm 
+</td></tr><tr><td> No Wait </td><td> --nowait </td><td> Do not wait (block) until operation has completed. 
+</td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to uninstall the package. 
+</td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the package will be uninstalled. 
+</td></tr></table>
+<p>
+For example:
+</p>
+<pre class="wiki">$ pulp-admin package uninstall -n emacs --consumerid test-consumer
 </pre><hr />
 <h2 id="install1">PackageGroup Installation</h2>
 <h3 id="Installation1">Installation</h3>
@@ -158,6 +177,25 @@ The <tt>packagegroup install</tt> command takes the following arguments:
 For example:
 </p>
 <pre class="wiki">$ pulp-admin packagegroup install --id test_group_id --consumerid test-consumer
+</pre><h3 id="Removal2">Removal</h3>
+<p>
+The <tt>packagegroup uninstall</tt> command provides a way to remotely trigger packagegroup removal on a consumer or a consumer group.
+</p>
+<p>
+The <tt>packagegroup uninstall</tt> command takes the following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> ID of the packagegroup to be uninstalled.  
+</td></tr><tr><td> Future Install Time </td><td> <tt>--when</tt> </td><td> If specified, the removal will take place at a point in the future. Format: yyyy-mm-dd hh:mm 
+</td></tr><tr><td> No Wait </td><td> --nowait </td><td> Do not wait (block) until operation has completed. 
+</td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to uninstall the package group. 
+</td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the package group will be uninstalled. 
+</td></tr></table>
+<p>
+For example:
+</p>
+<pre class="wiki">$ pulp-admin packagegroup uninstall --id test_group_id --consumerid test-consumer
 </pre><hr />
 <h2 id="keyvalue">Key-Value Pairs</h2>
 <p>
@@ -220,7 +258,7 @@ For example:
 </p>
 <pre class="wiki">$ pulp-admin consumergroup create --id test-group --description "Test Consumer Group"
 Successfully created Consumer group [ test-group ] with description [ Test Consumer Group ]
-</pre><h3 id="Removal1">Removal</h3>
+</pre><h3 id="Removal3">Removal</h3>
 <p>
 Consumer groups are removed with the <tt>consumergroup delete</tt> command, specifying the ID of the group as an argument. This process does not undo any operations that were done to consumers in the group. Consumers do not need to be removed from a group prior to deleting it.
 </p>
