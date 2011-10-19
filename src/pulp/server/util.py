@@ -42,10 +42,11 @@ log = logging.getLogger(__name__)
 # We are seeing segmentation faults when multiple threads
 # access yum/urlgrabber functionality concurrently.
 # This lock is intended to serialize the requests
-# We want to synchronize threads from grinder AND pulp
-# so that only one thread at a time is using yum's urlgrabber fetching
+# We want to synchronize threads so that only one thread at a time is using yum's urlgrabber fetching
 # See bz:695743 - Multiple concurrent calls to util.get_repo_packages() results in Segmentation fault
-__yum_lock = RepoFetch.GRINDER_YUM_LOCK
+# Grinder is using yum functionality through ActiveObject in another process
+#  this means we are only concerned with Pulp's usage of yum for synchronizing.
+__yum_lock = threading.Lock()
 
 # In memory lookup table for createrepo processes
 # Responsible for 2 tasks.  1) Restrict only one createrepo per repo_dir, 2) Allow an async cancel of running createrepo
