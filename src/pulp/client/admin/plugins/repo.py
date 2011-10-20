@@ -673,17 +673,6 @@ class Update(AdminRepoAction):
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
 
-        schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
-        schedule.add_option('--interval', dest='schedule_interval', default=None,
-                            help=_('length of time between each run in iso8601 duration format'))
-        schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
-        schedule.add_option('--runs', dest='schedule_runs', default=None,
-                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        schedule.add_option('--delete-schedule', dest='delete_schedule',
-                            action='store_true', default=False, help=_('delete existing schedule'))
-        self.parser.add_option_group(schedule)
-
     def run(self):
         id = self.get_required_option('id')
         delta = {}
@@ -725,26 +714,6 @@ class Update(AdminRepoAction):
                 consumer_cert_bundle = consumer_cert_bundle or {}
                 consumer_cert_bundle[k[9:]] = v
                 continue
-            if k in ('schedule_interval', 'schedule_start', 'schedule_runs'):
-                k = 'sync_schedule'
-                if k in  delta:
-                    continue
-                repo = self.repository_api.repository(id)
-                interval = start = runs = None
-                if repo[k] is not None:
-                    interval, start, runs = parse_iso8601_interval(repo[k])
-                    if not isinstance(interval, timedelta) and start is None:
-                        utils.system_exit(os.EX_USAGE, 'If interval has months or years, a start time must be specified')
-                    interval = interval and format_iso8601_duration(interval)
-                    start = start and format_iso8601_datetime(start)
-                    runs = runs and str(runs)
-                interval = self.opts.schedule_interval or interval
-                start = self.opts.schedule_start or start
-                runs = self.opts.schedule_runs or runs
-                v = parse_interval_schedule(interval, start, runs)
-            if k == 'delete_schedule':
-                k = 'sync_schedule'
-                v = None
             delta[k] = v
 
         # Certificate argument sanity check
@@ -770,6 +739,57 @@ class Update(AdminRepoAction):
             delta['consumer_cert_data'] = consumer_cert_bundle
         self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
+
+
+class Schedule(RepoAction):
+
+    name = 'schedule'
+    description = _('manage automatically scheduled syncs')
+
+    def setup_parser(self):
+        super(Schedule, self).setup_parser()
+        self.parser.add_option('--show', dest='show', action='store_true', default=False,
+                               help=_('show existing schedule'))
+        self.parser.add_option('--set-interval', dest='interval', default=None,
+                               help=_('length of time between each run in iso8601 duration format'))
+        self.parser.add_option('--set-start', dest='start', default=None,
+                               help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+        self.parser.add_option('--set-runs', dest='runs', default=None,
+                              help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        self.parser.add_option('--delete', dest='delete', action='store_true', default=False,
+                               help=_('delete existing schedule'))
+
+    def run(self):
+        repo_id = self.get_required_option('id')
+        if self.opts.show:
+            obj = self.repository_api.get_sync_schedule(repo_id)
+            print_header('Sync Schedule')
+            # TODO put together nice output formatting here
+            print obj['type'],
+            print ':',
+            print obj['schedule']
+        elif self.opts.delete:
+            self.repository_api.delete_sync_schedule(repo_id)
+            print _('Sync schedule for repo [ %(r)s ] removed') % {'r': repo_id}
+        elif self.opts.interval or self.opts.start or self.opts.runs:
+            obj = self.repository_api.get_sync_schedule(repo_id)
+            schedule = obj['schedule']
+            interval = start = runs = None
+            if schedule is not None:
+                interval, start, runs = parse_iso8601_interval(schedules)
+                interval = interval and format_iso8601_duration(interval)
+                start = start and format_iso8601_datetime(start)
+                runs = runs and str(runs) # this will skip '0', but that's wrong anyway...
+            new_interval = self.opts.interval or interval
+            new_start = self.opts.start or start
+            new_runs = self.opts.runs or runs
+            new_shedule = parse_interval_schedule(new_interval, new_start, new_runs)
+            if not isinstance(new_interval, timedelta) and new_start is None:
+                msg =_('If interval has months or years, a start date must be specified')
+                utils.system_exit(os.EX_USAGE,  msg)
+            self.repository_api.change_sync_schedule(new_shedule)
+        else:
+            utils.system_exit(os.EX_NOINPUT, _('No options specified, see --help'))
 
 
 class Sync(RepoProgressAction):
