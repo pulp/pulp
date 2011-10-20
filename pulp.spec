@@ -306,6 +306,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Oct 20 2011 James Slagle <jslagle@redhat.com> 0.0.214-4
+- Remove setgid root and sticky bit from our init scripts (jslagle@redhat.com)
+
 * Mon Oct 17 2011 James Slagle <jslagle@redhat.com> 0.0.214-3
 - 745945 Switch to using openssl to verify a certificate against a CA so that
   we can verify against CA chains. (jslagle@redhat.com)
