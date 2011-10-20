@@ -218,7 +218,6 @@ class Repositories(JSONController):
          * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
-         * sync_schedule?, str, iso8601 recurring interval specifying sync schedule
          * feed_cert_data?, dict, certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * consumer_cert_data?, str, certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * relative_path?, str, repository on disk path
@@ -227,7 +226,7 @@ class Repositories(JSONController):
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * notes?, dict, additional information in the form of key-value pairs
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
-         * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file] 
+         * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
         """
         repo_data = self.params()
 
@@ -240,7 +239,6 @@ class Repositories(JSONController):
                           repo_data['arch'],
                           feed=repo_data.get('feed', None),
                           symlinks=repo_data.get('use_symlinks', False),
-                          sync_schedule=repo_data.get('sync_schedule', None),
                           feed_cert_data=repo_data.get('feed_cert_data', None),
                           consumer_cert_data=repo_data.get('consumer_cert_data', None),
                           relative_path=repo_data.get('relative_path', None),
@@ -355,6 +353,50 @@ class Repository(JSONController):
         api.delete(id=id)
         return self.ok({})
 
+
+class RepositorySchedules(JSONController):
+
+    schedule_types = ('sync',)
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id, schedule_type):
+        if schedule_type not in self.schedule_types:
+            return self.not_found('No schedule type: %s' % schedule_type)
+        repo = api.repository(repo_id, ['id', 'sync_schedule'])
+        if repo is None:
+            return self.not_found('No repository %s' % repo_id)
+        data = {
+            'id': repo_id,
+            'href': serialization.repo.v1_href(repo),
+            'sync_schedule': repo['sync_schedule']
+        }
+        return self.ok(data)
+
+    @error_handler
+    @auth_required(DELETE)
+    def DELETE(self, repo_id, schedule_type):
+        if schedule_type not in self.schedule_types:
+            return self.not_found('No schedule type: %s' % schedule_type)
+        repo = api.repository(repo_id, ['id', 'sync_schedule'])
+        if repo is None:
+            return self.not_found('No repository %s' % repo_id)
+        scheduled_sync.delete_repo_schedule(repo)
+        return self.ok()
+
+    @error_handler
+    @auth_required(CREATE)
+    def POST(self, repo_id, schedule_type):
+        if schedule_type not in self.schedule_types:
+            return self.not_found('No schedule type: %s' % schedule_type)
+        repo = api.repository(repo_id, ['id', 'sync_schedule'])
+        if repo is None:
+            return self.not_found('No repository %s' % repo_id)
+        new_schedule = self.params()
+        scheduled_sync.update_repo_schedule(repo, new_schedule)
+        return self.ok()
+
+    PUT = POST
 
 class RepositoryDeferredFields(JSONController):
 
@@ -1548,6 +1590,9 @@ urls = (
     '/$', 'Repositories',
     '/schedules/', 'Schedules',
     '/([^/]+)/$', 'Repository',
+
+    '/([^/]+)/schedules/(%s)/' % '|'.join(RepositorySchedules.schedule_types),
+    RepositorySchedules,
 
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),
     'RepositoryDeferredFields',
