@@ -25,7 +25,7 @@ class RepositoryAPI(PulpAPI):
     Connection class to access repo specific calls
     """
     def create(self, id, name, arch, feed=None, symlinks=False,
-               sync_schedule=None, feed_cert_data=None, consumer_cert_data=None,
+               feed_cert_data=None, consumer_cert_data=None,
                relative_path=None, groupid=None, gpgkeys=None, checksum_type="sha256", notes={},
                preserve_metadata=False, content_types="yum"):
         path = "/repositories/"
@@ -34,7 +34,6 @@ class RepositoryAPI(PulpAPI):
                     "arch": arch,
                     "feed": feed,
                     "use_symlinks": symlinks,
-                    "sync_schedule": sync_schedule,
                     "feed_cert_data": feed_cert_data,
                     "consumer_cert_data": consumer_cert_data,
                     "relative_path": relative_path,

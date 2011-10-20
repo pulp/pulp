@@ -443,14 +443,6 @@ class Create(AdminRepoAction):
                                help=_("Preserves the original metadata; only works with feed repos"))
         self.parser.add_option('--content_type', dest='content_type', default="yum",
                             help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
-        schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
-        schedule.add_option('--interval', dest='schedule_interval', default=None,
-                            help=_('length of time between each run in iso8601 duration format'))
-        schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format'))
-        schedule.add_option('--runs', dest='schedule_runs', default=None,
-                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        self.parser.add_option_group(schedule)
 
     def run(self):
         id = self.get_required_option('id')
@@ -463,9 +455,6 @@ class Create(AdminRepoAction):
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
         symlinks = self.opts.symlinks or False
-        schedule = parse_interval_schedule(self.opts.schedule_interval,
-                                           self.opts.schedule_start,
-                                           self.opts.schedule_runs)
         relative_path = self.opts.relativepath
         if self.opts.notes:
             try:
@@ -518,7 +507,6 @@ class Create(AdminRepoAction):
             keylist = reader.expand(keylist)
 
         repo = self.repository_api.create(id, name, arch, feed, symlinks,
-                                          sync_schedule=schedule,
                                           feed_cert_data=feed_cert_data,
                                           consumer_cert_data=consumer_cert_data,
                                           relative_path=relative_path,
