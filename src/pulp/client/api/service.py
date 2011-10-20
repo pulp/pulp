@@ -113,3 +113,19 @@ class ServiceAPI(PulpAPI):
                   'cert_data' : cert_data}
         path = '/services/discovery/repo/'
         return self.server.POST(path, params)[1]
+
+    def repo_export(self, repoid, target_location, generate_isos=False, overwrite=False):
+        path = "/services/export/repository/"
+        params = {"repoid" : repoid,
+                  "target_location" : target_location,
+                  "generate_isos" : generate_isos,
+                  "overwrite" : overwrite, }
+        return self.server.POST(path, params)[1]
+
+    def repo_group_export(self, groupid, target_location, generate_isos=False, overwrite=False):
+        path = "/services/export/repository_group/"
+        params = {"groupid" : groupid,
+                  "target_location" : target_location,
+                  "generate_isos" : generate_isos,
+                  "overwrite" : overwrite, }
+        return self.server.POST(path, params)[1]

@@ -18,6 +18,7 @@ import web
 import urllib
 
 from pulp.server import async
+from pulp.server.api import exporter
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.package import PackageApi
@@ -31,6 +32,8 @@ from pulp.server.agent import Agent
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
+from pulp.server.exceptions import PulpException
+from pulp.server.exporter.base import TargetExistsException, ExportException
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
@@ -425,6 +428,94 @@ class RepoDiscovery(JSONController):
         task_info = self._task_to_dict(task)
         return self.accepted(task_info)
 
+class RepositoryExport(JSONController):
+    @error_handler
+    @auth_required(EXECUTE)
+    def POST(self):
+        """
+        [[wiki]]
+        title: Repository Content Export
+        description: Export the repository's content into target directory from its source.
+        method: POST
+        path: /services/export/repository/
+        permission: EXECUTE
+        success response: 202 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+                          406 Not Acceptable if the repository does not have a source
+                          409 Conflict if a export is already in progress for the repository
+        return: a Task object
+        parameters:
+         * target_location, str, target location on the server filesystem where the content needs to be exported
+         * generate_isos?, boolean, wrap the exported content into iso image files.
+         * overwrite?, boolean, overwrite the content in target location if not empty
+        """
+        export_params = self.params()
+        repoid = export_params.get('repoid', None)
+        if repoid is None:
+           return self.not_found('A repository with the id, %s, does not exist' % repoid)
+
+        target_location = export_params.get('target_location', None)
+        generate_isos = export_params.get('generate_isos', False)
+        overwrite = export_params.get('overwrite', False)
+        # Check for valid target_location values
+        try:
+            exporter.validate_target_path(target_dir=target_location, overwrite=overwrite)
+        except TargetExistsException:
+            return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
+        except ExportException, ee:
+            raise PulpException(str(ee))
+        task = exporter.export(repoid, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite)
+        if not task:
+            return self.conflict('Export already in process for repo [%s]' % repoid)
+        task_info = self._task_to_dict(task)
+        return self.accepted(task_info)
+
+class RepoGroupExport(JSONController):
+    @error_handler
+    @auth_required(EXECUTE)
+    def POST(self):
+        '''
+        [[wiki]]
+        title: Repository group export
+        description: schedule an export on a group of repositories
+        method: POST
+        path: /services/export/group/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 206 PARTIAL CONTENT
+        return: list of task ids
+        '''
+        export_params = self.params()
+        groupid = export_params.get('groupid', None)
+        if not groupid:
+            return self.bad_request('Invalid content groupid [%s]' % groupid)
+        target_location = export_params.get('target_location', None)
+        generate_isos = export_params.get('generate_isos', False)
+        overwrite = export_params.get('overwrite', False)
+        # Check for valid target_location values
+        try:
+            exporter.validate_target_path(target_dir=target_location, overwrite=overwrite)
+        except TargetExistsException:
+            return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
+        except ExportException, ee:
+            raise PulpException(str(ee))
+
+        repos = rapi.repositories({'groupid': groupid}, fields=['id'])
+        log.error("Repo ids in group %s" % repos)
+        if not len(repos):
+            return self.bad_request("No repoisotries associated to the group id [%s]; nothing to export." % groupid)
+        group_task_list = {}
+        for repo in repos:
+            repoid = repo['id']
+            repo_target_location = "%s/%s" % (target_location, repoid)
+            task = exporter.export(repoid, target_directory=repo_target_location, generate_isos=generate_isos, overwrite=overwrite)
+            if not task:
+                group_task_list[repoid]  = self.conflict('Export already in process for repo [%s]' % id)
+            task_info = self._task_to_dict(task)
+            group_task_list[repoid]  = task_info
+        return self.accepted(group_task_list)
+        
+
 
 # web.py application ----------------------------------------------------------
 
@@ -445,6 +536,8 @@ URLS = (
     '/enable_global_repo_auth/$', 'EnableGlobalRepoAuth',
     '/disable_global_repo_auth/$', 'DisableGlobalRepoAuth',
     '/discovery/repo/$', 'RepoDiscovery',
+    '/export/repository/$', 'RepositoryExport',
+    '/export/repository_group/$', 'RepoGroupExport',
 )
 
 application = web.application(URLS, globals())

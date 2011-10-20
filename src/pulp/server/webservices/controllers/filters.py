@@ -81,14 +81,14 @@ class Filter(JSONController):
         @return: filter details
         """
         return self.ok(api.filter(id))
-
+    
 
 class FilterActions(JSONController):
 
     exposed_actions = (
         'add_packages',
         'remove_packages',
-        'delete_filter'
+        'delete_filter',
     )
 
     def add_packages(self, id):
@@ -109,6 +109,8 @@ class FilterActions(JSONController):
         api.remove_packages(id, data['packages'])
         return self.ok(True)
 
+    @error_handler
+    @auth_required(DELETE)
     def delete_filter(self, id):
         """
         @param id: filter id

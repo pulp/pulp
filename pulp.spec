@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.239
+Version:        0.0.240
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -404,7 +404,7 @@ fi
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
 %attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
+%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 %{_bindir}/pulp-migrate
@@ -479,7 +479,7 @@ fi
 %config %{_sysconfdir}/pulp/cds.conf
 %config %{_sysconfdir}/pulp/repo_auth.conf
 %attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
+%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
@@ -494,6 +494,43 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Oct 19 2011 Jeff Ortel <jortel@redhat.com> 0.0.240-1
+- Adding new web service calls in services handler to export repo and repo
+  groups (pkilambi@redhat.com)
+- Add: package & group uninstall CLI; fix associated bugs in flow.
+  (jortel@redhat.com)
+- Add package & group uninstall in WS layer. (jortel@redhat.com)
+- Add package & group uninstall in API (manager) layer. (jortel@redhat.com)
+- Update agent mocks w/ package & group uninstall(). (jortel@redhat.com)
+- adding more filters to errata lookup (pkilambi@redhat.com)
+- Adding a warning message to pulp-migrate to validate repo relativepaths and
+  warn user to remove repos (pkilambi@redhat.com)
+- Update the version of mod_wsgi that pulp requires (jslagle@redhat.com)
+- Add patch for mod_wsgi to stop KeyError exception on python interpreter
+  shutdown in apache (jslagle@redhat.com)
+- fixing help on distro add/remove (pkilambi@redhat.com)
+- Add package, package group uninstall in agent. (jortel@redhat.com)
+- fixing auto populated timestamp to match iso8601 format (pkilambi@redhat.com)
+-  Distribution enhancements (contd): * adding a timestamp field to
+  distribution model * logic to parse timestamp from treeinfo if none use
+  current time * change relativepath to be path of the distro * changing the
+  distro url to use repo relativepath and show multiple urls on clients * unit
+  test updates (pkilambi@redhat.com)
+- Added automatic permissions for tasks (jconnor@redhat.com)
+- changed grant/revoke funtors so that they are now picklable
+  (jconnor@redhat.com)
+- changed dispatcher loop so that dispatcher does not exit (jconnor@redhat.com)
+- 746726 - fix the errata imports during syncs to account for severity and
+  other fields (pkilambi@redhat.com)
+- 669422 - Fixed repo sync not validating timeout input after recent isodate
+  changes. Also added validation for repo clone timeout and fixed a typo
+  (skarmark@redhat.com)
+- Distribution Enhancements: * Store distributions in a central location and
+  associate to repos(requires new grinder) * updating yum syncs to use new
+  storage path and pass it to grinder * rewriting local syncs to copy ks files
+  to new location and link to repo paths * adding new selective sync calls to
+  add and remove distributions * webservices and  cli changes and unittest
+  updates (pkilambi@redhat.com)
 * Fri Oct 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.239-1
 - added granting and revoking of tasks in async.enque do not circumvent
   async.enqueue or async.run_async if you want the permissions to be

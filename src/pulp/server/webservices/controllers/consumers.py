@@ -188,6 +188,9 @@ class Consumer(JSONController):
         if user is not None:
             revoke_all_permissions_from_user(user['login'])
             user_api.delete(login=id)
+        # Unbind the consumer from all repos
+        for repo_id in consumer["repoids"]:
+            consumer_api.unbind(id, repo_id)
         consumer_api.delete(id=id)
         return self.ok(True)
 

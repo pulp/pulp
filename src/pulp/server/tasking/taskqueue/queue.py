@@ -210,7 +210,7 @@ class TaskQueue(object):
             try:
                 hook(task)
             except Exception, e:
-                msg = _('Task %(t)\nException in task %(k) hook\n%(tb)')
+                msg = _('Task %(t)s\nException in task %(k)s hook\n%(tb)s')
                 _log.critical(msg % {'k': key, 't': str(task),
                                      'tb': ''.join(traceback.format_exception(*sys.exc_info()))})
 

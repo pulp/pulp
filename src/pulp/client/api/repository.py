@@ -389,3 +389,17 @@ class RepositoryAPI(PulpAPI):
         delinfo = {'repoid': repoid, 'distributionid': distributionid}
         path = "/repositories/%s/remove_distribution/" % repoid
         return self.server.POST(path, delinfo)[1]
+
+    def add_note(self, id, key, value):
+        key_value_dict = {'key' : key, 'value' : value}
+        path = "/repositories/%s/notes/" % id
+        return self.server.POST(path, key_value_dict)[1]
+
+    def delete_note(self, id, key):
+        path = "/repositories/%s/notes/%s/" % (id, key)
+        return self.server.DELETE(path)[1]
+
+    def update_note(self, id, key, value):
+        path = "/repositories/%s/notes/%s/" % (id, key)
+        return self.server.PUT(path, value)[1]
+
