@@ -487,7 +487,14 @@ class SchedulesResource(JSONController):
             return self.not_found('No repository %s' % repo_id)
         new_schedule = self.params()
         scheduled_sync.update_repo_schedule(repo, new_schedule)
-        return self.ok()
+        updated_repo = api.repository(repo_id, ['id', 'sync_schedule'])
+        data = {
+            'id': repo_id,
+            'href': serialization.repo.v1_href(repo),
+            'schedule': updated_repo['sync_schedule'],
+            'options': {},
+        }
+        return self.ok(data)
 
     PUT = POST
 
