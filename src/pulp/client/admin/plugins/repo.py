@@ -764,7 +764,7 @@ class Schedule(RepoAction):
             schedule = obj['schedule']
             interval = start = runs = None
             if schedule is not None:
-                interval, start, runs = parse_iso8601_interval(schedules)
+                interval, start, runs = parse_iso8601_interval(schedule)
                 interval = interval and format_iso8601_duration(interval)
                 start = start and format_iso8601_datetime(start)
                 runs = runs and str(runs) # this will skip '0', but that's wrong anyway...
