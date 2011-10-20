@@ -237,8 +237,8 @@ class RepoApi(BaseApi):
         # operations for publishing a repository
         r['relative_path'] = r['relative_path'].strip('/')
         r['repomd_xml_path'] = \
-                os.path.join(pulp.server.util.top_repos_location(),
-                        r['relative_path'], 'repodata/repomd.xml')
+            os.path.join(pulp.server.util.top_repos_location(),
+                         r['relative_path'], 'repodata/repomd.xml')
         r['checksum_type'] = checksum_type
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
@@ -311,7 +311,7 @@ class RepoApi(BaseApi):
         if not os.path.isdir(self.published_path):
             os.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
-                repo["relative_path"])
+                                   repo["relative_path"])
         if not os.path.isdir(source_path):
             os.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
@@ -348,7 +348,7 @@ class RepoApi(BaseApi):
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
-                                     cert=cert_files['cert'], key=cert_files['key'])
+                             cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
         gkeys = self._get_gpg_keys(serv, gpg_keys)
@@ -389,7 +389,7 @@ class RepoApi(BaseApi):
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
-                                     cert=cert_files['cert'], key=cert_files['key'])
+                             cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
         gkeys = self._get_gpg_keys(serv, gpg_keys)
@@ -536,7 +536,7 @@ class RepoApi(BaseApi):
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
 
-                
+
         #remove files:
         for fileid in repo['files']:
             repos = self.find_repos_by_files(fileid)
@@ -603,8 +603,8 @@ class RepoApi(BaseApi):
         """
         delta.pop('id', None)
         repo = self._get_existing_repo(id)
-	prevpath = ''
-	if repo['source']:
+        prevpath = ''
+        if repo['source']:
             prevpath = urlparse(repo['source']['url'])[2].strip('/')
         hascontent = self._hascontent(repo)
         repo_cert_utils = RepoCertUtils(config.config)
@@ -671,9 +671,9 @@ class RepoApi(BaseApi):
                     repo['source'] = ds
                 continue
             # sync_schedule changed
-	    # NOTE the following calls have the side effects of updating the
-	    # repo's schedule in the database, this causes an update to be
-	    # non-atomic
+            # NOTE the following calls have the side effects of updating the
+            # repo's schedule in the database, this causes an update to be
+            # non-atomic
             if key == 'sync_schedule':
                 if value:
                     update_repo_schedule(repo, value)
@@ -681,7 +681,7 @@ class RepoApi(BaseApi):
                     delete_repo_schedule(repo)
                 continue
             raise Exception, \
-                'update keyword "%s", not-supported' % key
+                  'update keyword "%s", not-supported' % key
 
         # If the consumer certs were updated, update the protected repo listings.
         # This has to be done down here in case the relative path has changed as well.
@@ -835,7 +835,7 @@ class RepoApi(BaseApi):
             log.info(msg)
             raise PulpException(msg)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
         packages = {}
@@ -859,12 +859,12 @@ class RepoApi(BaseApi):
             pkg_tup = get_pkg_tup(pkg)
             if nevras.has_key(pkg_tup):
                 log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
-                        % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
+                         % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
-                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
+                    % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
                 log.warn(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
@@ -903,7 +903,7 @@ class RepoApi(BaseApi):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate filename in repo [%s]" % (pkg["filename"], repo["id"]))
                 continue
             error_message = "Package with same filename [%s] already exists in repo [%s]" \
-                    % (pkg["filename"], repo['id'])
+                % (pkg["filename"], repo['id'])
             log.warn(error_message)
             errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
@@ -915,10 +915,10 @@ class RepoApi(BaseApi):
             self._add_package(repo, pkg)
             log.debug("Added: %s to repo: %s, progress %s/%s" % (pkg['filename'], repo['id'], index, len(packages)))
             shared_pkg = pulp.server.util.get_shared_package_path(
-                    pkg['name'], pkg['version'], pkg['release'],
-                    pkg['arch'], pkg["filename"], pkg['checksum'])
+                pkg['name'], pkg['version'], pkg['release'],
+                pkg['arch'], pkg["filename"], pkg['checksum'])
             pkg_repo_path = pulp.server.util.get_repo_package_path(
-                    repo['relative_path'], pkg["filename"])
+                repo['relative_path'], pkg["filename"])
             if not os.path.exists(pkg_repo_path):
                 try:
                     pulp.server.util.create_rel_symlink(shared_pkg, pkg_repo_path)
@@ -981,7 +981,7 @@ class RepoApi(BaseApi):
                 os.remove(pkg_repo_path)
         self.collection.save(repo, safe=True)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
         return errors
@@ -1260,7 +1260,7 @@ class RepoApi(BaseApi):
 
     @audit()
     def add_packages_to_group(self, repoid, groupid, pkg_names=(),
-            gtype="default", requires=None):
+                              gtype="default", requires=None):
         """
         @param repoid: repository id
         @param groupid: group id
@@ -1384,12 +1384,12 @@ class RepoApi(BaseApi):
         if categoryid in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][categoryid]["immutable"]:
                 raise PulpException(
-                        "Changes to immutable categories are not supported: %s" \
-                                % (categoryid))
+                    "Changes to immutable categories are not supported: %s" \
+                    % (categoryid))
             if groupid not in repo['packagegroupcategories'][categoryid]['packagegroupids']:
                 raise PulpException(
-                        "Group id [%s] is not in category [%s]" % \
-                                (groupid, categoryid))
+                    "Group id [%s] is not in category [%s]" % \
+                    (groupid, categoryid))
             repo['packagegroupcategories'][categoryid]['packagegroupids'].remove(groupid)
         self.collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
@@ -1400,8 +1400,8 @@ class RepoApi(BaseApi):
         if categoryid in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][categoryid]["immutable"]:
                 raise PulpException(
-                        "Changes to immutable categories are not supported: %s" \
-                                % (categoryid))
+                    "Changes to immutable categories are not supported: %s" \
+                    % (categoryid))
         if groupid not in repo['packagegroupcategories'][categoryid]["packagegroupids"]:
             repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
             self.collection.save(repo, safe=True)
@@ -1460,10 +1460,10 @@ class RepoApi(BaseApi):
             # a group metadata file, no point in continuing.
             if not os.path.exists(repo["repomd_xml_path"]):
                 log.warn("Skipping update of groups metadata since missing repomd file: '%s'" %
-                          (repo["repomd_xml_path"]))
+                         (repo["repomd_xml_path"]))
                 return False
             xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
-                repo['packagegroups'])
+                                            repo['packagegroups'])
             if repo["group_xml_path"] == "":
                 repo["group_xml_path"] = os.path.dirname(repo["repomd_xml_path"])
                 repo["group_xml_path"] = os.path.join(os.path.dirname(repo["repomd_xml_path"]),
@@ -1477,7 +1477,7 @@ class RepoApi(BaseApi):
                 gz.write(xml.encode("utf-8"))
                 gz.close()
             return comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
-                repo["group_xml_path"], repo["group_gz_xml_path"])
+                                                     repo["group_xml_path"], repo["group_gz_xml_path"])
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
             log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -1634,7 +1634,7 @@ class RepoApi(BaseApi):
             if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
                 repo_treefile_path = os.path.join(repo_path, os.path.basename(imfile))
                 if os.path.islink(repo_treefile_path):
-                   os.unlink(repo_treefile_path)
+                    os.unlink(repo_treefile_path)
             else:
                 repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
                 if os.path.islink(repo_dist_path):
@@ -1653,7 +1653,7 @@ class RepoApi(BaseApi):
         if not os.path.isdir(self.distro_path):
             os.makedirs(self.distro_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
-                repo["relative_path"])
+                                   repo["relative_path"])
         if not os.path.isdir(source_path):
             os.makedirs(source_path)
         link_path = os.path.join(self.distro_path, repo["relative_path"])
@@ -1717,7 +1717,7 @@ class RepoApi(BaseApi):
                 repo['files'].append(fid)
                 changed = True
                 shared_file = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
-                                            fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
+                                                  fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
                                                repo['relative_path'], fileobj["filename"])
                 if not os.path.exists(file_repo_path):
@@ -1750,7 +1750,7 @@ class RepoApi(BaseApi):
                 changed = True
                 # Remove package from repo location on file system
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
-                                            repo['relative_path'], fileobj["filename"])
+                                               repo['relative_path'], fileobj["filename"])
                 if os.path.exists(file_repo_path):
                     log.debug("Delete file %s at %s" % (fileobj["filename"], file_repo_path))
                     os.remove(file_repo_path)
@@ -1971,7 +1971,7 @@ class RepoApi(BaseApi):
             log.info(msg)
             raise PulpException(msg)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
@@ -2079,7 +2079,7 @@ class RepoApi(BaseApi):
         '''
         repo = self._get_existing_repo(id)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         repo_metdata_dir = "%s/%s" % (repo_path, "repodata")
         # if there is no repodata dir, then its probably not a yum repo; exit now
         if not os.path.exists(repo_metdata_dir):
@@ -2118,7 +2118,7 @@ class RepoApi(BaseApi):
         '''
         repo = self._get_existing_repo(id)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         repodata_file = "%s/%s" % (repo_path, "repodata/repomd.xml")
         dump = pulp.server.util.get_repomd_filetype_dump(repodata_file)
         return dump
@@ -2135,7 +2135,7 @@ class RepoApi(BaseApi):
         '''
         repo = self._get_existing_repo(id)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
         #return pulp.server.util.get_repomd_filetype_xml(repo_repomd_path, filetype)
         file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
@@ -2144,7 +2144,7 @@ class RepoApi(BaseApi):
         metadata_file = os.path.join(repo_path, file_path)
         try:
             f = metadata_file.endswith('.gz') and gzip.open(metadata_file) \
-                                        or open(metadata_file, 'rt')
+                or open(metadata_file, 'rt')
             return f.read().decode("utf-8", "replace")
         except Exception, e:
             msg = "Error [%s] reading the metadata file for type [%s] at location [%s]" % (str(e), filetype, file_path)
@@ -2162,7 +2162,7 @@ class RepoApi(BaseApi):
         '''
         repo = self._get_existing_repo(id)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
         file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
         if not file_path:
@@ -2175,4 +2175,3 @@ class RepoApi(BaseApi):
             msg = "Error [%s] removing the metadata file for type [%s]" % (str(e), filetype)
             log.info(msg)
             raise PulpException(msg)
-
