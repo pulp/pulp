@@ -154,7 +154,7 @@ def parse_iso8601_date(date_str):
     """
     try:
         return isodate.parse_date(date_str)
-    except ValueError:
+    except (ValueError, isodate.ISO8601Error):
         msg = _('Malformed ISO8601 date string: %(d)s') % {'d': date_str}
         raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
@@ -168,7 +168,7 @@ def parse_iso8601_datetime(datetime_str):
     """
     try:
         return isodate.parse_datetime(datetime_str)
-    except ValueError:
+    except (ValueError, isodate.ISO8601Error):
         msg = _('Malformed ISO8601 date-time string: %(d)s') % {'d': datetime_str}
         raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
@@ -182,7 +182,7 @@ def parse_iso8601_duration(duration_str):
     """
     try:
         return isodate.parse_duration(duration_str)
-    except ValueError:
+    except (ValueError, isodate.ISO8601Error):
         msg = _('Malformed ISO8601 duration string: %(d)s') % {'d': duration_str}
         raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
