@@ -404,7 +404,7 @@ fi
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
 %attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
+%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 %{_bindir}/pulp-migrate
@@ -479,7 +479,7 @@ fi
 %config %{_sysconfdir}/pulp/cds.conf
 %config %{_sysconfdir}/pulp/repo_auth.conf
 %attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
+%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
