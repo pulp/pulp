@@ -1953,6 +1953,7 @@ class AdminRepo(Repo):
                 Clone,
                 Delete,
                 Update,
+                Schedule,
                 Sync,
                 CancelSync,
                 CancelClone,
