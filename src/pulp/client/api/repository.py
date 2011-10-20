@@ -80,6 +80,18 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/" % id
         return self.server.PUT(path, delta)[1]
 
+    def get_sync_schedule(self, id):
+        path = '/repositories/%s/schedules/sync/' % id
+        return self.server.GET(path)[1]
+
+    def change_sync_schedule(self, id, new_schedule):
+        path = '/repositories/%s/schedules/sync/' % id
+        return self.server.PUT(path, new_schedule)[1]
+
+    def delete_sync_schedule(self, id):
+        path = '/repositories/%s/schedules/sync/' % id
+        return self.server.DELETE(path)[1]
+
     def delete(self, id):
         path = "/repositories/%s/" % id
         return self.server.DELETE(path)[1]
