@@ -469,7 +469,13 @@ class SchedulesResource(JSONController):
         if repo is None:
             return self.not_found('No repository %s' % repo_id)
         scheduled_sync.delete_repo_schedule(repo)
-        return self.ok()
+        data = {
+            'id': repo_id,
+            'href': serialization.repo.v1_href(repo),
+            'schedule': None,
+            'options': None,
+        }
+        return self.ok(data)
 
     @error_handler
     @auth_required(CREATE)
