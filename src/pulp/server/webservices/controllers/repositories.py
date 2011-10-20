@@ -50,7 +50,8 @@ Repo object fields:
  * distributionid, list of str, list of distribution ids this repository belongs to [deferred fields]
  * checksum_type, str, name of the algorithm used for checksums of the repository's content
  * filters, list of str, list of filter ids associated with the repository
- * content_types, str, content type allowed in this repository; default:yum; supported: [yum, file
+ * content_types, str, content type allowed in this repository; default:yum; supported: [yum, file]
+ * notes, dict, custom key-value attributes for this repository
 !RepoSource object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
@@ -183,9 +184,12 @@ class Repositories(JSONController):
         # Query by notes
         if "notes" in spec.keys() :
             notes = eval(spec["notes"])
-            for key, value in notes.items():
-                spec["notes."+ key] = value
-            del spec["notes"]
+            if notes == {}:
+                spec["notes"] = {}
+            else:
+                for key, value in notes.items():
+                    spec["notes."+ key] = value
+                del spec["notes"]
 
         repositories = api.repositories(spec, default_fields)
 
@@ -354,7 +358,83 @@ class Repository(JSONController):
         """
         api.delete(id=id)
         return self.ok({})
+    
+class RepositoryNotesUpdateDelete(JSONController):
+    
+    @auth_required(DELETE)
+    def DELETE(self, id, key):
+        """
+        [[wiki]]
+        title: Delete a Note from a Repository
+        description: Delete a Note from a Repository
+        method: DELETE
+        path: /repositories/<id>/notes/<key>/
+        permission: DELETE
+        success response: 200 OK
+        failure response: 404 Not Found if given repository does not exist
+                          404 Not Found if given key does not exist
+        """
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            return self.not_found('Given key [%s] does not exist' % key)
+        api.delete_note(id, key)
+        return self.ok(True)
 
+    @auth_required(UPDATE)
+    def PUT(self, id, key):
+        """
+        [[wiki]]
+        title: Update a key-value note of a Repository
+        description: Change the value of an existing key in Repository Notes.
+        method: PUT
+        path: /repositories/<id>/notes/<key>/
+        permission: UPDATE
+        success response: 200 OK
+        failure response: 404 Not Found if given repository does not exist
+                          404 Not Found if given key does not exist
+        return: a Repo object
+        parameters: new value of the key
+        """
+        data = self.params()
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            return self.not_found('Given key [%s] does not exist' % key)
+        api.update_note(id, key, data)
+        return self.ok(True)
+
+class RepositoryNotesAdd(JSONController):
+    @auth_required(EXECUTE)
+    def POST(self, id):
+        """
+        [[wiki]]
+        title: Add a Note to the Repository
+        description: Add a Note to the Repository
+        method: POST
+        path: /repositories/<id>/notes/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not found if given repository does not exist
+                          409 Conflict if given key already exists
+        return: repo object
+        parameters:
+         * key, str, key to be added
+         * value, str, value of key 
+        """
+        data = self.params()
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        key_value_pairs = repo['notes']
+        if data['key'] in key_value_pairs.keys():
+            return self.conflict('Given key [%s] already exist' % data['key'])
+        api.add_note(id, data['key'], data['value'])
+        return self.ok(True)
 
 class RepositoryDeferredFields(JSONController):
 
@@ -1426,6 +1506,7 @@ class RepositoryActions(JSONController):
         data = self.params()
         api.remove_distribution(id, data['distributionid'])
         return self.ok(True)
+    
 
     @error_handler
     @auth_required(EXECUTE)
@@ -1557,6 +1638,9 @@ urls = (
 
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
     'RepositoryTaskHistory',
+    
+    '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotesUpdateDelete',
+    '/([^/]+)/notes/$', 'RepositoryNotesAdd',
 )
 
 application = web.application(urls, globals())

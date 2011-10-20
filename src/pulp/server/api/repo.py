@@ -2176,3 +2176,72 @@ class RepoApi(BaseApi):
             log.info(msg)
             raise PulpException(msg)
 
+    
+    @audit()
+    def add_note(self, id, key, value):
+        """
+        Add note to a repo in the form of key-value pairs.
+        @param id: repo id.
+        @type id: str
+        @param key: key
+        @type key: str
+        @param value: value
+        @type value: str
+        @raise PulpException: When repo is not found or given key exists.
+        """
+        repo = self.repository(id)
+        if not repo:
+            raise PulpException('Repository [%s] does not exist', id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            key_value_pairs[key] = value
+        else:
+            raise PulpException('Given key [%s] already exists', key)
+        repo['notes'] = key_value_pairs
+        self.collection.save(repo, safe=True)
+
+    @audit()
+    def delete_note(self, id, key):
+        """
+        Delete key-value note from a repo.
+        @param id: repo id.
+        @type id: str
+        @param key: key
+        @type key: str
+        @raise PulpException: When repo does not exist or key is not found.
+        """
+        repo = self.repository(id)
+        if not repo:
+            raise PulpException('Repository [%s] does not exist', id)
+        key_value_pairs = repo['notes']
+        if key in key_value_pairs.keys():
+            del key_value_pairs[key]
+        else:
+            raise PulpException('Given key [%s] does not exist', key)
+        repo['notes'] = key_value_pairs
+        self.collection.save(repo, safe=True)
+
+    @audit()
+    def update_note(self, id, key, value):
+        """
+        Update key-value note of a repo.
+        @param id: repo id.
+        @type id: str
+        @param key: key
+        @type key: str
+        @param value: value
+        @type value: str
+        @raise PulpException: When repo is not found or given key exists.
+        """
+        repo = self.repository(id)
+        if not repo:
+            raise PulpException('Repository [%s] does not exist', id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            raise PulpException('Given key [%s] does not exist', key)
+        else:
+            key_value_pairs[key] = value
+        repo['notes'] = key_value_pairs
+        self.collection.save(repo, safe=True)
+ 
+        

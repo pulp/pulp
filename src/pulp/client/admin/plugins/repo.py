@@ -1859,6 +1859,66 @@ class KeyReader:
         except Exception, e:
             utils.system_exit(os.EX_DATAERR, _(str(e)))
 
+
+class AddNote(AdminRepoAction):
+
+    name = "add_note"
+    description = _('add key-value note to a repository')
+
+    def setup_parser(self):
+        super(AddNote, self).setup_parser()
+        self.parser.add_option("--key", dest="key",
+                               help=_("key identifier (required)"))
+        self.parser.add_option("--value", dest="value",
+                               help=_("value corresponding to the key (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        value = self.get_required_option('value')
+        self.repository_api.add_note(repoid, key, value)
+        print _("Successfully added key-value pair %s:%s") % (key, value)
+
+
+class DeleteNote(AdminRepoAction):
+
+    name = "delete_note"
+    description = _('delete note from a repository')
+
+    def setup_parser(self):
+        super(DeleteNote, self).setup_parser()
+        self.parser.add_option("--key", dest="key",
+                       help=_("key identifier (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        self.repository_api.delete_note(repoid, key)
+        print _("Successfully deleted key: %s") % key
+
+
+class UpdateNote(AdminRepoAction):
+
+    name = "update_note"
+    description = _('update a note of a respository')
+
+    def setup_parser(self):
+        super(UpdateNote, self).setup_parser()
+        self.parser.add_option("--key", dest="key",
+                       help=_("key identifier (required)"))
+        self.parser.add_option("--value", dest="value",
+                       help=_("value corresponding to the key (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        value = self.get_required_option('value')
+        self.repository_api.update_note(repoid, key, value)
+        print _("Successfully updated key-value pair %s:%s") % (key, value)
+
+
+
+
 # repo command ----------------------------------------------------------------
 
 class AdminRepo(Repo):
@@ -1895,7 +1955,10 @@ class AdminRepo(Repo):
                 Export,
                 CancelExport,
                 AddDistribution,
-                RemoveDistribution,]
+                RemoveDistribution,
+                AddNote,
+                DeleteNote,
+                UpdateNote,]
 
 # repo plugin ----------------------------------------------------------------
 

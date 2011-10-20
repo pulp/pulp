@@ -1416,7 +1416,60 @@ class TestRepoApi(testutil.PulpAsyncTest):
                                          'repodata', 'repomd.xml')
         # metadata should exists
         self.assertTrue(os.path.exists(repodata_file2))
-
-
+        
+    def test_add_note(self):
+        # repo with and without notes added at the creation time 
+        repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com')
+        repo2 = self.repo_api.create('some-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
+        self.repo_api.add_note(repo1['id'], "key2", "value2")
+        self.repo_api.add_note(repo2['id'], "key2", "value2")
+        repo1 = self.repo_api.repository(repo1['id'])
+        repo2 = self.repo_api.repository(repo2['id'])
+        assert(repo1["notes"]["key2"] == "value2")
+        assert(repo2["notes"]["key2"] == "value2")
+        
+        # trying to add different value for same key
+        try:
+            self.repo_api.add_note(repo2['id'], "key2", "value3")
+        except PulpException:    
+            caught = True
+        self.assertTrue(caught)
+        
+    def test_delete_note(self):
+        repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
+        repo2 = self.repo_api.create('some-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
+        self.repo_api.delete_note(repo1['id'], "key1")
+        self.repo_api.delete_note(repo2['id'], "key1")
+        repo1 = self.repo_api.repository(repo1['id'])
+        repo2 = self.repo_api.repository(repo2['id'])
+        assert(repo1["notes"] == {"key2":"value2"})
+        assert(repo2["notes"] == {})
+        
+        # try to delete note from repo containing empty notes
+        try:
+            self.repo_api.delete_note(repo2['id'], "key1")
+        except PulpException:
+            caught = True
+        self.assertTrue(caught)
+        
+        # try to delete note with non-existing key
+        try:
+            self.repo_api.delete_note(repo1['id'], "random")
+        except PulpException:
+            caught = True
+        self.assertTrue(caught)
+        
+    def test_update_repo(self):
+        repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
+        self.repo_api.update_note(repo1['id'], "key1", "value1-changed")
+        repo1 = self.repo_api.repository(repo1['id'])
+        assert(repo1["notes"]["key1"] == "value1-changed")
+        try:
+            self.repo_api.update_note(repo1['id'], "random", "random")
+        except PulpException:
+            caught = True
+        self.assertTrue(caught)
+        
+            
 if __name__ == '__main__':
     unittest.main()
