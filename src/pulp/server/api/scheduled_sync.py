@@ -183,6 +183,7 @@ def update_repo_schedule(repo, new_schedule):
                       {'$set': {'sync_schedule': sync_schedule}},
                       safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
+    repo['sync_schedule'] = new_schedule
     if task is None:
         _add_repo_scheduled_sync_task(repo)
     else:
@@ -201,6 +202,7 @@ def delete_repo_schedule(repo):
     collection.update({'_id': repo['_id']},
                       {'$set': {'sync_schedule': None}},
                       safe=True)
+    repo['sync_schedule'] = None
     _remove_repo_scheduled_sync_task(repo)
 
 
