@@ -433,7 +433,13 @@ class RepositoryNotesAdd(JSONController):
         api.add_note(id, data['key'], data['value'])
         return self.ok(True)
 
-class RepositorySchedules(JSONController):
+
+class SchedulesSubCollection(JSONController):
+    # placeholder for: /repositories/<id>/schedules/
+    pass
+
+
+class SchedulesResource(JSONController):
 
     schedule_types = ('sync',)
 
@@ -448,7 +454,9 @@ class RepositorySchedules(JSONController):
         data = {
             'id': repo_id,
             'href': serialization.repo.v1_href(repo),
-            'sync_schedule': repo['sync_schedule']
+            'type': schedule_type,
+            'schedule': repo['sync_schedule'],
+            'options': {},
         }
         return self.ok(data)
 
@@ -1671,8 +1679,8 @@ urls = (
     '/schedules/', 'Schedules',
     '/([^/]+)/$', 'Repository',
 
-    '/([^/]+)/schedules/(%s)/' % '|'.join(RepositorySchedules.schedule_types),
-    RepositorySchedules,
+    '/([^/]+)/schedules/(%s)/' % '|'.join(SchedulesResource.schedule_types),
+    SchedulesResource,
 
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),
     'RepositoryDeferredFields',
