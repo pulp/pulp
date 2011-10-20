@@ -177,9 +177,11 @@ def update_repo_schedule(repo, new_schedule):
     """
     if repo['source'] is None:
         raise PulpException(_('Cannot add schedule to repository without sync source'))
-    repo['sync_schedule'] = validate_schedule(new_schedule)
+    sync_schedule = validate_schedule(new_schedule)
     collection = Repo.get_collection()
-    collection.save(repo, safe=True)
+    collection.update({'_id': repo['_id']},
+                      {'$set': {'sync_schedule': sync_schedule}},
+                      safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
     if task is None:
         _add_repo_scheduled_sync_task(repo)
@@ -195,9 +197,10 @@ def delete_repo_schedule(repo):
     """
     if repo['sync_schedule'] is None:
         return
-    repo['sync_schedule'] = None
     collection = Repo.get_collection()
-    collection.save(repo, safe=True)
+    collection.update({'_id': repo['_id']},
+                      {'$set': {'sync_schedule': None}},
+                      safe=True)
     _remove_repo_scheduled_sync_task(repo)
 
 
