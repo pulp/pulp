@@ -775,7 +775,7 @@ class Schedule(RepoAction):
             if not isinstance(new_interval, timedelta) and new_start is None:
                 msg =_('If interval has months or years, a start date must be specified')
                 utils.system_exit(os.EX_USAGE,  msg)
-            self.repository_api.change_sync_schedule(new_shedule)
+            self.repository_api.change_sync_schedule(repo_id, new_shedule)
         else:
             utils.system_exit(os.EX_NOINPUT, _('No options specified, see --help'))
 
