@@ -132,7 +132,6 @@ default_fields = [
     'source',
     'name',
     'arch',
-    'sync_schedule',
     'last_sync',
     'use_symlinks',
     'groupid',
@@ -356,9 +355,9 @@ class Repository(JSONController):
         """
         api.delete(id=id)
         return self.ok({})
-    
+
 class RepositoryNotesUpdateDelete(JSONController):
-    
+
     @auth_required(DELETE)
     def DELETE(self, id, key):
         """
@@ -422,7 +421,7 @@ class RepositoryNotesAdd(JSONController):
         return: repo object
         parameters:
          * key, str, key to be added
-         * value, str, value of key 
+         * value, str, value of key
         """
         data = self.params()
         repo = api.repository(id)
@@ -1548,7 +1547,7 @@ class RepositoryActions(JSONController):
         data = self.params()
         api.remove_distribution(id, data['distributionid'])
         return self.ok(True)
-    
+
 
     @error_handler
     @auth_required(EXECUTE)
@@ -1683,7 +1682,7 @@ urls = (
 
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
     'RepositoryTaskHistory',
-    
+
     '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotesUpdateDelete',
     '/([^/]+)/notes/$', 'RepositoryNotesAdd',
 )
