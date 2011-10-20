@@ -171,7 +171,7 @@ class RepoApi(BaseApi):
             self.delete(r["id"])
 
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
+    def create(self, id, name, arch=None, feed=None, symlinks=False,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
                preserve_metadata=False, content_types="yum"):
@@ -253,8 +253,6 @@ class RepoApi(BaseApi):
         if content_types:
             r['content_types'] = content_types
         self.collection.insert(r, safe=True)
-        if sync_schedule:
-            update_repo_schedule(r, sync_schedule)
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
@@ -669,16 +667,6 @@ class RepoApi(BaseApi):
                         raise PulpException("Relativepath of the new feed [%s] does not match existing feed [%s]; cannot perform update" % (newpath, prevpath))
                     ds = model.RepoSource(value)
                     repo['source'] = ds
-                continue
-            # sync_schedule changed
-            # NOTE the following calls have the side effects of updating the
-            # repo's schedule in the database, this causes an update to be
-            # non-atomic
-            if key == 'sync_schedule':
-                if value:
-                    update_repo_schedule(repo, value)
-                else:
-                    delete_repo_schedule(repo)
                 continue
             raise Exception, \
                   'update keyword "%s", not-supported' % key
