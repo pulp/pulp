@@ -71,7 +71,9 @@ def parse_interval_schedule(interval, start, runs):
         if runs is not None:
             runs = int(runs)
     except ValueError:
-        system_exit(os.EX_USAGE, _('Runs must me an integer'))
+        system_exit(os.EX_USAGE, _('Runs must be an integer'))
+    if runs < 0:
+        system_exit(os.EX_USAGE, _('Runs must be not be negative'))
     try:
         interval = dateutils.parse_iso8601_duration(interval)
         if start is not None:
@@ -149,7 +151,7 @@ RPMTAG_NOSOURCE = 1051
 def findSysvArgs(args):
     """
     Find the arguments passed in from the CLI, skipping any --option=value and
-    any -o value options.  We don't want to treat the 'value' in '-o value' as 
+    any -o value options.  We don't want to treat the 'value' in '-o value' as
     an argument and must skip these
     """
     # Find the actual arguments to the command, skipping options
@@ -164,10 +166,10 @@ def findSysvArgs(args):
             skipArg = False
             continue
         if (arg.startswith("-") and not arg.startswith("--")):
-            skipArg = True 
+            skipArg = True
         elif (not arg.startswith("--")):
             foundargs.append(arg)
-            
+
     return foundargs
 
 
@@ -189,7 +191,7 @@ def getHostname():
     return socket.gethostname()
 
 def getFQDN():
-    return socket.getfqdn() 
+    return socket.getfqdn()
 
 def writeToFile(filename, message, overwrite=True):
     dir_name = os.path.dirname(filename)
@@ -350,7 +352,7 @@ def readRpmHeader(ts, rpmname):
 def is_signed(filename):
     ts = rpm.TransactionSet()
     ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
-    hdr = readRpmHeader(ts, filename)    
+    hdr = readRpmHeader(ts, filename)
     if hasattr(rpm, "RPMTAG_DSAHEADER"):
         dsaheader = hdr["dsaheader"]
     else:
@@ -367,12 +369,12 @@ def generatePkgMetadata(pkgFile):
 
 def generatePakageProfile(rpmHeaderList):
     """ Accumulates list of installed rpm info """
-    
+
     pkgList = []
     for h in rpmHeaderList:
         if h['name'] == "gpg-pubkey":
             #dbMatch includes imported gpg keys as well
-            # skip these for now as there isnt compelling 
+            # skip these for now as there isnt compelling
             # reason for server to know this info
             continue
         info = {
@@ -385,7 +387,7 @@ def generatePakageProfile(rpmHeaderList):
         }
         pkgList.append(info)
     return pkgList
- 
+
 def getRpmName(pkg):
     return pkg["name"] + "-" + pkg["version"] + "-" + \
            pkg["release"] + "." + pkg["arch"]
@@ -396,7 +398,7 @@ def readFile(filepath):
         raise FileError("Could not stat the file %s" % filepath)
     if not os.path.isfile(filepath):
         raise FileError("%s is not a file" % filepath)
-    
+
     try:
         f = open(filepath)
         contents = f.read()
@@ -405,7 +407,7 @@ def readFile(filepath):
     except:
         return None
 
-    
+
 def parseCSV(filepath):
     in_file  = open(filepath, "rb")
     reader = csv.reader(in_file)
