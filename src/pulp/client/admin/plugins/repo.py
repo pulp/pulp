@@ -16,10 +16,12 @@ import string
 import sys
 import time
 import urlparse
-from isodate import ISO8601Error
 from datetime import timedelta
 from gettext import gettext as _
+from itertools import chain
 from optparse import OptionGroup
+
+from isodate import ISO8601Error
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.consumer import ConsumerAPI
@@ -738,17 +740,61 @@ class Schedule(RepoAction):
         super(Schedule, self).setup_parser()
         self.parser.add_option('--show', dest='show', action='store_true', default=False,
                                help=_('show existing schedule'))
+        self.parser.add_option('--delete', dest='delete', action='store_true', default=False,
+                               help=_('delete existing schedule'))
         self.parser.add_option('--set-interval', dest='interval', default=None,
                                help=_('length of time between each run in iso8601 duration format'))
         self.parser.add_option('--set-start', dest='start', default=None,
                                help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
         self.parser.add_option('--set-runs', dest='runs', default=None,
-                              help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        self.parser.add_option('--delete', dest='delete', action='store_true', default=False,
-                               help=_('delete existing schedule'))
+                               help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        self.parser.add_option('--skip', dest='skip', acttion='append', default=[],
+                               help=_('elements to skip: packages, errata, and/or distribution'))
+        self.parser.add_option('--no-skip', dest='no_skip', action='append', default=[],
+                               help=_('elements to not skip: packages, errata, and/or distribution'))
+
+
+    def _new_schedule(self, obj):
+        schedule = obj and obj['schedule']
+        interval = start = runs = None
+        if schedule is not None:
+            interval, start, runs = parse_iso8601_interval(schedule)
+            interval = interval and format_iso8601_duration(interval)
+            start = start and format_iso8601_datetime(start)
+            runs = runs and str(runs) # this will skip '0', but that's wrong anyway...
+        new_interval = self.opts.interval or interval
+        new_start = self.opts.start or start
+        new_runs = self.opts.runs or runs
+        new_shedule = parse_interval_schedule(new_interval, new_start, new_runs)
+        if not isinstance(new_interval, timedelta) and new_start is None:
+            msg =_('If interval has months or years, a start date must be specified')
+            utils.system_exit(os.EX_USAGE,  msg)
+        return new_shedule
+
+    def _new_options(self, obj):
+        valid_elements = ('packages', 'errata', 'distribution')
+        invalid_elements = set()
+        options = obj and obj['options']
+        skip = options and options.get('skip', None)
+        skip = skip or {}
+        for element in self.opts.skip:
+            if element not in valid_elements:
+                invalid_elements.add(element)
+                continue
+            skip[element] = 1
+        for element in self.opts.no_skip:
+            if element not in valid_elements:
+                invalid_elements.add(element)
+                continue
+            skip.pop(element, None)
+        if invalid_elements:
+            msg = _('Unknown elements for skip/no-skip: %s') % ', '.join(invalid_elements)
+            utils.system_exit(os.EX_USAGE, msg)
+        return {'skip': skip}
 
     def run(self):
         repo_id = self.get_required_option('id')
+
         if self.opts.show:
             obj = self.repository_api.get_sync_schedule(repo_id)
             print_header('Sync Schedule')
@@ -756,29 +802,26 @@ class Schedule(RepoAction):
             print obj['type'],
             print ':',
             print obj['schedule']
-        elif self.opts.delete:
+            utils.system_exit(os.EX_OK, '')
+
+        if self.opts.delete:
             self.repository_api.delete_sync_schedule(repo_id)
-            print _('Sync schedule for repo [ %(r)s ] removed') % {'r': repo_id}
-        elif self.opts.interval or self.opts.start or self.opts.runs:
+            utils.system_exit(os.EX_OK, _('Sync schedule for repo [ %(r)s ] removed') % {'r': repo_id})
+
+        schedule_opts = [getattr(self.opts, n) for n in ('interval', 'starts', 'runs')]
+        options_opts = [getattr(self.opts, n) for n in ('skip', 'no_skip')]
+
+        if reduce(lambda x,y: x or y, chain(schedule_opts, options_opts)):
             obj = self.repository_api.get_sync_schedule(repo_id)
-            schedule = obj['schedule']
-            interval = start = runs = None
-            if schedule is not None:
-                interval, start, runs = parse_iso8601_interval(schedule)
-                interval = interval and format_iso8601_duration(interval)
-                start = start and format_iso8601_datetime(start)
-                runs = runs and str(runs) # this will skip '0', but that's wrong anyway...
-            new_interval = self.opts.interval or interval
-            new_start = self.opts.start or start
-            new_runs = self.opts.runs or runs
-            new_shedule = parse_interval_schedule(new_interval, new_start, new_runs)
-            if not isinstance(new_interval, timedelta) and new_start is None:
-                msg =_('If interval has months or years, a start date must be specified')
-                utils.system_exit(os.EX_USAGE,  msg)
-            self.repository_api.change_sync_schedule(repo_id, new_shedule)
+            new_schedule = self._new_schedule(obj)
+            new_options = self._new_options(obj)
+            data = {'schedule': new_schedule,
+                    'options': new_options}
+            self.repository_api.change_sync_schedule(repo_id, data)
             print _('Sync schedule for repo [ %s ] changed to [ %s ]') % (repo_id, new_shedule)
-        else:
-            utils.system_exit(os.EX_NOINPUT, _('No options specified, see --help'))
+            utils.system_exit(os.EX_OK, '')
+
+        utils.system_exit(os.EX_NOINPUT, _('No options specified, see --help'))
 
 
 class Sync(RepoProgressAction):
