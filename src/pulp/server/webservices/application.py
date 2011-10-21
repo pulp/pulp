@@ -127,6 +127,9 @@ def _update_sync_schedules():
             return None
 
     for _repo in repos_list:
+        # Allow for the sync schedule to not be set on custom repos.
+        if _repo["sync_schedule"] is None:
+            continue
         param = _sync_schedule_param(_repo["sync_schedule"], repo_sync_freq_iso)
         if param:
             repo_api.update(_repo["id"], param)
