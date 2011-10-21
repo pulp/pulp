@@ -293,7 +293,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
             # Determine removed errata
             synchronizer.progress_callback(step="Processing Errata")
             log.info("Examining %s errata from repo %s" % (len(repo_api.errata(repo_id)), repo_id))
-            repo_errata = repo_api.errata(repo_id)
+            repo_errata = [e['id'] for e in repo_api.errata(repo_id)]
             old_errata = list(set(repo_errata).difference(set(sync_errataids)))
             new_errata = list(set(sync_errataids).difference(set(repo_errata)))
             log.info("Removing %s old errata from repo %s" % (len(old_errata), repo_id))
