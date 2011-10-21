@@ -748,7 +748,7 @@ class Schedule(RepoAction):
                                help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
         self.parser.add_option('--set-runs', dest='runs', default=None,
                                help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        self.parser.add_option('--skip', dest='skip', acttion='append', default=[],
+        self.parser.add_option('--skip', dest='skip', action='append', default=[],
                                help=_('elements to skip: packages, errata, and/or distribution'))
         self.parser.add_option('--no-skip', dest='no_skip', action='append', default=[],
                                help=_('elements to not skip: packages, errata, and/or distribution'))
@@ -1778,7 +1778,7 @@ class Export(RepoProgressAction):
                                help=_('export repository in the foreground'))
         self.parser.add_option(  "--status", action="store_true", dest="status", default=False,
                                help=_("exporter status for given repository (optional)"))
-        
+
     def run(self):
         repoid = self.opts.id
         if self.opts.status:
