@@ -1711,23 +1711,50 @@ class Export(RepoProgressAction):
     description = _('export repository content')
 
     def setup_parser(self):
-        super(Export, self).setup_parser()
+        self.parser.add_option( "--id", dest="id",
+                               help=_("repository id"))
+        self.parser.add_option("-g", "--groupid", dest="groupid",
+                               help=_("repository group id to export a group of repos"))
         self.parser.add_option("-t", "--target_dir", dest="target",
                                help=_("target location on server to write the exported content"))
         self.parser.add_option(  "--generate-isos", action="store_true", dest="generate_isos", default=False,
                                help=_("wrap exported content into iso images (optional)"))
         self.parser.add_option(  "--overwrite", action="store_true", dest="overwrite", default=False,
                                help=_("overwrite existing content in target location (optional)"))
-
+        self.parser.add_option('-F', '--foreground', dest='foreground',
+                               action='store_true', default=False,
+                               help=_('export repository in the foreground'))
+        self.parser.add_option(  "--status", action="store_true", dest="status", default=False,
+                               help=_("exporter status for given repository (optional)"))
+        
     def run(self):
-        repoid = self.get_required_option('id')
+        repoid = self.opts.id
+        if self.opts.status:
+            if not repoid:
+                utils.system_exit(os.EX_USAGE, _("Error: repo id is required to check status of export"))
+            self.export_status()
+            return
+        groupid = self.opts.groupid
+        if not repoid and not groupid:
+            utils.system_exit(os.EX_USAGE, _("Error: repo id or group id is required to perform an export; see --help"))
+        if repoid and groupid:
+            utils.system_exit(os.EX_USAGE, _("Error: Cannot specify both repoid and groupid; see --help"))
         if not self.opts.target:
-            utils.system_exit(os.EX_USAGE, _("Error: Target location is required to export content"))
-        task =None
+            utils.system_exit(os.EX_USAGE, _("Error: Target location is required to export content; see --help"))
         try:
-            task = self.repository_api.export(repoid, self.opts.target, generate_isos=self.opts.generate_isos, overwrite=self.opts.overwrite)
+            if repoid:
+                task = self.service_api.repo_export(repoid, self.opts.target, generate_isos=self.opts.generate_isos, overwrite=self.opts.overwrite)
+                print(_("Export on repository %s started" % repoid))
+                if not self.opts.foreground:
+                    utils.system_exit(os.EX_OK, _('Use "repo export --status" to check on the progress'))
+                self.export_foreground(task)
+            if groupid:
+                job = self.service_api.repo_group_export(groupid, self.opts.target, generate_isos=self.opts.generate_isos, overwrite=self.opts.overwrite)
+                print(_("Export on repository group [%s] started with job id [%s]" % (groupid, job['id'])))
         except Exception,e:
             utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
+
+    def export_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')
         print ' '
         try:
@@ -1742,6 +1769,14 @@ class Export(RepoProgressAction):
         except KeyboardInterrupt:
             print ''
             return
+
+    def export_status(self):
+        id = self.opts.id
+        repo = self.get_repo(id)
+        export_task = self.repository_api.export_list(id)
+        print_header(_('Status for %s') % id)
+        print _('Repository: %s') % repo['id']
+        self.print_exporter_progress(export_task[0]['progress'])
 
     def print_exporter_progress(self, progress):
         current = ""
