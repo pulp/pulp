@@ -994,7 +994,7 @@ class RepoApi(BaseApi):
         found = self.collection.find({"packages":pkgid}, fields=["id"])
         return [r["id"] for r in found]
 
-    def errata(self, id, types=()):
+    def errata(self, id, types=(), severity=None):
         """
          Look up all applicable errata for a given repo id
         """
@@ -1002,18 +1002,24 @@ class RepoApi(BaseApi):
         errata = repo['errata']
         if not errata:
             return []
-
         if types:
             for type in types:
                 if type not in errata:
                     types.remove(type)
 
             errataids = [item for type in types for item in errata[type]]
-
         else:
             errataids = list(chain.from_iterable(errata.values()))
-
-        return errataids
+        # For each erratum find id, title and type
+        repo_errata = []
+        for errataid in errataids:
+            errata_obj = self.errataapi.erratum(errataid, fields=['id', 'title', 'type', 'severity']) 
+            if severity:
+                if severity.lower() == errata_obj['severity'].lower():
+                    repo_errata.append(errata_obj)
+            else:
+                repo_errata.append(errata_obj)
+        return repo_errata
 
     @audit()
     def add_erratum(self, repoid, erratumid):

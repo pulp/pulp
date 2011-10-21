@@ -544,17 +544,17 @@ class RepositoryDeferredFields(JSONController):
         filters:
          * type, str, type of errata
         """
-        valid_filters = ('type')
+        valid_filters = ('type', 'severity')
         types = self.filters(valid_filters).get('type', [])
-        if types == []:
-            errataids = api.errata(id)
+        severity = self.filters(valid_filters).get('severity', [])
+        if types:
+            errata = api.errata(id, [types])
+        elif severity:
+            errata = api.errata(id, severity=severity[0])
         else:
-            errataids = api.errata(id, [types])
-        # For each erratum find id, title and type
-        repo_errata = []
-        for errataid in errataids:
-            repo_errata.append(errataapi.erratum(errataid, fields=['id', 'title', 'type']))
-        return self.ok(repo_errata)
+            errata = api.errata(id)
+
+        return self.ok(errata)
 
     def distribution(self, id):
         """
