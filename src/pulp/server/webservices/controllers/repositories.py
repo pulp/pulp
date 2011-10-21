@@ -550,7 +550,7 @@ class RepositoryDeferredFields(JSONController):
         if types:
             errata = api.errata(id, [types])
         elif severity:
-            errata = api.errata(id, severity=severity[0])
+            errata = api.errata(id, severity=severity)
         else:
             errata = api.errata(id)
 
