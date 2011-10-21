@@ -34,6 +34,7 @@ from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
 from pulp.server.exceptions import PulpException
 from pulp.server.exporter.base import TargetExistsException, ExportException
+from pulp.server.tasking.job import Job
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
@@ -483,7 +484,7 @@ class RepoGroupExport(JSONController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
-        return: list of task ids
+        return: Job object
         '''
         export_params = self.params()
         groupid = export_params.get('groupid', None)
@@ -504,18 +505,16 @@ class RepoGroupExport(JSONController):
         log.error("Repo ids in group %s" % repos)
         if not len(repos):
             return self.bad_request("No repoisotries associated to the group id [%s]; nothing to export." % groupid)
-        group_task_list = {}
+        job = Job()
         for repo in repos:
             repoid = repo['id']
             repo_target_location = "%s/%s" % (target_location, repoid)
             task = exporter.export(repoid, target_directory=repo_target_location, generate_isos=generate_isos, overwrite=overwrite)
             if not task:
-                group_task_list[repoid]  = self.conflict('Export already in process for repo [%s]' % id)
-            task_info = self._task_to_dict(task)
-            group_task_list[repoid]  = task_info
-        return self.accepted(group_task_list)
-        
-
+                log.error('Export already in process for repo [%s]' % id)
+            job.add(task)
+        jobdict = self._job_to_dict(job)
+        return self.accepted(jobdict)
 
 # web.py application ----------------------------------------------------------
 
