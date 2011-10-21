@@ -273,6 +273,7 @@ class Repo(Model):
         self.group_xml_path = u""
         self.group_gz_xml_path = u""
         self.sync_schedule = None
+        self.sync_options = {}
         self.last_sync = None
         self.use_symlinks = None
         self.feed_ca = None
