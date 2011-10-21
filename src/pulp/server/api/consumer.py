@@ -644,7 +644,7 @@ class ConsumerApi(BaseApi):
         pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
         #Compute applicable errata by subscribed repos
 
-        errataids = [eid for repoid in consumer["repoids"] \
+        errataids = [eid['id'] for repoid in consumer["repoids"] \
                      for eid in self.repoapi.errata(repoid, types) ]
         for erratumid in errataids:
             # compare errata packages to consumer package profile and

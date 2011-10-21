@@ -293,6 +293,10 @@ class BaseSynchronizer(object):
 
     def _process_repo_images(self, repodir, repo):
         log.debug("Processing any images synced as part of the repo")
+        images_dir = os.path.join(repodir, "images")
+        if not os.path.exists(images_dir):
+            log.info("No image files to import to repo..")
+            return
         # compute and import repo image files
         treecfg = None
         for tree_info_name in ['treeinfo', '.treeinfo']:
