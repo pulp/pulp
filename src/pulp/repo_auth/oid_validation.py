@@ -161,12 +161,17 @@ class OidValidator:
         cert = certificate.Certificate(content=cert_pem)
         extensions = cert.extensions()
 
+        # Extract the repo portion of the URL
+        repo_dest = dest[dest.find(RELATIVE_URL) + len(RELATIVE_URL) + 1:]
+        # Remove any initial or trailing slashes
+        repo_dest = repo_dest.strip('/')
+
         valid = False
         for e in extensions:
             if self._is_download_url_ext(e):
                 oid_url = extensions[e]
 
-                if self._validate_url(oid_url, dest):
+                if self._validate_url(oid_url, repo_dest):
                     valid = True
                     break
 
@@ -204,5 +209,7 @@ class OidValidator:
         # Should allow any value for the variables:
         #   content/dist/rhel/server/.+?/.+?/os
 
-        oid_re = re.sub(r'\$.+?/', '.+?/', oid_url)
-        return re.search(oid_re, dest) is not None
+        if oid_url.endswith('/'):
+            oid_url = oid_url[:-1]
+        oid_re = re.sub(r'\$[^/]+/', '[^/]+/', oid_url)
+        return re.match(oid_re, dest) is not None
