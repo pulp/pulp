@@ -110,8 +110,8 @@ def parse_and_validate_repo_sync_options(options):
     for key, value in options.items():
         if key not in valid_keys:
             raise PulpValidationError(_('Unknown sync option: %(o)s') % {'o': key})
-        if key in valid_keys(:2):
-            new_options[key] = _parse_int(value)
+        if key in valid_keys[:2]:
+            new_options[key] = _parse_int(key, value)
         elif key == valid_keys[2]:
             new_options[key] = _parse_timeout(value)
         elif key == valid_keys[3]:

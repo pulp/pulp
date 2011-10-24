@@ -488,7 +488,7 @@ class SchedulesResource(JSONController):
         data = self.params()
         new_schedule = data.get('shedule')
         new_options = data.get('options')
-        scheduled_sync.update_repo_schedule(repo, new_schedule)
+        scheduled_sync.update_repo_schedule(repo, new_schedule, new_options)
         updated_repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
         data = {
             'id': repo_id,
