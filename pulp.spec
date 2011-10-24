@@ -307,8 +307,8 @@ fi
 
 %changelog
 * Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-5
-- Cherry pick 06b17d5cf4d02be3f2bc75a36c30d9e6880c6c4d from master
-  (jslagle@redhat.com)
+- 747725 Fix regular expression during oid validation and add a test that uses
+  wildcard oid urls (jslagle@redhat.com)
 - Bump grinder to 0.122 (jmatthews@redhat.com)
 - Update since grinder no longer has a yum lock (jmatthews@redhat.com)
 - 747880 Allow for custom repos to have no sync schedule (jslagle@redhat.com)
