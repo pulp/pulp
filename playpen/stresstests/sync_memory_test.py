@@ -34,6 +34,9 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.tasking import task
 from pulp.server.webservices import application
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../utils")
+from memory_usage import MemoryUsage
+
 # Initialize Pulp
 application._initialize_pulp()
 
@@ -133,19 +136,21 @@ if __name__ == "__main__":
     # Create repos or reuse if they exist
     create_repos(repos_to_sync)
 
+    memUsage = MemoryUsage()
     # Sync repos
     num_syncs = int(opts.num_syncs)
     if num_syncs > 0:
         print "Will complete %s iterations" % (num_syncs)
         for index in range(0, num_syncs):
             sync_repos(repos_to_sync)
-            print "Completed iteration <%s> %s %s" % (index, time.strftime(TIME_FMT_STR), get_memory_usage())
+            print "<%s> Completed iteration <%s> %s" % (memUsage.get_time_memory_stamp(), index)
     else:
         print "Will loop over syncs until CTRL-C"
         count = 0
         while True:
             sync_repos(repos_to_sync)
             count = count + 1
-            print "Completed iteration <%s> %s %s" % (count, time.strftime(TIME_FMT_STR), get_memory_usage())
+            print "<%s> Completed iteration <%s>" % (memUsage.get_time_memory_stamp(), count)
             
     print "%s end sync test" % (time.strftime(TIME_FMT_STR))
+    print memUsage.get_time_memory_stamp()

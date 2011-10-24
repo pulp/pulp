@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.240
+Version:        0.0.241
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -50,7 +50,7 @@ Requires: python-oauth2
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.118
+Requires: grinder >= 0.0.122
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -494,6 +494,25 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Oct 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.241-1
+- wrapping group export into a task job. * Adding client side changes to
+  support group exports * adding a status flag to check status for background
+  exports * adding a --foreground flag to invoke export and default to bg by
+  default (pkilambi@redhat.com)
+- fixing the rapi.errata usage to lookup id (pkilambi@redhat.com)
+- supporting multiple queries params (pkilambi@redhat.com)
+- Exposing severity as a filter on errata at repo api level
+  (pkilambi@redhat.com)
+- fixing logic to skip distros if there is no images dir. (pkilambi@redhat.com)
+- Remove setgid root and sticky bit from our init scripts (jslagle@redhat.com)
+- 727311 Unbind a consumer from all its repos before deleting it.
+  (jslagle@redhat.com)
+- 747283 - added missing auth_required decorator for delete_filter api
+  (skarmark@redhat.com)
+- 747151 - Added api and cli to add, update and delete a key-value pair to
+  repository notes along with wiki documentation for api and unit tests
+  (skarmark@redhat.com)
+
 * Wed Oct 19 2011 Jeff Ortel <jortel@redhat.com> 0.0.240-1
 - Adding new web service calls in services handler to export repo and repo
   groups (pkilambi@redhat.com)

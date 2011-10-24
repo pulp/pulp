@@ -18,9 +18,9 @@ import sys
 import web
 
 from paste.fixture import TestApp
-
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+testutil.load_test_config()
 
 from pulp.server.auth import authorization
 from pulp.server.webservices import application
