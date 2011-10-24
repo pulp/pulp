@@ -547,6 +547,7 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('type', 'severity')
         types = self.filters(valid_filters).get('type', [])
         severity = self.filters(valid_filters).get('severity', [])
+        
         if types:
             errata = api.errata(id, [types])
         elif severity:
