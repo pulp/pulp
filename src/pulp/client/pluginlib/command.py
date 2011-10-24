@@ -21,7 +21,7 @@ from M2Crypto import SSL
 from pulp.client.lib.config import Config
 from pulp.client.lib.utils import system_exit
 from pulp.client.lib.logutil import getLogger
-from pulp.client.api.server import ServerRequestError
+from pulp.client.api.server import ServerRequestError, NoCredentialsError
 
 
 _log = getLogger(__name__)
@@ -219,6 +219,9 @@ class Action(object):
             print _("Please correct the host in the %s file" %
                 self.cfg.FILE_PATH)
             sys.exit(1)
+        except NoCredentialsError, nce:
+            _log.error("error: %s" % nce)
+            system_exit(nce.args[0], _('error: operation failed: ') + nce.args[1])
         except ServerRequestError, re:
             _log.error("error: %s" % re)
             system_exit(re.args[0], _('error: operation failed: ') + re.args[1])

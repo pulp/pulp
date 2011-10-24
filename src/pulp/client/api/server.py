@@ -51,6 +51,14 @@ class ServerRequestError(Exception):
     pass
 
 
+class NoCredentialsError(Exception):
+    """
+    Indicates an attempt was made to do a server call without providing
+    authentication credentials, either through a certificate or as command
+    line flags.
+    """
+    pass
+
 class Bytes(str):
     """
     Binary (non-json) PUT/POST request body wrapper.
@@ -220,7 +228,7 @@ class PulpServer(Server):
             # try to deduce the name of the script, if we're being run from one
             if sys.argv:
                 msg += _(', please see: %s --help') % os.path.basename(sys.argv[0])
-            raise ServerRequestError(None, msg)
+            raise NoCredentialsError(None, msg)
         # make an appropriate connection to the pulp server
         if self.protocol == 'http':
             return self._http_connection()

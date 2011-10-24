@@ -16,6 +16,7 @@ from optparse import OptionGroup
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.cds import CDSAPI
+from pulp.client.api.server import ServerRequestError
 from pulp.client.lib.utils import print_header, parse_interval_schedule
 from pulp.client import constants
 from pulp.client.pluginlib.command import Action, Command
@@ -100,7 +101,7 @@ class Register(CDSAction):
         try:
             self.cds_api.register(hostname, name, description, schedule, cluster_id)
             print(_('Successfully registered CDS [%s]' % hostname))
-        except:
+        except ServerRequestError:
             print(_('Error attempting to register CDS [%s]' % hostname))
             print(_('Check that the CDS packages have been installed on the CDS and have been started'))
 
