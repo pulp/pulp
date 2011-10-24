@@ -20,6 +20,7 @@ from datetime import timedelta
 from gettext import gettext as _
 from itertools import chain
 from optparse import OptionGroup
+from pprint import pprint
 
 from isodate import ISO8601Error
 
@@ -799,9 +800,10 @@ class Schedule(RepoAction):
             obj = self.repository_api.get_sync_schedule(repo_id)
             print_header('Sync Schedule')
             # TODO put together nice output formatting here
-            print obj['type'],
-            print ':',
+            print obj['type'] + ':',
             print obj['schedule']
+            print 'options' + ':',
+            pprint(obj['options'])
             utils.system_exit(os.EX_OK, '')
 
         if self.opts.delete:
