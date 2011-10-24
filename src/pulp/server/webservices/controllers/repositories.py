@@ -488,7 +488,7 @@ class SchedulesResource(JSONController):
         if repo is None:
             return self.not_found('No repository %s' % repo_id)
         data = self.params()
-        new_schedule = data.get('shedule')
+        new_schedule = data.get('schedule')
         new_options = data.get('options')
         scheduled_sync.update_repo_schedule(repo, new_schedule, new_options)
         updated_repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
