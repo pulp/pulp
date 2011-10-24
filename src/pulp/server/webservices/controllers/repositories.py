@@ -456,7 +456,7 @@ class SchedulesResource(JSONController):
             'href': serialization.repo.v1_href(repo),
             'type': schedule_type,
             'schedule': repo['sync_schedule'],
-            'options': {},
+            'options': repo['sync_options'],
         }
         return self.ok(data)
 
@@ -482,17 +482,19 @@ class SchedulesResource(JSONController):
     def POST(self, repo_id, schedule_type):
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
-        repo = api.repository(repo_id, ['id', 'sync_schedule', 'source'])
+        repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options', 'source'])
         if repo is None:
             return self.not_found('No repository %s' % repo_id)
-        new_schedule = self.params()
+        data = self.params()
+        new_schedule = data.get('shedule')
+        new_options = data.get('options')
         scheduled_sync.update_repo_schedule(repo, new_schedule)
-        updated_repo = api.repository(repo_id, ['id', 'sync_schedule'])
+        updated_repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
         data = {
             'id': repo_id,
             'href': serialization.repo.v1_href(repo),
             'schedule': updated_repo['sync_schedule'],
-            'options': {},
+            'options': updated_repo['sync_options'],
         }
         return self.ok(data)
 
@@ -609,7 +611,7 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('type', 'severity')
         types = self.filters(valid_filters).get('type', [])
         severity = self.filters(valid_filters).get('severity', [])
-        
+
         if types:
             errata = api.errata(id, types=types)
         elif severity:
