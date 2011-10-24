@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,7 +306,7 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
-* Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-5
+* Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-6
 - 747725 Fix regular expression during oid validation and add a test that uses
   wildcard oid urls (jslagle@redhat.com)
 - Bump grinder to 0.122 (jmatthews@redhat.com)
