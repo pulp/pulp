@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,6 +306,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-5
+- Cherry pick 06b17d5cf4d02be3f2bc75a36c30d9e6880c6c4d from master
+  (jslagle@redhat.com)
+- Bump grinder to 0.122 (jmatthews@redhat.com)
+- Update since grinder no longer has a yum lock (jmatthews@redhat.com)
+- 747880 Allow for custom repos to have no sync schedule (jslagle@redhat.com)
+
 * Thu Oct 20 2011 James Slagle <jslagle@redhat.com> 0.0.214-4
 - Remove setgid root and sticky bit from our init scripts (jslagle@redhat.com)
 
