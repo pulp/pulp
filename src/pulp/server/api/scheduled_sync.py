@@ -243,7 +243,7 @@ def update_repo_schedule(repo, new_schedule, new_options):
     collection = Repo.get_collection()
     collection.update({'_id': repo['_id']},
                       {'$set': {'sync_schedule': sync_schedule,
-                                'sync_optinos': sync_options}},
+                                'sync_options': sync_options}},
                       safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
     repo['sync_schedule'] = new_schedule
