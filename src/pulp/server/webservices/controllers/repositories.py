@@ -134,6 +134,7 @@ default_fields = [
     'arch',
     'last_sync',
     'sync_schedule',
+    'sync_options',
     'use_symlinks',
     'groupid',
     'relative_path',
