@@ -810,7 +810,7 @@ class Schedule(RepoAction):
             self.repository_api.delete_sync_schedule(repo_id)
             utils.system_exit(os.EX_OK, _('Sync schedule for repo [ %(r)s ] removed') % {'r': repo_id})
 
-        schedule_opts = [getattr(self.opts, n) for n in ('interval', 'starts', 'runs')]
+        schedule_opts = [getattr(self.opts, n) for n in ('interval', 'start', 'runs')]
         options_opts = [getattr(self.opts, n) for n in ('skip', 'no_skip')]
 
         if reduce(lambda x,y: x or y, chain(schedule_opts, options_opts)):
