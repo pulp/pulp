@@ -281,8 +281,11 @@ class ConsumerDeferredFields(JSONController):
         @type id: str
         @param id: consumer id
         """
+        if not consumer_api.consumer(id):
+            return self.conflict('Consumer [%s] does not exist' % id)
         valid_filters = ('types')
         types = self.filters(valid_filters).get('type', [])
+           
         if types == []:
             errataids = consumer_api.listerrata(id)
         else:
