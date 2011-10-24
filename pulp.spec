@@ -30,7 +30,7 @@ Requires: python-oauth2
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.108
+Requires: grinder >= 0.0.122
 Requires: httpd
 Requires: mod_ssl
 Requires: m2crypto
