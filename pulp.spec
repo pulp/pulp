@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,6 +306,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-7
+- 748555 Default remove_old_packages to true so that old packages beyond the 2
+  most recent versions are pruned from the filesystem (jslagle@redhat.com)
+
 * Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-6
 - 747725 Fix regular expression during oid validation and add a test that uses
   wildcard oid urls (jslagle@redhat.com)
