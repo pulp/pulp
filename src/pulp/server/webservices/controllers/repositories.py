@@ -481,7 +481,7 @@ class SchedulesResource(JSONController):
 
     @error_handler
     @auth_required(CREATE)
-    def POST(self, repo_id, schedule_type):
+    def PUT(self, repo_id, schedule_type):
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
         repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options', 'source'])
@@ -500,7 +500,8 @@ class SchedulesResource(JSONController):
         }
         return self.ok(data)
 
-    PUT = POST
+    POST = PUT
+
 
 class RepositoryDeferredFields(JSONController):
 
