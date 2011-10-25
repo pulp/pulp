@@ -178,6 +178,11 @@ class CdsApi(BaseApi):
         if not doomed:
             raise PulpException('Could not find CDS with hostname [%s]' % hostname)
 
+        # Explicitly unassociate each repo from the CDS first so the cluster
+        # and redistribution changes can take place
+        for repo_id in doomed['repo_ids']:
+            self.unassociate_repo(hostname, repo_id, deleted=False, apply_to_cluster=True)
+
         try:
             self.dispatcher.release_cds(doomed)
         except CdsTimeoutException:
