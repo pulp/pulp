@@ -18,6 +18,7 @@ HOST=`hostname`
 PWDFILE="password"
 INST_DIR='/tmp/etc/pki/qpid'
 DB_PASSWORD=""
+CA_PATH=""
 
 #
 # ========== SETUP ============
@@ -34,6 +35,19 @@ then
   INST_DIR=$ans
 fi
 echo $INST_DIR
+
+# prompt user for existing CA.
+# must contain both key & certificate
+echo ""
+echo "Please specify a CA.  Generated if not specified."
+echo ""
+read -p "Enter a path: " ans
+if [ "${#ans}" -gt 0 ]
+then
+  CA_PATH=$ans
+  echo "Using CA: $CA_PATH"
+fi
+
 
 # prompt user for install directory
 while [ "${#DB_PASSWORD}" -eq 0 ]; do
@@ -71,12 +85,19 @@ echo "Database created."
 #
 
 # create the CA cert
-SUBJECT="CN=ca,O=pulp,ST=Alabama,C=US"
-certutil -S -d . -n "ca" -s $SUBJECT -t "CT,," -x -f $PWDFILE -z cert8.db
-# export CA cert
-certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
-
-echo "CA created"
+if [ "$CA_PATH" = "" ]
+then
+  SUBJECT="CN=ca,O=pulp,ST=Alabama,C=US"
+  certutil -S -d . -n "ca" -s $SUBJECT -t "CT,," -x -f $PWDFILE -z cert8.db
+  # export CA cert
+  certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
+  echo "CA created"
+else
+  openssl pkcs12 -export -in $CA_PATH -out ca.p12 -name "ca"
+  pk12util -d . -n "ca" -i ca.p12
+  certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
+  echo "CA $CA_PATH, imported"
+fi
 
 #
 # =========== BROKER =============
