@@ -101,9 +101,12 @@ class Register(CDSAction):
         try:
             self.cds_api.register(hostname, name, description, schedule, cluster_id)
             print(_('Successfully registered CDS [%s]' % hostname))
-        except ServerRequestError:
-            print(_('Error attempting to register CDS [%s]' % hostname))
-            print(_('Check that the CDS packages have been installed on the CDS and have been started'))
+        except ServerRequestError, sre:
+            if sre[0] == 409:
+                print(_('A CDS with hostname [%s] is already registered') % hostname)
+            else:
+                print(_('Error attempting to register CDS [%s]' % hostname))
+                print(_('Check that the CDS packages have been installed on the CDS and have been started'))
 
 class Unregister(CDSAction):
 
