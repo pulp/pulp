@@ -13,6 +13,7 @@
 
 from gettext import gettext as _
 from optparse import OptionGroup
+import sys
 
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client.api.cds import CDSAPI
@@ -102,11 +103,13 @@ class Register(CDSAction):
             self.cds_api.register(hostname, name, description, schedule, cluster_id)
             print(_('Successfully registered CDS [%s]' % hostname))
         except ServerRequestError, sre:
-            if sre[0] == 409:
-                print(_('A CDS with hostname [%s] is already registered') % hostname)
-            else:
-                print(_('Error attempting to register CDS [%s]' % hostname))
+
+            # If the issue isn't a conflict, remind the user that the CDS packages
+            # need to be installed and running
+            if sre[0] != 409:
                 print(_('Check that the CDS packages have been installed on the CDS and have been started'))
+
+            raise sre, None, sys.exc_info()[2]
 
 class Unregister(CDSAction):
 
