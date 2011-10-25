@@ -359,7 +359,7 @@ class Repository(JSONController):
         api.delete(id=id)
         return self.ok({})
     
-class RepositoryNotesUpdateDelete(JSONController):
+class RepositoryNotes(JSONController):
     
     @auth_required(DELETE)
     def DELETE(self, id, key):
@@ -408,7 +408,7 @@ class RepositoryNotesUpdateDelete(JSONController):
         api.update_note(id, key, data)
         return self.ok(True)
 
-class RepositoryNotesAdd(JSONController):
+class RepositoryNotesCollection(JSONController):
     @auth_required(EXECUTE)
     def POST(self, id):
         """
@@ -1640,8 +1640,8 @@ urls = (
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
     'RepositoryTaskHistory',
     
-    '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotesUpdateDelete',
-    '/([^/]+)/notes/$', 'RepositoryNotesAdd',
+    '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotes',
+    '/([^/]+)/notes/$', 'RepositoryNotesCollection',
 )
 
 application = web.application(urls, globals())
