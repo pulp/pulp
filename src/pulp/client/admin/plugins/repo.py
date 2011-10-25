@@ -44,6 +44,15 @@ from pulp.client.plugins.repo import RepoAction, Repo, List
 
 log = getLogger(__name__)
 
+# constants -------------------------------------------------------------------
+
+# Used to translate the item detail keys into a more user-friendly representation
+ITEM_DETAILS_TITLES = {
+    'rpm'       : 'RPMs',
+    'delta_rpm' : 'Delta RPMs',
+    'tree_file' : 'Tree Files',
+}
+
 # repo command errors ---------------------------------------------------------
 
 class FileError(Exception):
@@ -219,12 +228,14 @@ class RepoProgressAction(AdminRepoAction):
         result = ""
         for item_type in details:
             item_details = details[item_type]
-            if item_details.has_key("num_success") and \
-                item_details.has_key("total_count"):
-                    result += _("%s: %s/%s\n") % \
-                        (item_type.title(),
-                         item_details["num_success"],
-                         item_details["total_count"])
+            if item_details.has_key("num_success") and item_details.has_key("total_count"):
+                item_type_title = ITEM_DETAILS_TITLES.get(item_type, item_type.title())
+
+                result += _("%s: %s/%s\n") % \
+                    (item_type_title,
+                     item_details["num_success"],
+                     item_details["total_count"])
+                
         return result
 
     def form_progress_item_downloads(self, progress):
