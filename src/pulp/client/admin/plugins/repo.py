@@ -853,7 +853,7 @@ class Sync(RepoProgressAction):
             limit = int(self.opts.limit)
             if limit < 1:
                 raise ValueError()
-            return {'limit': limit}
+            return {'max_speed': limit}
         except (TypeError, ValueError):
             msg = _('Invalid value for --limit: %(l)s') % {'l': self.opts.limit}
             utils.system_exit(os.EX_USAGE, msg)
