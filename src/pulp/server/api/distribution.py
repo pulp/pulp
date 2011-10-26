@@ -12,12 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import os
+import shutil
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
+from pulp.server.event.dispatcher import event
 from pulp.server.exceptions import PulpException
 from pulp.server import config
+from pulp.server import util
 
 log = logging.getLogger(__name__)
 
@@ -51,12 +55,19 @@ class DistributionApi(BaseApi):
         return d
 
     @audit(params=["id"])
-    def delete(self, id):
+    def delete(self, id, keep_files=False):
         """
         Delete distribution object based on "_id" key
         """
         if self.referenced(id):
             raise DistributionHasReferences(id)
+        if not keep_files:
+            distribution = self.distribution(id)
+            distribution_path = "%s/%s" % (util.top_distribution_location(), distribution['id'])
+            if os.path.exists(distribution_path):
+                log.debug("Delete distribution %s" % id)
+                shutil.rmtree(distribution_path)
+                util.delete_empty_directories(os.path.dirname(distribution_path))
         self.collection.remove({'id':id}, safe=True)
 
     def referenced(self, id):

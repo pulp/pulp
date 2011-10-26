@@ -133,11 +133,11 @@ class TestDistribution(testutil.PulpAsyncTest):
         self.repo_api.remove_distribution(repoid, distroid)
         repo = self.repo_api.repository(repoid)
         found = self.distribution_api.distribution(distroid)
-        self.assertTrue(found is None)
+        self.assertTrue(found is not None)
         assert(distroid not in repo['distributionid'])
 
     def test_remove_distro_with_references(self):
-        distroid = 'test_repo_distro'
+        distroid = 'test_repo_distro_ref'
         distro = self.distribution_api.create(distroid, None, None, [])
         found = self.distribution_api.distribution(distroid)
         self.assertTrue(found is not None)
@@ -153,16 +153,20 @@ class TestDistribution(testutil.PulpAsyncTest):
         self.repo_api.add_distribution(repoid2, distroid)
         repo = self.repo_api.repository(repoid2)
         assert(distroid in repo['distributionid'])
-        self.repo_api.remove_distribution(repoid1, distroid)
+
+        self.repo_api.delete(repoid1)
         repo = self.repo_api.repository(repoid1)
+        assert(repo is None)
         found = self.distribution_api.distribution(distroid)
         self.assertTrue(found is not None)
-        assert(distroid not in repo['distributionid'])
-        self.repo_api.remove_distribution(repoid2, distroid)
-        repo = self.repo_api.repository(repoid1)
+        self.repo_api.delete(repoid2)
+        repo = self.repo_api.repository(repoid2)
+        print "REPO",repo
+        assert(repo is None)
         found = self.distribution_api.distribution(distroid)
+        print found
         self.assertTrue(found is None)
-        assert(distroid not in repo['distributionid'])
+
 
     def test_distro_timestamp(self):
         distroid = 'test_distro'

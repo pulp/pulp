@@ -1932,6 +1932,8 @@ class RemoveDistribution(AdminRepoAction):
         id = self.get_required_option('id')
         # check if repos are valid
         repo = self.get_repo(id)
+        if not self.opts.distributionid:
+            utils.system_exit(os.EX_USAGE, _("Error: At least one distribution id is required to perform a remove."))
         if self.opts.distributionid not in repo['distributionid']:
             utils.system_exit(os.EX_DATAERR, _("Error: Distribution id [%s] does not exists in repo [%s] to perform a remove" % (self.opts.distributionid, id)))
         if not self.opts.distributionid:

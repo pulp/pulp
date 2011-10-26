@@ -533,8 +533,10 @@ class RepoApi(BaseApi):
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
-
-
+            try:
+                self.distroapi.delete(distroid, keep_files)
+            except DistributionHasReferences:
+                log.info("Distribution Id [%s] has other references; leaving it in the db" % distroid)
         #remove files:
         for fileid in repo['files']:
             repos = self.find_repos_by_files(fileid)
@@ -1637,11 +1639,6 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
         self._delete_ks_link(repo)
-        # see if the distribution is orphaned and remove from db
-        try:
-            self.distroapi.delete(distroid)
-        except DistributionHasReferences:
-            log.info("Distribution Id [%s] has other references; leaving it in the db" % distroid)
 
     def _create_ks_link(self, repo):
         if not os.path.isdir(self.distro_path):
