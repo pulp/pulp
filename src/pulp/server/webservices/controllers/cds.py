@@ -242,6 +242,10 @@ class CdsSyncActions(JSONController):
         Triggers a sync against the CDS identified by id.
         '''
 
+        cds = cds_api.cds(id)
+        if cds is None:
+            return self.not_found('Could not find CDS with hostname [%s]' % id)
+
         # Check to see if a timeout was specified
         params = self.params()
         timeout = None
