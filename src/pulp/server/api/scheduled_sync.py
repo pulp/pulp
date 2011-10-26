@@ -264,7 +264,8 @@ def delete_repo_schedule(repo):
         return
     collection = Repo.get_collection()
     collection.update({'_id': repo['_id']},
-                      {'$set': {'sync_schedule': None}},
+                      {'$set': {'sync_schedule': None,
+                                'sync_options': {}}},
                       safe=True)
     repo['sync_schedule'] = None
     _remove_repo_scheduled_sync_task(repo)
