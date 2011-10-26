@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.241
+Version:        0.0.242
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -251,16 +251,16 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
 # Client and CDS Gofer Plugins
 mkdir -p %{buildroot}/etc/gofer/plugins
-mkdir -p %{buildroot}/usr/lib/gofer/plugins
+mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/usr/lib/gofer/plugins
-cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
+cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/%{_libdir}/gofer/plugins
+cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
 # profile plugin
 mkdir -p %{buildroot}/etc/yum/pluginconf.d/
-mkdir -p %{buildroot}/usr/lib/yum-plugins/
+mkdir -p %{buildroot}/%{_libdir}/yum-plugins/
 cp etc/yum/pluginconf.d/*.conf %{buildroot}/etc/yum/pluginconf.d/
-cp src/pulp/client/consumer/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plugins/
+cp src/pulp/client/consumer/yumplugin/pulp-profile-update.py %{buildroot}/%{_libdir}/yum-plugins/
 
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
@@ -443,7 +443,7 @@ fi
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-consumer
 %{_exec_prefix}/lib/gofer/plugins/*.py*
-%{_prefix}/lib/yum-plugins/pulp-profile-update.py*
+%{_libdir}/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
@@ -494,6 +494,46 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Oct 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.242-1
+- 672569 - Changed hard coded directories to macros to appease rpmlint
+  (jason.dobies@redhat.com)
+- 749230 - validate local treeinfo checksum before copying
+  (pkilambi@redhat.com)
+- 690902 - Since the sync runs in an async task, we need to add a check for
+  hostname validity before triggering the task so we can inform the caller that
+  the invocation was invalid (jason.dobies@redhat.com)
+- 745561 - fixing race condition of resource permission creation
+  (jconnor@redhat.com)
+- 748889 - fixing expection text to be consistant (pkilambi@redhat.com)
+- 748944 - changing the remove distro to unassociate and orphan the distro and
+  delete from filesystem if associated repo is deleted (pkilambi@redhat.com)
+- 688983 - Call to unassociate each repo from a CDS before unregistering it so
+  that all of the unassociate steps take place (jason.dobies@redhat.com)
+- 688631 - Change handling of CDS errors to raise up to the normal CLI
+  handling, only reminding the user about the CDS packages and service in the
+  process (jason.dobies@redhat.com)
+- 688288 - For a conflict, give the user a custom error message
+  (jason.dobies@redhat.com)
+- Renaming RepoNotesAdd and RepoNotesUpdateDelete to RepoNotesCollection and
+  RepoNotes (skarmark@redhat.com)
+- 712523 - Split missing auth into its own exception (previously it was bundled
+  in with server-side errors). Changed the CDS register code to only catch
+  server exceptions and let the auth ones bubble up. (jason.dobies@redhat.com)
+- 747725 Fix regular expression during oid validation and add a test that uses
+  wildcard oid urls (jslagle@redhat.com)
+- 674651 - Added translation layer between grinder programmatic keys and user-
+  friendly text (jason.dobies@redhat.com)
+- Bump grinder to 0.122 (jmatthews@redhat.com)
+- Load test config prior to webservices.application init Fixes problem with
+  permission denied on log dir if run as non root (jmatthews@redhat.com)
+- Update playpen script for displaying memory usage (jmatthews@redhat.com)
+- Update since grinder no longer has a yum lock (jmatthews@redhat.com)
+- fixing broken errata list --repoid with type filter (skarmark@redhat.com)
+- 748324 - Fixed pulp-admin errata list not checking for non-existing consumer
+  (skarmark@redhat.com)
+- 748324 - Fixed pulp-admin errata list not checking for non-existing consumer
+  (skarmark@redhat.com)
+
 * Fri Oct 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.241-1
 - wrapping group export into a task job. * Adding client side changes to
   support group exports * adding a status flag to check status for background
