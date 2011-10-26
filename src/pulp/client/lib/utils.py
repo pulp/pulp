@@ -72,7 +72,7 @@ def parse_interval_schedule(interval, start, runs):
             runs = int(runs)
     except ValueError:
         system_exit(os.EX_USAGE, _('Runs must be an integer'))
-    if runs < 0:
+    if runs is not None and runs < 0:
         system_exit(os.EX_USAGE, _('Runs must be not be negative'))
     try:
         interval = dateutils.parse_iso8601_duration(interval)
