@@ -891,7 +891,24 @@ class YumSynchronizer(BaseSynchronizer):
             os.makedirs(distro_path)
         dist_tree_path = os.path.join(distro_path, tree_info_name)
         log.debug("Copying treeinfo file from %s to %s" % (treecfg, dist_tree_path))
-        shutil.copy(treecfg, dist_tree_path)
+        try:
+            skip_copy = False
+            if os.path.exists(dist_tree_path):
+                dst_treecfg_checksum = pulp.server.util.get_file_checksum(filename=dist_tree_path)
+                src_treecfg_checksum = pulp.server.util.get_file_checksum(filename=treecfg)
+                if src_treecfg_checksum == dst_treecfg_checksum:
+                    log.info("treecfg file %s already exists with same checksum. skip import" % dist_tree_path)
+                    skip_copy = True
+            if not skip_copy:
+                if not os.path.isdir(os.path.dirname(dist_tree_path)):
+                    os.makedirs(os.path.dirname(dist_tree_path))
+                shutil.copy(treecfg, dist_tree_path)
+        except:
+            # probably the same file
+            if os.path.exists(dist_tree_path):
+                log.debug("distribution tree info file already exists at %s" % dist_tree_path)
+            else:
+                log.error("Error copying treeinfo file to distribution location")
         repo_treefile_path = os.path.join(dst_repo_dir, tree_info_name)
         if not os.path.islink(repo_treefile_path):
             log.info("creating a symlink for treeinfo file from %s to %s" % (dist_tree_path, repo_treefile_path))
@@ -907,6 +924,8 @@ class YumSynchronizer(BaseSynchronizer):
                     src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
                     if src_file_checksum == dst_file_checksum:
                         log.info("file %s already exists with same checksum. skip import" % rel_file_path)
+                        self.progress['details']["tree_file"]["num_success"] += 1
+                        self.progress["num_success"] += 1
                         skip_copy = True
                 if not skip_copy:
                     file_dir = os.path.dirname(dst_file_path)
