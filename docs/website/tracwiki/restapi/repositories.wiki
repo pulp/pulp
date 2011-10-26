@@ -35,7 +35,8 @@
  * '''distributionid''' <list of str> ''list of distribution ids this repository belongs to [deferred fields]''
  * '''checksum_type''' <str> ''name of the algorithm used for checksums of the repository's content''
  * '''filters''' <list of str> ''list of filter ids associated with the repository''
- * '''content_types''' <str> ''content type allowed in this repository; default:yum; supported: [yum, file''
+ * '''content_types''' <str> ''content type allowed in this repository; default:yum; supported: [yum, file]''
+ * '''notes''' <dict> ''custom key-value attributes for this repository''
 '''!RepoSource object fields''': 
  * '''supported_types''' <list of str> ''list of supported types of repositories''
  * '''type''' <str> ''repository source type''
@@ -138,7 +139,6 @@
  * '''arch''' <str> ''the main architecture of packages contained in the repository''
  * '''feed''' <str> ''repository feed in the form of <type>:<url>''
  * '''use_symlinks''' ''(optional)'' <bool> ''defaults to false''
- * '''sync_schedule''' ''(optional)'' <str> ''iso8601 recurring interval specifying sync schedule''
  * '''feed_cert_data''' ''(optional)'' <dict> ''certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename''
  * '''consumer_cert_data''' ''(optional)'' <str> ''certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename''
  * '''relative_path''' ''(optional)'' <str> ''repository on disk path''
@@ -245,6 +245,25 @@
  * '''skip''' ''(optional)'' <object> ''yum skip dict''
  * '''limit''' ''(optional)'' <int> ''value in KB/sec to limit download bandwidth per thread.  Only applicable for yum synchronization''
  * '''threads''' ''(optional)'' <int> ''number of threads to use for synchronization.  Only applicable for yum synchronization''
+[[BR]]
+
+== Add distributions to Repository ==
+''Add distributions to repositories'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/add_distribution/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
+[[BR]]
+'''return''': True on successful add, False otherwise [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''distributionid''' <str> ''distribution id''
 [[BR]]
 
 == Add Errata ==
@@ -757,6 +776,25 @@
 '''return''': dict or None [[BR]]
 [[BR]]
 
+== remove distributions to Repository ==
+''Remove distributions to repositories'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/remove_distribution/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
+[[BR]]
+'''return''': True on successful remove, False otherwise [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''distributionid''' <str> ''distribution id''
+[[BR]]
+
 == Remove File ==
 ''Remove files from the repository.'' [[BR]]
 [[BR]]
@@ -1071,6 +1109,70 @@
 
 ----
 
+== Add a Note to the Repository ==
+''Add a Note to the Repository'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/notes/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not found if given repository does not exist [[BR]]
+ 409 Conflict if given key already exists [[BR]]
+[[BR]]
+'''return''': repo object [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''key''' <str> ''key to be added''
+ * '''value''' <str> ''value of key''
+[[BR]]
+
+----
+
+== Delete a Note from a Repository ==
+''Delete a Note from a Repository'' [[BR]]
+[[BR]]
+'''method''': DELETE [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/notes/<key>/ [[BR]]
+[[BR]]
+'''permission''': DELETE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not Found if given repository does not exist [[BR]]
+ 404 Not Found if given key does not exist [[BR]]
+[[BR]]
+'''return''': Unspecified [[BR]]
+[[BR]]
+
+== Update a key-value note of a Repository ==
+''Change the value of an existing key in Repository Notes.'' [[BR]]
+[[BR]]
+'''method''': PUT [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/notes/<key>/ [[BR]]
+[[BR]]
+'''permission''': UPDATE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not Found if given repository does not exist [[BR]]
+ 404 Not Found if given key does not exist [[BR]]
+[[BR]]
+'''return''': a Repo object [[BR]]
+[[BR]]
+'''parameters''': new value of the key [[BR]]
+[[BR]]
+
+----
+
 == Repository Synchronization Schedules ==
 ''List all repository synchronization schedules.'' [[BR]]
 [[BR]]
@@ -1085,4 +1187,82 @@
 '''failure response''': None [[BR]]
 [[BR]]
 '''return''': list of object that are mappings of repository id to synchronization schedule [[BR]]
+[[BR]]
+
+----
+
+== Remove the schedule ==
+''Remove a repository's schedule for the given type'' [[BR]]
+[[BR]]
+'''method''': DELETE [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/schedules/<type>/ [[BR]]
+[[BR]]
+'''permission''': DELETE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found [[BR]]
+[[BR]]
+'''return''': Unspecified [[BR]]
+[[BR]]
+
+== Get a repository's schedule ==
+''Get the repository schedule for the given type'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/schedules/<type>/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found [[BR]]
+[[BR]]
+'''return''': 
+ * hedule object
+ * '''type''' <str> ''type of schedule''
+ * '''schedule''' <str> ''schedule in iso8601 format''
+ * '''options''' <obj> ''options for the scheduled action''
+[[BR]]
+
+== Create or replace a schedule ==
+''Create or replace a schedule for a repository of the given type'' [[BR]]
+[[BR]]
+'''method''': PUT [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/schedules/<type>/ [[BR]]
+[[BR]]
+'''permission''': CREATE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': Unspecified [[BR]]
+[[BR]]
+'''return''': Unspecified [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''schedule''' <str> ''schedule for given type in iso8601 format''
+ * '''options''' <obj> ''options for the scheduled action''
+[[BR]]
+
+== Create or replace a schedule ==
+''Create or replace a schedule for a repository of the given type'' [[BR]]
+[[BR]]
+'''method''': PUT [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/schedules/<type>/ [[BR]]
+[[BR]]
+'''permission''': CREATE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': Unspecified [[BR]]
+[[BR]]
+'''return''': Unspecified [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''schedule''' <str> ''schedule for given type in iso8601 format''
+ * '''options''' <obj> ''options for the scheduled action''
 [[BR]]

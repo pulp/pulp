@@ -62,7 +62,7 @@
 ----
 
 == Repository Discovery ==
-''Discover repository urls with metadata and create candidate repos.'' [[BR]]
+''Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -75,4 +75,48 @@
 '''failure response''': 206 PARTIAL CONTENT [[BR]]
 [[BR]]
 '''return''': list of matching repourls. [[BR]]
+[[BR]]
+
+----
+
+== Repository group export ==
+''schedule an export on a group of repositories'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /services/export/group/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 206 PARTIAL CONTENT [[BR]]
+[[BR]]
+'''return''': Job object [[BR]]
+[[BR]]
+
+----
+
+== Repository Content Export ==
+''Export the repository's content into target directory from its source.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /services/export/repository/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 202 Accepted [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not Found if the id does not match a repository [[BR]]
+ 406 Not Acceptable if the repository does not have a source [[BR]]
+ 409 Conflict if a export is already in progress for the repository [[BR]]
+[[BR]]
+'''return''': a Task object [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''target_location''' <str> ''target location on the server filesystem where the content needs to be exported''
+ * '''generate_isos''' ''(optional)'' <boolean> ''wrap the exported content into iso image files.''
+ * '''overwrite''' ''(optional)'' <boolean> ''overwrite the content in target location if not empty''
 [[BR]]
