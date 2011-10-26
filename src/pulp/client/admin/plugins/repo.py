@@ -794,7 +794,7 @@ class Sync(RepoProgressAction):
             self._foreground_final_output(task)
 
     def _show_schedule(self, repo_id):
-        conflicting_opts = ('delete', 'interval', 'runs', 'start', 'timeout', 'limit', 'threads', 'foreground')
+        conflicting_opts = ('delete', 'interval', 'runs', 'start', 'exclude', 'timeout', 'limit', 'threads', 'foreground')
         if reduce(lambda x,y: x or y, [getattr(self.opts, n) for n in conflicting_opts]):
             msg = _('Cannot use --show-schedule with other options')
             utils.system_exit(os.EX_USAGE, msg)
@@ -808,7 +808,7 @@ class Sync(RepoProgressAction):
         utils.system_exit(os.EX_OK, '')
 
     def _delete_schedule(self, repo_id):
-        conflicting_opts = ('show', 'interval', 'runs', 'start', 'timeout', 'limit', 'threads', 'foreground')
+        conflicting_opts = ('show', 'interval', 'runs', 'start', 'exclude', 'timeout', 'limit', 'threads', 'foreground')
         if reduce(lambda x,y: x or y, [getattr(self.opts, n) for n in conflicting_opts]):
             msg = _('Cannot use --delete-schedule with other options')
             utils.system_exit(os.EX_USAGE, msg)
