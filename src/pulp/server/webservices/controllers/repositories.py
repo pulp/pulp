@@ -450,7 +450,7 @@ class SchedulesResource(JSONController):
     def GET(self, repo_id, schedule_type):
         """
         [[wiki]]
-        title: Get a repository's schedule
+        title: Schedule
         description: Get the repository schedule for the given type
         method: GET
         path: /repositories/<id>/schedules/<type>/
@@ -481,7 +481,7 @@ class SchedulesResource(JSONController):
     def DELETE(self, repo_id, schedule_type):
         """
         [[wiki]]
-        title: Remove the schedule
+        title: Schedule Delete
         description: Remove a repository's schedule for the given type
         method: DELETE
         path: /repositories/<id>/schedules/<type>/
@@ -508,7 +508,7 @@ class SchedulesResource(JSONController):
     def PUT(self, repo_id, schedule_type):
         """
         [[wiki]]
-        title: Create or replace a schedule
+        title: Schedule Create or Replace
         description: Create or replace a schedule for a repository of the given type
         method: PUT
         path: /repositories/<id>/schedules/<type>/
