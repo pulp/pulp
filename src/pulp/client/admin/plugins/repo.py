@@ -20,7 +20,7 @@ from datetime import timedelta
 from gettext import gettext as _
 from itertools import chain
 from optparse import OptionGroup
-from pprint import pprint
+from pprint import pformat
 
 from isodate import ISO8601Error
 
@@ -799,13 +799,10 @@ class Sync(RepoProgressAction):
             msg = _('Cannot use --show-schedule with other options')
             utils.system_exit(os.EX_USAGE, msg)
         obj = self.repository_api.get_sync_schedule(repo_id)
-        print_header('Sync Schedule')
-        # TODO put together nice output formatting here
-        print obj['type'] + ':',
-        print obj['schedule']
-        print 'options' + ':',
-        pprint(obj['options'])
-        utils.system_exit(os.EX_OK, '')
+        print_header('Sync Schedule for %s' % repo_id)
+        msg = '%s schedule: %25s\noptions: %25s' % (obj['type'], obj['schedule'],
+                                                    pformat(obj['options']))
+        utils.system_exit(os.EX_OK, msg)
 
     def _delete_schedule(self, repo_id):
         conflicting_opts = ('show', 'interval', 'runs', 'start', 'exclude', 'timeout', 'limit', 'threads', 'foreground')
