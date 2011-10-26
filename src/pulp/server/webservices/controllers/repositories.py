@@ -448,6 +448,20 @@ class SchedulesResource(JSONController):
     @error_handler
     @auth_required(READ)
     def GET(self, repo_id, schedule_type):
+        """
+        [[wiki]]
+        title: Get a repository's schedule
+        description: Get the repository schedule for the given type
+        method: GET
+        path: /repositories/<id>/schedules/<type>/
+        permission: READ
+        success response: 200 OK
+        failure response: 404 Not Found
+        return: Schedule object
+         * type, str, type of schedule
+         * schedule, str, schedule in iso8601 format
+         * options, obj, options for the scheduled action
+        """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
         repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
@@ -465,6 +479,16 @@ class SchedulesResource(JSONController):
     @error_handler
     @auth_required(DELETE)
     def DELETE(self, repo_id, schedule_type):
+        """
+        [[wiki]]
+        title: Remove the schedule
+        description: Remove a repository's schedule for the given type
+        method: DELETE
+        path: /repositories/<id>/schedules/<type>/
+        permission: DELETE
+        success response: 200 OK
+        failure response: 404 Not Found
+        """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
         repo = api.repository(repo_id, ['id', 'sync_schedule'])
@@ -482,6 +506,18 @@ class SchedulesResource(JSONController):
     @error_handler
     @auth_required(CREATE)
     def PUT(self, repo_id, schedule_type):
+        """
+        [[wiki]]
+        title: Create or replace a schedule
+        description: Create or replace a schedule for a repository of the given type
+        method: PUT
+        path: /repositories/<id>/schedules/<type>/
+        permission: CREATE
+        success response: 200 OK
+        parameters:
+         * schedule, str, schedule for given type in iso8601 format
+         * options, obj, options for the scheduled action
+        """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
         repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options', 'source'])
@@ -1709,7 +1745,7 @@ urls = (
 
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
     'RepositoryTaskHistory',
-    
+
     '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotes',
     '/([^/]+)/notes/$', 'RepositoryNotesCollection',
 )
