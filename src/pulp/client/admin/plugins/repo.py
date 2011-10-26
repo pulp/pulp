@@ -790,8 +790,8 @@ class Sync(RepoProgressAction):
             if not self.opts.foreground:
                 msg = _('Use "repo status" to check on the progress')
                 utils.system_exit(os.EX_OK, msg)
-            self._foreground(task)
-            self._foreground_final_output(task)
+            final_task = self._foreground(task)
+            self._foreground_final_output(final_task)
 
     def _show_schedule(self, repo_id):
         conflicting_opts = ('delete', 'interval', 'runs', 'start', 'exclude', 'timeout', 'limit', 'threads', 'foreground')
@@ -923,6 +923,7 @@ class Sync(RepoProgressAction):
                 task = self.task_api.info(task['id'])
         except KeyboardInterrupt:
             print ''
+        return task
 
     def _foreground_final_output(self, task):
         state = task['state']
