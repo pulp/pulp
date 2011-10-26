@@ -1191,7 +1191,7 @@
 
 ----
 
-== Remove the schedule ==
+== Schedule Delete ==
 ''Remove a repository's schedule for the given type'' [[BR]]
 [[BR]]
 '''method''': DELETE [[BR]]
@@ -1207,7 +1207,7 @@
 '''return''': Unspecified [[BR]]
 [[BR]]
 
-== Get a repository's schedule ==
+== Schedule ==
 ''Get the repository schedule for the given type'' [[BR]]
 [[BR]]
 '''method''': GET [[BR]]
@@ -1227,7 +1227,7 @@
  * '''options''' <obj> ''options for the scheduled action''
 [[BR]]
 
-== Create or replace a schedule ==
+== Schedule Create or Replace ==
 ''Create or replace a schedule for a repository of the given type'' [[BR]]
 [[BR]]
 '''method''': PUT [[BR]]
@@ -1247,7 +1247,7 @@
  * '''options''' <obj> ''options for the scheduled action''
 [[BR]]
 
-== Create or replace a schedule ==
+== Schedule Create or Replace ==
 ''Create or replace a schedule for a repository of the given type'' [[BR]]
 [[BR]]
 '''method''': PUT [[BR]]
