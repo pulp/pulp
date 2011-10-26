@@ -106,7 +106,7 @@ def parse_and_validate_repo_sync_options(options):
     if not options:
         return {}
     new_options = {}
-    valid_keys = ('max_speed', 'threads', 'timeout', 'skip') # XXX couple of other throttling options
+    valid_keys = ('max_speed', 'threads', 'timeout', 'skip')
     for key, value in options.items():
         if key not in valid_keys:
             raise PulpValidationError(_('Unknown sync option: %(o)s') % {'o': key})
