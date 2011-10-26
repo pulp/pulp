@@ -438,7 +438,7 @@ def system_exit(code, msgs=None):
             out = sys.stdout
         else:
             out = sys.stderr
-        #out = sys.stdout if code == os.EX_OK else sys.stderr
+            print >> out, 'error: ',
         for msg in msgs:
             print >> out, msg
     sys.exit(code)
