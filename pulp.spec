@@ -251,16 +251,16 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
 # Client and CDS Gofer Plugins
 mkdir -p %{buildroot}/etc/gofer/plugins
-mkdir -p %{buildroot}/usr/lib/gofer/plugins
+mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/usr/lib/gofer/plugins
-cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
+cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/%{_libdir}/gofer/plugins
+cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
 # profile plugin
 mkdir -p %{buildroot}/etc/yum/pluginconf.d/
-mkdir -p %{buildroot}/usr/lib/yum-plugins/
+mkdir -p %{buildroot}/%{_libdir}/yum-plugins/
 cp etc/yum/pluginconf.d/*.conf %{buildroot}/etc/yum/pluginconf.d/
-cp src/pulp/client/consumer/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plugins/
+cp src/pulp/client/consumer/yumplugin/pulp-profile-update.py %{buildroot}/%{_libdir}/yum-plugins/
 
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
@@ -443,7 +443,7 @@ fi
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-consumer
 %{_exec_prefix}/lib/gofer/plugins/*.py*
-%{_prefix}/lib/yum-plugins/pulp-profile-update.py*
+%{_libdir}/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
