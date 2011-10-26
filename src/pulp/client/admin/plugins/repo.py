@@ -800,7 +800,7 @@ class Sync(RepoProgressAction):
             utils.system_exit(os.EX_USAGE, msg)
         obj = self.repository_api.get_sync_schedule(repo_id)
         print_header('Sync Schedule for %s' % repo_id)
-        msg = '%s Schedule\t: %-25s\nOptions\t: %-25s' % (obj['type'].title(), obj['schedule'], pformat(obj['options']))
+        msg = '%s Schedule: %30s\nOptions: %30s' % (obj['type'].title(), obj['schedule'], pformat(obj['options']))
         utils.system_exit(os.EX_OK, msg)
 
     def _delete_schedule(self, repo_id):
