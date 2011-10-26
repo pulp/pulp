@@ -69,7 +69,7 @@ class CloneError(Exception):
 class AdminRepoAction(RepoAction):
 
     def __init__(self, cfg):
-        super(RepoAction, self).__init__(cfg)
+        super(AdminRepoAction, self).__init__(cfg)
         self.consumer_api = ConsumerAPI()
         self.errata_api = ErrataAPI()
         self.package_api = PackageAPI()
@@ -235,7 +235,7 @@ class RepoProgressAction(AdminRepoAction):
                     (item_type_title,
                      item_details["num_success"],
                      item_details["total_count"])
-                
+
         return result
 
     def form_progress_item_downloads(self, progress):
@@ -743,100 +743,6 @@ class Update(AdminRepoAction):
         print _("Successfully updated repository [ %s ]") % id
 
 
-class Schedule(RepoAction):
-
-    name = 'schedule'
-    description = _('manage automatically scheduled syncs')
-
-    def setup_parser(self):
-        super(Schedule, self).setup_parser()
-        self.parser.add_option('--show', dest='show', action='store_true', default=False,
-                               help=_('show existing schedule'))
-        self.parser.add_option('--delete', dest='delete', action='store_true', default=False,
-                               help=_('delete existing schedule'))
-        self.parser.add_option('--set-interval', dest='interval', default=None,
-                               help=_('length of time between each run in iso8601 duration format'))
-        self.parser.add_option('--set-start', dest='start', default=None,
-                               help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
-        self.parser.add_option('--set-runs', dest='runs', default=None,
-                               help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
-        self.parser.add_option('--skip', dest='skip', action='append', default=[],
-                               help=_('elements to skip: packages, errata, and/or distribution'))
-        self.parser.add_option('--no-skip', dest='no_skip', action='append', default=[],
-                               help=_('elements to not skip: packages, errata, and/or distribution'))
-
-
-    def _new_schedule(self, obj):
-        schedule = obj and obj['schedule']
-        interval = start = runs = None
-        if schedule is not None:
-            interval, start, runs = parse_iso8601_interval(schedule)
-            interval = interval and format_iso8601_duration(interval)
-            start = start and format_iso8601_datetime(start)
-            runs = runs and str(runs) # this will skip '0', but that's wrong anyway...
-        new_interval = self.opts.interval or interval
-        new_start = self.opts.start or start
-        new_runs = self.opts.runs or runs
-        new_shedule = parse_interval_schedule(new_interval, new_start, new_runs)
-        if not isinstance(new_interval, timedelta) and new_start is None:
-            msg =_('If interval has months or years, a start date must be specified')
-            utils.system_exit(os.EX_USAGE,  msg)
-        return new_shedule
-
-    def _new_options(self, obj):
-        valid_elements = ('packages', 'errata', 'distribution')
-        invalid_elements = set()
-        options = obj and obj['options']
-        skip = options and options.get('skip', None)
-        skip = skip or {}
-        for element in self.opts.skip:
-            if element not in valid_elements:
-                invalid_elements.add(element)
-                continue
-            skip[element] = 1
-        for element in self.opts.no_skip:
-            if element not in valid_elements:
-                invalid_elements.add(element)
-                continue
-            skip.pop(element, None)
-        if invalid_elements:
-            msg = _('Unknown elements for skip/no-skip: %s') % ', '.join(invalid_elements)
-            utils.system_exit(os.EX_USAGE, msg)
-        return {'skip': skip}
-
-    def run(self):
-        repo_id = self.get_required_option('id')
-
-        if self.opts.show:
-            obj = self.repository_api.get_sync_schedule(repo_id)
-            print_header('Sync Schedule')
-            # TODO put together nice output formatting here
-            print obj['type'] + ':',
-            print obj['schedule']
-            print 'options' + ':',
-            pprint(obj['options'])
-            utils.system_exit(os.EX_OK, '')
-
-        if self.opts.delete:
-            self.repository_api.delete_sync_schedule(repo_id)
-            utils.system_exit(os.EX_OK, _('Sync schedule for repo [ %(r)s ] removed') % {'r': repo_id})
-
-        schedule_opts = [getattr(self.opts, n) for n in ('interval', 'start', 'runs')]
-        options_opts = [getattr(self.opts, n) for n in ('skip', 'no_skip')]
-
-        if reduce(lambda x,y: x or y, chain(schedule_opts, options_opts)):
-            obj = self.repository_api.get_sync_schedule(repo_id)
-            new_schedule = self._new_schedule(obj)
-            new_options = self._new_options(obj)
-            data = {'schedule': new_schedule,
-                    'options': new_options}
-            self.repository_api.change_sync_schedule(repo_id, data)
-            print _('Sync schedule for repo [ %s ] changed to [ %s ]') % (repo_id, new_schedule)
-            utils.system_exit(os.EX_OK, '')
-
-        utils.system_exit(os.EX_NOINPUT, _('No options specified, see --help'))
-
-
 class Sync(RepoProgressAction):
 
     name = "sync"
@@ -844,27 +750,184 @@ class Sync(RepoProgressAction):
 
     def setup_parser(self):
         super(Sync, self).setup_parser()
-        self.parser.add_option("--timeout", dest="timeout",
-                               help=_("repository sync timeout specified "
-                               "in iso8601 duration format "
-                               "(P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
-        self.parser.add_option("--no-packages", action="store_true", dest="nopackages",
-                               help=_("skip packages from the sync process"))
-        self.parser.add_option("--no-errata", action="store_true", dest="noerrata",
-                               help=_("skip errata from the sync process"))
-        self.parser.add_option("--no-distribution", action="store_true", dest="nodistro",
-                               help=_("skip distributions from the sync process"))
-        self.parser.add_option('-F', '--foreground', dest='foreground',
-                               action='store_true', default=False,
+        self.parser.add_option('--show-schedule', dest='show', action='store_true', default=False,
+                               help=_('show existing schedule'))
+        self.parser.add_option('--delete-schedule', dest='delete', action='store_true', default=False,
+                               help=_('delete existing schedule'))
+        self.parser.add_option('--interval', dest='interval', default=None,
+                               help=_('length of time between each run in iso8601 duration format'))
+        self.parser.add_option('--runs', dest='runs', default=None,
+                               help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        self.parser.add_option('--start', dest='start', default=None,
+                               help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+        self.parser.add_option('--exclude', dest='exclude', action='append', default=[],
+                               help=_('elements to exclude: packages, errata and/or distribution'))
+        self.parser.add_option("--timeout", dest="timeout", default=None,
+                               help=_("repository sync timeout specified in iso8601 duration format (P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
+        self.parser.add_option("--limit", dest="limit", default=None,
+                               help=_("limit download bandwidth per thread to value in KB/sec"))
+        self.parser.add_option("--threads", dest="threads", default=None,
+                               help=_("number of threads to use for downloading content"))
+        self.parser.add_option('-F', '--foreground', dest='foreground', action='store_true', default=False,
                                help=_('synchronize repository in the foreground'))
-        self.parser.add_option("--limit", dest="limit",
-                               help=_("limit download bandwidth per thread to value in KB/sec"),
-                               default=None)
-        self.parser.add_option("--threads", dest="threads",
-                               help=_("number of threads to use for downloading content"),
-                               default=None)
 
-    def print_sync_finish(self, state, progress):
+    def run(self):
+        repo_id = self.get_required_option('id')
+        self.get_repo(repo_id)
+        if self.opts.start and self.opts.foreground:
+            msg = _('Cannot use --foreground with --start')
+            utils.system_exit(os.EX_USAGE, msg)
+        if self.opts.show:
+            self._show_schedule(repo_id)
+        if self.opts.delete:
+            self._delete_schedule(repo_id)
+        schedule = self._new_schedule()
+        options = self._sync_options()
+        if schedule:
+            self._set_schedule(repo_id, schedule, options)
+        else:
+            task = self._sync(repo_id, options)
+            if not self.opts.foreground:
+                msg = _('Use "repo status" to check on the progress')
+                utils.system_exit(os.EX_OK, msg)
+            self._foreground(task)
+            self._foreground_final_output(task)
+
+    def _show_schedule(self, repo_id):
+        conflicting_opts = ('delete', 'interval', 'runs', 'start', 'timeout', 'limit', 'threads', 'foreground')
+        if reduce(lambda x,y: x or y, [getattr(self.opts, n) for n in conflicting_opts]):
+            msg = _('Cannot use --show-schedule with other options')
+            utils.system_exit(os.EX_USAGE, msg)
+        obj = self.repository_api.get_sync_schedule(repo_id)
+        print_header('Sync Schedule')
+        # TODO put together nice output formatting here
+        print obj['type'] + ':',
+        print obj['schedule']
+        print 'options' + ':',
+        pprint(obj['options'])
+        utils.system_exit(os.EX_OK, '')
+
+    def _delete_schedule(self, repo_id):
+        conflicting_opts = ('show', 'interval', 'runs', 'start', 'timeout', 'limit', 'threads', 'foreground')
+        if reduce(lambda x,y: x or y, [getattr(self.opts, n) for n in conflicting_opts]):
+            msg = _('Cannot use --delete-schedule with other options')
+            utils.system_exit(os.EX_USAGE, msg)
+        self.repository_api.delete_sync_schedule(repo_id)
+        msg = _('Sync schedule for repo [ %(r)s ] removed') % {'r': repo_id}
+        utils.system_exit(os.EX_OK, msg)
+
+    def _new_schedule(self):
+        if not self.opts.interval or self.opts.runs:
+            return None
+        if self.opts.runs and not self.opts.interval:
+            msg = _('Must use --runs with --interval')
+            utils.system_exit(os.EX_USAGE, msg)
+        interval = self.opts.interval
+        start = self.opts.start
+        runs = self.opts.runs
+        schedule = parse_interval_schedule(interval, start, runs)
+        if not isinstance(interval, timedelta) and start is None:
+            msg =_('If interval has months or years, a start date must be specified')
+            utils.system_exit(os.EX_USAGE,  msg)
+        return schedule
+
+    def _sync_options(self):
+        options = {}
+        options.update(self._at())
+        options.update(self._limit())
+        options.update(self._threads())
+        options.update(self._timeout())
+        options.update(self._skip_dict())
+        return options
+
+    def _at(self):
+        if not self.opts.start or self.opts.interval:
+            return {}
+        at = parse_iso8601_datetime(self.opts.start)
+        return {'at': self.opts.start}
+
+    def _limit(self):
+        if not self.opts.limit:
+            return {}
+        try:
+            limit = int(self.opts.limit)
+            if limit < 1:
+                raise ValueError()
+            return {'limit': limit}
+        except (TypeError, ValueError):
+            msg = _('Invalid value for --limit: %(l)s') % {'l': self.opts.limit}
+            utils.system_exit(os.EX_USAGE, msg)
+
+    def _threads(self):
+        if not self.opts.threads:
+            return {}
+        try:
+            threads = int(self.opts.threads)
+            if threads < 1:
+                raise ValueError()
+            return {'threads': threads}
+        except (TypeError, ValueError):
+            msg = _('Invalid value for --threads: %(t)s') % {'t': self.opts.threads}
+            utils.system_exit(os.EX_USAGE, msg)
+
+    def _timeout(self):
+        timeout = self.opts.timeout
+        if timeout is None:
+            return {}
+        try:
+            delta = parse_iso8601_duration(timeout)
+        except ISO8601Error:
+            msg = _('Improperly formatted timeout: %(t)s') % {'t': timeout}
+            utils.system_exit(os.EX_USAGE, msg)
+        if not isinstance(delta, timedelta):
+            utils.system_exit(os.EX_USAGE, 'Timeout may not contain months or years')
+        return {'timeout': timeout}
+
+    def _skip_dict(self):
+        valid_elements = ('packages', 'errata', 'distribution')
+        invalid_elements = set()
+        skip = {}
+        for element in self.opts.exclude:
+            if element not in valid_elements:
+                invalid_elements.add(element)
+                continue
+            skip[element] = 1
+        if invalid_elements:
+            msg = _('Unknown elements for exclusion: %(e)s') % {'e': ', '.join(invalid_elements)}
+            utils.system_exit(os.EX_USAGE, msg)
+        return {'skip': skip}
+
+    def _set_schedule(self, repo_id, schedule, options):
+        data = {'schedule': schedule,
+                'options': options}
+        self.repository_api.change_sync_schedule(repo_id, data)
+        msg = _('Sync schedule for repo [ %(r)s ] changed to [ %(s)s ]') % {'r': repo_id, 's': schedule}
+        utils.system_exit(os.EX_OK, msg)
+
+    def _sync(self, repo_id, options):
+        tasks = self.repository_api.sync_list(repo_id)
+        running = self.repository_api.running_task(tasks)
+        if running is not None:
+            print _('Sync for repository %(r)s already in progress') % {'r': repo_id}
+            return running
+        options.pop('at', None) # XXX temporary until I get 'at' working for syncs
+        task = self.repository_api.sync(repo_id, **options)
+        print _('Sync for repository %(r)s started') % {'r': repo_id}
+        return task
+
+    def _foreground(self, task):
+        print _('You can safely CTRL+C this current command and it will continue')
+        try:
+            while not task_end(task):
+                self.print_progress(task['progress'])
+                time.sleep(0.25)
+                task = self.task_api.info(task['id'])
+        except KeyboardInterrupt:
+            print ''
+
+    def _foreground_final_output(self, task):
+        state = task['state']
+        progress = task['progress']
         self.print_progress(progress)
         current = ""
         current += _('Sync: %s\n') % (state.title())
@@ -886,60 +949,8 @@ class Sync(RepoProgressAction):
                 current += self.form_error_details(progress)
         self.write(current, self._previous_progress)
         self._previous_progress = current
-
-    def sync_foreground(self, task):
-        print _('You can safely CTRL+C this current command and it will continue')
-        try:
-            while not task_end(task):
-                self.print_progress(task['progress'])
-                time.sleep(0.25)
-                task = self.task_api.info(task['id'])
-        except KeyboardInterrupt:
-            print ''
-            return
-        self.print_sync_finish(task['state'], task['progress'])
-        if task['state'] == 'error':
-            if task['traceback']:
-                utils.system_exit(-1, task['traceback'][-1])
-
-    def get_task(self):
-        id = self.get_required_option('id')
-        self.get_repo(id)
-        tasks = self.repository_api.sync_list(id)
-        running = self.repository_api.running_task(tasks)
-        if running is not None:
-            print _('Sync for repository %s already in progress') % id
-            return running
-        skip = {}
-        if self.opts.nopackages:
-            skip['packages'] = 1
-            # skip errata as well, no point of errata without pkgs
-            skip['errata'] = 1
-        if self.opts.noerrata:
-            skip['errata'] = 1
-        if self.opts.nodistro:
-            skip['distribution'] = 1
-        timeout = self.opts.timeout
-        if timeout is not None:
-            try:
-                delta = parse_iso8601_duration(timeout)
-            except ISO8601Error:
-                utils.system_exit(os.EX_USAGE, _('Improperly formatted timeout: %s , see --help') % timeout)
-            if not isinstance(delta, timedelta):
-                utils.system_exit(os.EX_USAGE, 'Timeout may not contain months or years')
-        limit = self.opts.limit
-        threads = self.opts.threads
-        task = self.repository_api.sync(id, skip, timeout, limit=limit, threads=threads)
-        print _('Sync for repository %s started') % id
-        return task
-
-    def run(self):
-        foreground = self.opts.foreground
-        task = self.get_task()
-        if not foreground:
-            utils.system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
-        self.sync_foreground(task)
-
+        if task['state'] == 'error' and task['traceback']:
+            utils.system_exit(-1, task['traceback'][-1])
 
 
 class CancelSync(AdminRepoAction):
@@ -2033,7 +2044,6 @@ class AdminRepo(Repo):
                 Clone,
                 Delete,
                 Update,
-                Schedule,
                 Sync,
                 CancelSync,
                 CancelClone,
