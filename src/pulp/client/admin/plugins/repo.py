@@ -849,7 +849,7 @@ class Sync(RepoProgressAction):
             limit = int(self.opts.limit)
             if limit < 1:
                 raise ValueError()
-            return {'max_speed': limit}
+            return {'limit': limit}
         except (TypeError, ValueError):
             msg = _('Invalid value for --limit: %(l)s') % {'l': self.opts.limit}
             utils.system_exit(os.EX_USAGE, msg)
@@ -894,6 +894,9 @@ class Sync(RepoProgressAction):
         return {'skip': skip}
 
     def _set_schedule(self, repo_id, schedule, options):
+        # HACK because we couldn't make up our minds about terminology
+        if 'limit' in options:
+            options['max_speed'] = options.pop('limit')
         data = {'schedule': schedule,
                 'options': options}
         self.repository_api.change_sync_schedule(repo_id, data)
