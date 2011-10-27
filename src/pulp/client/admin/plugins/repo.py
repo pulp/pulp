@@ -1658,7 +1658,7 @@ class Discovery(RepoProgressAction):
 
     def setup_parser(self):
         self.parser.add_option("-u", "--url", dest="url",
-                               help=_("root url to perform discovery (required)"))
+                               help=_("root url to perform discovery (required); Supported Urls: ['http', 'https', 'file']; For a file based url, the path should be accessible by apache"))
         self.parser.add_option("--ca", dest="ca",
                                help=_("path location to the url ca certificate"))
         self.parser.add_option("--cert", dest="cert",
