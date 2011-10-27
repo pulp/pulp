@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,6 +306,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Oct 27 2011 James Slagle <jslagle@redhat.com> 0.0.214-8
+- 737584 Switch remove_old_packages back to false.  Since we're not
+  regenerating repo metadata on sync, the packages we don't keep will 404 for
+  both CDS's and clients. (jslagle@redhat.com)
+- 747725 Strip off initial and trailing slash from OID url.  Some content certs
+  may have them where others do not. (jslagle@redhat.com)
+
 * Mon Oct 24 2011 James Slagle <jslagle@redhat.com> 0.0.214-7
 - 748555 Default remove_old_packages to true so that old packages beyond the 2
   most recent versions are pruned from the filesystem (jslagle@redhat.com)
