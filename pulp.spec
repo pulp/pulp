@@ -442,7 +442,7 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-consumer
-%{_exec_prefix}/lib/gofer/plugins/*.py*
+%{_libdir}/gofer/plugins/*.py*
 %{_libdir}/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
@@ -472,7 +472,7 @@ fi
 %{python_sitelib}/pulp/cds/
 %{python_sitelib}/pulp/repo_auth/
 %{_sysconfdir}/gofer/plugins/cdsplugin.conf
-%{_exec_prefix}/lib/gofer/plugins/cdsplugin.*
+%{_libdir}/gofer/plugins/cdsplugin.*
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/cds.wsgi
 %config %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
