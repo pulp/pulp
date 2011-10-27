@@ -81,6 +81,7 @@ class Package:
     __slots__ = \
         ('relativepath',
          'checksum',
+         'checksum_type',
          'name',
          'epoch',
          'version',
@@ -405,7 +406,7 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
             hash = checksum["sha256"]
         else:
             #unknown checksum type, grab first checksum type
-            hash = checksum[hash.keys()[0]]
+            hash = checksum.values()[0]
 
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
         name, version, release, arch, hash[:3], filename)

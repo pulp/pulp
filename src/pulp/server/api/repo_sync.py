@@ -351,6 +351,8 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
     # Process Files
     synchronizer.add_files_from_dir(repo_dir, repo_id, skip_dict)
+    # updating Metadata
+    synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     # Process Metadata
     added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
     return added_packages, added_errataids
