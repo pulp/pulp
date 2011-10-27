@@ -494,6 +494,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Oct 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.242-2
+- Fix macro changes for x86_64. (jortel@redhat.com)
+
 * Wed Oct 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.242-1
 - 672569 - Changed hard coded directories to macros to appease rpmlint
   (jason.dobies@redhat.com)
