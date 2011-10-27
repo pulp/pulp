@@ -391,9 +391,9 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/server/
 %{python_sitelib}/pulp/repo_auth/
-%config %{_sysconfdir}/pulp/pulp.conf
-%config %{_sysconfdir}/pulp/repo_auth.conf
-%config %{_sysconfdir}/pulp/logging
+%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+%config(noreplace) %{_sysconfdir}/pulp/logging
 %config %{_sysconfdir}/httpd/conf.d/pulp.conf
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(775, apache, apache) %{_sysconfdir}/pulp
@@ -476,8 +476,8 @@ fi
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/cds.wsgi
 %config %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
-%config %{_sysconfdir}/pulp/cds.conf
-%config %{_sysconfdir}/pulp/repo_auth.conf
+%config(noreplace) %{_sysconfdir}/pulp/cds.conf
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
 %attr(3775, root, root) %{_sysconfdir}/pki/content
 %attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
