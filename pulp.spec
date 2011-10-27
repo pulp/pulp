@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.242
+Version:        0.0.243
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -494,6 +494,40 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Oct 27 2011 Jeff Ortel <jortel@redhat.com> 0.0.243-1
+- 747725 Strip off initial and trailing slash from OID url.  Some content certs
+  may have them where others do not. (jslagle@redhat.com)
+- Fix macro changes for x86_64. (jortel@redhat.com)
+- re-vamped titles to schedule rest api (jconnor@redhat.com)
+- re-worked limit <-> max_speed hack (jconnor@redhat.com)
+- added error: prefix to system_exit when code not == os.EX_OK
+  (jconnor@redhat.com)
+- limit option maps to max_speed argument (jconnor@redhat.com)
+- forgot to remove options when removing sync schedule (jconnor@redhat.com)
+- needed to add sync_options to default fields as well (jconnor@redhat.com)
+- adding db version 26 that adds sync_options field to Repo model
+  (jconnor@redhat.com)
+- re-added sync_schedule into default fields as create and update were not the
+  only commands using it (jconnor@redhat.com)
+- setting sync options in db and using them in scheduled sync updates
+  (jconnor@redhat.com)
+- added sync_options to the Repo model (jconnor@redhat.com)
+- added --skip and --no-skip options to build skip_dict (jconnor@redhat.com)
+- more thorough error reporting for iso8601 parsing (jconnor@redhat.com)
+- adding some output to schedule change (jconnor@redhat.com)
+- fetching source field for repo as it is needed to change the sync schedule
+  (jconnor@redhat.com)
+- removed sync_schedule from repo create (jconnor@redhat.com)
+- renamed controller classes according to own standards :P (jconnor@redhat.com)
+- removed sync_schedule from default fields (jconnor@redhat.com)
+- moved repo sync logic out of repo update and into repo schedule
+  (jconnor@redhat.com)
+- added sync schedule methods to RepositoryAPI (jconnor@redhat.com)
+- changed db update of repo sync_schedule field to use atomic $set operation
+  instead of save (jconnor@redhat.com)
+- added schedules sub-collection for repo sync schedule management
+  (jconnor@redhat.com)
+- removed schedule changes from repo update and create (jconnor@redhat.com)
 * Wed Oct 26 2011 Jeff Ortel <jortel@redhat.com> 0.0.242-1
 - 672569 - Changed hard coded directories to macros to appease rpmlint
   (jason.dobies@redhat.com)
