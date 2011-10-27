@@ -266,8 +266,10 @@ class Install(PackageGroupAction):
         consumergroupid = self.opts.consumergroupid
         if consumerid:
             self.on_consumer(consumerid, grpids)
-        else:
+        elif consumergroupid:
             self.on_group(consumergroupid, grpids)
+        else:
+            system_exit(-1, _("No consumerid or consumergroupid specified"))
 
     def on_consumer(self, id, grpids):
         when = parse_at_schedule(self.opts.when)
