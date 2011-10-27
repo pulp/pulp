@@ -209,7 +209,7 @@ class OidValidator:
         # Should allow any value for the variables:
         #   content/dist/rhel/server/.+?/.+?/os
 
-        if oid_url.endswith('/'):
-            oid_url = oid_url[:-1]
-        oid_re = re.sub(r'\$[^/]+/', '[^/]+/', oid_url)
+        # Remove initial and trailing '/', and substitute the $variables for
+        # equivalent regular expressions in oid_url.
+        oid_re = re.sub(r'\$[^/]+/', '[^/]+/', oid_url.strip('/'))
         return re.match(oid_re, dest) is not None
