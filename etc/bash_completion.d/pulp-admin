@@ -475,7 +475,7 @@ _pulp_admin()
                             --id --name --arch --feed --feed_ca --feed_cert
                             --feed_key
                             --consumer_ca --consumer_cert --consumer_key
-                            --symlinks --relativepath --groupid --gpgkeys
+                            --relativepath --groupid --gpgkeys
                             --checksum_type --notes --preserve_metadata
                             --content_type' \
                             -- "$cur" ) )
@@ -574,6 +574,16 @@ _pulp_admin()
                     export)
                         COMPREPLY=( $( compgen -W '
                             --id -t --target_dir --generate-isos --overwrite' \
+                            -- "$cur" ) )
+                    ;;
+                    add_note|update_note)
+                        COMPREPLY=( $( compgen -W '
+                            --id --key --value' \
+                            -- "$cur" ) )
+                    ;;
+                    delete_note)
+                        COMPREPLY=( $( compgen -W '
+                            --id --key' \
                             -- "$cur" ) )
                     ;;
                 esac
@@ -774,7 +784,7 @@ _pulp_admin()
                         remove_file add_filters remove_filters
                         generate_metadata add_metadata list_metadata
                         download_metadata remove_metadata discovery export
-                        cancel_export' \
+                        cancel_export add_note delete_note update_note' \
                         -- "$cur" ) )
                 ;;
             esac
