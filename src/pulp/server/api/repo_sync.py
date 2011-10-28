@@ -118,15 +118,9 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
     # inherit content types from parent
     content_types = repo['content_types']
     log.info("Creating [%s] feed repo [%s] cloned from [%s] with relative_path [%s]" % (feed, clone_id, id, relative_path))
-    if feed == 'origin':
-        origin_feed = repo['source']['url']
-        repo_api.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
-                relative_path=relative_path, feed_cert_data=feed_cert_data,
-                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], content_types=content_types)
-    else:
-        repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
-                relative_path=relative_path, feed_cert_data=feed_cert_data,
-                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], content_types=content_types)
+    repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
+                    relative_path=relative_path, feed_cert_data=feed_cert_data,
+                    consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], content_types=content_types)
 
     # Associate filters if specified
     if len(filters) > 0:

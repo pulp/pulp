@@ -362,9 +362,10 @@ fi
 if [ $1 -eq 0 ]; then
   for selinuxvariant in %{selinux_variants}
     do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename}
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
     done
 fi
+exit 0
 %endif
 
 %postun consumer
@@ -378,9 +379,10 @@ fi
 if [ $1 -eq 0 ]; then
   for selinuxvariant in %{selinux_variants}
     do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename}
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
     done
 fi
+exit 0
 %endif
 
 # -- files - pulp server -----------------------------------------------------

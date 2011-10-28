@@ -520,7 +520,7 @@ class SchedulesResource(JSONController):
         """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
-        repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options', 'source'])
+        repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options', 'content_types', 'source'])
         if repo is None:
             return self.not_found('No repository %s' % repo_id)
         data = self.params()
