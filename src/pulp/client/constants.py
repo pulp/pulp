@@ -249,7 +249,7 @@ Sync Schedule    \t%-25s
     Interval     \t%-25s
     Start        \t%-25s
     Runs         \t%-25s
-Sunc Options
+Sync Options
     Exclude      \t%-25s
     Limit        \t%-25s
     Threads      \t%-25s
