@@ -998,77 +998,65 @@ class YumSynchronizer(BaseSynchronizer):
 
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
-            if repo['use_symlinks']:
-                log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
-                pulp.server.util.create_rel_symlink(src_repo_dir, dst_repo_dir)
-                if progress_callback is not None:
-                    self.progress['size_total'] = 0
-                    self.progress['size_left'] = 0
-                    self.progress['items_total'] = 0
-                    self.progress['items_left'] = 0
-                    self.progress['details'] = {}
-                    self.progress['num_download'] = 0
-                    self.progress['step'] = ProgressReport.DownloadItems
-                    progress_callback(self.progress)
+
+            if not os.path.exists(dst_repo_dir):
+                os.makedirs(dst_repo_dir)
+            if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+                log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
+                self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
+                                progress_callback)
+                log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
+                log.debug("Starting _sync_drpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
+                self._sync_drpms(dst_repo_dir, src_repo_dir, progress_callback)
+                log.debug("Completed _sync_drpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
             else:
-                if not os.path.exists(dst_repo_dir):
-                    os.makedirs(dst_repo_dir)
-                if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-                    log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                    self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
-                                    progress_callback)
-                    log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
-                    log.debug("Starting _sync_drpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                    self._sync_drpms(dst_repo_dir, src_repo_dir, progress_callback)
-                    log.debug("Completed _sync_drpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
-                else:
-                    log.info("Skipping package imports from sync process")
-                # process distributions
-                if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
-                    log.debug("Starting _sync_distributions(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                    self._sync_distributions(dst_repo_dir, src_repo_dir, progress_callback)
-                    log.debug("Completed _sync_distributions(%s,%s)" % (dst_repo_dir, src_repo_dir))
-                else:
-                    log.info("Skipping distribution imports from sync process")
-                
-                src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
-                if os.path.isfile(src_repomd_xml):
-                    dst_repomd_xml = os.path.join(dst_repo_dir, "repodata/repomd.xml")
-                    if not os.path.isdir(os.path.dirname(dst_repomd_xml)):
-                        os.makedirs(os.path.dirname(dst_repomd_xml))
-                    shutil.copy(src_repomd_xml, dst_repomd_xml)
-                src_repodata_files = self.list_repodata_files(src_repo_dir)
-                if progress_callback is not None:
-            	    self.progress['step'] = "Exporting repo metadata"
-                    progress_callback(self.progress)
-                dst_repodata_dir = os.path.join(dst_repo_dir, "repodata")
-                if not os.path.exists(dst_repodata_dir):
-                    os.makedirs(dst_repodata_dir)
-                for count, mdfile in enumerate(src_repodata_files):
-                    if self.stopped:
-                        raise CancelException()
-                    log.debug("Processing repo metadata %s" % mdfile)
-                    try:
-                        src_mdfile_checksum = pulp.server.util.get_file_checksum(filename=mdfile)
-                        dst_mdfile_path = os.path.join(dst_repodata_dir, os.path.basename(mdfile))
-                        if not pulp.server.util.check_package_exists(dst_mdfile_path, src_mdfile_checksum):
-                            if os.path.exists(dst_mdfile_path):
-                                os.remove(dst_mdfile_path)
-                            shutil.copyfile(mdfile, dst_mdfile_path)
-                        else:
-                            log.debug("mdfile %s already exists with same checksum. skip import" % \
-                                     os.path.basename(mdfile))
-                            skip_copy = True
-                            log.debug("Imported mdfile %s " % dst_mdfile_path)
-            	    except (IOError, OSError):
-                        log.error("%s" % (traceback.format_exc()))
-                        error_info = {}
-                        exctype, value = sys.exc_info()[:2]
-                        error_info["error_type"] = str(exctype)
-                        error_info["error"] = str(value)
-                        error_info["traceback"] = traceback.format_exc().splitlines()
-                if progress_callback is not None:
-                    progress_callback(self.progress)
+                log.info("Skipping package imports from sync process")
+            # process distributions
+            if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
+                log.debug("Starting _sync_distributions(%s, %s)" % (dst_repo_dir, src_repo_dir))
+                self._sync_distributions(dst_repo_dir, src_repo_dir, progress_callback)
+                log.debug("Completed _sync_distributions(%s,%s)" % (dst_repo_dir, src_repo_dir))
+            else:
+                log.info("Skipping distribution imports from sync process")
+
+            src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
+            if os.path.isfile(src_repomd_xml):
+                dst_repomd_xml = os.path.join(dst_repo_dir, "repodata/repomd.xml")
+                if not os.path.isdir(os.path.dirname(dst_repomd_xml)):
+                    os.makedirs(os.path.dirname(dst_repomd_xml))
+                shutil.copy(src_repomd_xml, dst_repomd_xml)
+            src_repodata_files = self.list_repodata_files(src_repo_dir)
+            if progress_callback is not None:
+                self.progress['step'] = "Exporting repo metadata"
+                progress_callback(self.progress)
+            dst_repodata_dir = os.path.join(dst_repo_dir, "repodata")
+            if not os.path.exists(dst_repodata_dir):
+                os.makedirs(dst_repodata_dir)
+            for count, mdfile in enumerate(src_repodata_files):
+                if self.stopped:
+                    raise CancelException()
+                log.debug("Processing repo metadata %s" % mdfile)
+                try:
+                    src_mdfile_checksum = pulp.server.util.get_file_checksum(filename=mdfile)
+                    dst_mdfile_path = os.path.join(dst_repodata_dir, os.path.basename(mdfile))
+                    if not pulp.server.util.check_package_exists(dst_mdfile_path, src_mdfile_checksum):
+                        if os.path.exists(dst_mdfile_path):
+                            os.remove(dst_mdfile_path)
+                        shutil.copyfile(mdfile, dst_mdfile_path)
+                    else:
+                        log.debug("mdfile %s already exists with same checksum. skip import" % \
+                                 os.path.basename(mdfile))
+                        skip_copy = True
+                        log.debug("Imported mdfile %s " % dst_mdfile_path)
+                except (IOError, OSError):
+                    log.error("%s" % (traceback.format_exc()))
+                    error_info = {}
+                    exctype, value = sys.exc_info()[:2]
+                    error_info["error_type"] = str(exctype)
+                    error_info["error"] = str(value)
+                    error_info["traceback"] = traceback.format_exc().splitlines()
+            if progress_callback is not None:
+                progress_callback(self.progress)
 
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))
@@ -1153,55 +1141,43 @@ class FileSynchronizer(BaseSynchronizer):
 
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
-            if repo['use_symlinks']:
-                log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
-                pulp.server.util.create_rel_symlink(src_repo_dir, dst_repo_dir)
+
+            if not os.path.exists(dst_repo_dir):
+                os.makedirs(dst_repo_dir)
+            filelist = self.list_files(src_repo_dir)
+            for count, pkg in enumerate(filelist):
+                skip_copy = False
+                log.debug("Processing files %s" % pkg)
+                if count % 500 == 0:
+                    log.info("Working on %s/%s" % (count, len(filelist)))
+                try:
+                    src_file_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+                    dst_file_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+                    if not pulp.server.util.check_package_exists(dst_file_path, src_file_checksum):
+                        shutil.copy(pkg, dst_file_path)
+                        self.progress['num_download'] += 1
+                    else:
+                        log.info("file %s already exists with same checksum. skip import" % os.path.basename(pkg))
+                        skip_copy = True
+                    log.debug("Imported delta rpm %s " % dst_file_path)
+                    self.progress['details']["file"]["num_success"] += 1
+                    self.progress["num_success"] += 1
+                except (IOError, OSError):
+                    log.error("%s" % (traceback.format_exc()))
+                    error_info = {}
+                    exctype, value = sys.exc_info()[:2]
+                    error_info["error_type"] = str(exctype)
+                    error_info["error"] = str(value)
+                    error_info["traceback"] = traceback.format_exc().splitlines()
+                    self._add_error_details(pkg, "file", error_info)
+                self.progress['step'] = ProgressReport.DownloadItems
+                item_size = self._calculate_bytes(src_repo_dir, [pkg])
+                self.progress['size_left'] -= item_size
+                self.progress['items_left'] -= 1
+                self.progress['details']["file"]["items_left"] -= 1
+                self.progress['details']["file"]["size_left"] -= item_size
                 if progress_callback is not None:
-                    self.progress['size_total'] = 0
-                    self.progress['size_left'] = 0
-                    self.progress['items_total'] = 0
-                    self.progress['items_left'] = 0
-                    self.progress['details'] = {}
-                    self.progress['num_download'] = 0
-                    self.progress['step'] = ProgressReport.DownloadItems
                     progress_callback(self.progress)
-            else:
-                if not os.path.exists(dst_repo_dir):
-                    os.makedirs(dst_repo_dir)
-                filelist = self.list_files(src_repo_dir)
-                for count, pkg in enumerate(filelist):
-                    skip_copy = False
-                    log.debug("Processing files %s" % pkg)
-                    if count % 500 == 0:
-                        log.info("Working on %s/%s" % (count, len(filelist)))
-                    try:
-                        src_file_checksum = pulp.server.util.get_file_checksum(filename=pkg)
-                        dst_file_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
-                        if not pulp.server.util.check_package_exists(dst_file_path, src_file_checksum):
-                            shutil.copy(pkg, dst_file_path)
-                            self.progress['num_download'] += 1
-                        else:
-                            log.info("file %s already exists with same checksum. skip import" % os.path.basename(pkg))
-                            skip_copy = True
-                        log.debug("Imported delta rpm %s " % dst_file_path)
-                        self.progress['details']["file"]["num_success"] += 1
-                        self.progress["num_success"] += 1
-                    except (IOError, OSError):
-                        log.error("%s" % (traceback.format_exc()))
-                        error_info = {}
-                        exctype, value = sys.exc_info()[:2]
-                        error_info["error_type"] = str(exctype)
-                        error_info["error"] = str(value)
-                        error_info["traceback"] = traceback.format_exc().splitlines()
-                        self._add_error_details(pkg, "file", error_info)
-                    self.progress['step'] = ProgressReport.DownloadItems
-                    item_size = self._calculate_bytes(src_repo_dir, [pkg])
-                    self.progress['size_left'] -= item_size
-                    self.progress['items_left'] -= 1
-                    self.progress['details']["file"]["items_left"] -= 1
-                    self.progress['details']["file"]["size_left"] -= item_size
-                    if progress_callback is not None:
-                        progress_callback(self.progress)
 
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))

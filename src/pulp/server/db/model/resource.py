@@ -275,7 +275,6 @@ class Repo(Model):
         self.sync_schedule = None
         self.sync_options = {}
         self.last_sync = None
-        self.use_symlinks = None
         self.feed_ca = None
         self.feed_cert = None
         self.consumer_ca = None

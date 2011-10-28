@@ -171,7 +171,7 @@ class RepoApi(BaseApi):
             self.delete(r["id"])
 
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch=None, feed=None, symlinks=False,
+    def create(self, id, name, arch=None, feed=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
                preserve_metadata=False, content_types="yum"):
@@ -192,7 +192,6 @@ class RepoApi(BaseApi):
         if not model.Repo.is_supported_content_type(content_types):
             raise PulpException('Content Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CONTENT_TYPES))
         r = model.Repo(id, name, arch, feed, notes)
-        r['use_symlinks'] = symlinks
 
         # Relative path calculation
         if relative_path is None or relative_path == "":
