@@ -888,7 +888,9 @@ class Sync(RepoProgressAction):
         if invalid_elements:
             msg = _('Unknown elements for exclusion: %(e)s') % {'e': ', '.join(invalid_elements)}
             utils.system_exit(os.EX_USAGE, msg)
-        return {'skip': skip}
+        if skip:
+            return {'skip': skip}
+        return {}
 
     def _set_schedule(self, repo_id, schedule, options):
         # HACK because we couldn't make up our minds about terminology
