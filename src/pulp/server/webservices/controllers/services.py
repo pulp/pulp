@@ -396,13 +396,17 @@ class RepoDiscovery(JSONController):
         '''
         [[wiki]]
         title: Repository Discovery
-        description: Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls
+        description: Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls. The file based url paths should be accessible by apache to perform discovery.
         method: POST
         path: /services/discovery/repo/
         permission: EXECUTE
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
         return: list of matching repourls.
+        parameters:
+         * url, str, remote url to perform discovery
+         * type, str, type of content to discover(supported types: 'yum')
+         * cert_data?, dict, a hash of ca and cert info to access if url is secure; {'ca' : <ca>,'cert':<cert>}
         '''
         data = self.params()
         try:
@@ -448,6 +452,7 @@ class RepositoryExport(JSONController):
                           409 Conflict if a export is already in progress for the repository
         return: a Task object
         parameters:
+         * repoid, str, id of the repository to export
          * target_location, str, target location on the server filesystem where the content needs to be exported
          * generate_isos?, boolean, wrap the exported content into iso image files.
          * overwrite?, boolean, overwrite the content in target location if not empty
@@ -487,6 +492,11 @@ class RepoGroupExport(JSONController):
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
         return: Job object
+         parameters:
+         * groupid, str, repository group to export
+         * target_location, str, target location on the server filesystem where the content needs to be exported
+         * generate_isos?, boolean, wrap the exported content into iso image files.
+         * overwrite?, boolean, overwrite the content in target location if not empty
         '''
         export_params = self.params()
         groupid = export_params.get('groupid', None)
