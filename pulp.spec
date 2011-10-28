@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.243
+Version:        0.0.244
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -496,6 +496,36 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Oct 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-1
+- Requires gofer 0.54. (jortel@redhat.com)
+- 734126 - make consumer certificate path configurable. (jortel@redhat.com)
+- fixed bug when specifying --runs for a schedule (jconnor@redhat.com)
+- 749821 waaaaaay nicer output formatting of repo schedule (jconnor@redhat.com)
+- 749821 only returning skip dict if it is non-empty (jconnor@redhat.com)
+- 744587 - removed use_symlinks flag from db and symlinks flag from pulp api
+  and cli (skarmark@redhat.com)
+- 747094 - fixing the task polling on discovery to report num of url. Also
+  uniquify the discovery task by url to avoid task conflicts
+  (pkilambi@redhat.com)
+- 749811 added content_types to the fields fetched from the database
+  (jconnor@redhat.com)
+- 735159 - post run script in the rpm raising error on uninstall
+  (jmatthews@redhat.com)
+- 743372 - Fixed origin feed syncing from origin at the clone time instead of
+  parent (skarmark@redhat.com)
+- add a noop update method to file synchronizer (pkilambi@redhat.com)
+- 712496 - adding server-side check for existence of user (jconnor@redhat.com)
+- adding check for existing user before attempting update (jconnor@redhat.com)
+- added db version 27 to fix 26 mistake (jconnor@redhat.com)
+- 742240 Change our config files to %config(noreplace) in the spec file.
+  (jslagle@redhat.com)
+- Sync Enhancements for #744021, #749289 * import the pkg and file information
+  before metadata is regenerated * modify the checksum to use the pkg checksum
+  from metadata * rewrote local sync metadata to import all the metadata under
+  repodata * new method call update_metadata to regenerate metadata if
+  preserve_metadata is set (pkilambi@redhat.com)
+- 743713 - Wrong error message when running packagegroup install without
+  consumerid/consumergroupid (jmatthews@redhat.com)
 * Thu Oct 27 2011 Jeff Ortel <jortel@redhat.com> 0.0.243-1
 - 747725 Strip off initial and trailing slash from OID url.  Some content certs
   may have them where others do not. (jslagle@redhat.com)
