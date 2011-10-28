@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+from gettext import gettext as _
 
 import web
 
@@ -92,6 +93,9 @@ class User(JSONController):
         @return: user metadata
         """
         user = api.user(login)
+        if user is None:
+            msg = _('No such user: %(u)s') % {'u': login}
+            return self.not_found(msg)
         user.pop('password', None)
         return self.ok(user)
 

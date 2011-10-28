@@ -112,6 +112,10 @@ class Update(UserAction):
 
     def run(self):
         username = self.get_required_option('username')
+        user = self.user_api.user(username)
+        if user is None:
+            msg = _('No such user: %(u)s') % {'u': username}
+            system_exit(os.EX_DATAERR, msg)
         delta = {}
         if self.opts.name:
             delta['name'] = self.opts.name
