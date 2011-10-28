@@ -62,11 +62,9 @@ class BaseDiscovery(object):
             self.progress[key] = kwargs[key]
         self.callback(self.progress)
 
-    def setup(self, url, ca=None, cert=None, key=None, sslverify=False):
+    def setup_certificate(self, ca=None, cert=None, key=None, sslverify=False):
         """
-        setup for discovery
-        @param url: url link to be discovered
-        @type url: string
+        setup certificate discovery
         @param ca: optional ca certificate to access the url
         @type ca: string
         @param cert: optional certificate to access the url(this could include both crt and key)
@@ -76,14 +74,18 @@ class BaseDiscovery(object):
         @param sslverify: use this to enforce ssl verification of the server cert
         @type sslverify: boolean
         """
-        proto = urlparse.urlparse(url)[0]
-        if proto not in ['http', 'https', 'ftp', 'file']:
-             raise InvalidDiscoveryInput("Invalid input url %s" % url)
-        self.url = url
         self.sslcacert = write_temp_file(ca)
         self.sslclientcert = write_temp_file(cert)
         self.sslclientkey = write_temp_file(key)
         self.sslverify = sslverify
+
+    def validate_url(self, url):
+        """
+         check if the url to be discoered is supported
+        """
+        proto = urlparse.urlparse(url)[0]
+        if proto not in ['http', 'https', 'ftp', 'file']:
+             raise InvalidDiscoveryInput("Invalid input url %s" % url)
 
     def _get_header(self, buf):
         """
@@ -189,20 +191,23 @@ class BaseDiscovery(object):
                 except:
                     log.error("Unable to remove temporary cert file [%s]" % crt)
 
-    def discover(self, progress_callback=None):
+    def discover(self, url, ca=None, cert=None, key=None, sslverify=False,progress_callback=None):
         raise NotImplementedError('base discovery class method called')
 
 class YumDiscovery(BaseDiscovery):
     """
     Yum discovery class to perform
     """
-    def discover(self, progress_callback=None):
+    def discover(self, url, ca=None, cert=None, key=None, sslverify=False, progress_callback=None):
         """
         Takes a root url and traverses the tree to find all the sub urls
         that has repodata in them.
         @return: list of matching urls
         @rtype: list
         """
+        self.url = url
+        if ca or cert or key:
+            self.setup_certificate(ca=ca, cert=cert, key=key, sslverify=sslverify)
         proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
         if proto in ['http', 'https', 'ftp']:
             repourls = self._remote(progress_callback=progress_callback)
@@ -259,6 +264,7 @@ class YumDiscovery(BaseDiscovery):
                         if fpath.rfind('/repodata') > 0:
                             result = fpath[:fpath.rfind('/repodata')]
                             repourls.append("file://" + result)
+                        self.progress_callback(num_of_urls=len(repourls))
                     else:
                         continue
         self.clean()
@@ -267,7 +273,9 @@ class YumDiscovery(BaseDiscovery):
     def __check_repomd_exists(self, repourls, result):
         try:
             self._request(url="%s/%s" % (result, 'repomd.xml'))
-            repourls.append(result[:result.rfind('/repodata/')])
+            new_url = result[:result.rfind('/repodata/')]
+            if new_url not in repourls:
+                repourls.append(new_url)
         except:
             log.debug("repomd.xml couldnt be found @ %s" % result)
 
@@ -316,9 +324,9 @@ def main():
     type = sys.argv[1]
     url = sys.argv[2]
     d = get_discovery(type)
-    d.setup(url)
+    #d.setup(url)
     try:
-        repourls = d.discover()
+        repourls = d.discover(url)
         print('========================')
         print('Urls with repodata:\n')
         print( '=======================')

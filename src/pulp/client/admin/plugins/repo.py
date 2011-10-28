@@ -1672,7 +1672,7 @@ class Discovery(RepoProgressAction):
 
     def print_discovery_progress(self, progress):
         current = ""
-        if progress and progress.has_key("num_of_urls"):
+        if progress and progress.has_key("num_of_urls") is not None:
             current += _("Number of Urls Discovered (%s): %s\n") % (self.get_wait_symbol(), progress['num_of_urls'])
             self._previous_step = progress["num_of_urls"]
         else:
@@ -1705,10 +1705,9 @@ class Discovery(RepoProgressAction):
             utils.system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
         while not task_end(task):
-            self.print_discovery_progress(task['progress'])
-            time.sleep(0.25)
             task = self.task_api.info(task['id'])
-
+            self.print_discovery_progress(task['progress'])
+            time.sleep(0.05)
         repourls = task['result'] or []
 
         if not len(repourls):

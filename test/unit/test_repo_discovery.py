@@ -43,8 +43,7 @@ class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
     def test_discovery(self):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
         d = get_discovery("yum")
-        d.setup(discover_url)
-        repourls = d.discover()
+        repourls = d.discover(discover_url)
         self.assertTrue(len(repourls) != 0)
 
     def test_invalid_url(self):
@@ -52,7 +51,7 @@ class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
         d = get_discovery("yum")
         failed = False
         try:
-            d.setup(discover_url)
+            d.validate_url(discover_url)
         except:
             failed = True
         assert(failed)
@@ -61,8 +60,7 @@ class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
         groupid = 'testrepos'
         d = get_discovery("yum")
-        d.setup(discover_url)
-        repourls = d.discover()
+        repourls = d.discover(discover_url)
         self.assertTrue(len(repourls) != 0)
         repourl = repourls[0]
         repo = self.repo_api.create('discover_test_repo', 'discovery_test_repo', 'noarch', feed='%s' % repourl, groupid=[groupid])
@@ -78,8 +76,7 @@ class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
         datadir = my_dir + "/data/repo_for_export/"
         discover_url = 'file://%s' % datadir
         d = get_discovery("yum")
-        d.setup(discover_url)
-        repourls = d.discover()
+        repourls = d.discover(discover_url)
         print repourls
         self.assertTrue(len(repourls) != 0)
         proto, netloc, path, params, query, frag = urlparse.urlparse(repourls[0])

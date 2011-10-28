@@ -412,18 +412,18 @@ class RepoDiscovery(JSONController):
             return self.bad_request('Invalid content type [%s]' % type)
         try:
             url = data.get('url', None)
+            discovery_obj.validate_url(url)
             cert_data = data.get('cert_data', None)
             cert = ca = None
             if cert_data:
                 cert = cert_data.get('cert', None)
                 ca   = cert_data.get('ca', None)
-            discovery_obj.setup(url, ca=ca, cert=cert)
         except InvalidDiscoveryInput:
             return self.bad_request('Invalid url [%s]' % url)
 
         log.info('Discovering compatible repo urls @ [%s]' % data['url'])
         # Kick off the async task
-        task = async.run_async(discovery_obj.discover)
+        task = async.run_async(discovery_obj.discover, [url, ca, cert])
         if not task:
             return self.conflict('Repo discovery is already in progress')    
         task.set_progress('progress_callback', discovery_progress_callback)
