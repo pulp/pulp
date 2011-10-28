@@ -1235,6 +1235,12 @@ class FileSynchronizer(BaseSynchronizer):
             log.info("Stop sync is being issued")
             self.file_repo_grinder.stop(block=False)
 
+    def update_metadata(self, repo_dir, repo_id, progress_callback=None):
+        """
+         Implement this method if there is a reason to regenerate file metadata.
+        """
+        return
+ 
 def parse_treeinfo(treecfg):
     """
      Parse distribution treeinfo config and return general information
