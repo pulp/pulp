@@ -809,7 +809,7 @@ class Sync(RepoProgressAction):
         options = obj['options']
         if options:
             if 'skip' in options and options['skip']:
-                exclude = ', '.join([k for k, v in options['skip'] if v])
+                exclude = ', '.join([k for k, v in options['skip'].items() if v])
             if 'max_speed' in options:
                 limit = str(options['max_speed']) + ' KB/s'
             if 'threads' in options:
