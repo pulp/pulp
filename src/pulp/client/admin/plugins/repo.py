@@ -797,7 +797,25 @@ class Sync(RepoProgressAction):
             utils.system_exit(os.EX_USAGE, msg)
         obj = self.repository_api.get_sync_schedule(repo_id)
         print_header('Sync Schedule for %s' % repo_id)
-        msg = '%s Schedule: %s\nOptions: %s' % (obj['type'].title(), obj['schedule'], pformat(obj['options']))
+        interval = start = runs = exclude = limit = threads = 'N/A'
+        schedule = obj['schedule']
+        if schedule:
+            i, s, r = parse_iso8601_interval(schedule)
+            interval = format_iso8601_duration(i)
+            if s is not None:
+                start = format_iso8601_datetime(s)
+            if r is not None:
+                runs = str(r)
+        options = obj['options']
+        if options:
+            if 'skip' in options and options['skip']:
+                exclude = ', '.join([k for k, v in options['skip'] if v])
+            if 'max_speed' in options:
+                limit = str(options['max_speed']) + ' KB/s'
+            if 'threads' in options:
+                threads = str(options['threads'])
+        msg = constants.REPO_SYNC_SCHEDULE % (str(schedule), interval, start,
+                                              runs, exclude, limit, threads)
         utils.system_exit(os.EX_OK, msg)
 
     def _delete_schedule(self, repo_id):

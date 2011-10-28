@@ -33,7 +33,7 @@ Clones             \t%-25s
 Groups             \t%-25s
 Filters            \t%-25s
 Notes              \t%-25s
-Preserve Metadata  \t%-25s 
+Preserve Metadata  \t%-25s
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """
@@ -233,6 +233,7 @@ Start Time       \t%-25s
 Finish Time      \t%-25s
 """
 
+
 SELECTION_QUERY="""
   'a'   \t : select all
   'x:y' \t : select a range eg:1:3
@@ -241,3 +242,15 @@ SELECTION_QUERY="""
   'c'   \t : clear selections
   'q'   \t : abort the repo creation
 """
+
+
+REPO_SYNC_SCHEDULE='''
+Sync Schedule    \t%-25s
+    Interval     \t%-25s
+    Start        \t%-25s
+    Runs         \t%-25s
+Sunc Options
+    Exclude      \t%-25s
+    Limit        \t%-25s
+    Threads      \t%-25s
+'''
