@@ -17,6 +17,7 @@ Module containing classes to manage client credentials.
 
 import os
 from pulp.common.bundle import Bundle
+from pulp.client.consumer.config import ConsumerConfig
 from M2Crypto import X509
 from logging import getLogger
 
@@ -25,14 +26,31 @@ log = getLogger(__name__)
 class Consumer(Bundle):
     """
     The bundle for the consumer.
+    @cvar ROOT: The default dir (path).
+    @type ROOT: str
+    @cvar CRT: The certificate file name.
+    @type CRT: str
     """
 
-    ROOT = '/etc/pki/consumer'
+    ROOT = '/etc/pki/consumer/pulp'
     CRT = 'cert.pem'
 
+    @classmethod
+    def path(cls):
+        """
+        Returns the consumer bundle path.
+        First looks in configuration [client].consumer_cert
+        @return: File path.
+        @rtype: str
+        """
+        cfg = ConsumerConfig()
+        path = cfg.client.consumer_cert
+        if not isinstance(path, basestring):
+            path = os.path.join(cls.ROOT, cls.CRT)
+        return path
+
     def __init__(self):
-        path = os.path.join(self.ROOT, self.CRT)
-        Bundle.__init__(self, path)
+        Bundle.__init__(self, self.path())
 
     def getid(self):
         """
