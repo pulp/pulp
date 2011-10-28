@@ -34,7 +34,6 @@ Repo object fields:
  * group_gz_xml_path, str, path to the repository's compressed group xml file
  * sync_schedule, iso8601 formated recurring interval
  * last_sync, str or nil, date and time of last successful sync in iso8601 format, nil if has not been synched
- * use_symlinks, bool, whether or not the repository uses symlinks for its content
  * feed_ca, str, full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed
  * feed_cert, str, full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content
  * feed_key, str, full path on the Pulp server to the private key for the feed certificate
@@ -135,7 +134,6 @@ default_fields = [
     'last_sync',
     'sync_schedule',
     'sync_options',
-    'use_symlinks',
     'groupid',
     'relative_path',
     'files',
@@ -222,7 +220,6 @@ class Repositories(JSONController):
          * name, str, a human-friendly name for the repsitory
          * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
-         * use_symlinks?, bool, defaults to false
          * feed_cert_data?, dict, certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * consumer_cert_data?, str, certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * relative_path?, str, repository on disk path
@@ -243,7 +240,6 @@ class Repositories(JSONController):
                           repo_data['name'],
                           repo_data['arch'],
                           feed=repo_data.get('feed', None),
-                          symlinks=repo_data.get('use_symlinks', False),
                           feed_cert_data=repo_data.get('feed_cert_data', None),
                           consumer_cert_data=repo_data.get('consumer_cert_data', None),
                           relative_path=repo_data.get('relative_path', None),

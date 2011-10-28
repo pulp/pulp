@@ -123,7 +123,6 @@ def prune(repo):
         'last_sync',
         'sync_in_progress',
         'source',
-        'use_symlinks',
         'clone_ids',
         'groupid',
         'errata',

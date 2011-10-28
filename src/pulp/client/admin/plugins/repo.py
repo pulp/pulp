@@ -441,8 +441,6 @@ class Create(AdminRepoAction):
                                help=_("path location to the consumer entitlement certificate key"))
         #self.parser.add_option("--schedule", dest="schedule",
         #                       help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
-        self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
-                               help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", action="append", dest="groupid",
@@ -468,7 +466,6 @@ class Create(AdminRepoAction):
         preserve_metadata = False
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
-        symlinks = self.opts.symlinks or False
         relative_path = self.opts.relativepath
         if self.opts.notes:
             try:
@@ -520,7 +517,7 @@ class Create(AdminRepoAction):
             reader = KeyReader()
             keylist = reader.expand(keylist)
 
-        repo = self.repository_api.create(id, name, arch, feed, symlinks,
+        repo = self.repository_api.create(id, name, arch, feed,
                                           feed_cert_data=feed_cert_data,
                                           consumer_cert_data=consumer_cert_data,
                                           relative_path=relative_path,
