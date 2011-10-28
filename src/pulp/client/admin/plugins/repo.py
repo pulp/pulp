@@ -828,11 +828,11 @@ class Sync(RepoProgressAction):
         utils.system_exit(os.EX_OK, msg)
 
     def _new_schedule(self):
-        if not self.opts.interval or self.opts.runs:
-            return None
         if self.opts.runs and not self.opts.interval:
             msg = _('Must use --runs with --interval')
             utils.system_exit(os.EX_USAGE, msg)
+        if not self.opts.interval:
+            return None
         interval = self.opts.interval
         start = self.opts.start
         runs = self.opts.runs
