@@ -261,6 +261,7 @@ class YumDiscovery(BaseDiscovery):
                             repourls.append("file://" + result)
                     else:
                         continue
+        self.clean()
         return repourls
 
     def __check_repomd_exists(self, repourls, result):

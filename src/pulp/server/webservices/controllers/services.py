@@ -424,6 +424,8 @@ class RepoDiscovery(JSONController):
         log.info('Discovering compatible repo urls @ [%s]' % data['url'])
         # Kick off the async task
         task = async.run_async(discovery_obj.discover)
+        if not task:
+            return self.conflict('Repo discovery is already in progress')    
         task.set_progress('progress_callback', discovery_progress_callback)
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
@@ -480,7 +482,7 @@ class RepoGroupExport(JSONController):
         title: Repository group export
         description: schedule an export on a group of repositories
         method: POST
-        path: /services/export/group/
+        path: /services/export/repository_group/
         permission: EXECUTE
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
