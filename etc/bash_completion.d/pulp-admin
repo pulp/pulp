@@ -477,7 +477,7 @@ _pulp_admin()
                             --consumer_ca --consumer_cert --consumer_key
                             --symlinks --relativepath --groupid --gpgkeys
                             --checksum_type --notes --preserve_metadata
-                            --content_type --interval --start --runs' \
+                            --content_type' \
                             -- "$cur" ) )
                     ;;
                     clone)
@@ -492,15 +492,14 @@ _pulp_admin()
                             --feed_key --remove_feed_cert --consumer_ca
                             --consumer_cert --consumer_key
                             --remove_consumer_cert --addgroup --rmgroup
-                            --addkeys --rmkeys --interval --start --runs
-                            --delete-schedule' \
+                            --addkeys --rmkeys' \
                             -- "$cur" ) )
                     ;;
                     sync)
                         COMPREPLY=( $( compgen -W '
-                            --id --timeout --no-packages --no-errata
-                            --no-distribution -F --foreground --limit
-                            --threads' \
+                            --id --show-schedule --delete-schedule --interval
+                            --runs --start --exclude --timeout --limit --threads
+                            -F --foreground' \
                             -- "$cur" ) )
                     ;;
                     publish)
