@@ -621,11 +621,39 @@ class ConsumerProfileUpdate(JSONController):
         packages = consumer_api.packages(id)
         packages = self.filter_results(packages, filters)
         return self.ok(packages)
+    
+
+class ApplicableErrataInRepos(JSONController):
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self):
+        """
+        [[wiki]]
+        title: Applicable Errata In Repos 
+        description: List all errata associated with a group of repositories along with consumers that it is applicable to
+        method: GET
+        path: /consumers/applicable_errata_in_repos/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of object that are mappings of errata id in given repoids to applicable consumers
+        """
+        valid_filters = ('repoids')
+        filters = self.filters(valid_filters)
+        errata = []
+        if filters.has_key('repoids'):
+            repoids = eval(filters['repoids'])
+            errata = consumer_api.get_consumers_applicable_errata(repoids)
+        return self.ok(errata)
+
+
 
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/$', 'Consumers',
+    '/applicable_errata_in_repos/$', 'ApplicableErrataInRepos',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
     '/([^/]+)/package_profile/$', 'ConsumerProfileUpdate',

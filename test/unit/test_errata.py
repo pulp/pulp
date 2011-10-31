@@ -558,3 +558,88 @@ class TestErrata(testutil.PulpAsyncTest):
         found = self.repo_api.find_repos_by_errataid(eid)
         self.assertTrue(len(found) == 0)
 
+
+    def test_repo_errata_consumers (self):
+        # Create 2 identical repos with errata and sync them
+        datadir = os.path.join(self.data_path, "repo_rhel_sample")
+        r = self.repo_api.create("test_repo_errata_consumers", "test_name", "x86_64",
+                "file://%s" % datadir)
+        repo_sync._sync(r['id'])
+        
+        r1 = self.repo_api.create("test_repo_errata_consumers1", "test_name", "x86_64",
+                "file://%s" % datadir)
+        repo_sync._sync(r1['id'])  
+
+        # Create a repo with custom errata 
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        repo = self.repo_api.create('some-id', 'some name', \
+            'x86_64', 'http://example.com')
+        id = 'test_errata_id_1'
+        title = 'test_errata_title_1'
+        description = 'test_errata_description_1'
+        version = '1.0'
+        release = '0'
+        type = 'enhancement'
+        test_errata_1 = self.errata_api.create(id, title, description, version, release, type)
+        assert(test_errata_1 is not None)
+
+        epkg = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+        test_pkg_name = epkg["name"]
+        test_epoch = epkg["epoch"]
+        test_version = epkg["version"]
+        test_release = epkg["release"]
+        test_arch = epkg["arch"]
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = 'test-filename-0.3.1-1.fc11.x86_64.rpm'
+        p = self.package_api.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+                release=test_release, arch=test_arch, description=test_description,
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        # Add this package version to the repo
+        self.repo_api.add_package(repo["id"], [p['id']])
+        test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
+                                                    'name': 'pulp-test-package',
+                                                    'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
+                                                    'epoch': '0', 'version': '0.3.1', 'release': '1.fc11',
+                                                    'arch': 'x86_64'}]}]
+        self.errata_api.update(id, model.Delta(test_errata_1, 'pkglist'))
+        self.repo_api.add_erratum(repo['id'], test_errata_1['id'])
+
+        # Associate repo with consumer and install lower version of package
+        cid = 'test-consumer'
+        c = self.consumer_api.create(cid, 'some consumer desc')
+        self.assertTrue(c is not None)
+
+        info1 = get_rpm_information(my_dir + \
+                        "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
+        info2 = get_rpm_information(my_dir + \
+                        "/data/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
+
+        packages = generatePakageProfile([info1, info2])
+        c['package_profile'] = packages
+        self.assertTrue(c['package_profile'] is not None)
+        model.Consumer.get_collection().save(c, safe=True)
+
+        c["repoids"] = [repo['id']]
+        model.Consumer.get_collection().save(c, safe=True)
+ 
+        result1 = self.consumer_api.get_consumers_applicable_errata([r['id'], r1['id'], repo['id']])
+        result2 = self.consumer_api.get_consumers_applicable_errata([r['id'], r1['id']])
+        
+        assert(result1 != result2)
+        assert(len(result1) == len(result2) + 1)
+        assert(result1['test_errata_id_1'] == ['test-consumer'])
+        
+        # Try with empty repoids
+        result = self.consumer_api.get_consumers_applicable_errata([])
+        assert(result == {})
+        
+        # Try with invalid repo ids
+        try:
+            self.consumer_api.get_consumers_applicable_errata(["fake_repo_id"])
+            exception_thrown = False
+        except:
+            exception_thrown = True
+        assert(exception_thrown == True)
+        

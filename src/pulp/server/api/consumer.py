@@ -633,10 +633,13 @@ class ConsumerApi(BaseApi):
             reboot_suggested = True
         return reboot_suggested
 
-    def _applicable_errata(self, consumer, types=()):
+    def _applicable_errata(self, consumer, types=(), repoids=None):
         """
         Logic to filter applicable errata for a consumer
         """
+        if repoids is None:
+            repoids = consumer["repoids"]
+
         applicable_errata = {}
         pkg_profile = consumer["package_profile"]
 
@@ -644,7 +647,7 @@ class ConsumerApi(BaseApi):
         pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
         #Compute applicable errata by subscribed repos
 
-        errataids = [eid['id'] for repoid in consumer["repoids"] \
+        errataids = [eid['id'] for repoid in repoids \
                      for eid in self.repoapi.errata(repoid, types) ]
         for erratumid in errataids:
             # compare errata packages to consumer package profile and
@@ -675,3 +678,39 @@ class ConsumerApi(BaseApi):
                                                                 'reboot_suggested' : erratum['reboot_suggested']}
                             applicable_errata[erratumid]['packages'].append(pkg)
         return applicable_errata
+    
+
+
+    @audit()
+    def get_consumers_applicable_errata(self, repoids):
+        """
+        """
+        all_repo_errata = []
+        for repoid in repoids:
+            repo = self.repoapi.repository(repoid)
+            if not repo:
+                raise PulpException('Repository [%s] does not exist', repoid)
+            for type_errata, errata in repo['errata'].items():
+                all_repo_errata.extend(errata)
+
+        applicable_errata_consumers = {}
+        for erratum in all_repo_errata:
+            applicable_errata_consumers[erratum] = []
+
+        for repoid in repoids:
+            registered_consumers = [ consumer for consumer in self.consumers() \
+                                    if repoid in consumer['repoids']]
+            repo_errataids = []
+            for type_errata, errata in repo['errata'].items():
+                repo_errataids.extend(errata)
+
+            for consumer in registered_consumers:
+                applicable_errata = self._applicable_errata(consumer=consumer, repoids=[repoid]).keys()
+
+                for repo_errataid in repo_errataids:
+                    if repo_errataid in applicable_errata:
+                        applicable_errata_consumers[repo_errataid].append(consumer['id'])
+
+        return applicable_errata_consumers
+
+
