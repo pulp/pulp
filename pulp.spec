@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.244
+Version:        0.0.245
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -496,6 +496,14 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Oct 31 2011 James Slagle <jslagle@redhat.com> 0.0.245-1
+- Update requires on mod_wsgi (jslagle@redhat.com)
+- 747026 - When removing a CDS/repo association, remove the association
+  document if no more CDSes are assigned for the given repo.
+  (jason.dobies@redhat.com)
+- adding repo notes cli and symlink changes to bash completion script
+  (skarmark@redhat.com)
+
 * Fri Oct 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-1
 - Requires gofer 0.54. (jortel@redhat.com)
 - 734126 - make consumer certificate path configurable. (jortel@redhat.com)
