@@ -530,6 +530,16 @@ _pulp_admin()
                             --id -e --errata -y --asumeyes -r --recursive' \
                             -- "$cur" ) )
                     ;;
+                    add_distribution)
+                        COMPREPLY=( $( compgen -W '
+                            --id -d --distribution --source' \
+                            -- "$cur" ) )
+                    ;;
+                    remove_distribution)
+                        COMPREPLY=( $( compgen -W '
+                            --id -d --distribution' \
+                            -- "$cur" ) )
+                    ;;
                     add_file)
                         COMPREPLY=( $( compgen -W '
                             --id -f --filename --source --csv' \
@@ -780,7 +790,8 @@ _pulp_admin()
                     COMPREPLY=( $( compgen -W '
                         list status content create clone delete update sync
                         cancel_sync list_keys publish add_package
-                        remove_package add_errata remove_errata add_file
+                        remove_package add_errata remove_errata
+                        add_distribution remove_distribution add_file
                         remove_file add_filters remove_filters
                         generate_metadata add_metadata list_metadata
                         download_metadata remove_metadata discovery export
