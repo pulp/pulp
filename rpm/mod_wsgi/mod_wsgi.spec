@@ -1,6 +1,6 @@
 Name:           mod_wsgi
 Version:        3.2
-Release:        5.pulp%{?dist}
+Release:        6.pulp%{?dist}
 Summary:        A WSGI interface for Python web applications in Apache
 
 Group:          System Environment/Libraries
