@@ -52,10 +52,16 @@ def v1_uri(repo):
     # not published: no repo uri
     if not repo['publish']:
         return None
+
     # use cds uri first
+
+    # This is incorrect; this circumvents the round robining and funnels
+    # all URLs to a single CDS. This is why the method was flagged as
+    # a private method in the first place, it's not meant to be used like this.
     cds = round_robin._find_association(repo['id'])
     if cds is not None:
         return cds['next_permutation'][0]
+
     # no cds association: build local uri
     request_uri = http.request_url()
     uri_prefix = request_uri.split(http.API_HREF)[0]

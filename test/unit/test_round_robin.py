@@ -234,8 +234,7 @@ class TestRoundRobin(testutil.PulpAsyncTest):
         self.assertTrue(removed)
 
         association = round_robin._find_association('repo1')
-        self.assertTrue(association is not None)
-        self.assertEqual(0, len(association['next_permutation']))
+        self.assertTrue(association is None)
 
     def test_remove_unassociated_cds(self):
         '''
