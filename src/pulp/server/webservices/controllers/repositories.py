@@ -354,7 +354,7 @@ class Repository(JSONController):
         api.delete(id=id)
         return self.ok({})
 
-class RepositoryNotesUpdateDelete(JSONController):
+class RepositoryNotes(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id, key):
