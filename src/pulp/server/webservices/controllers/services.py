@@ -57,12 +57,21 @@ class DependencyActions(JSONController):
     @auth_required(EXECUTE)
     def POST(self):
         """
-        list of available dependencies required \
-        for a specified package per repo.
-        expects passed in pkgnames and repoids from POST data
-        pkgnames format includes: name, name.arch, name-ver-rel.arch, name-ver, name-ver-rel,
-         epoch:name-ver-rel.arch, name-epoch:ver-rel.arch
-        @return: a dict of printable dependency result and suggested packages
+        [[wiki]]
+        title: list of available dependencies.
+        description: list of available dependencies required for a specified package per repo.
+        method: POST
+        path: /services/dependencies/
+        permission: READ
+        success response: 200 OK
+        failure response:
+        return: a dictionary of dependency info in the format {'printable_dependency_result' : '', 'resolved' : [], 'unresolved' : [], 'dependency_tree' : {}}
+        parameters:
+         * pkgnames, list, list of package names in the format name, name.arch, name-ver-rel.arch, name-ver,
+                    name-ver-rel, epoch:name-ver-rel.arch, name-epoch:ver-rel.arch.
+         * repoids, list, list of repo ids
+         * recursive?, boolean, performs dependency resolution recursively
+         * make_tree?, boolean, constrcts a dependency results as a tree form
         """
         data = self.params()
         # validate required params
@@ -73,7 +82,11 @@ class DependencyActions(JSONController):
         recursive = 0
         if data.has_key("recursive"):
             recursive = data['recursive']
-        return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=recursive))
+        make_tree = 0
+        if data.has_key("make_tree"):
+            make_tree = data["make_tree"]
+        return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], \
+                                               recursive=recursive, make_tree=make_tree))
 
 
 class PackageSearch(JSONController):

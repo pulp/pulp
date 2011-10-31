@@ -228,7 +228,7 @@ class PackageApi(BaseApi):
          @type repoid: str
          @param pkgnames: list of package names
          @type pkgnames: list
-         @return list: nvera of dependencies
+         @return dict: dictionary of dependency info of the format {'printable_dependency_result' : '', 'resolved' : [], 'unresolved' : [], 'dependency_tree' : {}}
         '''
         from pulp.server.api.repo import RepoApi
         rapi = RepoApi()
