@@ -837,7 +837,8 @@ class Sync(RepoProgressAction):
         start = self.opts.start
         runs = self.opts.runs
         schedule = parse_interval_schedule(interval, start, runs)
-        if not isinstance(interval, timedelta) and start is None:
+        delta = parse_iso8601_duration(interval)
+        if not isinstance(delta, timedelta) and start is None:
             msg =_('If interval has months or years, a start date must be specified')
             utils.system_exit(os.EX_USAGE,  msg)
         return schedule
