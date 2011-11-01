@@ -285,8 +285,8 @@ class BaseSynchronizer(object):
         # Handle files that are part of repo syncs
         files = parseManifest(file_metadata) or {}
         added_files = []
-        for hash, fileinfo in files.items():
-            checksum_type, checksum = ("sha256", hash)
+        for fileinfo in files:
+            checksum_type, checksum = ("sha256", fileinfo['checksum'])
             fileobj = self.file_api.create(os.path.basename(fileinfo['filename']),
                                            checksum=checksum, checksum_type=checksum_type, size=int(fileinfo['size']))
             if fileobj['id'] not in repo['files']:
