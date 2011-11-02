@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.245
+Version:        0.0.246
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -496,6 +496,23 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.246-1
+- 750913,750915 - Fix CLI package uninstall help and error messages.
+  (jortel@redhat.com)
+- Bump grinder to 0.126 (jmatthews@redhat.com)
+- updating file synchronizer to match new grinder changes (pkilambi@redhat.com)
+- bug specifying interval without start time always results in error
+  (jconnor@redhat.com)
+- Automatic commit of package [pulp] release [0.0.245-1]. (jslagle@redhat.com)
+- Update requires on mod_wsgi (jslagle@redhat.com)
+- updating the docs for dependency resolver call and exposing make_tree option
+  (pkilambi@redhat.com)
+- adding distribution selective sync calls to bash completion script
+  (pkilambi@redhat.com)
+- 741635 - Errata summary enhancement for katello dashboard
+  (skarmark@redhat.com)
+- fixing ISE for repo update and delete notes (skarmark@redhat.com)
+
 * Mon Oct 31 2011 James Slagle <jslagle@redhat.com> 0.0.245-1
 - Update requires on mod_wsgi (jslagle@redhat.com)
 - 747026 - When removing a CDS/repo association, remove the association
