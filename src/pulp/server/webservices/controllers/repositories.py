@@ -1704,7 +1704,7 @@ class RepositoryTaskHistory(JSONController):
     @auth_required(READ)
     def GET(self, id, action):
         """
-        [wiki]
+        [[wiki]]
         title: Repository Action History
         description: List completed actions and their results for a repository.
         method: GET
