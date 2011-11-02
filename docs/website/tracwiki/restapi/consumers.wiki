@@ -2,3 +2,21 @@
 = Consumers RESTful API = #top
 ''No description.'' [[BR]]
 [[BR]]
+
+----
+
+== Applicable Errata In Repos ==
+''List all errata associated with a group of repositories along with consumers that it is applicable to'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /consumers/applicable_errata_in_repos/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': None [[BR]]
+[[BR]]
+'''return''': list of object that are mappings of errata id in given repoids to applicable consumers [[BR]]
+[[BR]]
