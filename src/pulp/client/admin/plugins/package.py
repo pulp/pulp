@@ -119,7 +119,7 @@ class Install(PackageAction):
                         _("Consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
+            system_exit(os.EX_DATAERR, _("Must specify a package name"))
         if consumergroupid:
             self.on_group(consumergroupid, pnames)
         else:
@@ -208,6 +208,24 @@ class Uninstall(Install):
 
     name = "uninstall"
     description = _('schedule a package uninstall')
+    
+    def setup_parser(self):
+        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                               help=_("packages to be uninstalled; to specify multiple packages use multiple -n"))
+        id_group = OptionGroup(self.parser,
+                               _('Consumer or Consumer Group id (one is required'))
+        id_group.add_option("--consumerid", dest="consumerid",
+                            help=_("consumer id"))
+        id_group.add_option("--consumergroupid", dest="consumergroupid",
+                            help=_("consumer group id"))
+        self.parser.add_option_group(id_group)
+        self.parser.add_option("--when", dest="when", default=None,
+                               help=_("specifies when to execute the uninstall.  "
+                               "Format: iso8601, YYYY-MM-DDThh:mm"))
+        self.parser.add_option("--nowait", dest="nowait", default=False,
+            action="store_true",
+            help=_("if specified, don't wait for the package uninstall to finish, "
+            "return immediately."))
 
     def on_consumer(self, id, pnames):
         when = parse_at_schedule(self.opts.when)
