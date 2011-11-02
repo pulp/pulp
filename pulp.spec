@@ -496,6 +496,9 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-2
+- fixing ISE for repo update and delete notes (skarmark@redhat.com)
+
 * Fri Oct 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-1
 - Requires gofer 0.54. (jortel@redhat.com)
 - 734126 - make consumer certificate path configurable. (jortel@redhat.com)
