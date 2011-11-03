@@ -110,6 +110,7 @@ Requires:       python-isodate >= 0.4.4
 Requires:       m2crypto
 Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.54
+Requires:       gofer-package >= 0.54
 %if !0%{?fedora}
 # RHEL
 Requires:       python-hashlib

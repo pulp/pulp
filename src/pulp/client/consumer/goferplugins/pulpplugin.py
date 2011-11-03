@@ -28,9 +28,8 @@ from pulp.client.consumer.credentials import Consumer as ConsumerBundle
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
+from gofer.pmon import PathMonitor
 from gofer.decorators import *
-from yum import YumBase
-from yum.Errors import GroupsError
 
 from logging import getLogger
 
@@ -39,6 +38,11 @@ plugin = Plugin.find(__name__)
 cfg = ConsumerConfig()
 
 HEARTBEAT = cfg.heartbeat.seconds
+
+# plugin exports
+package = Plugin.find('package')
+Package = package.export('Package')
+PackageGroup = package.export('PackageGroup')
 
 
 def pulpserver():
@@ -65,17 +69,9 @@ def getsecret():
     else:
         return None
 
-def ybcleanup(yb):
-    try:
-        # close rpm db
-        yb.closeRpmDB()
-        # hack!  prevent file descriptor leak
-        yl = getLogger('yum.filelogging')
-        for h in yl.handlers:
-            yl.removeHandler(h)
-    except Exception, e:
-        log.exception(e)
-
+#
+# Actions
+#
 
 class Heartbeat:
     """
@@ -107,37 +103,36 @@ class Heartbeat:
             body = dict(uuid=myid, next=delay)
             p.send(topic, ttl=delay, heartbeat=body)
         return myid
-        
 
-class IdentityAction:
-    """
-    Detect changes in (pulp) registration status.
-    """
+
+class RegistrationMonitor:
     
-    last = -1
+    pmon = PathMonitor()
     
-    @action(seconds=1)
-    def perform(self):
+    @classmethod
+    @action(days=0x8E94)
+    def init(cls):
         """
-        Update the plugin's UUID.
+        Start path monitor to track changes in the
+        pulp identity certificate.
         """
         bundle = ConsumerBundle()
-        current = self.mtime(bundle.crtpath())
-        if current != self.last:
-            plugin.setuuid(bundle.getid())
-            self.last = current
-    
-    def mtime(self, path):
+        path = bundle.crtpath()
+        cls.pmon.add(path, cls.changed)
+        cls.pmon.start()
+
+    @classmethod
+    def changed(cls, path):
         """
-        Get the modification time for the file at path.
-        @param path: A file path
+        A change in the pulp certificate has been detected.
+        When deleted: disconnect from qpid.
+        When added/updated: reconnect to qpid.
+        @param path: The changed file (ignored).
         @type path: str
-        @return: The mtime or 0.
         """
-        try:
-            return os.path.getmtime(path)
-        except OSError:
-            return 0
+        log.info('changed: %s', path)
+        bundle = ConsumerBundle()
+        plugin.setuuid(bundle.getid())
 
 
 class ProfileUpdateAction:
@@ -165,7 +160,10 @@ class ProfileUpdateAction:
             log.info("Profile updated successfully for consumer [%s]" % cid)
         except Exception, e:
             log.error("Error: %s" % e)
-            
+
+#
+# API
+#
             
 class Packages:
     """
@@ -185,21 +183,8 @@ class Packages:
         @return: (installed, (reboot requested, performed))
         @rtype: tuple
         """
-        installed = []
-        try:
-            yb = YumBase()
-            impkeys = getbool(cfg.client, import_gpg_keys=False)
-            yb.conf.assumeyes = impkeys
-            log.info('installing packages: %s import keys: %s', names, impkeys)
-            for info in names:
-                yb.install(pattern=info)
-            if len(yb.tsInfo):
-                for t in yb.tsInfo:
-                    installed.append(str(t.po))
-                yb.resolveDeps()
-                yb.processTransaction()
-        finally:
-            ybcleanup(yb)
+        pkg = Package()
+        installed = pkg.install(names, assumeyes)
         scheduled = False
         if reboot:
             approved = getbool(cfg.client, assumeyes=assumeyes)
@@ -217,20 +202,10 @@ class Packages:
         @return: A list of erased packages.
         @rtype: list
         """
-        erased = []
-        try:
-            yb = YumBase()
-            log.info('removing packages: %s', names)
-            for info in names:
-                yb.remove(pattern=info)
-            if len(yb.tsInfo):
-                for t in yb.tsInfo:
-                    erased.append(str(t.po))
-                yb.resolveDeps()
-                yb.processTransaction()
-            return erased
-        finally:
-            ybcleanup(yb)
+        pkg = Package()
+        uninstalled = pkg.uninstall(names)
+        log.info('Packages uninstalled: %s', uninstalled)
+        return uninstalled
 
     def __schedule_reboot(self):
         interval = cfg.client.reboot_schedule
@@ -250,20 +225,10 @@ class PackageGroups:
         @param names: A list of package names.
         @param names: str
         """
-        installed = {}
-        yb = YumBase()
-        try:
-            log.info('installing package groups: %s', names)
-            for name in names:
-                packages = yb.selectGroup(name)
-                if packages:
-                    installed[name] = [str(t.po) for t in packages]
-            if installed:
-                yb.resolveDeps()
-                yb.processTransaction()
-            return installed
-        finally:
-            ybcleanup(yb)
+        grp = PackageGroup()
+        installed = grp.install(names)
+        log.info('Packages installed: %s', installed)
+        return installed
 
     @remote(secret=getsecret)
     def uninstall(self, names):
@@ -272,17 +237,7 @@ class PackageGroups:
         @param names: A list of package group names.
         @param names: str
         """
-        removed = {}
-        yb = YumBase()
-        try:
-            log.info('uninstalling package groups: %s', names)
-            for name in names:
-                packages = yb.groupRemove(name)
-                if packages:
-                    removed[name] = [str(t.po) for t in packages]
-            if removed:
-                yb.resolveDeps()
-                yb.processTransaction()
-            return removed
-        finally:
-            ybcleanup(yb)
+        grp = PackageGroup()
+        uninstalled = grp.uninstall(names)
+        log.info('Packages uninstalled: %s', uninstalled)
+        return uninstalled
