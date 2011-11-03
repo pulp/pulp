@@ -496,6 +496,13 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Nov 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-3
+- bump release for build. (jortel@redhat.com)
+- 750913,750915 - Fix CLI package uninstall help and error messages.
+  (jortel@redhat.com)
+- updating file synchronizer to match new grinder changes (pkilambi@redhat.com)
+- Update requires on mod_wsgi (jslagle@redhat.com)
+
 * Wed Nov 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-2
 - fixing ISE for repo update and delete notes (skarmark@redhat.com)
 
