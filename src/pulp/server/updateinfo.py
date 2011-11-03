@@ -113,6 +113,9 @@ def generate_updateinfo(repo):
     """
     um = UpdateMetadata()
     eapi = ErrataApi()
+    if repo['preserve_metadata']:
+        # metadata is set to be preserved, dont generate updatinfo
+        return
     if not repo['errata']:
         #no errata to process, return
         return
