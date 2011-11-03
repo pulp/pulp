@@ -344,7 +344,7 @@ class ImportUploadContent:
         packageInfo = PackageInfo(name, version, release, epoch, arch, description, checksum, pkgname,
                                   requires, provides, size, buildhost, license, group, vendor)
         bsync = BaseSynchronizer()
-        pkg = bsync.import_package(packageInfo, repo_id=None)
+        pkg = bsync.import_package(packageInfo)
         self.__package_imported(pkg['id'], pkg_path)
         return pkg
 

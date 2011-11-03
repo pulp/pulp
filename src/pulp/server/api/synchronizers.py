@@ -211,7 +211,7 @@ class BaseSynchronizer(object):
                 if not os.path.exists(pkg_path):
                     # skip import; package is missing from the filesystem
                     continue
-                package = self.import_package(package, repo_id, repo_defined=True)
+                package = self.import_package(package, repo, repo_defined=True)
                 if (package is not None):
                     added_packages[package["id"]] = package
             endTime = time.time()
@@ -382,7 +382,7 @@ class BaseSynchronizer(object):
             newpkg = found[0]
         return newpkg
 
-    def import_package(self, package, repo_id=None, repo_defined=False):
+    def import_package(self, package, repo=None, repo_defined=False):
         """
         @param package - package to add to repo
         @param repo_id - repo_id to hold package
@@ -411,7 +411,7 @@ class BaseSynchronizer(object):
             filter = ['requires', 'provides', 'buildhost',
                       'size' , 'group', 'license', 'vendor']
             # set the download URL
-            if repo_id:
+            if repo:
                 filter.append('download_url')
                 newpkg["download_url"] = \
                     constants.SERVER_SCHEME \
@@ -419,7 +419,7 @@ class BaseSynchronizer(object):
                     + "/" \
                     + config.config.get('server', 'relative_url') \
                     + "/" \
-                    + repo_id \
+                    + repo['relative_path'] \
                     + "/" \
                     + file_name
             newpkg = pulp.server.util.translate_to_utf8(newpkg)
