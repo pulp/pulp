@@ -496,6 +496,15 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Nov 04 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-4
+- bump release for build. (jortel@redhat.com)
+- relaxing requirement and validation on consumer group description
+  (jconnor@redhat.com)
+- The /v2 REST discovery URL is breaking all of the /v2 URLs.
+  (jason.dobies@redhat.com)
+- adding checksum type to packageinfo object during uploads
+  (pkilambi@redhat.com)
+
 * Thu Nov 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-3
 - bump release for build. (jortel@redhat.com)
 - 750913,750915 - Fix CLI package uninstall help and error messages.
