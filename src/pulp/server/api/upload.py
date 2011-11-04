@@ -341,8 +341,10 @@ class ImportUploadContent:
         if not self.__finalize_content(pkg_path):
             return None
 
-        packageInfo = PackageInfo(name, version, release, epoch, arch, description, checksum, pkgname,
-                                  requires, provides, size, buildhost, license, group, vendor)
+        packageInfo = PackageInfo(name, version, release, epoch, \
+                                  arch, description, checksum, pkgname, \
+                                  requires, provides, size, buildhost, \
+                                  license, group, vendor, hashtype)
         bsync = BaseSynchronizer()
         pkg = bsync.import_package(packageInfo)
         self.__package_imported(pkg['id'], pkg_path)
@@ -358,8 +360,10 @@ class ImportUploadContent:
         import the files into pulp database
         """
         log.info("Importing file metadata content into pulp")
-        file_path = "%s/%s/%s/%s/%s" % (util.top_file_location(), self.metadata['pkgname'][:3], \
-                                        self.metadata['pkgname'], self.metadata['checksum'], \
+        file_path = "%s/%s/%s/%s/%s" % (util.top_file_location(), 
+                                        self.metadata['pkgname'][:3], \
+                                        self.metadata['pkgname'], 
+                                        self.metadata['checksum'], \
                                         self.metadata['pkgname'])
         if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
             log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
@@ -415,15 +419,16 @@ class ImportUploadContent:
         return True
 
 class PackageInfo:
-    def __init__(self, name, version, release, epoch, arch, \
-                 description, checksum, relativepath,
-                 requires, provides, size, buildhost, license, group, vendor):
+    def __init__(self, name, version, release, epoch, arch, description, \
+                 checksum, relativepath, requires, provides, size, buildhost,\
+                 license, group, vendor, checksum_type):
         self.name = name
         self.version = version
         self.release = release
         self.epoch = epoch
         self.arch = arch
         self.checksum = checksum
+        self.checksum_type = checksum_type
         self.relativepath = relativepath
         self.description = description
         self.requires = requires
