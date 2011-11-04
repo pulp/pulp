@@ -43,7 +43,7 @@ class ConsumerGroup(Model):
     collection_name = 'consumergroups'
     search_indices = ('consumerids',)
 
-    def __init__(self, id, description, consumerids=[], key_value_pairs={}):
+    def __init__(self, id, description=None, consumerids=[], key_value_pairs={}):
         self._id = id
         self.id = id
         self.description = description
