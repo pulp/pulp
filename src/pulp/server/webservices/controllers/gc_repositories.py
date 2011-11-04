@@ -139,6 +139,8 @@ class RepoSync(JSONController):
         repo_sync_manager = manager_factory.repo_sync_manager()
         repo_sync_manager.sync(repo_id, overrides)
 
+        return self.ok(True)
+
 class RepoPublish(JSONController):
 
     # POST:  Trigger a repo publish
@@ -157,6 +159,8 @@ class RepoPublish(JSONController):
         # TODO: Make this run asynchronously
         repo_publish_manager = manager_factory.repo_publish_manager()
         repo_publish_manager.publish(repo_id, distributor_id, overrides)
+        
+        return self.ok(True)
 
 class ListRepositories(JSONController):
 
