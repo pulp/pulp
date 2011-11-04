@@ -111,7 +111,7 @@ def _validate_consumer_group():
     @return: number of errors found during validation
     """
     objectdb = ConsumerGroup.get_collection()
-    reference = model.ConsumerGroup(u'', u'')
+    reference = model.ConsumerGroup(u'')
     return _validate_model(model.ConsumerGroup.__name__, objectdb, reference)
 
 
