@@ -41,21 +41,8 @@ class Repo(Model):
                     either set by the user or by an importer or distributor
     @type metadata: dict
 
-    @ivar content_units: list of references from this repo to content units in it
-    @type content_units: to be determined
-
     @ivar content_unit_count: number of content units in the repo
     @type content_unit_count: int
-
-    @ivar importers: mapping of importer ID to document in the RepoImporter collection
-                     of all importers being used by this repo; each importer ID
-                     must be unique within a given repo
-    @type importers: dict: str, L{RepoImporter}
-
-    @ivar distributors: mapping of distributor ID to document in the RepoDistributor
-                        collection of all distributors being used by this repo;
-                        each distributor ID must be unique within a given repo
-    @type distributors: dict: str, L{RepoDistributor}
     """
 
     collection_name = 'gc_repositories'
