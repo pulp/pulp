@@ -150,7 +150,7 @@ class ContentUnitsCollection(JSONController):
         content_units = cqm.list_content_units(type_id)
         for unit in content_units:
             resource = serialization.content.content_unit_obj(unit)
-            resource.update(serialization.link.child_link_obj(unit['id']))
+            resource.update(serialization.link.child_link_obj(unit['_id']))
             resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
             collection.append(resource)
         return self.ok(collection)
