@@ -1024,7 +1024,7 @@ class GenerateMetadata(AdminRepoAction):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
         if self.opts.status:
-            task = self.repository_api.generate_metadata_status(id)[0]
+            task = self.repository_api.generate_metadata_status(id)[-1]
             start_time = None
             if task['start_time']:
                 start_time = str(parse_iso8601_datetime(task['start_time']))
