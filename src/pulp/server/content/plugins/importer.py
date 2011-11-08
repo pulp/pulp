@@ -11,17 +11,46 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+"""
+= API Conventions =
+
+== Conduits ==
+The term "conduit" refers to an object that is used to call back into the Pulp
+server. Many plugin action calls take a conduit as a parameter. The conduit
+is usually customized for the action taking place and will contain methods
+relevant to that particular action.
+
+"""
+
 
 class Importer(object):
     """
-    Base class for importer plugin development.
+    Base class for Pulp content importers. Importers must subclass this class
+    in order for Pulp to identify it as a valid importer during discovery.
     """
+
+    # -- plugin lifecycle -----------------------------------------------------
 
     @classmethod
     def metadata(cls):
-        return {}
+        """
+        Used by Pulp to classify the capabilities of this importer. The
+        following keys must be present in the returned dictionary:
 
-    def validate_config(self, repo_data, repo_config):
+        * id - Programmatic way to refer to this importer. Must be unique
+               across all importers. Only letters and underscores are valid.
+        * display_name - User-friendly identification of the importer.
+        * types - List of all content type IDs that may be imported using this
+               plugin.
+
+        @return: description of the importer's capabilities
+        @rtype:  dict
+        """
+        raise NotImplementedError()
+
+    # -- repo lifecycle -------------------------------------------------------
+
+    def validate_config(self, repo, config):
         """
         Allows the importer to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -30,59 +59,132 @@ class Importer(object):
         should use the given repository data to ensure that updating the
         configuration does not put the repository into an inconsistent state.
 
-        @param repo_data: metadata describing the repository to which the
-                          configuration applies
-        @type  repo_data: dict
+        @param repo: metadata describing the repository to which the
+                     configuration applies
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
 
-        @param repo_config: proposed configuration used by this importer for
-                                the given repo
-        @type  repo_config: dict
+        @param config: plugin configuration instance; the proposed repo
+                       configuration is found within
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
 
         @return: True if the configuration is valid; False otherwise
         @rtype:  bool
         """
         raise NotImplementedError()
 
-    def sync_repo(self, repo_data, sync_conduit, importer_config=None, repo_config=None):
+    def importer_added(self, repo, config):
         """
-        Sync content into a repository.
-        @param repo_data: metadata that describes a pulp repository
-        @type repo_data: dict
-        @param sync_conduit: api instance that provides limited pulp functionality
-        @type sync_conduit: L{ContentPluginHook} instance
-        @param importer_config: configuration for the importer instance
-        @type importer_config: None or dict
-        @param repo_config: configuration for a specific repo
-        @type repo_config: None or dict
+        Called upon the successful addition of an importer of this type to
+        a repository. This hook allows the importer to do any initial setup
+        it needs to prior to the first sync.
+
+        This call should raise an exception in the case where the importer
+        is unable to successfully set up anything it will need to perform any
+        repository actions against the given repository. In this case, Pulp
+        will mark the importer as broken and repository operations that rely
+        on the importer will be unavailable for the given repository.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
         raise NotImplementedError()
 
-    def import_unit(self, repo_data, unit_data, temp_location, importer_config=None, repo_config=None):
+    def importer_removed(self, repo, config):
         """
-        Import a unit of content into a repository.
-        @param repo_data: metadata that describes a pulp repository
-        @type repo_data: dict
-        @param unit_data: metadata that describes a content unit
-        @type unit_data: dict
-        @param temp_location: full path to content unit on disk
-        @type temp_location: str
-        @param importer_config: configuration for the importer instance
-        @type importer_config: None or dict
-        @param repo_config: configuration for a specific repo
-        @type repo_config: None or dict
+        Called when an importer of this type is removed from a repository.
+        This hook allows the importer to clean up any temporary files that may
+        have been created during the repository creation or sync process.
+
+        This call does not need to delete any content that has been
+        synchronized by this importer. Imported content units are deleted through
+        a separate process in Pulp.
+
+        The importer may use the contents of the working directory in cleanup.
+        It is not required that the contents of this directory be deleted by
+        the importer; Pulp will ensure it is wiped following this call.
+
+        If this call raises an exception, the importer will still be removed
+        from the repository and the working directory contents will still
+        be wiped by Pulp.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
         raise NotImplementedError()
 
-    def delete_repo(self, repo_data, delete_conduit, importer_config=None, repo_config=None):
+    # -- actions --------------------------------------------------------------
+
+    def sync_repo(self, repo, sync_conduit, config):
         """
-        Delete a repository and its content.
-        @param repo_data: metadata that describes a pulp repository
-        @type repo_data: dict
-        @param delete_conduit: api instance that provides limited pulp functionality
-        @type delete_conduit: L{ContentPluginHook} instance
-        @param importer_config: configuration for the importer instance
-        @type importer_config: None or dict
-        @param repo_config: configuration for a specific repo
-        @type repo_config: None or dict
+        Synchronizes content into the given repository using the values in
+        repo_config to drive the sync process. This call is responsible for
+        adding new content units to Pulp as well as associating them to the
+        given repository.
+
+        While this call may be implemented using multiple threads, its execution
+        from the Pulp server's standpoint should be synchronous. This call should
+        not return until the sync is complete.
+
+        It is not expected that this call be atomic. Should an error occur, it
+        is not the responsibility of the importer to rollback any unit additions
+        or associations that have been made.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param sync_conduit: provides access to relevant Pulp functionality
+        @type  sync_conduit: ?
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        """
+        raise NotImplementedError()
+
+    def import_unit(self, repo, unit_type, unit_data, temp_location,
+                    import_conduit, config):
+        """
+        Import a unit of content into the given repository. This method will be
+        called in a number of different situations:
+         * A user is attempting to migrate a content unit from one repository
+           into the repository that uses this importer
+         * A user has uploaded a content unit to the Pulp server and is
+           attempting to associate it to a repository that uses this importer
+         * An existing repository is being cloned into a repository that
+           uses this importer
+
+        In all cases, the expected behavior is that the importer uses this call
+        as an opportunity to perform any changes it needs to its working
+        files for the repository to incorporate the new unit.
+
+        The unit may or may not exist in Pulp prior to this call. The call to
+        add the unit to Pulp is idempotent and should be made anyway to ensure
+        the case where a new unit is being uploaded to Pulp is handled.
+
+        The unit's metadata is provided in the unit_data argument to this call.
+        If the metadata is incorrect in any way (contains invalid values or keys
+        with respect to the unit type, for instance), an exception should be
+        raised to indicate the import has failed.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param unit_data: metadata provided with the content unit at upload
+        @type  unit_data: dict
+
+        @param temp_location: full path to uploaded content unit on disk; may
+                              be none if the unit exists purely as metadata
+        @type  temp_location: str
+
+        @param import_conduit: provides access to relevant Pulp functionality
+        @type  import_conduit: ?
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
         raise NotImplementedError()
