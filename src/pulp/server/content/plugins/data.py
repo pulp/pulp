@@ -61,3 +61,33 @@ class Repository:
         self.notes = None
 
         self.working_dir = None
+
+class Unit:
+    """
+    Contains information related to a single content unit. The unit may or
+    may not exist in Pulp; this is meant simply as a way of linking together
+    a number of pieces of data.
+
+    @ivar id: Pulp internal ID that refers to this unit; if the unit does not
+              yet exist in Pulp, this will be None
+    @type id: str
+
+    @ivar type: ID of the unit's type
+    @type type: str
+
+    @ivar metadata: mapping of key/value pairs describing the unit
+    @type metadata: dict
+
+    @ivar location: full path to where on disk the unit is currently stored;
+                    the unit may have been placed here either by an importer or
+                    this may refer to a temporary location Pulp has saved the
+                    unit to if it was uploaded by a user
+    @type location: str
+    """
+
+    def init(self, type, metadata):
+        self.type = type
+        self.metadata = metadata
+
+        self.id = None
+        self.location = None

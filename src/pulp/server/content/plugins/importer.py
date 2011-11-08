@@ -11,18 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-"""
-= API Conventions =
-
-== Conduits ==
-The term "conduit" refers to an object that is used to call back into the Pulp
-server. Many plugin action calls take a conduit as a parameter. The conduit
-is usually customized for the action taking place and will contain methods
-relevant to that particular action.
-
-"""
-
-
 class Importer(object):
     """
     Base class for Pulp content importers. Importers must subclass this class
@@ -146,10 +134,9 @@ class Importer(object):
         """
         raise NotImplementedError()
 
-    def import_unit(self, repo, unit_type, unit_data, temp_location,
-                    import_conduit, config):
+    def import_units(self, repo, units, import_conduit, config):
         """
-        Import a unit of content into the given repository. This method will be
+        Import content units into the given repository. This method will be
         called in a number of different situations:
          * A user is attempting to migrate a content unit from one repository
            into the repository that uses this importer
@@ -160,31 +147,46 @@ class Importer(object):
 
         In all cases, the expected behavior is that the importer uses this call
         as an opportunity to perform any changes it needs to its working
-        files for the repository to incorporate the new unit.
+        files for the repository to incorporate the new units.
 
-        The unit may or may not exist in Pulp prior to this call. The call to
-        add the unit to Pulp is idempotent and should be made anyway to ensure
+        The units may or may not exist in Pulp prior to this call. The call to
+        add a unit to Pulp is idempotent and should be made anyway to ensure
         the case where a new unit is being uploaded to Pulp is handled.
-
-        The unit's metadata is provided in the unit_data argument to this call.
-        If the metadata is incorrect in any way (contains invalid values or keys
-        with respect to the unit type, for instance), an exception should be
-        raised to indicate the import has failed.
 
         @param repo: metadata describing the repository
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
-        @param unit_data: metadata provided with the content unit at upload
-        @type  unit_data: dict
-
-        @param temp_location: full path to uploaded content unit on disk; may
-                              be none if the unit exists purely as metadata
-        @type  temp_location: str
+        @param units: list of objects describing the units to import in
+                      this call
+        @type  units: list of L{pulp.server.content.plugins.data.Unit}
 
         @param import_conduit: provides access to relevant Pulp functionality
         @type  import_conduit: ?
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        """
+        raise NotImplementedError()
+
+    def remove_units(self, repo, units, remove_conduit):
+        """
+        Removes content units from the given repository.
+
+        This method is intended to provide the importer with a chance to remove
+        the units from the importer's working directory for the repository.
+
+        This call will not result in the unit being deleted from Pulp itself.
+        The importer should, however, use the conduit to tell Pulp to remove
+        the association between the unit and the given repository.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param units: list of objects describing the units to import in
+                      this call
+        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+
+        @param remove_conduit: provides access to relevant Pulp functionality
+        @type  remove_conduit: ?
         """
         raise NotImplementedError()
