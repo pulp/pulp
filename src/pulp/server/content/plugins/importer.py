@@ -106,34 +106,6 @@ class Importer(object):
         """
         raise NotImplementedError()
 
-    # -- actions --------------------------------------------------------------
-
-    def sync_repo(self, repo, sync_conduit, config):
-        """
-        Synchronizes content into the given repository using the values in
-        repo_config to drive the sync process. This call is responsible for
-        adding new content units to Pulp as well as associating them to the
-        given repository.
-
-        While this call may be implemented using multiple threads, its execution
-        from the Pulp server's standpoint should be synchronous. This call should
-        not return until the sync is complete.
-
-        It is not expected that this call be atomic. Should an error occur, it
-        is not the responsibility of the importer to rollback any unit additions
-        or associations that have been made.
-
-        @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
-
-        @param sync_conduit: provides access to relevant Pulp functionality
-        @type  sync_conduit: ?
-
-        @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
-        """
-        raise NotImplementedError()
-
     def import_units(self, repo, units, import_conduit, config):
         """
         Import content units into the given repository. This method will be
@@ -188,5 +160,33 @@ class Importer(object):
 
         @param remove_conduit: provides access to relevant Pulp functionality
         @type  remove_conduit: ?
+        """
+        raise NotImplementedError()
+
+    # -- actions --------------------------------------------------------------
+
+    def sync_repo(self, repo, sync_conduit, config):
+        """
+        Synchronizes content into the given repository using the values in
+        repo_config to drive the sync process. This call is responsible for
+        adding new content units to Pulp as well as associating them to the
+        given repository.
+
+        While this call may be implemented using multiple threads, its execution
+        from the Pulp server's standpoint should be synchronous. This call should
+        not return until the sync is complete.
+
+        It is not expected that this call be atomic. Should an error occur, it
+        is not the responsibility of the importer to rollback any unit additions
+        or associations that have been made.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param sync_conduit: provides access to relevant Pulp functionality
+        @type  sync_conduit: ?
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
         raise NotImplementedError()
