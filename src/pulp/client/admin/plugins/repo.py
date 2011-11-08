@@ -907,9 +907,7 @@ class Sync(RepoProgressAction):
         if invalid_elements:
             msg = _('Unknown elements for exclusion: %(e)s') % {'e': ', '.join(invalid_elements)}
             utils.system_exit(os.EX_USAGE, msg)
-        if skip:
-            return {'skip': skip}
-        return {}
+        return {'skip': skip}
 
     def _set_schedule(self, repo_id, schedule, options):
         # HACK because we couldn't make up our minds about terminology
@@ -1026,7 +1024,7 @@ class GenerateMetadata(AdminRepoAction):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
         if self.opts.status:
-            task = self.repository_api.generate_metadata_status(id)[0]
+            task = self.repository_api.generate_metadata_status(id)[-1]
             start_time = None
             if task['start_time']:
                 start_time = str(parse_iso8601_datetime(task['start_time']))

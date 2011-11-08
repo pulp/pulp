@@ -819,10 +819,6 @@ class RepoApi(BaseApi):
         if not repo:
             log.error("Couldn't find repository [%s]" % (repoid))
             return [(pkg_id, (None, None, None, None, None), None, None) for pkg_id in packageids]
-        if repo['preserve_metadata']:
-            msg = "Metadata for repo [%s] is set to be preserved. Cannot add new content" % repoid
-            log.info(msg)
-            raise PulpException(msg)
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
@@ -951,10 +947,6 @@ class RepoApi(BaseApi):
             # Nothing to perform, return
             return errors
         repo = self._get_existing_repo(repoid)
-        if repo['preserve_metadata']:
-            msg = "Metadata for repo [%s] is set to be preserved. Cannot remove new content" % repoid
-            log.info(msg)
-            raise PulpException(msg)
         for pkg in pkgobjs:
             if pkg['id'] not in repo['packages']:
                 log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"], repoid))
