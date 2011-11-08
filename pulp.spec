@@ -496,6 +496,10 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Nov 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-5
+- Bump release for build. (jortel@redhat.com)
+- updating grinder version (pkilambi@redhat.com)
+
 * Fri Nov 04 2011 Jeff Ortel <jortel@redhat.com> 0.0.244-4
 - bump release for build. (jortel@redhat.com)
 - relaxing requirement and validation on consumer group description
