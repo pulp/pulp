@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+
 class Importer(object):
     """
     Base class for Pulp content importers. Importers must subclass this class
@@ -29,7 +30,11 @@ class Importer(object):
                across all importers. Only letters and underscores are valid.
         * display_name - User-friendly identification of the importer.
         * types - List of all content type IDs that may be imported using this
-               plugin.
+               importer.
+
+        This method call may be made multiple times during the course of a
+        running Pulp server and thus should not be used for initialization
+        purposes.
 
         @return: description of the importer's capabilities
         @rtype:  dict
@@ -78,7 +83,7 @@ class Importer(object):
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
-        raise NotImplementedError()
+        pass
 
     def importer_removed(self, repo, config):
         """
@@ -104,7 +109,7 @@ class Importer(object):
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
-        raise NotImplementedError()
+        pass
 
     def import_units(self, repo, units, import_conduit, config):
         """
@@ -167,9 +172,8 @@ class Importer(object):
 
     def sync_repo(self, repo, sync_conduit, config):
         """
-        Synchronizes content into the given repository using the values in
-        repo_config to drive the sync process. This call is responsible for
-        adding new content units to Pulp as well as associating them to the
+        Synchronizes content into the given repository. This call is responsible
+        for adding new content units to Pulp as well as associating them to the
         given repository.
 
         While this call may be implemented using multiple threads, its execution
@@ -184,7 +188,7 @@ class Importer(object):
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
         @param sync_conduit: provides access to relevant Pulp functionality
-        @type  sync_conduit: ?
+        @type  sync_conduit: L{pulp.server.content.conduits.repo_sync.RepoSyncConduit}
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}

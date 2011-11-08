@@ -14,14 +14,37 @@
 
 class Distributor(object):
     """
-    Base class for distributor plugin development.
+    Base class for Pulp content distributors. Distributors must subclass this
+    class in order for Pulp to identify it as a valid distributor during
+    discovery.
     """
+
+    # -- plugin lifecycle -----------------------------------------------------
 
     @classmethod
     def metadata(cls):
-        return {}
+        """
+        Used by Pulp to classify the capabilities of this distributor. The
+        following keys must be present in the returned dictionary:
 
-    def validate_config(self, repo_data, repo_config):
+        * id - Programmatic way to refer to this distributor. Must be unique
+               across all distributors. Only letters and underscores are valid.
+        * display_name - User-friendly identification of the distributor.
+        * types - List of all content type IDs that may be imported using this
+               distributor.
+
+        This method call may be made multiple times during the course of a
+        running Pulp server and thus should not be used for initialization
+        purposes.
+
+        @return: description of the distributor's capabilities
+        @rtype:  dict
+        """
+        raise NotImplementedError()
+
+    # -- repo lifecycle -------------------------------------------------------
+
+    def validate_config(self, repo, config):
         """
         Allows the distributor to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -30,43 +53,75 @@ class Distributor(object):
         should use the given repository data to ensure that updating the
         configuration does not put the repository into an inconsistent state.
 
-        @param repo_data: metadata describing the repository to which the
-                          configuration applies
-        @type  repo_data: dict
+        @param repo: metadata describing the repository to which the
+                     configuration applies
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
 
-        @param repo_config: proposed configuration used by this distributor for
-                                   the given repo
-        @type  repo_config: dict
+        @param config: plugin configuration instance; the proposed repo
+                       configuration is found within
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
 
         @return: True if the configuration is valid; False otherwise
         @rtype:  bool
         """
         raise NotImplementedError()
 
-    def publish_repo(self, repo_data, publish_conduit, distributor_config=None, repo_config=None):
+    def distributor_added(self, repo, config):
         """
-        Publish a repository.
-        @param repo_data: metadata that describes a pulp repository
-        @type repo_data: dict
-        @param publish_conduit: api instance that provides limited pulp functionality
-        @type publish_conduit: L{PluginAPI} instance
-        @param distributor_config: configuration for distributor instance
-        @type distributor_config: None or dict
-        @param repo_config: configuration for a specific repo
-        @type repo_config: None or dict
-        """
-        raise NotImplementedError()
+        Called upon the successful addition of a distributor of this type to a
+        repository. This hook allows the distributor to do any initial setup
+        it needs to prior to the first publish call.
 
-    def unpublish_repo(self, repo_data, unpublish_conduit, distributor_config=None, repo_config=None):
+        This call should raise an exception in the case where the distributor is
+        unable to successfully perform any setup actions that will be required
+        to perform actions (publish, unpublish) later. In this case, Pulp will
+        mark the distributor as broken and repository operations that rely on
+        the distributor will be unavailable for the given repository.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
-        Unpublish a repository.
-        @param repo_data: metadata that describes a pulp repository
-        @type repo_data: dict
-        @param unpublish_conduit: api instance that provides limited pulp functionality
-        @type unpublish_conduit: L{ContentPluginHook} instance
-        @param distributor_config: configuration for distributor instance
-        @type distributor_config: None or dict
-        @param repo_config: configuration for a specific repo
-        @type repo_config: None or dict
+        pass
+
+    def distributor_removed(self, repo, config):
+        """
+        Called when a distributor of this type is removed from a repository.
+        This hook allows the distributor to clean up any files that may have
+        been created during the actual publishing.
+
+        The distributor may use the contents of the working directory in cleanup.
+        It is not required that the contents of this directory be deleted by
+        the distributor; Pulp will ensure it is wiped following this call.
+
+        If this call raises an exception, the distributor will still be removed
+        from the repository and the working directory contents will still be
+        wiped by Pulp.
+        """
+
+    # -- actions --------------------------------------------------------------
+
+    def publish_repo(self, repo, publish_conduit, config):
+        """
+        Publishes the given repository.
+
+        While this call may be implemented using multiple threads, its execution
+        from the Pulp server's standpoint should be synchronous. This call should
+        not return until the publish is complete.
+
+        It is not expected that this call be atomic. Should an error occur, it
+        is not the responsibility of the distributor to rollback any changes
+        that have been made.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param publish_conduit: provides access to relevant Pulp functionality
+        @type  publish_conduit: L{pulp.server.content.conduits.repo_publish.RepoPublishConduit}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
         raise NotImplementedError()
