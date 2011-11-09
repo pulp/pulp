@@ -323,9 +323,10 @@ class BaseSynchronizer(object):
         timestamp = None
         if treeinfo['timestamp']:
             timestamp = datetime.datetime.fromtimestamp(float(treeinfo['timestamp']))
-        distro = self.distro_api.create(id, description, distro_path, family=treeinfo['family'],
-                                        variant=treeinfo['variant'], version=treeinfo['version'],
-                                        timestamp=timestamp, files=files)
+        distro = self.distro_api.create(id, description, distro_path, \
+                family=treeinfo['family'], variant=treeinfo['variant'], \
+                version=treeinfo['version'], timestamp=timestamp, files=files,\
+                arch=treeinfo['arch'])
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
             log.info("Created a distributionID %s" % distro['id'])

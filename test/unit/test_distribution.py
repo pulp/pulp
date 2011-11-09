@@ -45,8 +45,9 @@ class TestDistribution(testutil.PulpAsyncTest):
         family = 'Fedora'
         variant = 'Fedora'
         version = 'F14'
+        arch = 'i386'
         distro = self.distribution_api.create(id, description, relativepath, family= family,
-                                              variant=variant, version=version, files=files)
+                                              variant=variant, version=version, files=files, arch=arch)
         self.assertTrue(distro is not None)
 
     def test_duplicate(self):
@@ -103,6 +104,12 @@ class TestDistribution(testutil.PulpAsyncTest):
         found = self.distribution_api.distribution(id)
         self.assertTrue(found is not None)
         self.assertTrue(found['version'] == new_version)
+        new_arch = "x86_64"
+        self.distribution_api.update(id, {'arch':new_arch})
+        found = self.distribution_api.distribution(id)
+        self.assertTrue(found is not None)
+        self.assertTrue(found['arch'] == new_arch)
+
         
     def test_add_distro_to_repo(self):
         distroid = 'test_repo_distro'
