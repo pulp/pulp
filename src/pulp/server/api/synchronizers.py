@@ -948,7 +948,7 @@ class YumSynchronizer(BaseSynchronizer):
                     self.progress['details']["tree_file"]["num_success"] += 1
                     self.progress["num_success"] += 1
                     log.debug("Imported file %s " % dst_file_path)
-                repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", os.path.basename(dst_file_path))
+                repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", dst_file_path.split(distro_path)[-1])
                 if not os.path.islink(repo_dist_path):
                     log.info("Creating a symlink to repo location from [%s] to [%s]" % (dst_file_path, repo_dist_path))
                     pulp.server.util.create_rel_symlink(dst_file_path, repo_dist_path)
