@@ -17,12 +17,16 @@ Contains the manager class and exceptions for all repository related functionali
 
 from gettext import gettext as _
 import logging
+import os
 import re
+import shutil
 import sys
 import uuid
 
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.config import PluginCallConfiguration
+import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
 
@@ -126,6 +130,21 @@ class MissingDistributor(Exception):
     def __str__(self):
         return _('No distributor with name [%(name)s]' % {'name' : self.distributor_name})
 
+class RepoDeleteException(Exception):
+    """
+    Aggregates all exceptions that occurred during a repo delete and tracks
+    the general area in which they occurred.
+    """
+
+    CODE_IMPORTER = 'importer-error'
+    CODE_DISTRIBUTOR = 'distributor-error'
+    CODE_WORKING_DIR = 'working-dir-error'
+    CODE_DATABASE = 'database-error'
+
+    def __init__(self, codes):
+        Exception.__init__(self)
+        self.codes = codes
+
 # -- manager ------------------------------------------------------------------
 
 class RepoManager:
@@ -176,7 +195,7 @@ class RepoManager:
         create_me = Repo(repo_id, display_name, description, notes)
         Repo.get_collection().save(create_me, safe=True)
 
-    def delete_repo(self, repo_id, delete_content=True):
+    def delete_repo(self, repo_id):
         """
         Deletes the given repository, optionally requesting the associated
         importer clean up any content in the repository. If there is no
@@ -185,9 +204,8 @@ class RepoManager:
         @param repo_id: identifies the repo being deleted
         @type  repo_id: str
 
-        @param delete_content: indicates if the repository's content should
-                               be deleted as well
-        @type  delete_content: bool
+        @raises RepoDeleteException: if any part of the delete process fails;
+                the exception will contain information on which sections failed
         """
 
         # Validation
@@ -196,20 +214,76 @@ class RepoManager:
             _LOG.warn('Delete called on a non-existent repository [%(id)s]. Nothing to do.' % {'id' : repo_id})
             return
 
-        # TODO: call to importer to delete content
-        # TODO: remove storage directory on disk (sync_manager.get_repo_storage_directory)
+        # With so much going on during a delete, it's possible that a few things
+        # could go wrong while others are successful. We track lesser errors
+        # that shouldn't abort the entire process until the end and then raise
+        # an exception describing the incompleteness of the delete. The user
+        # will have to look at the server logs for more information.
+        error_codes = []
 
-        # Database Update
-        Repo.get_collection().remove({'id' : repo_id}, safe=True)
+        # Inform the importer
+        importer_coll = RepoImporter.get_collection()
+        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        if repo_importer is not None:
+            importer_type_id = repo_importer['importer_type_id']
+            importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
 
-        # Remove all importers and distributors from the repo
-        RepoDistributor.get_collection().remove({'repo_id' : repo_id}, safe=True)
-        RepoImporter.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
+            
+            transfer_repo = common_utils.to_transfer_repo(found)
+            transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
-        # Remove all associations from the repo
-        RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            try:
+                importer_instance.importer_removed(transfer_repo, call_config)
+            except Exception:
+                _LOG.exception('Error received removing importer [%s] from repo [%s]' % (importer_type_id, repo_id))
+                error_codes.append(RepoDeleteException.CODE_IMPORTER)
 
-    def set_importer(self, repo_id, importer_type_id, importer_config):
+        # Inform all distributors
+        distributor_coll = RepoDistributor.get_collection()
+        repo_distributors = list(distributor_coll.find({'repo_id' : repo_id}))
+        for repo_distributor in repo_distributors:
+            distributor_type_id = repo_distributor['distributor_type_id']
+            distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+
+            call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
+
+            transfer_repo = common_utils.to_transfer_repo(found)
+            transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+
+            try:
+                distributor_instance.distributor_removed(transfer_repo, call_config)
+            except Exception:
+                _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
+                error_codes.append(RepoDeleteException.CODE_DISTRIBUTOR)
+
+        # Delete the repository working directory
+        repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)
+        if os.path.exists(repo_working_dir):
+            try:
+                shutil.rmtree(repo_working_dir)
+            except Exception:
+                _LOG.exception('Error while deleting repo working dir [%s] for repo [%s]' % (repo_working_dir, repo_id))
+                error_codes.append(RepoDeleteException.CODE_WORKING_DIR)
+
+        # Database Updates
+        try:
+            Repo.get_collection().remove({'id' : repo_id}, safe=True)
+
+            # Remove all importers and distributors from the repo
+            RepoDistributor.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            RepoImporter.get_collection().remove({'repo_id' : repo_id}, safe=True)
+
+            # Remove all associations from the repo
+            RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
+        except Exception:
+            _LOG.exception('Error updating one or more database collections while removing repo [%s]' % repo_id)
+            error_codes.append(RepoDeleteException.CODE_DATABASE)
+
+        if len(error_codes) > 0:
+            raise RepoDeleteException(error_codes)
+
+    def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
         Configures an importer to be used for the given repository.
 
@@ -224,8 +298,8 @@ class RepoManager:
                                  must correspond to an importer loaded at server startup
         @type  importer_type_id: str
 
-        @param importer_config: configuration values for the importer; may be None
-        @type  importer_config: dict
+        @param repo_plugin_config: configuration values for the importer; may be None
+        @type  repo_plugin_config: dict
 
         @raises MissingRepo: if repo_id does not represent a valid repo
         @raises MissingImporter: if there is no importer with importer_type_id
@@ -243,8 +317,13 @@ class RepoManager:
             raise MissingImporter(importer_type_id)
 
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
+
+        # Package for the plugin call
+        call_config = PluginCallConfiguration(plugin_config, repo_plugin_config)
+        transfer_repo = common_utils.to_transfer_repo(repo)
+
         try:
-            valid_config = importer_instance.validate_config(repo, importer_config)
+            valid_config = importer_instance.validate_config(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Exception received from importer [%s] while validating config' % importer_type_id)
             raise InvalidImporterConfiguration, None, sys.exc_info()[2]
@@ -261,7 +340,7 @@ class RepoManager:
         # Database Update
         importer_id = importer_type_id # use the importer name as its repo ID
 
-        importer = RepoImporter(repo_id, importer_id, importer_type_id, importer_config)
+        importer = RepoImporter(repo_id, importer_id, importer_type_id, repo_plugin_config)
         importer_coll.save(importer, safe=True)
 
     def add_distributor(self, repo_id, distributor_type_id, distributor_config,

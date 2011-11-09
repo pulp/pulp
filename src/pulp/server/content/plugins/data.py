@@ -41,24 +41,11 @@ class Repository:
     @type working_dir: str
     """
 
-    @classmethod
-    def from_repo(cls, repo):
-        """
-        Creates a new instance of this class from a Pulp internal repository
-        representation (in its database dict representation).
-        """
-        r = Repository()
-
-        r.id = repo['id']
-        r.display_name = repo['display_name']
-        r.description = repo['description']
-        r.notes = repo['notes']
-
-    def init(self):
-        self.id = None
-        self.display_name = None
-        self.description = None
-        self.notes = None
+    def __init__(self, id, display_name=None, description=None, notes=None):
+        self.id = id
+        self.display_name = display_name
+        self.description = description
+        self.notes = notes
 
         self.working_dir = None
 
@@ -85,7 +72,7 @@ class Unit:
     @type location: str
     """
 
-    def init(self, type, metadata):
+    def __init__(self, type, metadata):
         self.type = type
         self.metadata = metadata
 

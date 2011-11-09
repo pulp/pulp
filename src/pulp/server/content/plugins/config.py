@@ -35,7 +35,7 @@ different configuration types as well as accessing an individual configuration
 area.
 """
 
-class PluginConfiguration:
+class PluginCallConfiguration:
     """
     Provides APIs for retrieving values used to drive how a plugin should
     function for a given call on a repository.
@@ -46,7 +46,7 @@ class PluginConfiguration:
     persist between invocations on the plugin.
     """
 
-    def __init__(self, plugin_config, repo_plugin_config, override_config):
+    def __init__(self, plugin_config, repo_plugin_config, override_config=None):
         self.plugin_config = plugin_config or {}
         self.repo_plugin_config = repo_plugin_config or {}
         self.override_config = override_config or {}
