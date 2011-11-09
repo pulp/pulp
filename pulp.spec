@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.246
+Version:        0.0.247
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -497,6 +497,36 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.247-1
+- 752187 - use the newest task when showing the metadata status
+  (pkilambi@redhat.com)
+- 752195 - dont need to check preserver flag during associations. This is needs
+  to continue even when preserve metadata is set. (pkilambi@redhat.com)
+- 751460 using _id instead (jconnor@redhat.com)
+- started on oauth support in pic (jconnor@redhat.com)
+- simplifying return of _skip_dict (jconnor@redhat.com)
+- website index for CR18. (jortel@redhat.com)
+- Fixed incorrect docs (jason.dobies@redhat.com)
+- updating grinder version (pkilambi@redhat.com)
+- Added return codes where missing in this API (jason.dobies@redhat.com)
+- relaxing requirement and validation on consumer group description
+  (jconnor@redhat.com)
+- re-ran doc generation (jconnor@redhat.com)
+- fixed wiki doc processing macro that was causing wiki docs to not get
+  generated for repo sync history (jconnor@redhat.com)
+- fixed bug that could cause notes to be None (jconnor@redhat.com)
+- adding checksum type to packageinfo object during uploads
+  (pkilambi@redhat.com)
+- The /v2 REST discovery URL is breaking all of the /v2 URLs.
+  (jason.dobies@redhat.com)
+- Add gofer plugin requires: package to ensure proper plugin loading order.
+  (jortel@redhat.com)
+- 745751 - use relativepath when constructing download urls for repo packages
+  (pkilambi@redhat.com)
+- Refit pulpplugin to leverage gofer-package. (jortel@redhat.com)
+- no need to generate updateinfo.xml if metadata is preserved
+  (pkilambi@redhat.com)
+
 * Wed Nov 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.246-1
 - 750913,750915 - Fix CLI package uninstall help and error messages.
   (jortel@redhat.com)
