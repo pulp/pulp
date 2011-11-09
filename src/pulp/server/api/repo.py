@@ -1586,6 +1586,7 @@ class RepoApi(BaseApi):
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.collection.save(repo, safe=True)
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
         repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
         for imfile in distro_obj['files']:
             if not os.path.exists(imfile):
@@ -1596,7 +1597,7 @@ class RepoApi(BaseApi):
                 if not os.path.islink(repo_treefile_path):
                     pulp.server.util.create_rel_symlink(imfile, repo_treefile_path)
             else:
-                repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
                 if not os.path.islink(repo_dist_path):
                     pulp.server.util.create_rel_symlink(imfile, repo_dist_path)
         if repo['publish']:
@@ -1616,6 +1617,7 @@ class RepoApi(BaseApi):
         if distro_obj is None:
             log.error("Distribution ID [%s] does not exist" % distroid)
             return
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
         repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
         for imfile in distro_obj['files']:
             if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
@@ -1623,7 +1625,7 @@ class RepoApi(BaseApi):
                 if os.path.islink(repo_treefile_path):
                     os.unlink(repo_treefile_path)
             else:
-                repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
                 if os.path.islink(repo_dist_path):
                     os.unlink(repo_dist_path)
         del repo['distributionid'][repo['distributionid'].index(distroid)]
