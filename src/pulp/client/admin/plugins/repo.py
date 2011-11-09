@@ -255,7 +255,10 @@ class RepoProgressAction(AdminRepoAction):
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
-        current += _('%s %s%%\n') % (bar, percent)
+        if progress['size_total'] != 0:
+            current += _('%s %s%% of %.3f MB\n') % (bar, percent, float(progress['size_total'])/(1024*1024))
+        else:
+            current += _('%s %s%%\n') % (bar, percent)
         current += self.form_progress_item_details(progress["details"])
         current += _("Total: %s/%s items\n") % (items_done, items_total)
         return current
