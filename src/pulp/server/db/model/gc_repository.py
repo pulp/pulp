@@ -61,7 +61,6 @@ class Repo(Model):
 
         # Content
         self.content_unit_count = 0
-        self.metadata = {}
 
         # Timeline
         # TODO: figure out how to track repo modified states

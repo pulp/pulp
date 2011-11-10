@@ -32,6 +32,8 @@ TYPE_CONTENT_QUERY    = 'content-query-manager'
 TYPE_CONTENT_UPLOAD   = 'content-upload-manager'
 TYPE_PLUGIN_MANAGER   = 'plugin-manager'
 TYPE_REPO             = 'repo-manager'
+TYPE_REPO_IMPORTER    = 'repo-importer-manager'
+TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
 TYPE_REPO_ASSOCIATION = 'repo-association-manager'
 TYPE_REPO_CLONE       = 'repo-clone-manager'
 TYPE_REPO_PUBLISH     = 'repo-publish-manager'
@@ -69,6 +71,18 @@ def repo_manager():
     @rtype: L{pulp.server.managers.repo.cud.RepoManager}
     """
     return get_manager(TYPE_REPO)
+
+def repo_importer_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.importer.RepoImporterManager}
+    """
+    return get_manager(TYPE_REPO_IMPORTER)
+
+def repo_distributor_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.distributor.RepoDistributorManager}
+    """
+    return get_manager(TYPE_REPO_DISTRIBUTOR)
 
 def repo_unit_association_manager():
     """
@@ -137,6 +151,8 @@ def initialize():
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
+    from pulp.server.managers.repo.importer import RepoImporterManager
+    from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.clone import RepoCloneManager
     from pulp.server.managers.repo.publish import RepoPublishManager
@@ -150,6 +166,8 @@ def initialize():
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_REPO: RepoManager,
+        TYPE_REPO_IMPORTER: RepoImporterManager,
+        TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_CLONE: RepoCloneManager,
         TYPE_REPO_PUBLISH: RepoPublishManager,
