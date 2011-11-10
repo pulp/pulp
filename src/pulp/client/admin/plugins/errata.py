@@ -125,8 +125,8 @@ class Install(ErrataAction):
         id_group.add_option("--consumergroupid", dest="consumergroupid",
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
-        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("assume yes; assume that install performs all the suggested actions such as reboot on successful install"))
+        self.parser.add_option("-i", "--importkeys", action="store_true", dest="importkeys",
+                            help=_("permit the import of GPG keys as needed"))
         self.parser.add_option("--when", dest="when", default=None,
                        help=_("specifies when to execute the install.  "
                        "Format: iso8601, YYYY-MM-DDThh:mm"))
@@ -143,9 +143,9 @@ class Install(ErrataAction):
             self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
         if not errataids:
             utils.system_exit(os.EX_USAGE, _("Specify an erratum id to perform install"))
-        assumeyes = False
-        if self.opts.assumeyes:
-            assumeyes = True
+        importkeys = False
+        if self.opts.importkeys:
+            importkeys = True
         else:
             reboot_sugg = []
             for eid in errataids:
@@ -157,25 +157,25 @@ class Install(ErrataAction):
                 while ask_reboot.lower() not in ['y', 'n', 'q']:
                     ask_reboot = raw_input(_("\nOne or more erratum provided requires a system reboot. Would you like to perform a reboot if the errata is applicable and successfully installed(Y/N/Q):"))
                     if ask_reboot.strip().lower() == 'y':
-                        assumeyes = True
+                        importkeys = True
                     elif ask_reboot.strip().lower() == 'n':
-                        assumeyes = False
+                        importkeys = False
                     elif ask_reboot.strip().lower() == 'q':
                         utils.system_exit(os.EX_OK, _("Errata install aborted upon user request."))
                     else:
                         continue
         if consumerid:
-            self.on_consumer(consumerid, errataids, assumeyes=assumeyes)
+            self.on_consumer(consumerid, errataids, importkeys=importkeys)
         elif self.opts.consumergroupid:
-            self.on_group(consumergroupid, errataids, assumeyes=assumeyes)
+            self.on_group(consumergroupid, errataids, importkeys=importkeys)
 
-    def on_consumer(self, id, errataids, assumeyes):
+    def on_consumer(self, id, errataids, importkeys):
         when = utils.parse_at_schedule(self.opts.when)
         wait = self.getwait([id,])
         task = self.consumer_api.installerrata(
                 id,
                 errataids,
-                assumeyes=assumeyes,
+                importkeys=importkeys,
                 when=when)
         print _('Created task id: %s') % task['id']
         if when:
@@ -186,19 +186,22 @@ class Install(ErrataAction):
         while not task_end(task):
             utils.printwait()
             task = self.task_api.info(task['id'])
-        if task_succeeded(task):
-            installed, reboot = task['result']
+        if task_needed(task):
+            reboot = self.reboot_requested(task)
+            result = task['result']
+            installed = result['installed']
+            reboot_scheduled = result['reboot_scheduled']
             if installed:
                 print _('\nErrata applied to [%s]; packages installed: %s' % \
                        (id, installed))
             else:
                 print _('\nErrata applied to [%s]; no packages installed' % id)
-            if reboot[0] and not reboot[1]:
+            if reboot and not reboot_scheduled:
                 print _('Please reboot at your earliest convenience')
         else:
             print("\nErrata install failed: %s" % task['exception'])
 
-    def on_group(self, id, errataids, assumeyes):
+    def on_group(self, id, errataids, importkeys):
         when = utils.parse_at_schedule(self.opts.when)
         group = self.consumer_group_api.consumergroup(id)
         if not group:
@@ -208,7 +211,7 @@ class Install(ErrataAction):
         job = self.consumer_group_api.installerrata(
                 id,
                 errataids,
-                assumeyes=assumeyes,
+                importkeys=importkeys,
                 when=when)
         print _('Created job id: %s') % job['id']
         if when:
@@ -228,12 +231,18 @@ class Install(ErrataAction):
                 details = '; %s' % exception
             else:
                 s = []
-                installed, reboot = t['result']
-                if reboot[0] and not reboot[1]:
+                reboot = self.reboot_requested(t)
+                result = t['result']
+                installed = result['installed']
+                reboot_scheduled = result['reboot_scheduled']
+                if reboot and not reboot_scheduled:
                     s.append('reboot needed')
                 s.append('packages installed: %s' % installed)
                 details = ', '.join(s)
             print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+
+    def reboot_requested(self, task):
+        return task['args'][1]
 
     def getunavailable(self, ids):
         lst = []

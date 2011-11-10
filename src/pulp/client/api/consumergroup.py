@@ -95,11 +95,11 @@ class ConsumerGroupAPI(PulpAPI):
         body = dict(grpids=grpids, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
-    def installerrata(self, id, errataids, types=[], assumeyes=False, when=None):
+    def installerrata(self, id, errataids, types=[], importkeys=False, when=None):
         erratainfo = {'consumerid': id,
                       'errataids': errataids,
                       'types':   types,
-                      'assumeyes': assumeyes,
+                      'importkeys': importkeys,
                       'scheduled_time': when}
         path = "/consumergroups/%s/installerrata/" % id
         return self.server.POST(path, erratainfo)[1]

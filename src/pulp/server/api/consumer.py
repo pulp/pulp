@@ -433,13 +433,17 @@ class ConsumerApi(BaseApi):
         task = Task(self.__installpackages, [id, names])
         return task
 
-    def __installpackages(self, id, names, **options):
+    def __installpackages(self, id, names, reboot=False, importkeys=False):
         """
         Task callback to install packages.
         @param id: The consumer ID.
         @type id: str
         @param names: A list of package names.
         @type names: list
+        @param reboot: Reboot after package install.
+        @type reboot: bool
+        @param importkeys: Permit GPG keys to be imported as needed.
+        @type importkeys: bool
         @return: Whatever the agent returns.
         """
         consumer = self.consumer(id)
@@ -448,9 +452,7 @@ class ConsumerApi(BaseApi):
         agent = PulpAgent(consumer)
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         packages = agent.Packages(timeout=tm)
-        reboot = options.get('reboot', False)
-        assumeyes = options.get('assumeyes', True)
-        return packages.install(names, reboot, assumeyes)
+        return packages.install(names, reboot, importkeys)
 
     @audit()
     def uninstallpackages(self, id, names=()):
@@ -548,7 +550,7 @@ class ConsumerApi(BaseApi):
         pkgrps = agent.PackageGroups(timeout=tm)
         return pkgrps.uninstall(grpids)
 
-    def installerrata(self, id, errataids=(), types=(), assumeyes=False):
+    def installerrata(self, id, errataids=(), types=(), importkeys=False):
         """
         Install errata on the consumer.
         @param id: A consumer id.
@@ -593,7 +595,7 @@ class ConsumerApi(BaseApi):
         task = Task(
             self.__installpackages,
             [id, pkgs],
-            dict(reboot=reboot_suggested,assumeyes=assumeyes))
+            dict(reboot=reboot_suggested,importkeys=importkeys))
         return task
 
     def listerrata(self, id, types=()):

@@ -285,8 +285,8 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         errataids = data.get('errataids', [])
         types = data.get('types', [])
-        assumeyes = data.get('assumeyes', False)
-        job = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
+        importkeys = data.get('importkeys', False)
+        job = api.installerrata(id, errataids, types=types, importkeys=importkeys)
         if not job:
             return self.not_found('Errata %s you requested are not applicable for this consumergroup' % errataids)
         for task in job.tasks:

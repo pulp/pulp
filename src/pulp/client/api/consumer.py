@@ -143,11 +143,11 @@ class ConsumerAPI(PulpAPI):
         path = "/consumers/%s/errata_package_updates/" % id
         return self.server.GET(path)[1]
 
-    def installerrata(self, id, errataids, assumeyes=False, types=(), when=None):
+    def installerrata(self, id, errataids, importkeys=False, types=(), when=None):
         erratainfo = {'consumerid': id,
                       'errataids': errataids,
                       'types':   types,
-                      'assumeyes': assumeyes,
+                      'importkeys': importkeys,
                       'scheduled_time': when}
         path = "/consumers/%s/installerrata/" % id
         return self.server.POST(path, erratainfo)[1]

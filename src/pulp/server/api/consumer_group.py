@@ -341,7 +341,7 @@ class ConsumerGroupApi(BaseApi):
         @type names: list
         @param options: Install options:
             - reboot : Suggest reboot (default: False)
-            - assumeyes : Assume (yes) to yum. (default: True)
+            - importkeys : Import GPG keys.
         """
         consumer = self.consumerApi.consumer(consumerid)
         if consumer is None:
@@ -349,11 +349,11 @@ class ConsumerGroupApi(BaseApi):
         secret = PulpAgent.getsecret(consumer)
         agent = AsyncAgent(consumerid, secret)
         reboot = options.get('reboot', False)
-        assumeyes = options.get('assumeyes', True)
+        importkeys = options.get('importkeys', False)
         task = AsyncTask.current()
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         packages = agent.Packages(task, timeout=tm)
-        return packages.install(names, reboot, assumeyes)
+        return packages.install(names, reboot, importkeys)
 
     @audit()
     def uninstallpackages(self, id, names=()):
@@ -482,7 +482,7 @@ class ConsumerGroupApi(BaseApi):
         pkgrps = agent.PackageGroups(task, timeout=tm)
         return pkgrps.uninstall(grpids)
 
-    def installerrata(self, id, errataids=[], types=[], assumeyes=False):
+    def installerrata(self, id, errataids=[], types=[], importkeys=False):
         """
         Install errata on a consumer group.
         @param id: A consumergroup id.
@@ -535,7 +535,7 @@ class ConsumerGroupApi(BaseApi):
                     self.__installpackages,
                     [consumerid, pkgs],
                     dict(reboot=reboot_suggested,
-                         assumeyes=assumeyes))
+                         importkeys=importkeys))
             else:
                 task = Task(
                     self.__nopackagestoinstall,
