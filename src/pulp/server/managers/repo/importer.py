@@ -19,23 +19,13 @@ from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.repo._common import MissingRepo
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
 # -- exceptions ---------------------------------------------------------------
-
-class MissingRepo(Exception):
-    """
-    Indicates an operation was requested against a repo that doesn't exist.
-    """
-    def __init__(self, repo_id):
-        Exception.__init__(self)
-        self.repo_id = repo_id
-
-    def __str__(self):
-        return _('No repository with ID [%(id)s]' % {'id' : self.repo_id})
 
 class MissingImporter(Exception):
     """

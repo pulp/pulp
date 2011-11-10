@@ -24,8 +24,9 @@ import re
 import shutil
 
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit
-
+import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.repo._common import MissingRepo
 
 # -- constants ----------------------------------------------------------------
 
@@ -70,17 +71,6 @@ class DuplicateRepoId(Exception):
 
     def __str__(self):
         return _('Existing repository with ID [%(repo_id)s]') % {'repo_id' : self.duplicate_id}
-
-class MissingRepo(Exception):
-    """
-    Indicates an operation was requested against a repo that doesn't exist.
-    """
-    def __init__(self, repo_id):
-        Exception.__init__(self)
-        self.repo_id = repo_id
-
-    def __str__(self):
-        return _('No repository with ID [%(id)s]' % {'id' : self.repo_id})
 
 class RepoDeleteException(Exception):
     """
@@ -173,20 +163,22 @@ class RepoManager:
 
         # Inform the importer
         importer_coll = RepoImporter.get_collection()
+        importer_manager = manager_factory.repo_importer_manager()
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
         if repo_importer is not None:
             try:
-                self.remove_importer(repo_id)
+                importer_manager.remove_importer(repo_id)
             except Exception:
-                _LOG.exception('Error received removing importer [%s] from repo [%s]' % (importer_type_id, repo_id))
+                _LOG.exception('Error received removing importer [%s] from repo [%s]' % (repo_importer['importer_type_id'], repo_id))
                 error_codes.append(RepoDeleteException.CODE_IMPORTER)
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
+        distributor_manager = manager_factory.repo_distributor_manager()
         repo_distributors = list(distributor_coll.find({'repo_id' : repo_id}))
         for repo_distributor in repo_distributors:
             try:
-                self.remove_distributor(repo_id, repo_distributor['id'])
+                distributor_manager.remove_distributor(repo_id, repo_distributor['id'])
             except Exception:
                 _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
                 error_codes.append(RepoDeleteException.CODE_DISTRIBUTOR)
