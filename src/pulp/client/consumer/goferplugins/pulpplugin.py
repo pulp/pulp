@@ -187,11 +187,12 @@ class Packages:
         """
         pkg = Package()
         importkeys = self.permit_import(importkeys)
-        reboot = self.permit_reboot(reboot)
         installed = pkg.install(names, importkeys)
-        if reboot:
-            self.reboot()
-        return dict(installed=installed, reboot_scheduled=reboot)
+        if reboot and installed:
+            scheduled = self.reboot()
+        else:
+            scheduled = False
+        return dict(installed=installed, reboot_scheduled=scheduled)
 
     @remote(secret=getsecret)
     def uninstall(self, names):
@@ -211,14 +212,13 @@ class Packages:
         permitted = getbool(cfg.gpg, permit_import=flag)
         return ( flag and permitted )
 
-    def permit_reboot(self, flag):
-        permitted = getbool(cfg.reboot, permit=flag)
-        return ( flag and permitted )
-
     def reboot(self):
-        delay = getbool(cfg.reboot, delay=3)
-        os.system("shutdown -r %s &", delay)
-        log.info("Reboot scheduled for: +%s minutes", delay)
+        permitted = getbool(cfg.reboot, permit=0)
+        if permitted:
+            delay = getbool(cfg.reboot, delay=3)
+            os.system('shutdown -r %s &', delay)
+            log.info('rebooting in %s (minutes)', delay)
+        return permitted
 
 
 class PackageGroups:
