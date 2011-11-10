@@ -51,7 +51,11 @@
 <a href="UGREST-ConsumerGroups.html#Unbind">Unbind</a></li><li class="active">
 <a href="UGREST-ConsumerGroups.html#AddKey-ValuePair">Add Key-Value Pair</a></li><li class="active">
 <a href="UGREST-ConsumerGroups.html#UpdateKey-ValuePair">Update Key-Value Pair</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#DeleteKey-ValuePair">Delete Key-Value Pair</a></li></ol></li></ol></div>
+<a href="UGREST-ConsumerGroups.html#DeleteKey-ValuePair">Delete Key-Value Pair</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#InstallPackage">Install Package</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#UninstallPackage">Uninstall Package</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#InstallPackageGroup">Install Package Group</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#UninstallPackageGroup">Uninstall Package Group</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -588,6 +592,123 @@ Response: <strong>200 OK</strong>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
+<hr />
+<h2 id="InstallPackage">Install Package</h2>
+<p>
+<i>Request that package(s) be installed on a consumer group.</i>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <i>job ID</i>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <i>a list of package names</i>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <i>(optional) schedule in iso8601 format; immediate when Null</i>
+</li></ul><hr />
+<h2 id="UninstallPackage">Uninstall Package</h2>
+<p>
+<i>Request that package(s) be uninstalled on a consumer group.</i>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/uninstallpackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <i>job ID</i>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <i>a list of package names</i>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <i>(optional) schedule in iso8601 format; immediate when Null</i>
+</li></ul><hr />
+<h2 id="InstallPackageGroup">Install Package Group</h2>
+<p>
+<i>Request that package groups (s) be installed on a consumer group.</i>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackagegroups/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <i>job ID</i>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>grpids</strong> &lt;list&gt; <i>a list of group names</i>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <i>(optional) schedule in iso8601 format; immediate when Null</i>
+</li></ul><hr />
+<h2 id="UninstallPackageGroup">Uninstall Package Group</h2>
+<p>
+<i>Request that package group(s) be uninstalled on a consumer group.</i>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackagegroups/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <i>job ID</i>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>grpids</strong> &lt;list&gt; <i>a list of group names</i>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <i>(optional) schedule in iso8601 format; immediate when Null</i>
+</li></ul><hr />
 </div>
    </div>
    
