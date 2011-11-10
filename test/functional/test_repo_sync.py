@@ -127,7 +127,6 @@ class TestRepoSync(testutil.PulpAsyncTest):
             for key in keys:
                 self.assertNotEquals(error_entry[key], "")
                 self.assertTrue(error_entry.has_key("error_type"))
-                self.assertTrue(error_entry.has_key("traceback"))
         for e in error_details:
             self.assertTrue(e["fileName"] in ("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm",
                 "pulp-test-package-0.2.1-1.fc11.x86_64.rpm",
