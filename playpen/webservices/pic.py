@@ -49,7 +49,7 @@ def set_basic_auth_credentials(user, password):
     _password = password
 
 
-def set_oauth_credendtials(user)
+def set_oauth_credendtials(user):
     global _auth_scheme, _user, _password
     _auth_scheme = 'oauth'
     _user = user
