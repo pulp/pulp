@@ -100,6 +100,7 @@ class Distributor(object):
         from the repository and the working directory contents will still be
         wiped by Pulp.
         """
+        pass
 
     # -- actions --------------------------------------------------------------
 
