@@ -1250,7 +1250,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
             'i386', 'http://example.com')
         p1 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm", checksum="blah2")
-        errors = self.repo_api.add_package(repo["id"], [p1['id'],p2['id']])
+        errors, filtered_count = self.repo_api.add_package(repo["id"], [p1['id'],p2['id']])
         self.assertTrue(len(errors), 1)
         # Error format is:  [(id, (n,e,v,r,a), filename, sha256_checksum)]
         self.assertEqual(errors[0][0], p2["id"])

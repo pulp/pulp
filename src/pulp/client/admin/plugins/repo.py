@@ -1295,14 +1295,14 @@ class AddPackages(AdminRepoAction):
                 pids.append(pdep['id'])
         else:
             print _("No Source repo specified, skipping dependency lookup")
-        errors = {}
+        result = []
         try:
-            errors = self.repository_api.add_package(id, pids)
+            result = self.repository_api.add_package(id, pids)
         except Exception:
             utils.system_exit(os.EX_DATAERR, _("Unable to associate package [%s] to repo [%s]" % (pnames, id)))
-        if not errors:
-            print _("Successfully associated packages %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (pnames, id))
-        else:
+        errors = result[0]
+        filtered_count = result[1]
+        if errors:
             for e in errors:
                 # Format, [pkg_id, NEVRA, filename, sha256]
                 filename = e[2]
@@ -1310,7 +1310,12 @@ class AddPackages(AdminRepoAction):
                 print _("Error unable to associate: %s with sha256sum of %s") % (filename, checksum)
             print _("Errors occurred see /var/log/pulp/pulp.log for more info")
             print _("Note: any packages not listed in error output have been associated")
-        print _("%s packages associated to repo [%s]") % (len(pids) - len(errors), id)
+
+        total_associated_pkgs = len(pids) - len(errors) - filtered_count
+        print _("Successfully associated %s packages to repo [%s]") % (total_associated_pkgs , id)
+        print _("Packages skipped because of filters associated to the repository : %s" % filtered_count)
+        if total_associated_pkgs > 0:
+            print _("Please run `pulp-admin repo generate_metadata` to update the repository metadata.")
 
 
 class RemovePackages(AdminRepoAction):

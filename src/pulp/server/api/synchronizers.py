@@ -730,22 +730,6 @@ class YumSynchronizer(BaseSynchronizer):
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(pkg_location, repo_pkg_path)
 
-    def _find_combined_whitelist_packages(self, repo_filters):
-        combined_whitelist_packages = []
-        for filter_id in repo_filters:
-            filter = self.filter_api.filter(filter_id)
-            if filter['type'] == "whitelist":
-                combined_whitelist_packages.extend(filter['package_list'])
-        return combined_whitelist_packages
-
-    def _find_combined_blacklist_packages(self, repo_filters):
-        combined_blacklist_packages = []
-        for filter_id in repo_filters:
-            filter = self.filter_api.filter(filter_id)
-            if filter['type'] == "blacklist":
-                combined_blacklist_packages.extend(filter['package_list'])
-        return combined_blacklist_packages
-
     def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
         pkglist = []
 
@@ -989,8 +973,8 @@ class YumSynchronizer(BaseSynchronizer):
             # Process repo filters if any
             if repo['filters']:
                 log.info("Repo filters : %s" % repo['filters'])
-                whitelist_packages = self._find_combined_whitelist_packages(repo['filters'])
-                blacklist_packages = self._find_combined_blacklist_packages(repo['filters'])
+                whitelist_packages = self.repo_api.find_combined_whitelist_packages(repo['filters'])
+                blacklist_packages = self.repo_api.find_combined_blacklist_packages(repo['filters'])
                 log.info("combined whitelist packages = %s" % whitelist_packages)
                 log.info("combined blacklist packages = %s" % blacklist_packages)
             else:
