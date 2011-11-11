@@ -187,12 +187,45 @@ class RepoManagerTests(testutil.PulpTest):
         self.manager.delete_repo('doomed')
 
         # Verify
+        self.assertEqual(0, len(list(Repo.get_collection().find())))
+
         self.assertEqual(0, len(list(RepoImporter.get_collection().find({'repo_id' : 'doomed'}))))
         self.assertEqual(0, len(list(RepoDistributor.get_collection().find({'repo_id' : 'doomed'}))))
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
         self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.call_count)
 
+    def test_delete_with_plugin_error(self):
+        """
+        Tests deleting a repo where one (or more) of the plugins raises an error.
+        """
+
+        # Setup
+        self.manager.create_repo('doomed')
+
+        importer_manager = manager_factory.repo_importer_manager()
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        importer_manager.set_importer('doomed', 'mock-importer', {})
+        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True, distributor_id='dist-1')
+
+        #    Setup both mocks to raise errors on removal
+        mock_plugins.MOCK_IMPORTER.importer_removed.side_effect = Exception('Splat')
+        mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.side_effect = Exception('Pow')
+
+        # Test
+        try:
+            self.manager.delete_repo('doomed')
+            self.fail('No exception raised during repo delete')
+        except repo_manager.RepoDeleteException, e:
+            self.assertEqual(2, len(e.codes))
+            self.assertTrue(repo_manager.RepoDeleteException.CODE_IMPORTER in e.codes)
+            self.assertTrue(repo_manager.RepoDeleteException.CODE_DISTRIBUTOR in e.codes)
+
+        # Cleanup - need to manually clear the side effects
+        mock_plugins.MOCK_IMPORTER.importer_removed.side_effect = None
+        mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.side_effect = None
+                
 class UtilityMethodsTests(testutil.PulpTest):
 
     def test_is_repo_id_valid(self):

@@ -86,7 +86,7 @@ def reset():
     Removes the plugin loader monkey patch.
     """
 
-    # Reset the mock instances
+    # Reset the mock instances; reset doesn't do everything hence the manual steps
     MOCK_IMPORTER.reset_mock()
     MOCK_DISTRIBUTOR.reset_mock()
 
