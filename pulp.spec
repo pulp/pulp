@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.247
+Version:        0.0.248
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -497,6 +497,25 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Nov 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-1
+- disregard reboot in agent when no packages installed. (jortel@redhat.com)
+- Adjust for rhel5 not being able to sync f16 metadata unless it uses
+  --compress-type bz2 (jmatthews@redhat.com)
+- bumping grinder version to 0.0.128 (pkilambi@redhat.com)
+- exposing distribution arch info from cli (pkilambi@redhat.com)
+- Updated agent Packages.install() API; replaced 'assumeyes' w/ 'importkeys'
+  for clarity. (jortel@redhat.com)
+- 735091 - Added SYSTEMCTL_SKIP_REDIRECT=1 to mitigate systemd issues.
+  (jortel@redhat.com)
+- fixing the repo distribution associate to include subdirectories while
+  symlinking (pkilambi@redhat.com)
+- fix the symlink path to include subdirectories from distro location in local
+  syncs (pkilambi@redhat.com)
+- Distribution Enahncements * Adding new arch field to distribution model +
+  migration * sync and api changes * unit tests updates * changing ditro url to
+  be http (pkilambi@redhat.com)
+- Adding total size in MB to pulp repo sync CLI output (jmatthews@redhat.com)
+
 * Wed Nov 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.247-1
 - 752187 - use the newest task when showing the metadata status
   (pkilambi@redhat.com)
