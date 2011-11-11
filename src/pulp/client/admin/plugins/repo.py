@@ -1828,12 +1828,14 @@ class Export(RepoProgressAction):
 
     def run(self):
         repoid = self.opts.id
+        groupid = self.opts.groupid
+        if groupid and (self.opts.foreground or self.opts.status):
+            utils.system_exit(os.EX_OK, _("Use `pulp-admin job info` to check the status of group export jobs"))
         if self.opts.status:
             if not repoid:
                 utils.system_exit(os.EX_USAGE, _("Error: repo id is required to check status of export"))
             self.export_status()
             return
-        groupid = self.opts.groupid
         if not repoid and not groupid:
             utils.system_exit(os.EX_USAGE, _("Error: repo id or group id is required to perform an export; see --help"))
         if repoid and groupid:
