@@ -36,8 +36,15 @@ class Distributions(JSONController):
     @auth_required(READ)
     def GET(self):
         """
-        List all available distributions.
-        @return: a list of all available distributions
+        [[wiki]]
+        title: List all available distributions.
+        description: Get a list of all distributions managed by Pulp.
+        method: GET
+        path: /distributions/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of distribution objects, possibly empty
         """
         distributions = api.distributions()
         return self.ok(distributions)
@@ -49,12 +56,21 @@ class Distribution(JSONController):
     @auth_required(READ)
     def GET(self, id):
         """
-        Look up distribution by id.
-        @param id: distribution id
-        @return: distribution info
-        """
+        [[wiki]]
+        title: Look up distribution by id.
+        description: Get a distribution object
+        method: GET
+        path: /distributions/<id>/
+        permission: READ
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a distribution
+        return: a Distribution object
+        """  
+        distro = api.distribution(id)
+        if distro is None:
+            return self.not_found('No distribution %s' % id)
         # implement filters
-        return self.ok(api.distribution(id))
+        return self.ok(distro)
 
 # web.py application ----------------------------------------------------------
 
