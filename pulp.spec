@@ -34,12 +34,6 @@ BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-nose
 BuildRequires:  rpm-python
-%if %{pulp_selinux}
-BuildRequires:  make
-BuildRequires:  checkpolicy
-BuildRequires:  selinux-policy-devel
-BuildRequires:  hardlink
-%endif
 
 Requires: %{name}-common = %{version}
 Requires: pymongo >= 1.9
@@ -74,6 +68,13 @@ Requires: selinux-policy >= %{selinux_policyver}
 %endif
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
+%endif
+BuildRequires:  rpm-python
+%if %{pulp_selinux}
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
 %endif
 
 %if 0%{?rhel} == 5
@@ -172,7 +173,6 @@ Requires: m2crypto
 %else
 Requires: m2crypto = 0.21.1.pulp
 %endif
-
 %if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
@@ -180,7 +180,13 @@ Requires: selinux-policy >= %{selinux_policyver}
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
 %endif
-
+BuildRequires:  rpm-python
+%if %{pulp_selinux}
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
+%endif
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp
@@ -202,15 +208,9 @@ popd
 # SELinux Configuration
 cd selinux
 perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' %{modulename}.te
-for selinuxvariant in %{selinux_variants}
-do
-    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
-    mv %{modulename}.pp %{modulename}.pp.${selinuxvariant}
-    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
-done
+./build.sh
 cd -
 %endif
-
 
 %install
 rm -rf %{buildroot}
@@ -293,19 +293,7 @@ cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 %if %{pulp_selinux}
 # Install SELinux policy modules
 cd selinux
-for selinuxvariant in %{selinux_variants}
-  do
-    install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
-    install -p -m 644 %{modulename}.pp.${selinuxvariant} \
-           %{buildroot}%{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp
-  done
-# Install SELinux interfaces
-install -d %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
-install -p -m 644 %{modulename}.if \
-  %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
-
-# Hardlink identical policy module packages together
-/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+./install.sh %{buildroot}%{_datadir}
 cd -
 %endif
 
@@ -342,8 +330,8 @@ chown apache:apache /var/lib/pulp-cds/.cluster-members
 
 %if %{pulp_selinux}
 if /usr/sbin/selinuxenabled ; then
-    for selinuxvariant in %{selinux_variants}
-    do
+for selinuxvariant in %{selinux_variants}
+   do
         /usr/sbin/semodule -s ${selinuxvariant} -i \
         %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
     done
