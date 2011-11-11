@@ -58,7 +58,7 @@ class Importer(object):
 
         @param config: plugin configuration instance; the proposed repo
                        configuration is found within
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
         @return: True if the configuration is valid; False otherwise
         @rtype:  bool
@@ -81,7 +81,7 @@ class Importer(object):
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         pass
 
@@ -107,7 +107,7 @@ class Importer(object):
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         pass
 
@@ -141,7 +141,7 @@ class Importer(object):
         @type  import_conduit: ?
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         raise NotImplementedError()
 
@@ -191,6 +191,6 @@ class Importer(object):
         @type  sync_conduit: L{pulp.server.content.conduits.repo_sync.RepoSyncConduit}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         raise NotImplementedError()
