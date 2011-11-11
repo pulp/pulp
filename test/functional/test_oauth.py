@@ -62,6 +62,7 @@ class TestOauth(testutil.PulpAsyncTest):
         oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, None)
 
         headers = dict(oauth_request.to_header().items() + {'pulp-user':'admin'}.items())
+        headers = dict((k, str(v)) for k,v in headers.items())
 
         response = self.test_app.get('http://localhost/repositories/', headers=headers)
 
