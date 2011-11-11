@@ -65,9 +65,12 @@ class TestRepoSync(testutil.PulpAsyncTest):
         feeds = { "el5_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/i386/", "i386"),
             "el5_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/x86_64/", "x86_64"),
             "el6_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/i386/", "i386"),
-            "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64"),
-            "f16_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-16/i386/", "i386"),
-            "f16_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-16/x86_64/", "x86_64")}
+            "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
+            #    
+            # Note:  rhel5 has issues syncing f16 content if it does not use --compress-type bz2
+            #
+            #"f16_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-16/i386/", "i386"),
+            #"f16_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-16/x86_64/", "x86_64")}
 
         repos = [self.repo_api.create(key, key, value[1], value[0]) for key, value in feeds.items()]
         sync_tasks = []
