@@ -25,6 +25,7 @@ import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
+import pulp.server.managers.repo._common as common_utils
 
 # -- test cases ---------------------------------------------------------------
 
@@ -193,6 +194,9 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
         self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.call_count)
 
+        repo_working_dir = common_utils.repository_working_dir('doomed', mkdir=False)
+        self.assertTrue(not os.path.exists(repo_working_dir))
+        
     def test_delete_with_plugin_error(self):
         """
         Tests deleting a repo where one (or more) of the plugins raises an error.
@@ -223,7 +227,42 @@ class RepoManagerTests(testutil.PulpTest):
         # Cleanup - need to manually clear the side effects
         mock_plugins.MOCK_IMPORTER.importer_removed.side_effect = None
         mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.side_effect = None
-                
+
+    def test_update_repo(self):
+        """
+        Tests the case of successfully updating a repo.
+        """
+
+        # Setup
+        self.manager.create_repo('update-me', display_name='display_name_1', description='description_1')
+
+        delta = {
+            'display_name' : 'display_name_2',
+            'description'  : 'description_2',
+            'disregard'    : 'ignored',
+        }
+
+        # Test
+        self.manager.update_repo('update-me', delta)
+
+        # Verify
+        repo = Repo.get_collection().find_one({'id' : 'update-me'})
+
+        self.assertEqual(repo['display_name'], delta['display_name'])
+        self.assertEqual(repo['description'], delta['description'])
+
+    def test_update_missing_repo(self):
+        """
+        Tests updating a repo that isn't there raises the appropriate exception.
+        """
+
+        # Test
+        try:
+            self.manager.update_repo('not-there', {})
+            self.fail('Exception expected')
+        except repo_manager.MissingRepo, e:
+            self.assertEqual(e.repo_id, 'not-there')
+
 class UtilityMethodsTests(testutil.PulpTest):
 
     def test_is_repo_id_valid(self):
