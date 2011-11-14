@@ -674,6 +674,8 @@ class Update(AdminRepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
+        self.parser.add_option("--checksum_type", dest="checksum_type",
+                               help=_("checksum type to use for repository metadata; this will perform a metadata update"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -681,7 +683,6 @@ class Update(AdminRepoAction):
         optdict = vars(self.opts)
         feed_cert_bundle = None
         consumer_cert_bundle = None
-
         for k, v in optdict.items():
             if not v:
                 continue
@@ -701,6 +702,9 @@ class Update(AdminRepoAction):
             if k == 'rmkeys':
                 keylist = v.split(',')
                 delta['rmkeys'] = keylist
+                continue
+            if k == 'checksum_type':
+                delta['checksum_type'] = v
                 continue
             if k in ('feed_ca', 'feed_cert', 'feed_key'):
                 f = open(v)

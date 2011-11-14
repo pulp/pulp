@@ -1459,7 +1459,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
             caught = True
         self.assertTrue(caught)
         
-    def test_update_repo(self):
+    def test_update_repo_notes(self):
         repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
         self.repo_api.update_note(repo1['id'], "key1", "value1-changed")
         repo1 = self.repo_api.repository(repo1['id'])
@@ -1469,7 +1469,30 @@ class TestRepoApi(testutil.PulpAsyncTest):
         except PulpException:
             caught = True
         self.assertTrue(caught)
-        
+
+    def test_repo_update_checksum_type(self):
+        repo_id = 'test_repo_checksum_type'
+        self.repo_api.create(repo_id, 'Test checksum type', 'noarch')
+
+        #test valid checksum update 
+        valid_checksum_type = 'sha'
+        self.repo_api.update(repo_id, {'checksum_type' : valid_checksum_type})
+
+        # validate checksum update
+        repo_found = self.repo_api.repository(repo_id) 
+        assert(valid_checksum_type == repo_found['checksum_type'])
+
+        # validate metadata task was created
+        list_of_metadata_info = self.repo_api.list_metadata(repo_found['id'])
+        self.assertTrue(list_of_metadata_info is not None)
+
+        #test invalid checksum update 
+        failed = False
+        try:
+            self.repo_api.update(repo_id, {'checksum_type' : 'unknown'})
+        except:
+            failed = True
+        self.assertTrue(failed) 
             
 if __name__ == '__main__':
     unittest.main()

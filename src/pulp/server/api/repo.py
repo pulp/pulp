@@ -658,6 +658,7 @@ class RepoApi(BaseApi):
         # Also need to know later on if a consumer cert was updated.
         update_consumers = False
         consumer_cert_updated = False
+        update_metadata = False
         for key, value in delta.items():
             # simple changes
             if key == "addgrp":
@@ -714,6 +715,15 @@ class RepoApi(BaseApi):
                     ds = model.RepoSource(value)
                     repo['source'] = ds
                 continue
+            if key == 'checksum_type':
+                if not model.Repo.is_supported_checksum(value):
+                    raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
+                if repo[key] != value:
+                    repo[key] = value
+                    update_metadata = True
+                else:
+                    log.info('the repo checksum type is already %s' % value)
+                continue
             raise Exception, \
                   'update keyword "%s", not-supported' % key
 
@@ -731,6 +741,9 @@ class RepoApi(BaseApi):
         # Update subscribed consumers after the object has been saved
         if update_consumers:
             self.update_repo_on_consumers(repo)
+        if update_metadata:
+            # update the existing metadata with new checksum type
+            self.generate_metadata(id)
         return repo
 
     def repositories(self, spec=None, fields=None):
