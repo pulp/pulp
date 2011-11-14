@@ -57,6 +57,7 @@ def install():
     """
 
     # -- update plugin loader inventory ---------------------------------------
+
     plugin_loader._LOADER.add_importer('mock-importer', MockImporter, {})
     plugin_loader._LOADER.add_distributor('mock-distributor', MockDistributor, {})
 
@@ -80,6 +81,12 @@ def install():
     # Monkey patch in the mock methods
     plugin_loader.get_distributor_by_id = mock_get_distributor_by_id
     plugin_loader.get_importer_by_id = mock_get_importer_by_id
+
+    # -- configure the mock instances -----------------------------------------
+
+    # By default, have the plugins indicate configurations are valid
+    MOCK_IMPORTER.validate_config.return_value = True
+    MOCK_DISTRIBUTOR.validate_config.return_value = True
 
 def reset():
     """

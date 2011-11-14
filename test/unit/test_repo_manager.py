@@ -21,7 +21,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock_plugins
 
-
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
@@ -42,7 +41,6 @@ class RepoManagerTests(testutil.PulpTest):
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
-
         mock_plugins.reset()
 
     def clean(self):
