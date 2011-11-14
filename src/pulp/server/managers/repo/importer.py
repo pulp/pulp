@@ -115,7 +115,7 @@ class RepoImporterManager:
             importer_instance.importer_added(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo_id))
-            raise InvalidImporterConfiguration(), None, sys.exc_info()[2]
+            raise ImporterInitializationException(), None, sys.exc_info()[2]
 
         # Database Update
         importer_id = importer_type_id # use the importer name as its repo ID
