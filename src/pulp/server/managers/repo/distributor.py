@@ -166,6 +166,8 @@ class RepoDistributorManager:
             raise MissingRepo(repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        if repo_distributor is None:
+            return
 
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']
