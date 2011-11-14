@@ -22,6 +22,8 @@ import testutil
 import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.data import Repository
+from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
@@ -73,9 +75,24 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('mock-importer', importer['importer_type_id'])
         self.assertEqual(importer_config, importer['config'])
 
-        #   Plugin
+        #   Plugin - Validate Config
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_added.call_count)
+        call_repo = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][0]
+        call_config = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][1]
+
+        self.assertTrue(isinstance(call_repo, Repository))
+        self.assertEqual('importer-test', call_repo.id)
+
+        self.assertTrue(isinstance(call_config, PluginCallConfiguration))
+        self.assertTrue(call_config.plugin_config is not None)
+        self.assertEqual(call_config.repo_plugin_config, importer_config)
+
+        #   Plugin - Importer Added
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.validate_config.call_count)
+        call_repo = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][0]
+        call_config = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][1]
+        self.assertTrue(isinstance(call_repo, Repository))
+        self.assertTrue(isinstance(call_config, PluginCallConfiguration))
 
     def test_set_importer_no_repo(self):
         """
