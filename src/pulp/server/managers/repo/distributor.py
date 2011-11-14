@@ -31,6 +31,17 @@ _LOG = logging.getLogger(__name__)
 
 # -- exceptions ---------------------------------------------------------------
 
+class MissingDistributor(Exception):
+    """
+    Indicates a distributor was requested that does not exist.
+    """
+    def __init__(self, distributor_name):
+        Exception.__init__(self)
+        self.distributor_name = distributor_name
+
+    def __str__(self):
+        return _('No distributor with name [%(name)s]' % {'name' : self.distributor_name})
+
 class InvalidDistributorId(Exception):
     """
     Indicates a given distributor ID was invalid.
@@ -49,22 +60,18 @@ class InvalidDistributorConfiguration(Exception):
     """
     pass
 
-class MissingDistributor(Exception):
+class DistributorInitializationException(Exception):
     """
-    Indicates a distributor was requested that does not exist.
+    Wraps an exception coming out of a distributor while it tries to initialize
+    itself when being added to a repository.
     """
-    def __init__(self, distributor_name):
-        Exception.__init__(self)
-        self.distributor_name = distributor_name
-
-    def __str__(self):
-        return _('No distributor with name [%(name)s]' % {'name' : self.distributor_name})
+    pass
 
 # -- manager ------------------------------------------------------------------
 
 class RepoDistributorManager:
 
-    def add_distributor(self, repo_id, distributor_type_id, distributor_config,
+    def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
                         auto_distribute, distributor_id=None):
         """
         Adds an association from the given repository to a distributor. The
@@ -81,9 +88,8 @@ class RepoDistributorManager:
                                     to a distributor loaded at server startup
         @type  distributor_type_id: str
 
-        @param distributor_config: configuration the repo will use with this
-                                   distributor; may be None
-        @type distributor_config:  dict
+        @param repo_plugin_config: configuration the repo will use with this distributor; may be None
+        @type  repo_plugin_config: dict
 
         @param auto_distribute: if true, this distributor will be invoked at
                                 the end of every sync
@@ -121,8 +127,14 @@ class RepoDistributorManager:
                 raise InvalidDistributorId(distributor_id)
 
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+
+        # Let the distributor plugin verify the configuration
+        call_config = PluginCallConfiguration(plugin_config, repo_plugin_config)
+        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+
         try:
-            valid_config = distributor_instance.validate_config(repo, distributor_config)
+            valid_config = distributor_instance.validate_config(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
             raise InvalidDistributorConfiguration()
@@ -130,14 +142,18 @@ class RepoDistributorManager:
         if not valid_config:
             raise InvalidDistributorConfiguration()
 
-        # If a distributor already exists at that ID, remove it from the database
-        # as it will be replaced in this method
-        existing_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
-        if existing_distributor is not None:
-            distributor_coll.remove(existing_distributor, safe=True)
+        # Remove the old distributor if it exists
+        self.remove_distributor(repo_id, distributor_id)
+
+        # Let the distributor plugin initialize the repository
+        try:
+            distributor_instance.distributor_added(transfer_repo, call_config)
+        except Exception:
+            _LOG.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
+            raise DistributorInitializationException(), None, sys.exc_info()[2]
 
         # Database Update
-        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, distributor_config, auto_distribute)
+        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, repo_plugin_config, auto_distribute)
         distributor_coll.save(distributor, safe=True)
 
         return distributor_id
@@ -210,7 +226,7 @@ class RepoDistributorManager:
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingDistributor(None)
+            raise MissingDistributor(distributor_id)
 
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)

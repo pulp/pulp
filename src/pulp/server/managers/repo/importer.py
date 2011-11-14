@@ -159,7 +159,7 @@ class RepoImporterManager:
         importer_instance.importer_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
-        RepoImporter.get_collection().remove({'repo_id' : repo_id}, safe=True)
+        importer_coll.remove({'repo_id' : repo_id}, safe=True)
 
     def update_importer_config(self, repo_id, importer_config):
         """

@@ -22,6 +22,8 @@ import testutil
 import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.data import Repository
+from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
@@ -50,6 +52,8 @@ class RepoManagerTests(testutil.PulpTest):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
 
+    # -- add ------------------------------------------------------------------
+
     def test_add_distributor(self):
         """
         Tests adding a distributor to a new repo.
@@ -63,6 +67,8 @@ class RepoManagerTests(testutil.PulpTest):
         self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, True, distributor_id='my_dist')
 
         # Verify
+
+        #    Database
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
         self.assertEqual('my_dist', all_distributors[0]['id'])
@@ -70,6 +76,25 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('test_me', all_distributors[0]['repo_id'])
         self.assertEqual(config, all_distributors[0]['config'])
         self.assertTrue(all_distributors[0]['auto_distribute'])
+
+        #   Plugin - Validate Config
+        self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_count)
+        call_repo = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][0]
+        call_config = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][1]
+
+        self.assertTrue(isinstance(call_repo, Repository))
+        self.assertEqual('test_me', call_repo.id)
+
+        self.assertTrue(isinstance(call_config, PluginCallConfiguration))
+        self.assertTrue(call_config.plugin_config is not None)
+        self.assertEqual(call_config.repo_plugin_config, config)
+
+        #   Plugin - Distributor Added
+        self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.distributor_added.call_count)
+        call_repo = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][0]
+        call_config = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][1]
+        self.assertTrue(isinstance(call_repo, Repository))
+        self.assertTrue(isinstance(call_config, PluginCallConfiguration))
 
     def test_add_distributor_multiple_distributors(self):
         """
@@ -114,10 +139,16 @@ class RepoManagerTests(testutil.PulpTest):
         self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, False, distributor_id='dist_1')
 
         # Verify
+
+        #    Database
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
         self.assertTrue(not all_distributors[0]['auto_distribute'])
         self.assertEqual(config, all_distributors[0]['config'])
+
+        #    Plugin Calls
+        self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.distributor_added.call_count)
+        self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.call_count)
 
     def test_add_distributor_no_explicit_id(self):
         """
@@ -180,7 +211,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.assertEqual(bad_id, e.invalid_distributor_id)
             print(e) # for coverage
 
-    def test_add_distributor_raises_error(self):
+    def test_add_distributor_initialize_raises_error(self):
         """
         Tests the correct error is raised when the distributor raises an error during validation.
         """
@@ -193,11 +224,30 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('repo', 'mock-distributor', None, True)
             self.fail('Exception expected for error during validate')
-        except distributor_manager.InvalidDistributorConfiguration:
+        except distributor_manager.DistributorInitializationException:
             pass
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.distributor_added.side_effect = None
+
+    def test_add_distributor_validate_raises_error(self):
+        """
+        Tests the correct error is raised when the distributor raises an error during config validation.
+        """
+
+        # Setup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = Exception()
+        self.repo_manager.create_repo('rohan')
+
+        # Test
+        try:
+            self.distributor_manager.add_distributor('rohan', 'mock-distributor', None, True)
+            self.fail('Exception expected')
+        except distributor_manager.InvalidDistributorConfiguration:
+            pass
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
 
     def test_add_distributor_invalid_config(self):
         """
@@ -217,6 +267,8 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    # -- remove ---------------------------------------------------------------
 
     def test_remove_distributor(self):
         """
@@ -257,6 +309,103 @@ class RepoManagerTests(testutil.PulpTest):
         except repo_manager.MissingRepo, e:
             self.assertEqual(e.repo_id, 'fake-repo')
             print(e) # for coverage
+
+    # -- update ---------------------------------------------------------------
+
+    def test_update_distributor_config(self):
+        """
+        Tests the successful case of updating a distributor's config.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('dawnstar')
+        dist_id = self.distributor_manager.add_distributor('dawnstar', 'mock-distributor', {'key' : 'orig'}, True)
+
+        # Test
+        new_config = {'key' : 'updated'}
+        self.distributor_manager.update_distributor_config('dawnstar', dist_id, new_config)
+
+        # Verify
+
+        #    Database
+        repo_dist = RepoDistributor.get_collection().find_one({'repo_id' : 'dawnstar'})
+        self.assertEqual(repo_dist['config'], new_config)
+
+        #    Plugin
+        self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_count)
+        call_config = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][1]
+        self.assertEqual(new_config, call_config.repo_plugin_config)
+
+    def test_update_missing_repo(self):
+        """
+        Tests updating the distributor config on a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.distributor_manager.update_distributor_config('not-there', 'doesnt-matter', {})
+            self.fail('Exception expected')
+        except distributor_manager.MissingRepo, e:
+            self.assertEqual(e.repo_id, 'not-there')
+
+    def test_update_missing_distributor(self):
+        """
+        Tests updating the config on a distributor that doesn't exist on the repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('empty')
+
+        # Test
+        try:
+            self.distributor_manager.update_distributor_config('empty', 'missing', {})
+            self.fail('Exception expected')
+        except distributor_manager.MissingDistributor, e:
+            self.assertEqual('missing', e.distributor_name)
+
+    def test_update_validate_exception(self):
+        """
+        Tests updating a config when the plugin raises an exception during validate.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('elf')
+        dist_id = self.distributor_manager.add_distributor('elf', 'mock-distributor', {}, True)
+
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = Exception()
+
+        # Test
+        try:
+            self.distributor_manager.update_distributor_config('elf', dist_id, {})
+            self.fail('Exception expected')
+        except distributor_manager.InvalidDistributorConfiguration:
+            pass
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
+
+    def test_update_invalid_config(self):
+        """
+        Tests updating a config when the plugin indicates the config is invalid.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('dwarf')
+        dist_id = self.distributor_manager.add_distributor('dwarf', 'mock-distributor', {}, True)
+
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = False
+
+        # Test
+        try:
+            self.distributor_manager.update_distributor_config('dwarf', dist_id, {})
+            self.fail('Exception expected')
+        except distributor_manager.InvalidDistributorConfiguration:
+            pass
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    # -- scratchpad -----------------------------------------------------------
 
     def test_get_set_distributor_scratchpad(self):
         """
