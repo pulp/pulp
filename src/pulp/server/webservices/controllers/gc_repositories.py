@@ -22,57 +22,91 @@ import web
 # Pulp
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo.cud import DuplicateRepoId, InvalidRepoId, InvalidRepoMetadata
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.controllers.decorators import auth_required, error_handler
+from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.serialization.error import http_error_obj
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
-# -- controllers --------------------------------------------------------------
+# -- repo controllers ---------------------------------------------------------
 
-class RepoCreateDelete(JSONController):
+class RepoCollection(JSONController):
 
-    # POST:    Repository Create
-    # DELETE:  Repository Delete
+    # Scope: Collection
+    # GET:   Retrieve all repositories in the system
+    # POST:  Repository Create
 
-    @error_handler
+    @auth_required(READ)
+    def GET(self):
+        repo_query_manager = manager_factory.repo_query_manager()
+        all_repos = repo_query_manager.find_all()
+
+        # TODO: clean up serialized repos for return
+
+        # Return the repos or an empty list; either way it's a 200
+        return self.ok(all_repos)
+
     @auth_required(CREATE)
-    def POST(self, id):
+    def POST(self):
 
         # Pull the repo data out of the request body (validation will occur
         # in the manager)
         repo_data = self.params()
+        id = repo_data.get('id', None)
         display_name = repo_data.get('display_name', None)
         description = repo_data.get('description', None)
         notes = repo_data.get('notes', None)
 
         # Creation
         repo_manager = manager_factory.repo_manager()
-        repo_manager.create_repo(id, display_name, description, notes)
 
-        return self.ok(True)
+        try:
+            repo = repo_manager.create_repo(id, display_name, description, notes)
+        except DuplicateRepoId:
+            serialized = http_error_obj(409)
+            return self.conflict(serialized)
+        except (InvalidRepoId, InvalidRepoMetadata):
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
 
-    @error_handler
+        # TODO: explicitly serialize repo for return
+
+        return self.ok(repo)
+
+class RepoResource(JSONController):
+
+    # Scope:   Resource
+    # DELETE:  Repository Delete
+    # PUT:     Repository Update
+
     @auth_required(DELETE)
     def DELETE(self, id):
 
-        # Parameters
-        params = self.params()
-        delete_content = params.get('delete_content', True)
-
         # Deletion
         repo_manager = manager_factory.repo_manager()
-        repo_manager.delete_repo(id, delete_content)
+        repo_manager.delete_repo(id)
 
         return self.ok(True)
 
+    @auth_required(UPDATE)
+    def PUT(self, id):
+        pass
+
+# -- importer controllers -----------------------------------------------------
+
 class RepoImporters(JSONController):
 
+    # Scope:  Sub-collection
+    # GET:    List Importers
     # POST:   Set Importer
-    # DELETE: Remove Importer  (currently not supported)
 
-    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id):
+        pass
+
     @auth_required(CREATE)
     def POST(self, repo_id):
 
@@ -82,16 +116,37 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         # Update the repo
-        repo_manager = manager_factory.repo_manager()
-        repo_manager.set_importer(repo_id, importer_type, importer_config)
+        importer_manager = manager_factory.repo_importer_manager()
+        importer_manager.set_importer(repo_id, importer_type, importer_config)
 
         return self.ok(True)
 
-class RepoDistributor(JSONController):
+class RepoImporter(JSONController):
 
+    # Scope:  Exclusive Sub-resource
+    # DELETE: Remove Importer
+    # PUT:    Update Importer Config
+
+    @auth_required(UPDATE)
+    def DELETE(self, repo_id, importer_id):
+        pass
+
+    @auth_required(UPDATE)
+    def PUT(self, repo_id, importer_id):
+        pass
+
+# -- distributor controllers --------------------------------------------------
+
+class RepoDistributors(JSONController):
+
+    # Scope:  Sub-collection
+    # GET:    List Distributors
     # POST:   Add Distributor
 
-    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id):
+        pass
+    
     @auth_required(CREATE)
     def POST(self, repo_id):
 
@@ -105,26 +160,33 @@ class RepoDistributor(JSONController):
         auto_publish = params.get('auto_publish', False)
 
         # Update the repo
-        repo_manager = manager_factory.repo_manager()
-        repo_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
+        distributor_manager = manager_factory.repo_distributor_manager()
+        distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
 
         return self.ok(True)
 
-class RepoDistributors(JSONController):
+class RepoDistributor(JSONController):
 
+    # Scope:  Exclusive Sub-resource
     # DELETE: Remove Distributor
+    # PUT:    Update Distributor Config
 
-    @error_handler
-    @auth_required(DELETE)
+    @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
-        repo_manager = manager_factory.repo_manager()
-        repo_manager.remove_distributor(repo_id, distributor_id)
+        distributor_manager = manager_factory.repo_distributor_manager()
+        distributor_manager.remove_distributor(repo_id, distributor_id)
+
+    @auth_required(UPDATE)
+    def PUT(self, repo_id, distributor_id):
+        pass
+
+# -- action controllers -------------------------------------------------------
 
 class RepoSync(JSONController):
 
+    # Scope: Action
     # POST:  Trigger a repo sync
 
-    @error_handler
     @auth_required(EXECUTE)
     def POST(self, repo_id):
 
@@ -143,9 +205,9 @@ class RepoSync(JSONController):
 
 class RepoPublish(JSONController):
 
+    # Scope: Action
     # POST:  Trigger a repo publish
 
-    @error_handler
     @auth_required(EXECUTE)
     def POST(self, repo_id, distributor_id):
 
@@ -162,29 +224,21 @@ class RepoPublish(JSONController):
         
         return self.ok(True)
 
-class ListRepositories(JSONController):
-
-    # This is temporary and will be replaced by a more fleshed out repo query mechanism
-
-    # GET:  Retrieve all repositories in the system
-
-    @error_handler
-    @auth_required(READ)
-    def GET(self):
-        repo_query_manager = manager_factory.repo_query_manager()
-        all_repos = repo_query_manager.find_all()
-        return self.ok(all_repos)
-
 # -- web.py application -------------------------------------------------------
 
+# These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
-    '/', 'ListRepositories',
-    '/([^/]+)/$', 'RepoCreateDelete',
-    '/([^/]+)/importers/$', 'RepoImporters',
-    '/([^/]+)/distributors/$', 'RepoDistributor',
-    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributors',
-    '/([^/]+)/sync/$', 'RepoSync',
-    '/([^/]+)/publish/([^/]+)/$', 'RepoPublish',
+    '/', 'RepoCollection', # collection
+    '/([^/]+)/$', 'RepoResource', # resourcce
+
+    '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
+    '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
+
+    '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
+    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
+
+    '/([^/]+)/actions/sync/$', 'RepoSync', # sub-resource action
+    '/([^/]+)/actions/publish/([^/]+)/$', 'RepoPublish', # sub-resource action
 )
 
 application = web.application(urls, globals())

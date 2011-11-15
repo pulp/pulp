@@ -135,6 +135,8 @@ class RepoManager:
         create_me = Repo(repo_id, display_name, description, notes)
         Repo.get_collection().save(create_me, safe=True)
 
+        return create_me
+
     def delete_repo(self, repo_id):
         """
         Deletes the given repository, optionally requesting the associated
