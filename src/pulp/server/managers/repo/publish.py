@@ -167,8 +167,6 @@ class RepoPublishManager:
         repo_distributor['last_publish'] = _publish_finished_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
 
-        return repo_distributor
-
     def unpublish(self, repo_id, distributor_id):
         pass
 
