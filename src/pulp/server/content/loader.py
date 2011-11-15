@@ -728,12 +728,12 @@ def _is_enabled(cfg):
     return cfg.get('enabled', True)
 
 
-def _load_plugin(path, base_class, module_name):
+def _load_plugins(path, base_class, module_name):
     """
     @type path: str
     @type base_class: type
     @type module_name: str
-    @rtype: tuple (type, dict)
+    @rtype: list of tuple (type, dict)
     @raise: L{PluginLoadError}
     """
     _LOG.debug('Loading plugin: %s, %s, %s' %
@@ -761,11 +761,13 @@ def _load_plugin(path, base_class, module_name):
         d = {'n': module_name.title(), 'p': package_name, 'm': module_name}
         raise MissingPluginModule(msg % d)
     # load and return the plugin class and configuration
-    cls = _load_plugin_class('.'.join((package_name, module_name)), base_class)
+    cls_list = _load_plugin_classes('.'.join((package_name, module_name)), base_class)
     cfg = {}
     if config_path is not None:
         cfg = _load_plugin_config(config_path)
-    return (cls, cfg)
+
+    plugin_tuples = [(cls, cfg) for cls in cls_list]
+    return plugin_tuples
 
 
 def _load_plugin_config(config_file_name):
@@ -779,16 +781,17 @@ def _load_plugin_config(config_file_name):
     return cfg
 
 
-def _load_plugin_class(module_name, base_class):
+def _load_plugin_classes(module_name, base_class):
     """
     @type module_name: str
     @type base_class: type
-    @rtype: attr
+    @rtype: list of attr
     @raise: L{PluginLoadError}
     """
     _LOG.debug('Loading plugin class: %s, %s' %
                (module_name, base_class.__name__))
     module = _import_module(module_name)
+    attr_list = []
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
         if not isinstance(attr, type):
@@ -797,9 +800,13 @@ def _load_plugin_class(module_name, base_class):
             continue
         if attr is base_class:
             continue
-        return attr
-    msg = _('%(m)s modules did not contain a derived class of %(c)s')
-    raise MissingPluginClass(msg % {'m': module_name, 'c': base_class.__name__})
+        attr_list.append(attr)
+
+    if len(attr_list) is 0:
+        msg = _('%(m)s modules did not contain a derived class of %(c)s')
+        raise MissingPluginClass(msg % {'m': module_name, 'c': base_class.__name__})
+
+    return attr_list
 
 
 def _load_plugins_from_path(path, base_class, plugin_map):
@@ -815,8 +822,9 @@ def _load_plugins_from_path(path, base_class, plugin_map):
         if dir_ in sys.modules:
             msg =_('Python already has module loaded: %(d)s')
             raise NamespaceCollision(msg % {'d': dir_})
-        cls, cfg = _load_plugin(dir_, base_class, base_class.__name__.lower())
-        id = _get_plugin_metadata_field(cls, 'id', cls.__name__)
-        types = _get_plugin_types(cls)
-        plugin_map.add_plugin(id, cls, cfg, types)
+        plugin_tuples = _load_plugins(dir_, base_class, base_class.__name__.lower())
 
+        for cls, cfg in plugin_tuples:
+            id = _get_plugin_metadata_field(cls, 'id', cls.__name__)
+            types = _get_plugin_types(cls)
+            plugin_map.add_plugin(id, cls, cfg, types)

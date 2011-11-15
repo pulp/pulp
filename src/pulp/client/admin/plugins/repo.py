@@ -255,7 +255,10 @@ class RepoProgressAction(AdminRepoAction):
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
-        current += _('%s %s%%\n') % (bar, percent)
+        if progress['size_total'] != 0:
+            current += _('%s %s%% of %.3f MB\n') % (bar, percent, float(progress['size_total'])/(1024*1024))
+        else:
+            current += _('%s %s%%\n') % (bar, percent)
         current += self.form_progress_item_details(progress["details"])
         current += _("Total: %s/%s items\n") % (items_done, items_total)
         return current
@@ -671,6 +674,8 @@ class Update(AdminRepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
+        self.parser.add_option("--checksum_type", dest="checksum_type",
+                               help=_("checksum type to use for repository metadata; this will perform a metadata update"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -678,7 +683,6 @@ class Update(AdminRepoAction):
         optdict = vars(self.opts)
         feed_cert_bundle = None
         consumer_cert_bundle = None
-
         for k, v in optdict.items():
             if not v:
                 continue
@@ -698,6 +702,9 @@ class Update(AdminRepoAction):
             if k == 'rmkeys':
                 keylist = v.split(',')
                 delta['rmkeys'] = keylist
+                continue
+            if k == 'checksum_type':
+                delta['checksum_type'] = v
                 continue
             if k in ('feed_ca', 'feed_cert', 'feed_key'):
                 f = open(v)
@@ -1292,14 +1299,14 @@ class AddPackages(AdminRepoAction):
                 pids.append(pdep['id'])
         else:
             print _("No Source repo specified, skipping dependency lookup")
-        errors = {}
+        result = []
         try:
-            errors = self.repository_api.add_package(id, pids)
+            result = self.repository_api.add_package(id, pids)
         except Exception:
             utils.system_exit(os.EX_DATAERR, _("Unable to associate package [%s] to repo [%s]" % (pnames, id)))
-        if not errors:
-            print _("Successfully associated packages %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (pnames, id))
-        else:
+        errors = result[0]
+        filtered_count = result[1]
+        if errors:
             for e in errors:
                 # Format, [pkg_id, NEVRA, filename, sha256]
                 filename = e[2]
@@ -1307,7 +1314,12 @@ class AddPackages(AdminRepoAction):
                 print _("Error unable to associate: %s with sha256sum of %s") % (filename, checksum)
             print _("Errors occurred see /var/log/pulp/pulp.log for more info")
             print _("Note: any packages not listed in error output have been associated")
-        print _("%s packages associated to repo [%s]") % (len(pids) - len(errors), id)
+
+        total_associated_pkgs = len(pids) - len(errors) - filtered_count
+        print _("Successfully associated %s packages to repo [%s]") % (total_associated_pkgs , id)
+        print _("Packages skipped because of filters associated to the repository : %s" % filtered_count)
+        if total_associated_pkgs > 0:
+            print _("Please run `pulp-admin repo generate_metadata` to update the repository metadata.")
 
 
 class RemovePackages(AdminRepoAction):
@@ -1820,12 +1832,14 @@ class Export(RepoProgressAction):
 
     def run(self):
         repoid = self.opts.id
+        groupid = self.opts.groupid
+        if groupid and (self.opts.foreground or self.opts.status):
+            utils.system_exit(os.EX_OK, _("Use `pulp-admin job info` to check the status of group export jobs"))
         if self.opts.status:
             if not repoid:
                 utils.system_exit(os.EX_USAGE, _("Error: repo id is required to check status of export"))
             self.export_status()
             return
-        groupid = self.opts.groupid
         if not repoid and not groupid:
             utils.system_exit(os.EX_USAGE, _("Error: repo id or group id is required to perform an export; see --help"))
         if repoid and groupid:

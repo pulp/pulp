@@ -11,6 +11,7 @@
 # Description: Pulp is comprehensive content repository and consumer management 
 ### END INIT INFO
 
+export SYSTEMCTL_SKIP_REDIRECT=1
 export SYSTEMCTL_IGNORE_DEPENDENCIES=1
 
 . /etc/rc.d/init.d/functions

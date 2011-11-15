@@ -516,8 +516,8 @@ class ConsumerActions(JSONController):
         data = self.params()
         eids = data.get('errataids', [])
         types = data.get('types', [])
-        assumeyes = data.get('assumeyes', False)
-        task = consumer_api.installerrata(id, eids, types, assumeyes)
+        importkeys = data.get('importkeys', False)
+        task = consumer_api.installerrata(id, eids, types, importkeys)
         if not task:
             return self.not_found('Errata %s you requested are not applicable for your system' % eids)
         scheduled_time = data.get('scheduled_time', None)

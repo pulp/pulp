@@ -323,9 +323,10 @@ class BaseSynchronizer(object):
         timestamp = None
         if treeinfo['timestamp']:
             timestamp = datetime.datetime.fromtimestamp(float(treeinfo['timestamp']))
-        distro = self.distro_api.create(id, description, distro_path, family=treeinfo['family'],
-                                        variant=treeinfo['variant'], version=treeinfo['version'],
-                                        timestamp=timestamp, files=files)
+        distro = self.distro_api.create(id, description, distro_path, \
+                family=treeinfo['family'], variant=treeinfo['variant'], \
+                version=treeinfo['version'], timestamp=timestamp, files=files,\
+                arch=treeinfo['arch'])
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
             log.info("Created a distributionID %s" % distro['id'])
@@ -729,22 +730,6 @@ class YumSynchronizer(BaseSynchronizer):
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(pkg_location, repo_pkg_path)
 
-    def _find_combined_whitelist_packages(self, repo_filters):
-        combined_whitelist_packages = []
-        for filter_id in repo_filters:
-            filter = self.filter_api.filter(filter_id)
-            if filter['type'] == "whitelist":
-                combined_whitelist_packages.extend(filter['package_list'])
-        return combined_whitelist_packages
-
-    def _find_combined_blacklist_packages(self, repo_filters):
-        combined_blacklist_packages = []
-        for filter_id in repo_filters:
-            filter = self.filter_api.filter(filter_id)
-            if filter['type'] == "blacklist":
-                combined_blacklist_packages.extend(filter['package_list'])
-        return combined_blacklist_packages
-
     def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
         pkglist = []
 
@@ -947,7 +932,7 @@ class YumSynchronizer(BaseSynchronizer):
                     self.progress['details']["tree_file"]["num_success"] += 1
                     self.progress["num_success"] += 1
                     log.debug("Imported file %s " % dst_file_path)
-                repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", os.path.basename(dst_file_path))
+                repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", dst_file_path.split(distro_path)[-1])
                 if not os.path.islink(repo_dist_path):
                     log.info("Creating a symlink to repo location from [%s] to [%s]" % (dst_file_path, repo_dist_path))
                     pulp.server.util.create_rel_symlink(dst_file_path, repo_dist_path)
@@ -988,8 +973,8 @@ class YumSynchronizer(BaseSynchronizer):
             # Process repo filters if any
             if repo['filters']:
                 log.info("Repo filters : %s" % repo['filters'])
-                whitelist_packages = self._find_combined_whitelist_packages(repo['filters'])
-                blacklist_packages = self._find_combined_blacklist_packages(repo['filters'])
+                whitelist_packages = self.repo_api.find_combined_whitelist_packages(repo['filters'])
+                blacklist_packages = self.repo_api.find_combined_blacklist_packages(repo['filters'])
                 log.info("combined whitelist packages = %s" % whitelist_packages)
                 log.info("combined blacklist packages = %s" % blacklist_packages)
             else:

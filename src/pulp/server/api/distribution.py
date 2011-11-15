@@ -25,7 +25,7 @@ from pulp.server import util
 
 log = logging.getLogger(__name__)
 
-distribution_fields = model.Distribution(None, None, None, None, None, None, None, []).keys()
+distribution_fields = model.Distribution(None, None, None, None, None, None, None, [], None).keys()
 
 class DistributionHasReferences(Exception):
 
@@ -41,7 +41,7 @@ class DistributionApi(BaseApi):
 
     @audit(params=["id"])
     def create(self, id, description, relativepath, family=None, variant=None,
-               version=None, timestamp=None, files=[]):
+               version=None, timestamp=None, files=[], arch=None):
         """
         Create a new Distribution object and return it
         """
@@ -49,8 +49,9 @@ class DistributionApi(BaseApi):
         if d:
             log.info("Distribution with id %s already exists" % id)
             return d
-        d = model.Distribution(id, description, relativepath, family=family, variant=variant,
-                               version=version, timestamp=timestamp, files=files)
+        d = model.Distribution(id, description, relativepath, family=family, \
+                               variant=variant, version=version, timestamp=timestamp, \
+                               files=files, arch=arch)
         self.collection.insert(d, safe=True)
         return d
 
@@ -99,7 +100,7 @@ class DistributionApi(BaseApi):
             raise PulpException('Distributon [%s] does not exist', id)
         for key, value in delta.items():
             # simple changes
-            if key in ('description', 'relativepath', 'files', 'family', 'variant', 'version'):
+            if key in ('description', 'relativepath', 'files', 'family', 'variant', 'version', 'arch'):
                 dist[key] = value
                 continue
             # unsupported
@@ -137,6 +138,6 @@ class DistributionApi(BaseApi):
         collection = model.Repo.get_collection()
         repos = collection.find({"distributionid":distribution['id']}, fields=["id", "relative_path"])
         for repo in repos:
-            url = "%s://%s%s/%s/" % ("https", server_name, ks_url, repo['relative_path'])
+            url = "%s://%s%s/%s/" % ("http", server_name, ks_url, repo['relative_path'])
             distribution['url'].append(url)
         return distribution

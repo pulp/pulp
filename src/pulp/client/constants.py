@@ -34,6 +34,7 @@ Groups             \t%-25s
 Filters            \t%-25s
 Notes              \t%-25s
 Preserve Metadata  \t%-25s
+Checksum Type      \t%-25s
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """
@@ -114,6 +115,7 @@ Description           \t%-25s
 Family                \t%-25s
 Variant               \t%-25s
 Version               \t%-25s
+Arch                  \t%-25s
 URL                   \t%-25s
 Timestamp             \t%-25s
 """
@@ -125,6 +127,7 @@ URL                   \t%-25s
 Family                \t%-25s
 Variant               \t%-25s
 Version               \t%-25s
+Arch                  \t%-25s
 Files                 \t%-25s
 Timestamp             \t%-25s
 """

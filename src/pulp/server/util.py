@@ -115,7 +115,7 @@ def top_file_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "files")
 
 def top_distribution_location():
-    return "%s/%s" % (constants.LOCAL_STORAGE, "distributions")
+    return os.path.join(constants.LOCAL_STORAGE, "distributions")
 
 def relative_repo_path(path):
     """

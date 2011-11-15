@@ -64,16 +64,12 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Display name used to better describe the content and purpose of the repo. 
 </td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Indicates the architecture of packages that will be found in the repo. 
 </td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Indicates where packages should be synchronized from when populating the repo. See the section below on feeds for more information. 
-</td></tr><tr><td> Schedule Interval </td><td> <tt>--interval</tt> </td><td> Time between scheduled syncs in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format 
-</td></tr><tr><td> Schedule Start </td><td> <tt>--start</tt> </td><td> Date and time of first scheduled sync in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format (optional: not specified means to run immediately) 
-</td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository.  The file may contain both the private key as well as the certificate in which case the --feed_key should not be specified. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
 </td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
 </td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> The path to a file containing a certificate.  The file may contain both the private key as well as the certificate in which case the --consumer_key should not be specified.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
 </td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td>  The path to file containing the certificate's associated private key.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> If specified, the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
 </td></tr><tr><td> GPG Keys </td><td> <tt>--gpgkeys</tt> </td><td> A comma-separated list of GPG public key files that can be used to verify the packages found within the repository. 
@@ -100,10 +96,6 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Change the display name which is used to better describe the content and purpose of the repo. 
 </td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Change the architecture of packages that will be found in the repo. 
 </td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Change where packages should be synchronized from when populating the repo. 
-</td></tr><tr><td> Schedule Interval </td><td> <tt>--interval</tt> </td><td> Time between scheduled syncs in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format 
-</td></tr><tr><td> Schedule Start </td><td> <tt>--start</tt> </td><td> Date and time of first scheduled sync in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format (optional: not specified means to run immediately) 
-</td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
-</td></tr><tr><td> Delete Schedule </td><td> <tt>--delete-schedule</tt> </td><td> Delete an existing schedule 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository.  The file may contain both the private key as well as the certificate in which case the --feed_key is not necessary. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
@@ -112,7 +104,6 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
 </td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
 </td></tr><tr><td> Remove Consumer Entitlement Certificate </td><td> <tt>--remove_consumer_cert</tt> </td><td> Disabled repository authentication from the repository. For more information, see <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a>. 
-</td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> Change whether the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Change the relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
 </td></tr><tr><td> Add GPG keys </td><td> <tt>--addkeys</tt> </td><td> A comma-separated list of GPG public key files to be added. 
@@ -322,12 +313,16 @@ In addition to the <tt>-F</tt> flag, the following options are available to the 
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Show Schedule </td><td> <tt>--show-schedule</tt> </td><td> If specified, show the sync schedule and exit
+</td></tr><tr><td> Delete Schedule </td><td> <tt>--delete-schedule</tt> </td><td> If specified, remove the sync schedule and exit
+</td></tr><tr><td> Set Schedule Interval </td><td> <tt>--interval</tt> </td><td> If specified, schedule the sync, repeating on the given interval
+</td></tr><tr><td> Set Number of Runs </td><td> <tt>--runs</tt> </td><td> When used with <tt>--interval</tt>, limit the number of time the sync is repeated to the given number of runs
+</td></tr><tr><td> Set Start Time </td><td> <tt>--start</tt> </td><td> When used with <tt>--interval</tt>, delay the first scheduled sync until the given start time. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines. If omitted, the sync starts immediately.
+</td></tr><tr><td> Exclude Elements </td><td> <tt>--exclude</tt> </td><td> (cumulative) Exclude the element(s) specified from the sync. Valid elements are: <tt>packages</tt>, <tt>errata</tt>, and/or <tt>distribution</tt>. Note if packages is specified, but errata is not, the packages for the errata will still be synchronized.
+</td></tr><tr><td> Timeout </td><td> <tt>--timeout</tt> </td><td> Time for the sync to run before being timed out. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines.
 </td></tr><tr><td> Limit Bandwidth Per Thread </td><td> <tt>--limit</tt> </td><td> If specified, will limit the bandwidth each thread uses when synchronizing yum content.  Value is expected to be in KB/sec. 
 </td></tr><tr><td> Threads </td><td> <tt>--threads</tt> </td><td> If specified, will allow this many threads to be used for synchronization. 
-</td></tr><tr><td> Timeout </td><td> <tt>--timeout</tt> </td><td> Time for the sync to run before being timed out. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines.
-</td></tr><tr><td> Skip Packages </td><td> <tt>--no-packages</tt> </td><td> If specified, packages found in the feed that are not part of an errata will not be synchronized. If errata are still downloaded as part of the sync, their associated packages will still be downloaded. 
-</td></tr><tr><td> Skip Errata </td><td> <tt>--no-errata</tt> </td><td> If specified, errata found in the feed will not be synchronized. 
-</td></tr><tr><td> Skip Distributions </td><td> <tt>--no-distribution</tt> </td><td> If specified, distributions found in the feed will not be synchronized. 
+</td></tr><tr><td> Sync in the Foreground </td><td> <tt>-F</tt> or <tt>--foreground</tt> </td><td> Report the sync progress on the command line. Conflicts with <tt>--start</tt>
 </td></tr></table>
 <hr />
 <h2 id="packages">Packages</h2>
@@ -548,7 +543,7 @@ The <tt>repo discovery</tt> command takes following arguments:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> Base URL to perform discovery (required). Supports http, https and file based urls 
+</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> Base URL to perform discovery (required). Supports http, https and file based urls(path should be accessible by apache)
 </td></tr><tr><td> TYPE </td><td> <tt>-t</tt> or <tt>--type</tt> </td><td>  Content type to look for during discovery (required); supported types: 'yum' 
 </td></tr><tr><td> ASSUMEYES </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically create Pulp repositories for discovered repositories (optional). 
 </td></tr><tr><td> GROUPID   </td><td> <tt>-g</tt> or <tt>--groupid</tt>   </td><td> Group IDs (one or more) to associate the discovered repos (optional). 
@@ -776,6 +771,102 @@ The <tt>repo remove_distribution</tt> command is used to remove distributions fr
 </td></tr></table>
 <h4 id="Example:removedistributionfromtargetrepository">Example: remove distribution from target repository</h4>
 <pre class="wiki">$ pulp-admin repo remove_distribution --id testrepo -d ks-fedora-14-i386
+</pre><hr />
+<h2 id="notes">Repository Notes</h2>
+<p>
+Pulp provides the ability to create custom attributes for repositories using notes. These are similar to key-value attributes for consumers.
+</p>
+<h3 id="CreationDeletionUpdate">Creation, Deletion, Update</h3>
+<p>
+For example, take a scenario where multiple repositories in Pulp server need to be grouped together as blacklisted repositories. You can add blacklisted: True to notes of these repositories.
+</p>
+<pre class="wiki">$ pulp-admin repo add_note  --id test1 --key key1 --value value1
+Successfully added key-value pair key1:value1
+</pre><p>
+Attributes can be updated or deleted as follows:
+</p>
+<pre class="wiki">$ pulp-admin repo update_note --id test1 --key key1 --value value2
+Successfully updated key-value pair key1:value2
+
+$ pulp-admin repo delete_note --id test1  --key key1
+Successfully deleted key: key1
+</pre><h3 id="List">List</h3>
+<p>
+Repository listing will show notes added to each repository:
+</p>
+<pre class="wiki">$ pulp-admin repo list
++------------------------------------------+
+       List of Available Repositories
++------------------------------------------+
+
+Id                 	test1
+Name               	test1
+Repo URL           	https://sunflower/pulp/repos/test1/
+Feed URL           	None
+Feed Type          	None
+Content Type       	yum
+Feed Certs         	CA:No   Cert:No
+Consumer Certs     	CA:No   Cert:No
+Architecture       	noarch
+Sync Schedule      	None
+Packages           	0
+Files              	0
+Distributions      	None
+Publish            	True
+Clones             	[]
+Groups             	None
+Filters            	[]
+Notes              	{'key1': 'value1'}
+Preserve Metadata  	False
+
+
+Id                 	test2
+Name               	test2
+Repo URL           	https://sunflower/pulp/repos/test2/
+Feed URL           	None
+Feed Type          	None
+Content Type       	yum
+Feed Certs         	CA:No   Cert:No
+Consumer Certs     	CA:No   Cert:No
+Architecture       	noarch
+Sync Schedule      	None
+Packages           	0
+Files              	0
+Distributions      	None
+Publish            	True
+Clones             	[]
+Groups             	None
+Filters            	[]
+Notes              	{'key2': 'value2'}
+Preserve Metadata  	False
+</pre><p>
+In addition, you can also filter repositories based on notes:
+</p>
+<pre class="wiki">
+$ sudo pulp-admin repo list --notes "{'key1':'value1'}"
++------------------------------------------+
+       List of Available Repositories
++------------------------------------------+
+
+Id                 	test1
+Name               	test1
+Repo URL           	https://sunflower/pulp/repos/test1/
+Feed URL           	None
+Feed Type          	None
+Content Type       	yum
+Feed Certs         	CA:No   Cert:No
+Consumer Certs     	CA:No   Cert:No
+Architecture       	noarch
+Sync Schedule      	None
+Packages           	0
+Files              	0
+Distributions      	None
+Publish            	True
+Clones             	[]
+Groups             	None
+Filters            	[]
+Notes              	{'key1': 'value1'}
+Preserve Metadata  	False
 </pre><hr />
 </div>
    </div>

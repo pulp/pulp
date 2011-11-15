@@ -1,4 +1,4 @@
-module pulp 1.0;
+module pulp 1.1;
 
 require {
     type httpd_tmp_t;

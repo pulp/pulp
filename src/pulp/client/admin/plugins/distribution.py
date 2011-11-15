@@ -57,7 +57,7 @@ class List(DistributionAction):
         print_header(_('List of Available Distributions'))
         for distro in distribution:
             print constants.DISTRO_LIST % (distro['id'], distro['description'], distro['family'],
-                                           distro['variant'], distro['version'], '\n \t\t\t'.join(distro['url'][:]), distro['timestamp'])
+                                           distro['variant'], distro['version'], distro['arch'], '\n \t\t\t'.join(distro['url'][:]), distro['timestamp'])
 
 
 class Info(DistributionAction):
@@ -79,7 +79,7 @@ class Info(DistributionAction):
             system_exit(os.EX_OK, _("No distribution found with id [%s]" % distid))
         print_header(_('Distribution Info for %s' % distid))
         print constants.DISTRO_INFO % (distribution['id'], distribution['description'], '\n \t\t\t'.join(distribution['url'][:]),
-                                       distribution['family'], distribution['variant'], distribution['version'],
+                                       distribution['family'], distribution['variant'], distribution['version'], distribution['arch'],
                                        '\n \t\t\t'.join(distribution['files'][:]), distribution['timestamp'])
 
 # distribution command --------------------------------------------------------------

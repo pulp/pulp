@@ -139,7 +139,9 @@ class Install(PackageAction):
             printwait()
             task = self.task_api.info(task['id'])
         if task_succeeded(task):
-            print _('\n%s installed on %s') % (task['result'][0], id)
+            result = task['result']
+            installed = result['installed']
+            print _('\n%s installed on %s') % (installed, id)
         else:
             print _('\nInstall failed: %s' % task['exception'])
             system_exit(-1)
@@ -166,11 +168,12 @@ class Install(PackageAction):
             state = t['state']
             exception = t['exception']
             id, packages = t['args']
-            if exception:
-                details = str(exception)
-            else:
-                installed, reboot = t['result']
+            if not exception:
+                result = t['result']
+                installed = result['installed']
                 details = 'packages installed: %s' % installed
+            else:
+                details = str(exception)
             print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
 
     def getunavailable(self, ids):

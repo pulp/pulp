@@ -171,27 +171,28 @@ class Packages:
     """
 
     @remote(secret=getsecret)
-    def install(self, names, reboot=False, assumeyes=False):
+    def install(self, names, reboot=False, importkeys=False):
         """
         Install packages by name.
         @param names: A list of package names.
         @type names: [str,]
         @param reboot: Request reboot after packages are installed.
         @type reboot: bool
-        @param assumeyes: Assume (yes) to yum prompts.
-        @type assumeyes: bool
-        @return: (installed, (reboot requested, performed))
-        @rtype: tuple
+        @param importkeys: Permit YUM to install GPG keys as needed.
+        @type importkeys: bool
+        @return: (installed=, reboot=)
+          - installed : A list of installed packages
+          - rebooted : A reboot was scheduled.
+        @rtype: dict
         """
         pkg = Package()
-        installed = pkg.install(names, assumeyes)
-        scheduled = False
-        if reboot:
-            approved = getbool(cfg.client, assumeyes=assumeyes)
-            if approved:
-                self.__schedule_reboot()
-                scheduled = True
-        return (installed, (reboot, scheduled))
+        importkeys = self.permit_import(importkeys)
+        installed = pkg.install(names, importkeys)
+        if reboot and installed:
+            scheduled = self.reboot()
+        else:
+            scheduled = False
+        return dict(installed=installed, reboot_scheduled=scheduled)
 
     @remote(secret=getsecret)
     def uninstall(self, names):
@@ -207,10 +208,17 @@ class Packages:
         log.info('Packages uninstalled: %s', uninstalled)
         return uninstalled
 
-    def __schedule_reboot(self):
-        interval = cfg.client.reboot_schedule
-        os.system("shutdown -r %s &", interval)
-        log.info("System is scheduled to reboot in %s minutes", interval)
+    def permit_import(self, flag):
+        permitted = getbool(cfg.gpg, permit_import=flag)
+        return ( flag and permitted )
+
+    def reboot(self):
+        permitted = getbool(cfg.reboot, permit=0)
+        if permitted:
+            delay = getbool(cfg.reboot, delay=3)
+            os.system('shutdown -r %s &', delay)
+            log.info('rebooting in %s (minutes)', delay)
+        return permitted
 
 
 class PackageGroups:

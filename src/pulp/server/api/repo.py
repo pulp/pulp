@@ -16,6 +16,7 @@
 import gzip
 import logging
 import os
+import re
 import shutil
 import sys
 import time
@@ -159,6 +160,50 @@ class RepoApi(BaseApi):
                 raise Exception, 'key and certificate (PEM) expected'
         if KEY in data:
             del data[KEY]
+
+
+    def find_combined_whitelist_packages(self, repo_filters):
+        combined_whitelist_packages = []
+        for filter_id in repo_filters:
+            filter = self.filterapi.filter(filter_id)
+            if filter['type'] == "whitelist":
+                combined_whitelist_packages.extend(filter['package_list'])
+        return combined_whitelist_packages
+
+    def find_combined_blacklist_packages(self, repo_filters):
+        combined_blacklist_packages = []
+        for filter_id in repo_filters:
+            filter = self.filterapi.filter(filter_id)
+            if filter['type'] == "blacklist":
+                combined_blacklist_packages.extend(filter['package_list'])
+        return combined_blacklist_packages
+
+    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+        pkglist = {}
+
+        if whitelist_packages:
+            for key, pkg in unfiltered_pkglist.items():
+                for whitelist_package in whitelist_packages:
+                    w = re.compile(whitelist_package)
+                    if w.match(pkg["filename"]):
+                        pkglist[key] = pkg
+                        break
+        else:
+            pkglist = unfiltered_pkglist
+
+        if blacklist_packages:
+            to_remove = []
+            for key, pkg in pkglist.items():
+                for blacklist_package in blacklist_packages:
+                    b = re.compile(blacklist_package)
+                    if b.match(pkg["filename"]):
+                        to_remove.append(key)
+                        break
+            for key in to_remove:
+                del pkglist[key]
+
+        return pkglist
+
 
     @audit()
     def clean(self):
@@ -613,6 +658,7 @@ class RepoApi(BaseApi):
         # Also need to know later on if a consumer cert was updated.
         update_consumers = False
         consumer_cert_updated = False
+        update_metadata = False
         for key, value in delta.items():
             # simple changes
             if key == "addgrp":
@@ -669,6 +715,15 @@ class RepoApi(BaseApi):
                     ds = model.RepoSource(value)
                     repo['source'] = ds
                 continue
+            if key == 'checksum_type':
+                if not model.Repo.is_supported_checksum(value):
+                    raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
+                if repo[key] != value:
+                    repo[key] = value
+                    update_metadata = True
+                else:
+                    log.info('the repo checksum type is already %s' % value)
+                continue
             raise Exception, \
                   'update keyword "%s", not-supported' % key
 
@@ -686,6 +741,9 @@ class RepoApi(BaseApi):
         # Update subscribed consumers after the object has been saved
         if update_consumers:
             self.update_repo_on_consumers(repo)
+        if update_metadata:
+            # update the existing metadata with new checksum type
+            self.generate_metadata(id)
         return repo
 
     def repositories(self, spec=None, fields=None):
@@ -802,9 +860,10 @@ class RepoApi(BaseApi):
                     [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error,
                     where each id represents a package id that couldn't be added
         """
+        filtered_count = 0
         if not packageids:
             log.debug("add_package(%s, %s) called with no packageids to add" % (repoid, packageids))
-            return []
+            return [], filtered_count
         def get_pkg_tup(package):
             return (package['name'], package['epoch'], package['version'], package['release'], package['arch'])
         def get_pkg_nevra(package):
@@ -818,7 +877,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         if not repo:
             log.error("Couldn't find repository [%s]" % (repoid))
-            return [(pkg_id, (None, None, None, None, None), None, None) for pkg_id in packageids]
+            return [(pkg_id, (None, None, None, None, None), None, None) for pkg_id in packageids], filtered_count
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
@@ -833,6 +892,26 @@ class RepoApi(BaseApi):
         for p in result:
             pkg_objects[p["id"]] = p
         log.info("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
+
+        # Process repo filters if any
+        if repo['filters']:
+            log.info("Repo filters : %s" % repo['filters'])
+            whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
+            blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
+            log.info("combined whitelist packages = %s" % whitelist_packages)
+            log.info("combined blacklist packages = %s" % blacklist_packages)
+        else:
+            whitelist_packages = []
+            blacklist_packages = []
+
+        original_pkg_objects_count = len(pkg_objects)
+        pkg_objects = self._find_filtered_package_list(pkg_objects, whitelist_packages, blacklist_packages)
+        if original_pkg_objects_count > len(pkg_objects):
+            filtered_count = original_pkg_objects_count - len(pkg_objects)
+        if not pkg_objects:
+            log.info("No packages left to be added after removing filtered packages")
+            return [], filtered_count
+
         # Desire to keep the order dictated by calling arg of 'packageids'
         for pkg_id in packageids:
             if not pkg_objects.has_key(pkg_id):
@@ -842,6 +921,7 @@ class RepoApi(BaseApi):
                 continue
             pkg = pkg_objects[pkg_id]
             pkg_tup = get_pkg_tup(pkg)
+
             if nevras.has_key(pkg_tup):
                 log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
                          % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
@@ -895,6 +975,7 @@ class RepoApi(BaseApi):
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
         log.info("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
+
         for index, pid in enumerate(packages):
             pkg = packages[pid]
             self._add_package(repo, pkg)
@@ -912,7 +993,7 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
         log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
-        return errors
+        return errors, filtered_count
 
     def _add_package(self, repo, p):
         """
@@ -1586,6 +1667,7 @@ class RepoApi(BaseApi):
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.collection.save(repo, safe=True)
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
         repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
         for imfile in distro_obj['files']:
             if not os.path.exists(imfile):
@@ -1596,7 +1678,7 @@ class RepoApi(BaseApi):
                 if not os.path.islink(repo_treefile_path):
                     pulp.server.util.create_rel_symlink(imfile, repo_treefile_path)
             else:
-                repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
                 if not os.path.islink(repo_dist_path):
                     pulp.server.util.create_rel_symlink(imfile, repo_dist_path)
         if repo['publish']:
@@ -1616,6 +1698,7 @@ class RepoApi(BaseApi):
         if distro_obj is None:
             log.error("Distribution ID [%s] does not exist" % distroid)
             return
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
         repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
         for imfile in distro_obj['files']:
             if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
@@ -1623,7 +1706,7 @@ class RepoApi(BaseApi):
                 if os.path.islink(repo_treefile_path):
                     os.unlink(repo_treefile_path)
             else:
-                repo_dist_path = "%s/%s/%s" % (repo_path, "images", os.path.basename(imfile))
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
                 if os.path.islink(repo_dist_path):
                     os.unlink(repo_dist_path)
         del repo['distributionid'][repo['distributionid'].index(distroid)]
@@ -1887,7 +1970,7 @@ class RepoApi(BaseApi):
         repo_pkgs, errors = self._translate_filename_checksum_pairs(pkg_infos)
         for repo_id in repo_pkgs:
             start_time = time.time()
-            add_pkg_errors = self.add_package(repo_id, repo_pkgs[repo_id])
+            add_pkg_errors, filtered_count = self.add_package(repo_id, repo_pkgs[repo_id])
             for e in add_pkg_errors:
                 filename = e[2]
                 checksum = e[3]

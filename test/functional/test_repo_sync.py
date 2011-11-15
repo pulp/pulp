@@ -62,12 +62,15 @@ class TestRepoSync(testutil.PulpAsyncTest):
         self.protected_repo_utils = ProtectedRepoUtils(self.config)
 
     def test_sync_multiple_repos(self):
-        feeds = {"f14_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/x86_64/", "x86_64"),
-            "f14_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/i386/", "i386"),
-            "el5_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/i386/", "i386"),
+        feeds = { "el5_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/i386/", "i386"),
             "el5_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/x86_64/", "x86_64"),
             "el6_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/i386/", "i386"),
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
+            #    
+            # Note:  rhel5 has issues syncing f16 content if it does not use --compress-type bz2
+            #
+            #"f16_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-16/i386/", "i386"),
+            #"f16_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-16/x86_64/", "x86_64")}
 
         repos = [self.repo_api.create(key, key, value[1], value[0]) for key, value in feeds.items()]
         sync_tasks = []
@@ -78,6 +81,7 @@ class TestRepoSync(testutil.PulpAsyncTest):
             sync_tasks.append(t)
         # Poll tasks and wait for sync to finish
         waiting_tasks = [t.id for t in sync_tasks]
+        saw_error = False
         while len(waiting_tasks) > 0:
             time.sleep(1)
             for t_id in waiting_tasks:
@@ -85,10 +89,13 @@ class TestRepoSync(testutil.PulpAsyncTest):
                 self.assertEquals(len(found_tasks), 1)
                 updated_task = found_tasks[0]
                 if updated_task.state in task.task_complete_states:
-                    self.assertEquals(updated_task.state, task.task_finished)
+                    if updated_task.state != task.task_finished:
+                        saw_error = True
+                        print "Saw error on <%s>" % (updated_task)
+                        print "Task <%s> result = <%s>, exception = <%s>, traceback = <%s>, progress = <%s>" % \
+                          (t_id, updated_task.result, updated_task.exception, updated_task.traceback, updated_task.progress)
                     waiting_tasks.remove(t_id)
-                    #print "Task <%s> result = <%s>, exception = <%s>, traceback = <%s>, progress = <%s>" % \
-                    #      (t_id, updated_task.result, updated_task.exception, updated_task.traceback, updated_task.progress)
+        self.assertFalse(saw_error)
         # Refresh repo objects and verify packages were synced.
         for r in repos:
             synced_repo = self.repo_api.repository(r["id"])
@@ -123,7 +130,6 @@ class TestRepoSync(testutil.PulpAsyncTest):
             for key in keys:
                 self.assertNotEquals(error_entry[key], "")
                 self.assertTrue(error_entry.has_key("error_type"))
-                self.assertTrue(error_entry.has_key("traceback"))
         for e in error_details:
             self.assertTrue(e["fileName"] in ("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm",
                 "pulp-test-package-0.2.1-1.fc11.x86_64.rpm",

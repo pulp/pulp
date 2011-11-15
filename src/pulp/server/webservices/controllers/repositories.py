@@ -1029,13 +1029,13 @@ class RepositoryActions(JSONController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return: list of errors
+        return: list of errors, count of filtered packages
         parameters:
          * packageid, list of str, id of package to add
         """
         data = self.params()
-        errors = api.add_package(id, data['packageid'])
-        return self.ok(errors)
+        errors, filtered_count = api.add_package(id, data['packageid'])
+        return self.ok((errors, filtered_count))
 
     def delete_package(self, id):
         """

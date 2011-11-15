@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.246
+Version:        0.0.248
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -34,12 +34,6 @@ BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-nose
 BuildRequires:  rpm-python
-%if %{pulp_selinux}
-BuildRequires:  make
-BuildRequires:  checkpolicy
-BuildRequires:  selinux-policy-devel
-BuildRequires:  hardlink
-%endif
 
 Requires: %{name}-common = %{version}
 Requires: pymongo >= 1.9
@@ -50,7 +44,7 @@ Requires: python-oauth2
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.127
+Requires: grinder >= 0.0.128
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -74,6 +68,13 @@ Requires: selinux-policy >= %{selinux_policyver}
 %endif
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
+%endif
+BuildRequires:  rpm-python
+%if %{pulp_selinux}
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
 %endif
 
 %if 0%{?rhel} == 5
@@ -172,7 +173,6 @@ Requires: m2crypto
 %else
 Requires: m2crypto = 0.21.1.pulp
 %endif
-
 %if %{pulp_selinux}
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
@@ -180,7 +180,13 @@ Requires: selinux-policy >= %{selinux_policyver}
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
 %endif
-
+BuildRequires:  rpm-python
+%if %{pulp_selinux}
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
+%endif
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp
@@ -202,15 +208,9 @@ popd
 # SELinux Configuration
 cd selinux
 perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' %{modulename}.te
-for selinuxvariant in %{selinux_variants}
-do
-    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
-    mv %{modulename}.pp %{modulename}.pp.${selinuxvariant}
-    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
-done
+./build.sh
 cd -
 %endif
-
 
 %install
 rm -rf %{buildroot}
@@ -293,19 +293,7 @@ cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 %if %{pulp_selinux}
 # Install SELinux policy modules
 cd selinux
-for selinuxvariant in %{selinux_variants}
-  do
-    install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
-    install -p -m 644 %{modulename}.pp.${selinuxvariant} \
-           %{buildroot}%{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp
-  done
-# Install SELinux interfaces
-install -d %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
-install -p -m 644 %{modulename}.if \
-  %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
-
-# Hardlink identical policy module packages together
-/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+./install.sh %{buildroot}%{_datadir}
 cd -
 %endif
 
@@ -342,8 +330,8 @@ chown apache:apache /var/lib/pulp-cds/.cluster-members
 
 %if %{pulp_selinux}
 if /usr/sbin/selinuxenabled ; then
-    for selinuxvariant in %{selinux_variants}
-    do
+for selinuxvariant in %{selinux_variants}
+   do
         /usr/sbin/semodule -s ${selinuxvariant} -i \
         %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
     done
@@ -497,6 +485,55 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Nov 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-1
+- disregard reboot in agent when no packages installed. (jortel@redhat.com)
+- Adjust for rhel5 not being able to sync f16 metadata unless it uses
+  --compress-type bz2 (jmatthews@redhat.com)
+- bumping grinder version to 0.0.128 (pkilambi@redhat.com)
+- exposing distribution arch info from cli (pkilambi@redhat.com)
+- Updated agent Packages.install() API; replaced 'assumeyes' w/ 'importkeys'
+  for clarity. (jortel@redhat.com)
+- 735091 - Added SYSTEMCTL_SKIP_REDIRECT=1 to mitigate systemd issues.
+  (jortel@redhat.com)
+- fixing the repo distribution associate to include subdirectories while
+  symlinking (pkilambi@redhat.com)
+- fix the symlink path to include subdirectories from distro location in local
+  syncs (pkilambi@redhat.com)
+- Distribution Enahncements * Adding new arch field to distribution model +
+  migration * sync and api changes * unit tests updates * changing ditro url to
+  be http (pkilambi@redhat.com)
+- Adding total size in MB to pulp repo sync CLI output (jmatthews@redhat.com)
+
+* Wed Nov 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.247-1
+- 752187 - use the newest task when showing the metadata status
+  (pkilambi@redhat.com)
+- 752195 - dont need to check preserver flag during associations. This is needs
+  to continue even when preserve metadata is set. (pkilambi@redhat.com)
+- 751460 using _id instead (jconnor@redhat.com)
+- started on oauth support in pic (jconnor@redhat.com)
+- simplifying return of _skip_dict (jconnor@redhat.com)
+- website index for CR18. (jortel@redhat.com)
+- Fixed incorrect docs (jason.dobies@redhat.com)
+- updating grinder version (pkilambi@redhat.com)
+- Added return codes where missing in this API (jason.dobies@redhat.com)
+- relaxing requirement and validation on consumer group description
+  (jconnor@redhat.com)
+- re-ran doc generation (jconnor@redhat.com)
+- fixed wiki doc processing macro that was causing wiki docs to not get
+  generated for repo sync history (jconnor@redhat.com)
+- fixed bug that could cause notes to be None (jconnor@redhat.com)
+- adding checksum type to packageinfo object during uploads
+  (pkilambi@redhat.com)
+- The /v2 REST discovery URL is breaking all of the /v2 URLs.
+  (jason.dobies@redhat.com)
+- Add gofer plugin requires: package to ensure proper plugin loading order.
+  (jortel@redhat.com)
+- 745751 - use relativepath when constructing download urls for repo packages
+  (pkilambi@redhat.com)
+- Refit pulpplugin to leverage gofer-package. (jortel@redhat.com)
+- no need to generate updateinfo.xml if metadata is preserved
+  (pkilambi@redhat.com)
+
 * Wed Nov 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.246-1
 - 750913,750915 - Fix CLI package uninstall help and error messages.
   (jortel@redhat.com)
