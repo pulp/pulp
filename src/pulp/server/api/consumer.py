@@ -651,6 +651,7 @@ class ConsumerApi(BaseApi):
 
         errataids = [eid['id'] for repoid in repoids \
                      for eid in self.repoapi.errata(repoid, types) ]
+
         for erratumid in errataids:
             # compare errata packages to consumer package profile and
             # extract applicable errata
@@ -686,15 +687,19 @@ class ConsumerApi(BaseApi):
     @audit()
     def get_consumers_applicable_errata(self, repoids):
         """
+        List all errata associated with a group of repositories along with consumers that it is applicable to
         """
         all_repo_errata = []
+
+        # Get all errata ids from all given repositories
         for repoid in repoids:
             repo = self.repoapi.repository(repoid)
             if not repo:
                 raise PulpException('Repository [%s] does not exist', repoid)
-            for type_errata, errata in repo['errata'].items():
+            for errata in repo['errata'].values():
                 all_repo_errata.extend(errata)
 
+        # Initialize applicable_errata_consumers with errata id and empty list of applicable consumers
         applicable_errata_consumers = {}
         for erratum in all_repo_errata:
             applicable_errata_consumers[erratum] = []
@@ -702,13 +707,15 @@ class ConsumerApi(BaseApi):
         for repoid in repoids:
             registered_consumers = [ consumer for consumer in self.consumers() \
                                     if repoid in consumer['repoids']]
+
             repo_errataids = []
-            for type_errata, errata in repo['errata'].items():
+            repo = self.repoapi.repository(repoid)
+            for errata in repo['errata'].values():
                 repo_errataids.extend(errata)
 
+            # for each consumer add itself to applicable_errata_consumers for applicable errata id
             for consumer in registered_consumers:
-                applicable_errata = self._applicable_errata(consumer=consumer, repoids=[repoid]).keys()
-
+                applicable_errata = self._applicable_errata(consumer=consumer, repoids=[repoid])
                 for repo_errataid in repo_errataids:
                     if repo_errataid in applicable_errata:
                         applicable_errata_consumers[repo_errataid].append(consumer['id'])
