@@ -31,12 +31,18 @@ class MissingImporter(Exception):
     """
     Indicates an importer was requested that does not exist.
     """
-    def __init__(self, importer_name):
+    pass
+
+class InvalidImporterType(Exception):
+    """
+    Indicates an importer type was requested that doesn't exist.
+    """
+    def __init__(self, importer_type_id):
         Exception.__init__(self)
-        self.importer_name = importer_name
+        self.importer_type_id = importer_type_id
 
     def __str__(self):
-        return _('No importer with name [%(name)s]' % {'name' : self.importer_name})
+        return _('No importer type with id [%(id)s]' % {'id' : self.importer_type_id})
 
 class InvalidImporterConfiguration(Exception):
     """
@@ -55,6 +61,9 @@ class ImporterInitializationException(Exception):
 # -- manager ------------------------------------------------------------------
 
 class RepoImporterManager:
+
+    def get_importer(self, repo_id):
+        pass
 
     def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
@@ -75,9 +84,11 @@ class RepoImporterManager:
         @type  repo_plugin_config: dict
 
         @raises MissingRepo: if repo_id does not represent a valid repo
-        @raises MissingImporter: if there is no importer with importer_type_id
+        @raises InvalidImporterType: if there is no importer with importer_type_id
         @raises InvalidImporterConfiguration: if the importer cannot be initialized
                 for the given repo
+        @raises ImporterInitializationException: if the plugin raises an error
+                during initialization
         """
 
         repo_coll = Repo.get_collection()
@@ -89,7 +100,7 @@ class RepoImporterManager:
             raise MissingRepo(repo_id)
 
         if not plugin_loader.is_valid_importer(importer_type_id):
-            raise MissingImporter(importer_type_id)
+            raise InvalidImporterType(importer_type_id)
 
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
 
@@ -108,7 +119,10 @@ class RepoImporterManager:
             raise InvalidImporterConfiguration()
 
         # Remove old importer if one exists
-        self.remove_importer(repo_id)
+        try:
+            self.remove_importer(repo_id)
+        except MissingImporter:
+            pass # it didn't exist, so no harm done
 
         # Let the importer plugin initialize the repository
         try:
@@ -123,14 +137,17 @@ class RepoImporterManager:
         importer = RepoImporter(repo_id, importer_id, importer_type_id, repo_plugin_config)
         importer_coll.save(importer, safe=True)
 
+        return importer
+
     def remove_importer(self, repo_id):
         """
-        Removes an importer from a repository. If there are no importers on
-        the given repository, this call has no effect and will not raise
-        an error.
+        Removes an importer from a repository.
 
         @param repo_id: identifies the repo
         @type  repo_id: str
+
+        @raises MissingRepo: if the given repo does not exist
+        @raises MissingImporter: if the given repo does not have an importer
         """
 
         repo_coll = Repo.get_collection()
@@ -143,9 +160,8 @@ class RepoImporterManager:
 
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
 
-        # If the importer isn't there, this call's job is already done
         if repo_importer is None:
-            return
+            raise MissingImporter()
 
         # Call the importer's cleanup method
         importer_type_id = repo_importer['importer_type_id']
@@ -173,6 +189,11 @@ class RepoImporterManager:
 
         @param importer_config: new configuration values to use for this repo
         @type  importer_config: dict
+
+        @raises MissingRepo: if the given repo does not exist
+        @raises MissingImporter: if the given repo does not have an importer
+        @raises InvalidImporterConfiguration: if the plugin indicates the given
+                configuration is invalid
         """
 
         repo_coll = Repo.get_collection()
@@ -185,7 +206,7 @@ class RepoImporterManager:
 
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
         if repo_importer is None:
-            raise MissingImporter(None)
+            raise MissingImporter()
 
         importer_type_id = repo_importer['importer_type_id']
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)

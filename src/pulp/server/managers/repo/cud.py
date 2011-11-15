@@ -219,6 +219,16 @@ class RepoManager:
         fields may be updated through this call:
         * display_name
         * description
+
+        Other fields found in delta will be ignored.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param delta: list of attributes and their new values to change
+        @type  delta: dict
+
+        @raises MissingRepo: if there is no repo with repo_id
         """
 
         repo_coll = Repo.get_collection()

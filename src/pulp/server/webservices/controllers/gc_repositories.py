@@ -14,7 +14,6 @@
 
 # Python
 import logging
-from gettext import gettext as _
 
 # 3rd Party
 import web
@@ -22,10 +21,12 @@ import web
 # Pulp
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo._common import MissingRepo
 from pulp.server.managers.repo.cud import DuplicateRepoId, InvalidRepoId, InvalidRepoMetadata
+from pulp.server.managers.repo.importer import MissingImporter, InvalidImporterConfiguration, ImporterInitializationException, InvalidImporterType
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices.serialization.error import http_error_obj
+from pulp.server.webservices.serialization.error import http_error_obj, exception_obj
 
 # -- constants ----------------------------------------------------------------
 
@@ -65,16 +66,14 @@ class RepoCollection(JSONController):
 
         try:
             repo = repo_manager.create_repo(id, display_name, description, notes)
+            # TODO: explicitly serialize repo for return
+            return self.ok(repo)
         except DuplicateRepoId:
             serialized = http_error_obj(409)
             return self.conflict(serialized)
         except (InvalidRepoId, InvalidRepoMetadata):
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
-
-        # TODO: explicitly serialize repo for return
-
-        return self.ok(repo)
 
 class RepoResource(JSONController):
 
@@ -84,17 +83,33 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-
-        # Deletion
         repo_manager = manager_factory.repo_manager()
-        repo_manager.delete_repo(id)
 
-        return self.ok(True)
+        try:
+            repo_manager.delete_repo(id)
+            return self.ok(None)
+        except MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
     @auth_required(UPDATE)
     def PUT(self, id):
-        pass
+        parameters = self.params()
+        delta = parameters.get('delta', None)
 
+        if delta is None:
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
+
+        repo_manager = manager_factory.repo_manager()
+
+        try:
+            repo_manager.update_repo(id, delta)
+            return self.ok(None)
+        except MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+        
 # -- importer controllers -----------------------------------------------------
 
 class RepoImporters(JSONController):
@@ -115,11 +130,26 @@ class RepoImporters(JSONController):
         importer_type = params.get('importer_type_id', None)
         importer_config = params.get('importer_config', None)
 
-        # Update the repo
-        importer_manager = manager_factory.repo_importer_manager()
-        importer_manager.set_importer(repo_id, importer_type, importer_config)
+        if importer_type is None:
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
 
-        return self.ok(True)
+        # Note: If an importer exists, it's removed, so no need to handle 409s.
+        # Note: If the plugin raises an exception during initialization, let it
+        #  bubble up and be handled like any other 500.
+
+        importer_manager = manager_factory.repo_importer_manager()
+
+        try:
+            importer = importer_manager.set_importer(repo_id, importer_type, importer_config)
+            # TODO: serialize importer
+            return self.ok(importer)
+        except MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+        except (InvalidImporterType, InvalidImporterConfiguration):
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
 
 class RepoImporter(JSONController):
 
@@ -129,11 +159,43 @@ class RepoImporter(JSONController):
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, importer_id):
-        pass
+
+        # This is kind of REST ghetto. The importer_id is required for REST URL
+        # purposes but isn't actually used in the managers. So we attempt to
+        # look up the importer for the repo and if it's not there, raise the
+        # expected 404.
+
+        importer_manager = manager_factory.repo_importer_manager()
+
+        existing_importer = importer_manager.get_importer(repo_id)
+        if existing_importer is None:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+
+        try:
+            importer_manager.remove_importer(repo_id)
+            return self.ok(None)
+        except (MissingRepo, MissingImporter):
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
-        pass
+
+        # See comment above on REST ghetto as to why this importer ID isn't used
+
+        # Params (validation will occur in the manager)
+        params = self.params()
+        importer_config = params.get('importer_config', None)
+
+        importer_manager = manager_factory.repo_importer_manager()
+
+        try:
+            importer_manager.update_importer_config(repo_id, importer_config)
+            return self.ok(None)
+        except (MissingRepo, MissingImporter):
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
 # -- distributor controllers --------------------------------------------------
 

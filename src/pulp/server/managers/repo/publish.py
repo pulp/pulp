@@ -28,6 +28,7 @@ import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo._common import MissingRepo
 
 # -- constants ----------------------------------------------------------------
 
@@ -53,12 +54,6 @@ class NoDistributor(RepoPublishException):
     """
     Indicates a sync was requested on a repository that is not configured
     with an distributor.
-    """
-    pass
-
-class MissingRepo(RepoPublishException):
-    """
-    Indicates an operation was requested against a repo that doesn't exist.
     """
     pass
 
@@ -171,6 +166,8 @@ class RepoPublishManager:
         repo_distributor['publish_in_progress'] = False
         repo_distributor['last_publish'] = _publish_finished_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
+
+        return repo_distributor
 
     def unpublish(self, repo_id, distributor_id):
         pass

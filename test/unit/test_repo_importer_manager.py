@@ -64,7 +64,7 @@ class RepoManagerTests(testutil.PulpTest):
         importer_config = {'foo' : 'bar'}
 
         # Test
-        self.importer_manager.set_importer('importer-test', 'mock-importer', importer_config)
+        created = self.importer_manager.set_importer('importer-test', 'mock-importer', importer_config)
 
         # Verify
 
@@ -74,6 +74,12 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('mock-importer', importer['id'])
         self.assertEqual('mock-importer', importer['importer_type_id'])
         self.assertEqual(importer_config, importer['config'])
+
+        #   Return Value
+        self.assertEqual('importer-test', created['repo_id'])
+        self.assertEqual('mock-importer', created['id'])
+        self.assertEqual('mock-importer', created['importer_type_id'])
+        self.assertEqual(importer_config, created['config'])
 
         #   Plugin - Validate Config
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_added.call_count)
@@ -118,8 +124,8 @@ class RepoManagerTests(testutil.PulpTest):
         # Test
         try:
             self.importer_manager.set_importer('real-repo', 'fake-importer', None)
-        except importer_manager.MissingImporter, e:
-            self.assertEqual(e.importer_name, 'fake-importer')
+        except importer_manager.InvalidImporterType, e:
+            self.assertEqual(e.importer_type_id, 'fake-importer')
             print(e) # for coverage
 
     def test_set_importer_with_existing(self):
@@ -238,6 +244,21 @@ class RepoManagerTests(testutil.PulpTest):
             self.fail('Exception expected')
         except importer_manager.MissingRepo, e:
             self.assertEqual(e.repo_id, 'not-there')
+
+    def test_remove_importer_missing_importer(self):
+        """
+        Tests removing an importer from a repo that doesn't have one.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('solitude')
+
+        # Test
+        try:
+            self.importer_manager.remove_importer('solitude')
+            self.fail('Exception expected')
+        except importer_manager.MissingImporter:
+            pass
 
     # -- update ---------------------------------------------------------------
 

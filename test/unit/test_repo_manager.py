@@ -63,7 +63,7 @@ class RepoManagerTests(testutil.PulpTest):
         notes = {'note1' : 'value1'}
 
         # Test
-        self.manager.create_repo(id, name, description, notes)
+        created = self.manager.create_repo(id, name, description, notes)
 
         # Verify
         repos = list(Repo.get_collection().find())
@@ -74,6 +74,11 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual(name, repo['display_name'])
         self.assertEqual(description, repo['description'])
         self.assertEqual(notes, repo['notes'])
+
+        self.assertEqual(id, created['id'])
+        self.assertEqual(name, created['display_name'])
+        self.assertEqual(description, created['description'])
+        self.assertEqual(notes, created['notes'])
 
     def test_create_defaults(self):
         """
