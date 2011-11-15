@@ -794,6 +794,10 @@ def _load_plugin_classes(module_name, base_class):
     attr_list = []
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
+        # Allows the plugin writer to prefix a plugin subclass with _ to treat
+        # it as a non-loaded base class
+        if attr_name.startswith('_'):
+            continue
         if not isinstance(attr, type):
             continue
         if not issubclass(attr, base_class):
