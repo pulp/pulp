@@ -62,6 +62,31 @@ class $PLUGIN_TITLE($BASE_TITLE):
         return data
 ''')
 
+_MULTI_PLUGIN_TEMPLATE = string.Template('''
+from pulp.server.content.plugins.$BASE_NAME import $BASE_TITLE
+
+class Plugin1($BASE_TITLE):
+    @classmethod
+    def metadata(cls):
+        data = {'id': 'plugin1',
+                'types': $TYPE_LIST}
+        return data
+
+class Plugin2($BASE_TITLE):
+    @classmethod
+    def metadata(cls):
+        data = {'id': 'plugin2',
+                'types': $TYPE_LIST}
+        return data
+
+class Plugin3($BASE_TITLE):
+    @classmethod
+    def metadata(cls):
+        data = {'id': 'plugin3',
+                'types': $TYPE_LIST}
+        return data
+''')
+
 _CONF_TEMPLATE = string.Template('''
 {"enabled": $ENABLED}
 ''')
@@ -99,6 +124,37 @@ def gen_plugin(root, type_, name, types, enabled=True):
     handle.close()
     # return the top level directory
     return os.path.join(root, '%ss' % base_name)
+
+def gen_multi_plugin(root, type_, name, types, enabled=True):
+    base_name = type_.lower()
+    base_title = type_.title()
+    plugin_name = name.lower()
+    type_list = '[%s]' % ', '.join('\'%s\'' % t for t in types)
+    # create the directory
+    plugin_dir = os.path.join(root, '%ss' % base_name, plugin_name)
+    os.makedirs(plugin_dir)
+    # write the package module
+    pck_name = os.path.join(plugin_dir, '__init__.py')
+    handle = open(pck_name, 'w')
+    handle.write('\n')
+    handle.close()
+    # write the plugin module
+    contents = _MULTI_PLUGIN_TEMPLATE.safe_substitute({'BASE_NAME': base_name,
+                                                 'BASE_TITLE': base_title,
+                                                 'TYPE_LIST': type_list})
+    mod_name = os.path.join(plugin_dir, '%s.py' % base_name)
+    handle = open(mod_name, 'w')
+    handle.write(contents)
+    handle.close()
+    # write plugin config
+    contents = _CONF_TEMPLATE.safe_substitute({'ENABLED': str(enabled).lower()})
+    cfg_name = os.path.join(plugin_dir, '%s.conf' % plugin_name)
+    handle = open(cfg_name, 'w')
+    handle.write(contents)
+    handle.close()
+    # return the top level directory
+    return os.path.join(root, '%ss' % base_name)
+
 
 # test classes
 
@@ -303,6 +359,22 @@ class LoaderFileSystemOperationsTests(LoaderTest):
 
         cls_3 = self.loader.get_distributor_by_id('bazdistributor')[0]
         self.assertTrue(issubclass(cls_3, Distributor))
+
+    def test_multiple_importers_per_plugin(self):
+        """
+        Tests a single plugin that contains multiple importers.
+        """
+
+        # Setup
+        plugin_root = gen_plugin_root()
+        imp_root = gen_multi_plugin(plugin_root, 'importer', 'MultiImporter', ['foo'])
+
+        # Test
+        self.loader.load_importers_from_path(imp_root)
+
+        # Verify
+        loaded = self.loader.get_loaded_importers()
+        self.assertEqual(3, len(loaded))
 
 
     def test_multiple_with_disabled(self):
