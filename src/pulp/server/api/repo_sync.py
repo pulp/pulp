@@ -179,7 +179,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
     repo = repo_api.repository(repo_id)
     task = run_async(_sync,
                         [repo_id],
-                        {'skip_dict':skip,
+                        {'skip':skip,
                         'max_speed':max_speed,
                         'threads':threads},
                         timeout=timeout,
@@ -217,7 +217,7 @@ def get_synchronizer(source_type):
     return synchronizer
 
 
-def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
+def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
           max_speed=None, threads=None):
     """
     Sync a repo from the URL contained in the feed
@@ -240,8 +240,8 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
 
     try:
         log.info("Sync invoked for repo <%s>" % (repo_id))
-        if not skip_dict:
-            skip_dict = {}
+        if not skip:
+            skip = {}
         repo = repo_api._get_existing_repo(repo_id)
         repo_source = repo['source']
         if not repo_source:
@@ -253,10 +253,10 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
                 source = repo['content_types']
             synchronizer = get_synchronizer(source)
             synchronizer.set_callback(progress_callback)
-        log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip_dict))
+        log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip))
         start_sync_items = time.time()
 
-        sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip_dict,
+        sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()
         log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
@@ -264,7 +264,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call
         repo = repo_api._get_existing_repo(repo_id)
-        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+        if not skip.has_key('packages') or skip['packages'] != 1:
             old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
             old_pkgs = map(package_api.package, old_pkgs)
             old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
@@ -283,7 +283,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
             # Update repo for package additions
             repo_api.collection.save(repo, safe=True)
 
-        if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
+        if not skip.has_key('errata') or skip['errata'] != 1:
             # Determine removed errata
             synchronizer.progress_callback(step="Processing Errata")
             log.info("Examining %s errata from repo %s" % (len(repo_api.errata(repo_id)), repo_id))
