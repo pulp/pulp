@@ -101,20 +101,11 @@ class RepoManagerTests(testutil.PulpTest):
         Tests adding a second distributor to a repository.
         """
 
-        # Setup
-        class MockDistributor2:
-            @classmethod
-            def metadata(cls):
-                return {'types': ['mock_type_2']}
-            def validate_config(self, repo_data, distributor_config):
-                return True
-        plugin_loader._LOADER.add_distributor('MockDistributor2', MockDistributor2, {})
-
         self.repo_manager.create_repo('test_me')
         self.distributor_manager.add_distributor('test_me', 'mock-distributor', None, True, distributor_id='dist_1')
 
         # Test
-        self.distributor_manager.add_distributor('test_me', 'MockDistributor2', None, True, distributor_id='dist_2')
+        self.distributor_manager.add_distributor('test_me', 'mock-distributor-2', None, True, distributor_id='dist_2')
 
         # Verify
         all_distributors = list(RepoDistributor.get_collection().find())

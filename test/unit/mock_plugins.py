@@ -48,6 +48,7 @@ class MockDistributor(mock.Mock):
 
 MOCK_IMPORTER = MockImporter()
 MOCK_DISTRIBUTOR = MockDistributor()
+MOCK_DISTRIBUTOR_2 = MockDistributor()
 
 # -- public -------------------------------------------------------------------
 
@@ -60,6 +61,7 @@ def install():
 
     plugin_loader._LOADER.add_importer('mock-importer', MockImporter, {})
     plugin_loader._LOADER.add_distributor('mock-distributor', MockDistributor, {})
+    plugin_loader._LOADER.add_distributor('mock-distributor-2', MockDistributor, {})
 
     # -- return mock instances instead of ephemeral ones ----------------------
 
@@ -73,7 +75,11 @@ def install():
     # Return the mock instance; eventually can enhance this to support
     # multiple IDs and instances
     def mock_get_distributor_by_id(id):
-        return MOCK_DISTRIBUTOR, {}
+        mappings = {
+            'mock-distributor' : MOCK_DISTRIBUTOR,
+            'mock-distributor-2' : MOCK_DISTRIBUTOR_2,
+        }
+        return mappings[id], {}
 
     def mock_get_importer_by_id(id):
         return MOCK_IMPORTER, {}
@@ -87,6 +93,7 @@ def install():
     # By default, have the plugins indicate configurations are valid
     MOCK_IMPORTER.validate_config.return_value = True
     MOCK_DISTRIBUTOR.validate_config.return_value = True
+    MOCK_DISTRIBUTOR_2.validate_config.return_value = True
 
 def reset():
     """
@@ -96,6 +103,7 @@ def reset():
     # Reset the mock instances; reset doesn't do everything hence the manual steps
     MOCK_IMPORTER.reset_mock()
     MOCK_DISTRIBUTOR.reset_mock()
+    MOCK_DISTRIBUTOR_2.reset_mock()
 
     # Undo the monkey patch
     plugin_loader.get_distributor_by_id = _ORIG_GET_DISTRIBUTOR_BY_ID
@@ -104,3 +112,4 @@ def reset():
     # Clean out the loaded plugin types
     plugin_loader._LOADER.remove_importer('mock-importer')
     plugin_loader._LOADER.remove_distributor('mock-distributor')
+    plugin_loader._LOADER.remove_distributor('mock-distributor-2')
