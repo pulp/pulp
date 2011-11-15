@@ -158,11 +158,15 @@ class RepoManagerTests(testutil.PulpTest):
 
     def test_delete_repo_no_repo(self):
         """
-        Tests that deleting a repo that doesn't exist does not throw an error.
+        Tests that deleting a repo that doesn't exist raises the appropriate error.
         """
 
         # Test
-        self.manager.delete_repo('fake repo') # should not error
+        try:
+            self.manager.delete_repo('fake repo')
+            self.fail('Exception expected')
+        except repo_manager.MissingRepo, e:
+            self.assertEqual(e.repo_id, 'fake repo')
 
     def test_delete_with_plugins(self):
         """

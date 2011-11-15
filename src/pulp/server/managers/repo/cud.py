@@ -140,12 +140,12 @@ class RepoManager:
     def delete_repo(self, repo_id):
         """
         Deletes the given repository, optionally requesting the associated
-        importer clean up any content in the repository. If there is no
-        repository with the given ID, this call does nothing.
+        importer clean up any content in the repository.
 
         @param repo_id: identifies the repo being deleted
         @type  repo_id: str
 
+        @raises MissingRepo: if the given repo does not exist
         @raises RepoDeleteException: if any part of the delete process fails;
                 the exception will contain information on which sections failed
         """
@@ -153,8 +153,7 @@ class RepoManager:
         # Validation
         found = Repo.get_collection().find_one({'id' : repo_id})
         if found is None:
-            _LOG.warn('Delete called on a non-existent repository [%(id)s]. Nothing to do.' % {'id' : repo_id})
-            return
+            raise MissingRepo(repo_id)
 
         # With so much going on during a delete, it's possible that a few things
         # could go wrong while others are successful. We track lesser errors
