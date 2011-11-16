@@ -410,6 +410,99 @@ class RepoManagerTests(testutil.PulpTest):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
+    # -- get ------------------------------------------------------------------
+
+    def test_get_distributor(self):
+        """
+        Tests the successful case of getting a repo distributor.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('fire')
+        distributor_config = {'element' : 'fire'}
+        self.distributor_manager.add_distributor('fire', 'mock-distributor', distributor_config, True, distributor_id='flame')
+
+        # Test
+        distributor = self.distributor_manager.get_distributor('fire', 'flame')
+
+        # Verify
+        self.assertTrue(distributor is not None)
+        self.assertEqual(distributor['id'], 'flame')
+        self.assertEqual(distributor['repo_id'], 'fire')
+        self.assertEqual(distributor['config'], distributor_config)
+
+    def test_get_distributor_missing_repo(self):
+        """
+        Tests the case of getting a distributor for a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.distributor_manager.get_distributor('fake', 'irrelevant')
+            self.fail('Exception expected')
+        except errors.MissingDistributor, e:
+            self.assertEqual('irrelevant', e.distributor_id)
+
+    def test_get_distributor_missing_distributor(self):
+        """
+        Tests the case of getting a distributor that doesn't exist on a valid repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('empty')
+
+        # Test
+        try:
+            self.distributor_manager.get_distributor('empty', 'irrelevant')
+            self.fail('Exception expected')
+        except errors.MissingDistributor, e:
+            self.assertEqual('irrelevant', e.distributor_id)
+
+    def test_get_distributors(self):
+        """
+        Tests getting all distributors in the normal successful case.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('ice')
+        distributor_config = {'element' : 'ice'}
+        self.distributor_manager.add_distributor('ice', 'mock-distributor', distributor_config, True, distributor_id='snowball-1')
+        self.distributor_manager.add_distributor('ice', 'mock-distributor', distributor_config, True, distributor_id='snowball-2')
+
+        # Test
+        distributors = self.distributor_manager.get_distributors('ice')
+
+        # Verify
+        self.assertTrue(distributors is not None)
+        self.assertEqual(2, len(distributors))
+        
+    def test_get_distributors_none(self):
+        """
+        Tests an empty list is returned when none are present on the repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('empty')
+
+        # Test
+        distributors = self.distributor_manager.get_distributors('empty')
+
+        # Verify
+        self.assertTrue(distributors is not None)
+        self.assertEqual(0, len(distributors))
+
+    def test_get_distributors_missing_repo(self):
+        """
+        Tests the proper error is raised when getting distributors on a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.distributor_manager.get_distributors('fake')
+            self.fail('Exception expected')
+        except errors.MissingRepo, e:
+            self.assertEqual('fake', e.repo_id)
+
     # -- scratchpad -----------------------------------------------------------
 
     def test_get_set_distributor_scratchpad(self):

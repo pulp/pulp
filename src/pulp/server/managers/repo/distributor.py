@@ -33,8 +33,50 @@ _LOG = logging.getLogger(__name__)
 
 class RepoDistributorManager:
 
+    def get_distributor(self, repo_id, distributor_id):
+        """
+        Returns an individual distributor on the given repo.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the distributor
+        @type  distributor_id: str
+
+        @return: key-value pairs describing the distributor
+        @rtype:  dict
+
+        @raises MissingDistributor: if either the repo doesn't exist or there is no
+                    distributor with the given ID
+        """
+
+        distributor = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
+
+        if distributor is None:
+            raise MissingDistributor(distributor_id)
+
+        return distributor
+
     def get_distributors(self, repo_id):
-        pass
+        """
+        Returns all distributors on the given repo.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @return: list of key-value pairs describing the distributors; empty list
+                 if there are none for the given repo
+        @rtype:  list of dict or None
+
+        @raises MissingRepo: if the given repo doesn't exist
+        """
+
+        repo = Repo.get_collection().find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        distributors = list(RepoDistributor.get_collection().find({'repo_id' : repo_id}))
+        return distributors
 
     def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
                         auto_distribute, distributor_id=None):
