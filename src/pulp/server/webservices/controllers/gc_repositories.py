@@ -200,8 +200,9 @@ class RepoImporter(JSONController):
 
         importer_manager = manager_factory.repo_importer_manager()
 
-        existing_importer = importer_manager.get_importer(repo_id)
-        if existing_importer is None:
+        try:
+            importer_manager.get_importer(repo_id)
+        except errors.MissingImporter:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -228,8 +229,8 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
 
         try:
-            importer_manager.update_importer_config(repo_id, importer_config)
-            return self.ok(None)
+            importer = importer_manager.update_importer_config(repo_id, importer_config)
+            return self.ok(importer)
         except (errors.MissingRepo, errors.MissingImporter):
             serialized = http_error_obj(404)
             return self.not_found(serialized)

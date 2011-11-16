@@ -226,6 +226,8 @@ class RepoImporterManager:
         repo_importer['config'] = importer_config
         importer_coll.save(repo_importer, safe=True)
 
+        return repo_importer
+
     def get_importer_scratchpad(self, repo_id):
         """
         Returns the contents of the importer's scratchpad for the given repo.

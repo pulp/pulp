@@ -274,13 +274,16 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Test
         new_config = {'key' : 'updated'}
-        self.importer_manager.update_importer_config('winterhold', new_config)
+        updated = self.importer_manager.update_importer_config('winterhold', new_config)
 
         # Verify
 
         #    Database
         importer = RepoImporter.get_collection().find_one({'repo_id' : 'winterhold', 'id' : 'mock-importer'})
         self.assertEqual(importer['config'], new_config)
+
+        #    Return Value
+        self.assertEqual(updated['config'], new_config)
 
         #    Plugin
         self.assertEqual(2, mock_plugins.MOCK_IMPORTER.validate_config.call_count) # initial and update
