@@ -147,7 +147,7 @@ class PackageSearch(JSONController):
             checksum_type=checksum_type, regex=regex)
         repoids = None
         if data.has_key("repoids"):
-            repoids = eval(data["repoids"])
+            repoids = data["repoids"]
         initial_search_end = time.time()
 
         for p in pkgs:

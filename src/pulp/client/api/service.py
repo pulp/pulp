@@ -38,7 +38,7 @@ class ServiceAPI(PulpAPI):
         if checksum:
             data["checksum"] = checksum
         if repoids:
-            data["repoids"] = repoids
+            data["repoids"] = eval(repoids)
         data["regex"] = regex
         path = "/services/search/packages/"
         return self.server.POST(path, data)[1]
