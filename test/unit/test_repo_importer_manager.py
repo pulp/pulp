@@ -376,7 +376,6 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual(importer['repo_id'], 'trance')
         self.assertEqual(importer['config'], importer_config)
 
-
     def test_get_importer_missing_repo(self):
         """
         Tests getting the importer for a repo that doesn't exist.
@@ -395,6 +394,50 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Test
         self.assertRaises(errors.MissingImporter, self.importer_manager.get_importer, 'empty')
+
+    def test_get_importers(self):
+        """
+        Tests the successful case of getting the importer list for a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('trance')
+        self.importer_manager.set_importer('trance', 'mock-importer', {})
+
+        # Test
+        importers = self.importer_manager.get_importers('trance')
+
+        # Verify
+        self.assertTrue(importers is not None)
+        self.assertEqual(1, len(importers))
+        self.assertEqual('mock-importer', importers[0]['id'])
+        
+    def test_get_importers_none(self):
+        """
+        Tests an empty list is returned for a repo that has none.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('trance')
+
+        # Test
+        importers = self.importer_manager.get_importers('trance')
+
+        # Verify
+        self.assertTrue(importers is not None)
+        self.assertEqual(0, len(importers))
+
+    def test_get_importers_missing_repo(self):
+        """
+        Tests an exception is raised when getting importers for a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.importer_manager.get_importers('fake')
+            self.fail('Exception expected')
+        except errors.MissingRepo, e:
+            self.assertEqual('fake', e.repo_id)
 
     # -- scratchpad -----------------------------------------------------------
 

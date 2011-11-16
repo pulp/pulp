@@ -44,6 +44,24 @@ class RepoImporterManager:
 
         return importer
 
+    def get_importers(self, repo_id):
+        """
+        Returns a list of all importers associated with the given repo.
+
+        @return: list of key-value pairs describing the importers in use; empty
+                 list if the repo has no importers
+        @rtype:  list of dict or None
+
+        @raises MissingRepo: if the given repo doesn't exist
+        """
+
+        repo = Repo.get_collection().find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        importers = list(RepoImporter.get_collection().find({'repo_id' : repo_id}))
+        return importers
+
     def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
         Configures an importer to be used for the given repository.
