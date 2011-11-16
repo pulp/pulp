@@ -35,12 +35,24 @@ class MissingDistributor(Exception):
     """
     Indicates a distributor was requested that does not exist.
     """
-    def __init__(self, distributor_name):
+    def __init__(self, distributor_id):
         Exception.__init__(self)
-        self.distributor_name = distributor_name
+        self.distributor_id = distributor_id
 
     def __str__(self):
-        return _('No distributor with name [%(name)s]' % {'name' : self.distributor_name})
+        return _('No distributor with ID [%(id)s]' % {'id' : self.distributor_id})
+
+class InvalidDistributorType(Exception):
+    """
+    Indicates a distributor type was requested that doesn't exist.
+    """
+    def __init__(self, distributor_type_id):
+        Exception.__init__(self)
+        self.distributor_type_id = distributor_type_id
+
+    def __str__(self):
+        return _('No distributor type with id [%(id)s]' % {'id' : self.distributor_type_id})
+    
 
 class InvalidDistributorId(Exception):
     """
@@ -70,6 +82,9 @@ class DistributorInitializationException(Exception):
 # -- manager ------------------------------------------------------------------
 
 class RepoDistributorManager:
+
+    def get_distributors(self, repo_id):
+        pass
 
     def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
                         auto_distribute, distributor_id=None):
@@ -101,9 +116,13 @@ class RepoDistributorManager:
         @return: ID assigned to the distributor (only valid in conjunction with the repo)
 
         @raises MissingRepo: if the given repo_id does not refer to a valid repo
-        @raises MissingDistributor: if the given distributor type ID does not
-                                    refer to a valid distributor
+        @raises InvalidDistributorType: if the given distributor type ID does not
+                                        refer to a valid distributor
         @raises InvalidDistributorId: if the distributor ID is provided and unacceptable
+        @raises InvalidDistributorConfiguration: if the distributor plugin does not
+                    accept the given configuration
+        @raises DistributorInitializationException: if the distributor fails
+                    while initializing itself to handle the repo
         """
 
         repo_coll = Repo.get_collection()
@@ -115,7 +134,7 @@ class RepoDistributorManager:
             raise MissingRepo(repo_id)
 
         if not plugin_loader.is_valid_distributor(distributor_type_id):
-            raise MissingDistributor(distributor_type_id)
+            raise InvalidDistributorType(distributor_type_id)
 
         # Determine the ID for this distributor on this repo; will be
         # unique for all distributors on this repository but not globally
@@ -143,7 +162,10 @@ class RepoDistributorManager:
             raise InvalidDistributorConfiguration()
 
         # Remove the old distributor if it exists
-        self.remove_distributor(repo_id, distributor_id)
+        try:
+            self.remove_distributor(repo_id, distributor_id)
+        except MissingDistributor:
+            pass # if it didn't exist, no problem
 
         # Let the distributor plugin initialize the repository
         try:
@@ -156,13 +178,11 @@ class RepoDistributorManager:
         distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, repo_plugin_config, auto_distribute)
         distributor_coll.save(distributor, safe=True)
 
-        return distributor_id
+        return distributor
 
     def remove_distributor(self, repo_id, distributor_id):
         """
-        Removes a distributor from a repository. If there is no
-        distributor with the given ID on the repository, this call has no effect
-        and will not raise an error.
+        Removes a distributor from a repository.
 
         @param repo_id: identifies the repo
         @type  repo_id: str
@@ -171,6 +191,7 @@ class RepoDistributorManager:
         @type  distributor_id: str
 
         @raises MissingRepo: if repo_id doesn't correspond to a valid repo
+        @raises MissingDistributor: if there is no distributor with the given ID
         """
 
         repo_coll = Repo.get_collection()
@@ -183,7 +204,7 @@ class RepoDistributorManager:
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            return
+            raise MissingDistributor(distributor_id)
 
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']
@@ -214,6 +235,10 @@ class RepoDistributorManager:
 
         @param distributor_config: new configuration values to use
         @type  distributor_config: dict
+
+        @raises MissingRepo: if the given repo doesn't exist
+        @raises MissingDistributor: if the given distributor doesn't exist
+        @raises InvalidDistributorConfiguration: if the plugin rejects the given changes
         """
 
         repo_coll = Repo.get_collection()

@@ -64,7 +64,7 @@ class RepoManagerTests(testutil.PulpTest):
         config = {'foo' : 'bar'}
 
         # Test
-        self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, True, distributor_id='my_dist')
+        added = self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, True, distributor_id='my_dist')
 
         # Verify
 
@@ -76,6 +76,13 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('test_me', all_distributors[0]['repo_id'])
         self.assertEqual(config, all_distributors[0]['config'])
         self.assertTrue(all_distributors[0]['auto_distribute'])
+
+        #   Returned Value
+        self.assertEqual('my_dist', added['id'])
+        self.assertEqual('mock-distributor', added['distributor_type_id'])
+        self.assertEqual('test_me', added['repo_id'])
+        self.assertEqual(config, added['config'])
+        self.assertTrue(added['auto_distribute'])
 
         #   Plugin - Validate Config
         self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_count)
@@ -150,10 +157,10 @@ class RepoManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('happy-repo')
 
         # Test
-        generated_id = self.distributor_manager.add_distributor('happy-repo', 'mock-distributor', None, True)
+        added = self.distributor_manager.add_distributor('happy-repo', 'mock-distributor', None, True)
 
         # Verify
-        distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'happy-repo', 'id' : generated_id})
+        distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'happy-repo', 'id' : added['id']})
         self.assertTrue(distributor is not None)
 
     def test_add_distributor_no_repo(self):
@@ -181,8 +188,8 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('real-repo', 'fake-distributor', None, True)
             self.fail('No exception thrown for an invalid distributor type')
-        except distributor_manager.MissingDistributor, e:
-            self.assertEqual(e.distributor_name, 'fake-distributor')
+        except distributor_manager.InvalidDistributorType, e:
+            self.assertEqual(e.distributor_type_id, 'fake-distributor')
             print(e) # for coverage
 
     def test_add_distributor_invalid_id(self):
@@ -286,7 +293,10 @@ class RepoManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('empty')
 
         # Test
-        self.distributor_manager.remove_distributor('empty', 'non-existent') # shouldn't error
+        try:
+            self.distributor_manager.remove_distributor('empty', 'non-existent')
+        except distributor_manager.MissingDistributor, e:
+            self.assertEqual('non-existent', e.distributor_id)
 
     def test_remove_distributor_no_repo(self):
         """
@@ -310,7 +320,8 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('dawnstar')
-        dist_id = self.distributor_manager.add_distributor('dawnstar', 'mock-distributor', {'key' : 'orig'}, True)
+        distributor = self.distributor_manager.add_distributor('dawnstar', 'mock-distributor', {'key' : 'orig'}, True)
+        dist_id = distributor['id']
 
         # Test
         new_config = {'key' : 'updated'}
@@ -352,7 +363,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.distributor_manager.update_distributor_config('empty', 'missing', {})
             self.fail('Exception expected')
         except distributor_manager.MissingDistributor, e:
-            self.assertEqual('missing', e.distributor_name)
+            self.assertEqual('missing', e.distributor_id)
 
     def test_update_validate_exception(self):
         """
@@ -361,7 +372,8 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('elf')
-        dist_id = self.distributor_manager.add_distributor('elf', 'mock-distributor', {}, True)
+        distributor = self.distributor_manager.add_distributor('elf', 'mock-distributor', {}, True)
+        dist_id = distributor['id']
 
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = Exception()
 
@@ -382,7 +394,8 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('dwarf')
-        dist_id = self.distributor_manager.add_distributor('dwarf', 'mock-distributor', {}, True)
+        distributor = self.distributor_manager.add_distributor('dwarf', 'mock-distributor', {}, True)
+        dist_id = distributor['id']
 
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = False
 

@@ -23,7 +23,8 @@ from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo._common import MissingRepo
 from pulp.server.managers.repo.cud import DuplicateRepoId, InvalidRepoId, InvalidRepoMetadata
-from pulp.server.managers.repo.importer import MissingImporter, InvalidImporterConfiguration, ImporterInitializationException, InvalidImporterType
+from pulp.server.managers.repo.importer import MissingImporter, InvalidImporterConfiguration, InvalidImporterType
+from pulp.server.managers.repo.distributor import MissingDistributor, InvalidDistributorConfiguration, InvalidDistributorId, InvalidDistributorType
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.serialization.error import http_error_obj, exception_obj
@@ -188,6 +189,10 @@ class RepoImporter(JSONController):
         params = self.params()
         importer_config = params.get('importer_config', None)
 
+        if importer_config is None:
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
+
         importer_manager = manager_factory.repo_importer_manager()
 
         try:
@@ -223,9 +228,19 @@ class RepoDistributors(JSONController):
 
         # Update the repo
         distributor_manager = manager_factory.repo_distributor_manager()
-        distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
 
-        return self.ok(True)
+        # Note: The manager will automatically replace a distributor with the
+        # same ID, so there is no need to return a 409.
+
+        try:
+            added = distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
+            return self.ok(added)
+        except MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+        except (InvalidDistributorId, InvalidDistributorType, InvalidDistributorConfiguration):
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
 
 class RepoDistributor(JSONController):
 
@@ -236,11 +251,33 @@ class RepoDistributor(JSONController):
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
         distributor_manager = manager_factory.repo_distributor_manager()
-        distributor_manager.remove_distributor(repo_id, distributor_id)
 
+        try:
+            distributor_manager.remove_distributor(repo_id, distributor_id)
+            return self.ok(None)
+        except (MissingRepo, MissingDistributor):
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+        
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
-        pass
+
+        # Params (validation will occur in the manager)
+        params = self.params()
+        distributor_config = params.get('distributor_config', None)
+
+        if distributor_config is None:
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
+
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        try:
+            distributor_manager.update_distributor_config(repo_id, distributor_id, distributor_config)
+            return self.ok(None)
+        except (MissingRepo, MissingDistributor):
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
 # -- action controllers -------------------------------------------------------
 
