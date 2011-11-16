@@ -29,7 +29,20 @@ _LOG = logging.getLogger(__name__)
 class RepoImporterManager:
 
     def get_importer(self, repo_id):
-        pass
+        """
+        Returns metadata about an importer associated with the given repo.
+
+        @return: key-value pairs describing the importer in use
+        @rtype:  dict
+
+        @raises MissingImporter: if the repo does not exist or has no importer associated
+        """
+
+        importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
+        if importer is None:
+            raise MissingImporter()
+
+        return importer
 
     def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
