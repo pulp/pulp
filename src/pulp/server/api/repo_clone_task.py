@@ -85,7 +85,6 @@ class RepoCloneTask(Task):
             # Most likely this task has been snapshotted before we set a synchronizer object
             # it's our responsibility to ensure the synchronizer object is set, failure to do this
             # will break ability to cancel a sync.
-            from pulp.server.api.repo import RepoApi # avoid circular import
             r = RepoApi().repository(task.clone_id, fields=["content_types"])
             if r and r.has_key("content_types") and r["content_types"] is not None:
                 repo_content_type = r["content_types"]

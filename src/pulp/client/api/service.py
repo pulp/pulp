@@ -19,7 +19,7 @@ class ServiceAPI(PulpAPI):
     Connection class to the services handler
     '''
     def search_packages(self, name=None, epoch=None, version=None, release=None,
-                        arch=None, filename=None, checksum_type=None, checksum=None, regex=True):
+                        arch=None, filename=None, checksum_type=None, checksum=None, regex=True, repoids=None):
         data = {}
         if name:
             data["name"] = name
@@ -37,9 +37,11 @@ class ServiceAPI(PulpAPI):
             data["checksum_type"] = checksum_type
         if checksum:
             data["checksum"] = checksum
+        if repoids:
+            data["repoids"] = repoids
         data["regex"] = regex
         path = "/services/search/packages/"
-        return self.server.PUT(path, data)[1]
+        return self.server.POST(path, data)[1]
 
     def dependencies(self, pkgnames, repoids, recursive=0):
         params = {'repoids': repoids,
