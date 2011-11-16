@@ -85,6 +85,14 @@ class Plugin3($BASE_TITLE):
         data = {'id': 'plugin3',
                 'types': $TYPE_LIST}
         return data
+
+# Should not be loaded as a valid plugin since it starts with _
+class _BasePlugin($BASE_TITLE):
+    @classmethod
+    def metadata(cls):
+        data = {'id': 'base_plugin',
+                'types': $TYPE_LIST}
+        return data
 ''')
 
 _CONF_TEMPLATE = string.Template('''

@@ -297,6 +297,8 @@ class Search(PackageAction):
                                help=_("package release regex to search for"))
         self.parser.add_option("-v", "--version", dest="version", default=None,
                                help=_("package version regex to search for"))
+        self.parser.add_option("--repoids", dest="repoids", default=None,
+                               help=_("list of repositories to search; if not specified, search will be conducted on all the repositories"))
 
     def run(self):
         arch = self.opts.arch
@@ -306,7 +308,8 @@ class Search(PackageAction):
         release = self.opts.release
         version = self.opts.version
         pkgs = self.service_api.search_packages(name=name, epoch=epoch, version=version,
-                release=release, arch=arch, filename=filename)
+                release=release, arch=arch, filename=filename, repoids=self.opts.repoids)
+
         if not pkgs:
             system_exit(os.EX_DATAERR, _("No packages found."))
 

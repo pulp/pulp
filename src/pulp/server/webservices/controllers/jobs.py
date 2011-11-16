@@ -18,6 +18,10 @@ description: RESTful interface providing access to pulp jobs.
 Job object fields:
  * id, str, unique id (usually a uuid) for the job.
  * tasks, list of Task, list of related tasks.
+Cancel object fields:
+ * id, str, unique id (usually a uuid) for the job.
+ * completed, list of completed tasks associated with the job.
+ * cancelled, list of cancelled tasks associated with the job.
 Task object fields:
  * id, str, unique task id
  * job_id, str, the job id
@@ -44,18 +48,38 @@ import web
 import logging
 from gettext import gettext as _
 from pulp.server import async
+from pulp.server.tasking.task import task_waiting as WAITING
+from pulp.server.tasking.task import task_running as RUNNING
+from pulp.server.tasking.task import task_suspended as SUSPENDED
 from pulp.server.api import task_history
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.auth.authorization import READ
+from pulp.server.auth.authorization import READ, UPDATE
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
 
 log = logging.getLogger('pulp')
 
 
+# utils ----------------------------------------------------------------------
+
+
+
 # jobs controller -------------------------------------------------------------
 
-class Jobs(JSONController):
+
+class JobController(JSONController):
+
+    def active(self, id, states=[]):
+        tasks = {}
+        for task in async.find_async(job_id=id):
+            if states and task.state not in states:
+                continue
+            task_dict = self._task_to_dict(task)
+            tasks[task.id] = (task, task_dict)
+        return tasks
+
+
+class Jobs(JobController):
 
     @error_handler
     @auth_required(READ)
@@ -86,7 +110,7 @@ class Jobs(JSONController):
         return self.ok(jobs.values())
 
 
-class Job(JSONController):
+class Job(JobController):
 
     @error_handler
     @auth_required(READ)
@@ -103,28 +127,59 @@ class Job(JSONController):
         return: Job object
         """
         tasks = self.active(id)
-        if not tasks:
-            tasks = task_history.job(id)
+        for task in task_history.job(id):
+            tid = task['id']
+            if tid in tasks:
+                continue
+            tasks[tid] = task
+        tasks = self.active(id)
         if not tasks:
             return self.not_found(_('job %s, not-found') % id)
         job = {}
         job['id'] = id
-        job['tasks'] = tasks
+        job['tasks'] = [t[1] for t in tasks.values()]
         return self.ok(job)
 
-    def active(self, id):
-        tasks = []
-        for task in async.find_async(job_id=id):
-            task_dict = self._task_to_dict(task)
-            tasks.append(task_dict)
-        return tasks
 
+class Cancel(JobController):
+
+    @error_handler
+    @auth_required(UPDATE)
+    def POST(self, id):
+        """
+        [[wiki]]
+        title: Cancel A Job
+        description: Cancel a waiting or running job.
+        method: POST
+        path: /jobs/<id>/cancel/
+        permission: UPDATE
+        success response: 202 Accepted
+        failure response: 404 Not Found
+        return: Cancel object
+        """
+        history = []
+        filter = (WAITING, RUNNING, SUSPENDED)
+        active = self.active(id, filter)
+        for task in task_history.job(id):
+            if task['id'] in active:
+                continue
+            history.append(task)
+        active = active.values()
+        for task in active:
+            async.cancel_async(task[0])
+        if not history and not active:
+            return self.not_found(_('job %s, not-found') % id)
+        result = dict(id=id,
+                      completed=history,
+                      cancelled=[t[1] for t in active])
+        return self.accepted(result)            
 
 # web.py application -----------------------------------------------------------
 
 _urls = (
     '/$', Jobs,
     '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', Job,
+    '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/cancel/$', Cancel,
 )
 
 application = web.application(_urls, globals())

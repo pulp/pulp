@@ -328,6 +328,9 @@ class PulpWebserviceTest(PulpTest):
 
         # Collect return information and deserialize it
         status = response.status
-        body = json.loads(response.body)
+        try:
+            body = json.loads(response.body)
+        except ValueError:
+            body = None
 
         return status, body

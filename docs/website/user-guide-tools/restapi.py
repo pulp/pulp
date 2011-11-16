@@ -37,7 +37,7 @@ _parent_module = 'pulp.server.webservices.controllers'
 _module_names = ('audit', 'cds', 'consumergroups', 'consumers', 'content',
                  'distribution', 'errata', 'filters', 'orphaned', 'packages',
                  'permissions', 'repositories', 'roles', 'services', 'tasks',
-                 'users')
+                 'users', 'jobs',)
 
 
 def _import_module(name):

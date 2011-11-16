@@ -26,6 +26,13 @@ Job:      %s
 Finished: %s%%
 Tasks     (%d):"""
 
+CANCEL = """
+Job: %s
+Completed: %d
+%s
+Cancelled: %d
+%s"""
+
 TASK = """
 \tTask:      %s
 \tState:     %s
@@ -45,6 +52,12 @@ TASK_LONG = """
 # job actions -----------------------------------------------------------------
 
 class JobAction(Action):
+
+    def setup_parser(self):
+        self.parser.add_option('--id', dest='id', help=_('job id'))
+
+
+class ListAction(JobAction):
 
     def setup_parser(self):
         self.parser.add_option('--id', dest='id', help=_('job id'))
@@ -70,7 +83,7 @@ class JobAction(Action):
         return int(f*100)
 
 
-class List(JobAction):
+class List(ListAction):
 
     name = "list"
     description = _('list jobs currently in the tasking system')
@@ -82,7 +95,17 @@ class List(JobAction):
             system_exit(os.EX_OK, _('No jobs found'))
         for j in jobs:
             print self.job(j)
-
+            
+    def job(self, job):
+        s = []
+        id = job['id']
+        completed = job['completed']
+        cancelled = job['cancelled']
+        s.append(JOB % (id, self.pct(tasks), len(tasks)))
+        for t in tasks:
+            s.append(self.task(t))
+        return ''.join(s)
+            
     def task(self, task):
         return TASK % \
             (task['id'],
@@ -90,7 +113,7 @@ class List(JobAction):
              task['scheduled_time'],)
 
 
-class Info(JobAction):
+class Info(ListAction):
 
     name = "info"
     description = _('show information for a job')
@@ -102,7 +125,7 @@ class Info(JobAction):
         if not job:
             system_exit(os.EX_OK)
         print self.job(job)
-
+        
     def task(self, task):
         return TASK_LONG % \
             (task['id'],
@@ -113,6 +136,39 @@ class Info(JobAction):
              task['result'],
              task['exception'],)
 
+
+class Cancel(JobAction):
+    
+    name = "cancel"
+    description = _('cancel a job')
+
+    def run(self):
+        japi = JobAPI()
+        id = self.get_required_option('id')
+        cancel = japi.cancel(id)
+        if not cancel:
+            system_exit(os.EX_OK)
+        id = cancel['id']
+        completed = []
+        for t in cancel['completed']:
+            completed.append(self.task(t))
+        cancelled = []
+        for t in cancel['cancelled']:
+            cancelled.append(self.task(t))
+        print CANCEL % (
+            id,
+            len(completed),
+            ''.join(completed),
+            len(cancelled),
+            ''.join(cancelled))
+        
+    def task(self, task):
+        return TASK % \
+            (task['id'],
+             task['state'].upper(),
+             task['scheduled_time'],)
+    
+
 # job command -----------------------------------------------------------------
 
 class Job(Command):
@@ -120,7 +176,8 @@ class Job(Command):
     name = "job"
     description = _('pulp server job administration and debugging')
     actions = [ List,
-                Info ]
+                Info,
+                Cancel ]
 
 # job plugin -----------------------------------------------------------------
 

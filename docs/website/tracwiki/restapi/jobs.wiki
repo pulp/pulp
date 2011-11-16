@@ -1,0 +1,85 @@
+[[TOC]]
+= Jobs RESTful Interface = #top
+''RESTful interface providing access to pulp jobs.'' [[BR]]
+[[BR]]
+'''Job object fields''':
+ * '''id''' <str> ''unique id (usually a uuid) for the job.''
+ * '''tasks''' <list> ''list of related Tasks.''
+'''Cancel object fields''':
+ * '''id''' <str> ''unique id (usually a uuid) for the job.''
+ * '''completed''' <list> ''list of completed Task objects that cannot be cancelled.''
+ * '''cancelled''' <list> ''list of Task objects cancelled by the request.''
+'''Task object fields''':
+ * '''id''' <str> ''unique task id''
+ * '''job_id''' <str> ''the job id''
+ * '''class_name''' <str> ''name of the class, if the task's method is an instance method''
+ * '''method_name''' <str> ''name of the pulp library method that was called''
+ * '''state''' <str> ''one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended''
+ * '''failure_threshold''' <int> ''number of failures allowed this task before it is no longer scheduled''
+ * '''cancel_attempts''' <int> ''the number of times cancel was called on this task''
+ * '''callable''' <str> ''pickled task method''
+ * '''args''' <str> ''pickled arguments for the task method''
+ * '''kwargs''' <str> ''picked keyword arguments for the task method''
+ * '''progress''' <object or nil> ''object representing the pulp library call's progress, nill if no information is available''
+ * '''timeout''' <str> ''pickled timedelta representing the time limit for the task's run''
+ * '''schedule_threshold''' <str> ''pickled timedelta representing a max difference between the scheduled_time and start_time before an error is logged''
+ * '''_progress_callback''' <str> ''pickled method allowing progress information to be recorded by the task''
+ * '''start_time''' <str> ''pickled datetime showing the start time of the task''
+ * '''finish_time''' <str> ''pickled datetime showing the finish time of the task''
+ * '''result''' <str> ''pickled result of the task call''
+ * '''exception''' <str> ''pickled error, if one occurred''
+ * '''traceback''' <str> ''pickled traceback, if one occured''
+
+----
+
+== Cancel A Job ==
+''Cancel a waiting or running job.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /jobs/<id>/cancel/ [[BR]]
+[[BR]]
+'''permission''': UPDATE [[BR]]
+[[BR]]
+'''success response''': 202 Accepted [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found [[BR]]
+[[BR]]
+'''return''': Cancel object [[BR]]
+[[BR]]
+
+----
+
+== Get A Job ==
+''Get a Job object for a specific job'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /jobs/<id>/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if no such job [[BR]]
+[[BR]]
+'''return''': Job object [[BR]]
+[[BR]]
+
+----
+
+== Get All Jobs ==
+''Get a list of all jobs currently in the system'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /jobs/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': None [[BR]]
+[[BR]]
+'''return''': list of job objects [[BR]]
+[[BR]]

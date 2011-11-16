@@ -42,3 +42,11 @@ class JobAPI(PulpAPI):
         except ServerRequestError, e:
             print e.args[1]
         return None
+    
+    def cancel(self, job_id):
+        path = '/jobs/%s/cancel/' % job_id
+        try:
+            return self.server.POST(path)[1]
+        except ServerRequestError, e:
+            print e.args[1]
+        return None
