@@ -26,6 +26,7 @@ from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistribut
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
+import pulp.server.managers.repo._exceptions as errors
 
 # -- test cases ---------------------------------------------------------------
 
@@ -105,7 +106,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.create_repo('bad id')
             self.fail('Invalid ID did not raise an exception')
-        except repo_manager.InvalidRepoId, e:
+        except errors.InvalidRepoId, e:
             self.assertEqual(e.invalid_repo_id, 'bad id')
             print(e) # for coverage
 
@@ -123,7 +124,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.create_repo(id)
             self.fail('Repository with an existing ID did not raise an exception')
-        except repo_manager.DuplicateRepoId, e:
+        except errors.DuplicateRepoId, e:
             self.assertEqual(e.duplicate_id, id)
             print(e) # for coverage
 
@@ -141,7 +142,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.create_repo(id, notes=notes)
             self.fail('Invalid notes did not cause create to raise an exception')
-        except repo_manager.InvalidRepoMetadata, e:
+        except errors.InvalidRepoMetadata, e:
             self.assertEqual(e.invalid_data, notes)
             print(e) # for coverage
 
@@ -170,7 +171,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.delete_repo('fake repo')
             self.fail('Exception expected')
-        except repo_manager.MissingRepo, e:
+        except errors.MissingRepo, e:
             self.assertEqual(e.repo_id, 'fake repo')
 
     def test_delete_with_plugins(self):
@@ -228,10 +229,10 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.delete_repo('doomed')
             self.fail('No exception raised during repo delete')
-        except repo_manager.RepoDeleteException, e:
+        except errors.RepoDeleteException, e:
             self.assertEqual(2, len(e.codes))
-            self.assertTrue(repo_manager.RepoDeleteException.CODE_IMPORTER in e.codes)
-            self.assertTrue(repo_manager.RepoDeleteException.CODE_DISTRIBUTOR in e.codes)
+            self.assertTrue(errors.RepoDeleteException.CODE_IMPORTER in e.codes)
+            self.assertTrue(errors.RepoDeleteException.CODE_DISTRIBUTOR in e.codes)
 
         # Cleanup - need to manually clear the side effects
         mock_plugins.MOCK_IMPORTER.importer_removed.side_effect = None
@@ -269,7 +270,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.update_repo('not-there', {})
             self.fail('Exception expected')
-        except repo_manager.MissingRepo, e:
+        except errors.MissingRepo, e:
             self.assertEqual(e.repo_id, 'not-there')
 
 class UtilityMethodsTests(testutil.PulpTest):

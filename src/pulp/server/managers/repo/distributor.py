@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from gettext import gettext as _
 import logging
 import re
 import sys
@@ -21,63 +20,14 @@ from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._common import MissingRepo
+from pulp.server.managers.repo._exceptions import (MissingRepo, MissingDistributor,
+    InvalidDistributorId, InvalidDistributorType, InvalidDistributorConfiguration, DistributorInitializationException)
 
 # -- constants ----------------------------------------------------------------
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
 _LOG = logging.getLogger(__name__)
-
-# -- exceptions ---------------------------------------------------------------
-
-class MissingDistributor(Exception):
-    """
-    Indicates a distributor was requested that does not exist.
-    """
-    def __init__(self, distributor_id):
-        Exception.__init__(self)
-        self.distributor_id = distributor_id
-
-    def __str__(self):
-        return _('No distributor with ID [%(id)s]' % {'id' : self.distributor_id})
-
-class InvalidDistributorType(Exception):
-    """
-    Indicates a distributor type was requested that doesn't exist.
-    """
-    def __init__(self, distributor_type_id):
-        Exception.__init__(self)
-        self.distributor_type_id = distributor_type_id
-
-    def __str__(self):
-        return _('No distributor type with id [%(id)s]' % {'id' : self.distributor_type_id})
-    
-
-class InvalidDistributorId(Exception):
-    """
-    Indicates a given distributor ID was invalid.
-    """
-    def __init__(self, invalid_distributor_id):
-        Exception.__init__(self)
-        self.invalid_distributor_id = invalid_distributor_id
-
-    def __str__(self):
-        return _('Invalid distributor ID [%(id)s]' % {'id' : self.invalid_distributor_id})
-
-class InvalidDistributorConfiguration(Exception):
-    """
-    Indicates a distributor configuration was specified (either at add_distributor
-    time or later updated) but the distributor plugin indicated it was invalid.
-    """
-    pass
-
-class DistributorInitializationException(Exception):
-    """
-    Wraps an exception coming out of a distributor while it tries to initialize
-    itself when being added to a repository.
-    """
-    pass
 
 # -- manager ------------------------------------------------------------------
 

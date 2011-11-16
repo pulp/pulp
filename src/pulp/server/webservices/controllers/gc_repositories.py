@@ -21,13 +21,10 @@ import web
 # Pulp
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 import pulp.server.managers.factory as manager_factory
-from pulp.server.managers.repo._common import MissingRepo
-from pulp.server.managers.repo.cud import DuplicateRepoId, InvalidRepoId, InvalidRepoMetadata
-from pulp.server.managers.repo.importer import MissingImporter, InvalidImporterConfiguration, InvalidImporterType
-from pulp.server.managers.repo.distributor import MissingDistributor, InvalidDistributorConfiguration, InvalidDistributorId, InvalidDistributorType
+import pulp.server.managers.repo._exceptions as errors
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices.serialization.error import http_error_obj, exception_obj
+from pulp.server.webservices.serialization.error import http_error_obj
 
 # -- constants ----------------------------------------------------------------
 
@@ -69,10 +66,10 @@ class RepoCollection(JSONController):
             repo = repo_manager.create_repo(id, display_name, description, notes)
             # TODO: explicitly serialize repo for return
             return self.ok(repo)
-        except DuplicateRepoId:
+        except errors.DuplicateRepoId:
             serialized = http_error_obj(409)
             return self.conflict(serialized)
-        except (InvalidRepoId, InvalidRepoMetadata):
+        except (errors.InvalidRepoId, errors.InvalidRepoMetadata):
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -89,7 +86,7 @@ class RepoResource(JSONController):
         try:
             repo_manager.delete_repo(id)
             return self.ok(None)
-        except MissingRepo:
+        except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -107,7 +104,7 @@ class RepoResource(JSONController):
         try:
             repo_manager.update_repo(id, delta)
             return self.ok(None)
-        except MissingRepo:
+        except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
         
@@ -145,10 +142,10 @@ class RepoImporters(JSONController):
             importer = importer_manager.set_importer(repo_id, importer_type, importer_config)
             # TODO: serialize importer
             return self.ok(importer)
-        except MissingRepo:
+        except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (InvalidImporterType, InvalidImporterConfiguration):
+        except (errors.InvalidImporterType, errors.InvalidImporterConfiguration):
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -176,7 +173,7 @@ class RepoImporter(JSONController):
         try:
             importer_manager.remove_importer(repo_id)
             return self.ok(None)
-        except (MissingRepo, MissingImporter):
+        except (errors.MissingRepo, errors.MissingImporter):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -198,7 +195,7 @@ class RepoImporter(JSONController):
         try:
             importer_manager.update_importer_config(repo_id, importer_config)
             return self.ok(None)
-        except (MissingRepo, MissingImporter):
+        except (errors.MissingRepo, errors.MissingImporter):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -235,10 +232,10 @@ class RepoDistributors(JSONController):
         try:
             added = distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
             return self.ok(added)
-        except MissingRepo:
+        except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (InvalidDistributorId, InvalidDistributorType, InvalidDistributorConfiguration):
+        except (errors.InvalidDistributorId, errors.InvalidDistributorType, errors.InvalidDistributorConfiguration):
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -255,7 +252,7 @@ class RepoDistributor(JSONController):
         try:
             distributor_manager.remove_distributor(repo_id, distributor_id)
             return self.ok(None)
-        except (MissingRepo, MissingDistributor):
+        except (errors.MissingRepo, errors.MissingDistributor):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
         
@@ -275,7 +272,7 @@ class RepoDistributor(JSONController):
         try:
             distributor_manager.update_distributor_config(repo_id, distributor_id, distributor_config)
             return self.ok(None)
-        except (MissingRepo, MissingDistributor):
+        except (errors.MissingRepo, errors.MissingDistributor):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 

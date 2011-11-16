@@ -28,7 +28,7 @@ import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.factory as manager_factory
-from pulp.server.managers.repo._common import MissingRepo
+from pulp.server.managers.repo._exceptions import MissingRepo
 
 # -- constants ----------------------------------------------------------------
 

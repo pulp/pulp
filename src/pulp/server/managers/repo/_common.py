@@ -12,8 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains functionality and exceptions common across all repository-related
-managers.
+Contains functionality common across all repository-related managers.
 
 = Working Directories =
 Working directories are as staging or temporary file storage by importers
@@ -30,7 +29,6 @@ The rationale is to simplify cleanup on repository delete; the repository's
 working directory is simply deleted.
 """
 
-from gettext import gettext as _
 import os
 
 import pulp.server.constants as pulp_constants
@@ -39,20 +37,6 @@ from pulp.server.content.plugins.data import Repository
 # -- constants ----------------------------------------------------------------
 
 _WORKING_DIR_ROOT = os.path.join(pulp_constants.LOCAL_STORAGE, 'working')
-
-# -- exceptions ---------------------------------------------------------------
-
-class MissingRepo(Exception):
-    """
-    Indicates an operation was requested against a repo that doesn't exist. This
-    is used in any repo-related operation when the repo doesn't exist.
-    """
-    def __init__(self, repo_id):
-        Exception.__init__(self)
-        self.repo_id = repo_id
-
-    def __str__(self):
-        return _('No repository with ID [%(id)s]' % {'id' : self.repo_id})
 
 # -- public -------------------------------------------------------------------
 

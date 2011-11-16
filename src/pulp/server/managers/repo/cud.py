@@ -17,7 +17,6 @@ removal, and metadata update on a repository. This does not include importer
 or distributor configuration.
 """
 
-from gettext import gettext as _
 import logging
 import os
 import re
@@ -26,7 +25,7 @@ import shutil
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._common import MissingRepo
+from pulp.server.managers.repo._exceptions import MissingRepo, InvalidRepoId, InvalidRepoMetadata, DuplicateRepoId, RepoDeleteException
 
 # -- constants ----------------------------------------------------------------
 
@@ -34,58 +33,6 @@ _REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore
 _DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
 
 _LOG = logging.getLogger(__name__)
-
-# -- exceptions ---------------------------------------------------------------
-
-class InvalidRepoId(Exception):
-    """
-    Indicates a given repository ID was invalid.
-    """
-    def __init__(self, invalid_repo_id):
-        Exception.__init__(self)
-        self.invalid_repo_id = invalid_repo_id
-
-    def __str__(self):
-        return _('Invalid repository ID [%(repo_id)s]') % {'repo_id' : self.invalid_repo_id}
-
-class InvalidRepoMetadata(Exception):
-    """
-    Indicates one or more metadata fields on a repository were invalid, either
-    in a create or update operation. The invalid value will be included in
-    the exception.
-    """
-    def __init__(self, invalid_data):
-        Exception.__init__(self)
-        self.invalid_data = invalid_data
-
-    def __str__(self):
-        return _('Invalid repo metadata [%(data)s]' % {'data' : str(self.invalid_data)})
-
-class DuplicateRepoId(Exception):
-    """
-    Raised when a repository create conflicts with an existing repository ID.
-    """
-    def __init__(self, duplicate_id):
-        Exception.__init__(self)
-        self.duplicate_id = duplicate_id
-
-    def __str__(self):
-        return _('Existing repository with ID [%(repo_id)s]') % {'repo_id' : self.duplicate_id}
-
-class RepoDeleteException(Exception):
-    """
-    Aggregates all exceptions that occurred during a repo delete and tracks
-    the general area in which they occurred.
-    """
-
-    CODE_IMPORTER = 'importer-error'
-    CODE_DISTRIBUTOR = 'distributor-error'
-    CODE_WORKING_DIR = 'working-dir-error'
-    CODE_DATABASE = 'database-error'
-
-    def __init__(self, codes):
-        Exception.__init__(self)
-        self.codes = codes
 
 # -- manager ------------------------------------------------------------------
 

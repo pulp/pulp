@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from gettext import gettext as _
 import logging
 import sys
 
@@ -19,44 +18,11 @@ from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._common import MissingRepo
+from pulp.server.managers.repo._exceptions import MissingRepo, MissingImporter, InvalidImporterType, InvalidImporterConfiguration, ImporterInitializationException
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
-
-# -- exceptions ---------------------------------------------------------------
-
-class MissingImporter(Exception):
-    """
-    Indicates an importer was requested that does not exist.
-    """
-    pass
-
-class InvalidImporterType(Exception):
-    """
-    Indicates an importer type was requested that doesn't exist.
-    """
-    def __init__(self, importer_type_id):
-        Exception.__init__(self)
-        self.importer_type_id = importer_type_id
-
-    def __str__(self):
-        return _('No importer type with id [%(id)s]' % {'id' : self.importer_type_id})
-
-class InvalidImporterConfiguration(Exception):
-    """
-    Indicates an importer configuration was specified (either at set_importer
-    time or later updated) but the importer plugin indicated it is invalid.
-    """
-    pass
-
-class ImporterInitializationException(Exception):
-    """
-    Wraps an exception coming out of an importer while it tries to initialize
-    itself when being added to a repository.
-    """
-    pass
 
 # -- manager ------------------------------------------------------------------
 
