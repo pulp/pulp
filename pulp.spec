@@ -497,6 +497,13 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-2
+- Bump release for build. (jortel@redhat.com)
+- 753885 - added get access to last_sync to prevent key error: no idea why its not
+  getting initialized (jconnor@redhat.com)
+- 753885 - standardized our api sync calls on skip instead of skip_dict
+  (jconnor@redhat.com)
+
 * Fri Nov 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-1
 - disregard reboot in agent when no packages installed. (jortel@redhat.com)
 - Adjust for rhel5 not being able to sync f16 metadata unless it uses
