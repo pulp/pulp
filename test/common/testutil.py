@@ -319,8 +319,9 @@ class PulpWebserviceTest(PulpTest):
             headers.update(additional_headers)
 
         # Serialize the parameters if any are specified
-        if params is not None:
-            params = json.dumps(params)
+        if params is None:
+            params = {}
+        params = json.dumps(params)
 
         # Invoke the API
         f = getattr(self.test_app, request_type)
