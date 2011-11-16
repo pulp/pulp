@@ -115,8 +115,8 @@ class RepoResource(JSONController):
         repo_manager = manager_factory.repo_manager()
 
         try:
-            repo_manager.update_repo(id, delta)
-            return self.ok(None)
+            repo = repo_manager.update_repo(id, delta)
+            return self.ok(repo)
         except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)

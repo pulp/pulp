@@ -196,6 +196,7 @@ class RepoManager:
 
         repo_coll.save(repo, safe=True)
 
+        return repo
 
 # -- functions ----------------------------------------------------------------
 

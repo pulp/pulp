@@ -253,13 +253,15 @@ class RepoManagerTests(testutil.PulpTest):
         }
 
         # Test
-        self.manager.update_repo('update-me', delta)
+        updated = self.manager.update_repo('update-me', delta)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'update-me'})
-
         self.assertEqual(repo['display_name'], delta['display_name'])
         self.assertEqual(repo['description'], delta['description'])
+
+        self.assertEqual(updated['display_name'], delta['display_name'])
+        self.assertEqual(updated['description'], delta['description'])
 
     def test_update_missing_repo(self):
         """
