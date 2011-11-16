@@ -11,12 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import base64
+from datetime import timedelta
+from paste.fixture import TestApp
 import os
 import random
 import unittest
 import sys
 import time
-from datetime import timedelta
+import web
 
 import mock
 
@@ -24,6 +27,11 @@ try:
     import mocks
 except ImportError:
     mocks = None
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
@@ -61,6 +69,9 @@ from pulp.server.util import random_string
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.tasking.taskqueue import queue
 from pulp.server import constants
+
+from pulp.server.auth import authorization
+from pulp.server.webservices import http
 
 SerialNumber.PATH = '/tmp/sn.dat'
 constants.LOCAL_STORAGE = "/tmp/pulp/"
@@ -250,3 +261,73 @@ class PulpAsyncTest(PulpTest):
     def setup_async(self):
         async.config.config = self.config
         async.initialize()
+
+
+class PulpWebserviceTest(PulpTest):
+
+    def setUp(self):
+        PulpTest.setUp(self)
+
+        # Because our code is a tightly coupled mess, the test config has to be
+        # laoded before we can import application
+        load_test_config()
+        from pulp.server.webservices import application
+
+        self.web_app = web.subdir_application(application.URLS)
+        self.test_app = TestApp(self.web_app.wsgifunc())
+
+        def request_info(key):
+            if key == "REQUEST_URI":
+                key = "PATH_INFO"
+
+            return web.ctx.environ.get(key, None)
+
+        self.mock(http, "request_info", request_info)
+
+        #    User stuff
+        self.user_api.create('ws-user', password='ws-user')
+        self.user_api.update('ws-user', {'roles' : authorization.super_user_role})
+
+        base64string = base64.encodestring('%s:%s' % ('ws-user', 'ws-user'))[:-1]
+        self.headers = {'Authorization' : 'Basic %s' % base64string}
+
+    def tearDown(self):
+        PulpTest.tearDown(self)
+        self.user_api.delete('ws-user')
+
+    def get(self, uri, params=None, additional_headers=None):
+        return self._do_request('get', uri, params, additional_headers)
+
+    def post(self, uri, params=None, additional_headers=None):
+        return self._do_request('post', uri, params, additional_headers)
+
+    def delete(self, uri, params=None, additional_headers=None):
+        return self._do_request('delete', uri, params, additional_headers)
+
+    def put(self, uri, params=None, additional_headers=None):
+        return self._do_request('put', uri, params, additional_headers)
+
+    def _do_request(self, request_type, uri, params, additional_headers):
+        """
+        The calls and their pre/post processing are so similar, do it all in
+        here and use magic to make the right call.
+        """
+
+        # Use the default headers established at setup and override/add any
+        headers = dict(self.headers)
+        if additional_headers is not None:
+            headers.update(additional_headers)
+
+        # Serialize the parameters if any are specified
+        if params is not None:
+            params = json.dumps(params)
+
+        # Invoke the API
+        f = getattr(self.test_app, request_type)
+        response = f('http://localhost' + uri, params=params, headers=headers, expect_errors=True)
+
+        # Collect return information and deserialize it
+        status = response.status
+        body = json.loads(response.body)
+
+        return status, body
