@@ -118,7 +118,15 @@ class RepoImporters(JSONController):
 
     @auth_required(READ)
     def GET(self, repo_id):
-        pass
+        importer_manager = manager_factory.repo_importer_manager()
+
+        try:
+            importers = importer_manager.get_importers(repo_id)
+            # TODO: serialize properly
+            return self.ok(importers)
+        except errors.MissingImporter:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
     @auth_required(CREATE)
     def POST(self, repo_id):
@@ -152,8 +160,22 @@ class RepoImporters(JSONController):
 class RepoImporter(JSONController):
 
     # Scope:  Exclusive Sub-resource
+    # GET:    Get Importer
     # DELETE: Remove Importer
     # PUT:    Update Importer Config
+
+    @auth_required(READ)
+    def GET(self, repo_id, importer_id):
+
+        importer_manager = manager_factory.repo_importer_manager()
+
+        try:
+            importer = importer_manager.get_importer(repo_id)
+            # TODO: serialize properly
+            return self.ok(importer)
+        except errors.MissingImporter:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, importer_id):
@@ -209,7 +231,15 @@ class RepoDistributors(JSONController):
 
     @auth_required(READ)
     def GET(self, repo_id):
-        pass
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        try:
+            distributor_list = distributor_manager.get_distributors(repo_id)
+            # TODO: serialize each distributor before returning
+            return self.ok(distributor_list)
+        except errors.MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
     
     @auth_required(CREATE)
     def POST(self, repo_id):
@@ -242,8 +272,21 @@ class RepoDistributors(JSONController):
 class RepoDistributor(JSONController):
 
     # Scope:  Exclusive Sub-resource
+    # GET:    Get Distributor
     # DELETE: Remove Distributor
     # PUT:    Update Distributor Config
+
+    @auth_required(READ)
+    def GET(self, repo_id, distributor_id):
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        try:
+            distributor = distributor_manager.get_distributor(repo_id, distributor_id)
+            # TODO: serialize properly
+            return self.ok(distributor)
+        except errors.MissingDistributor:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
