@@ -497,6 +497,11 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-3
+- bump release for build. (jortel@redhat.com)
+- minor change in get_consumers_applicable_errata api and added extra comments
+  (skarmark@redhat.com)
+
 * Wed Nov 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-2
 - Bump release for build. (jortel@redhat.com)
 - 753885 - added get access to last_sync to prevent key error: no idea why its not
