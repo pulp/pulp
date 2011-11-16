@@ -76,8 +76,21 @@ class RepoCollection(JSONController):
 class RepoResource(JSONController):
 
     # Scope:   Resource
+    # GET:     Repository Retrieval
     # DELETE:  Repository Delete
     # PUT:     Repository Update
+
+    @auth_required(READ)
+    def GET(self, id):
+        query_manager = manager_factory.repo_query_manager()
+
+        repo = query_manager.find_by_id(id)
+
+        if repo is None:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+        else:
+            return self.ok(repo)
 
     @auth_required(DELETE)
     def DELETE(self, id):
