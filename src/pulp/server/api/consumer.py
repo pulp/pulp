@@ -452,7 +452,8 @@ class ConsumerApi(BaseApi):
         agent = PulpAgent(consumer)
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         packages = agent.Packages(timeout=tm)
-        return packages.install(names, reboot, importkeys)
+        packages(importkeys=importkeys)
+        return packages.install(names, reboot)
 
     @audit()
     def uninstallpackages(self, id, names=()):
