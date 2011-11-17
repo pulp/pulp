@@ -80,7 +80,7 @@ class RepoCollectionTest(testutil.PulpWebserviceTest):
         status, body = self.post('/v2/repositories/', params=body)
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(201, status)
 
         self.assertEqual(body['id'], 'repo-1')
 
@@ -280,6 +280,17 @@ class RepoImportersTest(testutil.PulpWebserviceTest):
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
 
+    def test_get_missing_repo(self):
+        """
+        Tests getting importers for a repo that doesn't exist.
+        """
+
+        # Test
+        status, body = self.get('/v2/repositories/not_there/importers/')
+
+        # Verify
+        self.assertEqual(404, status)
+
     def test_post(self):
         """
         Tests adding an importer to a repo.
@@ -297,7 +308,7 @@ class RepoImportersTest(testutil.PulpWebserviceTest):
         status, body = self.post('/v2/repositories/gravy/importers/', params=req_body)
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(201, status)
         self.assertEqual(body['importer_type_id'], req_body['importer_type_id'])
         self.assertEqual(body['repo_id'], 'gravy')
         self.assertEqual(body['config'], req_body['importer_config'])
@@ -518,4 +529,89 @@ class RepoImporterTest(testutil.PulpWebserviceTest):
         # Verify
         self.assertEqual(400, status)
 
-    
+class RepoDistributorsTest(testutil.PulpWebserviceTest):
+
+    def setUp(self):
+        testutil.PulpWebserviceTest.setUp(self)
+
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+        self.repo_manager = manager_factory.repo_manager()
+        self.distributor_manager = manager_factory.repo_distributor_manager()
+
+    def tearDown(self):
+        testutil.PulpWebserviceTest.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpTest.clean(self)
+
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+
+    def test_get_distributors(self):
+        """
+        Tests retrieving all distributors for a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('coffee')
+        self.distributor_manager.add_distributor('coffee', 'mock-distributor', {}, True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('coffee', 'mock-distributor', {}, True, distributor_id='dist-2')
+
+        # Test
+        status, body = self.get('/v2/repositories/coffee/distributors/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(2, len(body))
+
+    def test_get_distributors_no_distributors(self):
+        """
+        Tests retrieving distributors for a repo that has none.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('dark-roast')
+
+        # Test
+        status, body = self.get('/v2/repositories/dark-roast/distributors/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(0, len(body))
+
+    def test_get_distributors_missing_repo(self):
+        """
+        Tests retrieving distributors for a repo that doesn't exist.
+        """
+
+        # Test
+        status, body = self.get('/v2/repositories/not-there/distributors/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_create_distributor(self):
+        """
+        Tests creating a distributor on a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('tea')
+
+        req_body = {
+            'distributor_type_id' : 'mock-distributor',
+            'distributor_config' : {'a' : 'b'},
+        }
+
+        # Test
+        status, body = self.post('/v2/repositories/tea/distributors/', params=req_body)
+
+        # Verify
+        self.assertEqual(201, status)
+        self.assertEqual(body['repo_id'], 'tea')
+        self.assertEqual(body['config'], req_body['distributor_config'])
+        self.assertTrue('id' in body)
+        

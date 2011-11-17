@@ -65,7 +65,7 @@ class RepoCollection(JSONController):
         try:
             repo = repo_manager.create_repo(id, display_name, description, notes)
             # TODO: explicitly serialize repo for return
-            return self.ok(repo)
+            return self.created(None, repo)
         except errors.DuplicateRepoId:
             serialized = http_error_obj(409)
             return self.conflict(serialized)
@@ -137,7 +137,7 @@ class RepoImporters(JSONController):
             importers = importer_manager.get_importers(repo_id)
             # TODO: serialize properly
             return self.ok(importers)
-        except errors.MissingImporter:
+        except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -162,7 +162,7 @@ class RepoImporters(JSONController):
         try:
             importer = importer_manager.set_importer(repo_id, importer_type, importer_config)
             # TODO: serialize importer
-            return self.ok(importer)
+            return self.created(None, importer)
         except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
@@ -193,18 +193,7 @@ class RepoImporter(JSONController):
     @auth_required(UPDATE)
     def DELETE(self, repo_id, importer_id):
 
-        # This is kind of REST ghetto. The importer_id is required for REST URL
-        # purposes but isn't actually used in the managers. So we attempt to
-        # look up the importer for the repo and if it's not there, raise the
-        # expected 404.
-
         importer_manager = manager_factory.repo_importer_manager()
-
-        try:
-            importer_manager.get_importer(repo_id)
-        except errors.MissingImporter:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
 
         try:
             importer_manager.remove_importer(repo_id)
@@ -215,8 +204,6 @@ class RepoImporter(JSONController):
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
-
-        # See comment above on REST ghetto as to why this importer ID isn't used
 
         # Params (validation will occur in the manager)
         params = self.params()
@@ -275,7 +262,7 @@ class RepoDistributors(JSONController):
 
         try:
             added = distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
-            return self.ok(added)
+            return self.created(None, added)
         except errors.MissingRepo:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
@@ -362,12 +349,13 @@ class RepoPublish(JSONController):
     # POST:  Trigger a repo publish
 
     @auth_required(EXECUTE)
-    def POST(self, repo_id, distributor_id):
+    def POST(self, repo_id):
 
         # TODO: Add timeout support
 
         # Params
         params = self.params()
+        distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
 
         # Trigger the publish
@@ -391,7 +379,7 @@ urls = (
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
 
     '/([^/]+)/actions/sync/$', 'RepoSync', # sub-resource action
-    '/([^/]+)/actions/publish/([^/]+)/$', 'RepoPublish', # sub-resource action
+    '/([^/]+)/actions/publish/$', 'RepoPublish', # sub-resource action
 )
 
 application = web.application(urls, globals())
