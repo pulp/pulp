@@ -29,8 +29,10 @@ from pulp.common import dateutils
 import pulp.server.constants as pulp_constants
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
+from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
+import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
 
@@ -131,7 +133,7 @@ class RepoSyncManager:
             raise SyncInProgress(repo_id)
 
         try:
-            importer_instance, importer_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
+            importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
         except plugin_loader.PluginNotFound:
             raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
 
@@ -143,17 +145,15 @@ class RepoSyncManager:
         conduit = RepoSyncConduit(repo_id, repo_manager, self, association_manager,
                                   content_manager, content_query_manager)
 
-        # Take the repo's default sync config and merge in the override values
-        # for this sync alone (don't store it back to the DB)
-        sync_config = dict(repo_importer['config'])
-        if sync_config_override is not None:
-            sync_config.update(sync_config_override)
+        call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], sync_config_override)
+        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
 
         # Perform the sync
         try:
             repo_importer['sync_in_progress'] = True
             importer_coll.save(repo_importer, safe=True)
-            importer_instance.sync_repo(repo, conduit, importer_config, sync_config)
+            importer_instance.sync_repo(transfer_repo, conduit, call_config)
         except Exception:
             # I really wish python 2.4 supported except and finally together
 

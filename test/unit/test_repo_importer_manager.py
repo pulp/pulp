@@ -35,8 +35,6 @@ class RepoManagerTests(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-
-        plugin_loader._create_loader()
         mock_plugins.install()
 
         # Create the manager instance to test

@@ -21,7 +21,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock_plugins
 
-import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.data import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
@@ -35,8 +34,6 @@ class RepoManagerTests(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-
-        plugin_loader._create_loader()
         mock_plugins.install()
 
         # Create the manager instance to test

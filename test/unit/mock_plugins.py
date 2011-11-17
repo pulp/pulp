@@ -59,6 +59,8 @@ def install():
 
     # -- update plugin loader inventory ---------------------------------------
 
+    plugin_loader._create_loader()
+
     plugin_loader._LOADER.add_importer('mock-importer', MockImporter, {})
     plugin_loader._LOADER.add_distributor('mock-distributor', MockDistributor, {})
     plugin_loader._LOADER.add_distributor('mock-distributor-2', MockDistributor, {})

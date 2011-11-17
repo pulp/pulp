@@ -21,57 +21,18 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+import mock_plugins
 
 from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
-from pulp.server.content.plugins.importer import Importer
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
+import pulp.server.managers.repo.importer as repo_importer_manager
 import pulp.server.managers.repo.publish as repo_publish_manager
 import pulp.server.managers.repo.sync as repo_sync_manager
 
 # -- mocks --------------------------------------------------------------------
-
-class MockImporter(Importer):
-
-    # Last call state
-    repo_data = None
-    importer_config = None
-    sync_config = None
-    sync_conduit = None
-
-    # Call behavior
-    raise_error = False
-
-    @classmethod
-    def metadata(cls):
-        return {'types': ['mock_type']}
-
-    def sync_repo(self, repo_data, sync_conduit, importer_config, sync_config):
-
-        # Store the contents of what was passed to the sync call at the class
-        # level since the content manager factory will return a new instance
-        # at each invocation of sync (which we can't get access to to look in)
-        MockImporter.repo_data = repo_data
-        MockImporter.importer_config = importer_config
-        MockImporter.sync_config = sync_config
-        MockImporter.sync_conduit = sync_conduit
-
-        if MockImporter.raise_error:
-            raise Exception('Something bad happened during sync')
-
-    def validate_config(self, repo_data, importer_config):
-        return True
-
-    @classmethod
-    def reset(cls):
-        MockImporter.repo_data = None
-        MockImporter.importer_config = None
-        MockImporter.sync_config = None
-        MockImporter.sync_conduit = None
-
-        MockImporter.raise_error = False
 
 class MockRepoPublishManager:
 
@@ -101,21 +62,16 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-
-        plugin_loader._create_loader()
-
-        # Configure content manager
-        plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})
+        mock_plugins.install()
 
         # Create the manager instances for testing
         self.repo_manager = repo_manager.RepoManager()
+        self.importer_manager = repo_importer_manager.RepoImporterManager()
         self.sync_manager = repo_sync_manager.RepoSyncManager()
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
-
-        # Reset content manager
-        plugin_loader._LOADER.remove_importer('MockImporter')
+        mock_plugins.reset()
 
         # Reset the manager factory
         manager_factory.reset()
@@ -126,7 +82,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         RepoImporter.get_collection().remove()
 
         # Reset the state of the mock's tracker variables
-        MockImporter.reset()
         MockRepoPublishManager.reset()
 
     def test_sync(self):
@@ -138,14 +93,14 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Setup
         sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
         self.repo_manager.create_repo('repo-1')
-        self.repo_manager.set_importer('repo-1', 'MockImporter', sync_config)
+        self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
         # Test
         self.sync_manager.sync('repo-1', sync_config_override=None)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'MockImporter'})
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
 
         #   Verify database
         self.assertTrue(not repo_importer['sync_in_progress'])
@@ -153,9 +108,13 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
         #   Verify call into the importer
-        self.assertEqual(repo['id'], MockImporter.repo_data['id'])
-        self.assertEqual(sync_config, MockImporter.sync_config)
-        self.assertTrue(MockImporter.sync_conduit is not None)
+        sync_args = mock_plugins.MOCK_IMPORTER.sync_repo.call_args[0]
+
+        self.assertEqual(repo['id'], sync_args[0].id)
+        self.assertTrue(sync_args[1] is not None)
+        self.assertEqual({}, sync_args[2].plugin_config)
+        self.assertEqual(sync_config, sync_args[2].repo_plugin_config)
+        self.assertEqual({}, sync_args[2].override_config)
 
     def test_sync_with_sync_config_override(self):
         """
@@ -165,7 +124,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Setup
         importer_config = {'thor' : 'thor'}
         self.repo_manager.create_repo('repo-1')
-        self.repo_manager.set_importer('repo-1', 'MockImporter', importer_config)
+        self.importer_manager.set_importer('repo-1', 'mock-importer', importer_config)
 
         # Test
         sync_config_override = {'clint' : 'hawkeye'}
@@ -173,7 +132,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'MockImporter'})
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
 
         #   Verify database
         self.assertTrue(not repo_importer['sync_in_progress'])
@@ -181,12 +140,14 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
         #   Verify call into the importer
-        self.assertEqual(repo['id'], MockImporter.repo_data['id'])
-        self.assertTrue(MockImporter.sync_conduit is not None)
+        #   Verify call into the importer
+        sync_args = mock_plugins.MOCK_IMPORTER.sync_repo.call_args[0]
 
-        merged = copy.copy(importer_config)
-        merged.update(sync_config_override)
-        self.assertEqual(merged, MockImporter.sync_config)
+        self.assertEqual(repo['id'], sync_args[0].id)
+        self.assertTrue(sync_args[1] is not None)
+        self.assertEqual({}, sync_args[2].plugin_config)
+        self.assertEqual(importer_config, sync_args[2].repo_plugin_config)
+        self.assertEqual(sync_config_override, sync_args[2].override_config)
 
     def test_sync_missing_repo(self):
         """
@@ -225,10 +186,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('old-repo')
-        self.repo_manager.set_importer('old-repo', 'MockImporter', None)
+        self.importer_manager.set_importer('old-repo', 'mock-importer', None)
 
         #   Simulate bouncing the server and removing the importer plugin
-        plugin_loader._LOADER.remove_importer('MockImporter')
+        plugin_loader._LOADER.remove_importer('mock-importer')
 
         # Test
         try:
@@ -246,7 +207,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('good-repo')
-        self.repo_manager.set_importer('good-repo', 'MockImporter', None)
+        self.importer_manager.set_importer('good-repo', 'mock-importer', None)
 
         RepoImporter.get_collection().remove()
 
@@ -263,10 +224,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        MockImporter.raise_error = True
+        mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = Exception()
 
         self.repo_manager.create_repo('gonna-bail')
-        self.repo_manager.set_importer('gonna-bail', 'MockImporter', {})
+        self.importer_manager.set_importer('gonna-bail', 'mock-importer', {})
 
         # Test
         try:
@@ -276,11 +237,14 @@ class RepoSyncManagerTests(testutil.PulpTest):
             print(e) # for coverage
 
         # Verify
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'MockImporter'})
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'mock-importer'})
 
         self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
+
+        # Cleanup
+        mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = None
 
     def test_sync_in_progress(self):
         """
@@ -290,7 +254,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('busy')
-        self.repo_manager.set_importer('busy', 'MockImporter', {})
+        self.importer_manager.set_importer('busy', 'mock-importer', {})
 
         #   Trick the database into thinking it's synccing
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'busy'})
@@ -314,7 +278,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         manager_factory.register_manager(manager_factory.TYPE_REPO_PUBLISH, MockRepoPublishManager)
 
         self.repo_manager.create_repo('repo')
-        self.repo_manager.set_importer('repo', 'MockImporter', {})
+        self.importer_manager.set_importer('repo', 'mock-importer', {})
 
         # Test
         self.sync_manager.sync('repo')
@@ -333,7 +297,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         MockRepoPublishManager.raise_error = True
 
         self.repo_manager.create_repo('doa')
-        self.repo_manager.set_importer('doa', 'MockImporter', {})
+        self.importer_manager.set_importer('doa', 'mock-importer', {})
 
         # Test
         try:
