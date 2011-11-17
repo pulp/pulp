@@ -264,5 +264,5 @@ def _auto_distributors(repo_id):
     publishing.
     """
     dist_coll = RepoDistributor.get_collection()
-    auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_distribute' : True}))
+    auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
     return auto_distributors

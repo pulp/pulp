@@ -304,7 +304,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.assertEqual('busy', e.repo_id)
             print(e) # for coverage
 
-    def test_sync_with_auto_distribute(self):
+    def test_sync_with_auto_publish(self):
         """
         Tests that the autodistribute call is properly called at the tail end
         of a successful sync.
@@ -322,7 +322,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Verify
         self.assertEqual('repo', MockRepoPublishManager.repo_id)
 
-    def test_sync_with_auto_distribute_error(self):
+    def test_sync_with_auto_publish_error(self):
         """
         Tests that the autodistribute exception is propagated when one or more
         auto publish calls fail.

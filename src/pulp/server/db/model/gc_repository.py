@@ -148,9 +148,9 @@ class RepoDistributor(Model):
                       a particular repo)
     @type scratchpad: anything pickle-able
 
-    @ivar auto_distribute: indicates if the distributor should automatically
-                           publish the repo on the tail end of a successful sync
-    @type auto_distribute: bool
+    @ivar auto_publish: indicates if the distributor should automatically
+                        publish the repo on the tail end of a successful sync
+    @type auto_publish: bool
 
     @ivar publish_in_progress: holds the state of the distributor
     @type publish_in_progress: bool
@@ -163,7 +163,7 @@ class RepoDistributor(Model):
     collection_name = 'gc_repo_distributors'
     unique_indices = ( ('repo_id', 'id'), )
 
-    def __init__(self, repo_id, id, distributor_type_id, config, auto_distribute):
+    def __init__(self, repo_id, id, distributor_type_id, config, auto_publish):
 
         # Generate a UUID for _id
         Model.__init__(self)
@@ -172,7 +172,7 @@ class RepoDistributor(Model):
         self.id = id
         self.distributor_type_id = distributor_type_id
         self.config = config
-        self.auto_distribute = auto_distribute
+        self.auto_publish = auto_publish
         self.scratchpad = None
 
         # Publish

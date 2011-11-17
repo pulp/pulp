@@ -76,14 +76,14 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertEqual('mock-distributor', all_distributors[0]['distributor_type_id'])
         self.assertEqual('test_me', all_distributors[0]['repo_id'])
         self.assertEqual(config, all_distributors[0]['config'])
-        self.assertTrue(all_distributors[0]['auto_distribute'])
+        self.assertTrue(all_distributors[0]['auto_publish'])
 
         #   Returned Value
         self.assertEqual('my_dist', added['id'])
         self.assertEqual('mock-distributor', added['distributor_type_id'])
         self.assertEqual('test_me', added['repo_id'])
         self.assertEqual(config, added['config'])
-        self.assertTrue(added['auto_distribute'])
+        self.assertTrue(added['auto_publish'])
 
         #   Plugin - Validate Config
         self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_count)
@@ -142,7 +142,7 @@ class RepoManagerTests(testutil.PulpTest):
         #    Database
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
-        self.assertTrue(not all_distributors[0]['auto_distribute'])
+        self.assertTrue(not all_distributors[0]['auto_publish'])
         self.assertEqual(config, all_distributors[0]['config'])
 
         #    Plugin Calls

@@ -79,7 +79,7 @@ class RepoDistributorManager:
         return distributors
 
     def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
-                        auto_distribute, distributor_id=None):
+                        auto_publish, distributor_id=None):
         """
         Adds an association from the given repository to a distributor. The
         association will be tracked through the distributor_id; each distributor
@@ -98,9 +98,9 @@ class RepoDistributorManager:
         @param repo_plugin_config: configuration the repo will use with this distributor; may be None
         @type  repo_plugin_config: dict
 
-        @param auto_distribute: if true, this distributor will be invoked at
-                                the end of every sync
-        @type  auto_distribute: bool
+        @param auto_publish: if true, this distributor will be invoked at
+                             the end of every sync
+        @type  auto_publish: bool
 
         @param distributor_id: unique ID to refer to this distributor for this repo
         @type  distributor_id: str
@@ -167,7 +167,7 @@ class RepoDistributorManager:
             raise DistributorInitializationException(), None, sys.exc_info()[2]
 
         # Database Update
-        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, repo_plugin_config, auto_distribute)
+        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, repo_plugin_config, auto_publish)
         distributor_coll.save(distributor, safe=True)
 
         return distributor
