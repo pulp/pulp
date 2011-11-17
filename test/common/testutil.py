@@ -265,16 +265,28 @@ class PulpAsyncTest(PulpTest):
 
 class PulpWebserviceTest(PulpTest):
 
-    def setUp(self):
-        PulpTest.setUp(self)
+    WEB_APP = None
+    TEST_APP = None
+    ORIG_HTTP_REQUEST_INFO = None
+    HEADERS = None
+
+    @classmethod
+    def setUpClass(cls):
+
+        # The application setup is somewhat time consuming and really only needs
+        # to be done once. We might be able to move it out to a single call for
+        # the entire test suite, but for now I'm seeing performance improvements
+        # by only doing it once per class instead of on every run.
+
+        super(PulpWebserviceTest, cls).setUpClass()
 
         # Because our code is a tightly coupled mess, the test config has to be
         # laoded before we can import application
         load_test_config()
         from pulp.server.webservices import application
 
-        self.web_app = web.subdir_application(application.URLS)
-        self.test_app = TestApp(self.web_app.wsgifunc())
+        PulpWebserviceTest.WEB_APP = web.subdir_application(application.URLS)
+        PulpWebserviceTest.TEST_APP = TestApp(PulpWebserviceTest.WEB_APP.wsgifunc())
 
         def request_info(key):
             if key == "REQUEST_URI":
@@ -282,18 +294,27 @@ class PulpWebserviceTest(PulpTest):
 
             return web.ctx.environ.get(key, None)
 
-        self.mock(http, "request_info", request_info)
-
-        #    User stuff
-        self.user_api.create('ws-user', password='ws-user')
-        self.user_api.update('ws-user', {'roles' : authorization.super_user_role})
+        PulpWebserviceTest.ORIG_HTTP_REQUEST_INFO = http.request_info
+        http.request_info = request_info
 
         base64string = base64.encodestring('%s:%s' % ('ws-user', 'ws-user'))[:-1]
-        self.headers = {'Authorization' : 'Basic %s' % base64string}
+        PulpWebserviceTest.HEADERS = {'Authorization' : 'Basic %s' % base64string}
 
-    def tearDown(self):
-        PulpTest.tearDown(self)
-        self.user_api.delete('ws-user')
+    @classmethod
+    def tearDownClass(cls):
+        user_api = UserApi()
+        user_api.delete('ws-user')
+
+        http.request_info = PulpWebserviceTest.ORIG_HTTP_REQUEST_INFO
+
+    def setUp(self):
+        super(PulpWebserviceTest, self).setUp()
+
+        # The built in PulpTest clean will automatically delete users between
+        # test runs, so we can't just create the user in the class level setup.
+        user_api = UserApi()
+        user_api.create('ws-user', password='ws-user')
+        user_api.update('ws-user', {'roles' : authorization.super_user_role})
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers)
@@ -314,7 +335,7 @@ class PulpWebserviceTest(PulpTest):
         """
 
         # Use the default headers established at setup and override/add any
-        headers = dict(self.headers)
+        headers = dict(PulpWebserviceTest.HEADERS)
         if additional_headers is not None:
             headers.update(additional_headers)
 
@@ -324,7 +345,7 @@ class PulpWebserviceTest(PulpTest):
         params = json.dumps(params)
 
         # Invoke the API
-        f = getattr(self.test_app, request_type)
+        f = getattr(PulpWebserviceTest.TEST_APP, request_type)
         response = f('http://localhost' + uri, params=params, headers=headers, expect_errors=True)
 
         # Collect return information and deserialize it
