@@ -33,55 +33,13 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.repo._exceptions import MissingRepo, RepoSyncException, NoImporter, MissingImporterPlugin, SyncInProgress
 
 # -- constants ----------------------------------------------------------------
 
 REPO_STORAGE_DIR = os.path.join(pulp_constants.LOCAL_STORAGE, 'repos')
 
 _LOG = logging.getLogger(__name__)
-
-# -- exceptions ---------------------------------------------------------------
-
-class RepoSyncException(Exception):
-    """
-    Raised when an error occurred during a repo sync. Subclass exceptions are
-    used to further categorize the error encountered. The ID of the repository
-    that caused the error is included in the exception.
-    """
-    def __init__(self, repo_id):
-        Exception.__init__(self)
-        self.repo_id = repo_id
-
-    def __str__(self):
-        return _('Exception [%(e)s] raised for repository [%(r)s]') % \
-               {'e' : self.__class__.__name__, 'r' : self.repo_id}
-
-class NoImporter(RepoSyncException):
-    """
-    Indicates a sync was requested on a repository that is not configured
-    with an importer.
-    """
-    pass
-
-class MissingRepo(RepoSyncException):
-    """
-    Indicates an operation was requested against a repo that doesn't exist.
-    """
-    pass
-
-class MissingImporterPlugin(RepoSyncException):
-    """
-    Indicates a repo is configured with an importer type that could not be
-    found in the plugin manager.
-    """
-    pass
-
-class SyncInProgress(RepoSyncException):
-    """
-    Indicates a sync was requested for a repo already in the process of
-    synchronizing the repo.
-    """
-    pass
 
 # -- manager ------------------------------------------------------------------
 
