@@ -314,8 +314,8 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         try:
-            distributor_manager.update_distributor_config(repo_id, distributor_id, distributor_config)
-            return self.ok(None)
+            updated = distributor_manager.update_distributor_config(repo_id, distributor_id, distributor_config)
+            return self.ok(updated)
         except (errors.MissingRepo, errors.MissingDistributor):
             serialized = http_error_obj(404)
             return self.not_found(serialized)

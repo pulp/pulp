@@ -613,5 +613,152 @@ class RepoDistributorsTest(testutil.PulpWebserviceTest):
         self.assertEqual(201, status)
         self.assertEqual(body['repo_id'], 'tea')
         self.assertEqual(body['config'], req_body['distributor_config'])
+        self.assertEqual(body['auto_publish'], False)
         self.assertTrue('id' in body)
-        
+
+    def test_create_distributor_missing_repo(self):
+        """
+        Tests creating a distributor on a repo that doesn't exist.
+        """
+
+        # Test
+        req_body = {
+            'distributor_type_id' : 'mock-distributor',
+            'distributor_config' : {'a' : 'b'},
+        }
+        status, body = self.post('/v2/repositories/not_there/distributors/', params=req_body)
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_create_distributor_invalid_data(self):
+        """
+        Tests creating a distributor but not passing in all the required data.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('invalid')
+
+        # Test
+        status, body = self.post('/v2/repositories/invalid/distributors/', params={})
+
+        # Verify
+        self.assertEqual(400, status)
+
+class RepoDistributorTest(testutil.PulpWebserviceTest):
+
+    def setUp(self):
+        testutil.PulpWebserviceTest.setUp(self)
+
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+        self.repo_manager = manager_factory.repo_manager()
+        self.distributor_manager = manager_factory.repo_distributor_manager()
+
+    def tearDown(self):
+        testutil.PulpWebserviceTest.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpTest.clean(self)
+
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+
+    def test_get(self):
+        """
+        Tests getting a single repo distributor.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, True, 'dist-1')
+
+        # Test
+        status, body = self.get('/v2/repositories/repo/distributors/dist-1/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(body['id'], 'dist-1')
+
+    def test_get_missing_distributor(self):
+        """
+        Tests getting a distributor that doesn't exist.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo-1')
+
+        # Test
+        status, body = self.get('/v2/repositories/repo-1/distributors/foo/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_delete(self):
+        """
+        Tests unassociating a distributor from a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {}, True, 'dist-1')
+
+        # Test
+        status, body = self.delete('/v2/repositories/repo-1/distributors/dist-1/')
+
+        # Verify
+        self.assertEqual(200, status)
+
+        dist = RepoDistributor.get_collection().find_one({'repo_id' : 'repo-1'})
+        self.assertTrue(dist is None)
+
+    def test_delete_missing_distributor(self):
+        """
+        Tests deleting a distributor that isn't there.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo-1')
+
+        # Test
+        status, body = self.delete('/v2/repositories/repo-1/distributors/foo/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_update(self):
+        """
+        Tests updating a distributor's configuration.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key' : 'orig'}, True, 'dist-1')
+
+        # Test
+        req_body = {'distributor_config' : {'key' : 'updated'}}
+        status, body = self.put('/v2/repositories/repo-1/distributors/dist-1/', params=req_body)
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(body['config'], req_body['distributor_config'])
+
+        dist = RepoDistributor.get_collection().find_one({'repo_id' : 'repo-1'})
+        self.assertEqual(dist['config'], req_body['distributor_config'])
+
+    def test_update_bad_request(self):
+        """
+        Tests updating a distributor with a bad request.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key' : 'orig'}, True, 'dist-1')
+
+        # Test
+        status, body = self.put('/v2/repositories/repo-1/distributors/dist-1/', params={})
+
+        # Verify
+        self.assertEqual(400, status)

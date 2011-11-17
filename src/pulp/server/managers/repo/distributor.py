@@ -228,6 +228,9 @@ class RepoDistributorManager:
         @param distributor_config: new configuration values to use
         @type  distributor_config: dict
 
+        @return: the updated distributor
+        @rtype:  dict
+
         @raises MissingRepo: if the given repo doesn't exist
         @raises MissingDistributor: if the given distributor doesn't exist
         @raises InvalidDistributorConfiguration: if the plugin rejects the given changes
@@ -265,6 +268,8 @@ class RepoDistributorManager:
         # If we got this far, the new config is valid, so update the database
         repo_distributor['config'] = distributor_config
         distributor_coll.save(repo_distributor, safe=True)
+
+        return repo_distributor
 
     def get_distributor_scratchpad(self, repo_id, distributor_id):
         """
