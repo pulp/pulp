@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.248
+Version:        0.0.249
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -485,6 +485,42 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.249-1
+- Add support in REST/manager layers for package update. (jortel@redhat.com)
+- Params needs to be empty not None (jason.dobies@redhat.com)
+- added get access to last_sync to prevent key error: no idea why its not
+  getting initialized (jconnor@redhat.com)
+- using utc timezone for timestamps instead of local (jconnor@redhat.com)
+- standardized our api sync calls on skip instead of skip_dict
+  (jconnor@redhat.com)
+- 752961 - Add Packages.update() support in the agent. (jortel@redhat.com)
+- Add jobs REST API page. (jortel@redhat.com)
+- 750580 - Adding eval on client side so that api can accept list instead of
+  str(list) (skarmark@redhat.com)
+- 750580 - RFE made search packages filterable by repositories
+  (skarmark@redhat.com)
+- Add job cancel. (jortel@redhat.com)
+- Added convention for the plugin writer to be able to define their own plugin
+  base class that is itself a subclass of our plugin classes.
+  (jason.dobies@redhat.com)
+- Fixed bug that prevented multiple importer/distributor classes to be defined
+  in the same plugin. (jason.dobies@redhat.com)
+- minor change in get_consumers_applicable_errata api and added extra comments
+  (skarmark@redhat.com)
+- Adding support for updating checksum type for a repository
+  (pkilambi@redhat.com)
+- Moved SElinux build/install steps from RPM to separate scripts
+  (jmatthews@redhat.com)
+- 751836 - inform user to use job command when trying group status
+  (pkilambi@redhat.com)
+- 752791, 749526 - changing the distribution api to be plural /distributions/
+  consistant with others. Also fix the return code to be a 404 if the
+  distribution is not found (pkilambi@redhat.com)
+- Adding ability to apply filter to manually uploaded content, Changed return
+  types of repository add_package api and cli changes to display a summary of
+  associates packages with filtered package count (skarmark@redhat.com)
+- scheduling package and scheduler module (jconnor@redhat.com)
+
 * Fri Nov 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.248-1
 - disregard reboot in agent when no packages installed. (jortel@redhat.com)
 - Adjust for rhel5 not being able to sync f16 metadata unless it uses
