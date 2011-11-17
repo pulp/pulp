@@ -487,6 +487,38 @@ class ConsumerApi(BaseApi):
         return packages.uninstall(names)
 
     @audit()
+    def updatepackages(self, id, names=()):
+        """
+        Update packages on the consumer.
+        @param id: A consumer id.
+        @type id: str
+        @param names: The package names to update.  Empty means ALL.
+        @type names: [str,..]
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', id)
+        task = Task(self.__updatepackages, [id, names])
+        return task
+
+    def __updatepackages(self, id, names):
+        """
+        Task callback to install packages.
+        @param id: The consumer ID.
+        @type id: str
+        @param names: A list of package names.  Empty means ALL.
+        @type names: list
+        @return: Whatever the agent returns.
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', id)
+        agent = PulpAgent(consumer)
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        packages = agent.Packages(timeout=tm)
+        return packages.update(names)
+
+    @audit()
     def installpackagegroups(self, id, grpids):
         """
         Install package groups on the consumer.

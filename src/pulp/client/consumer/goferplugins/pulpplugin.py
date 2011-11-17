@@ -208,7 +208,7 @@ class Packages:
         log.info('Packages uninstalled: %s', uninstalled)
         return uninstalled
     
-    @remote
+    @remote(secret=getsecret)
     def update(self, names, reboot=False, importkeys=False):
         """
         Update packages by name.

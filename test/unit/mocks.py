@@ -54,7 +54,10 @@ class Consumer(object):
 
 class Packages(object):
 
-    def install(self, packageinfo, reboot=False, yes=False):
+    def install(self, names, reboot=False, importkeys=False):
+        pass
+
+    def update(self, names=(), reboot=False, importkeys=False):
         pass
 
     def uninstall(self, names):
@@ -63,7 +66,7 @@ class Packages(object):
 
 class PackageGroups(object):
 
-    def install(self, packagegroupids):
+    def install(self, names, importkeys=False):
         pass
 
     def uninstall(self, names):

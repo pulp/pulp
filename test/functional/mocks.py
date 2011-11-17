@@ -54,7 +54,10 @@ class Consumer(object):
 
 class Packages(object):
 
-    def install(self, packageinfo, reboot=False, yes=False):
+    def install(self, names, reboot=False, importkeys=False):
+        pass
+
+    def update(self, names, reboot=False, importkeys=False):
         pass
 
     def uninstall(self, names):

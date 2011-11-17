@@ -313,6 +313,27 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         last = calls[-1]
         self.assertEqual(last.args[0], packages)
         
+    def test_package_update(self):
+        '''
+        Test package update
+        '''
+        # Setup
+        id = 'test-consumer'
+        packages = ['zsh',]
+        self.consumer_api.create(id, None)
+
+        # Test
+        task = self.consumer_api.updatepackages(id, packages)
+        self.assertTrue(task is not None)
+        task.run()
+
+        # Verify
+        agent = Agent(id)
+        pkgproxy = agent.Packages()
+        calls = pkgproxy.update.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], packages)
+
     def test_package_uninstall(self):
         '''
         Test package uninstall
