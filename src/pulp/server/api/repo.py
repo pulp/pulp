@@ -57,10 +57,11 @@ from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.tasking.task import task_running, task_waiting
 from pulp.server.agent import PulpAgent
+from pymongo.errors import DuplicateKeyError
 
 log = logging.getLogger(__name__)
 
-repo_fields = model.Repo(None, None, None).keys()
+repo_fields = model.Repo(None, None, None, None).keys()
 
 def clear_sync_in_progress_flags():
     """
@@ -236,21 +237,29 @@ class RepoApi(BaseApi):
 
         if not model.Repo.is_supported_content_type(content_types):
             raise PulpException('Content Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CONTENT_TYPES))
-        r = model.Repo(id, name, arch, feed, notes)
-
+        source = None
+        if feed:
+            source = model.RepoSource(feed)
         # Relative path calculation
         if relative_path is None or relative_path == "":
-            if r['source'] is not None :
-                if r['source']['type'] == "local":
-                    r['relative_path'] = r['id']
+            if source is not None :
+                if source['type'] == "local":
+                    relative_path = id
                 else:
                     # For none product repos, default to repoid
-                    url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse[2] or r['id']
+                    url_parse = urlparse(str(source["url"]))
+                    relative_path = url_parse[2] or id
             else:
-                r['relative_path'] = r['id']
+                relative_path = id
         else:
-            r['relative_path'] = relative_path
+            relative_path = relative_path
+        # Remove leading "/", they will interfere with symlink
+        # operations for publishing a repository
+        relative_path = relative_path.strip('/')
+        #try:
+        r = model.Repo(id, name, arch, relative_path, feed, notes)
+        #except DuplicateKeyError, dke:
+        #    raise PulpException("A Repo with relative path `%s` already exists; failed to create repo `%s`" % (r['relative_path'], id))
 
         # Store any certificates and add the full paths to their files in the repo object
         repo_cert_utils = RepoCertUtils(config.config)
@@ -277,9 +286,6 @@ class RepoApi(BaseApi):
             for gid in groupid:
                 r['groupid'].append(gid)
 
-        # Remove leading "/", they will interfere with symlink
-        # operations for publishing a repository
-        r['relative_path'] = r['relative_path'].strip('/')
         r['repomd_xml_path'] = \
             os.path.join(pulp.server.util.top_repos_location(),
                          r['relative_path'], 'repodata/repomd.xml')
@@ -296,7 +302,10 @@ class RepoApi(BaseApi):
             r['preserve_metadata'] = preserve_metadata
         if content_types:
             r['content_types'] = content_types
-        self.collection.insert(r, safe=True)
+        try:
+            self.collection.insert(r, safe=True)
+        except DuplicateKeyError, dke:
+            raise PulpException("A Repo with relative path `%s` already exists; failed to create repo `%s`" % (r['relative_path'], id))
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
@@ -738,6 +747,7 @@ class RepoApi(BaseApi):
 
         # store changed object
         self.collection.save(repo, safe=True)
+            
         # Update subscribed consumers after the object has been saved
         if update_consumers:
             self.update_repo_on_consumers(repo)

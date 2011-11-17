@@ -21,25 +21,10 @@ DUPLICATE_WARNING_MSG = """WARNING: Your database has multiple repos with the sa
 This is a deprecated functionality and will not be supported in upcoming versions of pulp.
 Please remove the following set(s) of repoids from your pulp server %s\n\n"""
 
-def _warning_repo_relativepath():
-    collection = Repo.get_collection()
-    relpath_repo_map = {}
-    for repo in collection.find():
-        if not repo['relative_path']:
-            continue
-        rpath = repo['relative_path'].strip()
-        if not relpath_repo_map.has_key(rpath):
-            relpath_repo_map[rpath] = []
-        relpath_repo_map[rpath].append(str(repo['id']))
-    dup_repos = []
-    for relpath, repoids in relpath_repo_map.items():
-        if len(repoids) > 1:
-            dup_repos.append(tuple(repoids))
-    if not dup_repos:
-        # no duplicates found, db is clean
-        return
-    sys.stderr.write(DUPLICATE_WARNING_MSG % dup_repos)
+#NOTE: This functionality has been deprecated; no further warning required
 
+def _warning_repo_relativepath():
+    pass
 
 def migrate():
     # this is only a db content validation rather migration; no change to db model itself
