@@ -24,7 +24,6 @@ import testutil
 import mock_plugins
 
 from pulp.common import dateutils
-import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
@@ -189,7 +188,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.importer_manager.set_importer('old-repo', 'mock-importer', None)
 
         #   Simulate bouncing the server and removing the importer plugin
-        plugin_loader._LOADER.remove_importer('mock-importer')
+        mock_plugins.IMPORTER_MAPPINGS.pop('mock-importer')
 
         # Test
         try:

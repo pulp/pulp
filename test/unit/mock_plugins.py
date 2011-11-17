@@ -50,6 +50,10 @@ MOCK_IMPORTER = MockImporter()
 MOCK_DISTRIBUTOR = MockDistributor()
 MOCK_DISTRIBUTOR_2 = MockDistributor()
 
+# Set by install; can edit these during a test to simulate a plugin being uninstalled
+DISTRIBUTOR_MAPPINGS = None
+IMPORTER_MAPPINGS = None
+
 # -- public -------------------------------------------------------------------
 
 def install():
@@ -74,17 +78,31 @@ def install():
     _ORIG_GET_DISTRIBUTOR_BY_ID = plugin_loader.get_distributor_by_id
     _ORIG_GET_IMPORTER_BY_ID = plugin_loader.get_importer_by_id
 
+    # Setup the importer/distributor mappings that return the mock instances
+    global DISTRIBUTOR_MAPPINGS
+    DISTRIBUTOR_MAPPINGS = {
+            'mock-distributor' : MOCK_DISTRIBUTOR,
+            'mock-distributor-2' : MOCK_DISTRIBUTOR_2,
+    }
+
+    global IMPORTER_MAPPINGS
+    IMPORTER_MAPPINGS = {
+        'mock-importer' : MOCK_IMPORTER
+    }
+
     # Return the mock instance; eventually can enhance this to support
     # multiple IDs and instances
     def mock_get_distributor_by_id(id):
-        mappings = {
-            'mock-distributor' : MOCK_DISTRIBUTOR,
-            'mock-distributor-2' : MOCK_DISTRIBUTOR_2,
-        }
-        return mappings[id], {}
+        if id not in DISTRIBUTOR_MAPPINGS:
+            raise plugin_loader.PluginNotFound()
+
+        return DISTRIBUTOR_MAPPINGS[id], {}
 
     def mock_get_importer_by_id(id):
-        return MOCK_IMPORTER, {}
+        if id not in IMPORTER_MAPPINGS:
+            raise plugin_loader.PluginNotFound()
+
+        return IMPORTER_MAPPINGS[id], {}
 
     # Monkey patch in the mock methods
     plugin_loader.get_distributor_by_id = mock_get_distributor_by_id

@@ -26,65 +26,15 @@ import traceback
 from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit
+from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.factory as manager_factory
-from pulp.server.managers.repo._exceptions import MissingRepo
+import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.repo._exceptions import MissingRepo, RepoPublishException, NoDistributor, MissingDistributorPlugin, PublishInProgress, AutoPublishException
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
-
-# -- exceptions ---------------------------------------------------------------
-
-class RepoPublishException(Exception):
-    """
-    Raised when an error occurred during a repo publish. Subclass exceptions are
-    used to further categorize the error encountered. The ID of the repository
-    that caused the error is included in the exception.
-    """
-    def __init__(self, repo_id):
-        Exception.__init__(self)
-        self.repo_id = repo_id
-
-    def __str__(self):
-        return _('Exception [%(e)s] raised for repository [%(r)s]') % \
-               {'e' : self.__class__.__name__, 'r' : self.repo_id}
-
-class NoDistributor(RepoPublishException):
-    """
-    Indicates a sync was requested on a repository that is not configured
-    with an distributor.
-    """
-    pass
-
-class MissingDistributorPlugin(RepoPublishException):
-    """
-    Indicates a repo is configured with an distributor type that could not be
-    found in the plugin manager.
-    """
-    pass
-
-class PublishInProgress(RepoPublishException):
-    """
-    Indicates a publish was requested for a repo and distributor already in
-    the process of publishing the repo.
-    """
-    pass
-
-class AutoPublishException(Exception):
-    """
-    Raised when the automatic publishing of a repository results in an error
-    for at least one of the distributors. This exception will
-    """
-    def __init__(self, repo_id, dist_traceback_tuples):
-        Exception.__init__(self)
-        self.repo_id = repo_id
-        self.dist_traceback_tuples = dist_traceback_tuples
-
-    def __str__(self):
-        dist_ids = [d[0] for d in self.dist_traceback_tuples]
-        return _('Exception [%(e)s] raised for repository [%(r)s] on distributors [%(d)s]' % \
-               {'e' : self.__class__.__name__, 'r' : self.repo_id, 'd' : ', '.join(dist_ids)})
 
 # -- manager ------------------------------------------------------------------
 
@@ -126,7 +76,7 @@ class RepoPublishManager:
             raise PublishInProgress(repo_id)
 
         try:
-            distributor_instance, distributor_config = \
+            distributor_instance, plugin_config = \
                 plugin_loader.get_distributor_by_id(repo_distributor['distributor_type_id'])
         except plugin_loader.PluginNotFound:
             raise MissingDistributorPlugin(repo_id), None, sys.exc_info()[2]
@@ -138,19 +88,15 @@ class RepoPublishManager:
         conduit = RepoPublishConduit(repo_id, distributor_id, repo_manager, self,
                                      association_manager, content_query_manager)
 
-        # Take the repo's default publish config and merge in the override values
-        # for this run alone (don't store it back to the DB)
-        publish_config = None
-        if repo_distributor['config'] is not None:
-            publish_config = dict(repo_distributor['config'])
-            if publish_config_override is not None:
-                publish_config.update(publish_config_override)
+        call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'], publish_config_override)
+        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(repo_distributor['distributor_type_id'], repo_id, mkdir=True)
 
         # Perform the publish
         try:
             repo_distributor['publish_in_progress'] = True
             distributor_coll.save(repo_distributor, safe=True)
-            distributor_instance.publish_repo(repo, conduit, distributor_config, publish_config)
+            distributor_instance.publish_repo(transfer_repo, conduit, call_config)
         except Exception:
             # Reload the distributor in case the scratchpad is set by the plugin
             repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
@@ -166,9 +112,6 @@ class RepoPublishManager:
         repo_distributor['publish_in_progress'] = False
         repo_distributor['last_publish'] = _publish_finished_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
-
-    def unpublish(self, repo_id, distributor_id):
-        pass
 
     def auto_publish_for_repo(self, repo_id):
         """

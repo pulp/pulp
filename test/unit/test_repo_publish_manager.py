@@ -13,98 +13,19 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
-import copy
 import datetime
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+import mock_plugins
 
 from pulp.common import dateutils
-import pulp.server.content.loader as plugin_loader
-from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
+import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
-
-# -- mocks --------------------------------------------------------------------
-
-class MockDistributor1(Distributor):
-
-    # Last call state
-    repo_data = None
-    publish_conduit = None
-    distributor_config = None
-    repo_config = None
-
-    # Call behavior
-    raise_error = False
-
-    @classmethod
-    def metadata(cls):
-        return {'types': ['mock_type_1']}
-
-    def publish_repo(self, repo_data, publish_conduit, distributor_config=None, repo_config=None):
-        MockDistributor1.repo_data = repo_data
-        MockDistributor1.publish_conduit = publish_conduit
-        MockDistributor1.distributor_config = distributor_config
-        MockDistributor1.repo_config = repo_config
-
-        if MockDistributor1.raise_error:
-            raise Exception('Publish error')
-
-    def validate_config(self, repo_data, distributor_config):
-        return True
-
-    @classmethod
-    def reset(cls):
-        MockDistributor1.repo_data = None
-        MockDistributor1.publish_conduit = None
-        MockDistributor1.distributor_config = None
-        MockDistributor1.repo_config = None
-
-        MockDistributor1.raise_error = None
-
-class MockDistributor2(Distributor):
-    """
-    This is kinda ugly but I can't really think of a better way to have a second
-    distributor class that will track calls to it.
-    """
-
-    # Last call state
-    repo_data = None
-    publish_conduit = None
-    distributor_config = None
-    repo_config = None
-
-    # Call behavior
-    raise_error = False
-
-    @classmethod
-    def metadata(cls):
-        return {'types': ['mock_type_2']}
-
-    def publish_repo(self, repo_data, publish_conduit, distributor_config=None, repo_config=None):
-        MockDistributor2.repo_data = repo_data
-        MockDistributor2.publish_conduit = publish_conduit
-        MockDistributor2.distributor_config = distributor_config
-        MockDistributor2.repo_config = repo_config
-
-        if MockDistributor2.raise_error:
-            raise Exception('Publish error')
-
-    def validate_config(self, repo_data, distributor_config):
-        return True
-
-    @classmethod
-    def reset(cls):
-        MockDistributor2.repo_data = None
-        MockDistributor2.publish_conduit = None
-        MockDistributor2.distributor_config = None
-        MockDistributor2.repo_config = None
-
-        MockDistributor2.raise_error = None
 
 # -- test cases ---------------------------------------------------------------
 
@@ -112,32 +33,21 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-
-        plugin_loader._create_loader()
-
-        # Configure content manager
-        plugin_loader._LOADER.add_distributor('MockDistributor1', MockDistributor1, {})
-        plugin_loader._LOADER.add_distributor('MockDistributor2', MockDistributor2, {})
+        mock_plugins.install()
 
         # Create the manager instances for testing
         self.repo_manager = repo_manager.RepoManager()
+        self.distributor_manager = distributor_manager.RepoDistributorManager()
         self.publish_manager = publish_manager.RepoPublishManager()
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
-
-        # Reset content manager
-        plugin_loader._LOADER.remove_distributor('MockDistributor1')
-        plugin_loader._LOADER.remove_distributor('MockDistributor2')
+        mock_plugins.reset()
 
     def clean(self):
         testutil.PulpTest.clean(self)
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
-
-        # Reset the state of the mock's tracker variables
-        MockDistributor1.reset()
-        MockDistributor2.reset()
 
     def test_publish(self):
         """
@@ -148,8 +58,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Setup
         publish_config = {'foo' : 'bar'}
         self.repo_manager.create_repo('repo-1')
-        self.repo_manager.add_distributor('repo-1', 'MockDistributor1', publish_config, False, distributor_id='dist-1')
-        self.repo_manager.add_distributor('repo-1', 'MockDistributor2', publish_config, False, distributor_id='dist-2')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config, False, distributor_id='dist-2')
 
         # Test
         self.publish_manager.publish('repo-1', 'dist-1', None)
@@ -163,14 +73,16 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
         #   Call into the correct distributor
-        self.assertEqual('repo-1', MockDistributor1.repo_data['id'])
-        self.assertEqual(publish_config, MockDistributor1.repo_config)
-        self.assertTrue(MockDistributor1.publish_conduit is not None)
+        call_args = mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_args[0]
 
-        self.assertTrue(MockDistributor2.repo_data is None)
-        self.assertTrue(MockDistributor2.distributor_config is None)
-        self.assertTrue(MockDistributor2.publish_conduit is None)
+        self.assertEqual('repo-1', call_args[0].id)
+        self.assertTrue(call_args[1] is not None)
+        self.assertEqual({}, call_args[2].plugin_config)
+        self.assertEqual(publish_config, call_args[2].repo_plugin_config)
+        self.assertEqual({}, call_args[2].override_config)
 
+        self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
+        
     def test_publish_with_config_override(self):
         """
         Tests a publish when passing in override values.
@@ -179,16 +91,20 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Setup
         distributor_config = {'key-1' : 'orig-1', 'key-2' : 'orig-2'}
         self.repo_manager.create_repo('repo-1')
-        self.repo_manager.add_distributor('repo-1', 'MockDistributor2', distributor_config, False, 'dist-2')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', distributor_config, False, 'dist-2')
 
         # Test
         publish_overrides = {'key-1' : 'new-1', 'key-3' : 'new-3'}
         self.publish_manager.publish('repo-1', 'dist-2', publish_overrides)
 
         # Verify call into mock
-        expected_config = copy.copy(distributor_config)
-        expected_config.update(publish_overrides)
-        self.assertEqual(expected_config, MockDistributor2.repo_config)
+        call_args = mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_args[0]
+
+        self.assertEqual('repo-1', call_args[0].id)
+        self.assertTrue(call_args[1] is not None)
+        self.assertEqual({}, call_args[2].plugin_config)
+        self.assertEqual(distributor_config, call_args[2].repo_plugin_config)
+        self.assertEqual(publish_overrides, call_args[2].override_config)
 
     def test_publish_missing_repo(self):
         """
@@ -227,10 +143,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.repo_manager.add_distributor('repo', 'MockDistributor1', None, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', None, False, distributor_id='dist-1')
 
         #   Simulate bouncing the server and removing the distributor plugin
-        plugin_loader._LOADER.remove_distributor('MockDistributor1')
+        mock_plugins.DISTRIBUTOR_MAPPINGS.pop('mock-distributor')
 
         # Test
         try:
@@ -248,7 +164,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.repo_manager.add_distributor('repo', 'MockDistributor1', None, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', None, False, distributor_id='dist-1')
 
         RepoDistributor.get_collection().remove()
 
@@ -266,10 +182,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        MockDistributor1.raise_error = True
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = Exception()
 
         self.repo_manager.create_repo('gonna-bail')
-        self.repo_manager.add_distributor('gonna-bail', 'MockDistributor1', None, False, distributor_id='bad-dist')
+        self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', None, False, distributor_id='bad-dist')
 
         # Test
         try:
@@ -286,6 +202,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(repo_distributor is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
 
     def test_publish_in_progress(self):
         """
@@ -294,7 +212,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('busy')
-        self.repo_manager.add_distributor('busy', 'MockDistributor1', {}, False, 'dist-1')
+        self.distributor_manager.add_distributor('busy', 'mock-distributor', {}, False, 'dist-1')
 
         #   Trick the database into thinking it's publishing
         repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'busy'})
@@ -317,16 +235,16 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('publish-me')
-        self.repo_manager.add_distributor('publish-me', 'MockDistributor1', {}, True, 'auto')
-        self.repo_manager.add_distributor('publish-me', 'MockDistributor2', {}, False, 'manual')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor', {}, True, 'auto')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, False, 'manual')
 
         # Test
         self.publish_manager.auto_publish_for_repo('publish-me')
 
         # Verify
-        self.assertTrue(MockDistributor1.repo_data is not None)
-        self.assertTrue(MockDistributor2.repo_data is None)
-
+        self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_count)
+        self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
+        
     def test_auto_publish_no_repo(self):
         """
         Tests that calling auto publish on a repo that doesn't exist or one that
@@ -343,11 +261,11 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        MockDistributor1.raise_error = True
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = Exception()
 
         self.repo_manager.create_repo('publish-me')
-        self.repo_manager.add_distributor('publish-me', 'MockDistributor1', {}, True, 'auto-1')
-        self.repo_manager.add_distributor('publish-me', 'MockDistributor2', {}, True, 'auto-2')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor', {}, True, 'auto-1')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, True, 'auto-2')
 
         # Test
         try:
@@ -360,6 +278,9 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.assertTrue(e.dist_traceback_tuples[0][1] is not None)
             print(e) # for coverage
             print(e.dist_traceback_tuples[0][1]) # for curiosity of the exception format
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
 
     def test_last_publish(self):
         """
