@@ -203,7 +203,20 @@ class BaseSynchronizer(object):
         if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
             log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
-            package_list = pulp.server.util.get_repo_packages(dir)
+            unfiltered_pkglist = pulp.server.util.get_repo_packages(dir)
+            # Process repo filters if any
+            if repo['filters']:
+                log.info("Repo filters : %s" % repo['filters'])
+                whitelist_packages = self.repo_api.find_combined_whitelist_packages(repo['filters'])
+                blacklist_packages = self.repo_api.find_combined_blacklist_packages(repo['filters'])
+                log.info("combined whitelist packages = %s" % whitelist_packages)
+                log.info("combined blacklist packages = %s" % blacklist_packages)
+            else:
+                whitelist_packages = []
+                blacklist_packages = []
+
+            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+
             log.debug("Processing %s potential packages" % (len(package_list)))
             for package in package_list:
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package.name, package.version, \
