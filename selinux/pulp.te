@@ -4,8 +4,10 @@ require {
     type default_t;
     type fs_t;
     type httpd_t;
-    type httpd_sys_script_t;
     type httpd_log_t;
+    type httpd_sys_script_t;
+    type httpd_tmp_t;
+    type httpd_tmpfs_t;
     type initrc_t;
     type nfs_t;
     type restorecon_t;
@@ -58,4 +60,29 @@ allow unconfined_t pulp_certs_t:lnk_file { read getattr };
 allow httpd_t pulp_certs_t:dir search;
 allow httpd_t pulp_certs_t:file { getattr read open };
 allow httpd_t pulp_certs_t:lnk_file { getattr read };
-allow httpd_t default_t:file { read getattr };
+
+# SELinux is preventing /usr/sbin/httpd from open access on the file /shared/repo/pulp/srv/pulp/webservices.wsgi
+read_files_pattern(httpd_t, pulp_exec_t, pulp_exec_t)
+
+# SELinux is preventing /usr/sbin/httpd from search access on the directory /etc/pulp
+read_files_pattern(httpd_t, pulp_config_t, pulp_config_t)
+
+# SELinux is preventing /usr/sbin/httpd from read access on the lnk_file /etc/pulp/pulp.conf
+read_lnk_files_pattern(httpd_t, pulp_config_t, pulp_config_t)
+
+# SELinux is preventing /usr/sbin/httpd from write access on the file /var/log/pulp/events.log
+write_files_pattern(httpd_t, pulp_log_t, pulp_log_t)
+
+# SELinux is preventing /usr/sbin/httpd from write access on the directory /var/log/pulp
+manage_dirs_pattern(httpd_t, pulp_log_t, pulp_log_t)
+
+# TODO:  Look for a more restricted way to get around this problem of:
+# SELinux is preventing /usr/sbin/httpd from execute access on the file /tmp/ffiwWcJ6i (deleted)
+allow httpd_t httpd_tmp_t:file execute;
+allow httpd_t httpd_tmpfs_t:file execute;
+
+# SELinux is preventing /usr/sbin/httpd from search access on the directory /var/lib/pulp
+rw_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
+manage_dirs_pattern(httpd_t, pulp_content_t, pulp_content_t)
+
+
