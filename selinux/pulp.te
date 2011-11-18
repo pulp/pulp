@@ -1,34 +1,61 @@
-module pulp 1.1;
+policy_module(pulp,1.0)
 
 require {
-    type httpd_tmp_t;
-    type httpd_log_t;
-    type cert_t;
-    type httpd_tmpfs_t;
+    type default_t;
+    type fs_t;
     type httpd_t;
-    type var_t;
-    type var_lib_t;
-    type var_log_t;
-    type port_t;
-    type amqp_port_t;
-    class sock_file { write create unlink setattr };
-    class tcp_socket name_connect;
-    class lnk_file { create unlink };
-    class dir { rename setattr create write rmdir remove_name add_name };
-    class file { write rename execute read create unlink open getattr append };
+    type httpd_sys_script_t;
+    type httpd_log_t;
+    type initrc_t;
+    type nfs_t;
+    type restorecon_t;
+    type rpm_var_lib_t;
+    type setfiles_t;
+    type unconfined_t;
 }
 
-#============= httpd_t ==============
-allow httpd_t amqp_port_t:tcp_socket name_connect;
-allow httpd_t cert_t:dir { write remove_name create add_name rmdir };
-allow httpd_t cert_t:file { write create unlink };
-allow httpd_t httpd_log_t:file { write rename unlink create};
-allow httpd_t httpd_tmp_t:file execute;
-allow httpd_t httpd_tmpfs_t:file execute;
-allow httpd_t port_t:tcp_socket name_connect;
-allow httpd_t var_lib_t:dir { rename create rmdir setattr };
-allow httpd_t var_lib_t:file { write append };
-allow httpd_t var_lib_t:lnk_file {create unlink};
-allow httpd_t var_t:file { read getattr open };
-allow httpd_t var_t:sock_file { write create unlink setattr };
-allow httpd_t var_log_t:file write;
+# Private type declarations
+type pulp_t;
+type pulp_certs_t;
+type pulp_config_t;
+type pulp_content_t;
+type pulp_exec_t;
+type pulp_initrc_exec_t;
+type pulp_log_t;
+type pulp_tmp_t;
+
+domain_type(pulp_t)
+domain_entry_file(pulp_t, pulp_exec_t)
+domain_entry_file(initrc_t, pulp_initrc_exec_t)
+domain_auto_trans(initrc_t, pulp_initrc_exec_t, pulp_t)
+domain_auto_trans(httpd_t, pulp_initrc_exec_t, initrc_t)
+allow restorecon_t pulp_initrc_exec_t:file { relabelto getattr };
+
+logging_log_file(pulp_log_t)
+files_tmp_file(pulp_tmp_t)
+files_type(pulp_content_t)
+
+allow pulp_t pulp_log_t:file manage_file_perms;
+allow pulp_t pulp_tmp_t:file manage_file_perms;
+
+files_tmp_filetrans(pulp_t,pulp_tmp_t,file)
+
+files_config_file(pulp_config_t)
+
+
+# Added to allow restorecon to function after repeated runs of "enable.sh" during development
+allow pulp_certs_t fs_t:filesystem associate;
+allow setfiles_t pulp_certs_t:dir relabelto;
+allow setfiles_t pulp_certs_t:dir read;
+
+
+# Fix SELinux is preventing /bin/bash from getattr access on the directory /etc/pki/pulp
+allow unconfined_t pulp_certs_t:dir { getattr read search open };
+allow unconfined_t pulp_certs_t:file getattr;
+allow unconfined_t pulp_certs_t:lnk_file { read getattr };
+
+# Fix: SELinux is preventing /usr/sbin/httpd from getattr access on the file /shared/repo/pulp/etc/pki/pulp/ca.crt
+allow httpd_t pulp_certs_t:dir search;
+allow httpd_t pulp_certs_t:file { getattr read open };
+allow httpd_t pulp_certs_t:lnk_file { getattr read };
+allow httpd_t default_t:file { read getattr };
