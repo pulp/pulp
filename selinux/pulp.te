@@ -47,8 +47,9 @@ files_config_file(pulp_config_t)
 
 # Added to allow restorecon to function after repeated runs of "enable.sh" during development
 allow pulp_certs_t fs_t:filesystem associate;
-allow setfiles_t pulp_certs_t:dir relabelto;
-allow setfiles_t pulp_certs_t:dir read;
+allow setfiles_t pulp_certs_t:dir { getattr open search read relabelto };
+allow setfiles_t pulp_certs_t:file relabelto;
+allow setfiles_t pulp_certs_t:lnk_file relabelto;
 
 
 # Fix SELinux is preventing /bin/bash from getattr access on the directory /etc/pki/pulp
@@ -57,9 +58,12 @@ allow unconfined_t pulp_certs_t:file getattr;
 allow unconfined_t pulp_certs_t:lnk_file { read getattr };
 
 # Fix: SELinux is preventing /usr/sbin/httpd from getattr access on the file /shared/repo/pulp/etc/pki/pulp/ca.crt
-allow httpd_t pulp_certs_t:dir search;
-allow httpd_t pulp_certs_t:file { getattr read open };
-allow httpd_t pulp_certs_t:lnk_file { getattr read };
+#allow httpd_t pulp_certs_t:dir search;
+#allow httpd_t pulp_certs_t:file { getattr read open };
+#allow httpd_t pulp_certs_t:lnk_file { getattr read };
+manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t);
+manage_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t);
+manage_lnk_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t);
 
 # SELinux is preventing /usr/sbin/httpd from open access on the file /shared/repo/pulp/srv/pulp/webservices.wsgi
 read_files_pattern(httpd_t, pulp_exec_t, pulp_exec_t)
@@ -85,4 +89,15 @@ allow httpd_t httpd_tmpfs_t:file execute;
 rw_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
 manage_dirs_pattern(httpd_t, pulp_content_t, pulp_content_t)
 
+# SELinux is preventing /usr/sbin/httpd from getattr access on the lnk_file /var/lib/pulp/published/repos/repos/pulp/pulp/fedora-15/i386
+# SELinux is preventing /usr/sbin/httpd from unlink access on the file /var/lib/pulp/packages/python-webpy/0.32/8.fc15/noarch/a66/python-webpy-0.32-8.fc15.noarch.rpm
+manage_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
+manage_lnk_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
+
+# SELinux is preventing /usr/sbin/httpd from write access on the directory content
+# OSError: [Errno 13] Permission denied: '/etc/pki/content/pulp_f15_i386'
+manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
+manage_lnk_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
+
+# SELinux is preventing /usr/sbin/httpd from write access on the file pulp-protected-repos.
 
