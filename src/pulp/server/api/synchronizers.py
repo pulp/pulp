@@ -713,22 +713,21 @@ class YumSynchronizer(BaseSynchronizer):
             tree_files = self.list_tree_files(src_repo_dir)
             self._init_progress_details("tree_file", tree_files, src_repo_dir)
 
-    def _process_rpm(self, pkg, dst_repo_dir):
-        pkg_info = pulp.server.util.get_rpm_information(pkg)
-        pkg_checksum = pulp.server.util.get_file_checksum(hashtype="sha256", filename=pkg)
-        pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
-                pkg_info['version'], pkg_info['release'], pkg_info['arch'],
-                os.path.basename(pkg), pkg_checksum)
-        if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
-            pkg_dirname = os.path.dirname(pkg_location)
+    def _process_rpm(self, pkg, src_repo_dir, dst_repo_dir):
+        dst_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), pkg.name, pkg.version, \
+                                                  pkg.release, pkg.arch, pkg.checksum[:3], os.path.basename(pkg.relativepath))
+        if not pulp.server.util.check_package_exists(dst_pkg_path, pkg.checksum, hashtype=pkg.checksum_type):
+            pkg_dirname = os.path.dirname(dst_pkg_path)
             if not os.path.exists(pkg_dirname):
                 os.makedirs(pkg_dirname)
-            shutil.copy(pkg, pkg_location)
+            src_pkg_path = "%s/%s" % (src_repo_dir, pkg.relativepath)
+            log.error(" source path %s ; dst path %s" % (src_pkg_path, dst_pkg_path))
+            shutil.copy(src_pkg_path, dst_pkg_path)
 
             self.progress['num_download'] += 1
-        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg.relativepath))
         if not os.path.islink(repo_pkg_path):
-            pulp.server.util.create_rel_symlink(pkg_location, repo_pkg_path)
+            pulp.server.util.create_rel_symlink(dst_pkg_path, repo_pkg_path)
 
     def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
         pkglist = []
@@ -737,7 +736,7 @@ class YumSynchronizer(BaseSynchronizer):
             for pkg in unfiltered_pkglist:
                 for whitelist_package in whitelist_packages:
                     w = re.compile(whitelist_package)
-                    if w.match(os.path.basename(pkg)):
+                    if w.match(os.path.basename(pkg.relativepath)):
                         pkglist.append(pkg)
                         break
         else:
@@ -748,7 +747,7 @@ class YumSynchronizer(BaseSynchronizer):
             for pkg in pkglist:
                 for blacklist_package in blacklist_packages:
                     b = re.compile(blacklist_package)
-                    if b.match(os.path.basename(pkg)):
+                    if b.match(os.path.basename(pkg.relativepath)):
                         to_remove.append(pkg)
                         break
             for pkg in to_remove:
@@ -760,22 +759,22 @@ class YumSynchronizer(BaseSynchronizer):
     def _sync_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
                    progress_callback=None):
         # Compute and import packages
-        unfiltered_pkglist = self.list_rpms(src_repo_dir)
+        unfiltered_pkglist = pulp.server.util.get_repo_packages(src_repo_dir)
         pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
 
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
             progress_callback(self.progress)
-
+        log.debug("Processing %s potential packages" % (len(pkglist)))
         for count, pkg in enumerate(pkglist):
             if self.stopped:
                 raise CancelException()
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(pkglist)))
             try:
-                rpm_name = os.path.basename(pkg)
+                rpm_name = os.path.basename(pkg.relativepath)
                 log.debug("Processing rpm: %s" % rpm_name)
-                self._process_rpm(pkg, dst_repo_dir)
+                self._process_rpm(pkg, src_repo_dir, dst_repo_dir)
                 self.progress['details']["rpm"]["num_success"] += 1
                 self.progress["num_success"] += 1
                 self.progress["item_type"] = BaseFetch.RPM
@@ -789,7 +788,7 @@ class YumSynchronizer(BaseSynchronizer):
                 error_info["traceback"] = traceback.format_exc().splitlines()
                 self._add_error_details(pkg, "rpm", error_info)
             self.progress["step"] = ProgressReport.DownloadItems
-            item_size = self._calculate_bytes(src_repo_dir, [pkg])
+            item_size = self._calculate_bytes(src_repo_dir, [pkg.relativepath])
             self.progress['size_left'] -= item_size
             self.progress['items_left'] -= 1
             self.progress['details']["rpm"]["items_left"] -= 1
@@ -807,7 +806,7 @@ class YumSynchronizer(BaseSynchronizer):
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
         existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
-        source_pkgs = [os.path.basename(p) for p in unfiltered_pkglist]
+        source_pkgs = [os.path.basename(p.relativepath) for p in unfiltered_pkglist]
 
         if progress_callback is not None:
             log.debug("Updating progress to %s" % (ProgressReport.PurgeOrphanedPackages))
