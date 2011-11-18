@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.250
+Version:        0.0.251
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -485,6 +485,15 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Nov 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.251-1
+- 754807 - Added filter application step when importing packages as it is now
+  separated from fetch_content while syncing a local repository
+  (skarmark@redhat.com)
+- Added sync history retrieval to manager layer (jason.dobies@redhat.com)
+- updatinf functional test to get filename from pkg object
+  (pkilambi@redhat.com)
+- Added sync history tracking (jason.dobies@redhat.com)
+
 * Fri Nov 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.250-1
 - fixing the clones to use the checksum value from source metadata and not
   recompute checksum (pkilambi@redhat.com)
