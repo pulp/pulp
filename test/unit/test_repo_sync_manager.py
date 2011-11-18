@@ -379,6 +379,55 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(history[0]['exception'] is None)
         self.assertTrue(history[0]['traceback'] is None)
 
+    def test_sync_history(self):
+        """
+        Tests retrieving sync history for a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('creeper')
+        for i in range(1, 6):
+            add_result('creeper', i)
+
+        # Test
+        entries = self.sync_manager.sync_history('creeper')
+
+        # Verify
+        self.assertEqual(5, len(entries))
+
+        #    Verify descending order
+        for i in range(0, 4):
+            first = dateutils.parse_iso8601_datetime(entries[i]['completed'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['completed'])
+            self.assertTrue(first > second)
+
+    def test_sync_history_with_limit(self):
+        """
+        Tests retrieving only a subset of all history entries
+        """
+
+        # Setup
+        self.repo_manager.create_repo('zombie')
+        for i in range(1, 10):
+            add_result('zombie', i)
+
+        # Test
+        entries = self.sync_manager.sync_history('zombie', limit=3)
+
+        # Verify
+        self.assertEqual(3, len(entries))
+
+    def test_sync_history_missing_repo(self):
+        """
+        Tests getting sync history for a repo that doesn't exist.
+        """
+
+        # Test
+        try:
+            self.sync_manager.sync_history('endermen')
+            self.fail('Exception expected')
+        except repo_sync_manager.MissingRepo, e:
+            self.assertEqual('endermen', e.repo_id)
 
     def test_get_repo_storage_directory(self):
         """
@@ -409,3 +458,9 @@ def assert_last_sync_time(time_in_iso):
     # Compare them within a threshold since they won't be exact
     difference = now - finished
     return difference.seconds < 2
+
+def add_result(repo_id, offset):
+    started = datetime.datetime.now(dateutils.local_tz())
+    completed = started + datetime.timedelta(days=offset)
+    r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, '')
+    RepoSyncResult.get_collection().save(r, safe=True)

@@ -22,6 +22,7 @@ import datetime
 from gettext import gettext as _
 import logging
 import os
+import pymongo
 import sys
 
 # Pulp
@@ -184,6 +185,24 @@ class RepoSyncManager:
             os.makedirs(dir)
 
         return dir
+
+    def sync_history(self, repo_id, limit=10):
+        """
+        Returns sync history entries for the given repo, sorted from most recent
+        to oldest. If there are no entries, an empty list is returned.
+        """
+
+        # Validation
+        repo = Repo.get_collection().find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        # Retrieve the entries
+        cursor = RepoSyncResult.get_collection().find({'repo_id' : repo_id})
+        cursor.limit(limit)
+        cursor.sort('completed', pymongo.DESCENDING)
+
+        return list(cursor)
 
 def _now_timestamp():
     """
