@@ -108,6 +108,11 @@ class ConsumerAPI(PulpAPI):
         body = dict(packagenames=packagenames, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
+    def updatepackages(self, id, packagenames, when=None):
+        path = "/consumers/%s/updatepackages/" % id
+        body = dict(packagenames=packagenames, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
     def uninstallpackages(self, id, packagenames, when=None):
         path = "/consumers/%s/uninstallpackages/" % id
         body = dict(packagenames=packagenames, scheduled_time=when)

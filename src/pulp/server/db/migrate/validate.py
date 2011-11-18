@@ -252,7 +252,7 @@ def _validate_repo():
     @return: number of errors found during validation
     """
     objectdb = Repo.get_collection()
-    reference = model.Repo(u'', u'', u'')
+    reference = model.Repo(u'', u'', u'', u'')
     return _validate_model(model.Repo.__name__, objectdb, reference)
 
 

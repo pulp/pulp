@@ -974,7 +974,7 @@ class RepositoryActions(JSONController):
         parameters:
          * clone_id, str, the id of the clone repository
          * clone_name, str, the namd of clone repository
-         * feed, str, feed of the clone repository in <type>:<url> format
+         * feed, str, feed of the clone repository - parent/origin/none
          * relative_path?, str, clone repository on disk path
          * groupid?, str, repository groups that clone belongs to
          * filters?, list of objects, synchronization filters to apply to the clone
@@ -984,7 +984,10 @@ class RepositoryActions(JSONController):
             return self.not_found('A repository with the id, %s, does not exist' % id)
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
-
+        if repo_data['feed'] not in ['parent','origin','none']:
+            return self.bad_request('Invalid feed, %s, see --help' % repo_data['feed'])
+        if repo_data['feed'] == 'origin' and repo_data.get('filters'):
+            return self.bad_request('Filters cannot be applied to clones with origin feed')
         task = repo_sync.clone(id,
                          repo_data['clone_id'],
                          repo_data['clone_name'],

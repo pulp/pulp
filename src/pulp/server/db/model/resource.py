@@ -255,8 +255,9 @@ class Repo(Model):
 
     collection_name = 'repos'
     search_indices = ('packages', 'packagegroups', 'packagegroupcategories')
+    unique_indices = ('relative_path',)
 
-    def __init__(self, id, name, arch, source=None, notes=None, content_types=None):
+    def __init__(self, id, name, arch, relative_path, source=None, notes=None, content_types=None):
         self._id = id
         self.id = id
         if source:
@@ -282,7 +283,7 @@ class Repo(Model):
         self.consumer_cert = None
         self.errata = {}
         self.groupid = []
-        self.relative_path = None
+        self.relative_path = relative_path
         self.files = []
         self.publish = False
         self.clone_ids = []

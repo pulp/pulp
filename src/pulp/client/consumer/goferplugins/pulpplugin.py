@@ -170,29 +170,55 @@ class Packages:
     Package management object.
     """
 
+    def __init__(self, importkeys=False):
+        """
+        @param importkeys: Import GPG keys as needed.
+        @type importkeys: bool
+        """
+        self.importkeys = \
+            getbool(cfg.gpg, permit_import=importkeys)
+
     @remote(secret=getsecret)
-    def install(self, names, reboot=False, importkeys=False):
+    def install(self, names, reboot=False):
         """
         Install packages by name.
         @param names: A list of package names.
         @type names: [str,]
         @param reboot: Request reboot after packages are installed.
         @type reboot: bool
-        @param importkeys: Permit YUM to install GPG keys as needed.
-        @type importkeys: bool
         @return: {installed=, reboot=}
           - installed : A list of installed packages
           - rebooted : A reboot was scheduled.
         @rtype: dict
         """
-        pkg = Package()
-        importkeys = self.permit_import(importkeys)
-        installed = pkg.install(names, importkeys)
+        p = Package(importkeys=self.importkeys)
+        installed = p.install(names)
         if reboot and installed:
             scheduled = self.reboot()
         else:
             scheduled = False
         return dict(installed=installed, reboot_scheduled=scheduled)
+    
+    @remote(secret=getsecret)
+    def update(self, names, reboot=False):
+        """
+        Update packages by name.
+        @param names: A list of package names.  Empty means update ALL.
+        @type names: [str,]
+        @param reboot: Request reboot after packages are installed.
+        @type reboot: bool
+        @return: {updated=, reboot=}
+          - updated : A list of (pkg, {updates=[],obsoletes=[]})
+          - rebooted : A reboot was scheduled.
+        @rtype: dict
+        """
+        p = Package(importkeys=self.importkeys)
+        updated = p.update(names)
+        if reboot and updated:
+            scheduled = self.reboot()
+        else:
+            scheduled = False
+        return dict(updated=updated, reboot_scheduled=scheduled)
 
     @remote(secret=getsecret)
     def uninstall(self, names):
@@ -203,38 +229,10 @@ class Packages:
         @return: A list of erased packages.
         @rtype: list
         """
-        pkg = Package()
-        uninstalled = pkg.uninstall(names)
+        p = Package()
+        uninstalled = p.uninstall(names)
         log.info('Packages uninstalled: %s', uninstalled)
         return uninstalled
-    
-    @remote
-    def update(self, names, reboot=False, importkeys=False):
-        """
-        Update packages by name.
-        @param names: A list of package names.  Empty means update ALL.
-        @type names: [str,]
-        @param reboot: Request reboot after packages are installed.
-        @type reboot: bool
-        @param importkeys: Permit YUM to install GPG keys as needed.
-        @type importkeys: bool
-        @return: {updated=, reboot=}
-          - updated : A list of (pkg, {updates=[],obsoletes=[]})
-          - rebooted : A reboot was scheduled.
-        @rtype: dict
-        """
-        pkg = Package()
-        importkeys = self.permit_import(importkeys)
-        updated = pkg.update(names, importkeys=importkeys)
-        if reboot and updated:
-            scheduled = self.reboot()
-        else:
-            scheduled = False
-        return dict(updated=updated, reboot_scheduled=scheduled)
-
-    def permit_import(self, flag):
-        permitted = getbool(cfg.gpg, permit_import=flag)
-        return ( flag and permitted )
 
     def reboot(self):
         permitted = getbool(cfg.reboot, permit=0)
@@ -250,6 +248,14 @@ class PackageGroups:
     PackageGroup management object
     """
 
+    def __init__(self, importkeys=False):
+        """
+        @param importkeys: Permit YUM to install GPG keys as needed.
+        @type importkeys: bool
+        """
+        self.importkeys = \
+            getbool(cfg.gpg, permit_import=importkeys)
+
     @remote(secret=getsecret)
     def install(self, names):
         """
@@ -257,8 +263,8 @@ class PackageGroups:
         @param names: A list of package names.
         @param names: str
         """
-        grp = PackageGroup()
-        installed = grp.install(names)
+        g = PackageGroup(importkeys=self.importkeys)
+        installed = g.install(names)
         log.info('Packages installed: %s', installed)
         return installed
 
@@ -269,7 +275,7 @@ class PackageGroups:
         @param names: A list of package group names.
         @param names: str
         """
-        grp = PackageGroup()
-        uninstalled = grp.uninstall(names)
+        g = PackageGroup()
+        uninstalled = g.uninstall(names)
         log.info('Packages uninstalled: %s', uninstalled)
         return uninstalled

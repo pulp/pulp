@@ -316,6 +316,7 @@ class ConsumerActions(JSONController):
         'delete_key_value_pair',
         'update_key_value_pair',
         'installpackages',
+        'updatepackages',
         'uninstallpackages',
         'installpackagegroups',
         'uninstallpackagegroups',
@@ -410,6 +411,25 @@ class ConsumerActions(JSONController):
         data = self.params()
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        if scheduled_time is not None:
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
+            task.scheduler = AtScheduler(scheduled_time)
+        async.enqueue(task, unique=False)
+        taskdict = self._task_to_dict(task)
+        return self.accepted(taskdict)
+
+    def updatepackages(self, id):
+        """
+        Update packages.
+        Body contains a list of package names.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        task = consumer_api.updatepackages(id, names)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)

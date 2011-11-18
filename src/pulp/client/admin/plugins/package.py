@@ -206,6 +206,97 @@ class Install(PackageAction):
         return wait
 
 
+class Update(Install):
+
+    name = "update"
+    description = _('schedule a package update')
+
+    def setup_parser(self):
+        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                               help=_("packages to be updated; to specify multiple packages use multiple -n; not specified means update ALL"))
+        id_group = OptionGroup(self.parser,
+                               _('Consumer or Consumer Group id (one is required'))
+        id_group.add_option("--consumerid", dest="consumerid",
+                            help=_("consumer id"))
+        id_group.add_option("--consumergroupid", dest="consumergroupid",
+                            help=_("consumer group id"))
+        self.parser.add_option_group(id_group)
+        self.parser.add_option("--when", dest="when", default=None,
+                               help=_("specifies when to execute the uninstall.  "
+                               "Format: iso8601, YYYY-MM-DDThh:mm"))
+        self.parser.add_option("--nowait", dest="nowait", default=False,
+            action="store_true",
+            help=_("if specified, don't wait for the package update to finish, "
+            "return immediately."))
+
+    def run(self):
+        consumerid = self.opts.consumerid
+        consumergroupid = self.opts.consumergroupid
+        if not (consumerid or consumergroupid):
+            system_exit(os.EX_USAGE,
+                        _("Consumer or consumer group id required. try --help"))
+        pnames = self.opts.pnames
+        if consumergroupid:
+            self.on_group(consumergroupid, pnames)
+        else:
+            self.on_consumer(consumerid, pnames)
+
+    def on_consumer(self, id, pnames):
+        when = parse_at_schedule(self.opts.when)
+        wait = self.getwait([id,])
+        task = self.consumer_api.updatepackages(id, pnames, when=when)
+        print _('Created task id: %s') % task['id']
+        if when:
+            print _('Task is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
+        startwait()
+        while not task_end(task):
+            printwait()
+            task = self.task_api.info(task['id'])
+        if task_succeeded(task):
+            updated = task['result']['updated']
+            print _('\n[%d] packages:') % len(updated)
+            for u in sorted([u[0] for u in updated]):
+                print '  %s' % u
+            print _('\nupdated on %s') % id
+        else:
+            print _('\nUpdate failed: %s' % task['exception'])
+            system_exit(-1)
+
+    def on_group(self, id, pnames):
+        when = parse_at_schedule(self.opts.when)
+        group = self.consumer_group_api.consumergroup(id)
+        if not group:
+            system_exit(-1,
+                _('Invalid group: %s' % id))
+        wait = self.getwait(group['consumerids'])
+        job = self.consumer_group_api.updatepackages(id, pnames, when=when)
+        print _('Created job id: %s') % job['id']
+        if when:
+            print _('Job is scheduled for: %s') % when
+        if not wait:
+            system_exit(0)
+        startwait()
+        while not job_end(job):
+            job = self.job_api.info(job['id'])
+            printwait()
+        print _('\nUpdate Summary:')
+        for t in job['tasks']:
+            state = t['state']
+            exception = t['exception']
+            id, packages = t['args']
+            if exception:
+                details = str(exception)
+                print _('\t[ %-8s ] %s: failed: %s') % (state.upper(), id, details)
+                continue
+            updated = t['result']['updated']
+            pkgs = sorted([u[0] for u in updated])
+            print _('\t[ %-8s ] %s: [%d] packages updated:') % \
+                (state.upper(), id, len(pkgs))
+            for p in pkgs:
+                print '\t%-13s%s' % ('',p)
+
 
 class Uninstall(Install):
 
@@ -403,6 +494,7 @@ class Package(Command):
 
     actions = [ Info,
                 Install,
+                Update,
                 Uninstall,
                 Search,
                 DependencyList ]

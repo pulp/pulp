@@ -332,7 +332,7 @@ class ConsumerGroupApi(BaseApi):
             job.add(task)
         return job
 
-    def __installpackages(self, consumerid, names=(), **options):
+    def __installpackages(self, consumerid, names, **options):
         """
         Task callback.
         @param consumerid: A consumer id.
@@ -354,6 +354,46 @@ class ConsumerGroupApi(BaseApi):
         tm = (10, 600) # start in 10 seconds, finish in 10 minutes
         packages = agent.Packages(task, timeout=tm)
         return packages.install(names, reboot, importkeys)
+
+    @audit()
+    def updatepackages(self, id, names=()):
+        """
+        Update packages on the consumers in a consnumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param names: The package names to update.  Empty means ALL.
+        @type names: [str,..]
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        job = Job()
+        for consumerid in consumergroup['consumerids']:
+            consumer = self.consumerApi.consumer(consumerid)
+            if consumer is None:
+                log.error('consumer [%s], not-found', consumerid)
+                continue
+            task = AsyncTask(self.__updatepackages, [consumerid, names])
+            job.add(task)
+        return job
+
+    def __updatepackages(self, consumerid, names):
+        """
+        Task callback.
+        @param consumerid: A consumer id.
+        @type consumerid: str
+        @param names: A list of package names.  Empty means ALL.
+        @type names: list
+        """
+        consumer = self.consumerApi.consumer(consumerid)
+        if consumer is None:
+            raise PulpException('Consumer [%s] not found', consumerid)
+        secret = PulpAgent.getsecret(consumer)
+        agent = AsyncAgent(consumerid, secret)
+        task = AsyncTask.current()
+        tm = (10, 600) # start in 10 seconds, finish in 10 minutes
+        packages = agent.Packages(task, timeout=tm)
+        return packages.update(names)
 
     @audit()
     def uninstallpackages(self, id, names=()):

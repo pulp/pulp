@@ -142,13 +142,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.protected_repo_utils = ProtectedRepoUtils(self.config)
 
     def test_repo_create(self):
-        repo = self.repo_api.create('some-id', 'some name',
+        repo = self.repo_api.create('some-repo-id', 'some name',
             'i386', 'http://example.com')
         assert(repo is not None)
 
     def test_repo_create_with_notes(self):
         notes = {'key':'value','k':'v'}
-        repo = self.repo_api.create('some-id', 'some name',
+        repo = self.repo_api.create('some-repo-with-notes-id', 'some name',
             'i386', 'http://example.com', notes=notes)
         assert(repo is not None)
         assert(repo['notes'] == notes)
@@ -465,11 +465,11 @@ class TestRepoApi(testutil.PulpAsyncTest):
 
         # default path
         repo = self.repo_api.create('some-id-default-path', 'some name', \
-            'i386', 'http://example.com/mypath')
+            'i386', 'http://example.com/test/mypath')
         found = self.repo_api.repository('some-id-default-path')
         assert(found is not None)
         assert(found['id'] == 'some-id-default-path')
-        assert(found['relative_path'] == "mypath")
+        assert(found['relative_path'] == "test/mypath")
 
 
     def test_repo_packages(self):
@@ -1246,7 +1246,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.package_api.delete(p3['id'])
 
     def test_add_2_pkg_same_nevra_same_repo(self):
-        repo = self.repo_api.create('some-id1', 'some name', \
+        repo = self.repo_api.create('some-same-nevra-id1', 'some name', \
             'i386', 'http://example.com')
         p1 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm", checksum="blah2")
@@ -1259,9 +1259,9 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(errors[0][3], p2["checksum"]["sha256"])
 
     def test_associate_packages(self):
-        repo1 = self.repo_api.create('some-id1', 'some name', \
+        repo1 = self.repo_api.create('some-associate-pkg-id1', 'some name', \
             'i386', 'http://example.com')
-        repo2 = self.repo_api.create('some-id2', 'some name', \
+        repo2 = self.repo_api.create('some-associate-pkg-id2', 'some name', \
             'i386', 'http://example.com')
         p1 = testutil.create_package(self.package_api, 'test_pkg_by_name1', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.package_api, 'test_pkg_by_name2', filename="test02.rpm", checksum="blah2")
@@ -1297,9 +1297,9 @@ class TestRepoApi(testutil.PulpAsyncTest):
             self.assertTrue(e in [p4["filename"], p5b["filename"], bad_filename])
 
     def test_disassociate_packages(self):
-        repo1 = self.repo_api.create('some-id1', 'some name', \
+        repo1 = self.repo_api.create('some-repopkg-id1', 'some name', \
             'i386', 'http://example.com')
-        repo2 = self.repo_api.create('some-id2', 'some name', \
+        repo2 = self.repo_api.create('some-repopkg-id2', 'some name', \
             'i386', 'http://example.com')
         p1 = testutil.create_package(self.package_api, 'test_pkg_by_name1', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.package_api, 'test_pkg_by_name2', filename="test02.rpm", checksum="blah2")
@@ -1342,7 +1342,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(len(found['packages']), 0)
 
     def test_get_packages_by_nvera(self):
-        repo1 = self.repo_api.create('some-id1', 'some name', \
+        repo1 = self.repo_api.create('some-nvera-id1', 'some name', \
             'i386', 'http://example.com')
         p1 = testutil.create_package(self.package_api, 'test_pkg_by_name1',
                 filename="test01.rpm", checksum="blah1")
@@ -1370,7 +1370,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEquals(len(found), 0)
 
     def test_duplicate_syncs(self):
-        repo = self.repo_api.create('some-id', 'some name',
+        repo = self.repo_api.create('some-dup-sync-id', 'some name',
             'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         self.assertTrue(self.repo_api.set_sync_in_progress(repo["id"], True))
         caught = False
@@ -1419,8 +1419,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         
     def test_add_note(self):
         # repo with and without notes added at the creation time 
-        repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com')
-        repo2 = self.repo_api.create('some-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
+        repo1 = self.repo_api.create('some-add-note-id1', 'some name', 'i386', 'http://example.com')
+        repo2 = self.repo_api.create('some-add-note-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
         self.repo_api.add_note(repo1['id'], "key2", "value2")
         self.repo_api.add_note(repo2['id'], "key2", "value2")
         repo1 = self.repo_api.repository(repo1['id'])
@@ -1436,8 +1436,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertTrue(caught)
         
     def test_delete_note(self):
-        repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
-        repo2 = self.repo_api.create('some-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
+        repo1 = self.repo_api.create('some-del-note-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
+        repo2 = self.repo_api.create('some-del-note-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
         self.repo_api.delete_note(repo1['id'], "key1")
         self.repo_api.delete_note(repo2['id'], "key1")
         repo1 = self.repo_api.repository(repo1['id'])
@@ -1460,7 +1460,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertTrue(caught)
         
     def test_update_repo_notes(self):
-        repo1 = self.repo_api.create('some-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
+        repo1 = self.repo_api.create('some-update-note-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
         self.repo_api.update_note(repo1['id'], "key1", "value1-changed")
         repo1 = self.repo_api.repository(repo1['id'])
         assert(repo1["notes"]["key1"] == "value1-changed")
