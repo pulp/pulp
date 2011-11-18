@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.249
+Version:        0.0.250
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -485,6 +485,75 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Nov 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.250-1
+- fixing the clones to use the checksum value from source metadata and not
+  recompute checksum (pkilambi@redhat.com)
+- 754809 - Added validation for trying to add filters when cloning a repo with
+  origin feed (skarmark@redhat.com)
+- 754743 - added validation for feed when cloning a repository
+  (skarmark@redhat.com)
+- Brought publish manager up to speed with new APIs (jason.dobies@redhat.com)
+- Refactored out sync manager exceptions to common module
+  (jason.dobies@redhat.com)
+- Brought sync manager up to speed with new plugin APIs
+  (jason.dobies@redhat.com)
+- Finished distributor-related unit tests (jason.dobies@redhat.com)
+- Renamed "auto_distribute" to "auto_publish" (jason.dobies@redhat.com)
+- Adding distributor unit tests (jason.dobies@redhat.com)
+- Enforcing relativepath to be unique in pulp's repo collection * Db and
+  migration to ensure unique index. If there are pre existing documents with
+  non unique paths, we drop all except one. * APi changes to handle duplicate
+  error * unit test updates (pkilambi@redhat.com)
+- The application setup is a bit costly, so reduce it to once per class instead
+  of each test itself. (jason.dobies@redhat.com)
+- The application setup is a bit costly, so reduce it to once per class instead
+  of each test itself. (jason.dobies@redhat.com)
+- Initial work on repo controller test (jason.dobies@redhat.com)
+- Changed importer create to return the importer (jason.dobies@redhat.com)
+- Changed update repo to return the newly updated repo
+  (jason.dobies@redhat.com)
+- Added resource-level GET for single repo retrieval (jason.dobies@redhat.com)
+- Added web service controller test base class (jason.dobies@redhat.com)
+- Wired up GET on importer/distributors (jason.dobies@redhat.com)
+- Added both resource and sub-collection style APIs for get_importer*
+  (jason.dobies@redhat.com)
+- Added get_distributor and get_distributors funcitonality
+  (jason.dobies@redhat.com)
+- Implemented get_importer call (jason.dobies@redhat.com)
+- Refactored out all repo manager exceptions to reduce coupling
+  (jason.dobies@redhat.com)
+- Flushed out repo distributor REST APIs with proper error codes
+  (jason.dobies@redhat.com)
+- Put this return in the wrong module. Need. More. Coffee.
+  (jason.dobies@redhat.com)
+- Added a second mock distributor plugin to the mix (jason.dobies@redhat.com)
+- Flushed out REST APIs for repo and importer calls. (jason.dobies@redhat.com)
+- Changed behavior of repo delete to error if the ID is invalid
+  (jason.dobies@redhat.com)
+- Progress towards repo v2 REST API clean up (jason.dobies@redhat.com)
+- Added more checks to ensure the right values are passed to the plugins
+  (jason.dobies@redhat.com)
+- Flushed out repo distributor unit tests (jason.dobies@redhat.com)
+- Flushed out repo importer manager unit tests (jason.dobies@redhat.com)
+- Added update repo unit tests (jason.dobies@redhat.com)
+- Refactored out distributor manager unit tests (jason.dobies@redhat.com)
+- Refactored out importer manager tests into its own test case
+  (jason.dobies@redhat.com)
+- Refactored out the MissingRepo exception to common (jason.dobies@redhat.com)
+- Refactored importer and distributor handling from the repo manager because
+  the module was getting entirely too long. Still haven't updated the unit
+  tests which at this point are so incorrect it's almost comical.
+  (jason.dobies@redhat.com)
+- Added common functions module to repo managers (jason.dobies@redhat.com)
+- Flushed out repo delete with calls to clean up plugins and delete the working
+  directory (jason.dobies@redhat.com)
+- Flushed out distributor lifecycle APIs and added docs
+  (jason.dobies@redhat.com)
+- Encapsulated unit data into a transfer object (jason.dobies@redhat.com)
+- Added module for plugin transfer objects (jason.dobies@redhat.com)
+- Added config wrapper to simplify plugin APIs by doing the heavy lifting of
+  config location resolution (jason.dobies@redhat.com)
+
 * Wed Nov 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.249-1
 - Add support in REST/manager layers for package update. (jortel@redhat.com)
 - Params needs to be empty not None (jason.dobies@redhat.com)
