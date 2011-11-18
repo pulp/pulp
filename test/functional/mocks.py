@@ -54,23 +54,29 @@ class Consumer(object):
 
 class Packages(object):
 
-    def install(self, names, reboot=False, importkeys=False):
+    def install(self, names, reboot=False):
         pass
 
-    def update(self, names, reboot=False, importkeys=False):
+    def update(self, names=(), reboot=False):
         pass
 
     def uninstall(self, names):
         return names
+
+    def __call__(self, *args, **kwargs):
+        pass
 
 
 class PackageGroups(object):
 
-    def install(self, packagegroupids):
+    def install(self, names):
         pass
 
     def uninstall(self, names):
         return names
+
+    def __call__(self, *args, **kwargs):
+        pass
 
 
 class cdsplugin(object):
