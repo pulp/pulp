@@ -986,6 +986,8 @@ class RepositoryActions(JSONController):
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
         if repo_data['feed'] not in ['parent','origin','none']:
             return self.bad_request('Invalid feed, %s, see --help' % repo_data['feed'])
+        if repo_data['feed'] == 'origin' and repo_data.get('filters'):
+            return self.bad_request('Filters cannot be applied to clones with origin feed')
         task = repo_sync.clone(id,
                          repo_data['clone_id'],
                          repo_data['clone_name'],
