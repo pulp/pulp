@@ -180,8 +180,7 @@ class TestRepoSync(testutil.PulpAsyncTest):
                     self.assertEquals(error_entry[key], "")
                     self.assertTrue(error_entry.has_key("error_type"))
                     self.assertTrue(error_entry.has_key("traceback"))
-
-            self.assertTrue("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" in error_details[0]["fileName"])
+            self.assertTrue("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" in os.path.basename(error_details[0]["fileName"].relativepath))
             self.assertTrue("Permission denied" in error_details[0]["error"])
             self.assertTrue("file3.img" in error_details[1]["fileName"])
             self.assertTrue("Permission denied" in error_details[1]["error"])
