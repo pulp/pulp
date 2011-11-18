@@ -23,6 +23,7 @@ the defaults.
 import mock
 
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.data import SyncReport
 
 # -- constants ----------------------------------------------------------------
 
@@ -112,6 +113,8 @@ def install():
 
     # By default, have the plugins indicate configurations are valid
     MOCK_IMPORTER.validate_config.return_value = True
+    MOCK_IMPORTER.sync_repo.return_value = SyncReport(10, 1, 'Details of the sync')
+
     MOCK_DISTRIBUTOR.validate_config.return_value = True
     MOCK_DISTRIBUTOR_2.validate_config.return_value = True
 

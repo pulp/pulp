@@ -30,7 +30,8 @@ import pulp.server.constants as pulp_constants
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.db.model.gc_repository import Repo, RepoImporter
+from pulp.server.content.plugins.data import SyncReport
+from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import MissingRepo, RepoSyncException, NoImporter, MissingImporterPlugin, SyncInProgress
@@ -75,6 +76,7 @@ class RepoSyncManager:
 
         repo_coll = Repo.get_collection()
         importer_coll = RepoImporter.get_collection()
+        sync_result_coll = RepoSyncResult.get_collection()
 
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
@@ -108,27 +110,53 @@ class RepoSyncManager:
         transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
 
         # Perform the sync
+        sync_start_timestamp = _now_timestamp()
         try:
             repo_importer['sync_in_progress'] = True
             importer_coll.save(repo_importer, safe=True)
-            importer_instance.sync_repo(transfer_repo, conduit, call_config)
-        except Exception:
+            sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
+        except Exception, e:
             # I really wish python 2.4 supported except and finally together
+            sync_end_timestamp = _now_timestamp()
 
             # Reload the importer in case the plugin edits the scratchpad
             repo_importer = importer_coll.find_one({'repo_id' : repo_id})
             repo_importer['sync_in_progress'] = False
-            repo_importer['last_sync'] = _sync_finished_timestamp()
+            repo_importer['last_sync'] = sync_end_timestamp
             importer_coll.save(repo_importer, safe=True)
+
+            # Add a sync history entry for this run
+            result = RepoSyncResult.error_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+                                                 sync_start_timestamp, sync_end_timestamp, e, sys.exc_info()[2])
+            sync_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
             raise RepoSyncException(repo_id), None, sys.exc_info()[2]
 
+        sync_end_timestamp = _now_timestamp()
+
         # Reload the importer in case the plugin edits the scratchpad
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
         repo_importer['sync_in_progress'] = False
-        repo_importer['last_sync'] = _sync_finished_timestamp()
+        repo_importer['last_sync'] = sync_end_timestamp
         importer_coll.save(repo_importer, safe=True)
+
+        # Add a sync history entry for this run. Need to be safe here in case
+        # the plugin is incorrect in its return
+        if sync_report is not None and isinstance(sync_report, SyncReport):
+            added_count = sync_report.added_count
+            removed_count = sync_report.removed_count
+            plugin_log = sync_report.log
+        else:
+            _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
+
+            added_count = _('Unknown')
+            removed_count = _('Unknown')
+            plugin_log = _('Unknown')
+
+        result = RepoSyncResult.success_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+                                               sync_start_timestamp, sync_end_timestamp, added_count, removed_count, plugin_log)
+        sync_result_coll.save(result, safe=True)
 
         # Request any auto-distributors publish (if we're here, the sync was successful)
         publish_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_PUBLISH)
@@ -157,7 +185,7 @@ class RepoSyncManager:
 
         return dir
 
-def _sync_finished_timestamp():
+def _now_timestamp():
     """
     @return: timestamp suitable for indicating when a sync completed
     @rtype:  str

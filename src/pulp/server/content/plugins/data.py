@@ -78,3 +78,23 @@ class Unit:
 
         self.id = None
         self.location = None
+
+class SyncReport:
+    """
+    Returned to the Pulp server at the end of a sync call. This is used by the
+    plugin to describe what took place during the sync.
+
+    @ivar added_count: number of new units added during the sync
+    @type added_count: int
+
+    @ivar removed_count: number of units unassociated from the repo during the sync
+    @type removed_count: int
+
+    @ivar log: arbitrary text the plugin wants to communicate to users about the sync
+    @type log: str
+    """
+
+    def __init__(self, added_count, removed_count, log):
+        self.added_count = added_count
+        self.removed_count = removed_count
+        self.log = log

@@ -184,6 +184,10 @@ class Importer(object):
         is not the responsibility of the importer to rollback any unit additions
         or associations that have been made.
 
+        The returned report object is used to communicate the results of the
+        sync back to the user. Care should be taken to i18n the free text "log"
+        attribute in the report if applicable.
+
         @param repo: metadata describing the repository
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
@@ -192,5 +196,8 @@ class Importer(object):
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @return: report of the details of the sync
+        @rtype:  L{pulp.server.content.plugins.data.SyncReport}
         """
         raise NotImplementedError()

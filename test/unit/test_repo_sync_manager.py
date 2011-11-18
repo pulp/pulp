@@ -24,7 +24,7 @@ import testutil
 import mock_plugins
 
 from pulp.common import dateutils
-from pulp.server.db.model.gc_repository import Repo, RepoImporter
+from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as repo_importer_manager
@@ -79,6 +79,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         testutil.PulpTest.clean(self)
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
+        RepoSyncResult.get_collection().remove()
 
         # Reset the state of the mock's tracker variables
         MockRepoPublishManager.reset()
@@ -101,12 +102,12 @@ class RepoSyncManagerTests(testutil.PulpTest):
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
 
-        #   Verify database
+        #   Database
         self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
-        #   Verify call into the importer
+        #   Call into the Importer
         sync_args = mock_plugins.MOCK_IMPORTER.sync_repo.call_args[0]
 
         self.assertEqual(repo['id'], sync_args[0].id)
@@ -114,6 +115,24 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertEqual({}, sync_args[2].plugin_config)
         self.assertEqual(sync_config, sync_args[2].repo_plugin_config)
         self.assertEqual({}, sync_args[2].override_config)
+
+        #   History Entry
+        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(1, len(history))
+        self.assertEqual('repo-1', history[0]['repo_id'])
+        self.assertEqual(RepoSyncResult.RESULT_SUCCESS, history[0]['result'])
+        self.assertEqual('mock-importer', history[0]['importer_id'])
+        self.assertEqual('mock-importer', history[0]['importer_type_id'])
+        self.assertTrue(history[0]['started'] is not None)
+        self.assertTrue(history[0]['completed'] is not None)
+
+        self.assertEqual(10, history[0]['added_count'])
+        self.assertEqual(1, history[0]['removed_count'])
+        self.assertTrue(history[0]['plugin_log'] is not None)
+
+        self.assertTrue(history[0]['error_message'] is None)
+        self.assertTrue(history[0]['exception'] is None)
+        self.assertTrue(history[0]['traceback'] is None)
 
     def test_sync_with_sync_config_override(self):
         """
@@ -133,13 +152,12 @@ class RepoSyncManagerTests(testutil.PulpTest):
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
 
-        #   Verify database
+        #   Database
         self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
-        #   Verify call into the importer
-        #   Verify call into the importer
+        #   Call into the importer
         sync_args = mock_plugins.MOCK_IMPORTER.sync_repo.call_args[0]
 
         self.assertEqual(repo['id'], sync_args[0].id)
@@ -223,7 +241,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = Exception()
+        class FakePluginException(Exception): pass
+
+        error_msg = 'Error test'
+        mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = FakePluginException(error_msg)
 
         self.repo_manager.create_repo('gonna-bail')
         self.importer_manager.set_importer('gonna-bail', 'mock-importer', {})
@@ -236,11 +257,31 @@ class RepoSyncManagerTests(testutil.PulpTest):
             print(e) # for coverage
 
         # Verify
+
+        #    Database
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'mock-importer'})
 
         self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
+
+        #    History Entry
+        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'gonna-bail'}))
+        self.assertEqual(1, len(history))
+        self.assertEqual('gonna-bail', history[0]['repo_id'])
+        self.assertEqual(RepoSyncResult.RESULT_ERROR, history[0]['result'])
+        self.assertEqual('mock-importer', history[0]['importer_id'])
+        self.assertEqual('mock-importer', history[0]['importer_type_id'])
+        self.assertTrue(history[0]['started'] is not None)
+        self.assertTrue(history[0]['completed'] is not None)
+
+        self.assertTrue(history[0]['added_count'] is None)
+        self.assertTrue(history[0]['removed_count'] is None)
+        self.assertTrue(history[0]['plugin_log'] is None)
+
+        self.assertEqual(error_msg, history[0]['error_message'])
+        self.assertTrue('FakePluginException' in history[0]['exception'])
+        self.assertTrue(history[0]['traceback'] is not None)
 
         # Cleanup
         mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = None
@@ -287,8 +328,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
     def test_sync_with_auto_publish_error(self):
         """
-        Tests that the autodistribute exception is propagated when one or more
-        auto publish calls fail.
+        Tests that the autodistribute exception is propagated when one or more auto publish calls fail.
         """
 
         # Setup
@@ -304,6 +344,41 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.fail('Expected exception not thrown')
         except repo_publish_manager.AutoPublishException, e:
             self.assertEqual('doa', e.repo_id)
+
+    def test_sync_no_plugin_report(self):
+        """
+        Tests synchronizing against a sloppy plugin that doesn't return a sync report.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('repo-1')
+        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
+
+        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None # sloppy plugin
+
+        # Test
+        self.sync_manager.sync('repo-1')
+
+        # Verify
+
+        #   History Entry
+        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(1, len(history))
+        self.assertEqual('repo-1', history[0]['repo_id'])
+        self.assertEqual(RepoSyncResult.RESULT_SUCCESS, history[0]['result'])
+        self.assertEqual('mock-importer', history[0]['importer_id'])
+        self.assertEqual('mock-importer', history[0]['importer_type_id'])
+        self.assertTrue(history[0]['started'] is not None)
+        self.assertTrue(history[0]['completed'] is not None)
+
+        self.assertEqual('Unknown', history[0]['added_count'])
+        self.assertEqual('Unknown', history[0]['removed_count'])
+        self.assertEqual('Unknown', history[0]['plugin_log'])
+
+        self.assertTrue(history[0]['error_message'] is None)
+        self.assertTrue(history[0]['exception'] is None)
+        self.assertTrue(history[0]['traceback'] is None)
+
 
     def test_get_repo_storage_directory(self):
         """
