@@ -22,6 +22,7 @@ import testutil
 import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.importer import Importer
 from pulp.server.content.plugins.data import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
@@ -133,25 +134,27 @@ class RepoManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        class MockImporter2:
+        class MockImporter2(Importer):
             @classmethod
             def metadata(cls):
                 return {'types': ['mock_types_2']}
+
             def validate_config(self, repo_data, importer_config):
                 return True
 
-        plugin_loader._LOADER.add_importer('MockImporter2', MockImporter2, {})
+        mock_plugins.IMPORTER_MAPPINGS['mock-importer-2'] = MockImporter2()
+        plugin_loader._LOADER.add_importer('mock-importer-2', MockImporter2, {})
 
         self.repo_manager.create_repo('change_me')
         self.importer_manager.set_importer('change_me', 'mock-importer', None)
 
         # Test
-        self.importer_manager.set_importer('change_me', 'MockImporter2', None)
+        self.importer_manager.set_importer('change_me', 'mock-importer-2', None)
 
         # Verify
         all_importers = list(RepoImporter.get_collection().find())
         self.assertEqual(1, len(all_importers))
-        self.assertEqual(all_importers[0]['id'], 'MockImporter2')
+        self.assertEqual(all_importers[0]['id'], 'mock-importer-2')
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
 
