@@ -20,14 +20,16 @@ need to execute syncs asynchronously must be handled at a higher layer.
 import datetime
 from gettext import gettext as _
 import logging
+import pymongo
 import sys
 import traceback
 
 from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.data import PublishReport
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import MissingRepo, RepoPublishException, NoDistributor, MissingDistributorPlugin, PublishInProgress, AutoPublishException
@@ -62,6 +64,7 @@ class RepoPublishManager:
 
         repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
+        publish_result_coll = RepoPublishResult.get_collection()
 
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
@@ -93,25 +96,47 @@ class RepoPublishManager:
         transfer_repo.working_dir = common_utils.distributor_working_dir(repo_distributor['distributor_type_id'], repo_id, mkdir=True)
 
         # Perform the publish
+        publish_start_timestamp = _now_timestamp()
         try:
             repo_distributor['publish_in_progress'] = True
             distributor_coll.save(repo_distributor, safe=True)
-            distributor_instance.publish_repo(transfer_repo, conduit, call_config)
-        except Exception:
+            publish_report = distributor_instance.publish_repo(transfer_repo, conduit, call_config)
+        except Exception, e:
+            publish_end_timestamp = _now_timestamp()
+
             # Reload the distributor in case the scratchpad is set by the plugin
             repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
             repo_distributor['publish_in_progress'] = False
-            repo_distributor['last_publish'] = _publish_finished_timestamp()
+            repo_distributor['last_publish'] = publish_end_timestamp
             distributor_coll.save(repo_distributor, safe=True)
+
+            # Add a publish history entry for the run
+            result = RepoPublishResult.error_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
+                                                    publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
+            publish_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
             raise RepoPublishException(repo_id), None, sys.exc_info()[2]
 
+        publish_end_timestamp = _now_timestamp()
+
         # Reload the distributor in case the scratchpad is set by the plugin
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         repo_distributor['publish_in_progress'] = False
-        repo_distributor['last_publish'] = _publish_finished_timestamp()
+        repo_distributor['last_publish'] = _now_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
+
+        # Add a publish entry
+        if publish_report is not None and isinstance(publish_report, PublishReport):
+            plugin_log = publish_report.log
+        else:
+            _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid publish report' % (repo_distributor['distributor_type_id'], repo_id))
+
+            plugin_log = _('Unknown')
+
+        result = RepoPublishResult.success_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
+                                                  publish_start_timestamp, publish_end_timestamp, plugin_log)
+        publish_result_coll.save(result, safe=True)
 
     def auto_publish_for_repo(self, repo_id):
         """
@@ -190,9 +215,41 @@ class RepoPublishManager:
             instance = dateutils.parse_iso8601_datetime(date_str)
             return instance
 
+    def publish_history(self, repo_id, limit=None):
+        """
+        Returns publish history entries for the give repo, sorted from most
+        recent to oldest. If there are no entries, an empty list is returned.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param limit: maximum number of results to return
+        @type  limit: int
+
+        @return: list of publish history result instances
+        @rtype:  list of L{pulp.server.db.model.gc_repository.RepoPublishResult}
+
+        @raises MissingRepo: if repo_id does not reference a valid repo
+        """
+
+        # Validation
+        repo = Repo.get_collection().find_one({'id' : repo_id})
+        if repo is None:
+            raise MissingRepo(repo_id)
+
+        if limit is None:
+            limit = 10 # default here for each of REST API calls into here
+
+        # Retrieve the entries
+        cursor = RepoPublishResult.get_collection().find({'repo_id' : repo_id})
+        cursor.limit(limit)
+        cursor.sort('completed', pymongo.DESCENDING)
+
+        return list(cursor)
+
 # -- utilities ----------------------------------------------------------------
 
-def _publish_finished_timestamp():
+def _now_timestamp():
     """
     @return: timestamp suitable for indicating when a publish completed
     @rtype:  str

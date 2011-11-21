@@ -22,7 +22,7 @@ import os
 import re
 import shutil
 
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import MissingRepo, InvalidRepoId, InvalidRepoMetadata, DuplicateRepoId, RepoDeleteException
@@ -150,6 +150,9 @@ class RepoManager:
             #   to keep the database clean
             RepoDistributor.get_collection().remove({'repo_id' : repo_id}, safe=True)
             RepoImporter.get_collection().remove({'repo_id' : repo_id}, safe=True)
+
+            RepoSyncResult.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            RepoPublishResult.get_collection().remove({'repo_id' : repo_id}, safe=True)
 
             # Remove all associations from the repo
             RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)

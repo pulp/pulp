@@ -259,10 +259,10 @@ class RepoSyncResult(Model):
         """
 
         r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed, RepoSyncResult.RESULT_ERROR)
-        r.error_message = exception[0]
+        r.error_message = str(exception)
         r.exception = repr(exception)
         r.traceback = traceback_module.format_tb(traceback)
-
+                
         return r
 
     @classmethod
@@ -304,7 +304,7 @@ class RepoSyncResult(Model):
 
     def __init__(self, repo_id, importer_id, importer_type_id, started, completed, result):
         """
-        Describes the results of ya single completed (potentially errored) sync.
+        Describes the results of a single completed (potentially errored) sync.
         Rather than directory instantiating instances, use one of the above
         factory methods to make sure all the necessary fields are specified.
         """
@@ -324,4 +324,100 @@ class RepoSyncResult(Model):
 
         self.added_count = None
         self.removed_count = None
+        self.plugin_log = None
+
+class RepoPublishResult(Model):
+    """
+    Stores the results of a repo publish.
+    """
+
+    collection_name = 'gc_repo_publish_result'
+
+    RESULT_SUCCESS = 'success'
+    RESULT_ERROR = 'error'
+
+    @classmethod
+    def error_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, exception, traceback):
+        """
+        Creates a new history entry for a failed publish. The details of the error
+        raised from the plugin are captured.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the repo's distributor
+        @type  distributor_id: str
+
+        @param distributor_type_id: identifies the type of distributor that did the publish
+        @type  distributor_type_id: str
+
+        @param started: iso8601 formatted timestamp when the publish was begun
+        @type  started: str
+
+        @param completed: iso8601 formatted timestamp when the publish completed
+        @type  completed: str
+
+        @param exception: exception instance raised from the plugin
+        @type  exception: L{Exception}
+
+        @param traceback: traceback in the plugin that caused the exception
+        @type  traceback: traceback
+        """
+
+        r = RepoPublishResult(repo_id, distributor_id, distributor_type_id, started, completed, RepoPublishResult.RESULT_ERROR)
+        r.error_message = str(exception)
+        r.exception = repr(exception)
+        r.traceback = traceback_module.format_tb(traceback)
+        
+        return r
+
+    @classmethod
+    def success_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, plugin_log):
+        """
+        Creates a new history entry for a successful publish.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the repo's distributor
+        @type  distributor_id: str
+
+        @param distributor_type_id: identifies the type of distributor that did the publish
+        @type  distributor_type_id: str
+
+        @param started: iso8601 formatted timestamp when the publish was begun
+        @type  started: str
+
+        @param completed: iso8601 formatted timestamp when the publish completed
+        @type  completed: str
+
+        @param plugin_log: log output from the plugin of the publish
+        @type  plugin_log: str
+        """
+
+        r = RepoPublishResult(repo_id, distributor_id, distributor_type_id, started, completed, RepoSyncResult.RESULT_SUCCESS)
+        r.plugin_log = plugin_log
+
+        return r
+
+    def __init__(self, repo_id, distributor_id, distributor_type_id, started, completed, result):
+        """
+        Describes the results of a single completed (potentially errored) publish.
+        Rather than directory instantiating instances, use one of the above
+        factory methods to make sure all the necessary fields are specified.
+        """
+        Model.__init__(self)
+
+        self.repo_id = repo_id
+        self.distributor_id = distributor_id
+        self.distributor_type_id = distributor_type_id
+        self.started = started
+        self.completed = completed
+        self.result = result
+
+        # Include the success/error specific fields so they appear in all cases
+        self.error_message = None
+        self.exception = None
+        self.traceback = None
+
         self.plugin_log = None

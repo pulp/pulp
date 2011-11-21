@@ -190,6 +190,17 @@ class RepoSyncManager:
         """
         Returns sync history entries for the given repo, sorted from most recent
         to oldest. If there are no entries, an empty list is returned.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param limit: maximum number of results to return
+        @type  limit: int
+
+        @return: list of sync history result instances
+        @rtype:  list of L{pulp.server.db.model.gc_repository.RepoSyncResult}
+
+        @raises MissingRepo: if repo_id does not reference a valid repo
         """
 
         # Validation
@@ -198,7 +209,7 @@ class RepoSyncManager:
             raise MissingRepo(repo_id)
 
         if limit is None:
-            limit = 10 # default here instead of signature for ease of calling
+            limit = 10 # default here for each of REST API calls into here
 
         # Retrieve the entries
         cursor = RepoSyncResult.get_collection().find({'repo_id' : repo_id})

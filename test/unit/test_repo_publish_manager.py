@@ -22,7 +22,7 @@ import testutil
 import mock_plugins
 
 from pulp.common import dateutils
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
@@ -48,6 +48,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         testutil.PulpTest.clean(self)
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        RepoPublishResult.get_collection().remove()
 
     def test_publish(self):
         """
@@ -71,6 +72,20 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(not repo_distributor['publish_in_progress'])
         self.assertTrue(repo_distributor['last_publish'] is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
+
+        #   History
+        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(1, len(entries))
+        self.assertEqual('repo-1', entries[0]['repo_id'])
+        self.assertEqual('dist-1', entries[0]['distributor_id'])
+        self.assertEqual('mock-distributor', entries[0]['distributor_type_id'])
+        self.assertTrue(entries[0]['started'] is not None)
+        self.assertTrue(entries[0]['completed'] is not None)
+        self.assertEqual(RepoPublishResult.RESULT_SUCCESS, entries[0]['result'])
+        self.assertTrue(entries[0]['plugin_log'] is not None)
+        self.assertTrue(entries[0]['error_message'] is None)
+        self.assertTrue(entries[0]['exception'] is None)
+        self.assertTrue(entries[0]['traceback'] is None)
 
         #   Call into the correct distributor
         call_args = mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_args[0]
@@ -202,6 +217,19 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(repo_distributor is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
+        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'gonna-bail'}))
+        self.assertEqual(1, len(entries))
+        self.assertEqual('gonna-bail', entries[0]['repo_id'])
+        self.assertEqual('bad-dist', entries[0]['distributor_id'])
+        self.assertEqual('mock-distributor', entries[0]['distributor_type_id'])
+        self.assertTrue(entries[0]['started'] is not None)
+        self.assertTrue(entries[0]['completed'] is not None)
+        self.assertEqual(RepoPublishResult.RESULT_ERROR, entries[0]['result'])
+        self.assertTrue(entries[0]['plugin_log'] is None)
+        self.assertTrue(entries[0]['error_message'] is not None)
+        self.assertTrue(entries[0]['exception'] is not None)
+        self.assertTrue(entries[0]['traceback'] is not None)
+
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
 
@@ -316,6 +344,72 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Verify
         self.assertTrue(last is None)
 
+    def test_publish_no_plugin_report(self):
+        """
+        Tests publishing against a sloppy plugin that doesn't return a report.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('sloppy')
+        self.distributor_manager.add_distributor('sloppy', 'mock-distributor', {}, True, distributor_id='slop')
+
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = None # lame plugin
+
+        # Test
+        self.publish_manager.publish('sloppy', 'slop')
+
+        # Verify
+        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'sloppy'}))
+        self.assertEqual(1, len(entries))
+        self.assertEqual('Unknown', entries[0]['plugin_log'])
+
+    def test_publish_history(self):
+        """
+        Tests getting the history of publishes on a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('foo')
+        for i in range(1, 6):
+            add_result('foo', i)
+
+        # Test
+        entries = self.publish_manager.publish_history('foo')
+
+        # Verify
+        self.assertEqual(5, len(entries))
+
+        #   Verify descending order
+        for i in range(0, 4):
+            first = dateutils.parse_iso8601_datetime(entries[i]['completed'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['completed'])
+            self.assertTrue(first > second)
+
+    def test_publish_history_with_limit(self):
+        """
+        Tests using the limit to retrieve only a subset of the history.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('dragon')
+        for i in range(0, 10):
+            add_result('dragon', i)
+
+
+        # Test
+        entries = self.publish_manager.publish_history('dragon', limit=3)
+
+        # Verify
+        self.assertEqual(3, len(entries))
+
+    def test_publish_history_missing_repo(self):
+        """
+        Tests the correct error is raised when getting history for a repo that doesn't exist.
+        """
+
+        # Test
+        self.assertRaises(publish_manager.MissingRepo, self.publish_manager.publish_history, 'missing')
+
     # -- utility tests --------------------------------------------------------
 
     def test_auto_distributors(self):
@@ -358,3 +452,9 @@ def assert_last_sync_time(time_in_iso):
     # Compare them within a threshold since they won't be exact
     difference = now - finished
     return difference.seconds < 2
+
+def add_result(repo_id, offset):
+    started = datetime.datetime.now(dateutils.local_tz())
+    completed = started + datetime.timedelta(days=offset)
+    r = RepoPublishResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-log')
+    RepoPublishResult.get_collection().save(r, safe=True)

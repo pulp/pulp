@@ -98,3 +98,15 @@ class SyncReport:
         self.added_count = added_count
         self.removed_count = removed_count
         self.log = log
+
+class PublishReport:
+    """
+    Returned to the Pulp server at the end of a publish call. This is used by the
+    plugin to decrive what took place during the publish run.
+
+    @ivar log: arbitrary text the plugin wants to communicate to users about the run
+    @type log: str
+    """
+
+    def __init__(self, log):
+        self.log = log
