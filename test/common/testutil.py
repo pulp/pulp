@@ -278,8 +278,6 @@ class PulpWebserviceTest(PulpTest):
         # the entire test suite, but for now I'm seeing performance improvements
         # by only doing it once per class instead of on every run.
 
-        super(PulpWebserviceTest, cls).setUpClass()
-
         # Because our code is a tightly coupled mess, the test config has to be
         # laoded before we can import application
         load_test_config()

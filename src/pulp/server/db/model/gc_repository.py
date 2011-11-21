@@ -259,7 +259,7 @@ class RepoSyncResult(Model):
         """
 
         r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed, RepoSyncResult.RESULT_ERROR)
-        r.error_message = exception.message
+        r.error_message = exception[0]
         r.exception = repr(exception)
         r.traceback = traceback_module.format_tb(traceback)
 

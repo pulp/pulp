@@ -320,6 +320,35 @@ class RepoDistributor(JSONController):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
+# -- history controllers ------------------------------------------------------
+
+class RepoSyncHistory(JSONController):
+
+    # Scope: Resource
+    # GET:   Get history entries for a given repo
+
+    @auth_required(READ)
+    def GET(self, repo_id):
+        # Params
+        filters = self.filters(['limit'])
+        limit = filters['limit']
+
+        # Handle if the limit was passed
+        sync_manager = manager_factory.repo_sync_manager()
+        entries = None
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except ValueError:
+                serialized = http_error_obj(400)
+                return self.bad_request(serialized)
+
+            entries = sync_manager.sync_history(repo_id, limit=limit)
+        else:
+            entries = sync_manager.sync_history(repo_id)
+
+        return self.ok(entries)
+
 # -- action controllers -------------------------------------------------------
 
 class RepoSync(JSONController):
@@ -377,6 +406,8 @@ urls = (
 
     '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
+
+    '/([^/]+)/sync_history/$', 'RepoSyncHistory', # sub-collection
 
     '/([^/]+)/actions/sync/$', 'RepoSync', # sub-resource action
     '/([^/]+)/actions/publish/$', 'RepoPublish', # sub-resource action
