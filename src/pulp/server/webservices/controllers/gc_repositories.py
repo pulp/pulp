@@ -331,23 +331,22 @@ class RepoSyncHistory(JSONController):
     def GET(self, repo_id):
         # Params
         filters = self.filters(['limit'])
-        limit = filters['limit']
+        limit = filters.get('limit', None)
 
-        # Handle if the limit was passed
-        sync_manager = manager_factory.repo_sync_manager()
-        entries = None
         if limit is not None:
             try:
-                limit = int(limit)
+                limit = int(limit[0])
             except ValueError:
                 serialized = http_error_obj(400)
                 return self.bad_request(serialized)
 
+        sync_manager = manager_factory.repo_sync_manager()
+        try:
             entries = sync_manager.sync_history(repo_id, limit=limit)
-        else:
-            entries = sync_manager.sync_history(repo_id)
-
-        return self.ok(entries)
+            return self.ok(entries)
+        except errors.MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
 
 # -- action controllers -------------------------------------------------------
 

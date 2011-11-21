@@ -186,7 +186,7 @@ class RepoSyncManager:
 
         return dir
 
-    def sync_history(self, repo_id, limit=10):
+    def sync_history(self, repo_id, limit=None):
         """
         Returns sync history entries for the given repo, sorted from most recent
         to oldest. If there are no entries, an empty list is returned.
@@ -196,6 +196,9 @@ class RepoSyncManager:
         repo = Repo.get_collection().find_one({'id' : repo_id})
         if repo is None:
             raise MissingRepo(repo_id)
+
+        if limit is None:
+            limit = 10 # default here instead of signature for ease of calling
 
         # Retrieve the entries
         cursor = RepoSyncResult.get_collection().find({'repo_id' : repo_id})

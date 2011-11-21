@@ -13,7 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
-
+import datetime
 import os
 import sys
 
@@ -22,8 +22,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock_plugins
 
+from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
-from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
+from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 
 class RepoCollectionTest(testutil.PulpWebserviceTest):
@@ -762,3 +763,100 @@ class RepoDistributorTest(testutil.PulpWebserviceTest):
 
         # Verify
         self.assertEqual(400, status)
+
+    def test_update_missing_repo(self):
+        """
+        Tests updating a distributor on a repo that doesn't exist.
+        """
+
+        # Test
+        req_body = {'distributor_config' : {'key' : 'updated'}}
+        status, body = self.put('/v2/repositories/foo/distributors/dist-1/', params=req_body)
+
+        # Verify
+        self.assertEqual(404, status)
+
+class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
+
+    def setUp(self):
+        testutil.PulpWebserviceTest.setUp(self)
+
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+        self.repo_manager = manager_factory.repo_manager()
+        self.sync_manager = manager_factory.repo_sync_manager()
+
+    def tearDown(self):
+        testutil.PulpWebserviceTest.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpTest.clean(self)
+
+        Repo.get_collection().remove()
+        RepoSyncResult.get_collection().remove()
+
+    def test_get(self):
+        """
+        Tests getting sync history for a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('sync-test')
+        for i in range(0, 10):
+            self.add_success_result('sync-test', i)
+
+        # Test
+        status, body = self.get('/v2/repositories/sync-test/sync_history/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(10, len(body))
+
+    def test_get_no_entries(self):
+        """
+        Tests getting sync history entries for a repo that exists but hasn't been syncced.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('boring')
+
+        # Test
+        status, body = self.get('/v2/repositories/boring/sync_history/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(0, len(body))
+
+    def test_get_missing_repo(self):
+        """
+        Tests getting sync history for a repo that doesn't exist.
+        """
+
+        # Test
+        status, body = self.get('/v2/repositories/no/sync_history/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_get_bad_limit(self):
+        """
+        Tests getting with an invalid limit query parameter.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('sync-test')
+        self.add_success_result('sync-test', 0)
+
+        # Test
+        status, body = self.get('/v2/repositories/sync-test/sync_history/?limit=unparsable')
+
+        # Verify
+        self.assertEqual(400, status)
+        
+    def add_success_result(self, repo_id, offset):
+        started = datetime.datetime.now(dateutils.local_tz())
+        completed = started + datetime.timedelta(days=offset)
+        r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, '')
+        RepoSyncResult.get_collection().save(r, safe=True)
