@@ -24,7 +24,7 @@ import mock_plugins
 
 from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
-from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor, RepoSyncResult
+from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 
 class RepoCollectionTest(testutil.PulpWebserviceTest):
@@ -854,9 +854,109 @@ class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
 
         # Verify
         self.assertEqual(400, status)
-        
+
     def add_success_result(self, repo_id, offset):
         started = datetime.datetime.now(dateutils.local_tz())
         completed = started + datetime.timedelta(days=offset)
         r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, '')
         RepoSyncResult.get_collection().save(r, safe=True)
+
+class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
+
+    def setUp(self):
+        testutil.PulpWebserviceTest.setUp(self)
+
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+        self.repo_manager = manager_factory.repo_manager()
+        self.distributor_manager = manager_factory.repo_distributor_manager()
+        self.publish_manager = manager_factory.repo_publish_manager()
+
+    def tearDown(self):
+        testutil.PulpWebserviceTest.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpTest.clean(self)
+
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoPublishResult.get_collection().remove()
+
+    def test_get(self):
+        """
+        Tests getting the publish history for a repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('pub-test')
+        self.distributor_manager.add_distributor('pub-test', 'mock-distributor', {}, True, distributor_id='dist-1')
+        for i in range(0, 10):
+            self._add_success_result('pub-test', 'dist-1', i)
+
+        # Test
+        status, body = self.get('/v2/repositories/pub-test/publish_history/dist-1/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(10, len(body))
+
+    def test_get_no_entries(self):
+        """
+        Tests an empty list is returned for a distributor that has not published.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('foo')
+        self.distributor_manager.add_distributor('foo', 'mock-distributor', {}, True, distributor_id='empty')
+
+        # Test
+        status, body = self.get('/v2/repositories/foo/publish_history/empty/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(0, len(body))
+
+    def test_get_missing_repo(self):
+        """
+        Tests getting history for a repo that doesn't exist.
+        """
+
+        # Test
+        status, body = self.get('/v2/repositories/foo/publish_history/irrlevant/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_get_missing_distributor(self):
+        """
+        Tests getting history for a distributor that doesn't exist on the repo.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('foo')
+
+        # Test
+        status, body = self.get('/v2/repositories/foo/publish_history/irrlevant/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_get_bad_limit(self):
+        """
+        Tests getting with an invalid limit query parameter.
+        """
+
+        # Test
+        status, body = self.get('/v2/repositories/foo/publish_history/empty/?limit=unparsable')
+
+        # Verify
+        self.assertEqual(400, status)
+
+    def _add_success_result(self, repo_id, distributor_id, offset):
+        started = datetime.datetime.now(dateutils.local_tz())
+        completed = started + datetime.timedelta(days=offset)
+        r = RepoPublishResult.success_result(repo_id, distributor_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), '')
+        RepoPublishResult.get_collection().save(r, safe=True)
+

@@ -146,8 +146,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('no-dist', 'fake-dist')
             self.fail('Expected exception was not raised')
-        except publish_manager.NoDistributor, e:
-            self.assertEqual('no-dist', e.repo_id)
+        except publish_manager.MissingDistributor, e:
+            self.assertEqual('no-dist', e.distributor_id)
             print(e) # for coverage
 
     def test_publish_bad_distributor(self):
@@ -187,8 +187,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('repo', 'dist-1')
             self.fail('Expected exception was not raised')
-        except publish_manager.NoDistributor, e:
-            self.assertEqual('repo', e.repo_id)
+        except publish_manager.MissingDistributor, e:
+            self.assertEqual('repo', e.distributor_id)
             print(e) # for coverage
 
     def test_publish_with_error(self):
@@ -370,11 +370,12 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('foo')
+        self.distributor_manager.add_distributor('foo', 'mock-distributor', {}, True, distributor_id='dist-1')
         for i in range(1, 6):
-            add_result('foo', i)
+            add_result('foo', 'dist-1', i)
 
         # Test
-        entries = self.publish_manager.publish_history('foo')
+        entries = self.publish_manager.publish_history('foo', 'dist-1')
 
         # Verify
         self.assertEqual(5, len(entries))
@@ -392,12 +393,12 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('dragon')
+        self.distributor_manager.add_distributor('dragon', 'mock-distributor', {}, True, distributor_id='fire')
         for i in range(0, 10):
-            add_result('dragon', i)
-
+            add_result('dragon', 'fire', i)
 
         # Test
-        entries = self.publish_manager.publish_history('dragon', limit=3)
+        entries = self.publish_manager.publish_history('dragon', 'fire', limit=3)
 
         # Verify
         self.assertEqual(3, len(entries))
@@ -408,7 +409,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.assertRaises(publish_manager.MissingRepo, self.publish_manager.publish_history, 'missing')
+        self.assertRaises(publish_manager.MissingRepo, self.publish_manager.publish_history, 'missing', 'irrelevant')
 
     # -- utility tests --------------------------------------------------------
 
@@ -453,8 +454,8 @@ def assert_last_sync_time(time_in_iso):
     difference = now - finished
     return difference.seconds < 2
 
-def add_result(repo_id, offset):
+def add_result(repo_id, dist_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoPublishResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-log')
+    r = RepoPublishResult.success_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-log')
     RepoPublishResult.get_collection().save(r, safe=True)

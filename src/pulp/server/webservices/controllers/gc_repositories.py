@@ -325,7 +325,7 @@ class RepoDistributor(JSONController):
 class RepoSyncHistory(JSONController):
 
     # Scope: Resource
-    # GET:   Get history entries for a given repo
+    # GET:   Get history entries for the given repo
 
     @auth_required(READ)
     def GET(self, repo_id):
@@ -345,6 +345,32 @@ class RepoSyncHistory(JSONController):
             entries = sync_manager.sync_history(repo_id, limit=limit)
             return self.ok(entries)
         except errors.MissingRepo:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+
+class RepoPublishHistory(JSONController):
+
+    # Scope: Resource
+    # GET:   Get history entries for the given repo
+
+    @auth_required(READ)
+    def GET(self, repo_id, distributor_id):
+        # Params
+        filters = self.filters(['limit'])
+        limit = filters.get('limit', None)
+
+        if limit is not None:
+            try:
+                limit = int(limit[0])
+            except ValueError:
+                serialized = http_error_obj(400)
+                return self.bad_request(serialized)
+
+        publish_manager = manager_factory.repo_publish_manager()
+        try:
+            entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
+            return self.ok(entries)
+        except (errors.MissingRepo, errors.MissingDistributor):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -407,6 +433,7 @@ urls = (
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
 
     '/([^/]+)/sync_history/$', 'RepoSyncHistory', # sub-collection
+    '/([^/]+)/publish_history/([^/]+)/$', 'RepoPublishHistory', # sub-collection
 
     '/([^/]+)/actions/sync/$', 'RepoSync', # sub-resource action
     '/([^/]+)/actions/publish/$', 'RepoPublish', # sub-resource action

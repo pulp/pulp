@@ -217,13 +217,6 @@ class RepoPublishException(Exception):
         return _('Exception [%(e)s] raised for repository [%(r)s]') % \
                {'e' : self.__class__.__name__, 'r' : self.repo_id}
 
-class NoDistributor(RepoPublishException):
-    """
-    Indicates a sync was requested on a repository that is not configured
-    with an distributor.
-    """
-    pass
-
 class MissingDistributorPlugin(RepoPublishException):
     """
     Indicates a repo is configured with an distributor type that could not be

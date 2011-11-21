@@ -32,7 +32,7 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import MissingRepo, RepoPublishException, NoDistributor, MissingDistributorPlugin, PublishInProgress, AutoPublishException
+from pulp.server.managers.repo._exceptions import MissingRepo, RepoPublishException, MissingDistributorPlugin, PublishInProgress, AutoPublishException, MissingDistributor
 
 # -- constants ----------------------------------------------------------------
 
@@ -73,7 +73,7 @@ class RepoPublishManager:
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise NoDistributor(repo_id)
+            raise MissingDistributor(repo_id)
 
         if repo_distributor['publish_in_progress']:
             raise PublishInProgress(repo_id)
@@ -204,7 +204,7 @@ class RepoPublishManager:
         repo_distributor = coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
 
         if repo_distributor is None:
-            raise NoDistributor(repo_id)
+            raise MissingDistributor(repo_id)
 
         # Convert to datetime instance
         date_str = repo_distributor['last_publish']
@@ -215,13 +215,16 @@ class RepoPublishManager:
             instance = dateutils.parse_iso8601_datetime(date_str)
             return instance
 
-    def publish_history(self, repo_id, limit=None):
+    def publish_history(self, repo_id, distributor_id, limit=None):
         """
         Returns publish history entries for the give repo, sorted from most
         recent to oldest. If there are no entries, an empty list is returned.
 
         @param repo_id: identifies the repo
         @type  repo_id: str
+
+        @param distributor_id: identifies the distributor to retrieve history for
+        @type  distributor_id: str
 
         @param limit: maximum number of results to return
         @type  limit: int
@@ -237,11 +240,15 @@ class RepoPublishManager:
         if repo is None:
             raise MissingRepo(repo_id)
 
+        dist = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        if dist is None:
+            raise MissingDistributor(distributor_id)
+
         if limit is None:
             limit = 10 # default here for each of REST API calls into here
 
         # Retrieve the entries
-        cursor = RepoPublishResult.get_collection().find({'repo_id' : repo_id})
+        cursor = RepoPublishResult.get_collection().find({'repo_id' : repo_id, 'distributor_id' : distributor_id})
         cursor.limit(limit)
         cursor.sort('completed', pymongo.DESCENDING)
 
