@@ -83,7 +83,8 @@ read_files_pattern(httpd_t, pulp_config_t, pulp_config_t)
 read_lnk_files_pattern(httpd_t, pulp_config_t, pulp_config_t)
 
 # SELinux is preventing /usr/sbin/httpd from write access on the file /var/log/pulp/events.log
-write_files_pattern(httpd_t, pulp_log_t, pulp_log_t)
+# SELinux is preventing /usr/sbin/httpd from unlink access on the file /var/log/pulp/grinder.log.3
+manage_files_pattern(httpd_t, pulp_log_t, pulp_log_t)
 
 # SELinux is preventing /usr/sbin/httpd from write access on the directory /var/log/pulp
 manage_dirs_pattern(httpd_t, pulp_log_t, pulp_log_t)
@@ -106,6 +107,4 @@ manage_lnk_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
 # OSError: [Errno 13] Permission denied: '/etc/pki/content/pulp_f15_i386'
 manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
 manage_lnk_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
-
-# SELinux is preventing /usr/sbin/httpd from write access on the file pulp-protected-repos.
 
