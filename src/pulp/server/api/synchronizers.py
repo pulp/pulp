@@ -99,7 +99,7 @@ class BaseSynchronizer(object):
             'item_name': None,
             'item_type': None,
             'items_total': 0,
-            'items_remaining': 0,
+            'items_left': 0,
             'size_total': 0,
             'size_left': 0,
             'num_error': 0,
