@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Repo module containing repo quries based on HTTP query parameters.
+Repo module containing repo queries based on HTTP query parameters.
 """
 
 from pulp.server.db.model.resource import Repo
