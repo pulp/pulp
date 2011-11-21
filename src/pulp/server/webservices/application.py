@@ -43,8 +43,8 @@ from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
-    filters, jobs, orphaned, packages, permissions, repositories, roles,
-    services, tasks, users)
+    filters, jobs, orphaned, packages, permissions, statuses,
+    repositories, roles, services, tasks, users)
 from pulp.server.webservices.controllers import (
     api_v2, gc_contents, gc_plugins, gc_repositories)
 from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
@@ -69,6 +69,7 @@ URLS = (
     '/packages', packages.application,
     '/permissions', permissions.application,
     '/repositories', repositories.application,
+    '/statuses', statuses.application,
     '/roles', roles.application,
     '/services', services.application,
     '/tasks', tasks.application,
@@ -87,6 +88,7 @@ URLS = (
     '/v1/packages', packages.application,
     '/v1/permissions', permissions.application,
     '/v1/repositories', repositories.application,
+    '/v1/repo_sync_status', statuses.application,
     '/v1/roles', roles.application,
     '/v1/services', services.application,
     '/v1/tasks', tasks.application,

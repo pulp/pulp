@@ -341,3 +341,19 @@ class RepoSyncSchedule(Model):
         self.interval = interval
         self.start_time = start_time
         self.runs = runs
+
+
+class RepoStatus(Model):
+    """
+    Repsitory synchronization status.  Represents the status of a current sync
+    task on a repository.
+    """
+
+    def __init__(self, repoid, state=None, progress=None, exception=None,
+                 traceback=None):
+        self.repoid = repoid
+        self.state = state
+        self.progress = progress
+        self.exception = exception
+        self.traceback = traceback
+

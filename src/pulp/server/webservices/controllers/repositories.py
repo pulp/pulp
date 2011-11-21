@@ -716,7 +716,47 @@ class RepositoryDeferredFields(JSONController):
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
         return field(id)
+     
 
+class RepositoryStatusesCollection(JSONController):
+    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id):
+        sync_status_controller = RepositorySyncStatus()
+        status_methods = [getattr(sync_status_controller, st)
+            for st in sync_status_controller.status_types.values()]
+
+        statuses = []
+        for status_method in status_methods:
+            status = status_method(repo_id)
+            if status:
+                statuses.append(status)
+
+        return self.ok(statuses)
+
+class RepositorySyncStatus(JSONController):
+
+    status_types = {"sync" : "_sync",
+                    "clone" : "_clone"}
+
+    def _sync(self, repo_id):
+        return api.get_sync_status(repo_id)
+
+    def _clone(self, repo_id):
+        pass
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id, status_type):
+        status_method = getattr(self, self.status_types[status_type], None)
+
+        if status_method:
+            response = self.ok(status_method(repo_id))
+        else:
+            response = self.not_found(_("Invalid status type %s.") %
+                status_type)
+
+        return response
 
 class RepositoryActions(JSONController):
 
@@ -1610,7 +1650,6 @@ class RepositoryActions(JSONController):
         api.remove_distribution(id, data['distributionid'])
         return self.ok(True)
 
-
     @error_handler
     @auth_required(EXECUTE)
     def POST(self, id, action_name):
@@ -1747,6 +1786,9 @@ urls = (
 
     '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotes',
     '/([^/]+)/notes/$', 'RepositoryNotesCollection',
+
+    '/([^/]+)/statuses/$', 'RepositoryStatusesCollection',
+    '/([^/]+)/statuses/([^/]+)/$', 'RepositorySyncStatus',
 )
 
 application = web.application(urls, globals())
