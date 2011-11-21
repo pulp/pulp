@@ -5,7 +5,7 @@
 Name:			python-oauth2
 Summary:		Python support for improved oauth
 Version:		%{version}
-Release:		pulp.2%{?dist}
+Release:		2.pulp%{?dist}
 License:		MIT
 Group:			System Environment/Libraries
 Source0:		http://pypi.python.org/packages/source/o/oauth2/oauth2-%{version}.tar.gz
