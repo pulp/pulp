@@ -263,7 +263,7 @@ class PulpAsyncTest(PulpTest):
         async.initialize()
 
 
-class PulpWebserviceTest(PulpTest):
+class PulpWebserviceTest(PulpAsyncTest):
 
     WEB_APP = None
     TEST_APP = None
