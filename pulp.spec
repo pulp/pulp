@@ -40,9 +40,9 @@ Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson >= 2.0.9
-Requires: python-oauth2
+Requires: python-oauth2 >= 1.5.170-2.pulp%{?dist}
 Requires: python-httplib2
-Requires: python-isodate >= 0.4.4
+Requires: python-isodate >= 0.4.4-3.pulp%{?dist}
 Requires: python-BeautifulSoup
 Requires: grinder >= 0.0.128
 Requires: httpd
