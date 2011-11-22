@@ -17,7 +17,7 @@ require {
 }
 
 # Private type declarations
-type pulp_t;
+#type pulp_t;
 type pulp_exec_t;
 type pulp_initrc_exec_t;
 
@@ -36,34 +36,34 @@ logging_log_file(pulp_log_t)
 type pulp_tmp_t;
 files_tmp_file(pulp_tmp_t)
 
-domain_type(pulp_t)
-domain_entry_file(pulp_t, pulp_exec_t)
+#domain_type(pulp_t)
+#domain_entry_file(pulp_t, pulp_exec_t)
+#domain_auto_trans(initrc_t, pulp_initrc_exec_t, pulp_t)
 domain_entry_file(initrc_t, pulp_initrc_exec_t)
-domain_auto_trans(initrc_t, pulp_initrc_exec_t, pulp_t)
 domain_auto_trans(httpd_t, pulp_initrc_exec_t, initrc_t)
 allow restorecon_t pulp_initrc_exec_t:file { relabelto getattr };
 
 
-allow pulp_t pulp_log_t:file manage_file_perms;
-allow pulp_t pulp_tmp_t:file manage_file_perms;
+#allow pulp_t pulp_log_t:file manage_file_perms;
+#allow pulp_t pulp_tmp_t:file manage_file_perms;
 
-files_tmp_filetrans(pulp_t,pulp_tmp_t,file)
+#files_tmp_filetrans(pulp_t,pulp_tmp_t,file)
 
 
 
 # Added to allow restorecon to function after repeated runs of "enable.sh" during development
 # TODO:  Re-test, these setting may not be needed after we added "files_type(pulp_certs_t)"
-allow pulp_certs_t fs_t:filesystem associate;
-allow setfiles_t pulp_certs_t:dir { getattr open search read relabelto };
-allow setfiles_t pulp_certs_t:file relabelto;
-allow setfiles_t pulp_certs_t:lnk_file relabelto;
+#allow pulp_certs_t fs_t:filesystem associate;
+#allow setfiles_t pulp_certs_t:dir { getattr open search read relabelto };
+#allow setfiles_t pulp_certs_t:file relabelto;
+#allow setfiles_t pulp_certs_t:lnk_file relabelto;
 
 
 # Fix SELinux is preventing /bin/bash from getattr access on the directory /etc/pki/pulp
 # TODO:  Re-test, these setting may not be needed after we added "files_type(pulp_certs_t)"
-allow unconfined_t pulp_certs_t:dir { getattr read search open };
-allow unconfined_t pulp_certs_t:file getattr;
-allow unconfined_t pulp_certs_t:lnk_file { read getattr };
+#allow unconfined_t pulp_certs_t:dir { getattr read search open };
+#allow unconfined_t pulp_certs_t:file getattr;
+#allow unconfined_t pulp_certs_t:lnk_file { read getattr };
 
 # Fix: SELinux is preventing /usr/sbin/httpd from getattr access on the file /shared/repo/pulp/etc/pki/pulp/ca.crt
 #allow httpd_t pulp_certs_t:dir search;
