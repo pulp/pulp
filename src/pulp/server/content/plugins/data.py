@@ -71,24 +71,21 @@ class Unit:
     @ivar metadata: mapping of key/value pairs describing the unit
     @type metadata: dict
 
-    @ivar storage_path: full path to where on disk the unit is currently stored;
-                    the unit may have been placed here either by an importer or
-                    this may refer to a temporary path Pulp has saved the
-                    unit to if it was uploaded by a user
+    @ivar storage_path: full path to where on disk the unit is stored
     @type storage_path: str
     """
 
-    def __init__(self, unit_key, type_id, metadata):
-        self.unit_key = unit_key
+    def __init__(self, type_id, unit_key, metadata, storage_path):
         self.type_id = type_id
+        self.unit_key = unit_key
         self.metadata = metadata
+        self.storage_path = storage_path
 
         self.id = None
-        self.storage_path = None
 
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
-    
+
 class SyncReport:
     """
     Returned to the Pulp server at the end of a sync call. This is used by the

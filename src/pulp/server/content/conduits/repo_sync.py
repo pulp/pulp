@@ -20,8 +20,10 @@ from gettext import gettext as _
 import logging
 import sys
 
+import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.data import Unit
+from pulp.server.managers.content._exceptions import ContentUnitNotFound
 
 # -- constants ---------------------------------------------------------------
 
@@ -157,16 +159,8 @@ class RepoSyncConduit:
                 if type_def is None:
                     continue
 
-                key_list = type_def['unique_indexes']
-
                 for unit in type_units:
-                    unit_key = {}
-
-                    for k in key_list:
-                        unit_key[k] = unit.pop(k)
-
-                    u = Unit(unit_key, type_id, unit)
-                    u.storage_path = unit.pop('_storage_path')
+                    u = common_utils.to_plugin_unit(unit, type_def)
                     all_units.append(u)
 
             return all_units
@@ -175,15 +169,12 @@ class RepoSyncConduit:
             _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
-    def new_unit(self, unit_key, type_id, metadata, relative_path):
+    def new_unit(self, type_id, unit_key, metadata, relative_path):
 
         try:
             # Generate the storage location
             path = self.__content_query_manager.request_content_unit_file_path(type_id, relative_path)
-
-            u = Unit(unit_key, type_id, metadata)
-            u.storage_path = path
-
+            u = Unit(unit_key, type_id, metadata, path)
             return u
         except:
             _LOG.exception('Exception from server requesting unit filename for relative path [%s]' % relative_path)
@@ -198,23 +189,28 @@ class RepoSyncConduit:
 
         """
         try:
+            unit_id = None
+
+            # Save or update the unit
+            pulp_unit = common_utils.to_pulp_unit(unit)
+            try:
+                existing_unit = self.__content_query_manager.get_content_unit_by_keys_dict(unit.type_id, unit.unit_key)
+                unit.id = existing_unit['_id']
+                self.__content_manager.update_content_unit(unit.type_id, unit_id, pulp_unit)
+            except ContentUnitNotFound:
+                unit.id = self.__content_manager.add_content_unit(unit.type_id, None, pulp_unit)
+
+            # Associate it with the repo
             self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id)
         except:
-            _LOG.exception(_('Content unit association failed'))
+            _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
-    def remove_unit(self, unit_id):
+    def remove_unit(self, unit):
         try:
-            self.__association_manager.unassociate_unit_by_id(self.repo_id, type_id, unit_id)
+            self.__association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id)
         except:
             _LOG.exception(_('Content unit unassociation failed'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
-
-    def remove_units(self, type_id, unit_ids):
-        try:
-            self.__association_manager.unassociate_all_by_ids(self.repo_id, type_id, unit_ids)
-        except:
-            _LOG.exception(_('Multiple unit unassociations failed'))
             raise RepoSyncConduitException(), None, sys.exc_info()[2]
 
     def link_child_unit(self, parent_unit, child_unit):
