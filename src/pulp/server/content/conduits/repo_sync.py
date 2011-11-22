@@ -21,7 +21,7 @@ import logging
 import sys
 from gettext import gettext as _
 
-from pulp.server.managers.content.exception import ContentUnitNotFound
+from pulp.server.managers.content._exceptions import ContentUnitNotFound
 
 # -- constants ---------------------------------------------------------------
 

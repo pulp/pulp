@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
 import testutil
 
 from pulp.server.content.types import database, model
-from pulp.server.managers.content import exception
+from pulp.server.managers.content import _exceptions as exception
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 

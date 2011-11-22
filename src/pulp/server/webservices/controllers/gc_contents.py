@@ -18,9 +18,8 @@ import web
 from pulp.server.auth.authorization import (
     CREATE, READ, UPDATE, DELETE, EXECUTE)
 from pulp.server.managers import factory
-from pulp.server.webservices import http
 from pulp.server.webservices import serialization
-from pulp.server.managers.content.exception import ContentUnitNotFound
+from pulp.server.managers.content._exceptions import ContentUnitNotFound
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
