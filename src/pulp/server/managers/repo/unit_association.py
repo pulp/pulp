@@ -158,7 +158,7 @@ class RepoUnitAssociationManager:
         @type  repo_id: str
 
         @return: dict of type ID to list of unit dicts
-        @rtype:  dict of {str : dict}
+        @rtype:  dict of {str : [dict]}
         """
 
         result = {}

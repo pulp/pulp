@@ -89,69 +89,6 @@ class Unit:
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
     
-class UnitsBag:
-    """
-    Contains all of the content units associated with a given repository. This
-    class will provide a number of transformation utilities to support
-    different retrieval and organization schemes.
-
-    Plugins should not attempt to change the contents of instances of this class.
-    They will not be persisted; this class is intended for query capabilities
-    only.
-    """
-
-    def __init__(self):
-        self.units_by_type = {} # mapping of type ID to list of Unit instances
-
-    def _add_units(self, units):
-        """
-        Adds one or more content units to the instance.
-        """
-
-        for unit in units:
-            type_id = unit.type_id
-
-            unit_list = self.units_by_type.get(type_id, [])
-            unit_list.append(unit)
-            self.units_by_type[type_id] = unit_list
-
-    def units(self):
-        """
-        Returns a mapping of type ID to list of units of that type.
-
-        @return: collection of unit instances
-        @rtyep:  dict {str : [L{Unit}]}
-        """
-        return self.units_by_type
-
-    def units_by_id(self, type_id):
-        """
-        Returns all content units of the given type. The units will be organized
-        in a mapping from unit ID to Unit instance. If there are no units for
-        the given type, an empty dict is returned.
-
-        @return: mapping of unit ID to unit instance
-        @rtype:  dict {str : L{Unit}}
-        """
-        result = {}
-        for unit in self.units_by_type.get(type_id, []):
-            result[unit.id] = unit
-        return result
-
-    def units_by_key(self, type_id):
-        """
-        Returns all content units of the given type. The units will be orgnanized
-        in a mapping from unit key to Unit instance. If there are no units for
-        the given type, an empty dict is returned.
-
-        @return: mapping of unit key to unit instance
-        @rtype:  dict {dict : L{Unit}}
-        """
-        result = {}
-        for unit in self.units_by_type.get(type_id, []):
-            result[unit.unit_key] = unit
-        return result
-
 class SyncReport:
     """
     Returned to the Pulp server at the end of a sync call. This is used by the
