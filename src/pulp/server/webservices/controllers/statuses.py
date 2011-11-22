@@ -13,7 +13,7 @@
 
 import web
 
-from pulp.server import async
+from pulp.server.async import find_async
 from pulp.server.api.repo import RepoApi
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.webservices.controllers.base import JSONController
@@ -23,7 +23,19 @@ from pulp.server.webservices.controllers.decorators import (
 api = RepoApi()
 
 class StatusesCollection(JSONController):
-    pass
+    @error_handler
+    @auth_required(READ)
+    def GET(self):
+        statuses_controller = Statuses()
+
+        statuses = []
+        for resource_type, resource_method in \
+            statuses_controller.resource_types.items():
+            _statuses = getattr(statuses_controller, resource_method)()
+            if _statuses:
+                statuses += _statuses
+
+        return self.ok(statuses)
 
 class Statuses(JSONController):
     resource_types = {"repositories" : "repositories"}
@@ -45,7 +57,7 @@ class Statuses(JSONController):
         for status_method in status_methods:
             _statuses = status_method()
             if _statuses:
-                statuses.append(_statuses)
+                statuses += _statuses
 
         return statuses
 
@@ -102,16 +114,20 @@ class RepositoryStatuses(JSONController):
             if type(states) != type([]):
                 states = [states]
             tasks = set()
-            if not states or 'all' in states:
-                tasks.update(async.all_async())
+            if 'all' in states:
+                tasks.update(find_async(method_name="_sync"))
             if 'waiting' in states:
-                tasks.update(async.waiting_async())
+                tasks.update([t for t in find_async(method_name="_sync")
+                    if t.state=='waiting'])
             if 'running' in states:
-                tasks.update(async.running_async())
+                tasks.update([t for t in find_async(method_name="_sync")
+                    if t.state=='running'])
             if 'complete' in states:
-                tasks.update(async.complete_async())
+                tasks.update([t for t in find_async(method_name="_sync")
+                    if t.state=='complete'])
             if 'incomplete' in states:
-                tasks.update(async.incomplete_async())
+                tasks.update([t for t in find_async(method_name="_sync")
+                    if t.state=='incomplete'])
             if 'error' in states:
                 pass
 
@@ -124,6 +140,8 @@ class RepositoryStatuses(JSONController):
         else:
             repos = api.repositories()
             statuses = api.get_sync_status_for_repos(repos)
+
+        statuses = [s for s in statuses if s["state"] is not None]
 
         return statuses
    
