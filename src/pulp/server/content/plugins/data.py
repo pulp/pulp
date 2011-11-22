@@ -49,6 +49,9 @@ class Repository:
 
         self.working_dir = None
 
+    def __str__(self):
+        return 'Repository [%s]' % self.id
+        
 class Unit:
     """
     Contains information related to a single content unit. The unit may or
@@ -59,25 +62,95 @@ class Unit:
               yet exist in Pulp, this will be None
     @type id: str
 
-    @ivar type: ID of the unit's type
-    @type type: str
+    @ivar unit_key: natural key for the content unit
+    @type unit_key: dict
+
+    @ivar type_id: ID of the unit's type
+    @type type_id: str
 
     @ivar metadata: mapping of key/value pairs describing the unit
     @type metadata: dict
 
-    @ivar location: full path to where on disk the unit is currently stored;
+    @ivar storage_path: full path to where on disk the unit is currently stored;
                     the unit may have been placed here either by an importer or
-                    this may refer to a temporary location Pulp has saved the
+                    this may refer to a temporary path Pulp has saved the
                     unit to if it was uploaded by a user
-    @type location: str
+    @type storage_path: str
     """
 
-    def __init__(self, type, metadata):
-        self.type = type
+    def __init__(self, unit_key, type_id, metadata):
+        self.unit_key = unit_key
+        self.type_id = type_id
         self.metadata = metadata
 
         self.id = None
-        self.location = None
+        self.storage_path = None
+
+    def __str__(self):
+        return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
+    
+class UnitsBag:
+    """
+    Contains all of the content units associated with a given repository. This
+    class will provide a number of transformation utilities to support
+    different retrieval and organization schemes.
+
+    Plugins should not attempt to change the contents of instances of this class.
+    They will not be persisted; this class is intended for query capabilities
+    only.
+    """
+
+    def __init__(self):
+        self.units_by_type = {} # mapping of type ID to list of Unit instances
+
+    def _add_units(self, units):
+        """
+        Adds one or more content units to the instance.
+        """
+
+        for unit in units:
+            type_id = unit.type_id
+
+            unit_list = self.units_by_type.get(type_id, [])
+            unit_list.append(unit)
+            self.units_by_type[type_id] = unit_list
+
+    def units(self):
+        """
+        Returns a mapping of type ID to list of units of that type.
+
+        @return: collection of unit instances
+        @rtyep:  dict {str : [L{Unit}]}
+        """
+        return self.units_by_type
+
+    def units_by_id(self, type_id):
+        """
+        Returns all content units of the given type. The units will be organized
+        in a mapping from unit ID to Unit instance. If there are no units for
+        the given type, an empty dict is returned.
+
+        @return: mapping of unit ID to unit instance
+        @rtype:  dict {str : L{Unit}}
+        """
+        result = {}
+        for unit in self.units_by_type.get(type_id, []):
+            result[unit.id] = unit
+        return result
+
+    def units_by_key(self, type_id):
+        """
+        Returns all content units of the given type. The units will be orgnanized
+        in a mapping from unit key to Unit instance. If there are no units for
+        the given type, an empty dict is returned.
+
+        @return: mapping of unit key to unit instance
+        @rtype:  dict {dict : L{Unit}}
+        """
+        result = {}
+        for unit in self.units_by_type.get(type_id, []):
+            result[unit.unit_key] = unit
+        return result
 
 class SyncReport:
     """
