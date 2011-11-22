@@ -80,6 +80,8 @@ class Filter(JSONController):
         @param id: filter id
         @return: filter details
         """
+        if api.filter(id) is None:
+            return self.not_found('A filter with the id, %s, does not exist'% id)
         return self.ok(api.filter(id))
     
 
