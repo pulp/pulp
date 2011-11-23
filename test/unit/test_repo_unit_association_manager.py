@@ -189,6 +189,8 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
         for type_id, unit_list in found_units.items():
             self.assertTrue(type_id in units)
+            self.assertEqual(3, len(unit_list))
             for u in unit_list:
-                self.assertTrue(u['id'] in units[type_id])
+
+                self.assertTrue(u['_id'] in units[type_id])
                 self.assertTrue('key_1' in u)
