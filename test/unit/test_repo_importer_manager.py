@@ -23,7 +23,7 @@ import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.importer import Importer
-from pulp.server.content.plugins.data import Repository
+from pulp.server.content.plugins.model import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.repo._exceptions as errors

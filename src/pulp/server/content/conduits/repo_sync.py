@@ -22,7 +22,7 @@ import sys
 
 import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
-from pulp.server.content.plugins.data import Unit
+from pulp.server.content.plugins.model import Unit
 from pulp.server.managers.content._exceptions import ContentUnitNotFound
 
 # -- constants ---------------------------------------------------------------

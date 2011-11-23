@@ -31,7 +31,7 @@ import pulp.server.constants as pulp_constants
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.content.plugins.data import SyncReport
+from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils

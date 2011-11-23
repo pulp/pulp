@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp.server.content.plugins.data import Unit
+from pulp.server.content.plugins.model import Unit
 
 
 def to_pulp_unit(plugin_unit):
