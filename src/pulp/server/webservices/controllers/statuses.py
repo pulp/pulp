@@ -62,7 +62,7 @@ class RepositoryStatuses(JSONController):
 
     @error_handler
     @auth_required(READ)
-    @collection_query("id", "state")
+    @collection_query("repoid", "state")
     def GET(self, status_type, spec={}):
         status_method = getattr(self, status_type)
         response = self.ok(status_method(spec))
@@ -78,7 +78,7 @@ class RepositoryStatuses(JSONController):
         description: Get a list of the repository sync status for all
         repositories managed by Pulp.
         method: GET
-        path: /repo_sync_status/
+        path: /statuses/repository/syncs/
         permission: READ
         success response: 200 OK
         failure response: None
@@ -92,8 +92,8 @@ class RepositoryStatuses(JSONController):
         repoids = []
         states = []
 
-        if "id" in spec:
-            repos = api.repositories(dict(id=spec["id"]))
+        if "repoid" in spec:
+            repos = api.repositories(dict(id=spec["repoid"]))
             repoids = [r["id"] for r in repos]
             repo_statuses = api.get_sync_status_for_repos(repos)
 

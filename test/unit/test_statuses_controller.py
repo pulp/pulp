@@ -102,13 +102,13 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(1, len(et))
 
     def test_get_filtered_sync_statuses(self):
-        status, body = self.get('/statuses/repository/syncs/?id=rr1')
+        status, body = self.get('/statuses/repository/syncs/?repoid=rr1')
         self.assertEquals(200, status)
         self.assertEquals(1, len(body))
         self.assertEquals("rr1", body[0]["repoid"])
 
         status, body = self.get(
-            '/statuses/repository/syncs/?id=rr1&id=rr2&_union=id')
+            '/statuses/repository/syncs/?repoid=rr1&repoid=rr2&_union=repoid')
         self.assertEquals(200, status)
         self.assertEquals(2, len(body))
         repo_ids = [r["repoid"] for r in body]
@@ -124,7 +124,7 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(["rr1", "rr2"], repo_ids)
 
         status, body = self.get(
-            '/statuses/repository/syncs/?state=running&id=rr1')
+            '/statuses/repository/syncs/?state=running&repoid=rr1')
         self.assertEquals(200, status)
         self.assertEquals(1, len(body))
         self.assertEquals("rr1", body[0]["repoid"])
