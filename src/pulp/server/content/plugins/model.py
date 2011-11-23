@@ -97,8 +97,8 @@ class SyncReport:
     @ivar removed_count: number of units unassociated from the repo during the sync
     @type removed_count: int
 
-    @ivar log: arbitrary text the plugin wants to communicate to users about the sync
-    @type log: str
+    @ivar log: arbitrary value the plugin wants to communicate to users about the sync
+    @type log: just about any serializable object (likely str or dict)
     """
 
     def __init__(self, added_count, removed_count, log):
@@ -112,7 +112,7 @@ class PublishReport:
     plugin to decrive what took place during the publish run.
 
     @ivar log: arbitrary text the plugin wants to communicate to users about the run
-    @type log: str
+    @type log: just about any serializable object (likely str or dict)
     """
 
     def __init__(self, log):
