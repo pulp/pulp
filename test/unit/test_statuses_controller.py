@@ -84,7 +84,7 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(1, len(et))
 
     def test_get_repository_statuses(self):
-        status, body = self.get('/statuses/repositories/')
+        status, body = self.get('/statuses/repository/')
         self.assertEquals(200, status)
         self.assertEquals(3, len(body))
         rt = [t for t in body if t["state"] == task.task_running]
@@ -93,7 +93,7 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(1, len(et))
 
     def test_get_sync_statuses(self):
-        status, body = self.get('/statuses/repositories/sync/')
+        status, body = self.get('/statuses/repository/syncs/')
         self.assertEquals(200, status)
         self.assertEquals(3, len(body))
         rt = [t for t in body if t["state"] == task.task_running]
@@ -102,13 +102,13 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(1, len(et))
 
     def test_get_filtered_sync_statuses(self):
-        status, body = self.get('/statuses/repositories/sync/?id=rr1')
+        status, body = self.get('/statuses/repository/syncs/?id=rr1')
         self.assertEquals(200, status)
         self.assertEquals(1, len(body))
         self.assertEquals("rr1", body[0]["repoid"])
 
         status, body = self.get(
-            '/statuses/repositories/sync/?id=rr1&id=rr2&_union=id')
+            '/statuses/repository/syncs/?id=rr1&id=rr2&_union=id')
         self.assertEquals(200, status)
         self.assertEquals(2, len(body))
         repo_ids = [r["repoid"] for r in body]
@@ -116,7 +116,7 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(["rr1", "rr2"], repo_ids)
 
         status, body = self.get(
-            '/statuses/repositories/sync/?state=running')
+            '/statuses/repository/syncs/?state=running')
         self.assertEquals(200, status)
         self.assertEquals(2, len(body))
         repo_ids = [r["repoid"] for r in body]
@@ -124,7 +124,7 @@ class StatusesTest(BaseStatusesTest):
         self.assertEquals(["rr1", "rr2"], repo_ids)
 
         status, body = self.get(
-            '/statuses/repositories/sync/?state=running&id=rr1')
+            '/statuses/repository/syncs/?state=running&id=rr1')
         self.assertEquals(200, status)
         self.assertEquals(1, len(body))
         self.assertEquals("rr1", body[0]["repoid"])

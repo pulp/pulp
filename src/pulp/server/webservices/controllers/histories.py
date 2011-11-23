@@ -26,18 +26,18 @@ class HistoriesCollection(JSONController):
     @error_handler
     @auth_required(READ)
     def GET(self):
-        history = History()
+        histories_controller = Histories()
 
         histories = []
-        for resource_type in history.resource_types:
-            _histories = getattr(history, resource_type)()
+        for resource_type in histories_controller.resource_types:
+            _histories = getattr(histories_controller, resource_type)()
             if _histories:
                 histories += _histories
 
         return self.ok(histories)
 
 
-class History(JSONController):
+class Histories(JSONController):
     resource_types = [ "repository" ]
 
     @error_handler
@@ -47,21 +47,18 @@ class History(JSONController):
         return response
 
     def repository(self):
-        repository_history = RepositoryHistory()
+        repository_history = RepositoryHistories()
         
-        history_methods = [getattr(repository_history, ht)
-            for ht in repository_history.history_types]
-
         histories = []
-        for history_method in history_methods:
-            _histories = history_method()
+        for history_type in repository_history.history_types:
+            _histories = getattr(repository_history, history_type)()
             if _histories:
                 histories += _histories
 
         return histories
 
 
-class RepositoryHistory(JSONController):
+class RepositoryHistories(JSONController):
 
     history_types = [ "syncs", "clones" ]
 
@@ -92,9 +89,9 @@ class RepositoryHistory(JSONController):
 
 urls = (
     '/$', 'HistoriesCollection',
-    '/(%s)/' % '|'.join(History.resource_types), 'History',
-    '/repository/(%s)/' % '|'.join(RepositoryHistory.history_types),
-        'RepositoryHistory',
+    '/(%s)/' % '|'.join(Histories.resource_types), 'Histories',
+    '/repository/(%s)/' % '|'.join(RepositoryHistories.history_types),
+        'RepositoryHistories',
 )
 
 application = web.application(urls, globals())

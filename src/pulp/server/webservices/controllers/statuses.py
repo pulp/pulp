@@ -29,33 +29,28 @@ class StatusesCollection(JSONController):
         statuses_controller = Statuses()
 
         statuses = []
-        for resource_type, resource_method in \
-            statuses_controller.resource_types.items():
-            _statuses = getattr(statuses_controller, resource_method)()
+        for resource_type in statuses_controller.resource_types:
+            _statuses = getattr(statuses_controller, resource_type)()
             if _statuses:
                 statuses += _statuses
 
         return self.ok(statuses)
 
 class Statuses(JSONController):
-    resource_types = {"repositories" : "repositories"}
+    resource_types = [ "repository" ]
 
     @error_handler
     @auth_required(READ)
     def GET(self, resource_type):
-        response = self.ok(getattr(self,
-            self.resource_types[resource_type])()) 
+        response = self.ok(getattr(self, resource_type)())
         return response
 
-    def repositories(self):
+    def repository(self):
         repository_statuses_controller = RepositoryStatuses()
 
-        status_methods = [getattr(repository_statuses_controller, st)
-            for st in repository_statuses_controller.status_types]
-
         statuses = []
-        for status_method in status_methods:
-            _statuses = status_method()
+        for status_type in repository_statuses_controller.status_types:
+            _statuses = getattr(repository_statuses_controller, status_type)()
             if _statuses:
                 statuses += _statuses
 
@@ -63,27 +58,20 @@ class Statuses(JSONController):
 
 class RepositoryStatuses(JSONController):
 
-    status_types = { "sync" : "sync",
-                     "clone" : "clone" }
+    status_types = [ "syncs", "clones" ]
 
     @error_handler
     @auth_required(READ)
     @collection_query("id", "state")
     def GET(self, status_type, spec={}):
-        status_method = getattr(self, self.status_types[status_type], None)
-
-        if status_method:
-            response = self.ok(status_method(spec))
-        else:
-            response = self.not_found(_("Invalid status type %s.") %
-                status_type)
-
+        status_method = getattr(self, status_type)
+        response = self.ok(status_method(spec))
         return response
 
-    def clone(self, spec={}):
+    def clones(self, spec={}):
         pass
 
-    def sync(self, spec={}):
+    def syncs(self, spec={}):
         """
         [[wiki]]
         title: Bulk List Repository Sync Status
@@ -147,8 +135,8 @@ class RepositoryStatuses(JSONController):
    
 urls = (
     '/$', 'StatusesCollection',
-    '/(%s)/' % '|'.join(Statuses.resource_types.keys()), 'Statuses',
-    '/repositories/(%s)/' % '|'.join(RepositoryStatuses.status_types.keys()),
+    '/(%s)/' % '|'.join(Statuses.resource_types), 'Statuses',
+    '/repository/(%s)/' % '|'.join(RepositoryStatuses.status_types),
         'RepositoryStatuses',
 )
 
