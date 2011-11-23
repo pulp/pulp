@@ -27,6 +27,18 @@ def _finish_time_cmp(one, two):
                dateutils.parse_iso8601_datetime(two['finish_time']))
 
 
+def all_repo_sync():
+    """
+    Return a list of all the finished repo syncs.
+    Note: this does not include any waiting or currently running syncs.
+    @rtype: list of R{TaskHistory} instances.
+    @return: a list of the finished repo syncs.
+    """
+    history = []
+    collection = TaskHistory.get_collection()
+    history = collection.find({'task_type': RepoSyncTask.__name__})
+    return sorted(history, cmp=_finish_time_cmp, reverse=True)
+
 def repo_sync(id):
     """
     Return a list of all the finished repo syncs for the given repo id.
