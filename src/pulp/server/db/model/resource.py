@@ -71,9 +71,9 @@ class Distribution(Model):
      Distribution Model to represent kickstart trees
     """
     collection_name = 'distribution'
-    search_indices = ('files', 'family', 'variant', 'version', 'arch','relativepath')
+    search_indices = ('files', 'family', 'variant', 'version', 'arch', 'relativepath', 'repoids')
 
-    def __init__(self, id, description, relativepath, family=None, variant=None, version=None, timestamp=None, files=[], arch=None):
+    def __init__(self, id, description, relativepath, family=None, variant=None, version=None, timestamp=None, files=[], arch=None, repoids=[]):
         Model.__init__(self)
         self._id = id
         self.id = id
@@ -84,6 +84,7 @@ class Distribution(Model):
         self.family = family
         self.variant = variant
         self.version = version
+        self.repoids = repoids
         if timestamp:
             self.timestamp = dateutils.format_iso8601_datetime(timestamp)
         else:

@@ -1759,6 +1759,13 @@ class RepoApi(BaseApi):
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.collection.save(repo, safe=True)
+
+        # Add the repoid to the list on the distribution as well.
+        distro_obj = self.distroapi.distribution(distroid)
+        distro_obj['repoids'].append(repoid)
+        distro_collection = model.Distribution.get_collection()
+        distro_collection.save(distro_obj, safe=True)
+        
         distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
         repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
         for imfile in distro_obj['files']:
@@ -1803,6 +1810,12 @@ class RepoApi(BaseApi):
                     os.unlink(repo_dist_path)
         del repo['distributionid'][repo['distributionid'].index(distroid)]
         self.collection.save(repo, safe=True)
+
+        # Delete the repoid from the list on the distribution as well.
+        del distro_obj['repoids'][distro_obj['repoids'].index(repoid)]
+        distro_collection = model.Distribution.get_collection()
+        distro_collection.save(distro_obj, safe=True)
+
         log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
         self._delete_ks_link(repo)
 

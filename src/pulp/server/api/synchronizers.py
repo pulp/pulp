@@ -339,7 +339,7 @@ class BaseSynchronizer(object):
         distro = self.distro_api.create(id, description, distro_path, \
                 family=treeinfo['family'], variant=treeinfo['variant'], \
                 version=treeinfo['version'], timestamp=timestamp, files=files,\
-                arch=treeinfo['arch'])
+                arch=treeinfo['arch'], repoids=[repo['id']])
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
             log.info("Created a distributionID %s" % distro['id'])
