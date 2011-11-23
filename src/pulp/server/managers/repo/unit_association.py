@@ -168,7 +168,7 @@ class RepoUnitAssociationManager:
         for unit in all_units:
             type_id = unit['unit_type_id']
             unit_list = result.get(type_id, [])
-            unit_list.append(unit['id'])
+            unit_list.append(unit['unit_id'])
             result[type_id] = unit_list
 
         # Now we can batch up the actual unit retrievals by type rather than
