@@ -165,20 +165,20 @@ class RepoSyncConduit:
 
             return all_units
 
-        except:
+        except Exception, e:
             _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
-    def new_unit(self, type_id, unit_key, metadata, relative_path):
+    def init_unit(self, type_id, unit_key, metadata, relative_path):
 
         try:
             # Generate the storage location
             path = self.__content_query_manager.request_content_unit_file_path(type_id, relative_path)
-            u = Unit(unit_key, type_id, metadata, path)
+            u = Unit(type_id, unit_key, metadata, path)
             return u
-        except:
+        except Exception, e:
             _LOG.exception('Exception from server requesting unit filename for relative path [%s]' % relative_path)
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     def save_unit(self, unit):
         """
@@ -202,16 +202,18 @@ class RepoSyncConduit:
 
             # Associate it with the repo
             self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id)
-        except:
+
+            return unit
+        except Exception, e:
             _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     def remove_unit(self, unit):
         try:
             self.__association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id)
-        except:
+        except Exception, e:
             _LOG.exception(_('Content unit unassociation failed'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     def link_child_unit(self, parent_unit, child_unit):
         """
@@ -219,9 +221,9 @@ class RepoSyncConduit:
         """
         try:
             self.__content_manager.link_child_content_units(parent_unit.type_id, parent_unit.id, child_unit.type_id, child_unit.id)
-        except:
+        except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(parent_unit), str(child_unit))))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     # -- importer utilities ---------------------------------------------------
 
