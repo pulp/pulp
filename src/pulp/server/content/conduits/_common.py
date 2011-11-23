@@ -58,7 +58,7 @@ def to_plugin_unit(pulp_unit, type_def):
     storage_path = pulp_unit.pop('_storage_path', None)
     unit_id = pulp_unit.pop('_id', None)
 
-    u = Unit(unit_key, type_def['id'], pulp_unit, storage_path)
+    u = Unit(type_def['id'], unit_key, pulp_unit, storage_path)
     u.id = unit_id
 
     return u

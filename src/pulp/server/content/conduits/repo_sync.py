@@ -220,7 +220,7 @@ class RepoSyncConduit:
         Must be called _after_ save_unit on both parent and child.
         """
         try:
-            self.__content_manager.link_child_content_units(parent_unit.type_id, parent_unit.id, child_unit.type_id, child_unit.id)
+            self.__content_manager.link_child_content_units(parent_unit.type_id, parent_unit.id, child_unit.type_id, [child_unit.id])
         except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(parent_unit), str(child_unit))))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]
