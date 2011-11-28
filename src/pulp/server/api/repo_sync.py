@@ -25,6 +25,7 @@ from pulp.server import comps_util, config
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
     yum_rhn_progress_callback, local_progress_callback, FileSynchronizer
 from pulp.server.api.repo_sync_task import RepoSyncTask
@@ -42,6 +43,7 @@ log = logging.getLogger(__name__)
 repo_api = RepoApi()
 package_api = PackageApi()
 errata_api = ErrataApi()
+distro_api = DistributionApi()
 
 # synchronization type map ----------------------------------------------------
 type_classes = {
@@ -151,6 +153,12 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
     clone_ids.append(clone_id)
     repo['clone_ids'] = clone_ids
     repo_api.collection.save(repo, safe=True)
+
+    # Update repoids on distributions
+    for distro_id in cloned_repo["distributionid"]:
+        distro = distro_api.distribution(distro_id)
+        distro["repoids"].append(clone_id)
+        distro_api.collection.save(distro, safe=True)
 
     # Update gpg keys from parent repo
     keylist = []
