@@ -267,14 +267,12 @@ class RepoSyncConduit:
         @rtype:  L{Unit}
         """
         try:
-            unit_id = None
-
             # Save or update the unit
             pulp_unit = common_utils.to_pulp_unit(unit)
             try:
                 existing_unit = self.__content_query_manager.get_content_unit_by_keys_dict(unit.type_id, unit.unit_key)
                 unit.id = existing_unit['_id']
-                self.__content_manager.update_content_unit(unit.type_id, unit_id, pulp_unit)
+                self.__content_manager.update_content_unit(unit.type_id, unit.id, pulp_unit)
             except ContentUnitNotFound:
                 unit.id = self.__content_manager.add_content_unit(unit.type_id, None, pulp_unit)
 
