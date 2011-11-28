@@ -56,6 +56,11 @@ number of notable differences exist between this code and its forefathers:
 %{python_sitelib}/oauth2-%{version}-*.egg-info/
 
 %changelog
+* Mon Nov 28 2011 John Matthews <jmatthews@redhat.com> 1.5.170-2.pulp
+- removed old sources (jconnor@redhat.com)
+- fixed release (jconnor@redhat.com)
+- latest oauth2 with patch (jconnor@redhat.com)
+
 * Fri Nov 18 2011 Jason L Connor <jconnor@redhat.com> 1.5.170-pulp01
 - Updated to latest release and include a patch to fix Pulp issue
 
