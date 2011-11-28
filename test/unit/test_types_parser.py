@@ -323,6 +323,6 @@ class ParserTest(testutil.PulpTest):
         # Test
         self.assertTrue(parser._valid_id('good'))
         self.assertTrue(parser._valid_id('Good'))
+        self.assertTrue(parser._valid_id('good1'))
         self.assertTrue(not parser._valid_id('bad-'))
-        self.assertTrue(not parser._valid_id('bad91'))
         self.assertTrue(not parser._valid_id('bad!'))
