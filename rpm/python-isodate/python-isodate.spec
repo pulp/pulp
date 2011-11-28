@@ -58,6 +58,9 @@ for instance nanoseconds it will round it to microseconds.
 %{python_sitelib}/*
 
 %changelog
+* Mon Nov 28 2011 John Matthews <jmatthews@redhat.com> 0.4.4-3.pulp
+- incremented build and added pulp (jconnor@redhat.com)
+
 * Fri Jun 03 2011 John Matthews <jmatthew@redhat.com> 0.4.4-2
 - Getting python-isodate built in brew (jmatthew@redhat.com)
 
