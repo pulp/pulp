@@ -306,13 +306,10 @@ rm -rf %{buildroot}
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
 %if %{pulp_selinux}
-if /usr/sbin/selinuxenabled ; then
-    for selinuxvariant in %{selinux_variants}
-    do
-        /usr/sbin/semodule -s ${selinuxvariant} -i \
-        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
-    done
-fi
+# Enable SELinux policy modules
+cd selinux
+./enable.sh %{_datadir}
+cd -
 %endif
 # -- post - pulp cds ---------------------------------------------------------
 
@@ -329,15 +326,11 @@ chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
 %if %{pulp_selinux}
-if /usr/sbin/selinuxenabled ; then
-for selinuxvariant in %{selinux_variants}
-   do
-        /usr/sbin/semodule -s ${selinuxvariant} -i \
-        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
-    done
-fi
+# Enable SELinux policy modules
+cd selinux
+./enable.sh %{_datadir}
+cd -
 %endif
-
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
