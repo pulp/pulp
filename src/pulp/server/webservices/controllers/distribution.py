@@ -20,7 +20,7 @@ from pulp.server.api.distribution import DistributionApi
 from pulp.server.auth.authorization import CREATE, READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
-    auth_required, error_handler)
+    auth_required, error_handler, collection_query)
 from pulp.server.webservices.http import extend_uri_path
 
 # globals ---------------------------------------------------------------------
@@ -34,7 +34,8 @@ class Distributions(JSONController):
 
     @error_handler
     @auth_required(READ)
-    def GET(self):
+    @collection_query("id", "repoids")
+    def GET(self, spec={}):
         """
         [[wiki]]
         title: List all available distributions.
@@ -46,7 +47,7 @@ class Distributions(JSONController):
         failure response: None
         return: list of distribution objects, possibly empty
         """
-        distributions = api.distributions()
+        distributions = api.distributions(spec)
         return self.ok(distributions)
 
 

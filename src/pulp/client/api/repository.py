@@ -116,7 +116,6 @@ class RepositoryAPI(PulpAPI):
         except ServerRequestError:
             return []
 
-
     def running_task(self, task_list):
         """
         Iterate over a list of tasks and return one that is currently running or

@@ -31,6 +31,7 @@ from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.api.repo_clone_task import RepoCloneTask
 from pulp.server.auditing import audit
 from pulp.server.async import run_async
+from pulp.server.event.handler.task import TaskDequeued
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
 from pulp.server.tasking.exception import ConflictingOperationException
@@ -199,6 +200,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
         task.set_synchronizer(synchronizer)
         if content_type == 'yum':
             task.weight = config.config.getint('yum', 'task_weight')
+    task.add_dequeue_hook(TaskDequeued())
     return task
 
 def get_synchronizer(source_type):

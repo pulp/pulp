@@ -61,7 +61,7 @@ from pulp.server.api.errata import ErrataApi
 from pulp.server.api.role import RoleAPI
 from pulp.server.content.types import database as types_database
 from pulp.server.db import connection
-from pulp.server.db.model import Delta
+from pulp.server.db.model import Delta, TaskHistory
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.logs import start_logging, stop_logging
 import pulp.server.managers.factory as manager_factory
@@ -231,6 +231,8 @@ class PulpTest(unittest.TestCase):
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove(safe=True)
 
+        TaskHistory.get_collection().remove(safe=True)
+
         auditing.cull_events(timedelta())
 
         if mocks is not None:
@@ -263,7 +265,7 @@ class PulpAsyncTest(PulpTest):
         async.initialize()
 
 
-class PulpWebserviceTest(PulpTest):
+class PulpWebserviceTest(PulpAsyncTest):
 
     WEB_APP = None
     TEST_APP = None

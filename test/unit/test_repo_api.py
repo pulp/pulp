@@ -21,6 +21,8 @@ import time
 import unittest
 import shutil
 
+import mock
+
 try:
     import json
 except ImportError:
@@ -33,7 +35,7 @@ import pymongo.json_util
 
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
-from pulp.server.api import repo_sync
+from pulp.server.api import repo, repo_sync
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.api.repo import RepoApi
@@ -46,6 +48,7 @@ from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import RepoSource
 from pulp.server.db.model import persistence
+from pulp.server.tasking.task import Task, task_running, task_error
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information, get_repomd_filetype_dump
@@ -1493,6 +1496,37 @@ class TestRepoApi(testutil.PulpAsyncTest):
         except:
             failed = True
         self.assertTrue(failed) 
+        
+    def test_no_sync_status(self):
+        repo_path = os.path.join(self.data_path, "repo_resync_a")
+        r = self.repo_api.create('test_sync_status',
+                'test_name', 'x86_64', 'file://%s' % (repo_path))
+        self.assertTrue(r != None)
+        repo_sync._sync(r["id"])
+
+        sync_status = self.repo_api.get_sync_status(r["id"])
+        self.assertEquals(None, sync_status["progress"])
+        self.assertEquals(None, sync_status["state"])
+        self.assertEquals(None, sync_status["exception"])
+        self.assertEquals(None, sync_status["traceback"])
+        self.assertEquals(r["id"], sync_status["repoid"])
+
+    def test_running_sync_status(self):
+        repo_path = os.path.join(self.data_path, "repo_resync_a")
+        r = self.repo_api.create('test_sync_status',
+                'test_name', 'x86_64', 'file://%s' % (repo_path))
+        self.assertTrue(r != None)
+        repo_sync._sync(r["id"])
+
+        running_task = Task(repo_sync._sync, [r["id"]])
+        running_task.state = task_running
+        mock_find_async = mock.Mock(return_value=[running_task])
+        self.mock(repo, "find_async", mock_find_async)
+
+        sync_status = self.repo_api.get_sync_status(r["id"])
+        self.assertEquals(task_running, sync_status["state"])
+        self.assertEquals(r["id"], sync_status["repoid"])
+
             
 if __name__ == '__main__':
     unittest.main()

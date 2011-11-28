@@ -41,7 +41,7 @@ class DistributionApi(BaseApi):
 
     @audit(params=["id"])
     def create(self, id, description, relativepath, family=None, variant=None,
-               version=None, timestamp=None, files=[], arch=None):
+               version=None, timestamp=None, files=[], arch=None, repoids=[]):
         """
         Create a new Distribution object and return it
         """
@@ -51,7 +51,7 @@ class DistributionApi(BaseApi):
             return d
         d = model.Distribution(id, description, relativepath, family=family, \
                                variant=variant, version=version, timestamp=timestamp, \
-                               files=files, arch=arch)
+                               files=files, arch=arch, repoids=repoids)
         self.collection.insert(d, safe=True)
         return d
 
@@ -117,11 +117,11 @@ class DistributionApi(BaseApi):
             self.__make_ks_url(distro)
         return distro
 
-    def distributions(self):
+    def distributions(self, spec={}):
         """
          Return all available distributions
         """
-        distributions = list(self.collection.find())
+        distributions = list(self.collection.find(spec=spec))
         if not len(distributions):
             return []
         for distro in distributions:

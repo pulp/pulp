@@ -55,7 +55,7 @@ from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.tasking.task import task_running, task_waiting
+from pulp.server.tasking.task import task_running, task_waiting, task_error
 from pulp.server.agent import PulpAgent
 from pymongo.errors import DuplicateKeyError
 
@@ -1569,6 +1569,88 @@ class RepoApi(BaseApi):
                 for task in find_async(method='_sync')
                 if id in task.args]
 
+    def get_sync_status_by_tasks(self, tasks):
+        """
+        Given a list of tasks, return a list of the repo sync statuses
+        associated with those tasks.
+        @param tasks: List of tasks
+        @type tasks: list
+        @return: List of of repo sync statuses
+        @rtype: list of L{model.RepoStatus}
+        """
+        statuses = [self.get_sync_status_by_task(t) for t in tasks]
+        # Not all tasks will have repo syncs associated with them yet, if
+        # they're waiting for instance, so remove None values.
+        statuses = [s for s in statuses if s is not None]
+        return statuses
+
+    def get_sync_status_by_task(self, task):
+        """
+        Given a task, return the repo sync statuses
+        associated with that task.
+        @param task: repo sync task
+        @type tasks: L{pulp.server.api.repo_sync_task.RepoSyncTask}
+        @return: repo sync status assocated with the task
+        @rtype: L{model.RepoStatus}
+        """
+        # If there's no task.args, then we can't even look up the repo
+        # associated with this task.
+        if not task.args:
+            return None
+
+        # The repo id should always be the first argument of the task
+        repo_id = task.args[0]
+        repo_sync_status = model.RepoStatus(repo_id)
+
+        repo_sync_status["state"] = task.state
+        repo_sync_status["progress"] = task.progress
+        repo_sync_status["state"] = task.state
+        repo_sync_status["state"] = task_error
+        repo_sync_status["exception"] = task.exception
+        repo_sync_status["traceback"] = task.traceback
+
+        return repo_sync_status
+
+    def get_sync_status_for_repos(self, repos):
+        """
+        Get the sync status for a list of repos.
+        @param repos: List of repos.
+        @type repos: list of L{Repo}
+        @return: List of repo sync statuses
+        @rtype: list of L{model.RepoStatus}
+        """
+        statuses = [self.get_sync_status(r["id"]) for r in repos]
+        return statuses
+
+    def get_sync_status(self, id):
+        """
+        Get the sync status for a repo id.
+        @param id: Repo id.
+        @type id: int
+        @return: repo sync status
+        @rtype: L{model.RepoStatus}
+        """
+        # Look up the tasks for this repo id
+        tasks = [t for t in find_async(method_name="_sync")
+                 if (t.args and id in t.args) or
+                 (t.kwargs and id in t.kwargs.values())]
+
+        # Assume we only founds 1 task.
+        if tasks:
+            task = tasks[0]
+        else:
+            task = None
+
+        repo_sync_status = model.RepoStatus(id)
+
+        if task:
+            repo_sync_status["state"] = task.state
+            repo_sync_status["progress"] = task.progress
+            repo_sync_status["exception"] = task.exception
+            repo_sync_status["traceback"] = task.traceback
+
+        return repo_sync_status
+
     @audit(params=['id', 'keylist'])
     def addkeys(self, id, keylist):
         repo = self._get_existing_repo(id)
@@ -1677,6 +1759,13 @@ class RepoApi(BaseApi):
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.collection.save(repo, safe=True)
+
+        # Add the repoid to the list on the distribution as well.
+        distro_obj = self.distroapi.distribution(distroid)
+        distro_obj['repoids'].append(repoid)
+        distro_collection = model.Distribution.get_collection()
+        distro_collection.save(distro_obj, safe=True)
+        
         distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
         repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
         for imfile in distro_obj['files']:
@@ -1721,6 +1810,12 @@ class RepoApi(BaseApi):
                     os.unlink(repo_dist_path)
         del repo['distributionid'][repo['distributionid'].index(distroid)]
         self.collection.save(repo, safe=True)
+
+        # Delete the repoid from the list on the distribution as well.
+        del distro_obj['repoids'][distro_obj['repoids'].index(repoid)]
+        distro_collection = model.Distribution.get_collection()
+        distro_collection.save(distro_obj, safe=True)
+
         log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
         self._delete_ks_link(repo)
 

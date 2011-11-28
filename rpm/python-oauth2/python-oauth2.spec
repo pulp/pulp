@@ -1,22 +1,20 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
-%global oldversion 1.1.3
+%global version 1.5.170
 
 Name:			python-oauth2
 Summary:		Python support for improved oauth
-Version:		1.2.1
-Release:		3%{?dist}
+Version:		%{version}
+Release:		2.pulp%{?dist}
 License:		MIT
 Group:			System Environment/Libraries
-Source0:		http://pypi.python.org/packages/source/o/oauth2/oauth2-%{oldversion}.tar.gz
-# Upstream can't seem to manage to put out newer tarballs, just newer git tagged revisions.
-Patch0:			python-oauth2-1.1.3-1.2.1.patch
-Patch1:			python-oauth2-1.1.3-el5.patch
+Source0:		http://pypi.python.org/packages/source/o/oauth2/oauth2-%{version}.tar.gz
+Patch0:			python-oauth2-1.5.170-from_request_multi.patch
 URL:			http://pypi.python.org/pypi/oauth2/
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
-BuildRequires:		python-devel, python-setuptools, python-simplejson
-Requires:		python-simplejson
+BuildRequires:  python-devel, python-setuptools
+Requires:		python-httplib2
 
 %description
 Oauth2 was originally forked from Leah Culver and Andy Smith's oauth.py 
@@ -37,9 +35,8 @@ number of notable differences exist between this code and its forefathers:
   wish to make.
 
 %prep
-%setup -q -n oauth2-%{oldversion}
-%patch0 -p1 -b .121
-%patch1 -p1 -b .el5
+%setup -q -n oauth2-%{version}
+%patch0 -p0
 
 %build
 %{__python} setup.py build
@@ -54,11 +51,14 @@ number of notable differences exist between this code and its forefathers:
 
 %files
 %defattr(-,root,root,-)
-%doc README.md LICENSE.txt PKG-INFO
+%doc PKG-INFO
 %{python_sitelib}/oauth2/
 %{python_sitelib}/oauth2-%{version}-*.egg-info/
 
 %changelog
+* Fri Nov 18 2011 Jason L Connor <jconnor@redhat.com> 1.5.170-pulp01
+- Updated to latest release and include a patch to fix Pulp issue
+
 * Mon Mar 21 2011 John Matthews <jmatthew@redhat.com> 1.2.1-3
 - Add release tagger to python-oauth2 (jmatthew@redhat.com)
 
