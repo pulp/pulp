@@ -32,7 +32,7 @@ working directory is simply deleted.
 import os
 
 import pulp.server.constants as pulp_constants
-from pulp.server.content.plugins.data import Repository
+from pulp.server.content.plugins.model import Repository
 
 # -- constants ----------------------------------------------------------------
 

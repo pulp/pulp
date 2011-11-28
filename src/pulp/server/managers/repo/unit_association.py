@@ -18,7 +18,8 @@ repositories and content units.
 
 import logging
 
-from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
+from pulp.server.db.model.gc_repository import RepoContentUnit
+import pulp.server.managers.factory as manager_factory
 
 # -- constants ----------------------------------------------------------------
 
@@ -148,3 +149,33 @@ class RepoUnitAssociationManager:
             ids = unit_ids.setdefault(content_unit['unit_type_id'], [])
             ids.append(content_unit['unit_id'])
         return unit_ids
+
+    def get_units(self, repo_id):
+        """
+        Returns all content units associated with the given repository.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @return: dict of type ID to list of unit dicts
+        @rtype:  dict of {str : [dict]}
+        """
+
+        result = {}
+
+        # First step is to retrieve all the IDs from the mapping collection
+        all_units = list(RepoContentUnit.get_collection().find({'repo_id': repo_id}))
+        for unit in all_units:
+            type_id = unit['unit_type_id']
+            unit_list = result.get(type_id, [])
+            unit_list.append(unit['unit_id'])
+            result[type_id] = unit_list
+
+        # Now we can batch up the actual unit retrievals by type rather than
+        # hammer the database asking for each unit individually
+        content_query_manager = manager_factory.content_query_manager()
+        for type_id, unit_id_list in result.items():
+            unit_list = content_query_manager.get_multiple_units_by_ids(type_id, unit_id_list)
+            result[type_id] = unit_list
+
+        return result

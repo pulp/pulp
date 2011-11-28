@@ -19,8 +19,18 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
+from pulp.server.content.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.repo.unit_association as association_manager
+import pulp.server.managers.content.cud as content_cud_manager
+
+# constants --------------------------------------------------------------------
+
+TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
+                                  ['key-1'], ['search-1'], [])
+
+TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
+                                  [('key-2a', 'key-2b')], [], ['type-1'])
 
 # -- test cases ---------------------------------------------------------------
 
@@ -28,13 +38,15 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
     def clean(self):
         super(RepoUnitAssociationManagerTests, self).clean()
-
+        database.clean()
         RepoContentUnit.get_collection().remove()
+
 
     def setUp(self):
         super(RepoUnitAssociationManagerTests, self).setUp()
-
+        database.update_database([TYPE_1_DEF, TYPE_2_DEF])
         self.manager = association_manager.RepoUnitAssociationManager()
+        self.content_manager = content_cud_manager.ContentManager()
 
     def test_associate_by_id(self):
         """
@@ -132,22 +144,53 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-1'}) is not None)
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-2'}) is not None)
 
-    def test_association_query(self):
+    def test_get_unit_ids(self):
         """
         Tests that querying associations works.
         """
 
-        # unit_type: [id, ...]
+        # Setup
         repo_id = 'repo-1'
         units = {'type-1': ['1-1', '1-2', '1-3'],
                  'type-2': ['2-1', '2-2', '2-3']}
         for type_id, unit_ids in units.items():
             self.manager.associate_all_by_ids(repo_id, type_id, unit_ids)
 
+        # Test
         type_1_units = self.manager.get_unit_ids(repo_id, 'type-1')
+
+        # Verify
         self.assertTrue('type-1' in type_1_units)
         self.assertFalse('type-2' in type_1_units)
         for id in units['type-1']:
             self.assertTrue(id in type_1_units['type-1'], '%s not in %s' % (id, ','.join(type_1_units['type-1'])))
         for id in type_1_units['type-1']:
             self.assertTrue(id in units['type-1'])
+
+    def test_get_units(self):
+        """
+        Tests retrieving units associated with a repository.
+        """
+
+        # Setup
+        repo_id = 'repo-1'
+        units = {'type_1': ['1-1', '1-2', '1-3'],
+                 'type_2': ['2-1', '2-2', '2-3']}
+        for type_id, unit_ids in units.items():
+            for unit_id in unit_ids:
+                self.content_manager.add_content_unit(type_id, unit_id, {'key_1' : unit_id})
+            self.manager.associate_all_by_ids(repo_id, type_id, unit_ids)
+
+        # Test
+        found_units = self.manager.get_units(repo_id)
+
+        # Verify
+        self.assertEqual(2, len(found_units))
+
+        for type_id, unit_list in found_units.items():
+            self.assertTrue(type_id in units)
+            self.assertEqual(3, len(unit_list))
+            for u in unit_list:
+
+                self.assertTrue(u['_id'] in units[type_id])
+                self.assertTrue('key_1' in u)

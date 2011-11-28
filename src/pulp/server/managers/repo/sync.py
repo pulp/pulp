@@ -31,7 +31,7 @@ import pulp.server.constants as pulp_constants
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.content.plugins.data import SyncReport
+from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -101,9 +101,10 @@ class RepoSyncManager:
         # Assemble the data needed for the sync
         association_manager = manager_factory.repo_unit_association_manager()
         repo_manager = manager_factory.repo_manager()
+        repo_importer_manager = manager_factory.repo_importer_manager()
         content_manager = manager_factory.content_manager()
         content_query_manager = manager_factory.content_query_manager()
-        conduit = RepoSyncConduit(repo_id, repo_manager, self, association_manager,
+        conduit = RepoSyncConduit(repo_id, repo_manager, repo_importer_manager, self, association_manager,
                                   content_manager, content_query_manager)
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], sync_config_override)

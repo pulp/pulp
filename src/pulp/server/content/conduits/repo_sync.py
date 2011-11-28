@@ -14,14 +14,39 @@
 """
 Contains the definitions for all classes related to the importer's API for
 interacting with the Pulp server during a repo sync.
+
+Plugin implementations for repository sync will obviously vary wildly. For help
+in understanding the APIs, below is a short outline of a common sync process and
+its calls into this conduit:
+
+1. Call get_units to understand what units are already associated with the
+   repository being synchronized.
+2. For each new unit to add to the Pulp server and associate with the repository,
+   the plugin takes the following steps.:
+   a. Calls init_unit which takes unit specific metadata and allows Pulp to
+      populate any calculated/derived values for the unit. The result of this
+      call is an object representation of the unit.
+   b. Uses the storage_path field in the returned unit to save the bits for the
+      unit to disk.
+   c. Calls save_unit which creates/updates Pulp's knowledge of the content unit
+      and creates an association between the unit and the repository
+   d. If necessary, calls link_unit to establish any relationships between units.
+3. For units previously associated with the repository (known from get_units)
+   that should no longer be, calls remove_unit to remove that association.
+
+Throughout the sync process, the set_progress call can be used to update the
+Pulp server on the status of the sync. Pulp will make this information available
+to users.
 """
 
-import copy
+from gettext import gettext as _
 import logging
 import sys
-from gettext import gettext as _
 
-from pulp.server.managers.content.exception import ContentUnitNotFound
+import pulp.server.content.conduits._common as common_utils
+import pulp.server.content.types.database as types_db
+from pulp.server.content.plugins.model import Unit
+from pulp.server.managers.content._exceptions import ContentUnitNotFound
 
 # -- constants ---------------------------------------------------------------
 
@@ -43,7 +68,7 @@ class RepoSyncConduit:
     Used to communicate back into the Pulp server while an importer performs
     a repo sync. Instances of this class should *not* be cached between repo
     sync runs. Each sync will be issued its own conduit instance that is scoped
-    to that sync alone.
+    to that run of the sync alone.
 
     Instances of this class are thread-safe. The importer implementation is
     allowed to do whatever threading makes sense to optimize its sync process.
@@ -54,6 +79,7 @@ class RepoSyncConduit:
     def __init__(self,
                  repo_id,
                  repo_cud_manager,
+                 repo_importer_manager,
                  repo_sync_manager,
                  repo_association_manager,
                  content_manager,
@@ -65,6 +91,9 @@ class RepoSyncConduit:
 
         @param repo_cud_manager: server manager instance for manipulating repos
         @type  repo_cud_manager: L{RepoManager}
+
+        @param repo_importer_manager: server manager for manipulating importers
+        @type  repo_importer_manager: L{RepoImporterManager}
 
         @param repo_sync_manager: server manager instance for sync-related operations
         @type  repo_sync_manager: L{RepoSyncManager}
@@ -82,12 +111,13 @@ class RepoSyncConduit:
         @type  content_query_manager: L{ContentQueryManager}
 
         @param progress_callback: used to update the server's knowledge of the
-                   sync progress
-        @type  progress_callback: ?
+                                  sync progress
+        @type  progress_callback: TBD
         """
         self.repo_id = repo_id
 
         self.__repo_manager = repo_cud_manager
+        self.__importer_manager = repo_importer_manager
         self.__sync_manager = repo_sync_manager
         self.__association_manager = repo_association_manager
         self.__content_manager = content_manager
@@ -130,221 +160,202 @@ class RepoSyncConduit:
 
         _LOG.info('Progress for repo [%s] sync: %s - %d/%d' % (self.repo_id, message, current_step, total_steps))
 
-    def request_unit_filename(self, content_type, relative_path):
+    # -- unit lifecycle -------------------------------------------------------
+
+    def get_units(self):
         """
-        Requests the server translate the relative location of where a content
-        unit should be stored into a full path on the local filesystem.
+        Returns the collection of content units associated with the repository
+        being synchronized. 
 
-        @param content_type: the unique id of the content type
-        @type  content_type: str
+        Units returned from this call will have the id field populated and are
+        useable in any calls in this conduit that require the id field.
 
-        @param relative_path: the path, as determined by the importer, where the
-                              content unit should be stored
-        @type  relative_path: str
-
-        @return: absolute path where to store the unit
-        @rtype:  str
+        @return: list of unit instances
+        @rtype:  list of L{Unit}
         """
 
-        path = self.__content_query_manager.request_content_unit_file_path(content_type, relative_path)
-        return path
+        try:
+            units_by_type = self.__association_manager.get_units(self.repo_id)
 
-    def get_repo_storage_directory(self):
+            all_units = []
+            for type_id, type_units in units_by_type.items():
+
+                # Handle old units in the database after a content type has been
+                # removed from the server
+                type_def = types_db.type_definition(type_id)
+                if type_def is None:
+                    continue
+
+                # Convert to transfer object
+                for unit in type_units:
+                    u = common_utils.to_plugin_unit(unit, type_def)
+                    all_units.append(u)
+
+            return all_units
+
+        except Exception, e:
+            _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
+
+    def init_unit(self, type_id, unit_key, metadata, relative_path):
         """
-        Returns a unique directory for the repository being synchronized where
-        repository-related data can be stored.
+        Initializes the Pulp representation of a content unit. The conduit will
+        use the provided information to generate any unit metadata that it needs
+        to. A populated transfer object representation of the unit will be
+        returned from this call. The returned unit should be used in subsequent
+        calls to this conduit.
 
-        @return: full path to the directory into which the importer can write
-                 repository files
-        @rtype:  str
-        """
-        dir = self.__sync_manager.get_repo_storage_directory(self.repo_id)
-        return dir
+        This call makes no changes to the Pulp server. At the end of this call,
+        the unit's id field will *not* be populated.
 
-    def add_or_update_content_unit(self, type_id, unit_key, standard_unit_data, custom_unit_data):
-        """
-        Informs the server of a link between a content unit and the repo being
-        syncced. This call does not distinguish between adding a new unit to
-        the server v. updating an existing one; the server will resolve those
-        distinctions. What this call does is ensure that a link exists between
-        the repo being syncced and the given content unit.
+        The unit_key and metadata will be merged as they are saved in Pulp to
+        form the full representation of the unit. If values are specified in
+        both dictionaries, the unit_key value takes precedence.
 
-        If the content unit already exists in the database (as determined by the
-        pairing of type_id and unit_key), its metadata will be updated with the
-        contents of standard_unit_data and custom_unit_data passed into this call.
+        If the importer wants to save the bits for the unit, the relative_path
+        value should be used to indicate a unique -- with respect to the type
+        of unit -- relative path where it will be saved. Pulp will convert this
+        into an absolute path on disk where the unit should actually be saved.
+        The absolute path is stored in the returned unit object.
 
-        @param type_id: identifies the type of unit being added; this value must
-                        be present in the server at the time of this call or an
-                        error will be raised
+        @param type_id: must correspond to a type definition in Pulp
         @type  type_id: str
 
-        @param unit_key: key/value pairs uniquely identifying this unit from all
-                         other units of the same type; the keys in here must
-                         match the unique indexes defined in the type definition
+        @param unit_key: dictionary of whatever fields are necessary to uniquely
+                         identify this unit from others of the same type
         @type  unit_key: dict
 
-        @param standard_unit_data: key/value pairs providing the required set of
-                         metadata for describing a content unit
-        @type  standard_unit_data: dict
+        @param metadata: dictionary of key-value pairs to describe the unit
+        @type  metadata: dict
 
-        @param custom_unit_data: key/value pairs describing any type-specific
-                         metadata for the content unit; no validation will be
-                         performed on the data included here
-        @type  custom_unit_data: dict
-        @return: unique unit id
-        @rtype: str
+        @param relative_path: see above; may be None
+        @type  relative_path: str
+
+        @return: object representation of the unit, populated by Pulp with both
+                 provided and derived values
+        @rtype:  L{Unit}
         """
-        unit_id = None
+
         try:
-            unit = self.__content_query_manager.get_content_unit_by_keys_dict(type_id, unit_key)
-            unit_id = unit['_id']
-            self.__content_manager.update_content_unit(type_id, unit_id, custom_unit_data)
-        except ContentUnitNotFound:
-            consolidated_data = copy.copy(standard_unit_data)
-            consolidated_data.update(custom_unit_data)
-            unit_id = consolidated_data.get('_id', None)
-            unit_id = self.__content_manager.add_content_unit(type_id, unit_id, consolidated_data)
-        return unit_id
+            # Generate the storage location
+            if relative_path is not None:
+                path = self.__content_query_manager.request_content_unit_file_path(type_id, relative_path)
+            else:
+                path = None
+            u = Unit(type_id, unit_key, metadata, path)
+            return u
+        except Exception, e:
+            _LOG.exception('Exception from server requesting unit filename for relative path [%s]' % relative_path)
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
-    def associate_content_unit(self, type_id, unit_id):
+    def save_unit(self, unit):
         """
-        Creates a relationship between the repo being synchronized and the
-        content unit identified by the given key. The unit must have been
-        previously added to the server through the add_or_update_content_unit
-        call.
+        Performs two distinct steps on the Pulp server:
+        - Creates or updates Pulp's knowledge of the content unit.
+        - Associates the unit to the repository being synchronized.
 
-        @param type_id: identifies the type of content unit being associated
-        @type  type_id: str
+        This call is idempotent. If the unit already exists or the association
+        already exists, this call will have no effect.
 
-        @param unit_id: identifies the content unit itself
-        @type  unit_id: str
-        """
-        try:
-            self.__association_manager.associate_unit_by_id(self.repo_id, type_id, unit_id)
-        except:
-            _LOG.exception(_('Content unit association failed'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+        A reference to the provided unit is returned from this call. This call
+        will populate the unit's id field with the UUID for the unit.
 
-    def associate_content_units(self, type_id, unit_id_list):
-        """
-        Bulk operation to create multiple associations. This call is optimized
-        for multiple associations and is preferred to looping over multiple
-        calls to associate_content_unit.
+        @param unit: unit object returned from the init_unit call
+        @type  unit: L{Unit}
 
-        @param type_id: identifies the type of content unit being associated
-        @type  type_id: str
-
-        @param unit_id_list: list of unit IDs to associate
-        @type  unit_id_list: list of str
+        @return: object reference to the provided unit, its state updated from the call
+        @rtype:  L{Unit}
         """
         try:
-            self.__association_manager.associate_all_by_ids(self.repo_id, type_id, unit_id_list)
-        except:
-            _LOG.exception(_('Multiple unit association failed'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            # Save or update the unit
+            pulp_unit = common_utils.to_pulp_unit(unit)
+            try:
+                existing_unit = self.__content_query_manager.get_content_unit_by_keys_dict(unit.type_id, unit.unit_key)
+                unit.id = existing_unit['_id']
+                self.__content_manager.update_content_unit(unit.type_id, unit.id, pulp_unit)
+            except ContentUnitNotFound:
+                unit.id = self.__content_manager.add_content_unit(unit.type_id, None, pulp_unit)
 
-    def associate_child_content_unit(self, parent_type, parent_id, child_type, child_id):
-        self.associate_child_content_units(parent_type, parent_id, child_type, [child_id])
+            # Associate it with the repo
+            self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id)
 
-    def associate_child_content_units(self, parent_type, parent_id, child_type, child_ids):
-        self.associate_content_units(child_type, child_ids)
-        self.__content_manager.link_child_content_units(parent_type, parent_id, child_type, child_ids)
+            return unit
+        except Exception, e:
+            _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
-    def unassociate_content_unit(self, type_id, unit_id):
+    def remove_unit(self, unit):
         """
-        Unassociates the given content unit from the repo being syncced. The
-        unit is not deleted from the server's database. If for some reason the
-        content unit is not associated with the repo, this call has no effect.
+        Removes the association between the given content unit and the repository
+        being synchronized.
 
-        @param type_id: identifies the type of unit being associated
-        @type  type_id: str
+        This call will only remove the association owned by this importer
+        between the repository and unit. If the unit was manually associated by
+        a user, the repository will retain that instance of the association.
 
-        @param unit_id: identifies the content unit itself
-        @type  unit_id: str
+        This call does not delete Pulp's representation of the unit in its
+        database. If this call removes the final association of the unit to a
+        repository, the unit will become "orphaned" and will be deleted from
+        Pulp outside of this plugin.
+
+        Units passed to this call must have their id fields set by the Pulp server.
+
+        This call is idempotent. If no association, owned by this importer, exists
+        between the unit and repository, this call has no effect.
+
+        @param unit: unit object (must have its id value set)
+        @type  unit: L{Unit}
         """
+
         try:
-            self.__association_manager.unassociate_unit_by_id(self.repo_id, type_id, unit_id)
-        except:
+            self.__association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id)
+        except Exception, e:
             _LOG.exception(_('Content unit unassociation failed'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
-    def unassociate_content_units(self, type_id, unit_id_list):
+    def link_unit(self, from_unit, to_unit, bidirectional=False):
         """
-        Bulk operation for removing multiple associations. This call is optimized
-        for multiple association removals and is preferred to looping over
-        multiple calls to unassociate_content_unit.
+        Creates a reference between two content units. The semantics of what
+        this relationship means depends on the types of content units being
+        used; this call simply ensures that Pulp will save and make available
+        the indication that a reference exists from one unit to another.
 
-        @param type_id: identifies the type of content unit being associated
-        @type  type_id: str
+        By default, the reference will only exist on the from_unit side. If
+        the bidirectional flag is set to true, a second reference will be created
+        on the to_unit to refer back to the from_unit.
 
-        @param unit_id_list: list of unit IDs to unassociate
-        @type  unit_id_list: list of str
+        Units passed to this call must have their id fields set by the Pulp server.
+
+        @param from_unit: owner of the reference
+        @type  from_unit: L{Unit}
+
+        @param to_unit: will be referenced by the from_unit
+        @type  to_unit: L{Unit}
         """
         try:
-            self.__association_manager.unassociate_all_by_ids(self.repo_id, type_id, unit_id_list)
-        except:
-            _LOG.exception(_('Multiple unit unassociations failed'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
+            self.__content_manager.link_child_content_units(from_unit.type_id, from_unit.id, to_unit.type_id, [to_unit.id])
 
-    def unassociate_child_content_unit(self, parent_type, parent_id, child_type, child_id):
-        self.unassociate_child_content_units(parent_type, parent_id, child_type, [child_id])
+            if bidirectional:
+                self.__content_manager.link_child_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
+        except Exception, e:
+            _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
-    def unassociate_child_content_units(self, parent_type, parent_id, child_type, child_ids):
-        self.__content_manager.unlink_child_content_units(parent_type, parent_id, child_type, child_ids)
-        self.unassociate_content_units(child_type, child_ids)
-
-    def add_repo_metadata_values(self, values_dict):
-        """
-        Adds or updates metadata on the repo itself to further describe its
-        contents. Existing values that are not included in the argument to this
-        call are left unchanged.
-
-        @param values_dict: pairing of keys/values to add to the repo
-        @type  values_dict: dict
-        """
-
-        try:
-            self.__repo_manager.add_metadata_values(self.repo_id, values_dict)
-        except:
-            _LOG.exception(_('Error adding metadata values to repo'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
-
-    def remove_repo_metadata_values(self, value_keys):
-        """
-        Removes repo metadata stored at the given keys. If there is no metadata
-        entry for a given key, nothing is done and no error is raised.
-
-        @param value_keys: list of keys to remove from the repo's metadata
-        @type  value_keys: list of str
-        """
-
-        try:
-            self.__repo_manager.remove_metadata_values(self.repo_id, value_keys)
-        except:
-            _LOG.exception(_('Exception removing metadata values from repo'))
-            raise RepoSyncConduitException(), None, sys.exc_info()[2]
-
-    def get_unit_keys_for_repo(self, type_id=None):
-        """
-        Returns a list of keys for units associated with the repo being
-        synchronized. This can be used to determine units that were once
-        associated but were not present in the latest sync.
-
-        @param type_id: optional; if specified, only keys for units of the
-                        given type are returned
-        """
-        unit_keys = []
-        content_ids = self.__association_manager.get_unit_ids(self.repo_id, type_id)
-        for content_type_id, unit_ids in content_ids:
-            unit_keys.extend(self.__content_query_manager.get_content_unit_keys(type_id, unit_ids)[1])
-        return unit_keys
+    # -- importer utilities ---------------------------------------------------
 
     def get_scratchpad(self):
         """
         Returns the value set in the scratchpad for this repository. If no
         value has been set, None is returned.
+
+        @return: value saved for the repository being synchronized
+        @rtype:  <serializable>
         """
-        return self.__repo_manager.get_importer_scratchpad(self.repo_id)
+        try:
+            return self.__importer_manager.get_importer_scratchpad(self.repo_id)
+        except Exception, e:
+            _LOG.exception(_('Error getting scratchpad for repo [%s]' % self.repo_id))
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
         """
@@ -352,5 +363,12 @@ class RepoSyncConduit:
         be retrieved in subsequent syncs through get_scratchpad. The type for
         the given value is anything that can be stored in the database (string,
         list, dict, etc.).
+
+        @param value: will overwrite the existing scratchpad
+        @type  value: <serializable>
         """
-        self.__repo_manager.set_importer_scratchpad(self.repo_id, value)
+        try:
+            self.__importer_manager.set_importer_scratchpad(self.repo_id, value)
+        except Exception, e:
+            _LOG.exception(_('Error setting scratchpad for repo [%s]' % self.repo_id))
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]

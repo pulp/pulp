@@ -49,6 +49,9 @@ class Repository:
 
         self.working_dir = None
 
+    def __str__(self):
+        return 'Repository [%s]' % self.id
+        
 class Unit:
     """
     Contains information related to a single content unit. The unit may or
@@ -59,25 +62,29 @@ class Unit:
               yet exist in Pulp, this will be None
     @type id: str
 
-    @ivar type: ID of the unit's type
-    @type type: str
+    @ivar unit_key: natural key for the content unit
+    @type unit_key: dict
+
+    @ivar type_id: ID of the unit's type
+    @type type_id: str
 
     @ivar metadata: mapping of key/value pairs describing the unit
     @type metadata: dict
 
-    @ivar location: full path to where on disk the unit is currently stored;
-                    the unit may have been placed here either by an importer or
-                    this may refer to a temporary location Pulp has saved the
-                    unit to if it was uploaded by a user
-    @type location: str
+    @ivar storage_path: full path to where on disk the unit is stored
+    @type storage_path: str
     """
 
-    def __init__(self, type, metadata):
-        self.type = type
+    def __init__(self, type_id, unit_key, metadata, storage_path):
+        self.type_id = type_id
+        self.unit_key = unit_key
         self.metadata = metadata
+        self.storage_path = storage_path
 
         self.id = None
-        self.location = None
+
+    def __str__(self):
+        return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
 
 class SyncReport:
     """
@@ -90,8 +97,8 @@ class SyncReport:
     @ivar removed_count: number of units unassociated from the repo during the sync
     @type removed_count: int
 
-    @ivar log: arbitrary text the plugin wants to communicate to users about the sync
-    @type log: str
+    @ivar log: arbitrary value the plugin wants to communicate to users about the sync
+    @type log: just about any serializable object (likely str or dict)
     """
 
     def __init__(self, added_count, removed_count, log):
@@ -105,7 +112,7 @@ class PublishReport:
     plugin to decrive what took place during the publish run.
 
     @ivar log: arbitrary text the plugin wants to communicate to users about the run
-    @type log: str
+    @type log: just about any serializable object (likely str or dict)
     """
 
     def __init__(self, log):
