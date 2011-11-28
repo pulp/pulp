@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NAME="pulp"
+NAME="pulp-server"
 SELINUX_VARIANTS="mls strict targeted"
 
 for selinuxvariant in ${SELINUX_VARIANTS}

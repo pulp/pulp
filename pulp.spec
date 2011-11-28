@@ -12,7 +12,6 @@
 #SELinux
 %define selinux_variants mls strict targeted
 %define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
-%define modulename pulp
 %define moduletype apps
 %endif
 
@@ -63,18 +62,19 @@ Requires: m2crypto = 0.21.1.pulp
 %endif
 
 %if %{pulp_selinux}
-%if "%{selinux_policyver}" != ""
-Requires: selinux-policy >= %{selinux_policyver}
-%endif
-Requires(post): /usr/sbin/semodule, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule
-%endif
-BuildRequires:  rpm-python
-%if %{pulp_selinux}
-BuildRequires:  make
-BuildRequires:  checkpolicy
-BuildRequires:  selinux-policy-devel
-BuildRequires:  hardlink
+Requires: %{name}-selinux-server = %{version}
+#%if "%{selinux_policyver}" != ""
+#Requires: selinux-policy >= %{selinux_policyver}
+#%endif
+#Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+#Requires(postun): /usr/sbin/semodule
+#%endif
+#BuildRequires:  rpm-python
+#%if %{pulp_selinux}
+#BuildRequires:  make
+#BuildRequires:  checkpolicy
+#BuildRequires:  selinux-policy-devel
+#BuildRequires:  hardlink
 %endif
 
 %if 0%{?rhel} == 5
@@ -174,19 +174,20 @@ Requires: m2crypto
 Requires: m2crypto = 0.21.1.pulp
 %endif
 %if %{pulp_selinux}
-%if "%{selinux_policyver}" != ""
-Requires: selinux-policy >= %{selinux_policyver}
-%endif
-Requires(post): /usr/sbin/semodule, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule
+Requires: %{name}-selinux-server = %{version}
+#%if "%{selinux_policyver}" != ""
+#Requires: selinux-policy >= %{selinux_policyver}
+#%endif
+#Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+#Requires(postun): /usr/sbin/semodule
 %endif
 BuildRequires:  rpm-python
-%if %{pulp_selinux}
-BuildRequires:  make
-BuildRequires:  checkpolicy
-BuildRequires:  selinux-policy-devel
-BuildRequires:  hardlink
-%endif
+#%if %{pulp_selinux}
+#BuildRequires:  make
+#BuildRequires:  checkpolicy
+#BuildRequires:  selinux-policy-devel
+#BuildRequires:  hardlink
+#%endif
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp
@@ -194,6 +195,27 @@ Conflicts:      pulp
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
 to clients.
+
+# -- headers - pulp-selinux-server ---------------------------------------------------
+%if %{pulp_selinux}
+%package        selinux-server
+Summary:        Pulp SELinux policy for server components.
+Group:          Development/Languages
+BuildRequires:  rpm-python
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
+
+%if "%{selinux_policyver}" != ""
+Requires: selinux-policy >= %{selinux_policyver}
+%endif
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule
+
+%description    selinux-server
+SELinux policy for Pulp's server components
+%endif
 
 # -- build -------------------------------------------------------------------
 
@@ -206,8 +228,9 @@ pushd src
 popd
 %if %{pulp_selinux}
 # SELinux Configuration
-cd selinux
-perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' %{modulename}.te
+cd selinux/server
+#perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' pulp-server.te
+perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!0.0.0!$VER!g;' pulp-server.te
 ./build.sh
 cd -
 %endif
@@ -292,8 +315,12 @@ cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 
 %if %{pulp_selinux}
 # Install SELinux policy modules
-cd selinux
+cd selinux/server
 ./install.sh %{buildroot}%{_datadir}
+mkdir -p %{buildroot}%{_datadir}/pulp/selinux/server
+cp enable.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp uninstall.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
 cd -
 %endif
 
@@ -305,12 +332,6 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
-%if %{pulp_selinux}
-# Enable SELinux policy modules
-cd selinux
-./enable.sh %{_datadir}
-cd -
-%endif
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
@@ -325,12 +346,10 @@ touch /var/lib/pulp-cds/.cluster-members
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
-%if %{pulp_selinux}
+#%if %{pulp_selinux}
 # Enable SELinux policy modules
-cd selinux
-./enable.sh %{_datadir}
-cd -
-%endif
+#%{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+#%endif
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
@@ -338,14 +357,22 @@ if [ "$1" = "1" ]; then
   ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
 
-%postun
-# Clean up after package removal
 %if %{pulp_selinux}
+%post selinux-server
+# Enable SELinux policy modules
+if /usr/sbin/selinuxenabled ; then
+ %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+fi
+
+%posttrans
+if /usr/sbin/selinuxenabled ; then
+ %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
+fi
+
+%preun selinux-server
+# Clean up after package removal
 if [ $1 -eq 0 ]; then
-  for selinuxvariant in %{selinux_variants}
-    do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
-    done
+%{_datadir}/pulp/selinux/server/uninstall.sh
 fi
 exit 0
 %endif
@@ -357,15 +384,6 @@ fi
 
 %postun cds
 # Clean up after package removal
-%if %{pulp_selinux}
-if [ $1 -eq 0 ]; then
-  for selinuxvariant in %{selinux_variants}
-    do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
-    done
-fi
-exit 0
-%endif
 
 # -- files - pulp server -----------------------------------------------------
 
@@ -392,12 +410,6 @@ exit 0
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 %{_bindir}/pulp-migrate
-%if %{pulp_selinux}
-# SELinux
-%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
-%{_datadir}/selinux/*/%{modulename}.pp
-%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
-%endif
 # -- files - common ----------------------------------------------------------
 
 %files common
@@ -468,11 +480,20 @@ exit 0
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
 %attr(3775, apache, apache) /var/log/pulp-cds
-%if %{pulp_selinux}
+#%if %{pulp_selinux}
 # SELinux
-%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
-%{_datadir}/selinux/*/%{modulename}.pp
-%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+#%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
+#%{_datadir}/selinux/*/%{modulename}.pp
+#%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+#%endif
+
+%if %{pulp_selinux}
+%files selinux-server
+%defattr(-,root,root,-)
+%doc selinux/server/pulp-server.fc selinux/server/pulp-server.if selinux/server/pulp-server.te
+%{_datadir}/pulp/selinux/server/*
+%{_datadir}/selinux/*/pulp-server.pp
+%{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
 %endif
 
 # -- changelog ---------------------------------------------------------------

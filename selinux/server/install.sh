@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NAME="pulp"
+NAME="pulp-server"
 MODULE_TYPE="apps"
 SELINUX_VARIANTS="mls strict targeted"
 #This script will be called from pulp RPM and needs the ability to install
