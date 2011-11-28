@@ -78,7 +78,7 @@ class Importer(object):
         on the importer will be unavailable for the given repository.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.content.plugins.model.Repository}
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
@@ -104,7 +104,7 @@ class Importer(object):
         be wiped by Pulp.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.content.plugins.model.Repository}
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
@@ -198,6 +198,6 @@ class Importer(object):
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
         @return: report of the details of the sync
-        @rtype:  L{pulp.server.content.plugins.data.SyncReport}
+        @rtype:  L{pulp.server.content.plugins.model.SyncReport}
         """
         raise NotImplementedError()
