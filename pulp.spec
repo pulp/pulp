@@ -19,7 +19,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.251
+Version:        0.0.252
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -485,6 +485,42 @@ exit 0
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Nov 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.252-1
+- Automatic commit of package [python-oauth2] minor release [1.5.170-2.pulp].
+  (jmatthews@redhat.com)
+- Automatic commit of package [python-isodate] minor release [0.4.4-3.pulp].
+  (jmatthews@redhat.com)
+- removed old sources (jconnor@redhat.com)
+- 747336 Change filter parameter from id to repoid for consistency
+  (jslagle@redhat.com)
+- Clean up usage of singular/plural for bulk apis for consistency
+  (jslagle@redhat.com)
+- 747336 Add bulk API for repository sync history. (jslagle@redhat.com)
+- Remove the expectation that log in a report will be a string; no reason the
+  plugin can't serialize anything they want in there (jason.dobies@redhat.com)
+- Renamed plugin "data" module to "model" (jason.dobies@redhat.com)
+- Fixed bug in retrieving the unit ID (jason.dobies@redhat.com)
+- 747336 Add a list of repoids to the distribution model (jslagle@redhat.com)
+- First draft at new repo sync conduit APIs (jason.dobies@redhat.com)
+- Progress on new conduit APIs (jason.dobies@redhat.com)
+- Renamed exceptions module (jason.dobies@redhat.com)
+- Added get_units call to the unit association manager
+  (jason.dobies@redhat.com)
+- 747336 Add tests. (jslagle@redhat.com)
+- 747336 Add GET handler for /statuses and fix the way task search was working
+  (jslagle@redhat.com)
+- Fix initialization of items_remaining->items_left (jslagle@redhat.com)
+- 747336 Add rollup call for repository sync status and bulk call for sync
+  status (jslagle@redhat.com)
+- updated for latest isodate and oauth2 modules (jconnor@redhat.com)
+- 755625 - Non-existent filter now replies with a 404 (skarmark@redhat.com)
+- latest oauth2 with patch (jconnor@redhat.com)
+- Raise AMQP events when repo sync task dequeued. (jortel@redhat.com)
+- changing the distro cli proxy to use new rest path (pkilambi@redhat.com)
+- Wired up distributor history REST APIs (jason.dobies@redhat.com)
+- Added publish history tracking and manager-level retrieval calls
+  (jason.dobies@redhat.com)
+- curl example for using clone API (jmatthews@redhat.com)
 * Fri Nov 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.251-1
 - 754807 - Added filter application step when importing packages as it is now
   separated from fetch_content while syncing a local repository
