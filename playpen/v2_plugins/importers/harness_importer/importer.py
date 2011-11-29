@@ -124,7 +124,7 @@ class HarnessImporter(Importer):
                 removed_count += 1
 
         # Fake a slow sync if one is requested
-        sync_delay_in_seconds = config.get('sync_delay', None)
+        sync_delay_in_seconds = config.get('sync_delay_in_seconds', None)
         if sync_delay_in_seconds is not None:
             _LOG.info('Faking a long sync with delay of [%s] seconds' % sync_delay_in_seconds)
             time.sleep(int(sync_delay_in_seconds))
@@ -132,8 +132,17 @@ class HarnessImporter(Importer):
         end = datetime.datetime.now()
         ellapsed_in_seconds = (end - start).seconds
 
+        # Exercise the scratchpad with a simple counter of all syncs ever
+        all_sync_count = sync_conduit.get_scratchpad()
+        if all_sync_count is None:
+            all_sync_count = 1
+        else:
+            all_sync_count = int(all_sync_count) + 1
+        sync_conduit.set_scratchpad(all_sync_count)
+        
         summary  = 'Import Summary\n'
         summary += 'Ellapsed time in seconds: %d\n' % ellapsed_in_seconds
         summary += 'Files written:            %s\n' % str(write_files)
+        summary += 'Global sync count:        %d' % all_sync_count
 
         return SyncReport(added_count, removed_count, summary)
