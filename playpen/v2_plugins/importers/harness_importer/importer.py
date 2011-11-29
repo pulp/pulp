@@ -124,7 +124,7 @@ class HarnessImporter(Importer):
                 removed_count += 1
 
         # Fake a slow sync if one is requested
-        sync_delay_in_seconds = config.get('sync_delay', None)
+        sync_delay_in_seconds = config.get('sync_delay_in_seconds', None)
         if sync_delay_in_seconds is not None:
             _LOG.info('Faking a long sync with delay of [%s] seconds' % sync_delay_in_seconds)
             time.sleep(int(sync_delay_in_seconds))
