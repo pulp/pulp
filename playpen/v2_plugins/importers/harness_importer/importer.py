@@ -85,7 +85,7 @@ class HarnessImporter(Importer):
 
         # Add type 1 units
         num_units = int(config.get('num_units'))
-        write_files = bool(config.get('write_files'))
+        write_files = config.get('write_files').lower() == 'true'
 
         _LOG.info('Saving [%d] units of type "harness_type_one"' % num_units)
         if write_files:
@@ -132,4 +132,8 @@ class HarnessImporter(Importer):
         end = datetime.datetime.now()
         ellapsed_in_seconds = (end - start).seconds
 
-        return SyncReport(added_count, removed_count, 'Ellapsed time in seconds: %d' % ellapsed_in_seconds)
+        summary  = 'Import Summary\n'
+        summary += 'Ellapsed time in seconds: %d\n' % ellapsed_in_seconds
+        summary += 'Files written:            %s\n' % str(write_files)
+
+        return SyncReport(added_count, removed_count, summary)

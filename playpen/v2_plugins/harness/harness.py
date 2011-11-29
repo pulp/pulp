@@ -181,7 +181,8 @@ class Harness:
         self.prompt.write('  Completed:          %s' % item['completed'])
         self.prompt.write('  Added Unit Count:   %s' % item['added_count'])
         self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
-        self.prompt.write('  Plugin Log:         %s' % item['plugin_log'])
+        self.prompt.write('  Plugin Log:')
+        self.prompt.write(item['plugin_log'])
         
     def list_units(self):
         self._print_divider()
