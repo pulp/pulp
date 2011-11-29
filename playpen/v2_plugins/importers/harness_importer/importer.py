@@ -30,7 +30,7 @@ from pulp.server.content.plugins.model import SyncReport
 _LOG = logging.getLogger(__name__)
 _LOG.addHandler(logging.FileHandler('/var/log/pulp/harness-importer.log'))
 
-ACCEPTABLE_CONFIG_KEYS = ['num_units', 'write_bits']
+ACCEPTABLE_CONFIG_KEYS = ['num_units', 'write_files']
 
 # -- plugins ------------------------------------------------------------------
 
@@ -41,7 +41,7 @@ class HarnessImporter(Importer):
         return {
             'id'           : 'harness_importer',
             'display_name' : 'Test Harness Importer',
-            'types'        : ['harness_type_1', 'harness_type_2']
+            'types'        : ['harness_type_one', 'harness_type_two']
         }
 
     def validate_config(self, repo, config):
@@ -51,6 +51,8 @@ class HarnessImporter(Importer):
         # key into the config.
         for key in config.repo_plugin_config:
             if key not in ACCEPTABLE_CONFIG_KEYS:
+                return False
+            if config.repo_plugin_config.get(key) is None:
                 return False
         return True
 
@@ -80,10 +82,10 @@ class HarnessImporter(Importer):
 
         # Add type 1 units
         num_units = int(config.get('num_units'))
-        write_bits = bool(config.get('write_bits'))
+        write_files = bool(config.get('write_files'))
 
-        _LOG.info('Saving [%d] units of type "harness_type_1"' % num_units)
-        if write_bits:
+        _LOG.info('Saving [%d] units of type "harness_type_one"' % num_units)
+        if write_files:
             _LOG.info('Unit files will be written as part of the sync')
         else:
             _LOG.info('Importer configuration indicates to skip writing files')
@@ -96,10 +98,10 @@ class HarnessImporter(Importer):
             relative_path = 'chunk_%d/%s.unit' % (i % 5, unit_key['name'])
 
             # Initialize the unit
-            unit = sync_conduit.init_unit('harness_type_1', unit_key, metadata, relative_path)
+            unit = sync_conduit.init_unit('harness_type_one', unit_key, metadata, relative_path)
 
             # Write the bits if configured to do so
-            if write_bits:
+            if write_files:
                 f = open(unit.storage_path, 'w')
                 f.write(unit_key['name'])
                 f.close()
