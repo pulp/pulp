@@ -20,6 +20,10 @@ from gettext import gettext as _
 import logging
 import sys
 
+import pulp.server.content.conduits._common as common_utils
+import pulp.server.content.types.database as types_db
+from pulp.server.content.plugins.model import Unit
+
 # -- constants ---------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
@@ -111,10 +115,11 @@ class RepoPublishConduit:
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
-    def get_content_units(self, unit_type_id=None, filters=None, fields=None):
+    def get_units(self, unit_type_id=None, filters=None, fields=None):
         """
-        Return the content units associated with thre repo to be publised.
-
+        Returns the collection of content units associated with the repository
+        being published.
+        
         @param unit_type_id: type of units to be returned, None means all types
         @type  unit_type_id: None or str
 
@@ -133,11 +138,23 @@ class RepoPublishConduit:
             # mongo db semantics to the plugin developer
             content_units = []
             associated = self.__association_manager.get_unit_ids(self.repo_id, unit_type_id)
+
             for unit_type, unit_ids in associated.items():
                 spec = filters or {}
                 spec.update({'_id': {'$in': unit_ids}})
                 units = self.__content_query_manager.list_content_units(unit_type, spec, fields)
-                content_units.extend(units)
+
+                # Handle old units in the database after a content type has been
+                # removed from the server
+                type_def = types_db.type_definition(unit_type)
+                if type_def is None:
+                    continue
+
+                # Convert to transfer object
+                for unit in units:
+                    u = common_utils.to_plugin_unit(unit, type_def)
+                    content_units.append(u)
+
             return content_units
         except Exception, e:
             _LOG.exception('Error getting units for repository [%s]' % self.repo_id)

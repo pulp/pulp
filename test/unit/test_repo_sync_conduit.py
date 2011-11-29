@@ -34,8 +34,8 @@ import pulp.server.managers.content.query as query_manager
 
 # constants --------------------------------------------------------------------
 
-TYPE_1_DEF = types_model.TypeDefinition('type-1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type-2'])
-TYPE_2_DEF = types_model.TypeDefinition('type-2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type-1'])
+TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type-2'])
+TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type-1'])
 
 # -- test cases ---------------------------------------------------------------
 
@@ -254,6 +254,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         # Test
         try:
             self.conduit.get_units()
+            self.fail('Exception expected')
         except RepoSyncConduitException, e:
             print(e) # for coverage
 
