@@ -61,8 +61,6 @@ class CallRequest(object):
     @type resources: dict
     @ivar weight: weight of callable in relation concurrency resources
     @type weight: int
-    @ivar timeout: maximum amount of time to allow callable to run
-    @type timeout: None or timedelta
     @ivar exec_hooks: callbacks to be executed during lifecycle of callable
     @type exec_hooks: dict
     @ivar ctl_hooks: callbacks used to control the lifecycle of the callable
@@ -77,9 +75,8 @@ class CallRequest(object):
                  kwargs=None,
                  resources=None,
                  weight=1,
-                 timeout=None,
-                 exec_hooks=None,
-                 ctl_hooks=None,
+                 execution_hooks=None,
+                 control_hooks=None,
                  tags=None):
 
         assert callable(call)
@@ -87,9 +84,8 @@ class CallRequest(object):
         assert isinstance(kwargs, (NoneType, dict))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
-        assert isinstance(timeout, (NoneType, timedelta))
-        assert isinstance(exec_hooks, (NoneType, dict))
-        assert isinstance(ctl_hooks, (NoneType, dict))
+        assert isinstance(execution_hooks, (NoneType, dict))
+        assert isinstance(control_hooks, (NoneType, dict))
         assert isinstance(tags, (NoneType, tuple, list))
 
         self.call = call
@@ -98,8 +94,8 @@ class CallRequest(object):
         self.resources = resources or {}
         self.weight = weight
         self.timeout = timeout
-        self.exec_hooks = exec_hooks or {}
-        self.ctl_hooks = ctl_hooks or {}
+        self.execution_hooks = execution_hooks or {}
+        self.control_hooks = control_hooks or {}
         self.tags = tags or []
 
     def __str__(self):
@@ -122,7 +118,7 @@ class CallRequest(object):
 
     # call request serialization/deserialization -------------------------------
 
-    pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'exec_hooks', 'ctl_hooks')
+    pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'execution_hooks', 'control_hooks')
     copied_fields = ('resources', 'weight', 'tags')
     all_fields = itertools.chain(pickled_fields, copied_fields)
 
@@ -203,7 +199,7 @@ class CallReport(object):
                  task_id=None,
                  job_id=None,
                  progress=None,
-                 return_value=None,
+                 result=None,
                  exception=None,
                  traceback=None):
 
@@ -213,7 +209,6 @@ class CallReport(object):
         assert isinstance(task_id, (NoneType, basestring))
         assert isinstance(job_id, (NoneType, basestring))
         assert isinstance(progress, (NoneType, dict))
-        # NOTE return_value can be anything
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
 
@@ -223,6 +218,6 @@ class CallReport(object):
         self.task_id = task_id
         self.job_id = job_id
         self.progress = progress or {}
-        self.return_value = return_value
+        self.result = result
         self.exception = exception
         self.traceback = traceback
