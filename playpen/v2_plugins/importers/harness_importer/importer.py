@@ -78,7 +78,7 @@ class HarnessImporter(Importer):
         existing_units = sync_conduit.get_units()
         _LOG.info('Retrieved [%d] units from the server for repository [%s]' % (len(existing_units), repo.id))
 
-        units_by_name = dict([(unit['name'], unit) for unit in existing_units])
+        units_by_name = dict([(unit.unit_key['name'], unit) for unit in existing_units])
 
         # Add type 1 units
         num_units = int(config.get('num_units'))
