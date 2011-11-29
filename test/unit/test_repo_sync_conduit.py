@@ -39,17 +39,17 @@ TYPE_2_DEF = types_model.TypeDefinition('type-2', 'Type 2', 'Two', [('key-2a', '
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoUnitAssociationManagerTests(testutil.PulpTest):
+class RepoSyncConduitTests(testutil.PulpTest):
 
     def clean(self):
-        super(RepoUnitAssociationManagerTests, self).clean()
+        super(RepoSyncConduitTests, self).clean()
         types_database.clean()
 
         RepoContentUnit.get_collection().remove()
         Repo.get_collection().remove()
 
     def setUp(self):
-        super(RepoUnitAssociationManagerTests, self).setUp()
+        super(RepoSyncConduitTests, self).setUp()
         mock_plugins.install()
         types_database.update_database([TYPE_1_DEF, TYPE_2_DEF])
 
