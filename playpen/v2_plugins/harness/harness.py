@@ -182,7 +182,9 @@ class Harness:
         self.prompt.write('  Added Unit Count:   %s' % item['added_count'])
         self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
         self.prompt.write('  Plugin Log:')
-        self.prompt.write(item['plugin_log'])
+        self.prompt.write('---')
+        self.prompt.write(self.prompt.color(item['plugin_log'], prompt.COLOR_YELLOW))
+        self.prompt.write('---')
         
     def list_units(self):
         self._print_divider()
@@ -198,7 +200,6 @@ class Harness:
         self._print_response(status, body, limit=unit_limit)
 
         self.prompt.write('Retrieved [%d] units' % len(body))
-
 
     # -- utilities ------------------------------------------------------------
 
