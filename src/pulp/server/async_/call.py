@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
+import itertools
 import logging
 import pickle
 from datetime import timedelta
@@ -121,8 +122,9 @@ class CallRequest(object):
 
     # call request serialization/deserialization -------------------------------
 
-    _pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'exec_hooks', 'ctl_hooks')
-    _copied_fields = ('resources', 'weight', 'tags')
+    pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'exec_hooks', 'ctl_hooks')
+    copied_fields = ('resources', 'weight', 'tags')
+    all_fields = itertools.chain(pickled_fields, copied_fields)
 
     def serialize(self):
         """
@@ -134,9 +136,9 @@ class CallRequest(object):
         data = {}
 
         try:
-            for field in self._pickled_fields:
+            for field in self.pickled_fields:
                 data[field] = pickle.dumps(getattr(self, field))
-            for field in self._copied_fields:
+            for field in self.copied_fields:
                 data[field] = getattr(self, field)
 
         except Exception, e:
@@ -158,7 +160,7 @@ class CallRequest(object):
         constructor_kwargs = copy.copy(data)
 
         try:
-            for field in cls._pickled_fields:
+            for field in cls.pickled_fields:
                 constructor_kwargs[field] = pickle.loads(data[field])
 
         except Exception, e:
