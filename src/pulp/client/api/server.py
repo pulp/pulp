@@ -26,8 +26,8 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
-from pulp.client.lib.logutil import getLogger
-
+from pulp.client.lib.logutil import getLogger, getResponseLogger
+from pulp.client.consumer.config import ConsumerConfig
 # current active server -------------------------------------------------------
 
 active_server = None
@@ -198,7 +198,9 @@ class PulpServer(Server):
                    'Content-Type': 'application/json'}
         self.headers.update(headers)
 
+        self._config = ConsumerConfig()
         self._log = getLogger('pulp')
+        self._response_log = getResponseLogger('api_responses')
 
         self.__certfile = None
 
@@ -263,6 +265,10 @@ class PulpServer(Server):
         except SSL.SSLError, err:
             raise ServerRequestError(None, str(err), None)
         response_body = response.read()
+        if self._config.api_response.log_response == 'True':
+            self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
+            self._response_log.info("Response status and reason : %s  %s\n" % (response.status, response.reason))
+            self._response_log.info("Response body : %s\n\n" % response_body)
         try:
             response_body = json.loads(response_body)
         except:
