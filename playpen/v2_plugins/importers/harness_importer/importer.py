@@ -74,6 +74,9 @@ class HarnessImporter(Importer):
 
         start = datetime.datetime.now()
 
+        added_count = 0
+        removed_count = 0
+
         # Retrieve units already associated with the repository
         existing_units = sync_conduit.get_units()
         _LOG.info('Retrieved [%d] units from the server for repository [%s]' % (len(existing_units), repo.id))
@@ -90,7 +93,6 @@ class HarnessImporter(Importer):
         else:
             _LOG.info('Importer configuration indicates to skip writing files')
 
-        added_count = 0
         for i in range(0, num_units):
             # Collect unit metadata
             unit_key = {'name' : 'harness_unit_%d' % i}
@@ -113,6 +115,14 @@ class HarnessImporter(Importer):
             if unit_key['name'] not in units_by_name:
                 added_count += 1
 
+        # Remove any units above the unit count
+        if len(existing_units) > num_units:
+            for i in range(num_units, len(existing_units)):
+                doomed_name = 'harness_unit_%d' % i
+                doomed = units_by_name[doomed_name]
+                sync_conduit.remove_unit(doomed)
+                removed_count += 1
+
         # Fake a slow sync if one is requested
         sync_delay_in_seconds = config.get('sync_delay', None)
         if sync_delay_in_seconds is not None:
@@ -122,4 +132,4 @@ class HarnessImporter(Importer):
         end = datetime.datetime.now()
         ellapsed_in_seconds = (end - start).seconds
 
-        return SyncReport(added_count, 0, 'Ellapsed time in seconds: %d' % ellapsed_in_seconds)
+        return SyncReport(added_count, removed_count, 'Ellapsed time in seconds: %d' % ellapsed_in_seconds)
