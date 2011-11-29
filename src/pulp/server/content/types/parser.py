@@ -27,7 +27,7 @@ from pulp.server.compat import json
 REQUIRED_DEFINITION_FIELDS = ['id', 'display_name', 'description']
 OPTIONAL_DEFINITION_FIELDS = ['unique_indexes', 'search_indexes', 'child_types']
 
-TYPE_ID_REGEX = re.compile(r'^[_A-Za-z0-9]+$') # letters and underscore
+TYPE_ID_REGEX = re.compile(r'^[_A-Za-z]+$') # letters and underscore
 
 LOG = logging.getLogger(__name__)
 
