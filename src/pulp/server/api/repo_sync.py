@@ -81,6 +81,8 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     content_type = repo['content_types']
     synchronizer = get_synchronizer(content_type)
+    # enable synchronizer as a clone process
+    synchronizer.set_clone()
     task.set_synchronizer(synchronizer)
     if content_type == 'yum':
         task.weight = config.config.getint('yum', 'task_weight')
@@ -355,8 +357,9 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
     # Process Files
     synchronizer.add_files_from_dir(repo_dir, repo_id, skip_dict)
-    # updating Metadata
-    synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
+    if not synchronizer.is_clone:
+        # updating Metadata
+        synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     # Process Metadata
     added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
     return added_packages, added_errataids
