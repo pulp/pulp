@@ -16,8 +16,9 @@ Contains the definitions for all classes related to the distributor's API for
 interacting with the Pulp server during a repo publish.
 """
 
-import logging
 from gettext import gettext as _
+import logging
+import sys
 
 # -- constants ---------------------------------------------------------------
 
@@ -51,6 +52,7 @@ class RepoPublishConduit:
                  repo_id,
                  distributor_id,
                  repo_manager,
+                 repo_distributor_manager,
                  repo_publish_manager,
                  repo_association_manager,
                  content_query_manager,
@@ -64,6 +66,9 @@ class RepoPublishConduit:
 
         @param repo_manager: repo CUD manager used by the conduit
         @type  repo_manager: L{RepoManager}
+
+        @param repo_distributor_manager: distributor manager
+        @type  repo_distributor_manager: L{RepoDistributorManager}
 
         @param repo_publish_manager: repo publish manager used by this conduit
         @type  repo_publish_manager: L{RepoPublishManager}
@@ -80,6 +85,7 @@ class RepoPublishConduit:
 
         self.__repo_manager = repo_manager
         self.__repo_publish_manager = repo_publish_manager
+        self.__repo_distributor_manager = repo_distributor_manager
         self.__association_manager = repo_association_manager
         self.__content_query_manager = content_query_manager
         self.__progress_callback = progress_callback
@@ -98,8 +104,12 @@ class RepoPublishConduit:
         @return: timestamp instance describing the last publish
         @rtype:  datetime or None
         """
-        last = self.__repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
-        return last
+        try:
+            last = self.__repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
+            return last
+        except Exception, e:
+            _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
+            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
     def get_content_units(self, unit_type_id=None, filters=None, fields=None):
         """
@@ -117,23 +127,32 @@ class RepoPublishConduit:
         @return: list of the content units associated with the repo
         @rtype:  list (dict, ...)
         """
-        # FIXME: the filters is a little bit of a hack as we shouldn't expose
-        # mongo db semantics to the plugin developer
-        content_units = []
-        associated = self.__association_manager.get_unit_ids(self.repo_id, unit_type_id)
-        for unit_type, unit_ids in associated.items():
-            spec = filters or {}
-            spec.update({'_id': {'$in': unit_ids}})
-            units = self.__content_query_manager.list_content_units(unit_type, spec, fields)
-            content_units.extend(units)
-        return content_units
+
+        try:
+            # FIXME: the filters is a little bit of a hack as we shouldn't expose
+            # mongo db semantics to the plugin developer
+            content_units = []
+            associated = self.__association_manager.get_unit_ids(self.repo_id, unit_type_id)
+            for unit_type, unit_ids in associated.items():
+                spec = filters or {}
+                spec.update({'_id': {'$in': unit_ids}})
+                units = self.__content_query_manager.list_content_units(unit_type, spec, fields)
+                content_units.extend(units)
+            return content_units
+        except Exception, e:
+            _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
+            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
     def get_scratchpad(self):
         """
         Returns the value set in the scratchpad for this repository. If no
         value has been set, None is returned.
         """
-        return self.__repo_manager.get_distributor_scratchpad(self.repo_id, self.distributor_id)
+        try:
+            return self.__repo_distributor_manager.get_distributor_scratchpad(self.repo_id, self.distributor_id)
+        except Exception, e:
+            _LOG.exception('Error getting scratchpad for repository [%s]' % self.repo_id)
+            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
         """
@@ -142,4 +161,8 @@ class RepoPublishConduit:
         the given value is anything that can be stored in the database (string,
         list, dict, etc.).
         """
-        self.__repo_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
+        try:
+            self.__repo_distributor_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
+        except Exception, e:
+            _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
+            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
