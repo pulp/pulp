@@ -21,6 +21,16 @@ from types import NoneType, TracebackType
 
 _LOG = logging.getLogger(__name__)
 
+# execution response -----------------------------------------------------------
+
+CALL_ACCEPTED = 'accepted'
+CALL_POSTPONED = 'postponed'
+CALL_REJECTED = 'rejected'
+
+CALL_RESPONSES = (CALL_ACCEPTED,
+                  CALL_POSTPONED,
+                  CALL_REJECTED)
+
 # call states ------------------------------------------------------------------
 
 CALL_UNKNOWN = 'unknown'
