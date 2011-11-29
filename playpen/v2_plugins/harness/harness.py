@@ -65,6 +65,9 @@ class Harness:
         if self.script.has_option('general', 'run_sync_repo') and self.script.getboolean('general', 'run_sync_repo'):
             self.sync_repo()
 
+        if self.script.has_option('general', 'run_sync_history') and self.script.getboolean('general', 'run_sync_history'):
+            self.load_sync_history()
+
         if self.script.has_option('general', 'run_list_units') and self.script.getboolean('general', 'run_list_units'):
             self.list_units()
 
@@ -75,10 +78,8 @@ class Harness:
         url = '/v2/repositories/%s/' % repo_id
 
         self.prompt.write('Looking up repository [%s] on the server' % repo_id)
-        self._call('GET', url, None)
         self._pause()
-
-        status, body = self.connection.GET(url)
+        status, body = self._call('GET', url, None)
 
         if status == 200:
             self.prompt.write('Repository with ID [%s] already exists and will be deleted' % repo_id)
@@ -101,10 +102,8 @@ class Harness:
         }
 
         self.prompt.write('Creating repository with ID [%s]' % repo_id)
-        self._call('POST', url, body)
         self._pause()
-
-        status, body = self.connection.POST(url, body)
+        status, body = self._call('POST', url, body)
 
         self._print_response(status, body)
 
@@ -131,10 +130,8 @@ class Harness:
         for k, v in importer_config.items():
             self.prompt.write('    %-15s : %s' % (k, v))
 
-        self._call('POST', url, body)
         self._pause()
-        
-        status, body = self.connection.POST(url, body)
+        status, body = self._call('POST', url, body)
 
         self._print_response(status, body)
 
@@ -156,18 +153,36 @@ class Harness:
         }
 
         self.prompt.write('Synchronizing repository [%s]' % repo_id)
-        self._call('POST', url, body)
         self._pause()
-
-        status, body = self.connection.POST(url, body)
+        status, body = self._call('POST', url, body)
 
         self._print_response(status, body)
 
         self.prompt.write('Synchronization complete')
 
     def load_sync_history(self):
-        pass
+        self._print_divider()
 
+        repo_id = self.script.get('general', 'repo_id')
+
+        url = '/v2/repositories/%s/sync_history/?limit=1' % repo_id
+
+        self.prompt.write('Retrieving the results of the last sync')
+        self._pause()
+        status, body = self._call('GET', url, None)
+
+        self._print_response(status, body)
+
+        item = body[0]
+        self.prompt.write('Results of the last sync')
+        self.prompt.write('  Result:             %s' % item['result'])
+        self.prompt.write('  Importer ID:        %s' % item['importer_id'])
+        self.prompt.write('  Started:            %s' % item['started'])
+        self.prompt.write('  Completed:          %s' % item['completed'])
+        self.prompt.write('  Added Unit Count:   %s' % item['added_count'])
+        self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
+        self.prompt.write('  Plugin Log:         %s' % item['plugin_log'])
+        
     def list_units(self):
         self._print_divider()
 
@@ -175,10 +190,8 @@ class Harness:
         url = '/v2/content/%s/units/' % type_id
 
         self.prompt.write('Retrieving list of units of type [%s]' % type_id)
-        self._call('GET', url, None)
         self._pause()
-
-        status, body = self.connection.GET(url)
+        status, body = self._call('GET', url, None)
 
         unit_limit = self.script.getint('output', 'list_units_limit')
         self._print_response(status, body, limit=unit_limit)
@@ -264,7 +277,6 @@ class PulpConnection:
         self.connection = httplib.HTTPSConnection(self.host, self.port)
 
     def GET(self, path, **params):
-        path = '?'.join((path, self._query_params(params)))
         return self._request('GET', path)
 
     def OPTIONS(self, path):
