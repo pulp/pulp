@@ -139,17 +139,6 @@ class Task(object):
         self.state = call.CALL_CANCELED
         self.finalize()
 
-    # reporting ----------------------------------------------------------------
-
-    def call_report(self):
-        report = call.CallReport(state=self.state,
-                                 task_id=self.id,
-                                 progress=self.progress,
-                                 result=self.result,
-                                 exception=self.exception,
-                                 traceback=self.traceback)
-        return report
-
 # asynchronous task ------------------------------------------------------------
 
 class AsyncTask(Task):
