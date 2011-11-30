@@ -30,6 +30,10 @@ TIME_COLOR = prompt.COLOR_LIGHT_RED
 
 # -- classes ------------------------------------------------------------------
 
+class SilentPrompt(prompt.Prompt):
+    def write(self, content, new_line=True):
+        pass
+
 class Harness:
 
     def __init__(self, connection, script):
@@ -44,7 +48,11 @@ class Harness:
         self.script = script
 
         use_color = self.script.getboolean('output', 'use_color')
-        self.prompt = prompt.Prompt(enable_color=use_color)
+
+        if self.script.getboolean('output', 'silent'):
+            self.prompt = SilentPrompt()
+        else:
+            self.prompt = prompt.Prompt(enable_color=use_color)
 
     # -- script running functionality -----------------------------------------
 
@@ -53,22 +61,25 @@ class Harness:
         Runs the appropriate commands accroding the script given at instantiation.
         """
 
-        if self.script.has_option('general', 'run_delete_repo') and self.script.getboolean('general', 'run_delete_repo'):
+        if self.script.getboolean('general', 'run_delete_repo'):
             self.delete_repo()
 
-        if self.script.has_option('general', 'run_create_repo') and self.script.getboolean('general', 'run_create_repo'):
+        if self.script.getboolean('general', 'run_create_repo'):
             self.create_repo()
 
-        if self.script.has_option('general', 'run_add_importer') and self.script.getboolean('general', 'run_add_importer'):
+        if self.script.getboolean('general', 'run_add_importer'):
             self.add_importer()
 
-        if self.script.has_option('general', 'run_sync_repo') and self.script.getboolean('general', 'run_sync_repo'):
+        if self.script.getboolean('general', 'run_add_distributor'):
+            self.add_distributor()
+
+        if self.script.getboolean('general', 'run_sync_repo'):
             self.sync_repo()
 
-        if self.script.has_option('general', 'run_sync_history') and self.script.getboolean('general', 'run_sync_history'):
+        if self.script.getboolean('general', 'run_sync_history'):
             self.load_sync_history()
 
-        if self.script.has_option('general', 'run_list_units') and self.script.getboolean('general', 'run_list_units'):
+        if self.script.getboolean('general', 'run_list_units'):
             self.list_units()
 
     def delete_repo(self):
@@ -117,7 +128,7 @@ class Harness:
 
         repo_id = self.script.get('general', 'repo_id')
 
-        importer_config = dict(self.script.items('repository'))
+        importer_config = dict(self.script.items('importer'))
 
         url = '/v2/repositories/%s/importers/' % repo_id
         body = {
@@ -136,7 +147,37 @@ class Harness:
         self._print_response(status, body)
 
         if status == 201:
-            self.prompt.write('Importer successfully added to repository')
+            self.prompt.write('Importer successfully added to the repository')
+        else:
+            self.prompt.write('Addition returned error code [%s]' % status)
+
+    def add_distributor(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+
+        distributor_config = dict(self.script.items('distributor'))
+
+        url = '/v2/repositories/%s/distributors/' % repo_id
+        body = {
+            'distributor_type_id' : 'harness_distributor',
+            'distributor_config'  : distributor_config,
+            'auto_publish'        : False,
+            'distributor_id'      : 'dist_1',
+        }
+
+        self.prompt.write('Adding the harness distributor to repository [%s]' % repo_id)
+        self.prompt.write('Distributor configuration:')
+        for k, v in distributor_config.items():
+            self.prompt.write('    %-15s : %s' % (k, v))
+
+        self._pause()
+        status, body = self._call('POST', url, body)
+
+        self._print_response(status, body)
+
+        if status == 201:
+            self.prompt.write('Distributor successfully added to the repository')
         else:
             self.prompt.write('Addition returned error code [%s]' % status)
 
@@ -145,7 +186,7 @@ class Harness:
 
         repo_id = self.script.get('general', 'repo_id')
 
-        override_config = dict(self.script.items('override'))
+        override_config = dict(self.script.items('sync-override'))
 
         url = '/v2/repositories/%s/actions/sync/' % repo_id
         body = {

@@ -267,6 +267,7 @@ class RepoDistributors(JSONController):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
         except (errors.InvalidDistributorId, errors.InvalidDistributorType, errors.InvalidDistributorConfiguration):
+            _LOG.exception('Bad request adding distributor of type [%s] to repo [%s]' % (distributor_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 

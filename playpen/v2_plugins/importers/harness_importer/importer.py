@@ -129,9 +129,6 @@ class HarnessImporter(Importer):
             _LOG.info('Faking a long sync with delay of [%s] seconds' % sync_delay_in_seconds)
             time.sleep(int(sync_delay_in_seconds))
 
-        end = datetime.datetime.now()
-        ellapsed_in_seconds = (end - start).seconds
-
         # Exercise the scratchpad with a simple counter of all syncs ever
         all_sync_count = sync_conduit.get_scratchpad()
         if all_sync_count is None:
@@ -139,7 +136,10 @@ class HarnessImporter(Importer):
         else:
             all_sync_count = int(all_sync_count) + 1
         sync_conduit.set_scratchpad(all_sync_count)
-        
+
+        end = datetime.datetime.now()
+        ellapsed_in_seconds = (end - start).seconds
+
         summary  = 'Import Summary\n'
         summary += 'Ellapsed time in seconds: %d\n' % ellapsed_in_seconds
         summary += 'Files written:            %s\n' % str(write_files)
