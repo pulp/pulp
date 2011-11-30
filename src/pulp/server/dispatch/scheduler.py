@@ -136,6 +136,14 @@ class Scheduler(object):
     def remove(self, schedule_id):
         self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
+    def enable(self, schedule_id):
+        update = {'$set': {'enabled': True}}
+        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+
+    def disable(self, schedule_id):
+        update = {'$set': {'enabled': False}}
+        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+
     # query methods ------------------------------------------------------------
 
     def find(self, **criteria):
