@@ -114,6 +114,15 @@ def to_utc_datetime(dt):
         dt = to_local_datetime(dt)
     return dt.astimezone(utc_tz())
 
+
+def to_naive_utc_datetime(dt):
+    """
+    Convert the passed in time to the utc timezone, then remove the timezone
+    information.
+    """
+    udt = to_utc_datetime(dt)
+    return udt.replace(tzinfo=None)
+
 # custom pickling --------------------------------------------------------------
 
 def pickle_tzinfo(tz):
