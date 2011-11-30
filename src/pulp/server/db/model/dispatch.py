@@ -46,8 +46,9 @@ class ScheduledCall(Model):
         interval, start_date, runs = dateutils.parse_iso8601_interval(schedule)
         if start_date is None:
             start_date = datetime.utcnow()
+
         self.interval = interval
         self.start_date = dateutils.to_naive_utc_datetime(start_date)
         self.runs = runs
 
-        self.next_run = None
+        self.next_run = None # will calculated and set by the scheduler
