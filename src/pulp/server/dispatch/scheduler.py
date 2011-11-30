@@ -12,12 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
+import logging
 import threading
 
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.util import Singleton
+
+
+_LOG = logging.getLogger(__name__)
 
 # tags -------------------------------------------------------------------------
 
@@ -52,20 +56,35 @@ class Scheduler(object):
                 if self.__lock is not None:
                     self.__lock.release()
                 return
-            self.run_scheduled_calls()
+            try:
+                self.run_scheduled_calls()
+            except Exception, e:
+                _LOG.critical('Unhandled exception in scheduler dispatch: %s' % repr(e))
+                _LOG.exception(e)
 
     def exit(self):
         self.__exit = True
 
     def run_scheduled_calls(self):
         now = datetime.datetime.utcnow()
+        # TODO account for daylight savings time
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
+            if not scheduled_call['enabled']:
+                continue
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            # TODO submit the call request to tasking (eventually coordinator)
-            # TODO log the call?
+            self.run_via_legacy_tasking(call_request)
             self.update_scheduled_call(scheduled_call)
+
+    def run_via_legacy_tasking(self, call_request):
+        pass
+
+    def run_via_taskqueue(self, call_request):
+        raise NotImplementedError()
+
+    def run_via_coordinator(self, call_request):
+        raise NotImplementedError()
 
     def update_scheduled_call(self, scheduled_call):
         schedule_id = scheduled_call['_id']
@@ -78,9 +97,9 @@ class Scheduler(object):
             scheduled_call['runs'] -= 1
 
         # update the next_run
-        next_run = self._next_run(scheduled_call)
-        # remove the scheduled call if there are no more
+        next_run = self.next_run(scheduled_call)
         if next_run is None:
+            # remove the scheduled call if there are no more
             self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
             return
 
@@ -90,11 +109,14 @@ class Scheduler(object):
 
     # scheduling ---------------------------------------------------------------
 
-    def _next_run(self, scheduled_call):
+    def next_run(self, scheduled_call):
         if scheduled_call['runs'] == 0:
             return None
         now = datetime.datetime.utcnow()
-        next_run = scheduled_call['next_run']
+        last_run = scheduled_call['last_run']
+        if last_run is None:
+            return scheduled_call['start_date']
+        next_run = last_run
         interval = scheduled_call['interval']
         while next_run < now:
             next_run += interval
@@ -105,7 +127,7 @@ class Scheduler(object):
     def add(self, call_request, schedule, last_run=None):
         call_request.tags.append(SCHEDULED_TAG)
         scheduled_call = ScheduledCall(call_request, schedule, last_run)
-        next_run = self._next_run(scheduled_call)
+        next_run = self.next_run(scheduled_call)
         if next_run is None:
             return None
         self.scheduled_call_collection.insert(scheduled_call, safe=True)
