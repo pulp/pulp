@@ -18,13 +18,14 @@ from pulp.server.db.model.base import Model
 class QueuedCall(Model):
 
     collection_name = 'queued_calls'
+    unique_indicies = ()
 
 
 class ScheduledCall(Model):
 
     collection_name = 'scheduled_calls'
-
-    search_indexes = ('serialized_call_request.tags', 'last_run', 'next_run')
+    unique_indices = ()
+    search_indices = ('serialized_call_request.tags', 'last_run', 'next_run')
 
     def __init__(self, call_request, schedule, last_run=None):
         self.serialized_call_request = call_request.serialize()
