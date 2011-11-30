@@ -265,14 +265,16 @@ class PulpServer(Server):
         except SSL.SSLError, err:
             raise ServerRequestError(None, str(err), None)
         response_body = response.read()
-        if self._config.api_response.log_response == 'True':
-            self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
-            self._response_log.info("Response status and reason : %s  %s\n" % (response.status, response.reason))
-            self._response_log.info("Response body : %s\n\n" % response_body)
         try:
             response_body = json.loads(response_body)
         except:
             pass
+
+        if self._config.api_response.log_response.lower() == 'True':
+            self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
+            self._response_log.info("Response status and reason : %s  %s\n" % (response.status, response.reason))
+            self._response_log.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
+                
         if response.status >= 300:
             # if the server has responded with a python traceback
             # try to split it out
