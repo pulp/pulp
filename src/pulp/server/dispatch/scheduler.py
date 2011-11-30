@@ -148,7 +148,3 @@ class Scheduler(object):
 
     def find(self, **criteria):
         pass
-
-    def history(self, **criteria):
-        pass
-
