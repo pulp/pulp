@@ -103,10 +103,11 @@ class HarnessDistributor(Distributor):
         ellapsed_in_seconds = (end - start).seconds
 
         summary  = 'Publish Summary\n'
-        summary += 'Ellapsed time in seconds: %d' % ellapsed_in_seconds
-        summary += 'Files written:            %s' % write_files
+        summary += 'Ellapsed time in seconds:  %d\n' % ellapsed_in_seconds
+        summary += 'Number of units published: %d\n' % len(units)
+        summary += 'Files written:             %s\n' % write_files
         if write_files:
-            summary += 'Publish directory:        %s' % publish_dir
-        summary += 'Global publish count:     %d' % all_publish_count
+            summary += 'Publish directory:         %s\n' % publish_dir
+        summary += 'Global publish count:      %d' % all_publish_count
 
         return PublishReport(summary)

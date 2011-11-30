@@ -79,6 +79,12 @@ class Harness:
         if self.script.getboolean('general', 'run_sync_history'):
             self.load_sync_history()
 
+        if self.script.getboolean('general', 'run_publish_repo'):
+            self.publish_repo()
+
+        if self.script.getboolean('general', 'run_publish_history'):
+            self.load_publish_history()
+
         if self.script.getboolean('general', 'run_list_units'):
             self.list_units()
 
@@ -185,7 +191,6 @@ class Harness:
         self._print_divider()
 
         repo_id = self.script.get('general', 'repo_id')
-
         override_config = dict(self.script.items('sync-override'))
 
         url = '/v2/repositories/%s/actions/sync/' % repo_id
@@ -200,6 +205,27 @@ class Harness:
         self._print_response(status, body)
 
         self.prompt.write('Synchronization complete')
+
+    def publish_repo(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+        distributor_id = 'dist_1'
+        override_config = dict(self.script.items('publish-override'))
+
+        url = '/v2/repositories/%s/actions/publish/' % repo_id
+        body = {
+            'id'              : distributor_id,
+            'override_config' : override_config,
+        }
+
+        self.prompt.write('Publishing repository [%s]' % repo_id)
+        self._pause()
+        status, body = self._call('POST', url, body)
+
+        self._print_response(status, body)
+
+        self.prompt.write('Publish complete')
 
     def load_sync_history(self):
         self._print_divider()
@@ -226,7 +252,30 @@ class Harness:
         self.prompt.write('---')
         self.prompt.write(self.prompt.color(item['plugin_log'], prompt.COLOR_YELLOW))
         self.prompt.write('---')
-        
+
+    def load_publish_history(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+        distributor_id = 'dist_1'
+
+        url = '/v2/repositories/%s/publish_history/%s/?limit=1' % (repo_id, distributor_id)
+        self._pause()
+        status, body = self._call('GET', url, None)
+
+        self._print_response(status, body)
+
+        item = body[0]
+        self.prompt.write('Results of the last publish')
+        self.prompt.write('  Result:             %s' % item['result'])
+        self.prompt.write('  Distributor ID:     %s' % item['distributor_id'])
+        self.prompt.write('  Started:            %s' % item['started'])
+        self.prompt.write('  Completed:          %s' % item['completed'])
+        self.prompt.write('  Plugin Log:')
+        self.prompt.write('---')
+        self.prompt.write(self.prompt.color(item['plugin_log'], prompt.COLOR_YELLOW))
+        self.prompt.write('---')
+
     def list_units(self):
         self._print_divider()
 
