@@ -15,7 +15,6 @@ import copy
 import itertools
 import logging
 import pickle
-from datetime import timedelta
 from types import NoneType, TracebackType
 
 
@@ -71,10 +70,10 @@ class CallRequest(object):
     @type resources: dict
     @ivar weight: weight of callable in relation concurrency resources
     @type weight: int
-    @ivar exec_hooks: callbacks to be executed during lifecycle of callable
-    @type exec_hooks: dict
-    @ivar ctl_hooks: callbacks used to control the lifecycle of the callable
-    @type ctl_hooks: dict
+    @ivar execution_hooks: callbacks to be executed during lifecycle of callable
+    @type execution_hooks: dict
+    @ivar control_hooks: callbacks used to control the lifecycle of the callable
+    @type control_hooks: dict
     @ivar tags: list of arbitrary tags
     @type tags: list
     """
@@ -103,7 +102,6 @@ class CallRequest(object):
         self.kwargs = kwargs or {}
         self.resources = resources or {}
         self.weight = weight
-        self.timeout = timeout
         self.execution_hooks = execution_hooks or {}
         self.control_hooks = control_hooks or {}
         self.tags = tags or []
@@ -190,7 +188,7 @@ class CallReport(object):
     @type state: str
     @ivar task_id: identity of task executing call
     @type task_id: str
-    @ivar job_id: identy of job the call is a part of
+    @ivar job_id: identity of job the call is a part of
     @type job_id: str
     @ivar progress: dictionary of progress information
     @type progress: dict

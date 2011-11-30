@@ -15,7 +15,7 @@ import datetime
 import threading
 
 from pulp.common import dateutils
-from pulp.server.async_ import call
+from pulp.server.dispatch import call
 from pulp.server.util import Singleton
 
 

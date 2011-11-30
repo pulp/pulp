@@ -20,7 +20,7 @@ import uuid
 from gettext import gettext as _
 
 from pulp.common import dateutils
-from pulp.server.async_ import call
+from pulp.server.dispatch import call
 
 
 _LOG = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class Task(object):
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
 
         self.call_request = call_request
-        self.serialzed_call_request_id = None
+        self.serialized_call_request_id = None
 
         for field in call_request.all_fields:
             value = getattr(call_request, field)
@@ -58,7 +58,7 @@ class Task(object):
         self.traceback = None
 
     def __str__(self):
-        return 'Task %s: %s' % (self.id, str(self.__call_request))
+        return 'Task %s: %s' % (self.id, str(self.call_request))
 
     def __eq__(self, other):
         if not isinstance(other, Task):
