@@ -27,7 +27,7 @@ except ImportError:
 from M2Crypto import SSL, httpslib
 
 from pulp.client.lib.logutil import getLogger, getResponseLogger
-from pulp.client.consumer.config import ConsumerConfig
+from pulp.client.admin.config import AdminConfig
 # current active server -------------------------------------------------------
 
 active_server = None
@@ -198,7 +198,7 @@ class PulpServer(Server):
                    'Content-Type': 'application/json'}
         self.headers.update(headers)
 
-        self._config = ConsumerConfig()
+        self._config = AdminConfig()
         self._log = getLogger('pulp')
         self._response_log = getResponseLogger('api_responses')
 
