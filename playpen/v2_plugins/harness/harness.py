@@ -26,7 +26,9 @@ import prompt
 
 REST_COLOR = prompt.COLOR_LIGHT_BLUE
 RESPONSE_COLOR = prompt.COLOR_LIGHT_PURPLE
-TIME_COLOR = prompt.COLOR_LIGHT_RED
+TIME_COLOR = prompt.COLOR_LIGHT_CYAN
+PLUGIN_LOG_COLOR = prompt.COLOR_YELLOW
+ERROR_COLOR = prompt.COLOR_LIGHT_RED
 
 # -- classes ------------------------------------------------------------------
 
@@ -62,31 +64,31 @@ class Harness:
         """
 
         if self.script.getboolean('general', 'run_delete_repo'):
-            self.delete_repo()
+            self._assert_status(self.delete_repo())
 
         if self.script.getboolean('general', 'run_create_repo'):
-            self.create_repo()
+            self._assert_status(self.create_repo())
 
         if self.script.getboolean('general', 'run_add_importer'):
-            self.add_importer()
+            self._assert_status(self.add_importer())
 
         if self.script.getboolean('general', 'run_add_distributor'):
-            self.add_distributor()
+            self._assert_status(self.add_distributor())
 
         if self.script.getboolean('general', 'run_sync_repo'):
-            self.sync_repo()
+            self._assert_status(self.sync_repo())
 
         if self.script.getboolean('general', 'run_sync_history'):
-            self.load_sync_history()
+            self._assert_status(self.load_sync_history())
 
         if self.script.getboolean('general', 'run_publish_repo'):
-            self.publish_repo()
+            self._assert_status(self.publish_repo())
 
         if self.script.getboolean('general', 'run_publish_history'):
-            self.load_publish_history()
+            self._assert_status(self.load_publish_history())
 
         if self.script.getboolean('general', 'run_list_units'):
-            self.list_units()
+            self._assert_status(self.list_units())
 
     def delete_repo(self):
         self._print_divider()
@@ -108,6 +110,8 @@ class Harness:
         else:
             self.prompt.write('Unexpected HTTP status code testing for repository existence [%s]' % status)
 
+        return status
+
     def create_repo(self):
         self._print_divider()
 
@@ -128,6 +132,8 @@ class Harness:
             self.prompt.write('Repository successfully created')
         else:
             self.prompt.write('Creation returned error code [%s]' % status)
+
+        return status
 
     def add_importer(self):
         self._print_divider()
@@ -156,6 +162,8 @@ class Harness:
             self.prompt.write('Importer successfully added to the repository')
         else:
             self.prompt.write('Addition returned error code [%s]' % status)
+
+        return status
 
     def add_distributor(self):
         self._print_divider()
@@ -187,6 +195,8 @@ class Harness:
         else:
             self.prompt.write('Addition returned error code [%s]' % status)
 
+        return status
+
     def sync_repo(self):
         self._print_divider()
 
@@ -205,6 +215,8 @@ class Harness:
         self._print_response(status, body)
 
         self.prompt.write('Synchronization complete')
+
+        return status
 
     def publish_repo(self):
         self._print_divider()
@@ -226,6 +238,8 @@ class Harness:
         self._print_response(status, body)
 
         self.prompt.write('Publish complete')
+
+        return status
 
     def load_sync_history(self):
         self._print_divider()
@@ -250,8 +264,10 @@ class Harness:
         self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
         self.prompt.write('  Plugin Log:')
         self.prompt.write('---')
-        self.prompt.write(self.prompt.color(item['plugin_log'], prompt.COLOR_YELLOW))
+        self.prompt.write(self.prompt.color(item['plugin_log'], PLUGIN_LOG_COLOR))
         self.prompt.write('---')
+
+        return status
 
     def load_publish_history(self):
         self._print_divider()
@@ -273,8 +289,10 @@ class Harness:
         self.prompt.write('  Completed:          %s' % item['completed'])
         self.prompt.write('  Plugin Log:')
         self.prompt.write('---')
-        self.prompt.write(self.prompt.color(item['plugin_log'], prompt.COLOR_YELLOW))
+        self.prompt.write(self.prompt.color(item['plugin_log'], PLUGIN_LOG_COLOR))
         self.prompt.write('---')
+
+        return status
 
     def list_units(self):
         self._print_divider()
@@ -291,7 +309,20 @@ class Harness:
 
         self.prompt.write('Retrieved [%d] units' % len(body))
 
+        return status
+
     # -- utilities ------------------------------------------------------------
+
+    def _assert_status(self, status):
+        """
+        Determines if the script should abort based on the given HTTP status.
+        """
+
+        if status > 299:
+            self.prompt.write('')
+            self.prompt.write(self.prompt.color('Error HTTP status code from last command [%d]' % status, ERROR_COLOR))
+            self.prompt.write('')
+            sys.exit(1)
 
     def _pause(self):
         if not self.script.getboolean('general', 'pause'):
