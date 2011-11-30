@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.252
+Version:        0.0.253
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -471,6 +471,57 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Nov 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.253-1
+- Comment out API response logging in the client(s). (jortel@redhat.com)
+- Pass the response to be logged back into the json module to let it format it
+  nicely (jason.dobies@redhat.com)
+- 758723 - removed pulp-client-lib's dependency on pulp-consumer by adding
+  response configuration to admin.conf (skarmark@redhat.com)
+- Added logging to better indicate why HTTP error codes are being returned
+  (jason.dobies@redhat.com)
+- Cleaned up pulp.spec and removed older commented out selinux lines
+  (jmatthews@redhat.com)
+- Cloning Improvements * fix the content duplication by reusing the real link
+  from source repo * fix the distribution clone to account for the relativepath
+  and sub directories and use real path * fix package imports during clone to
+  lookup package from pulp instead of trying to create and lookup * unit tests
+  to validate clone calls these changes should considerably enhance the cloning
+  performance and resolve duplication issues (pkilambi@redhat.com)
+- Updated the publish conduit and added unit tests (jason.dobies@redhat.com)
+- Added slow sync simulation script (jason.dobies@redhat.com)
+- Added usage of the importer scratchpad (jason.dobies@redhat.com)
+- All conduit calls should return a wrapped exception (jason.dobies@redhat.com)
+- SELinux rewrite: creating separate rpm pulp-server-selinux
+  (jmatthews@redhat.com)
+- SELinux rewrite: developer setup script (jmatthews@redhat.com)
+- SELinux rewrite: Update pulp.spec to call enable.sh (jmatthews@redhat.com)
+- SELinux cleanup of .te rules and fix for getattr on pulp-migrate
+  (jmatthews@redhat.com)
+- SELinux rules: cleaning up unused type (jmatthews@redhat.com)
+- SELinux rewrite: allow httpd to unlink log files for logrotate functionality
+  (jmatthews@redhat.com)
+- SELinux rewrite: update pulp_certs_t rule to allow basic file permissions for
+  git checkout (jmatthews@redhat.com)
+- SELinux rewrite: repo delete working (jmatthews@redhat.com)
+- SELinux rewrite: pulp-admin auth login & repo list are working
+  (jmatthews@redhat.com)
+- Rewriting SELinux rules:  rules allow httpd restart (jmatthews@redhat.com)
+- Added functionality to log api request and response details when running cli
+  so it can be added to api documentation (skarmark@redhat.com)
+- Added support for removing units in the harness importer
+  (jason.dobies@redhat.com)
+- Added call to show sync history (jason.dobies@redhat.com)
+- Fixing broken rhel5 tests because of fix for 756132 (skarmark@redhat.com)
+- Added in a default script and call timing support (jason.dobies@redhat.com)
+- First pass at harness for running plugin commands (jason.dobies@redhat.com)
+- Removed ability to use numbers in type IDs (messes up mongo)
+  (jason.dobies@redhat.com)
+- 756132 - Fixed traceback when deleting a filter (skarmark@redhat.com)
+- Updated test (forgot I had one that tested numbers) (jason.dobies@redhat.com)
+- First pass at v2 live server test harness (jason.dobies@redhat.com)
+- Add cloned repo ids to the list on associated distributions.
+  (jslagle@redhat.com)
+
 * Mon Nov 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.252-1
 - Automatic commit of package [python-oauth2] minor release [1.5.170-2.pulp].
   (jmatthews@redhat.com)
