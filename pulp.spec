@@ -63,18 +63,6 @@ Requires: m2crypto = 0.21.1.pulp
 
 %if %{pulp_selinux}
 Requires: %{name}-selinux-server = %{version}
-#%if "%{selinux_policyver}" != ""
-#Requires: selinux-policy >= %{selinux_policyver}
-#%endif
-#Requires(post): /usr/sbin/semodule, /sbin/fixfiles
-#Requires(postun): /usr/sbin/semodule
-#%endif
-#BuildRequires:  rpm-python
-#%if %{pulp_selinux}
-#BuildRequires:  make
-#BuildRequires:  checkpolicy
-#BuildRequires:  selinux-policy-devel
-#BuildRequires:  hardlink
 %endif
 
 %if 0%{?rhel} == 5
@@ -175,19 +163,8 @@ Requires: m2crypto = 0.21.1.pulp
 %endif
 %if %{pulp_selinux}
 Requires: %{name}-selinux-server = %{version}
-#%if "%{selinux_policyver}" != ""
-#Requires: selinux-policy >= %{selinux_policyver}
-#%endif
-#Requires(post): /usr/sbin/semodule, /sbin/fixfiles
-#Requires(postun): /usr/sbin/semodule
 %endif
 BuildRequires:  rpm-python
-#%if %{pulp_selinux}
-#BuildRequires:  make
-#BuildRequires:  checkpolicy
-#BuildRequires:  selinux-policy-devel
-#BuildRequires:  hardlink
-#%endif
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp
@@ -229,7 +206,6 @@ popd
 %if %{pulp_selinux}
 # SELinux Configuration
 cd selinux/server
-#perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' pulp-server.te
 perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!0.0.0!$VER!g;' pulp-server.te
 ./build.sh
 cd -
@@ -364,6 +340,8 @@ if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
 fi
 
+# restorcecon wasn't reading new file contexts we added when running under %post so moved to %posttrans
+# Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
 %posttrans
 if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
@@ -480,12 +458,6 @@ fi
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
 %attr(3775, apache, apache) /var/log/pulp-cds
-#%if %{pulp_selinux}
-# SELinux
-#%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
-#%{_datadir}/selinux/*/%{modulename}.pp
-#%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
-#%endif
 
 %if %{pulp_selinux}
 %files selinux-server
