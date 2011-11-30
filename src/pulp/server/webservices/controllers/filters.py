@@ -119,10 +119,10 @@ class FilterActions(JSONController):
         @return: True on successful deletion of filter
         """
         data = self.params()
-        if data['force'] == 'true':
+        force = False
+        if 'force' in data and data['force'] == 'true':
             force = True
-        else:
-            force = False
+
         api.delete(id, force)
         return self.ok(True)
 

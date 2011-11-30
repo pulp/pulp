@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NAME="pulp"
+NAME="pulp-server"
 SELINUX_VARIANTS="mls strict targeted"
 #This script will be called from pulp RPM and needs the ability to use the specified macro
 if [ $# -lt 1 ]; then
@@ -16,3 +16,9 @@ if /usr/sbin/selinuxenabled ; then
             ${INSTALL_DIR}/selinux/${selinuxvariant}/${NAME}.pp &> /dev/null || :
     done
 fi
+
+
+
+
+
+

@@ -100,3 +100,28 @@ class TestRepoSync(testutil.PulpAsyncTest):
         p = packages[0]
         assert(p is not None)
         # versions = p['versions']
+
+    def test_clone(self):
+        local_repo = self.repo_api.create("testrepocln", "testrepocln", "x86_64",
+            "file://repo")
+        # clone
+        repo_sync.clone(local_repo["id"], "testrepocln_clone", "testrepocln_clone")
+
+        # run_async called once, and a task is returned
+        self.assertEquals(1, repo_sync.run_async.call_count)
+        task = repo_sync.run_async.return_value
+
+        # task.set_progress called
+        self.assertEquals(1, task.set_progress.call_count)
+        call_args = task.set_progress.call_args[0]
+        self.assertEquals(2, len(call_args))
+        self.assertEquals("progress_callback", call_args[0])
+        self.assertEquals(local_progress_callback, call_args[1])
+
+        # task.set_synchronizer called
+        self.assertEquals(1, task.set_synchronizer.call_count)
+        call_args = task.set_synchronizer.call_args[0]
+        self.assertEquals(1, len(call_args))
+        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
+        # validate if the clone is enabled on the synchronizer
+        self.assertEquals(True, call_args[0].is_clone)

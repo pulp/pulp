@@ -12,14 +12,13 @@
 #SELinux
 %define selinux_variants mls strict targeted
 %define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
-%define modulename pulp
 %define moduletype apps
 %endif
 
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.251
+Version:        0.0.252
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -63,18 +62,19 @@ Requires: m2crypto = 0.21.1.pulp
 %endif
 
 %if %{pulp_selinux}
-%if "%{selinux_policyver}" != ""
-Requires: selinux-policy >= %{selinux_policyver}
-%endif
-Requires(post): /usr/sbin/semodule, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule
-%endif
-BuildRequires:  rpm-python
-%if %{pulp_selinux}
-BuildRequires:  make
-BuildRequires:  checkpolicy
-BuildRequires:  selinux-policy-devel
-BuildRequires:  hardlink
+Requires: %{name}-selinux-server = %{version}
+#%if "%{selinux_policyver}" != ""
+#Requires: selinux-policy >= %{selinux_policyver}
+#%endif
+#Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+#Requires(postun): /usr/sbin/semodule
+#%endif
+#BuildRequires:  rpm-python
+#%if %{pulp_selinux}
+#BuildRequires:  make
+#BuildRequires:  checkpolicy
+#BuildRequires:  selinux-policy-devel
+#BuildRequires:  hardlink
 %endif
 
 %if 0%{?rhel} == 5
@@ -174,19 +174,20 @@ Requires: m2crypto
 Requires: m2crypto = 0.21.1.pulp
 %endif
 %if %{pulp_selinux}
-%if "%{selinux_policyver}" != ""
-Requires: selinux-policy >= %{selinux_policyver}
-%endif
-Requires(post): /usr/sbin/semodule, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule
+Requires: %{name}-selinux-server = %{version}
+#%if "%{selinux_policyver}" != ""
+#Requires: selinux-policy >= %{selinux_policyver}
+#%endif
+#Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+#Requires(postun): /usr/sbin/semodule
 %endif
 BuildRequires:  rpm-python
-%if %{pulp_selinux}
-BuildRequires:  make
-BuildRequires:  checkpolicy
-BuildRequires:  selinux-policy-devel
-BuildRequires:  hardlink
-%endif
+#%if %{pulp_selinux}
+#BuildRequires:  make
+#BuildRequires:  checkpolicy
+#BuildRequires:  selinux-policy-devel
+#BuildRequires:  hardlink
+#%endif
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp
@@ -194,6 +195,27 @@ Conflicts:      pulp
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
 to clients.
+
+# -- headers - pulp-selinux-server ---------------------------------------------------
+%if %{pulp_selinux}
+%package        selinux-server
+Summary:        Pulp SELinux policy for server components.
+Group:          Development/Languages
+BuildRequires:  rpm-python
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
+
+%if "%{selinux_policyver}" != ""
+Requires: selinux-policy >= %{selinux_policyver}
+%endif
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule
+
+%description    selinux-server
+SELinux policy for Pulp's server components
+%endif
 
 # -- build -------------------------------------------------------------------
 
@@ -206,8 +228,9 @@ pushd src
 popd
 %if %{pulp_selinux}
 # SELinux Configuration
-cd selinux
-perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' %{modulename}.te
+cd selinux/server
+#perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' pulp-server.te
+perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!0.0.0!$VER!g;' pulp-server.te
 ./build.sh
 cd -
 %endif
@@ -292,8 +315,12 @@ cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 
 %if %{pulp_selinux}
 # Install SELinux policy modules
-cd selinux
+cd selinux/server
 ./install.sh %{buildroot}%{_datadir}
+mkdir -p %{buildroot}%{_datadir}/pulp/selinux/server
+cp enable.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp uninstall.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
 cd -
 %endif
 
@@ -305,15 +332,6 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
-%if %{pulp_selinux}
-if /usr/sbin/selinuxenabled ; then
-    for selinuxvariant in %{selinux_variants}
-    do
-        /usr/sbin/semodule -s ${selinuxvariant} -i \
-        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
-    done
-fi
-%endif
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
@@ -328,16 +346,10 @@ touch /var/lib/pulp-cds/.cluster-members
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
-%if %{pulp_selinux}
-if /usr/sbin/selinuxenabled ; then
-for selinuxvariant in %{selinux_variants}
-   do
-        /usr/sbin/semodule -s ${selinuxvariant} -i \
-        %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp &> /dev/null || :
-    done
-fi
-%endif
-
+#%if %{pulp_selinux}
+# Enable SELinux policy modules
+#%{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+#%endif
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
@@ -345,14 +357,22 @@ if [ "$1" = "1" ]; then
   ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
 
-%postun
-# Clean up after package removal
 %if %{pulp_selinux}
+%post selinux-server
+# Enable SELinux policy modules
+if /usr/sbin/selinuxenabled ; then
+ %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+fi
+
+%posttrans
+if /usr/sbin/selinuxenabled ; then
+ %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
+fi
+
+%preun selinux-server
+# Clean up after package removal
 if [ $1 -eq 0 ]; then
-  for selinuxvariant in %{selinux_variants}
-    do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
-    done
+%{_datadir}/pulp/selinux/server/uninstall.sh
 fi
 exit 0
 %endif
@@ -364,15 +384,6 @@ fi
 
 %postun cds
 # Clean up after package removal
-%if %{pulp_selinux}
-if [ $1 -eq 0 ]; then
-  for selinuxvariant in %{selinux_variants}
-    do
-    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} &> /dev/null || :
-    done
-fi
-exit 0
-%endif
 
 # -- files - pulp server -----------------------------------------------------
 
@@ -399,12 +410,6 @@ exit 0
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 %{_bindir}/pulp-migrate
-%if %{pulp_selinux}
-# SELinux
-%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
-%{_datadir}/selinux/*/%{modulename}.pp
-%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
-%endif
 # -- files - common ----------------------------------------------------------
 
 %files common
@@ -475,16 +480,61 @@ exit 0
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
 %attr(3775, apache, apache) /var/lib/pulp-cds/packages
 %attr(3775, apache, apache) /var/log/pulp-cds
-%if %{pulp_selinux}
+#%if %{pulp_selinux}
 # SELinux
-%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
-%{_datadir}/selinux/*/%{modulename}.pp
-%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+#%doc selinux/%{modulename}.fc selinux/%{modulename}.if selinux/%{modulename}.te
+#%{_datadir}/selinux/*/%{modulename}.pp
+#%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+#%endif
+
+%if %{pulp_selinux}
+%files selinux-server
+%defattr(-,root,root,-)
+%doc selinux/server/pulp-server.fc selinux/server/pulp-server.if selinux/server/pulp-server.te
+%{_datadir}/pulp/selinux/server/*
+%{_datadir}/selinux/*/pulp-server.pp
+%{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
 %endif
 
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Nov 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.252-1
+- Automatic commit of package [python-oauth2] minor release [1.5.170-2.pulp].
+  (jmatthews@redhat.com)
+- Automatic commit of package [python-isodate] minor release [0.4.4-3.pulp].
+  (jmatthews@redhat.com)
+- removed old sources (jconnor@redhat.com)
+- 747336 Change filter parameter from id to repoid for consistency
+  (jslagle@redhat.com)
+- Clean up usage of singular/plural for bulk apis for consistency
+  (jslagle@redhat.com)
+- 747336 Add bulk API for repository sync history. (jslagle@redhat.com)
+- Remove the expectation that log in a report will be a string; no reason the
+  plugin can't serialize anything they want in there (jason.dobies@redhat.com)
+- Renamed plugin "data" module to "model" (jason.dobies@redhat.com)
+- Fixed bug in retrieving the unit ID (jason.dobies@redhat.com)
+- 747336 Add a list of repoids to the distribution model (jslagle@redhat.com)
+- First draft at new repo sync conduit APIs (jason.dobies@redhat.com)
+- Progress on new conduit APIs (jason.dobies@redhat.com)
+- Renamed exceptions module (jason.dobies@redhat.com)
+- Added get_units call to the unit association manager
+  (jason.dobies@redhat.com)
+- 747336 Add tests. (jslagle@redhat.com)
+- 747336 Add GET handler for /statuses and fix the way task search was working
+  (jslagle@redhat.com)
+- Fix initialization of items_remaining->items_left (jslagle@redhat.com)
+- 747336 Add rollup call for repository sync status and bulk call for sync
+  status (jslagle@redhat.com)
+- updated for latest isodate and oauth2 modules (jconnor@redhat.com)
+- 755625 - Non-existent filter now replies with a 404 (skarmark@redhat.com)
+- latest oauth2 with patch (jconnor@redhat.com)
+- Raise AMQP events when repo sync task dequeued. (jortel@redhat.com)
+- changing the distro cli proxy to use new rest path (pkilambi@redhat.com)
+- Wired up distributor history REST APIs (jason.dobies@redhat.com)
+- Added publish history tracking and manager-level retrieval calls
+  (jason.dobies@redhat.com)
+- curl example for using clone API (jmatthews@redhat.com)
 * Fri Nov 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.251-1
 - 754807 - Added filter application step when importing packages as it is now
   separated from fetch_content while syncing a local repository

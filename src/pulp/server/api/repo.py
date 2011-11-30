@@ -1811,10 +1811,11 @@ class RepoApi(BaseApi):
         del repo['distributionid'][repo['distributionid'].index(distroid)]
         self.collection.save(repo, safe=True)
 
-        # Delete the repoid from the list on the distribution as well.
-        del distro_obj['repoids'][distro_obj['repoids'].index(repoid)]
-        distro_collection = model.Distribution.get_collection()
-        distro_collection.save(distro_obj, safe=True)
+        if repoid in distro_obj['repoids']:
+            # Delete the repoid from the list on the distribution as well.
+            del distro_obj['repoids'][distro_obj['repoids'].index(repoid)]
+            distro_collection = model.Distribution.get_collection()
+            distro_collection.save(distro_obj, safe=True)
 
         log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
         self._delete_ks_link(repo)

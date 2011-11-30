@@ -25,6 +25,7 @@ from pulp.server import comps_util, config
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
     yum_rhn_progress_callback, local_progress_callback, FileSynchronizer
 from pulp.server.api.repo_sync_task import RepoSyncTask
@@ -42,6 +43,7 @@ log = logging.getLogger(__name__)
 repo_api = RepoApi()
 package_api = PackageApi()
 errata_api = ErrataApi()
+distro_api = DistributionApi()
 
 # synchronization type map ----------------------------------------------------
 type_classes = {
@@ -79,6 +81,8 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     content_type = repo['content_types']
     synchronizer = get_synchronizer(content_type)
+    # enable synchronizer as a clone process
+    synchronizer.set_clone()
     task.set_synchronizer(synchronizer)
     if content_type == 'yum':
         task.weight = config.config.getint('yum', 'task_weight')
@@ -151,6 +155,12 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
     clone_ids.append(clone_id)
     repo['clone_ids'] = clone_ids
     repo_api.collection.save(repo, safe=True)
+
+    # Update repoids on distributions
+    for distro_id in cloned_repo["distributionid"]:
+        distro = distro_api.distribution(distro_id)
+        distro["repoids"].append(clone_id)
+        distro_api.collection.save(distro, safe=True)
 
     # Update gpg keys from parent repo
     keylist = []
@@ -347,8 +357,9 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
     # Process Files
     synchronizer.add_files_from_dir(repo_dir, repo_id, skip_dict)
-    # updating Metadata
-    synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
+    if not synchronizer.is_clone:
+        # updating Metadata
+        synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     # Process Metadata
     added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
     return added_packages, added_errataids
