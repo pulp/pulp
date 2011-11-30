@@ -20,7 +20,7 @@ from types import NoneType, TracebackType
 
 _LOG = logging.getLogger(__name__)
 
-# execution response -----------------------------------------------------------
+# execution responses ----------------------------------------------------------
 
 CALL_ACCEPTED = 'accepted'
 CALL_POSTPONED = 'postponed'
@@ -38,7 +38,6 @@ CALL_RUNNING = 'running'
 CALL_SUSPENDED = 'suspended'
 CALL_FINISHED = 'finished'
 CALL_ERROR = 'error'
-CALL_TIMED_OUT = 'timed out'
 CALL_CANCELED = 'canceled'
 
 CALL_STATES = (CALL_UNKNOWN,
@@ -47,7 +46,6 @@ CALL_STATES = (CALL_UNKNOWN,
                CALL_SUSPENDED,
                CALL_FINISHED,
                CALL_ERROR,
-               CALL_TIMED_OUT,
                CALL_CANCELED)
 
 CALL_READY_STATES = (CALL_WAITING,)
