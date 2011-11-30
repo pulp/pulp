@@ -67,9 +67,11 @@ class RepoCollection(JSONController):
             # TODO: explicitly serialize repo for return
             return self.created(None, repo)
         except errors.DuplicateRepoId:
+            _LOG.exception('Duplicate repo ID [%s]' % id)
             serialized = http_error_obj(409)
             return self.conflict(serialized)
         except (errors.InvalidRepoId, errors.InvalidRepoMetadata):
+            _LOG.exception('Bad request data for repository [%s]' % id)
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -109,6 +111,7 @@ class RepoResource(JSONController):
         delta = parameters.get('delta', None)
 
         if delta is None:
+            _LOG.exception('Missing delta when updating repository [%s]' % id)
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -150,6 +153,7 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_type is None:
+            _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -167,6 +171,7 @@ class RepoImporters(JSONController):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
         except (errors.InvalidImporterType, errors.InvalidImporterConfiguration):
+            _LOG.exception('Bad request data adding importer of type [%s] to repository [%s]' % (importer_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -210,6 +215,7 @@ class RepoImporter(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_config is None:
+            _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -309,6 +315,7 @@ class RepoDistributor(JSONController):
         distributor_config = params.get('distributor_config', None)
 
         if distributor_config is None:
+            _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
@@ -338,6 +345,7 @@ class RepoSyncHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
+                _LOG.exception('Invalid limit specified [%s]' % limit)
                 serialized = http_error_obj(400)
                 return self.bad_request(serialized)
 
@@ -364,6 +372,7 @@ class RepoPublishHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
+                _LOG.exception('Invalid limit specified [%s]' % limit)
                 serialized = http_error_obj(400)
                 return self.bad_request(serialized)
 
