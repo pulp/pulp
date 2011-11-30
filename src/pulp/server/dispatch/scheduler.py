@@ -30,6 +30,14 @@ SCHEDULED_TAG = 'scheduled'
 # scheduler --------------------------------------------------------------------
 
 class Scheduler(object):
+    """
+    Scheduler class
+    Manager and dispatcher of scheduled call requests
+    @ivar dispatch_interval: time, in seconds, between schedule checks
+    @type dispatch_interval: int
+    @ivar scheduled_call_collection: db collection of scheduled call requests
+    @type scheduled_call_collection: pymongo.collection.Collection
+    """
 
     __metaclass__ = Singleton
 
@@ -49,6 +57,9 @@ class Scheduler(object):
     # scheduled calls dispatch -------------------------------------------------
 
     def __dispatch(self):
+        """
+        Dispatcher thread loop
+        """
         self.__lock.acquire()
         while True:
             self.__condition.wait(timeout=self.dispatch_interval)
@@ -63,9 +74,16 @@ class Scheduler(object):
                 _LOG.exception(e)
 
     def exit(self):
+        """
+        Flag the dispatcher thread for exit
+        NOTE, the scheduler cannot be restarted once the thread exists
+        """
         self.__exit = True
 
     def run_scheduled_calls(self):
+        """
+        Find call requests that are currently scheduled to run
+        """
         now = datetime.datetime.utcnow()
         # TODO account for daylight savings time
         query = {'next_run': {'$lte': now}}
@@ -78,15 +96,29 @@ class Scheduler(object):
             self.update_scheduled_call(scheduled_call)
 
     def run_via_legacy_tasking(self, call_request):
-        pass
+        """
+        Run the call request in the legacy tasking sub-system
+        """
+        raise NotImplementedError()
 
     def run_via_taskqueue(self, call_request):
+        """
+        Run the call request directy in the task queue
+        """
         raise NotImplementedError()
 
     def run_via_coordinator(self, call_request):
+        """
+        Run the call request through the coordinator
+        """
         raise NotImplementedError()
 
     def update_scheduled_call(self, scheduled_call):
+        """
+        Update a scheduled call's metadata once it has been run
+        @param scheduled_call: scheduled call to be updated
+        @type  scheduled_call: dict
+        """
         schedule_id = scheduled_call['_id']
 
         # update the last_run
@@ -110,6 +142,13 @@ class Scheduler(object):
     # scheduling ---------------------------------------------------------------
 
     def next_run(self, scheduled_call):
+        """
+        Calculate the next run datetime of a scheduled call
+        @param scheduled_call: scheduled call to schedule
+        @type  scheduled_call: dict
+        @return: datetime of scheduled call's next run or None if there is no next run
+        @rtype:  datetime.datetime or None
+        """
         if scheduled_call['runs'] == 0:
             return None
         now = datetime.datetime.utcnow()
@@ -125,6 +164,17 @@ class Scheduler(object):
     # schedule control ---------------------------------------------------------
 
     def add(self, call_request, schedule, last_run=None):
+        """
+        Add a scheduled call request
+        @param call_request: call request to schedule
+        @type  call_request: pulp.server.dispatch.call.CallRequest
+        @param schedule: iso8601 formatted interval schedule
+        @type  schedule: str
+        @param last_run: datetime of the last run of the call request or None if no last run
+        @type  last_run: datetime.datetime or None
+        @return: schedule id if successfully scheduled or None otherwise
+        @rtype:  str or None
+        """
         call_request.tags.append(SCHEDULED_TAG)
         scheduled_call = ScheduledCall(call_request, schedule, last_run)
         next_run = self.next_run(scheduled_call)
@@ -134,13 +184,28 @@ class Scheduler(object):
         return scheduled_call['_id']
 
     def remove(self, schedule_id):
+        """
+        Remove a scheduled call reqeust
+        @param schedule_id: id of the schedule for the call request
+        @type  schedule_id: str
+        """
         self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
     def enable(self, schedule_id):
+        """
+        Enable a previously disabled scheduled call request
+        @param schedule_id: id of the schedule for the call request
+        @type  schedule_id: str
+        """
         update = {'$set': {'enabled': True}}
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def disable(self, schedule_id):
+        """
+        Disable a scheduled call request without removing it
+        @param schedule_id: id of the schedule for the call request
+        @type  schedule_id: str
+        """
         update = {'$set': {'enabled': False}}
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
