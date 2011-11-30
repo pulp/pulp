@@ -18,7 +18,7 @@ from pulp.server.db.model.base import Model
 class QueuedCall(Model):
 
     collection_name = 'queued_calls'
-    unique_indicies = ()
+    unique_indices = ()
 
 
 class ScheduledCall(Model):
@@ -28,13 +28,15 @@ class ScheduledCall(Model):
     search_indices = ('serialized_call_request.tags', 'last_run', 'next_run')
 
     def __init__(self, call_request, schedule, last_run=None):
+        super(ScheduledCall, self).__init__()
         self.serialized_call_request = call_request.serialize()
         interval, start_date, runs = dateutils.parse_iso8601_interval(schedule)
         self.interval = interval
         self.runs = runs
         self.last_run = last_run or start_date
-        # can't store tzinfo, so normalize to utc and then get rid of tzinfo
-        self.last_run = self.last_run.astimezone(dateutils.utc_tz())
-        self.last_run = self.last_run.replaze(tzinfo=None)
+        if self.last_run.tzinfo is not None:
+            # can't store tzinfo, so normalize to utc and then get rid of tzinfo
+            self.last_run = self.last_run.astimezone(dateutils.utc_tz())
+            self.last_run = self.last_run.replaze(tzinfo=None)
         # next run will be calculated and assigned by the scheduler
         self.next_run = None
