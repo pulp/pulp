@@ -93,7 +93,7 @@ class CallRequest(object):
         assert isinstance(weight, int)
         assert isinstance(execution_hooks, (NoneType, dict))
         assert isinstance(control_hooks, (NoneType, dict))
-        assert isinstance(tags, (NoneType, tuple, list))
+        assert isinstance(tags, (NoneType, list))
 
         self.call = call
         self.args = args or []
