@@ -18,11 +18,11 @@ from logging import root, Formatter
 from logging.handlers import RotatingFileHandler
 from pulp.client.admin.config import AdminConfig
 
-cfg = AdminConfig()
+#cfg = AdminConfig()
 USRDIR = '~/.pulp'
 LOGDIR = '/var/log/pulp'
 LOGFILE = 'client.log'
-RESPONSE_LOG_FILE = cfg.api_response.responses_file
+#RESPONSE_LOG_FILE = cfg.api_response.responses_file
 
 TIME = '%(asctime)s'
 LEVEL = ' [%(levelname)s]'
