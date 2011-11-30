@@ -61,8 +61,8 @@ class Scheduler(object):
         now = datetime.datetime.utcnow()
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
-            serialized_call_reqeust = scheduled_call['serialized_call_request']
-            call_request = call.CallRequest.deserialize(serialized_call_reqeust)
+            serialized_call_request = scheduled_call['serialized_call_request']
+            call_request = call.CallRequest.deserialize(serialized_call_request)
             # TODO submit the call request to tasking (eventually coordinator)
             # TODO log the call?
             self.update_scheduled_call(scheduled_call)
