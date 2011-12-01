@@ -49,10 +49,8 @@ class Scheduler(object):
         self.__exit = False
         self.__lock = threading.RLock()
         self.__condition = threading.Condition(self.__lock)
+        self.__dispatcher = None
 
-        self.__dispatcher = threading.Thread(target=self.__dispatch)
-        self.__dispatcher.setDaemon(True)
-        self.__dispatcher.start()
 
     # scheduled calls dispatch -------------------------------------------------
 
@@ -73,26 +71,39 @@ class Scheduler(object):
                 _LOG.critical('Unhandled exception in scheduler dispatch: %s' % repr(e))
                 _LOG.exception(e)
 
-    def exit(self):
+    def start(self):
         """
-        Flag the dispatcher thread for exit
-        NOTE, the scheduler cannot be restarted once the thread exists
+        Start the scheduler
         """
+        assert self.__dispatcher is None
+        self.__dispatcher = threading.Thread(target=self.__dispatch)
+        self.__dispatcher.setDaemon(True)
+        self.__dispatcher.start()
+
+    def stop(self):
+        """
+        Stop the scheduler
+        """
+        assert self.__dispatcher is not None
+        self.__lock.acquire()
         self.__exit = True
+        self.__condition.notify()
+        self.__lock.release()
+        self.__dispatcher.join()
+        self.__dispatcher = None
 
     def run_scheduled_calls(self):
         """
         Find call requests that are currently scheduled to run
         """
         now = datetime.datetime.utcnow()
-        # TODO account for daylight savings time
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
             if scheduled_call['enabled']:
                 serialized_call_request = scheduled_call['serialized_call_request']
                 call_request = call.CallRequest.deserialize(serialized_call_request)
                 self.run_via_legacy_tasking(call_request)
-            # still update disabled calls
+            # still update the schedule of disabled calls
             self.update_scheduled_call(scheduled_call)
 
     def run_via_legacy_tasking(self, call_request):
@@ -121,19 +132,20 @@ class Scheduler(object):
         """
         schedule_id = scheduled_call['_id']
 
-        # update the last_run
-        # use scheduled time instead of current to prevent schedule drift
-        last_run = scheduled_call['next_run']
-        scheduled_call['last_run'] = last_run
-        if scheduled_call['runs'] is not None:
-            scheduled_call['runs'] -= 1
-
         # update the next_run
         next_run = self.next_run(scheduled_call)
         if next_run is None:
             # remove the scheduled call if there are no more
             self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
             return
+
+        # update the last_run
+        # use scheduled time instead of current to prevent schedule drift
+        last_run = scheduled_call['next_run']
+        scheduled_call['last_run'] = last_run
+
+        if scheduled_call['runs'] is not None and scheduled_call['enabled']:
+            scheduled_call['runs'] -= 1
 
         # update the persisted scheduled call
         update = {'$set': {'last_run': last_run, 'next_run': next_run}}
@@ -151,10 +163,12 @@ class Scheduler(object):
         """
         if scheduled_call['runs'] == 0:
             return None
+
         now = datetime.datetime.utcnow()
         last_run = scheduled_call['last_run']
         if last_run is None:
             return scheduled_call['start_date']
+
         next_run = last_run
         interval = scheduled_call['interval']
         while next_run < now:
