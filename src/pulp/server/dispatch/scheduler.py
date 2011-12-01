@@ -211,30 +211,5 @@ class Scheduler(object):
 
     # query methods ------------------------------------------------------------
 
-    def get(self, schedule_id):
-        """
-        Get the call request and the schedule for the given schedule id
-        @param schedule_id: id of the schedule for the call request
-        @type  schedule_id: str
-        @return: tuple of (call request, schedule) if found, (None, None) otherwise
-        @rtype:  tuple (CallRequest, str) or tupe(None, None)
-        """
-        scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
-        if scheduled_call is None:
-            return (None, None)
-        serialized_call_request = scheduled_call['serialized_call_request']
-        call_request = call.CallRequest.deserialize(serialized_call_request)
-        schedule = scheduled_call['schedule']
-        return (call_request, schedule)
-
-    def find(self, *tags):
-        """
-        Find the scheduled call requests for the given call request tags
-        @return: list of tuples (scheduled id, call request, schedule)
-        """
-        query = {'serialized_call_request.tags': {'$all': tags}}
-        scheduled_calls = self.scheduled_call_collection.find(query)
-        return [(s['_id'],
-                 call.CallRequest.deserialize(s['serialized_call_request']),
-                 s['schedule'])
-                for s in scheduled_calls]
+    def find(self, **criteria):
+        pass
