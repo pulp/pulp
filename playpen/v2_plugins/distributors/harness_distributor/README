@@ -1,0 +1,13 @@
+The following configuration parameters can be passed to the distributor either
+in its static configuration when it is added to a repo or with an individual
+publish call.
+
+write_files : If true, the distributor will copy the file created by the importer
+  to the publish directory.
+
+publish_dir : Location on disk the files will be written to when the repository
+  is published. This has no effect if write_files is false.
+
+publish_delay_in_seconds : Number of seconds to wait at the tail end of the publish
+  before informing Pulp the operation has completed. This can be used to simulate
+  a long running publish operation.
