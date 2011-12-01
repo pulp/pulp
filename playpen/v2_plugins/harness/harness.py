@@ -64,7 +64,7 @@ class Harness:
         """
 
         if self.script.getboolean('general', 'run_delete_repo'):
-            self._assert_status(self.delete_repo())
+            self._assert_status(self.delete_repo(), no_fail=True)
 
         if self.script.getboolean('general', 'run_create_repo'):
             self._assert_status(self.create_repo())
@@ -313,11 +313,14 @@ class Harness:
 
     # -- utilities ------------------------------------------------------------
 
-    def _assert_status(self, status):
+    def _assert_status(self, status, no_fail=False):
         """
         Determines if the script should abort based on the given HTTP status.
         """
 
+        if no_fail:
+            return
+        
         if status > 299:
             self.prompt.write('')
             self.prompt.write(self.prompt.color('Error HTTP status code from last command [%d]' % status, ERROR_COLOR))
