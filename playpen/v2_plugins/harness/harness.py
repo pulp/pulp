@@ -453,7 +453,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     script = ConfigParser.SafeConfigParser()
-    script.read('scripts/_default.ini')
+    script.read('scenarios/_default.ini')
     script.read(sys.argv[1])
 
     if len(sys.argv) > 2:
