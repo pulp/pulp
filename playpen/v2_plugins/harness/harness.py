@@ -16,7 +16,6 @@ import ConfigParser
 import datetime
 import httplib
 import json
-import optparse
 import sys
 import types
 
@@ -449,19 +448,21 @@ class PulpConnection:
 
 if __name__ == '__main__':
 
-    parser = optparse.OptionParser(usage='%s -s SCRIPT_FILE' % __file__)
-    parser.add_option('-s', '--script', dest='script', default=None,
-                      help='full path to the configuration file dictating how the harness will run')
-
-    options, args = parser.parse_args()
-    if options.script is None:
-        parser.print_help()
+    if len(sys.argv) == 1:
+        print('Usage: harness.py SCENARIO_FILE')
         sys.exit(1)
 
     script = ConfigParser.SafeConfigParser()
     script.read('scripts/_default.ini')
-    script.read(options.script)
+    script.read(sys.argv[1])
 
+    if len(sys.argv) > 2:
+        for o in sys.argv[2:]:
+            key, value = o.split('=')
+            section, option = key.split('.')
+            
+            script.set(section, option, value)
+            
     connection = PulpConnection()
     connection.connect()
 
