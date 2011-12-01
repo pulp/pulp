@@ -128,7 +128,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         self.assertEqual(10, history[0]['added_count'])
         self.assertEqual(1, history[0]['removed_count'])
-        self.assertTrue(history[0]['plugin_log'] is not None)
+        self.assertTrue(history[0]['summary'] is not None)
+        self.assertTrue(history[0]['details'] is not None)
 
         self.assertTrue(history[0]['error_message'] is None)
         self.assertTrue(history[0]['exception'] is None)
@@ -276,8 +277,10 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(history[0]['completed'] is not None)
 
         self.assertTrue(history[0]['added_count'] is None)
+        self.assertTrue(history[0]['updated_count'] is None)
         self.assertTrue(history[0]['removed_count'] is None)
-        self.assertTrue(history[0]['plugin_log'] is None)
+        self.assertTrue(history[0]['summary'] is None)
+        self.assertTrue(history[0]['details'] is None)
 
         self.assertEqual(error_msg, history[0]['error_message'])
         self.assertTrue('FakePluginException' in history[0]['exception'])
@@ -371,9 +374,12 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(history[0]['started'] is not None)
         self.assertTrue(history[0]['completed'] is not None)
 
-        self.assertEqual('Unknown', history[0]['added_count'])
-        self.assertEqual('Unknown', history[0]['removed_count'])
-        self.assertEqual('Unknown', history[0]['plugin_log'])
+        self.assertEqual(-1, history[0]['added_count'])
+        self.assertEqual(-1, history[0]['updated_count'])
+        self.assertEqual(-1, history[0]['removed_count'])
+
+        self.assertEqual('Unknown', history[0]['summary'])
+        self.assertEqual('Unknown', history[0]['details'])
 
         self.assertTrue(history[0]['error_message'] is None)
         self.assertTrue(history[0]['exception'] is None)
@@ -462,5 +468,5 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, '')
+    r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '')
     RepoSyncResult.get_collection().save(r, safe=True)

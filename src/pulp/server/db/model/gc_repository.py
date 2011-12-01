@@ -266,7 +266,7 @@ class RepoSyncResult(Model):
         return r
 
     @classmethod
-    def success_result(cls, repo_id, importer_id, importer_type_id, started, completed, added_count, removed_count, plugin_log):
+    def success_result(cls, repo_id, importer_id, importer_type_id, started, completed, added_count, updated_count, removed_count, summary, details):
         """
         Creates a new history entry for a successful sync.
 
@@ -288,17 +288,25 @@ class RepoSyncResult(Model):
         @param added_count: number of new units added during the sync
         @type  added_count: int
 
+        @param updated_count: number of units updated during the sync
+        @type  updated_count: int
+
         @param removed_count: number of units removed from the repo during the sync
         @type  removed_count: int
 
-        @param plugin_log: log output from the plugin of the sync
-        @type  plugin_log: str
+        @param summary: short log output from the plugin of the sync
+        @type  summary: any serializable
+
+        @param details: long log output from the plugin of the sync
+        @type  details: any serializable
         """
 
         r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed, RepoSyncResult.RESULT_SUCCESS)
         r.added_count = added_count
+        r.updated_count = updated_count
         r.removed_count = removed_count
-        r.plugin_log = plugin_log
+        r.summary = summary
+        r.details = details
 
         return r
 
@@ -323,8 +331,10 @@ class RepoSyncResult(Model):
         self.traceback = None
 
         self.added_count = None
+        self.updated_count = None
         self.removed_count = None
-        self.plugin_log = None
+        self.summary = None
+        self.details = None
 
 class RepoPublishResult(Model):
     """
@@ -372,7 +382,7 @@ class RepoPublishResult(Model):
         return r
 
     @classmethod
-    def success_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, plugin_log):
+    def success_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, summary, details):
         """
         Creates a new history entry for a successful publish.
 
@@ -391,12 +401,16 @@ class RepoPublishResult(Model):
         @param completed: iso8601 formatted timestamp when the publish completed
         @type  completed: str
 
-        @param plugin_log: log output from the plugin of the publish
-        @type  plugin_log: str
+        @param summary: short log output from the plugin of the publish
+        @type  summary: any serializable
+
+        @param details: long log output from the plugin of the publish
+        @type  details: any serializable
         """
 
         r = RepoPublishResult(repo_id, distributor_id, distributor_type_id, started, completed, RepoSyncResult.RESULT_SUCCESS)
-        r.plugin_log = plugin_log
+        r.summary = summary
+        r.details = details
 
         return r
 
@@ -420,4 +434,5 @@ class RepoPublishResult(Model):
         self.exception = None
         self.traceback = None
 
-        self.plugin_log = None
+        self.summary = None
+        self.details = None

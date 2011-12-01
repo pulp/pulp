@@ -94,26 +94,42 @@ class SyncReport:
     @ivar added_count: number of new units added during the sync
     @type added_count: int
 
+    @ivar updated_count: number of units updated during the sync
+    @type updated_count: int
+
     @ivar removed_count: number of units unassociated from the repo during the sync
     @type removed_count: int
 
-    @ivar log: arbitrary value the plugin wants to communicate to users about the sync
-    @type log: just about any serializable object (likely str or dict)
+    @ivar summary: arbitrary value that will be returned by default as the log
+                   for the sync (should be short)
+    @type summary: just about any serializable object (likely str or dict)
+
+    @ivar details: potentially longer log that will have to be specifically
+                   retrieved through the Pulp REST APIs
+    @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, added_count, removed_count, log):
+    def __init__(self, added_count, updated_count, removed_count, summary, details):
         self.added_count = added_count
+        self.updated_count = updated_count
         self.removed_count = removed_count
-        self.log = log
+        self.summary = summary
+        self.details = details
 
 class PublishReport:
     """
     Returned to the Pulp server at the end of a publish call. This is used by the
     plugin to decrive what took place during the publish run.
 
-    @ivar log: arbitrary text the plugin wants to communicate to users about the run
-    @type log: just about any serializable object (likely str or dict)
+    @ivar summary: arbitrary value that will be returned by default as the log
+                   for the call (should be short)
+    @type summary: just about any serializable object (likely str or dict)
+
+    @ivar details: potentially longer log that will have to be specifically
+                   retrieved through the Pulp REST APIs
+    @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, log):
-        self.log = log
+    def __init__(self, summary, details):
+        self.summary = summary
+        self.details = details

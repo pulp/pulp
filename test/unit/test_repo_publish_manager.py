@@ -82,7 +82,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(entries[0]['started'] is not None)
         self.assertTrue(entries[0]['completed'] is not None)
         self.assertEqual(RepoPublishResult.RESULT_SUCCESS, entries[0]['result'])
-        self.assertTrue(entries[0]['plugin_log'] is not None)
+        self.assertTrue(entries[0]['summary'] is not None)
+        self.assertTrue(entries[0]['details'] is not None)
         self.assertTrue(entries[0]['error_message'] is None)
         self.assertTrue(entries[0]['exception'] is None)
         self.assertTrue(entries[0]['traceback'] is None)
@@ -225,7 +226,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(entries[0]['started'] is not None)
         self.assertTrue(entries[0]['completed'] is not None)
         self.assertEqual(RepoPublishResult.RESULT_ERROR, entries[0]['result'])
-        self.assertTrue(entries[0]['plugin_log'] is None)
+        self.assertTrue(entries[0]['summary'] is None)
+        self.assertTrue(entries[0]['details'] is None)
         self.assertTrue(entries[0]['error_message'] is not None)
         self.assertTrue(entries[0]['exception'] is not None)
         self.assertTrue(entries[0]['traceback'] is not None)
@@ -361,7 +363,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'sloppy'}))
         self.assertEqual(1, len(entries))
-        self.assertEqual('Unknown', entries[0]['plugin_log'])
+        self.assertEqual('Unknown', entries[0]['summary'])
+        self.assertEqual('Unknown', entries[0]['details'])
 
     def test_publish_history(self):
         """
@@ -457,5 +460,5 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, dist_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoPublishResult.success_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-log')
+    r = RepoPublishResult.success_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details')
     RepoPublishResult.get_collection().save(r, safe=True)
