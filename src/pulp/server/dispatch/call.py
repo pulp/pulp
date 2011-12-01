@@ -105,31 +105,22 @@ class CallRequest(object):
         self.tags = tags or []
 
     def callable_name(self):
-        pass
+        name = self.call.__name__
+        if hasattr(self.call, 'im_class'):
+            class_name = self.call.im_class.__name__
+            return '.'.join((class_name, name))
+        return name
 
     def callable_args_reprs(self):
-        pass
+        return [repr(a) for a in self.args]
 
     def callable_kwargs_reprs(self):
-        pass
+        return dict([(k, repr(v)) for k, v in self.kwargs.items()])
 
     def __str__(self):
-
-        def _name():
-            name = self.call.__name__
-            if hasattr(self.call, 'im_class'):
-                class_name = self.call.im_class.__name__
-                return '.'.join((class_name, name))
-            return name
-
-        def _args():
-            return ', '.join([str(a) for a in self.args])
-
-        def _kwargs():
-            return ', '.join(['='.join((str(k), str(v)))
-                              for k, v in self.kwargs.items()])
-
-        return 'CallRequest: %s(%s, %s)' % (_name(), _args(), _kwargs())
+        args = ', '.join(self.callable_args_reprs())
+        kwargs = ', '.join(['%s=%s' % (k, v) for k, v in self.callable_kwargs_reprs.items()])
+        return 'CallRequest: %s(%s, %s)' % (self.callable_name(), args, kwargs)
 
     # call request serialization/deserialization -------------------------------
 
