@@ -104,6 +104,15 @@ class CallRequest(object):
         self.control_hooks = control_hooks or {}
         self.tags = tags or []
 
+    def callable_name(self):
+        pass
+
+    def callable_args_reprs(self):
+        pass
+
+    def callable_kwargs_reprs(self):
+        pass
+
     def __str__(self):
 
         def _name():

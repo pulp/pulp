@@ -88,11 +88,11 @@ class Scheduler(object):
         # TODO account for daylight savings time
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
-            if not scheduled_call['enabled']:
-                continue
-            serialized_call_request = scheduled_call['serialized_call_request']
-            call_request = call.CallRequest.deserialize(serialized_call_request)
-            self.run_via_legacy_tasking(call_request)
+            if scheduled_call['enabled']:
+                serialized_call_request = scheduled_call['serialized_call_request']
+                call_request = call.CallRequest.deserialize(serialized_call_request)
+                self.run_via_legacy_tasking(call_request)
+            # still update disabled calls
             self.update_scheduled_call(scheduled_call)
 
     def run_via_legacy_tasking(self, call_request):
