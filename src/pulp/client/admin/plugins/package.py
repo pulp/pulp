@@ -388,8 +388,10 @@ class Search(PackageAction):
                                help=_("package release regex to search for"))
         self.parser.add_option("-v", "--version", dest="version", default=None,
                                help=_("package version regex to search for"))
-        self.parser.add_option("--repoids", dest="repoids", default=None,
-                               help=_("list of repositories to search; if not specified, search will be conducted on all the repositories"))
+        self.parser.add_option("-p", "--repoid", action="append", dest="repoid", default=[],
+                               help=_("repository labels; to specify multiple repositories use multiple -p; if not specified, search will be conducted on all the repositories"))
+        #self.parser.add_option("--repoids", dest="repoids", default=None,
+         #                      help=_("list of repositories to search; if not specified, search will be conducted on all the repositories"))
 
     def run(self):
         arch = self.opts.arch
@@ -398,8 +400,9 @@ class Search(PackageAction):
         name = self.opts.name
         release = self.opts.release
         version = self.opts.version
+        repoids = [ r for r in self.opts.repoid or [] if len(r)]
         pkgs = self.service_api.search_packages(name=name, epoch=epoch, version=version,
-                release=release, arch=arch, filename=filename, repoids=self.opts.repoids)
+                release=release, arch=arch, filename=filename, repoids=repoids)
 
         if not pkgs:
             system_exit(os.EX_DATAERR, _("No packages found."))
