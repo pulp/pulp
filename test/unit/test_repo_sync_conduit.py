@@ -34,8 +34,8 @@ import pulp.server.managers.content.query as query_manager
 
 # constants --------------------------------------------------------------------
 
-TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type-2'])
-TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type-1'])
+TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type_2'])
+TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type_1'])
 
 # -- test cases ---------------------------------------------------------------
 
@@ -192,8 +192,8 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Verify
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, unit_2.id)
-        self.assertTrue('_type-1_children' in parent)
-        self.assertTrue(unit_1.id in parent['_type-1_children'])
+        self.assertTrue('_type_1_children' in parent)
+        self.assertTrue(unit_1.id in parent['_type_1_children'])
 
     def test_link_unit_bidirectional(self):
         """
@@ -216,12 +216,12 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Verify
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, unit_2.id)
-        self.assertTrue('_type-1_children' in parent)
-        self.assertTrue(unit_1.id in parent['_type-1_children'])
+        self.assertTrue('_type_1_children' in parent)
+        self.assertTrue(unit_1.id in parent['_type_1_children'])
 
         parent = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
-        self.assertTrue('_type-2_children' in parent)
-        self.assertTrue(unit_2.id in parent['_type-2_children'])
+        self.assertTrue('_type_2_children' in parent)
+        self.assertTrue(unit_2.id in parent['_type_2_children'])
 
     def test_get_set_scratchpad(self):
         """

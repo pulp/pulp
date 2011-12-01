@@ -26,9 +26,15 @@ import prompt
 
 REST_COLOR = prompt.COLOR_LIGHT_BLUE
 RESPONSE_COLOR = prompt.COLOR_LIGHT_PURPLE
-TIME_COLOR = prompt.COLOR_LIGHT_RED
+TIME_COLOR = prompt.COLOR_LIGHT_CYAN
+PLUGIN_LOG_COLOR = prompt.COLOR_YELLOW
+ERROR_COLOR = prompt.COLOR_LIGHT_RED
 
 # -- classes ------------------------------------------------------------------
+
+class SilentPrompt(prompt.Prompt):
+    def write(self, content, new_line=True):
+        pass
 
 class Harness:
 
@@ -44,7 +50,11 @@ class Harness:
         self.script = script
 
         use_color = self.script.getboolean('output', 'use_color')
-        self.prompt = prompt.Prompt(enable_color=use_color)
+
+        if self.script.getboolean('output', 'silent'):
+            self.prompt = SilentPrompt()
+        else:
+            self.prompt = prompt.Prompt(enable_color=use_color)
 
     # -- script running functionality -----------------------------------------
 
@@ -53,23 +63,32 @@ class Harness:
         Runs the appropriate commands accroding the script given at instantiation.
         """
 
-        if self.script.has_option('general', 'run_delete_repo') and self.script.getboolean('general', 'run_delete_repo'):
-            self.delete_repo()
+        if self.script.getboolean('general', 'run_delete_repo'):
+            self._assert_status(self.delete_repo())
 
-        if self.script.has_option('general', 'run_create_repo') and self.script.getboolean('general', 'run_create_repo'):
-            self.create_repo()
+        if self.script.getboolean('general', 'run_create_repo'):
+            self._assert_status(self.create_repo())
 
-        if self.script.has_option('general', 'run_add_importer') and self.script.getboolean('general', 'run_add_importer'):
-            self.add_importer()
+        if self.script.getboolean('general', 'run_add_importer'):
+            self._assert_status(self.add_importer())
 
-        if self.script.has_option('general', 'run_sync_repo') and self.script.getboolean('general', 'run_sync_repo'):
-            self.sync_repo()
+        if self.script.getboolean('general', 'run_add_distributor'):
+            self._assert_status(self.add_distributor())
 
-        if self.script.has_option('general', 'run_sync_history') and self.script.getboolean('general', 'run_sync_history'):
-            self.load_sync_history()
+        if self.script.getboolean('general', 'run_sync_repo'):
+            self._assert_status(self.sync_repo())
 
-        if self.script.has_option('general', 'run_list_units') and self.script.getboolean('general', 'run_list_units'):
-            self.list_units()
+        if self.script.getboolean('general', 'run_sync_history'):
+            self._assert_status(self.load_sync_history())
+
+        if self.script.getboolean('general', 'run_publish_repo'):
+            self._assert_status(self.publish_repo())
+
+        if self.script.getboolean('general', 'run_publish_history'):
+            self._assert_status(self.load_publish_history())
+
+        if self.script.getboolean('general', 'run_list_units'):
+            self._assert_status(self.list_units())
 
     def delete_repo(self):
         self._print_divider()
@@ -90,6 +109,8 @@ class Harness:
             self.prompt.write('Repository [%s] did not previously exist on the server' % repo_id)
         else:
             self.prompt.write('Unexpected HTTP status code testing for repository existence [%s]' % status)
+
+        return status
 
     def create_repo(self):
         self._print_divider()
@@ -112,12 +133,14 @@ class Harness:
         else:
             self.prompt.write('Creation returned error code [%s]' % status)
 
+        return status
+
     def add_importer(self):
         self._print_divider()
 
         repo_id = self.script.get('general', 'repo_id')
 
-        importer_config = dict(self.script.items('repository'))
+        importer_config = dict(self.script.items('importer'))
 
         url = '/v2/repositories/%s/importers/' % repo_id
         body = {
@@ -136,16 +159,49 @@ class Harness:
         self._print_response(status, body)
 
         if status == 201:
-            self.prompt.write('Importer successfully added to repository')
+            self.prompt.write('Importer successfully added to the repository')
         else:
             self.prompt.write('Addition returned error code [%s]' % status)
+
+        return status
+
+    def add_distributor(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+
+        distributor_config = dict(self.script.items('distributor'))
+
+        url = '/v2/repositories/%s/distributors/' % repo_id
+        body = {
+            'distributor_type_id' : 'harness_distributor',
+            'distributor_config'  : distributor_config,
+            'auto_publish'        : False,
+            'distributor_id'      : 'dist_1',
+        }
+
+        self.prompt.write('Adding the harness distributor to repository [%s]' % repo_id)
+        self.prompt.write('Distributor configuration:')
+        for k, v in distributor_config.items():
+            self.prompt.write('    %-15s : %s' % (k, v))
+
+        self._pause()
+        status, body = self._call('POST', url, body)
+
+        self._print_response(status, body)
+
+        if status == 201:
+            self.prompt.write('Distributor successfully added to the repository')
+        else:
+            self.prompt.write('Addition returned error code [%s]' % status)
+
+        return status
 
     def sync_repo(self):
         self._print_divider()
 
         repo_id = self.script.get('general', 'repo_id')
-
-        override_config = dict(self.script.items('override'))
+        override_config = dict(self.script.items('sync-override'))
 
         url = '/v2/repositories/%s/actions/sync/' % repo_id
         body = {
@@ -159,6 +215,31 @@ class Harness:
         self._print_response(status, body)
 
         self.prompt.write('Synchronization complete')
+
+        return status
+
+    def publish_repo(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+        distributor_id = 'dist_1'
+        override_config = dict(self.script.items('publish-override'))
+
+        url = '/v2/repositories/%s/actions/publish/' % repo_id
+        body = {
+            'id'              : distributor_id,
+            'override_config' : override_config,
+        }
+
+        self.prompt.write('Publishing repository [%s]' % repo_id)
+        self._pause()
+        status, body = self._call('POST', url, body)
+
+        self._print_response(status, body)
+
+        self.prompt.write('Publish complete')
+
+        return status
 
     def load_sync_history(self):
         self._print_divider()
@@ -183,9 +264,36 @@ class Harness:
         self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
         self.prompt.write('  Plugin Log:')
         self.prompt.write('---')
-        self.prompt.write(self.prompt.color(item['plugin_log'], prompt.COLOR_YELLOW))
+        self.prompt.write(self.prompt.color(item['plugin_log'], PLUGIN_LOG_COLOR))
         self.prompt.write('---')
-        
+
+        return status
+
+    def load_publish_history(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+        distributor_id = 'dist_1'
+
+        url = '/v2/repositories/%s/publish_history/%s/?limit=1' % (repo_id, distributor_id)
+        self._pause()
+        status, body = self._call('GET', url, None)
+
+        self._print_response(status, body)
+
+        item = body[0]
+        self.prompt.write('Results of the last publish')
+        self.prompt.write('  Result:             %s' % item['result'])
+        self.prompt.write('  Distributor ID:     %s' % item['distributor_id'])
+        self.prompt.write('  Started:            %s' % item['started'])
+        self.prompt.write('  Completed:          %s' % item['completed'])
+        self.prompt.write('  Plugin Log:')
+        self.prompt.write('---')
+        self.prompt.write(self.prompt.color(item['plugin_log'], PLUGIN_LOG_COLOR))
+        self.prompt.write('---')
+
+        return status
+
     def list_units(self):
         self._print_divider()
 
@@ -201,7 +309,20 @@ class Harness:
 
         self.prompt.write('Retrieved [%d] units' % len(body))
 
+        return status
+
     # -- utilities ------------------------------------------------------------
+
+    def _assert_status(self, status):
+        """
+        Determines if the script should abort based on the given HTTP status.
+        """
+
+        if status > 299:
+            self.prompt.write('')
+            self.prompt.write(self.prompt.color('Error HTTP status code from last command [%d]' % status, ERROR_COLOR))
+            self.prompt.write('')
+            sys.exit(1)
 
     def _pause(self):
         if not self.script.getboolean('general', 'pause'):
