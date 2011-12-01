@@ -22,6 +22,7 @@ import testutil
 import mock_plugins
 
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit, RepoSyncConduitException
+from pulp.server.content.plugins.model import SyncReport
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
@@ -240,6 +241,38 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Test - get updated value
         self.assertEqual(value, self.conduit.get_scratchpad())
+
+    def test_build_report(self):
+        """
+        Tests that the conduit correctly inserts the count values into the report.
+        """
+
+        # Setup
+
+        #   Created - 10
+        for i in range(0, 10):
+            unit_key = {'key-1' : 'unit_%d' % i}
+            unit = self.conduit.init_unit(TYPE_1_DEF.id, unit_key, {}, '/foo/bar')
+            self.conduit.save_unit(unit)
+
+        #   Removed - 1
+        doomed = self.conduit.get_units()[0]
+        self.conduit.remove_unit(doomed)
+
+        #   Updated - 1
+        update_me = self.conduit.init_unit(TYPE_1_DEF.id, {'key-1' : 'unit_5'}, {}, '/foo/bar')
+        self.conduit.save_unit(update_me)
+
+        # Test
+        report = self.conduit.build_report('summary', 'details')
+
+        # Verify
+        self.assertTrue(isinstance(report, SyncReport))
+        self.assertEqual(10, report.added_count)
+        self.assertEqual(1, report.removed_count)
+        self.assertEqual(1, report.updated_count)
+        self.assertEqual('summary', report.summary)
+        self.assertEqual('details', report.details)
 
     # -- error tests ----------------------------------------------------------
 
