@@ -123,8 +123,15 @@ class Config(INIConfig):
             if altpath:
                 alt = self.__read(altpath)
                 self.__mergeIn(alt)
+            self.validate()
         finally:
             fp.close()
+
+    def validate(self):
+        """
+        Abstract: validate configuration.
+        """
+        pass
 
     def write(self):
         """

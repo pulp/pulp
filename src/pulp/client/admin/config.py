@@ -13,6 +13,27 @@
 
 
 from pulp.client.lib.config import Config
+from pulp.common.config import Validator
+from pulp.common.config import ANY, NUMBER, BOOL, REQUIRED, OPTIONAL
+from pulp.common.config import ValidationException
+
+
+SCHEMA = (
+    ('server', REQUIRED,
+        (
+            ('host', REQUIRED, ANY),
+            ('port', REQUIRED, NUMBER),
+            ('scheme', REQUIRED, '(http$|https$)'),
+            ('path', REQUIRED, ANY),
+            ('interval', REQUIRED, NUMBER),
+        )
+    ),
+    ('plugins', REQUIRED,
+        (
+            ('plugin_dirs', REQUIRED, ANY),
+        )
+    ),
+)
 
 
 class AdminConfig(Config):
@@ -31,3 +52,14 @@ class AdminConfig(Config):
     BASE_PATH = "/etc/pulp/admin"
     FILE = "admin.conf"
     ALT = "PULP_ADMIN_OVERRIDE"
+
+    def validate(self):
+        """
+        Validate configuration.
+        """
+        v = Validator(SCHEMA)
+        try:
+            return v.validate(self)
+        except ValidationException, e:
+            e.path = self.FILE_PATH
+            raise e
