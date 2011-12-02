@@ -340,10 +340,10 @@ class RepoSyncConduit:
         @type  to_unit: L{Unit}
         """
         try:
-            self.__content_manager.link_child_content_units(from_unit.type_id, from_unit.id, to_unit.type_id, [to_unit.id])
+            self.__content_manager.link_referenced_content_units(from_unit.type_id, from_unit.id, to_unit.type_id, [to_unit.id])
 
             if bidirectional:
-                self.__content_manager.link_child_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
+                self.__content_manager.link_referenced_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
         except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]

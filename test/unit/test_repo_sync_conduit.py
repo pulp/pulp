@@ -318,7 +318,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
     def test_link_unit_with_error(self):
         # Setup
         self.conduit._RepoSyncConduit__content_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__content_manager.link_child_content_units.side_effect = Exception()
+        self.conduit._RepoSyncConduit__content_manager.link_referenced_content_units.side_effect = Exception()
 
         # Test
         self.assertRaises(RepoSyncConduitException, self.conduit.link_unit, None, None)

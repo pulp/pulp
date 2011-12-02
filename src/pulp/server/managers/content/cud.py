@@ -70,51 +70,51 @@ class ContentManager(object):
         collection = content_types_db.type_units_collection(content_type)
         collection.remove({'_id': unit_id}, safe=True)
 
-    def link_child_content_units(self, parent_type, parent_id, child_type, child_ids):
+    def link_referenced_content_units(self, from_type, from_id, to_type, to_ids):
         """
-        Link children content units to a parent.
-        @param parent_type: unique id of the parent content collection
-        @type parent_type: str
-        @param parent_id: unique id of the parent content unit
-        @type parent_id: str
-        @param child_type: unique id of the child content collection
-        @type child_type: str
-        @param child_ids: list of unique ids of child content units
+        Link referenced content units.
+        @param from_type: unique id of the parent content collection
+        @type from_type: str
+        @param from_id: unique id of the parent content unit
+        @type from_id: str
+        @param to_type: unique id of the child content collection
+        @type to_type: str
+        @param to_ids: list of unique ids of child content units
         @types child_ids: tuple of list
         """
-        collection = content_types_db.type_units_collection(parent_type)
-        parent = collection.find_one({'_id': parent_id})
+        collection = content_types_db.type_units_collection(from_type)
+        parent = collection.find_one({'_id': from_id})
         if parent is None:
             msg = _('%(t)s content unit with id %(p) not found')
-            raise ContentTypeNotFound(msg % {'t': parent_type, 'p': parent_id})
-        parent_type_def = content_types_db.type_definition(parent_type)
-        if child_type not in parent_type_def['child_types']:
+            raise ContentTypeNotFound(msg % {'t': from_type, 'p': from_id})
+        parent_type_def = content_types_db.type_definition(from_type)
+        if to_type not in parent_type_def['referenced_types']:
             raise Exception()
-        children = parent.setdefault('_%s_children' % child_type, [])
-        for id_ in child_ids:
+        children = parent.setdefault('_%s_references' % to_type, [])
+        for id_ in to_ids:
             if id_ in children:
                 continue
             children.append(id_)
-        collection.update({'_id': parent_id}, parent, safe=True)
+        collection.update({'_id': from_id}, parent, safe=True)
 
-    def unlink_child_content_units(self, parent_type, parent_id, child_type, child_ids):
+    def unlink_referenced_content_units(self, from_type, from_id, to_type, to_ids):
         """
-        Unlink children content units from a parent.
-        @param parent_type: unique id of the parent content collection
-        @type parent_type: str
-        @param parent_id: unique id of the parent content unit
-        @type parent_id: str
-        @param child_type: unique id of the child content collection
-        @type child_type: str
-        @param child_ids: list of unique ids of child content units
+        Unlink referenced content units.
+        @param from_type: unique id of the parent content collection
+        @type from_type: str
+        @param from_id: unique id of the parent content unit
+        @type from_id: str
+        @param to_type: unique id of the child content collection
+        @type to_type: str
+        @param to_ids: list of unique ids of child content units
         @types child_ids: tuple of list
         """
-        collection = content_types_db.type_units_collection(parent_type)
-        parent = collection.find_one({'_id': parent_id})
+        collection = content_types_db.type_units_collection(from_type)
+        parent = collection.find_one({'_id': from_id})
         if parent is None:
             msg = _('%(t)s content unit with id %(p) not found')
-            raise ContentTypeNotFound(msg % {'t': parent_type, 'p': parent_id})
-        key = '_%s_children' % child_type
+            raise ContentTypeNotFound(msg % {'t': from_type, 'p': from_id})
+        key = '_%s_references' % to_type
         children = set(parent.get(key, []))
-        parent[key] = list(children.difference(child_ids))
-        collection.update({'_id': parent_id}, parent, safe=True)
+        parent[key] = list(children.difference(to_ids))
+        collection.update({'_id': from_id}, parent, safe=True)
