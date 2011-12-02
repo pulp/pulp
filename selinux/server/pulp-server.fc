@@ -11,5 +11,6 @@
 
 /var/lib/pulp(/.*)? gen_context(system_u:object_r:pulp_content_t,s0)
 /var/log/pulp(/.*)? gen_context(system_u:object_r:pulp_log_t,s0)
+/tmp/grinder(/.*)? gen_context(system_u:object_r:httpd_tmp_t,s0)
 
 
