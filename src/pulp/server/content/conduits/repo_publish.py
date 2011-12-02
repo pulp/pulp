@@ -22,7 +22,7 @@ import sys
 
 import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
-from pulp.server.content.plugins.model import Unit
+from pulp.server.content.plugins.model import PublishReport
 
 # -- constants ---------------------------------------------------------------
 
@@ -183,3 +183,17 @@ class RepoPublishConduit:
         except Exception, e:
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise RepoPublishConduitException(e), None, sys.exc_info()[2]
+
+    def build_report(self, summary, details):
+        """
+        Creates the PublishReport instance that needs to be returned to the Pulp
+        server at the end of the publish_repo call.
+
+        @param summary: short log of the publish; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the publish; may be None
+        @type  details: any serializable
+        """
+        r = PublishReport(summary, details)
+        return r
