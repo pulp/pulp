@@ -180,7 +180,7 @@ class ContentQueryManager(object):
                  the same index in each tuple corresponds to a single content unit
         @rtype: tuple of (possibly empty) tuples
         """
-        key_fields = content_types_db.type_units_unique_indexes(content_type)
+        key_fields = content_types_db.type_units_unit_key(content_type)
         if key_fields is None:
             raise ContentTypeNotFound(_('No content type found: %(c)') %
                                       {'c': content_type})
@@ -302,7 +302,7 @@ def _build_muti_keys_spec(content_type, unit_keys_dicts):
 
     # keys dicts validation constants
     key_fields = []
-    _flatten_keys(key_fields, content_types_db.type_units_unique_indexes(content_type))
+    _flatten_keys(key_fields, content_types_db.type_units_unit_key(content_type))
     key_fields_set = set(key_fields)
     extra_keys_msg = _('keys dictionary found with superfluous keys %(a)s, valid keys are %(b)s')
     missing_keys_msg = _('keys dictionary missing keys %(a)s, required keys are %(b)s')

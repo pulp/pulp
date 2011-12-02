@@ -24,8 +24,8 @@ from pulp.server.compat import json
 
 # -- constants ---------------------------------------------------------------
 
-REQUIRED_DEFINITION_FIELDS = ['id', 'display_name', 'description']
-OPTIONAL_DEFINITION_FIELDS = ['unique_indexes', 'search_indexes', 'child_types']
+REQUIRED_DEFINITION_FIELDS = ['id', 'display_name', 'description', 'unit_key']
+OPTIONAL_DEFINITION_FIELDS = ['search_indexes', 'referenced_types']
 
 TYPE_ID_REGEX = re.compile(r'^[_A-Za-z]+$') # letters and underscore
 
@@ -111,14 +111,14 @@ class DuplicateType(SemanticsException):
         SemanticsException.__init__(self)
         self.type_ids = duplicate_type_ids
 
-class UndefinedChildIds(SemanticsException):
+class UndefinedReferencedIds(SemanticsException):
     """
-    One or more child type definitions reference types that are not defined.
+    One or more referenced type definitions reference types that are not defined.
     """
 
-    def __init__(self, missing_children):
+    def __init__(self, missing_referenced_ids):
         SemanticsException.__init__(self)
-        self.missing_child_ids = missing_children
+        self.missing_referenced_ids = missing_referenced_ids
 
 # -- public api --------------------------------------------------------------
 
@@ -250,12 +250,12 @@ def _validate_semantics(descriptors):
     if len(all_copy) > 0: # remaining IDs were duplicated
         raise DuplicateType(all_copy)
 
-    # Ensure referenced child types are defined as types on their own
-    all_child_ids = _all_child_type_ids(descriptors)
-    undefined_child_ids = all_child_ids - set(all_type_ids)
+    # Ensure referenced referenced types are defined as types on their own
+    all_referenced_ids = _all_referenced_type_ids(descriptors)
+    undefined_referenced_ids = all_referenced_ids - set(all_type_ids)
 
-    if len(undefined_child_ids) > 0:
-        raise UndefinedChildIds(undefined_child_ids)
+    if len(undefined_referenced_ids) > 0:
+        raise UndefinedReferencedIds(undefined_referenced_ids)
 
 def _instantiate_type_definitions(descriptors):
     """
@@ -275,12 +275,12 @@ def _instantiate_type_definitions(descriptors):
     for type_dict in all_type_dicts:
 
         # Handle optional values
-        unique_indexes = type_dict.get('unique_indexes', [])
         search_indexes = type_dict.get('search_indexes', [])
-        child_types = type_dict.get('child_types', [])
+        referenced_types = type_dict.get('referenced_types', [])
 
         type_def = model.TypeDefinition(type_dict['id'], type_dict['display_name'],
-                                  type_dict['description'], unique_indexes, search_indexes, child_types)
+                                        type_dict['description'], type_dict['unit_key'],
+                                        search_indexes, referenced_types)
         all_types.append(type_def)
 
     return all_types
@@ -307,21 +307,21 @@ def _all_type_ids(descriptors):
 
     return all_ids
 
-def _all_child_type_ids(descriptors):
+def _all_referenced_type_ids(descriptors):
     """
-    @return: list of all IDs that are mentioned as child types across all types
+    @return: list of all IDs that are mentioned as referenced types across all types
              in every descriptor
     @rtype:  set of str
     """
     types = _all_types(descriptors)
-    all_child_ids = set()
-    for child_ids in [t['child_types'] for t in types if 'child_types' in t]:
-        if not isinstance(child_ids, list):
-            child_ids = [child_ids]
+    all_referenced_ids = set()
+    for referenced_ids in [t['referenced_types'] for t in types if 'referenced_types' in t]:
+        if not isinstance(referenced_ids, list):
+            referenced_ids = [referenced_ids]
 
-        all_child_ids.update(child_ids)
+        all_referenced_ids .update(referenced_ids)
 
-    return all_child_ids
+    return all_referenced_ids
 
 def _valid_id(id):
     """

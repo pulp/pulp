@@ -22,7 +22,7 @@ import logging
 from pymongo import ASCENDING
 
 import pulp.server.db.connection as pulp_db
-from pulp.server.db.model.content import ContentType
+from pulp.server.db.model.gc_content import ContentType
 
 # -- constants ----------------------------------------------------------------
 
@@ -114,9 +114,9 @@ def update_database(definitions, error_on_missing_definitions=False):
             continue
 
         try:
-            _update_unique_indexes(type_def)
+            _update_unit_key(type_def)
         except Exception:
-            LOG.exception('Exception updating unique indexes for type [%s]' % type_def.id)
+            LOG.exception('Exception updating unit key for type [%s]' % type_def.id)
             error_defs.append(type_def)
             continue
 
@@ -181,6 +181,7 @@ def all_type_ids():
 
     return type_ids
 
+
 def all_type_collection_names():
     """
     @return: list of collection names for all types currently in the database
@@ -206,6 +207,7 @@ def all_type_definitions():
     coll = ContentType.get_collection()
     types = list(coll.find())
     return types
+
 
 def type_definition(type_id):
     """
@@ -233,9 +235,9 @@ def unit_collection_name(type_id):
     return TYPE_COLLECTION_PREFIX + type_id
 
 
-def type_units_unique_indexes(type_id):
+def type_units_unit_key(type_id):
     """
-    Get the unique indices for a given content type collection. If no type
+    Get the unit key for a given content type collection. If no type
     definition is found for the given ID, None is returned
 
     @param type_id: unique content type identifier
@@ -248,7 +250,7 @@ def type_units_unique_indexes(type_id):
     type_def = collection.find_one(type_id)
     if type_def is None:
         return None
-    return type_def['unique_indexes']
+    return type_def['unit_key']
 
 # -- private -----------------------------------------------------------------
 
@@ -263,7 +265,7 @@ def _create_or_update_type(type_def):
 
     # Add an entry to the types list
     content_type = ContentType(type_def.id, type_def.display_name, type_def.description,
-                               type_def.unique_indexes, type_def.search_indexes, type_def.child_types)
+                               type_def.unit_key, type_def.search_indexes, type_def.referenced_types)
     ContentType.get_collection().save(content_type, safe=True)
 
 def _update_indexes(type_def, unique):
@@ -272,7 +274,7 @@ def _update_indexes(type_def, unique):
     collection = pulp_db.get_collection(collection_name, create=False)
 
     if unique:
-        index_list = type_def.unique_indexes
+        index_list = [type_def.unit_key] # treat the key as a compound key
     else:
         index_list = type_def.search_indexes
 
@@ -296,7 +298,7 @@ def _update_indexes(type_def, unique):
             LOG.info('Index already existed on type definition [%s]' % type_def.id)
 
 
-def _update_unique_indexes(type_def):
+def _update_unit_key(type_def):
     _update_indexes(type_def, True)
 
 

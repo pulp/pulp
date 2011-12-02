@@ -21,19 +21,19 @@ import testutil
 
 import pulp.server.content.types.database as types_db
 from pulp.server.content.types.model import TypeDefinition
-from pulp.server.db.model.content import ContentType
+from pulp.server.db.model.gc_content import ContentType
 import pulp.server.db.connection as pulp_db
 
 # -- constants -----------------------------------------------------------------
 
 DEF_1 = TypeDefinition('def_1', 'Definition 1', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
+                       'single_1', ['search_1'], [])
 DEF_2 = TypeDefinition('def_2', 'Definition 2', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
+                       ['single_1'], ['search_1'], [])
 DEF_3 = TypeDefinition('def_3', 'Definition 3', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
+                       ['compound_1', 'compound_2'], ['search_1'], [])
 DEF_4 = TypeDefinition('def_4', 'Definition 4', 'Test definition',
-                       [['compound_1', 'compound_2'], 'single_1'], ['search_1'], [])
+                       'single_1', ['search_1'], [])
 
 # -- test cases ----------------------------------------------------------------
 
@@ -65,7 +65,7 @@ class TypesDatabaseTests(testutil.PulpTest):
             collection = types_db.type_units_collection(d.id)
             all_indexes = collection.index_information()
 
-            total_index_count = 1 + len(d.unique_indexes) + len(d.search_indexes)
+            total_index_count = 1 + 1 + len(d.search_indexes) # _id + unit key + all search
             self.assertEqual(total_index_count, len(all_indexes))
 
     def test_update_no_changes(self):
@@ -93,7 +93,7 @@ class TypesDatabaseTests(testutil.PulpTest):
             collection = types_db.type_units_collection(d.id)
             all_indexes = collection.index_information()
 
-            total_index_count = 1 + len(d.unique_indexes) + len(d.search_indexes)
+            total_index_count = 1 + 1 + len(d.search_indexes) # _id + unit key + all search
             self.assertEqual(total_index_count, len(all_indexes))
 
     def test_update_missing_no_error(self):
@@ -121,7 +121,7 @@ class TypesDatabaseTests(testutil.PulpTest):
             collection = types_db.type_units_collection(d.id)
             all_indexes = collection.index_information()
 
-            total_index_count = 1 + len(d.unique_indexes) + len(d.search_indexes)
+            total_index_count = 1 + 1 + len(d.search_indexes) # _id + unit key + all search
             self.assertEqual(total_index_count, len(all_indexes))
 
     def test_update_missing_with_error(self):
@@ -165,42 +165,6 @@ class TypesDatabaseTests(testutil.PulpTest):
             self.assertEqual(1, len(e.type_definitions))
             self.assertEqual(busted, e.type_definitions[0])
             print(e)
-
-    def test_update_failed_unique_indexes(self):
-        """
-        Simulates a failure to create unique indexes by passing a bad ID in the
-        index list.
-        """
-
-        # Setup
-        busted = TypeDefinition('busted', 'Busted', 'Busted', ['bad..dot..notation'], None, [])
-        defs = [busted, DEF_1]
-
-        # Tests
-        try:
-            types_db.update_database(defs)
-            self.fail('Update with a failed unique index did not raise exception')
-        except types_db.UpdateFailed, e:
-            self.assertEqual(1, len(e.type_definitions))
-            self.assertEqual(busted, e.type_definitions[0])
-
-    def test_update_failed_search_indexes(self):
-        """
-        Simulates a failure to create unique indexes by passing a bad ID in the
-        index list.
-        """
-
-        # Setup
-        busted = TypeDefinition('busted', 'Busted', 'Busted', None, ['bad..dot..notation'], [])
-        defs = [busted, DEF_1]
-
-        # Tests
-        try:
-            types_db.update_database(defs)
-            self.fail('Update with a failed search index update did not raise exception')
-        except types_db.UpdateFailed, e:
-            self.assertEqual(1, len(e.type_definitions))
-            self.assertEqual(busted, e.type_definitions[0])
 
     def test_all_type_collection_names(self):
         """
@@ -275,9 +239,9 @@ class TypesDatabaseTests(testutil.PulpTest):
         # Verify
         self.assertEqual(4, len(all_defs))
 
-    def test_type_units_unique_indexes(self):
+    def test_type_units_unit_key(self):
         """
-        Tests the syntactic sugar method for retrieving unique indexes on a type.
+        Tests the syntactic sugar method for retrieving unit key on a type.
         """
 
         # Setup
@@ -285,13 +249,10 @@ class TypesDatabaseTests(testutil.PulpTest):
         types_db._create_or_update_type(type_def)
 
         # Test
-        indexes = types_db.type_units_unique_indexes('rpm')
+        unit_key = types_db.type_units_unit_key('rpm')
 
         # Verify
-        self.assertTrue(indexes is not None)
-        self.assertEqual(2, len(indexes))
-        self.assertTrue('unique_1' in indexes)
-        self.assertTrue('unique_2' in indexes)
+        self.assertEqual(type_def.unit_key, unit_key)
 
     def test_type_units_unique_indexes_missing_def(self):
         """
@@ -299,7 +260,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         """
 
         # Test
-        indexes = types_db.type_units_unique_indexes('not_there')
+        indexes = types_db.type_units_unit_key('not_there')
 
         # Verify
         self.assertTrue(indexes is None)
@@ -327,7 +288,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         self.assertEqual(type_def.id, found['id'])
         self.assertEqual(type_def.display_name, found['display_name'])
         self.assertEqual(type_def.description, found['description'])
-        self.assertEqual(type_def.unique_indexes, found['unique_indexes'])
+        self.assertEqual(type_def.unit_key, found['unit_key'])
         self.assertEqual(type_def.search_indexes, found['search_indexes'])
 
         #   Type collection exists
@@ -347,7 +308,7 @@ class TypesDatabaseTests(testutil.PulpTest):
         # Test
         type_def.display_name = 'new-name'
         type_def.description = 'new-description'
-        type_def.unique_indexes = None
+        type_def.unit_key = 'new-key'
         type_def.search_indexes = None
         types_db._create_or_update_type(type_def)
 
@@ -361,29 +322,24 @@ class TypesDatabaseTests(testutil.PulpTest):
         self.assertEqual(type_def.id, found['id'])
         self.assertEqual(type_def.display_name, found['display_name'])
         self.assertEqual(type_def.description, found['description'])
-        self.assertEqual(type_def.unique_indexes, found['unique_indexes'])
+        self.assertEqual(type_def.unit_key, found['unit_key'])
         self.assertEqual(type_def.search_indexes, found['search_indexes'])
 
         #   Type collection exists
         collection_name = types_db.unit_collection_name(type_def.id)
         self.assertTrue(collection_name in pulp_db.database().collection_names())
 
-    def test_update_unique_indexes(self):
+    def test_update_unit_key_single_field(self):
         """
-        Tests that the unique index creation on a new collection is successful.
-        This will test both single key and compound indexes to ensure mongo
-        handles them successfully.
+        Tests a single field unit key is handled correctly.
         """
 
         # Setup
-        unique_indexes = [
-            ['compound_1', 'compound_2'],
-            'individual_1'
-        ]
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', unique_indexes, None, [])
+        unit_key = 'individual_1',
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', unit_key, None, [])
 
         # Test
-        types_db._update_unique_indexes(type_def)
+        types_db._update_unit_key(type_def)
 
         # Verify
         collection_name = types_db.unit_collection_name(type_def.id)
@@ -391,9 +347,8 @@ class TypesDatabaseTests(testutil.PulpTest):
 
         index_dict = collection.index_information()
 
-        self.assertEqual(3, len(index_dict)) # default (_id) + definition ones
+        self.assertEqual(2, len(index_dict)) # default (_id) + unit key
 
-        #   Verify individual index
         index = index_dict['individual_1_1']
         self.assertTrue(index['unique'])
 
@@ -402,7 +357,26 @@ class TypesDatabaseTests(testutil.PulpTest):
         self.assertEqual('individual_1', keys[0][0])
         self.assertEqual(types_db.ASCENDING, keys[0][1])
 
-        #   Verify compound index
+    def test_update_unit_key_multiple_fields(self):
+        """
+        Tests that a multiple field unit key is built as a single, compound index
+        """
+
+        # Setup
+        unit_key = ['compound_1', 'compound_2']
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', unit_key, None, [])
+
+        # Test
+        types_db._update_unit_key(type_def)
+
+        # Verify
+        collection_name = types_db.unit_collection_name(type_def.id)
+        collection = pulp_db.get_collection(collection_name)
+
+        index_dict = collection.index_information()
+
+        self.assertEqual(2, len(index_dict)) # default (_id) + unit key
+
         index = index_dict['compound_1_1_compound_2_1']
         self.assertTrue(index['unique'])
 
@@ -460,24 +434,21 @@ class TypesDatabaseTests(testutil.PulpTest):
 
     def test_drop_indexes(self):
         """
-        Tests updating indexes on an existing collection with different
-        indexes correctly changes them.
+        Tests updating indexes on an existing collection with different indexes correctly changes them.
         """
 
         # Setup
-        old_indexes = [
-            ['compound_1', 'compound_2'],
-            'individual_1'
-        ]
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', old_indexes, None, [])
-        types_db._update_unique_indexes(type_def)
+        old_key = ['compound_1', 'compound_2']
+
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', old_key, None, [])
+        types_db._update_unit_key(type_def)
 
         # Test
-        new_indexes = ['new_1']
-        type_def.unique_indexes = new_indexes
+        new_key = ['new_1']
+        type_def.unit_key = new_key
 
         types_db._drop_indexes(type_def)
-        types_db._update_unique_indexes(type_def)
+        types_db._update_unit_key(type_def)
 
         # Verify
         collection_name = types_db.unit_collection_name(type_def.id)
