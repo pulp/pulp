@@ -102,12 +102,15 @@ class HarnessDistributor(Distributor):
         end = datetime.datetime.now()
         ellapsed_in_seconds = (end - start).seconds
 
-        summary  = 'Publish Summary\n'
-        summary += 'Ellapsed time in seconds:  %d\n' % ellapsed_in_seconds
-        summary += 'Number of units published: %d\n' % len(units)
-        summary += 'Files written:             %s\n' % write_files
-        if write_files:
-            summary += 'Publish directory:         %s\n' % publish_dir
-        summary += 'Global publish count:      %d' % all_publish_count
+        summary = 'Publish Successful'
 
-        return PublishReport(summary)
+        details  = 'Publish Summary\n'
+        details += 'Ellapsed time in seconds:  %d\n' % ellapsed_in_seconds
+        details += 'Number of units published: %d\n' % len(units)
+        details += 'Files written:             %s\n' % write_files
+        if write_files:
+            details += 'Publish directory:         %s\n' % publish_dir
+        details += 'Global publish count:      %d' % all_publish_count
+
+        return publish_conduit.build_report(summary, details)
+    

@@ -2,12 +2,12 @@
     {"id" : "harness_type_one",
      "display_name" : "Test Harness Type 1",
      "description" : "Parent to child types: [harness_type_two]",
-     "unique_indexes" : ["name"],
+     "unit_key" : ["name"],
      "search_indexes" : ["field_1"],
-     "child_types" : ["harness_type_two"]},
+     "referenced_types" : ["harness_type_two"]},
     {"id" : "harness_type_two",
      "display_name" : "Test Harness Type 2",
      "description" : "Potentially a child to harness_type_one",
-     "unique_indexes" : ["name", "version"],
+     "unit_key" : ["name", "version"],
      "search_indexes" : ["field_1"]}
    ]}

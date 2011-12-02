@@ -140,9 +140,11 @@ class HarnessImporter(Importer):
         end = datetime.datetime.now()
         ellapsed_in_seconds = (end - start).seconds
 
-        summary  = 'Import Summary\n'
-        summary += 'Ellapsed time in seconds: %d\n' % ellapsed_in_seconds
-        summary += 'Files written:            %s\n' % str(write_files)
-        summary += 'Global sync count:        %d' % all_sync_count
+        summary = 'Synchronization Successful'
 
-        return SyncReport(added_count, removed_count, summary)
+        details  = 'Import Details\n'
+        details += 'Ellapsed time in seconds: %d\n' % ellapsed_in_seconds
+        details += 'Files written:            %s\n' % str(write_files)
+        details += 'Global sync count:        %d' % all_sync_count
+
+        return sync_conduit.build_report(summary, details)
