@@ -160,7 +160,7 @@ class Repositories(JSONController):
 
     @error_handler
     @auth_required(READ)
-    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path', 'notes')
+    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path', 'note')
     def GET(self, spec=None):
         """
         [[wiki]]
@@ -178,17 +178,20 @@ class Repositories(JSONController):
          * arch, str, repository contect architecture
          * groupid, str, repository group id
          * relative_path, str, repository's on disk path
-         * notes, str of dict, repository notes
+         * note, str, repository note in the format key:value
         """
         # Query by notes
-        if "notes" in spec.keys() :
-            notes = eval(spec["notes"])
-            if notes == {}:
-                spec["notes"] = {}
-            else:
-                for key, value in notes.items():
-                    spec["notes."+ key] = value
-                del spec["notes"]
+        if "note" in spec.keys() :
+            try:
+                note = spec["note"].rsplit(':')
+            except:
+                return self.bad_request("Invalid note %s; correct format is key:value", note)
+
+            if len(note) != 2:
+                return self.bad_request("Invalid note %s; correct format is key:value" % note)
+
+            spec["notes."+ note[0]] = note[1]
+            del spec["note"]
 
         repositories = api.repositories(spec, default_fields)
 
@@ -246,7 +249,6 @@ class Repositories(JSONController):
                           groupid=repo_data.get('groupid', None),
                           gpgkeys=repo_data.get('gpgkeys', None),
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
-                          notes=repo_data.get('notes', None),
                           preserve_metadata=repo_data.get('preserve_metadata', False),
                           content_types=repo_data.get('content_types', 'yum'))
 

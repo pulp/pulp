@@ -452,8 +452,6 @@ class Create(AdminRepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
-        self.parser.add_option("--notes", dest="notes",
-                               help=_("additional information about repo in a dictionary form inside a string"))
         self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
                                help=_("Preserves the original metadata; only works with feed repos"))
         self.parser.add_option('--content_type', dest='content_type', default="yum",
@@ -470,14 +468,6 @@ class Create(AdminRepoAction):
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
         relative_path = self.opts.relativepath
-        if self.opts.notes:
-            try:
-                notes = eval(self.opts.notes)
-            except:
-                utils.system_exit(os.EX_USAGE, _("Invalid argument for notes. Notes need to be specified in dictionary form inside a string eg. \"{'key':'value'}\""))
-
-        else:
-            notes = {}
 
         # Feed cert bundle
         feed_cert_data = None
@@ -527,7 +517,7 @@ class Create(AdminRepoAction):
                                           groupid=groupid,
                                           gpgkeys=keylist,
                                           checksum_type=self.opts.checksum_type,
-                                          notes=notes, preserve_metadata=preserve_metadata,
+                                          preserve_metadata=preserve_metadata,
                                           content_types=self.opts.content_type)
         print _("Successfully created repository [ %s ]") % repo['id']
 
