@@ -1823,7 +1823,7 @@ class Export(RepoProgressAction):
     def run(self):
         repoid = self.opts.id
         groupid = self.opts.groupid
-        if groupid and (self.opts.foreground or self.opts.status):
+        if groupid and self.opts.status:
             utils.system_exit(os.EX_OK, _("Use `pulp-admin job info` to check the status of group export jobs"))
         if self.opts.status:
             if not repoid:
