@@ -355,7 +355,7 @@ _pulp_admin()
                     search)
                         COMPREPLY=( $( compgen -W '
                             -a --arch -e --epoch -f --filename -n --name -r
-                            --release -v --version' \
+                            --release -v --version -p --repoid' \
                             -- "$cur" ) )
                     ;;
                     deplist)
@@ -457,7 +457,7 @@ _pulp_admin()
                 case ${COMP_WORDS[2]} in
                     list)
                         COMPREPLY=( $( compgen -W '
-                            --groupid --notes' \
+                            --groupid --note' \
                             -- "$cur" ) )
                     ;;
                     content)
@@ -476,7 +476,7 @@ _pulp_admin()
                             --feed_key
                             --consumer_ca --consumer_cert --consumer_key
                             --relativepath --groupid --gpgkeys
-                            --checksum_type --notes --preserve_metadata
+                            --checksum_type --preserve_metadata
                             --content_type' \
                             -- "$cur" ) )
                     ;;

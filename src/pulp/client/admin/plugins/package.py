@@ -390,8 +390,6 @@ class Search(PackageAction):
                                help=_("package version regex to search for"))
         self.parser.add_option("-p", "--repoid", action="append", dest="repoid", default=[],
                                help=_("repository labels; to specify multiple repositories use multiple -p; if not specified, search will be conducted on all the repositories"))
-        #self.parser.add_option("--repoids", dest="repoids", default=None,
-         #                      help=_("list of repositories to search; if not specified, search will be conducted on all the repositories"))
 
     def run(self):
         arch = self.opts.arch
