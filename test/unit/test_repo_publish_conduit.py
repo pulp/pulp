@@ -38,7 +38,7 @@ import pulp.server.managers.content.query as query_manager
 # constants --------------------------------------------------------------------
 
 TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type-2'])
-TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type-1'])
+TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'key-2b'], [], ['type-1'])
 
 # -- test cases ---------------------------------------------------------------
 
