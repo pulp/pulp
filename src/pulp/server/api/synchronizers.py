@@ -112,7 +112,7 @@ class BaseSynchronizer(object):
         self.stopped = False
         self.callback = None
         self.repo_dir = None
-        self.is_clone = False
+        self.clone = None
 
     def stop(self):
         self.stopped = True
@@ -120,8 +120,9 @@ class BaseSynchronizer(object):
     def set_callback(self, callback):
         self.callback = callback
 
-    def set_clone(self):
-        self.is_clone = True
+    def set_clone(self, id):
+        # parent repo id to be cloned
+        self.clone = id
 
     def progress_callback(self, **kwargs):
         """
@@ -227,11 +228,7 @@ class BaseSynchronizer(object):
                 if not os.path.exists(pkg_path):
                     # skip import; package is missing from the filesystem
                     continue
-                if self.is_clone:
-                    # if clone, just lookup existing package in db to associate
-                    package = self.lookup_package(package)
-                else:
-                    package = self.import_package(package, repo, repo_defined=True)
+                package = self.import_package(package, repo, repo_defined=True)
                 if (package is not None):
                     added_packages[package["id"]] = package
             endTime = time.time()
@@ -262,6 +259,70 @@ class BaseSynchronizer(object):
         if found:
             newpkg = found[0]
         return newpkg
+
+    def clone_packages_from_source(self, repo_id, skip=None):
+        if not self.clone:
+            # parent clone not set, noting to import
+            return {}
+        parent_repo = self.repo_api.repository(self.clone)
+        repo = self.repo_api.repository(repo_id)
+        added_packages = {}
+        if "yum" not in repo['content_types']:
+            return added_packages
+        if not skip:
+            skip = {}
+        if not skip.has_key('packages') or skip['packages'] != 1:
+            parent_pkglist = parent_repo['packages']
+            if not parent_pkglist:
+                return added_packages
+            unfiltered_pkglist = []
+            for packageid in parent_pkglist:
+                pobj = self.package_api.package(packageid)
+                if not pobj:
+                    continue
+                unfiltered_pkglist.append(pobj)
+            # Process repo filters if any
+            whitelist_packages = []
+            blacklist_packages = []
+            if repo['filters']:
+                log.info("Repo filters : %s" % repo['filters'])
+                whitelist_packages = self.repo_api.find_combined_whitelist_packages(repo['filters'])
+                blacklist_packages = self.repo_api.find_combined_blacklist_packages(repo['filters'])
+                log.info("combined whitelist packages = %s" % whitelist_packages)
+                log.info("combined blacklist packages = %s" % blacklist_packages)
+            # apply any filters
+            package_list = []
+            if whitelist_packages:
+                for pkg in unfiltered_pkglist:
+                    for whitelist_package in whitelist_packages:
+                        w = re.compile(whitelist_package)
+                        if w.match(pkg['filename']):
+                            package_list.append(pkg)
+                            break
+            else:
+                package_list = list(unfiltered_pkglist)
+            if blacklist_packages:
+                to_remove = []
+                for pkg in pkglist:
+                    for blacklist_package in blacklist_packages:
+                        b = re.compile(blacklist_package)
+                        if b.match(pkg['filename']):
+                            to_remove.append(pkg)
+                            break
+                for pkg in to_remove:
+                    package_list.remove(pkg)
+            for package in package_list:
+                pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package['name'], package['version'], \
+                                                          package['release'], package['arch'], package['checksum'].values()[0][:3], package['filename'])
+                if not os.path.exists(pkg_path):
+                    # skip import; package is missing from the filesystem
+                    continue
+                if (package is not None):
+                    added_packages[package["id"]] = package
+        else:
+            log.info("Skipping package imports from sync process")
+        self.repo_api.collection.save(repo, safe=True)
+        return added_packages
 
     def add_distribution_from_dir(self, dir, repo_id, skip=None):
         repo = self.repo_api.repository(repo_id)
@@ -822,7 +883,7 @@ class YumSynchronizer(BaseSynchronizer):
             try:
                 rpm_name = os.path.basename(pkg.relativepath)
                 log.debug("Processing rpm: %s" % rpm_name)
-                if self.is_clone:
+                if self.clone:
                     self._create_clone(pkg.relativepath, src_repo_dir, dst_repo_dir)
                 else:
                     self._process_rpm(pkg, src_repo_dir, dst_repo_dir)
@@ -886,7 +947,7 @@ class YumSynchronizer(BaseSynchronizer):
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(dpkglist)))
             try:
-                if self.is_clone:
+                if self.clone:
                     self._create_clone(os.path.basename(pkg), src_drpms_dir, dst_drpms_dir)
                 else:
                     src_drpm_checksum = pulp.server.util.get_file_checksum(filename=pkg)
@@ -943,13 +1004,13 @@ class YumSynchronizer(BaseSynchronizer):
         log.debug("Copying treeinfo file from %s to %s" % (treecfg, dist_tree_path))
         try:
             skip_copy = False
-            if os.path.exists(dist_tree_path) and not self.is_clone:
+            if os.path.exists(dist_tree_path) and not self.clone:
                 dst_treecfg_checksum = pulp.server.util.get_file_checksum(filename=dist_tree_path)
                 src_treecfg_checksum = pulp.server.util.get_file_checksum(filename=treecfg)
                 if src_treecfg_checksum == dst_treecfg_checksum:
                     log.info("treecfg file %s already exists with same checksum. skip import" % dist_tree_path)
                     skip_copy = True
-            if not skip_copy and not self.is_clone:
+            if not skip_copy and not self.clone:
                 if not os.path.isdir(os.path.dirname(dist_tree_path)):
                     os.makedirs(os.path.dirname(dist_tree_path))
                 shutil.copy(treecfg, dist_tree_path)
@@ -970,7 +1031,7 @@ class YumSynchronizer(BaseSynchronizer):
                 skip_copy = False
                 rel_file_path = imfile.split('/images/')[-1]
                 dst_file_path = os.path.join(distro_path, rel_file_path)
-                if self.is_clone:
+                if self.clone:
                     src_repo_img_dir = "%s/%s" % (src_repo_dir, "images")
                     dst_repo_img_dir =  "%s/%s" % (dst_repo_dir, "images")
                     self._create_clone(rel_file_path, src_repo_img_dir, dst_repo_img_dir)
@@ -1200,7 +1261,7 @@ class FileSynchronizer(BaseSynchronizer):
                 if count % 500 == 0:
                     log.info("Working on %s/%s" % (count, len(filelist)))
                 try:
-                    if self.is_clone:
+                    if self.clone:
                         self._create_clone(os.path.basename(pkg), src_repo_dir, dst_repo_dir)
                     else:
                         src_file_checksum = pulp.server.util.get_file_checksum(filename=pkg)

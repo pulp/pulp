@@ -124,4 +124,4 @@ class TestRepoSync(testutil.PulpAsyncTest):
         self.assertEquals(1, len(call_args))
         self.assertTrue(isinstance(call_args[0], YumSynchronizer))
         # validate if the clone is enabled on the synchronizer
-        self.assertEquals(True, call_args[0].is_clone)
+        self.assertEquals(local_repo["id"], call_args[0].clone)
