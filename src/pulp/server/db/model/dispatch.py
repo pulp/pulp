@@ -38,6 +38,8 @@ class ScheduledCall(Model):
     def __init__(self, call_request, schedule, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
 
+        call_request.tags.append(self._id)
+
         self.serialized_call_request = call_request.serialize()
         self.schedule = schedule
         self.last_run = dateutils.to_naive_utc_datetime(last_run)

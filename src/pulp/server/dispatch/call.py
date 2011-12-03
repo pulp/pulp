@@ -122,6 +122,15 @@ class CallRequest(object):
         kwargs = ', '.join(['%s=%s' % (k, v) for k, v in self.callable_kwargs_reprs.items()])
         return 'CallRequest: %s(%s, %s)' % (self.callable_name(), args, kwargs)
 
+    # hooks management ---------------------------------------------------------
+
+    def add_execution_hook(self, key, hook):
+        hook_list = self.execution_hooks.setdefault(key, [])
+        hook_list.append(hook)
+
+    def add_control_hook(self, key, hook):
+        self.control_hooks[key] = hook
+
     # call request serialization/deserialization -------------------------------
 
     pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'execution_hooks', 'control_hooks')

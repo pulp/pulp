@@ -99,12 +99,14 @@ class Scheduler(object):
         now = datetime.datetime.utcnow()
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
-            if scheduled_call['enabled']:
-                serialized_call_request = scheduled_call['serialized_call_request']
-                call_request = call.CallRequest.deserialize(serialized_call_request)
-                self.run_via_legacy_tasking(call_request)
-            # still update the schedule of disabled calls
-            self.update_scheduled_call(scheduled_call)
+            if not scheduled_call['enabled']:
+            # update the next run information for disabled calls
+                self.update_next_run(scheduled_call)
+                continue
+            serialized_call_request = scheduled_call['serialized_call_request']
+            call_request = call.CallRequest.deserialize(serialized_call_request)
+            self.run_via_legacy_tasking(call_request)
+            self.update_last_run(scheduled_call)
 
     def run_via_legacy_tasking(self, call_request):
         """
@@ -124,36 +126,39 @@ class Scheduler(object):
         """
         raise NotImplementedError()
 
-    def update_scheduled_call(self, scheduled_call):
+    # scheduling ---------------------------------------------------------------
+
+    def update_last_run(self, scheduled_call):
         """
-        Update a scheduled call's metadata once it has been run
+        Update the metadata for a schedulded call that has been run
         @param scheduled_call: scheduled call to be updated
         @type  scheduled_call: dict
         """
         schedule_id = scheduled_call['_id']
+        # use scheduled time instead of current to prevent schedule drift
+        last_run = scheduled_call['next_run']
+        scheduled_call['last_run'] = last_run
+        if scheduled_call['runs'] is not None:
+            scheduled_call['runs'] -= 1
+        update = {'$set': {'last_run': last_run}}
+        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
-        # update the next_run
-        next_run = self.next_run(scheduled_call)
+    def update_next_run(self, scheduled_call):
+        """
+        Update the metadata for a scheduled call that will be run again
+        @param scheduled_call: scheduled call to be updated
+        @type  scheduled_call: dict
+        """
+        schedule_id = scheduled_call['_id']
+        next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             # remove the scheduled call if there are no more
             self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
             return
-
-        # update the last_run
-        # use scheduled time instead of current to prevent schedule drift
-        last_run = scheduled_call['next_run']
-        scheduled_call['last_run'] = last_run
-
-        if scheduled_call['runs'] is not None and scheduled_call['enabled']:
-            scheduled_call['runs'] -= 1
-
-        # update the persisted scheduled call
-        update = {'$set': {'last_run': last_run, 'next_run': next_run}}
+        update = {'$set': {'next_run': next_run}}
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
-    # scheduling ---------------------------------------------------------------
-
-    def next_run(self, scheduled_call):
+    def calculate_next_run(self, scheduled_call):
         """
         Calculate the next run datetime of a scheduled call
         @param scheduled_call: scheduled call to schedule
@@ -175,6 +180,17 @@ class Scheduler(object):
             next_run += interval
         return next_run
 
+    def call_finished_callback(self, task):
+        """
+        Call back for task (call_request) results and rescheduling
+        """
+        # NOTE the "call_request" is acually a task, but the scheduler doesn't care
+        i = task.tags.index(SCHEDULED_TAG)
+        schedule_id = task.tags[i + 1]
+        scheduled_call = self.get(schedule_id)
+        self.update_last_run(scheduled_call)
+        self.update_next_run(scheduled_call)
+
     # schedule control ---------------------------------------------------------
 
     def add(self, call_request, schedule, last_run=None):
@@ -190,8 +206,9 @@ class Scheduler(object):
         @rtype:  str or None
         """
         call_request.tags.append(SCHEDULED_TAG)
+        call_request.add_execution_hook('dequeue', self.call_finished_callback)
         scheduled_call = ScheduledCall(call_request, schedule, last_run)
-        next_run = self.next_run(scheduled_call)
+        next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             return None
         self.scheduled_call_collection.insert(scheduled_call, safe=True)
