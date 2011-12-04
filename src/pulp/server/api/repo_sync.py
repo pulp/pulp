@@ -62,36 +62,6 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     @return
     """
     repo = repo_api.repository(id)
-    task = run_async(_clone,
-                    [clone_id],
-                    {'id':id,
-                     'clone_name':clone_name,
-                     'feed':feed,
-                     'relative_path':relative_path,
-                     'groupid':groupid,
-                     'filters':filters},
-                     timeout=timeout,
-                     task_type=RepoCloneTask)
-    if not task:
-        log.error("Unable to create repo._clone task for [%s]" % (id))
-        return task
-    if feed in ('feedless', 'parent'):
-        task.set_progress('progress_callback', local_progress_callback)
-    else:
-        task.set_progress('progress_callback', yum_rhn_progress_callback)
-    content_type = repo['content_types']
-    synchronizer = get_synchronizer(content_type)
-    # enable synchronizer as a clone process
-    synchronizer.set_clone(id)
-    task.set_synchronizer(synchronizer)
-    if content_type == 'yum':
-        task.weight = config.config.getint('yum', 'task_weight')
-    return task
-
-
-def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=None,
-            filters=(), progress_callback=None, synchronizer=None):
-    repo = repo_api.repository(id)
     if repo is None:
         raise PulpException("A Repo with id %s does not exist" % id)
     cloned_repo = repo_api.repository(clone_id)
@@ -130,6 +100,38 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
     # Associate filters if specified
     if len(filters) > 0:
         repo_api.add_filters(clone_id, filter_ids=filters)
+
+
+    task = run_async(_clone,
+                    [clone_id],
+                    {'id':id,
+                     'clone_name':clone_name,
+                     'feed':feed,
+                     'relative_path':relative_path,
+                     'groupid':groupid,
+                     'filters':filters},
+                     timeout=timeout,
+                     task_type=RepoCloneTask)
+    if not task:
+        log.error("Unable to create repo._clone task for [%s]" % (id))
+        return task
+    if feed in ('feedless', 'parent'):
+        task.set_progress('progress_callback', local_progress_callback)
+    else:
+        task.set_progress('progress_callback', yum_rhn_progress_callback)
+    content_type = repo['content_types']
+    synchronizer = get_synchronizer(content_type)
+    # enable synchronizer as a clone process
+    synchronizer.set_clone(id)
+    task.set_synchronizer(synchronizer)
+    if content_type == 'yum':
+        task.weight = config.config.getint('yum', 'task_weight')
+    return task
+
+
+def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=None,
+            filters=(), progress_callback=None, synchronizer=None):
+    repo = repo_api.repository(id)
 
     # Sync from parent repo
     try:
