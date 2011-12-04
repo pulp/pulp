@@ -4,52 +4,24 @@ policy_module(pulp-server,0.0.0)
 
 require {
     type httpd_t;
-    type httpd_log_t;
-    type httpd_sys_script_t;
     type httpd_tmp_t;
     type httpd_tmpfs_t;
-    type initrc_t;
-    type restorecon_t;
 }
 
-type pulp_exec_t;
-files_type(pulp_exec_t)
+########################################
+#
+# Declarations
+#
 
-type pulp_initrc_exec_t;
-files_type(pulp_initrc_exec_t)
-
-type pulp_certs_t;
-files_type(pulp_certs_t)
-
-type pulp_config_t;
-files_config_file(pulp_config_t)
-
-type pulp_content_t;
-files_type(pulp_content_t)
+apache_content_template(pulp)
 
 type pulp_log_t;
 logging_log_file(pulp_log_t)
 
-type pulp_tmp_t;
-files_tmp_file(pulp_tmp_t)
-
-domain_entry_file(initrc_t, pulp_initrc_exec_t)
-domain_auto_trans(httpd_t, pulp_initrc_exec_t, initrc_t)
-allow restorecon_t pulp_initrc_exec_t:file { relabelto getattr };
-
-manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t);
-manage_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t);
-manage_lnk_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t);
-
-# SELinux is preventing /usr/sbin/httpd from open access on the file /shared/repo/pulp/srv/pulp/webservices.wsgi
-read_files_pattern(httpd_t, pulp_exec_t, pulp_exec_t)
-
-# SELinux is preventing /usr/sbin/httpd from search access on the directory /etc/pulp
-read_files_pattern(httpd_t, pulp_config_t, pulp_config_t)
-
-# SELinux is preventing /usr/sbin/httpd from read access on the lnk_file /etc/pulp/pulp.conf
-read_lnk_files_pattern(httpd_t, pulp_config_t, pulp_config_t)
-
+########################################
+#
+# Pulp local policy
+#
 # SELinux is preventing /usr/sbin/httpd from write access on the file /var/log/pulp/events.log
 # SELinux is preventing /usr/sbin/httpd from unlink access on the file /var/log/pulp/grinder.log.3
 manage_files_pattern(httpd_t, pulp_log_t, pulp_log_t)
@@ -61,18 +33,4 @@ manage_dirs_pattern(httpd_t, pulp_log_t, pulp_log_t)
 # SELinux is preventing /usr/sbin/httpd from execute access on the file /tmp/ffiwWcJ6i (deleted)
 allow httpd_t httpd_tmp_t:file execute;
 allow httpd_t httpd_tmpfs_t:file execute;
-
-# SELinux is preventing /usr/sbin/httpd from search access on the directory /var/lib/pulp
-rw_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
-manage_dirs_pattern(httpd_t, pulp_content_t, pulp_content_t)
-
-# SELinux is preventing /usr/sbin/httpd from getattr access on the lnk_file /var/lib/pulp/published/repos/repos/pulp/pulp/fedora-15/i386
-# SELinux is preventing /usr/sbin/httpd from unlink access on the file /var/lib/pulp/packages/python-webpy/0.32/8.fc15/noarch/a66/python-webpy-0.32-8.fc15.noarch.rpm
-manage_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
-manage_lnk_files_pattern(httpd_t, pulp_content_t, pulp_content_t)
-
-# SELinux is preventing /usr/sbin/httpd from write access on the directory content
-# OSError: [Errno 13] Permission denied: '/etc/pki/content/pulp_f15_i386'
-manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
-manage_lnk_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
 
