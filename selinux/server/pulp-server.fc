@@ -1,16 +1,12 @@
-/etc/init.d/pulp-server  gen_context(system_u:object_r:pulp_initrc_exec_t,s0)
-/etc/pki/pulp(/.*)? gen_context(system_u:object_r:pulp_certs_t,s0)
-/etc/pki/content(/.*)? gen_context(system_u:object_r:pulp_certs_t,s0)
-/etc/pulp(/.*)? gen_context(system_u:object_r:pulp_config_t,s0)
+/etc/pki/pulp(/.*)? gen_context(system_u:object_r:httpd_pulp_content_rw_t,s0)
+/etc/pki/content(/.*)? gen_context(system_u:object_r:httpd_pulp_content_rw_t,s0)
+/etc/pulp(/.*)? gen_context(system_u:object_r:httpd_pulp_content_t,s0)
 
-/srv/pulp/cds.wsgi gen_context(system_u:object_r:pulp_exec_t,s0)
-/srv/pulp/repo_auth.wsgi gen_context(system_u:object_r:pulp_exec_t,s0)
-/srv/pulp/webservices.wsgi gen_context(system_u:object_r:pulp_exec_t,s0)
+/srv/pulp/cds.wsgi gen_context(system_u:object_r:httpd_pulp_script_exec_t,s0)
+/srv/pulp/repo_auth.wsgi gen_context(system_u:object_r:httpd_pulp_script_exec_t,s0)
+/srv/pulp/webservices.wsgi gen_context(system_u:object_r:httpd_pulp_script_exec_t,s0)
 
-/usr/bin/pulp-migrate   gen_context(system_u:object_r:pulp_exec_t,s0)
-
-/var/lib/pulp(/.*)? gen_context(system_u:object_r:pulp_content_t,s0)
+/var/lib/pulp(/.*)? gen_context(system_u:object_r:httpd_pulp_content_rw_t,s0)
 /var/log/pulp(/.*)? gen_context(system_u:object_r:pulp_log_t,s0)
+
 /tmp/grinder(/.*)? gen_context(system_u:object_r:httpd_tmp_t,s0)
-
-
