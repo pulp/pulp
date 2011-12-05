@@ -112,7 +112,8 @@ class BaseSynchronizer(object):
         self.stopped = False
         self.callback = None
         self.repo_dir = None
-        self.clone = None
+        self.is_clone = False
+        self.parent = None
 
     def stop(self):
         self.stopped = True
@@ -122,7 +123,8 @@ class BaseSynchronizer(object):
 
     def set_clone(self, id):
         # parent repo id to be cloned
-        self.clone = id
+        self.is_clone = True
+        self.parent = id
 
     def progress_callback(self, **kwargs):
         """
@@ -261,10 +263,10 @@ class BaseSynchronizer(object):
         return newpkg
 
     def clone_packages_from_source(self, repo_id, skip=None):
-        if not self.clone:
+        if not self.is_clone:
             # parent clone not set, noting to import
             return {}
-        parent_repo = self.repo_api.repository(self.clone)
+        parent_repo = self.repo_api.repository(self.parent)
         repo = self.repo_api.repository(repo_id)
         added_packages = {}
         if "yum" not in repo['content_types']:
@@ -888,7 +890,7 @@ class YumSynchronizer(BaseSynchronizer):
             try:
                 rpm_name = os.path.basename(pkg.relativepath)
                 log.debug("Processing rpm: %s" % rpm_name)
-                if self.clone:
+                if self.is_clone:
                     self._create_clone(pkg.relativepath, src_repo_dir, dst_repo_dir)
                 else:
                     self._process_rpm(pkg, src_repo_dir, dst_repo_dir)
@@ -952,7 +954,7 @@ class YumSynchronizer(BaseSynchronizer):
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(dpkglist)))
             try:
-                if self.clone:
+                if self.is_clone:
                     self._create_clone(os.path.basename(pkg), src_drpms_dir, dst_drpms_dir)
                 else:
                     src_drpm_checksum = pulp.server.util.get_file_checksum(filename=pkg)
@@ -1009,13 +1011,13 @@ class YumSynchronizer(BaseSynchronizer):
         log.debug("Copying treeinfo file from %s to %s" % (treecfg, dist_tree_path))
         try:
             skip_copy = False
-            if os.path.exists(dist_tree_path) and not self.clone:
+            if os.path.exists(dist_tree_path) and not self.is_clone:
                 dst_treecfg_checksum = pulp.server.util.get_file_checksum(filename=dist_tree_path)
                 src_treecfg_checksum = pulp.server.util.get_file_checksum(filename=treecfg)
                 if src_treecfg_checksum == dst_treecfg_checksum:
                     log.info("treecfg file %s already exists with same checksum. skip import" % dist_tree_path)
                     skip_copy = True
-            if not skip_copy and not self.clone:
+            if not skip_copy and not self.is_clone:
                 if not os.path.isdir(os.path.dirname(dist_tree_path)):
                     os.makedirs(os.path.dirname(dist_tree_path))
                 shutil.copy(treecfg, dist_tree_path)
@@ -1036,7 +1038,7 @@ class YumSynchronizer(BaseSynchronizer):
                 skip_copy = False
                 rel_file_path = imfile.split('/images/')[-1]
                 dst_file_path = os.path.join(distro_path, rel_file_path)
-                if self.clone:
+                if self.is_clone:
                     src_repo_img_dir = "%s/%s" % (src_repo_dir, "images")
                     dst_repo_img_dir =  "%s/%s" % (dst_repo_dir, "images")
                     self._create_clone(rel_file_path, src_repo_img_dir, dst_repo_img_dir)
@@ -1266,7 +1268,7 @@ class FileSynchronizer(BaseSynchronizer):
                 if count % 500 == 0:
                     log.info("Working on %s/%s" % (count, len(filelist)))
                 try:
-                    if self.clone:
+                    if self.is_clone:
                         self._create_clone(os.path.basename(pkg), src_repo_dir, dst_repo_dir)
                     else:
                         src_file_checksum = pulp.server.util.get_file_checksum(filename=pkg)
