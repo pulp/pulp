@@ -260,14 +260,14 @@ class Harness:
         self.prompt.write('  Started:            %s' % item['started'])
         self.prompt.write('  Completed:          %s' % item['completed'])
         self.prompt.write('  Added Unit Count:   %s' % item['added_count'])
+        self.prompt.write('  Updated Unit Count: %s' % item['updated_count'])
         self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
         self.prompt.write('  Report Summary:     %s' % item['summary'])
         self.prompt.write('  Report Details:')
         self.prompt.write('---')
         self.prompt.write(self.prompt.color(item['details'], PLUGIN_LOG_COLOR))
         self.prompt.write('---')
-
-
+    
         return status
 
     def load_publish_history(self):
