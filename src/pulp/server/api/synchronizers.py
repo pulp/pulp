@@ -305,7 +305,7 @@ class BaseSynchronizer(object):
                 package_list = list(unfiltered_pkglist)
             if blacklist_packages:
                 to_remove = []
-                for pkg in pkglist:
+                for pkg in package_list:
                     for blacklist_package in blacklist_packages:
                         b = re.compile(blacklist_package)
                         if b.match(pkg['filename']):
