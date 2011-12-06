@@ -501,7 +501,10 @@ class Create(AdminRepoAction):
             cons_cert_tmp = utils.readFile(cert)
         if key:
             cons_key_tmp = utils.readFile(key)
-        consumer_cert_data = {"ca": cons_cacert_tmp,
+        if cons_cacert_tmp is not None or \
+           cons_cert_tmp is not None or \
+           cons_key_tmp is not None:
+            consumer_cert_data = {"ca": cons_cacert_tmp,
                                   "cert": cons_cert_tmp,
                                   "key": cons_key_tmp}
         groupid = self.opts.groupid
