@@ -1104,16 +1104,64 @@ class RepoApi(BaseApi):
         self._update_errata_packages(repoid, [erratumid], action='add')
         updateinfo.generate_updateinfo(repo)
 
+    def _find_filtered_erratum_packages(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+        pkglist = []
+
+        if whitelist_packages:
+            for pkg in unfiltered_pkglist:
+                for whitelist_package in whitelist_packages:
+                    w = re.compile(whitelist_package)
+                    if w.match(pkg["filename"]):
+                        pkglist.append(pkg)
+                        break
+        else:
+            pkglist = unfiltered_pkglist
+
+        if blacklist_packages:
+            for pkg in pkglist:
+                for blacklist_package in blacklist_packages:
+                    b = re.compile(blacklist_package)
+                    if b.match(pkg["filename"]):
+                        pkglist.remove(pkg)
+                        break
+
+        return pkglist
+
+
     def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
+         Returns a list of errataids which are skipped because of repository filters
         """
         repo = self._get_existing_repo(repoid)
-        for erratumid in errataids:
-            self._add_erratum(repo, erratumid)
+        filtered_errata = []
+        # Process repo filters if any
+        if repo['filters']:
+            log.info("Repo filters : %s" % repo['filters'])
+            whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
+            blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
+            log.info("combined whitelist packages = %s" % whitelist_packages)
+            log.info("combined blacklist packages = %s" % blacklist_packages)
+
+            for erratumid in errataids:
+                erratum = self.errataapi.erratum(erratumid)
+                original_pkg_objects = [p for pkg in erratum['pkglist'] for p in pkg['packages']]
+                original_pkg_count = len(original_pkg_objects)
+                pkg_objects = self._find_filtered_erratum_packages(original_pkg_objects, whitelist_packages, blacklist_packages)
+                if len(pkg_objects) != original_pkg_count:
+                    errataids.remove(erratumid)
+                    filtered_errata.append(erratumid)
+                    log.info("Filtered errata : %s" % erratumid)
+                else:
+                    self._add_erratum(repo, erratumid)
+        else:
+            for erratumid in errataids:
+                self._add_erratum(repo, erratumid)
+
         self.collection.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
+        return filtered_errata
 
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
@@ -1974,7 +2022,7 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'filter_ids'])
     def add_filters(self, id, filter_ids):
         repo = self._get_existing_repo(id)
-        if not repo['source'] or repo['source']['type'] != 'local':
+        if repo['source'] and repo['source']['type'] != 'local':
             raise PulpException("Filters can be added to repos with 'local' feed only")
         for filter_id in filter_ids:
             filter = self.filterapi.filter(filter_id)

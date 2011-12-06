@@ -1361,8 +1361,12 @@ class RepositoryActions(JSONController):
          * errataid, str, errata id
         """
         data = self.params()
-        api.add_errata(id, data['errataid'])
-        return self.ok(True)
+        for erratumid in data['errataid']:
+            erratum = errataapi.erratum(erratumid)
+            if erratum is None:
+                return self.not_found("No Erratum with id: %s found" % erratumid)
+        filtered_errata = api.add_errata(id, data['errataid'])
+        return self.ok(filtered_errata)
 
     def delete_errata(self, id):
         """
