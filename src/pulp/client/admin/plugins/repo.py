@@ -1435,11 +1435,15 @@ class AddErrata(AdminRepoAction):
         else:
             pids = [pkg['id'] for pkg in pkgs.values()]
         try:
-            self.repository_api.add_errata(id, errataids)
+            filtered_errata = self.repository_api.add_errata(id, errataids)
             if pids:
                 # add dependencies to repo
                 self.repository_api.add_package(id, pids)
-            print _("Successfully associated Errata %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
+            if len(filtered_errata) > 0:
+                print _("Successfully associated Errata to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % id)
+                print _("Following errata could not be added due to filters associated with the repository:\n %s" % filtered_errata)
+            else:
+                print _("Successfully associated Errata %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
         except Exception:
             utils.system_exit(os.EX_DATAERR, _("Unable to associate errata [%s] to repo [%s]" % (errataids, id)))
 
