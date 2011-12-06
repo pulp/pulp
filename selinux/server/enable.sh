@@ -17,7 +17,4 @@ if /usr/sbin/selinuxenabled ; then
     done
 fi
 
-#bz 736788, allows repo sync through a proxy to work
-/usr/sbin/setsebool -P httpd_can_network_connect
-/usr/sbin/setsebool -P httpd_tmp_exec
 

@@ -1,36 +1,23 @@
 # When built from RPM, the below version of "0.0.0" will be 
 # replaced with the version in the spec file
 policy_module(pulp-server,0.0.0)
-
 require {
     type httpd_t;
-    type httpd_tmp_t;
-    type httpd_tmpfs_t;
 }
 
 ########################################
 #
 # Declarations
 #
-
 apache_content_template(pulp)
 
 type pulp_log_t;
 logging_log_file(pulp_log_t)
-
-########################################
-#
-# Pulp local policy
-#
-# SELinux is preventing /usr/sbin/httpd from write access on the file /var/log/pulp/events.log
-# SELinux is preventing /usr/sbin/httpd from unlink access on the file /var/log/pulp/grinder.log.3
 manage_files_pattern(httpd_t, pulp_log_t, pulp_log_t)
-
-# SELinux is preventing /usr/sbin/httpd from write access on the directory /var/log/pulp
 manage_dirs_pattern(httpd_t, pulp_log_t, pulp_log_t)
 
-# TODO:  Look for a more restricted way to get around this problem of:
-# SELinux is preventing /usr/sbin/httpd from execute access on the file /tmp/ffiwWcJ6i (deleted)
-allow httpd_t httpd_tmp_t:file execute;
-allow httpd_t httpd_tmpfs_t:file execute;
+#libsepol.expand_terule_helper: conflicting TE rule for (httpd_t, var_log_t:file):  old was httpd_log_t, new is pulp_log_t
+#libsepol.expand_module: Error during expand
+#logging_log_filetrans(httpd_t, pulp_log_t, { file dir })
+
 

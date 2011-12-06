@@ -23,3 +23,12 @@ install -p -m 644 ${NAME}.if ${INSTALL_DIR}/selinux/devel/include/${MODULE_TYPE}
 
 # Hardlink identical policy module packages together
 /usr/sbin/hardlink -cv ${INSTALL_DIR}/selinux
+
+#bz 736788, allows repo sync through a proxy to work
+/usr/sbin/setsebool -P httpd_can_network_connect 1
+
+# Pulp is indirectly creating a script in /tmp and asking Apache to execute it 
+# possibly from mod_wsgi?
+# TODO: This is an area to investigate further.
+# Ideal is to remove the ability for Apache to execute temporary files
+/usr/sbin/setsebool -P httpd_tmp_exec 1
