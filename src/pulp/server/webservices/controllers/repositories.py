@@ -455,7 +455,8 @@ class SchedulesResource(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found
-        return: Schedule object
+        return:
+         * Schedule object
          * type, str, type of schedule
          * schedule, str, schedule in iso8601 format
          * options, obj, options for the scheduled action
@@ -718,7 +719,7 @@ class RepositoryDeferredFields(JSONController):
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
         return field(id)
-     
+
 
 class RepositoryStatusesCollection(JSONController):
     @error_handler
