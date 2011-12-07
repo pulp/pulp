@@ -7,8 +7,7 @@ INSTALL_DIR="/usr/share"
 
 for selinuxvariant in ${SELINUX_VARIANTS}
 do
-    #/usr/sbin/semodule -s ${selinuxvariant} -r ${NAME} &> /dev/null || :
-    /usr/sbin/semodule -s ${selinuxvariant} -r ${NAME}
+    /usr/sbin/semodule -s ${selinuxvariant} -r ${NAME} &> /dev/null || :
     rm -f ${INSTALL_DIR}/${selinuxvariant}/${NAME}.pp
 done
 
