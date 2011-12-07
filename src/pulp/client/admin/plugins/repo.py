@@ -754,9 +754,9 @@ class Sync(RepoProgressAction):
         self.parser.add_option('--interval', dest='interval', default=None,
                                help=_('length of time between each run in iso8601 duration format'))
         self.parser.add_option('--runs', dest='runs', default=None,
-                               help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+                               help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option('--start', dest='start', default=None,
-                               help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+                               help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
         self.parser.add_option('--exclude', dest='exclude', action='append', default=[],
                                help=_('elements to exclude: packages, errata and/or distribution'))
         self.parser.add_option("--timeout", dest="timeout", default=None,
