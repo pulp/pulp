@@ -301,7 +301,8 @@ def get_repo_packages(path):
     try:
         packages = []
         r = _get_yum_repomd(path, temp_path=temp_path)
-        if not r:
+        if not os.path.exists(os.path.join(path, r.repoMDFile)):
+            # check if repomd.xml exists before loading package sack
             return []
         sack = r.getPackageSack()
         sack.populate(r, 'metadata', None, 0)
