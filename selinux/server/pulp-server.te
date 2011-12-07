@@ -5,23 +5,7 @@ require {
     type httpd_t;
 }
 
-apache_content_template(pulp)
-
 type pulp_certs_t;
 miscfiles_cert_type(pulp_certs_t)
 manage_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
 manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
-manage_lnk_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
-
-
-type pulp_log_t;
-logging_log_file(pulp_log_t)
-manage_files_pattern(httpd_t, pulp_log_t, pulp_log_t)
-manage_dirs_pattern(httpd_t, pulp_log_t, pulp_log_t)
-
-#logging_log_filetrans(httpd_t, pulp_log_t, { file dir })
-# above resulted in this error:
-# libsepol.expand_terule_helper: conflicting TE rule for (httpd_t, var_log_t:file):  old was httpd_log_t, new is pulp_log_t
-# libsepol.expand_module: Error during expand
-
-
