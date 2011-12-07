@@ -866,8 +866,8 @@ class RepoApi(BaseApi):
     def add_package(self, repoid, packageids=[]):
         """
         Adds the passed in package to this repo
-        @return:    [] on success
-                    [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error,
+        @return:    [], filtered_count on success
+                    [(package_id,(name,epoch,version,release,arch),filename,checksum)], filtered_count on error,
                     where each id represents a package id that couldn't be added
         """
         filtered_count = 0
@@ -1002,7 +1002,7 @@ class RepoApi(BaseApi):
                     log.error("Link %s already exists" % pkg_repo_path)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
-        log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
+        log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
         return errors, filtered_count
 
     def _add_package(self, repo, p):
