@@ -5,7 +5,8 @@ require {
     type httpd_t;
 }
 
-type pulp_certs_t;
-miscfiles_cert_type(pulp_certs_t)
-manage_files_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
-manage_dirs_pattern(httpd_t, pulp_certs_t, pulp_certs_t)
+type pulp_cert_t;
+miscfiles_cert_type(pulp_cert_t)
+manage_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
+manage_dirs_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
+read_lnk_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
