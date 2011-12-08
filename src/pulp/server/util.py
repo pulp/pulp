@@ -441,11 +441,18 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
             log.info("Checking what metadata types are available: %s" % \
                     (get_repomd_filetypes(repodata_file)))
             if "group" in get_repomd_filetypes(repodata_file):
-                comps_file = get_repomd_filetype_path(
+                comps_ftype = get_repomd_filetype_path(
                     repodata_file, "group")
-                comps_file = os.path.join(dir, comps_file)
-                if comps_file and os.path.isfile(comps_file):
-                    cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, comps_file, dir)
+                filetype_path = os.path.join(dir,comps_ftype)
+                # createrepo uses filename as mdtype, rename to type.<ext>
+                # to avoid filename too long errors
+                renamed_filetype_path = os.path.join(os.path.dirname(comps_ftype),
+                                         "comps" + '.' + '.'.join(os.path.basename(comps_ftype).split('.')[1:]))
+                renamed_comps_file = os.path.join(dir, renamed_filetype_path)
+                os.rename(filetype_path, renamed_comps_file)
+                if renamed_comps_file and os.path.isfile(renamed_comps_file):
+                    cmd = "createrepo --database --checksum %s -g %s --update %s " % \
+                          (checksum_type, renamed_comps_file, dir)
     #shlex doesn't like unicode strings
     cmd = shlex.split(cmd.encode('ascii', 'ignore'))
     log.info("started repo metadata update: %s" % (cmd))
