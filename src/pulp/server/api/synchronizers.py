@@ -669,6 +669,11 @@ class YumSynchronizer(BaseSynchronizer):
         self.yum_repo_grinder = None
         self.yum_repo_grinder_lock = Lock()
 
+    def __getstate__(self):
+	state = self.__dict__.copy()
+	state.pop('yum_repo_grinder_lock', None)
+	return state
+
     def remote(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
