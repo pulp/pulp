@@ -292,7 +292,10 @@ class Repo(Model):
         self.checksum_type = u"sha256"
         self.filters = []
         self.sync_in_progress = False
-        self.notes = notes or {}
+        if notes:
+            self.notes = notes
+        else:
+            self.notes = {}
         self.preserve_metadata = False
         self.content_types = content_types
 
