@@ -80,6 +80,7 @@ class Tasks(JSONController):
         failure response: None
         return: list of task objects
         filters:
+         * id, str, task id
          * state, str, tasking system task state: waiting, running, complete, incomplete, all
         """
         def _serialize(t):
@@ -87,9 +88,10 @@ class Tasks(JSONController):
             d['snapshot_id'] = t.snapshot_id
             return d
 
-        valid_filters = ('state',)
+        valid_filters = ('id', 'state',)
         valid_states = ('waiting', 'running', 'complete', 'incomplete', 'all')
         filters = self.filters(valid_filters)
+        ids = filters.pop('id', [])
         states = [s.lower() for s in filters.pop('state', [])]
         for s in states:
             if s in valid_states:
@@ -106,6 +108,8 @@ class Tasks(JSONController):
             tasks.update(async.complete_async())
         if 'incomplete' in states:
             tasks.update(async.incomplete_async())
+        if ids:
+            tasks = [t for t in tasks if i.id in ids]
         return self.ok([_serialize(t) for t in tasks])
 
 # task controller --------------------------------------------------------------
