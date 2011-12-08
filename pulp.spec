@@ -471,6 +471,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Dec 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-3
+- Bump release for build. (jortel@redhat.com)
+- Removing instantiation of repoapi from RepoCloneTask which can cause pickling
+  of threading lock issue (skarmark@redhat.com)
+
 * Thu Dec 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-2
 - Bump release for build. (jortel@redhat.com)
 - 760958 - Fixing DB validation error (skarmark@redhat.com)
