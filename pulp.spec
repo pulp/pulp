@@ -351,14 +351,18 @@ fi
 # Clean up after package removal
 if [ $1 -eq 0 ]; then
 %{_datadir}/pulp/selinux/server/uninstall.sh
+%{_datadir}/pulp/selinux/server/relabel.sh
 fi
 exit 0
 %endif
+
+
 
 %postun consumer
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
+
 
 %postun cds
 # Clean up after package removal
