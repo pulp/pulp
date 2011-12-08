@@ -31,13 +31,13 @@ echo "Assuming Pulp git checkout is at ${PULP_SRC_DIR}"
 adjust_context "httpd_config_t" "${PULP_SRC_DIR}/etc/httpd(/.*)?"
 /sbin/restorecon -R ${PULP_SRC_DIR}/etc/httpd
 
-adjust_context "pulp_certs_t" "${PULP_SRC_DIR}/etc/pki/pulp(/.*)?"
+adjust_context "pulp_cert_t" "${PULP_SRC_DIR}/etc/pki/pulp(/.*)?"
 /sbin/restorecon -R ${PULP_SRC_DIR}/etc/pki/pulp
 
-adjust_context "httpd_pulp_content_t" "${PULP_SRC_DIR}/etc/pulp(/.*)?"
+adjust_context "httpd_sys_content_t" "${PULP_SRC_DIR}/etc/pulp(/.*)?"
 /sbin/restorecon -R ${PULP_SRC_DIR}/etc/pulp
 
-adjust_context "httpd_pulp_script_exec_t" "${PULP_SRC_DIR}/srv/pulp(/.*)?"
+adjust_context "httpd_sys_content_t" "${PULP_SRC_DIR}/srv/pulp(/.*)?"
 /sbin/restorecon -R ${PULP_SRC_DIR}/srv/pulp
 
 adjust_context "lib_t" "${PULP_SRC_DIR}/src(/.*)?"
