@@ -32,7 +32,6 @@ class RepoCloneTask(Task):
     """
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
         super(RepoCloneTask, self).__init__(callable, args, kwargs, timeout=timeout)
-        self.rapi = RepoApi()
         self.clone_id = None
         if len(args) > 0:
             # Assuming that args first parameter is always the clone_id
@@ -56,8 +55,8 @@ class RepoCloneTask(Task):
         # Related to bz700508 - fast sync/cancel_sync locks up task subsystem
         # Removed injecting a CancelException into thread
         # Allow thread to stop on it's own when it reaches a safe stopping point
-        if self.rapi.repository(self.clone_id) is not None: 
-            self.rapi.delete(self.clone_id)
+        if RepoApi().repository(self.clone_id) is not None:
+            RepoApi().delete(self.clone_id)
 
     def snapshot(self):
         # self grooming
