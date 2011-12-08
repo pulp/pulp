@@ -471,6 +471,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Dec 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-2
+- Bump release for build. (jortel@redhat.com)
+- 760958 - Fixing DB validation error (skarmark@redhat.com)
+- 760766 - Updated content upload cli to parse new return format for
+  repo.add_packages() with filters correctly (skarmark@redhat.com)
+
 * Fri Dec 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-1
 - fixing the clone to accoutn for el5 type metadata paths causing missing
   imports (pkilambi@redhat.com)
