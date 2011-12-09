@@ -45,7 +45,7 @@ class TasksCollectionTest(testutil.PulpWebserviceTest):
             if datetime.datetime.now() - start >= timeout:
                 raise RuntimeError('Task wait timed out after %d seconds with state: %s' %
                                    (timeout.seconds, task.state))
-            if task.state = task_error:
+            if task.state == task_error:
                 pprint.pprint(task.traceback)
 
     def test_get(self):
