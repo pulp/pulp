@@ -47,6 +47,7 @@ import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import Unit, SyncReport
 from pulp.server.managers.content._exceptions import ContentUnitNotFound
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
 # -- constants ---------------------------------------------------------------
 
@@ -78,6 +79,7 @@ class RepoSyncConduit:
 
     def __init__(self,
                  repo_id,
+                 importer_id,
                  repo_cud_manager,
                  repo_importer_manager,
                  repo_sync_manager,
@@ -88,6 +90,9 @@ class RepoSyncConduit:
         """
         @param repo_id: identifies the repo being synchronized
         @type  repo_id: str
+
+        @param importer_id: identifies the importer performing the sync
+        @type  importer_id: str
 
         @param repo_cud_manager: server manager instance for manipulating repos
         @type  repo_cud_manager: L{RepoManager}
@@ -115,6 +120,7 @@ class RepoSyncConduit:
         @type  progress_callback: TBD
         """
         self.repo_id = repo_id
+        self.importer_id = importer_id
 
         self.__repo_manager = repo_cud_manager
         self.__importer_manager = repo_importer_manager
@@ -283,7 +289,7 @@ class RepoSyncConduit:
                 self._added_count += 1
 
             # Associate it with the repo
-            self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id)
+            self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.importer_id)
 
             return unit
         except Exception, e:
@@ -314,7 +320,7 @@ class RepoSyncConduit:
         """
 
         try:
-            self.__association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id)
+            self.__association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.importer_id)
             self._removed_count += 1
         except Exception, e:
             _LOG.exception(_('Content unit unassociation failed'))

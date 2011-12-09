@@ -72,7 +72,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         for i in range(0, 100):
             unit_id = 'unit_%d' % i
             self.content_manager.add_content_unit(TYPE_1_DEF.id, unit_id, {'key-1' : 'value_%d' % i})
-            self.association_manager.associate_unit_by_id('repo-1', TYPE_1_DEF.id, unit_id)
+            self.association_manager.associate_unit_by_id('repo-1', TYPE_1_DEF.id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'test-importer')
 
     def test_str(self):
         """
@@ -101,7 +101,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Setup
         for i in range(0, 100):
-            self.association_manager.unassociate_unit_by_id('repo-1', TYPE_1_DEF.id, 'unit_%d' % i)
+            self.association_manager.unassociate_unit_by_id('repo-1', TYPE_1_DEF.id, 'unit_%d' % i, association_manager.OWNER_TYPE_IMPORTER, 'test-importer')
 
         # Test
         units = self.conduit.get_units()
