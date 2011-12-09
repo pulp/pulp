@@ -229,7 +229,6 @@ class Repositories(JSONController):
          * groupid?, list of str, list of repository group ids this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
-         * notes?, dict, additional information in the form of key-value pairs
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
         """
@@ -249,6 +248,7 @@ class Repositories(JSONController):
                           groupid=repo_data.get('groupid', None),
                           gpgkeys=repo_data.get('gpgkeys', None),
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
+                          notes=repo_data.get('notes', None),
                           preserve_metadata=repo_data.get('preserve_metadata', False),
                           content_types=repo_data.get('content_types', 'yum'))
 

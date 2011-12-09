@@ -161,19 +161,24 @@ class Upload(ContentAction):
                 continue
 
             if len(pids):
-                errors = self.repository_api.add_package(rid, pids.values())
+                errors, filtered_count = self.repository_api.add_package(rid, pids.values())
                 for e in errors:
                     error_message = e[4]
                     if error_message:
                         exit_code = os.EX_DATAERR
                         print "%s" % (error_message)
-                task = self.repository_api.generate_metadata(rid)
-                print _("\n* Metadata generation has been scheduled for repository [%s] with a task id [%s]; use `pulp-admin repo generate_metadata --status` to check the status." % (rid, task['id']))
+                print _("Packages skipped because of filters associated with the repository %s : %s" % (rid, filtered_count))
+                if filtered_count < len(pids):
+                    task = self.repository_api.generate_metadata(rid)
+                    print _("\n* Metadata generation has been scheduled for repository [%s] with a task id [%s]; use `pulp-admin repo generate_metadata --status` to check the status." % (rid, task['id']))
 
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
-            msg = _('Content association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
-                    (rid, '\n'.join(pids.keys()) or None, '\n'.join(fids.keys()) or None))
+            if filtered_count == 0:
+                msg = _('\nContent association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
+                        (rid, '\n'.join(pids.keys()) or None, '\n'.join(fids.keys()) or None))
+            else:
+                msg = _('Content association Complete for Repo [%s]' % rid)
             log.info(msg)
             if self.opts.verbose:
                 print msg

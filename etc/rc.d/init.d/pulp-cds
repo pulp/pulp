@@ -14,18 +14,20 @@ export SYSTEMCTL_SKIP_REDIRECT=1
 export SYSTEMCTL_IGNORE_DEPENDENCIES=1
 
 . /etc/rc.d/init.d/functions
+
 RETVAL=0
+SERVICE=/sbin/service
 
 
 start() {
-    /etc/rc.d/init.d/goferd start || RETVAL=$?
-    [ $RETVAL = 0 ] && /etc/rc.d/init.d/httpd start || RETVAL=$?
+    $SERVICE goferd start || RETVAL=$?
+    [ $RETVAL = 0 ] && $SERVICE httpd start || RETVAL=$?
     return $RETVAL
 }
 
 stop() {
-    /etc/rc.d/init.d/httpd stop
-    /etc/rc.d/init.d/goferd stop
+    $SERVICE httpd stop
+    $SERVICE goferd stop
     return $RETVAL
 }
 

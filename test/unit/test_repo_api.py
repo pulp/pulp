@@ -36,19 +36,13 @@ import pymongo.json_util
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server.api import repo, repo_sync
-from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.package import PackageApi, PackageHasReferences
-from pulp.server.api.repo import RepoApi
+from pulp.server.api.package import PackageHasReferences
 from pulp.server.api.keystore import KeyStore
-from pulp.server.api.errata import ErrataApi
 from pulp.server.auth.certificate import Certificate
 from pulp.server.db.model import Delta
-from pulp.server.db.model import PackageGroup
-from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer
-from pulp.server.db.model import RepoSource
 from pulp.server.db.model import persistence
-from pulp.server.tasking.task import Task, task_running, task_error
+from pulp.server.tasking.task import Task, task_running
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information, get_repomd_filetype_dump
@@ -156,7 +150,6 @@ class TestRepoApi(testutil.PulpAsyncTest):
         assert(repo is not None)
         assert(repo['notes'] == notes)
 
-
     def test_repo_create_feedless(self):
         repo = self.repo_api.create('some-id-no-feed', 'some name', 'i386')
         assert(repo is not None)
@@ -252,6 +245,17 @@ class TestRepoApi(testutil.PulpAsyncTest):
         cert = f.read()
         f.close()
         self.assertTrue(cert.strip(), BUNDLE.strip())
+
+    def test_repo_create_conflicting_relative_path(self):
+        """
+        Tests that creating a repository whose relative path conflicts with an existing repository raises the correct error.
+        """
+
+        # Setup
+        self.repo_api.create('existing', 'Existing', 'noarch', relative_path='foo/bar')
+
+        # Test
+        self.assertRaises(PulpException, self.repo_api.create, 'proposed', 'Proposed', 'noarch', relative_path='foo/bar/baz')
 
     def test_repo_update_with_feed_certs(self):
         '''
@@ -1527,6 +1531,41 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEquals(task_running, sync_status["state"])
         self.assertEquals(r["id"], sync_status["repoid"])
 
-            
-if __name__ == '__main__':
-    unittest.main()
+    def test_validate_relative_path(self):
+        """
+        Tests validating relative paths in the following scenarios:
+        - New path is the same as an existing path
+        - New path is nested in existing path
+        - New path is a parent directory of an existing path
+        - New path and existing path are completely different
+        - New path contains a subset of an existing path but not at the same root
+        - New path and existing path differ only by architecture (common use case)
+        - New path and existing path differ only by trailing characters
+        - Simple tests with a single directory as the path root
+        """
+
+        # Same
+        self.assertFalse(repo.validate_relative_path('foo/bar/baz', 'foo/bar/baz'))
+
+        # Nested
+        self.assertFalse(repo.validate_relative_path('foo/bar/baz', 'foo/bar'))
+
+        # Parent
+        self.assertFalse(repo.validate_relative_path('foo/bar', 'foo/bar/baz'))
+
+        # Distinct
+        self.assertTrue(repo.validate_relative_path('foo/bar', 'wombat/zombie'))
+
+        # Subset
+        self.assertTrue(repo.validate_relative_path('bar/baz', 'foo/bar/baz/wombat'))
+
+        # Architecture
+        self.assertTrue(repo.validate_relative_path('rhel5/i386', 'rhel5/x86_64'))
+
+        # Trailing Characters
+        self.assertTrue(repo.validate_relative_path('rhel/repo', 'rhel/repo2'))
+
+        # Single directory tests
+        self.assertTrue(repo.validate_relative_path('foo', 'bar'))
+        self.assertFalse(repo.validate_relative_path('foo', 'foo/bar'))
+        self.assertFalse(repo.validate_relative_path('foo/bar', 'foo'))
