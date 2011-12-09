@@ -21,7 +21,9 @@ import testutil
 
 from pulp.server.content.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit
+from pulp.server.managers.repo._exceptions import InvalidOwnerType
 import pulp.server.managers.repo.unit_association as association_manager
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
 import pulp.server.managers.content.cud as content_cud_manager
 
 # constants --------------------------------------------------------------------
@@ -54,8 +56,8 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1')
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2', OWNER_TYPE_USER, 'admin')
 
         # Verify
         repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
@@ -71,13 +73,17 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1')
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1') # shouldn't error
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin') # shouldn't error
 
         # Verify
         repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
         self.assertEqual(1, len(repo_units))
         self.assertEqual('unit-1', repo_units[0]['unit_id'])
+
+    def test_associate_invalid_owner_type(self):
+        # Test
+        self.assertRaises(InvalidOwnerType, self.manager.associate_unit_by_id, 'repo-1', 'type-1', 'unit-1', 'bad-owner', 'irrelevant')
 
     def test_associate_all(self):
         """
@@ -86,7 +92,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
         # Test
         ids = ['foo', 'bar', 'baz']
-        self.manager.associate_all_by_ids('repo-1', 'type-1', ids)
+        self.manager.associate_all_by_ids('repo-1', 'type-1', ids, OWNER_TYPE_USER, 'admin')
 
         # Verify
         repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
@@ -100,11 +106,11 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1')
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2', OWNER_TYPE_USER, 'admin')
 
         # Test
-        self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1')
+        self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
 
         # Verify
         repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
@@ -117,7 +123,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         """
 
         # Test - Make sure this does not raise an error
-        self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1')
+        self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
 
     def test_unassociate_all(self):
         """
@@ -125,17 +131,17 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1')
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2')
-        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-3')
-        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-1')
-        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-2')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-3', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-2', OWNER_TYPE_USER, 'admin')
 
         unit_coll = RepoContentUnit.get_collection()
         self.assertEqual(5, len(list(unit_coll.find({'repo_id' : 'repo-1'}))))
 
         # Test
-        self.manager.unassociate_all_by_ids('repo-1', 'type-1', ['unit-1', 'unit-2'])
+        self.manager.unassociate_all_by_ids('repo-1', 'type-1', ['unit-1', 'unit-2'], OWNER_TYPE_USER, 'admin')
 
         # Verify
         self.assertEqual(3, len(list(unit_coll.find({'repo_id' : 'repo-1'}))))
@@ -145,21 +151,27 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-2'}) is not None)
 
     def test_get_unit_ids(self):
-        """
-        Tests that querying associations works.
-        """
 
         # Setup
         repo_id = 'repo-1'
         units = {'type-1': ['1-1', '1-2', '1-3'],
                  'type-2': ['2-1', '2-2', '2-3']}
         for type_id, unit_ids in units.items():
-            self.manager.associate_all_by_ids(repo_id, type_id, unit_ids)
+            self.manager.associate_all_by_ids(repo_id, type_id, unit_ids, OWNER_TYPE_USER, 'admin')
 
-        # Test
+        # Test - No Type
+        all_units = self.manager.get_unit_ids(repo_id)
+
+        # Verify - No Type
+        self.assertTrue('type-1' in all_units)
+        self.assertTrue('type-2' in all_units)
+        self.assertEqual(3, len(all_units['type-1']))
+        self.assertEqual(3, len(all_units['type-2']))
+
+        # Test - By Type
         type_1_units = self.manager.get_unit_ids(repo_id, 'type-1')
 
-        # Verify
+        # Verify - By Type
         self.assertTrue('type-1' in type_1_units)
         self.assertFalse('type-2' in type_1_units)
         for id in units['type-1']:
@@ -179,7 +191,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         for type_id, unit_ids in units.items():
             for unit_id in unit_ids:
                 self.content_manager.add_content_unit(type_id, unit_id, {'key_1' : unit_id})
-            self.manager.associate_all_by_ids(repo_id, type_id, unit_ids)
+            self.manager.associate_all_by_ids(repo_id, type_id, unit_ids, OWNER_TYPE_USER, 'admin')
 
         # Test
         found_units = self.manager.get_units(repo_id)
