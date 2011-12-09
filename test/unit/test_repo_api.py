@@ -1534,12 +1534,18 @@ class TestRepoApi(testutil.PulpAsyncTest):
     def test_validate_relative_path(self):
         """
         Tests validating relative paths in the following scenarios:
+        - New path is the same as an existing path
         - New path is nested in existing path
         - New path is a parent directory of an existing path
         - New path and existing path are completely different
         - New path contains a subset of an existing path but not at the same root
         - New path and existing path differ only by architecture (common use case)
+        - New path and existing path differ only by trailing characters
+        - Simple tests with a single directory as the path root
         """
+
+        # Same
+        self.assertFalse(repo.validate_relative_path('foo/bar/baz', 'foo/bar/baz'))
 
         # Nested
         self.assertFalse(repo.validate_relative_path('foo/bar/baz', 'foo/bar'))
@@ -1555,3 +1561,11 @@ class TestRepoApi(testutil.PulpAsyncTest):
 
         # Architecture
         self.assertTrue(repo.validate_relative_path('rhel5/i386', 'rhel5/x86_64'))
+
+        # Trailing Characters
+        self.assertTrue(repo.validate_relative_path('rhel/repo', 'rhel/repo2'))
+
+        # Single directory tests
+        self.assertTrue(repo.validate_relative_path('foo', 'bar'))
+        self.assertFalse(repo.validate_relative_path('foo', 'foo/bar'))
+        self.assertFalse(repo.validate_relative_path('foo/bar', 'foo'))

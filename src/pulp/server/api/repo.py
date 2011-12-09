@@ -2492,12 +2492,30 @@ def validate_relative_path(new_path, existing_path):
     @rtype:  bool
     """
 
-    if new_path.startswith(existing_path):
-        log.warn('New relative path [%s] is nested in existing path [%s]' % (existing_path, new_path))
+    # Easy out clause: if they are the same, they are invalid
+    if new_path == existing_path:
         return False
 
+    # If both paths are in the same parent directory but have different
+    # names, we're safe
+    new_path_dirname = os.path.dirname(new_path)
+    existing_path_dirname = os.path.dirname(existing_path)
+
+    if new_path_dirname == existing_path_dirname:
+        return True
+
+    # See if either path is a parent of the other. This is safe from the case of
+    # /foo/bar and /foo/bar2 since the above check will have punched out early
+    # if this was the case. If the above check wasn't there, this example would
+    # reflect as invalid when in reality it is safe.
+    
     if existing_path.startswith(new_path):
         log.warn('New relative path [%s] is a parent directory of existing path [%s]' % (new_path, existing_path))
         return False
 
+    if new_path.startswith(existing_path):
+        log.warn('New relative path [%s] is nested in existing path [%s]' % (existing_path, new_path))
+        return False
+
+    # If we survived the parent/child tests, the new path is safe
     return True
