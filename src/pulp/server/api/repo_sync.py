@@ -21,7 +21,7 @@ from gettext import gettext as _
 from StringIO import StringIO
 
 from pulp.common import dateutils
-from pulp.server import comps_util, config
+from pulp.server import comps_util, config, async
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -102,19 +102,15 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
         repo_api.add_filters(clone_id, filter_ids=filters)
 
 
-    task = run_async(_clone,
-                    [clone_id],
-                    {'id':id,
-                     'clone_name':clone_name,
-                     'feed':feed,
-                     'relative_path':relative_path,
-                     'groupid':groupid,
-                     'filters':filters},
-                     timeout=timeout,
-                     task_type=RepoCloneTask)
-    if not task:
-        log.error("Unable to create repo._clone task for [%s]" % (id))
-        return task
+    task = RepoCloneTask(_clone,
+                         [clone_id],
+                         {'id':id,
+                          'clone_name':clone_name,
+                          'feed':feed,
+                          'relative_path':relative_path,
+                          'groupid':groupid,
+                          'filters':filters},
+                         timeout=timeout)
     if feed in ('feedless', 'parent'):
         task.set_progress('progress_callback', local_progress_callback)
     else:
@@ -126,6 +122,9 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     task.set_synchronizer(synchronizer)
     if content_type == 'yum':
         task.weight = config.config.getint('yum', 'task_weight')
+    task = async.enqueue(task)
+    if task is None:
+        log.error("Unable to create repo._clone task for [%s]" % (id))
     return task
 
 
@@ -190,16 +189,12 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
     @return
     """
     repo = repo_api.repository(repo_id)
-    task = run_async(_sync,
+    task = RepoSyncTask(_sync,
                         [repo_id],
                         {'skip':skip,
-                        'max_speed':max_speed,
-                        'threads':threads},
-                        timeout=timeout,
-                        task_type=RepoSyncTask)
-    if not task:
-        log.error("Unable to create repo._sync task for [%s]" % (repo_id))
-        return task
+                         'max_speed':max_speed,
+                         'threads':threads},
+                        timeout=timeout)
     if repo['source'] is not None:
         source_type = repo['source']['type']
         if source_type in ('remote'):
@@ -213,6 +208,9 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
         if content_type == 'yum':
             task.weight = config.config.getint('yum', 'task_weight')
     task.add_dequeue_hook(TaskDequeued())
+    task = async.enqueue(task)
+    if task is None:
+        log.error("Unable to create repo._sync task for [%s]" % (repo_id))
     return task
 
 def get_synchronizer(source_type):
