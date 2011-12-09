@@ -259,7 +259,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             self._test_uniqueness(task, unique) # NonUniqueTaskException
-            task.schedule() # UncheduledTaskException
+            task.schedule() # UnscheduledTaskException
             task.reset()
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
