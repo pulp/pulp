@@ -460,7 +460,8 @@ class TaskQueueTester(QueueTester):
         task.add_dequeue_hook(hook)
         self.queue.enqueue(task)
         self.assertFalse(hook.called)
-        self._wait_for_task(task)
+        while hook.task is None:
+            time.sleep(1)
         self.assertTrue(hook.called)
         self.assertTrue(hook.task is task)
 
