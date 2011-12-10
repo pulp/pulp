@@ -475,6 +475,52 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Dec 09 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-5
+- bump release for build. (jortel@redhat.com)
+- adding a different check for dequeue hook (jconnor@redhat.com)
+- quieting mocked unittests (jconnor@redhat.com)
+- removed mocked portions of clone and sync tests (jconnor@redhat.com)
+- 765853 fixing race condition between task snapshot and setting of progress
+  callback for repo clone and sync (jconnor@redhat.com)
+- fixed typo (jconnor@redhat.com)
+- fist pass at /tasks/ controller testing (jconnor@redhat.com)
+- added archived tasks to /tasks/ collection iff state=archived is passed in
+  (jconnor@redhat.com)
+- added id as valid filter on /tasks/ (jconnor@redhat.com)
+- 765874 - Fixed amqp event handler loading. (jortel@redhat.com)
+- 760673 - Fix consumer group package install; Add support for remote class
+  constuctor args. (jortel@redhat.com)
+- SELinux: relabel files when rpm is uninstalled (jmatthews@redhat.com)
+- 761232 - fix applied to pulp-cds for F16 compat. (jortel@redhat.com)
+- SELinux: Change pulp log files to httpd_sys_content_rw_t
+  (jmatthews@redhat.com)
+- 761232 - replace /etc/init.d/ references to use /sbin/service instead for F16
+  compat. (jortel@redhat.com)
+- SELinux: quiet output from uninstall (jmatthews@redhat.com)
+- SELinux: fix for pulp_cert_t (jmatthews@redhat.com)
+- SELinux: move setsebool to enable script to be executed during %post
+  (jmatthews@redhat.com)
+- SELinux: rewrite rules to be based off of httpd content
+  (jmatthews@redhat.com)
+- SELinux: add file context for initrc script pulp-server
+  (jmatthews@redhat.com)
+- SELinux: changes for certs pulp creates, pulp_certs_t (jmatthews@redhat.com)
+- SELinux: leveraging apache_content_template(pulp) macro to simplify rules
+  Updates for developer setup/uninstall scripts (jmatthews@redhat.com)
+- SELinux: added error checking to making a policy (jmatthews@redhat.com)
+- SELinux:  Adding bools to allow http to network and execute tmp files
+  (jmatthews@redhat.com)
+- SELinux rules update to leverage apache_content_template macro
+  (jmatthews@redhat.com)
+- Adding filtering capability for manually uploaded packages and custom errata
+  (skarmark@redhat.com)
+- 760607 - fixing the pkg list param (pkilambi@redhat.com)
+- minor renaming and tweaks (pkilambi@redhat.com)
+- Fixing unit tests (skarmark@redhat.com)
+- 745458 - Separated asynchronous operations in cloning process from
+  synchronous operations such that clone task can be reloaded from db from a
+  saved state in case pulp-server dies during cloning (skarmark@redhat.com)
+
 * Thu Dec 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-4
 - bump release for build. (jortel@redhat.com)
 - removing yum_repo_grinder_lock from YumSynchronizer (skarmark@redhat.com)
