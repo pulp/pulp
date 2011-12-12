@@ -475,6 +475,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Dec 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-6
+- bump release for build. (jortel@redhat.com)
+- 766705 - fixing UnboundLocalError when uploading a file due to filters
+  (pkilambi@redhat.com)
+
 * Fri Dec 09 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-5
 - bump release for build. (jortel@redhat.com)
 - adding a different check for dequeue hook (jconnor@redhat.com)
