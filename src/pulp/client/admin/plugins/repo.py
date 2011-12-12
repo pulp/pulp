@@ -752,15 +752,15 @@ class Sync(RepoProgressAction):
         self.parser.add_option('--delete-schedule', dest='delete', action='store_true', default=False,
                                help=_('delete existing schedule'))
         self.parser.add_option('--interval', dest='interval', default=None,
-                               help=_('length of time between each run in iso8601 duration format'))
+                               help=_('length of time between each run in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S (e.g. "P3Y6M4DT12H30M5S" for "three years, six months, four days, twelve hours, thirty minutes, and five seconds")'))
         self.parser.add_option('--runs', dest='runs', default=None,
                                help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option('--start', dest='start', default=None,
-                               help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
+                               help=_('date and time of the first run in iso8601 combined date and time format (e.g. "2012-03-01T13:00:00Z"), omitting implies starting immediately'))
         self.parser.add_option('--exclude', dest='exclude', action='append', default=[],
                                help=_('elements to exclude: packages, errata and/or distribution'))
         self.parser.add_option("--timeout", dest="timeout", default=None,
-                               help=_("repository sync timeout specified in iso8601 duration format (P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
+                               help=_("repository sync timeout specified in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S:"))
         self.parser.add_option("--limit", dest="limit", default=None,
                                help=_("limit download bandwidth per thread to value in KB/sec"))
         self.parser.add_option("--threads", dest="threads", default=None,
