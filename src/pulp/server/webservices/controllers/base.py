@@ -76,9 +76,6 @@ class JSONController(object):
         fields = ('id', 'job_id', 'class_name', 'method_name', 'args', 'state', 'result',
                   'exception', 'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
-        # convert the exception into a string as it cannot be json encoded
-        if isinstance(task.exception, Exception):
-            d['exception'] = str(task.exception)
         # time fields must be in iso8601 format
         fields = ('start_time', 'finish_time', 'scheduled_time')
         for f in fields:
