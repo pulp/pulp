@@ -627,7 +627,7 @@ class Delete(AdminRepoAction):
         id = self.get_required_option('id')
         self.get_repo(id)
         self.repository_api.delete(id=id)
-        print _("Successful deleted repository [ %s ]") % id
+        print _("Repository [ %s ] being deleted") % id
 
 
 class Update(AdminRepoAction):

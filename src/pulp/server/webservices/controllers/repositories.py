@@ -350,11 +350,19 @@ class Repository(JSONController):
         method: DELETE
         path: /repositories/<id>/
         permission: DELETE
-        success response: 200 OK
-        failure response: None
+        success response: 202 Accepted
+        failure response: 404 Not Found if repository does not exist
+                          409 Conflict if repository cannot be deleted
+        return: a Task object
         """
-        api.delete(id=id)
-        return self.ok({})
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        task = async.run_async(api.delete, kwargs={'id': id})
+        if task is None:
+            return self.conflict('The repository, %s, cannot be deleted' % id)
+        status = self._task_to_dict(task)
+        return self.accepted(status)
 
 class RepositoryNotes(JSONController):
 
