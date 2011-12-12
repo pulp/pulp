@@ -23,7 +23,7 @@ from pulp.server.content.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit
 from pulp.server.managers.repo._exceptions import InvalidOwnerType
 import pulp.server.managers.repo.unit_association as association_manager
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.content.cud as content_cud_manager
 
 # constants --------------------------------------------------------------------
@@ -81,6 +81,21 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertEqual(1, len(repo_units))
         self.assertEqual('unit-1', repo_units[0]['unit_id'])
 
+    def test_associate_by_id_other_owner(self):
+        """
+        Tests making a second association using a different owner.
+        """
+
+        # Test
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_IMPORTER, 'test-importer')
+
+        # Verify
+        repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(2, len(repo_units))
+        self.assertEqual('unit-1', repo_units[0]['unit_id'])
+        self.assertEqual('unit-1', repo_units[1]['unit_id'])
+
     def test_associate_invalid_owner_type(self):
         # Test
         self.assertRaises(InvalidOwnerType, self.manager.associate_unit_by_id, 'repo-1', 'type-1', 'unit-1', 'bad-owner', 'irrelevant')
@@ -124,6 +139,24 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
         # Test - Make sure this does not raise an error
         self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+
+    def test_unassociate_by_id_other_owner(self):
+        """
+        Tests that removing the association owned by one party doesn't affect another owner's association.
+        """
+
+        # Setup
+        # Setup
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_IMPORTER, 'test-importer')
+
+        # Test
+        self.manager.unassociate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+
+        # Verify
+        repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(1, len(repo_units))
+        self.assertEqual('unit-1', repo_units[0]['unit_id'])
 
     def test_unassociate_all(self):
         """
@@ -206,3 +239,23 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
                 self.assertTrue(u['_id'] in units[type_id])
                 self.assertTrue('key_1' in u)
+
+    def test_get_units_multiple_owners(self):
+        """
+        Tests retrieving units with multiple associations and different owners only returns the unit once.
+        """
+
+        # Setup
+        repo_id = 'repo-1'
+        self.content_manager.add_content_unit('type_1', 'unit_1', {})
+        self.content_manager.add_content_unit('type_2', 'unit_1', {})
+
+        self.manager.associate_unit_by_id(repo_id, 'type_1', 'unit_1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(repo_id, 'type_1', 'unit_1', OWNER_TYPE_IMPORTER, 'test-importer')
+
+        # Test
+        found_units = self.manager.get_units(repo_id)
+
+        # Verify
+        self.assertEqual(1, len(found_units['type_1']))
+        self.assertEqual('unit_1', found_units['type_1'][0]['_id'])

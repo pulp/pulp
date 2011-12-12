@@ -75,13 +75,18 @@ class RepoUnitAssociationManager:
         @raises InvalidOwnerType: if the given owner type is not of the valid enumeration
         """
 
-        # If the association already exists, no need to do anything else
-        existing_association = RepoContentUnit.get_collection().find_one({'repo_id' : repo_id, 'unit_id' : unit_id, 'unit_type_id' : unit_type_id})
-        if existing_association is not None:
-            return
-
         if owner_type not in _OWNER_TYPES:
             raise InvalidOwnerType()
+
+        # If the association already exists, no need to do anything else
+        spec = {'repo_id' : repo_id,
+                'unit_id' : unit_id,
+                'unit_type_id' : unit_type_id,
+                'owner_type' : owner_type,
+                'owner_id' : owner_id,}
+        existing_association = RepoContentUnit.get_collection().find_one(spec)
+        if existing_association is not None:
+            return
 
         # Create the database entry
         association = RepoContentUnit(repo_id, unit_id, unit_type_id, owner_type, owner_id)
