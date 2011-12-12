@@ -150,6 +150,7 @@ class Upload(ContentAction):
         if not pids and not fids:
             utils.system_exit(os.EX_DATAERR, _("No applicable content to associate."))
         print _('\n* Performing Repo Associations ')
+        filtered_count = 0
         # performing package Repo Association
         for rid in repoids:
             repo = self.repository_api.repository(rid)
@@ -174,7 +175,7 @@ class Upload(ContentAction):
 
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
-            if filtered_count == 0:
+            if not filtered_count:
                 msg = _('\nContent association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
                         (rid, '\n'.join(pids.keys()) or None, '\n'.join(fids.keys()) or None))
             else:
