@@ -25,7 +25,7 @@ Summary:        An application for managing software content
 Group:          Development/Languages
 License:        GPLv2
 URL:            https://fedorahosted.org/pulp/
-Source0:        %{name}-%{version}.tar.gz
+Source0:        https://fedorahosted.org/releases/p/u/pulp/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
@@ -322,10 +322,6 @@ touch /var/lib/pulp-cds/.cluster-members
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
-#%if %{pulp_selinux}
-# Enable SELinux policy modules
-#%{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
-#%endif
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
@@ -340,7 +336,7 @@ if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
 fi
 
-# restorcecon wasn't reading new file contexts we added when running under %post so moved to %posttrans
+# restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
 # Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
 %posttrans
 if /usr/sbin/selinuxenabled ; then
@@ -802,7 +798,7 @@ fi
 - 712496 - adding server-side check for existence of user (jconnor@redhat.com)
 - adding check for existing user before attempting update (jconnor@redhat.com)
 - added db version 27 to fix 26 mistake (jconnor@redhat.com)
-- 742240 Change our config files to %config(noreplace) in the spec file.
+- 742240 Change our config files to config(noreplace) in the spec file.
   (jslagle@redhat.com)
 - Sync Enhancements for #744021, #749289 * import the pkg and file information
   before metadata is regenerated * modify the checksum to use the pkg checksum
