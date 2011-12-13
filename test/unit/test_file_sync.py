@@ -31,6 +31,7 @@ class TestFileSync(testutil.PulpAsyncTest):
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
         self.mock(repo_sync, "run_async")
+        self.mock(async, 'enqueue')
 
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
@@ -60,21 +61,7 @@ class TestFileSync(testutil.PulpAsyncTest):
         repo_sync.sync(remote_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, repo_sync.run_async.call_count)
-        task = repo_sync.run_async.return_value
-
-        # task.set_progress called
-        self.assertEquals(1, task.set_progress.call_count)
-        call_args = task.set_progress.call_args[0]
-        self.assertEquals(2, len(call_args))
-        self.assertEquals("progress_callback", call_args[0])
-        self.assertEquals(yum_rhn_progress_callback, call_args[1])
-
-        # task.set_synchronizer called
-        self.assertEquals(1, task.set_synchronizer.call_count)
-        call_args = task.set_synchronizer.call_args[0]
-        self.assertEquals(1, len(call_args))
-        self.assertTrue(isinstance(call_args[0], FileSynchronizer))
+        self.assertEquals(1, async.enqueue.call_count)
 
     def test_file_sync_local(self):
         # create a local_repo
@@ -85,19 +72,6 @@ class TestFileSync(testutil.PulpAsyncTest):
         repo_sync.sync(local_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, repo_sync.run_async.call_count)
-        task = repo_sync.run_async.return_value
+        self.assertEquals(1, async.enqueue.call_count)
 
-        # task.set_progress called
-        self.assertEquals(1, task.set_progress.call_count)
-        call_args = task.set_progress.call_args[0]
-        self.assertEquals(2, len(call_args))
-        self.assertEquals("progress_callback", call_args[0])
-        self.assertEquals(local_progress_callback, call_args[1])
 
-        # task.set_synchronizer called
-        self.assertEquals(1, task.set_synchronizer.call_count)
-        call_args = task.set_synchronizer.call_args[0]
-        self.assertEquals(1, len(call_args))
-        print call_args[0]
-        self.assertTrue(isinstance(call_args[0], FileSynchronizer))

@@ -129,14 +129,15 @@ class RepoPublishManager:
 
         # Add a publish entry
         if publish_report is not None and isinstance(publish_report, PublishReport):
-            plugin_log = publish_report.log
+            summary = publish_report.summary
+            details = publish_report.details
         else:
             _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid publish report' % (repo_distributor['distributor_type_id'], repo_id))
 
-            plugin_log = _('Unknown')
+            summary = details = _('Unknown')
 
         result = RepoPublishResult.success_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
-                                                  publish_start_timestamp, publish_end_timestamp, plugin_log)
+                                                  publish_start_timestamp, publish_end_timestamp, summary, details)
         publish_result_coll.save(result, safe=True)
 
     def auto_publish_for_repo(self, repo_id):

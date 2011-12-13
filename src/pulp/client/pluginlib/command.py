@@ -180,6 +180,8 @@ class Action(object):
             self.parser.error(_('Option %s is required; please see --help') % flag)
         if value is "":
             self.parser.error(_('%s option requires an argument') % flag)
+        if isinstance(value, (list, tuple)) and not value:
+            self.parser.error(_('At least one %s option is required; please see --help') % flag)
         return value
 
     def setup_parser(self):

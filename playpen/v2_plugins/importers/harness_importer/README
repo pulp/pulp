@@ -1,0 +1,19 @@
+The following configuration parameters can be passed to the importer either
+in its static configuration when it is added to a repo or with an individual
+sync call.
+
+num_units : Indicates how many units should be in the repository after the sync
+  completes. Units will be named incrementally following the pattern
+  harness_unit_%d. If the repository previously contained more units than this
+  number, the extra units will be removed as part of the sync.
+
+write_files : If true, the importer will write an empty file with the appropriate
+  name and location as it it had actually downloaded a file. If this is false,
+  the metadata for each unit will still be added to the Pulp server but the
+  file system will not be touched. When written, files are chunked into 5 different
+  subdirectories to exercise Pulp's ability to retain the importer's requested
+  relative path for a unit while determining the final storage location.
+
+sync_delay_in_seconds : Number of seconds to wait at the tail end of the sync
+  before informing Pulp the sync has completed. This can be used to simulate
+  slow connections in the plugin.

@@ -22,6 +22,7 @@ import testutil
 import mock_plugins
 
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit, RepoSyncConduitException
+from pulp.server.content.plugins.model import SyncReport
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
@@ -35,7 +36,7 @@ import pulp.server.managers.content.query as query_manager
 # constants --------------------------------------------------------------------
 
 TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type_2'])
-TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type_1'])
+TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'key-2b'], [], ['type_1'])
 
 # -- test cases ---------------------------------------------------------------
 
@@ -192,8 +193,8 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Verify
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, unit_2.id)
-        self.assertTrue('_type_1_children' in parent)
-        self.assertTrue(unit_1.id in parent['_type_1_children'])
+        self.assertTrue('_type_1_references' in parent)
+        self.assertTrue(unit_1.id in parent['_type_1_references'])
 
     def test_link_unit_bidirectional(self):
         """
@@ -216,12 +217,12 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Verify
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, unit_2.id)
-        self.assertTrue('_type_1_children' in parent)
-        self.assertTrue(unit_1.id in parent['_type_1_children'])
+        self.assertTrue('_type_1_references' in parent)
+        self.assertTrue(unit_1.id in parent['_type_1_references'])
 
         parent = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
-        self.assertTrue('_type_2_children' in parent)
-        self.assertTrue(unit_2.id in parent['_type_2_children'])
+        self.assertTrue('_type_2_references' in parent)
+        self.assertTrue(unit_2.id in parent['_type_2_references'])
 
     def test_get_set_scratchpad(self):
         """
@@ -240,6 +241,38 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Test - get updated value
         self.assertEqual(value, self.conduit.get_scratchpad())
+
+    def test_build_report(self):
+        """
+        Tests that the conduit correctly inserts the count values into the report.
+        """
+
+        # Setup
+
+        #   Created - 10
+        for i in range(0, 10):
+            unit_key = {'key-1' : 'unit_%d' % i}
+            unit = self.conduit.init_unit(TYPE_1_DEF.id, unit_key, {}, '/foo/bar')
+            self.conduit.save_unit(unit)
+
+        #   Removed - 1
+        doomed = self.conduit.get_units()[0]
+        self.conduit.remove_unit(doomed)
+
+        #   Updated - 1
+        update_me = self.conduit.init_unit(TYPE_1_DEF.id, {'key-1' : 'unit_5'}, {}, '/foo/bar')
+        self.conduit.save_unit(update_me)
+
+        # Test
+        report = self.conduit.build_report('summary', 'details')
+
+        # Verify
+        self.assertTrue(isinstance(report, SyncReport))
+        self.assertEqual(10, report.added_count)
+        self.assertEqual(1, report.removed_count)
+        self.assertEqual(1, report.updated_count)
+        self.assertEqual('summary', report.summary)
+        self.assertEqual('details', report.details)
 
     # -- error tests ----------------------------------------------------------
 
@@ -285,7 +318,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
     def test_link_unit_with_error(self):
         # Setup
         self.conduit._RepoSyncConduit__content_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__content_manager.link_child_content_units.side_effect = Exception()
+        self.conduit._RepoSyncConduit__content_manager.link_referenced_content_units.side_effect = Exception()
 
         # Test
         self.assertRaises(RepoSyncConduitException, self.conduit.link_unit, None, None)

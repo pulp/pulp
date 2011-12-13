@@ -44,15 +44,16 @@ class List(RepoAction):
     def setup_parser(self):
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("filter repositories by group id"))
-        self.parser.add_option("--notes", dest="notes",
-                               help=_("filter repositories by notes; notes should be in a dictionary form inside a string"))
+        self.parser.add_option("--note", dest="note",
+                               help=_("filter repositories by note; note should be specified in key:value format"))
 
     def run(self):
         searchdict = {}
         if self.opts.groupid:
             searchdict["groupid"] = self.opts.groupid
-        if self.opts.notes:
-            searchdict["notes"] = self.opts.notes
+        if self.opts.note:
+            searchdict["note"] = self.opts.note
+
         repos = self.repository_api.repositories(queries=searchdict)
         if not len(repos):
             system_exit(os.EX_OK, _("No repositories available to list"))

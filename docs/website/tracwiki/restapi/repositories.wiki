@@ -114,7 +114,7 @@
  * '''arch''' <str> ''repository contect architecture''
  * '''groupid''' <str> ''repository group id''
  * '''relative_path''' <str> ''repository's on disk path''
- * '''notes''' <str of dict> ''repository notes''
+ * '''note''' <str> ''repository note in the format key:value''
 [[BR]]
 
 == Create a Repository ==
@@ -143,7 +143,6 @@
  * '''groupid''' ''(optional)'' <list of str> ''list of repository group ids this repository belongs to''
  * '''gpgkeys''' ''(optional)'' <list of str> ''list of gpg keys used for signing content''
  * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
- * '''notes''' ''(optional)'' <dict> ''additional information in the form of key-value pairs''
  * '''preserve_metadata''' ''(optional)'' <bool> ''will not regenerate metadata and treats the repo as a mirror''
  * '''content_types''' ''(optional)'' <str> ''content type allowed in this repository; default:yum; supported: [yum, file]''
 [[BR]]
@@ -159,11 +158,13 @@
 [[BR]]
 '''permission''': DELETE [[BR]]
 [[BR]]
-'''success response''': 200 OK [[BR]]
+'''success response''': 202 Accepted [[BR]]
 [[BR]]
-'''failure response''': None [[BR]]
+'''failure response''': 
+ 404 Not Found if repository does not exist [[BR]]
+ 409 Conflict if repository cannot be deleted [[BR]]
 [[BR]]
-'''return''': Unspecified [[BR]]
+'''return''': a Task object [[BR]]
 [[BR]]
 
 == Get A Repository ==
@@ -197,7 +198,17 @@
 [[BR]]
 '''return''': a Repo object [[BR]]
 [[BR]]
-'''parameters''': any field of a Repo object except id [[BR]]
+'''parameters''': 
+ * '''name''' <str> ''name of the repository''
+ * '''arch''' <str> ''architecture of the repository''
+ * '''feed_cert_data''' <object> ''feed key and certificate''
+ * '''consumer_cert_data''' <object> ''consumers key and certificate''
+ * '''feed''' <str> ''url of feed''
+ * '''checksum_type''' <str> ''name of checksum algorithm (sha256, sha1, md5)''
+ * '''addgrp''' ''(optional)'' <list of str> ''list of group ids to add the repository to''
+ * '''rmgrp''' ''(optional)'' <list of str> ''list of group ids to remove the repository from''
+ * '''addkeys''' ''(optional)'' <list of str> ''list of keys to add to the repository''
+ * '''rmkeys''' ''(optional)'' <list of str> ''list of keys to remove from the repository''
 [[BR]]
 
 ----
@@ -373,7 +384,7 @@
 [[BR]]
 '''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return''': list of errors [[BR]]
+'''return''': list of errors, count of filtered packages [[BR]]
 [[BR]]
 '''parameters''': 
  * '''packageid''' <list of str> ''id of package to add''
@@ -462,7 +473,7 @@
 '''parameters''': 
  * '''clone_id''' <str> ''the id of the clone repository''
  * '''clone_name''' <str> ''the namd of clone repository''
- * '''feed''' <str> ''feed of the clone repository in <type>:<url> format''
+ * '''feed''' <str> ''feed of the clone repository - parent/origin/none''
  * '''relative_path''' ''(optional)'' <str> ''clone repository on disk path''
  * '''groupid''' ''(optional)'' <str> ''repository groups that clone belongs to''
  * '''filters''' ''(optional)'' <list of objects> ''synchronization filters to apply to the clone''
@@ -1237,7 +1248,7 @@
 '''failure response''': 404 Not Found [[BR]]
 [[BR]]
 '''return''': 
- * hedule object
+ * Schedule object
  * '''type''' <str> ''type of schedule''
  * '''schedule''' <str> ''schedule in iso8601 format''
  * '''options''' <obj> ''options for the scheduled action''

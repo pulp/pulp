@@ -30,7 +30,7 @@ TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
                                   ['key-1'], ['search-1'], [])
 
 TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
-                                  [('key-2a', 'key-2b')], [], ['type-1'])
+                                  ['key-2a', 'key-2b'], [], ['type-1'])
 
 # -- test cases ---------------------------------------------------------------
 

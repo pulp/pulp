@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.253
+Version:        0.0.254
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -48,7 +48,7 @@ Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.60
+Requires: python-gofer >= 0.63
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.2-4.pulp%{?dist}
@@ -98,8 +98,8 @@ Requires:       python-simplejson
 Requires:       python-isodate >= 0.4.4
 Requires:       m2crypto
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.60
-Requires:       gofer-package >= 0.60
+Requires:       gofer >= 0.63
+Requires:       gofer-package >= 0.63
 %if !0%{?fedora}
 # RHEL
 Requires:       python-hashlib
@@ -151,7 +151,7 @@ Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.60
+Requires:       gofer >= 0.63
 Requires:       grinder >= 0.0.126
 Requires:       httpd
 Requires:       mod_wsgi >= 3.2-4.pulp%{?dist}
@@ -351,14 +351,18 @@ fi
 # Clean up after package removal
 if [ $1 -eq 0 ]; then
 %{_datadir}/pulp/selinux/server/uninstall.sh
+%{_datadir}/pulp/selinux/server/relabel.sh
 fi
 exit 0
 %endif
+
+
 
 %postun consumer
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
+
 
 %postun cds
 # Clean up after package removal
@@ -471,6 +475,37 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Dec 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-1
+- fixing the clone to accoutn for el5 type metadata paths causing missing
+  imports (pkilambi@redhat.com)
+- SELinux update developer scripts, added a developer uninstall, fixed possible
+  issue with grinder (jmatthews@redhat.com)
+- Moved api_responses config from admin.conf to environment variables
+  (skarmark@redhat.com)
+- 756417 - ignore foreground option for group exports and let the server bad
+  requests pass to clients (pkilambi@redhat.com)
+- Added conduit utility method for building the publish report
+  (jason.dobies@redhat.com)
+- Renamed terminology in the managers to reflect referenced instead of
+  parent/child units (jason.dobies@redhat.com)
+- Parser and database changes for changing unique indexes to unit key.
+  (jason.dobies@redhat.com)
+- Updating bash completion script for latest changes (skarmark@redhat.com)
+- Making pulp 'eval' free and updating repo list --note to accept a note in
+  key:value format instead of dictionary (skarmark@redhat.com)
+- 759153 - Add INI file validation. (jortel@redhat.com)
+- README files to instruct on how to use the v2 plugins
+  (jason.dobies@redhat.com)
+- Added conduit syntactic sugar method for building sync reports.
+  (jason.dobies@redhat.com)
+- Added updated_count and split out summary and detail logs in plugin reports
+  (jason.dobies@redhat.com)
+- Added ability to override scenario properties at command line
+  (jason.dobies@redhat.com)
+- Made the delete repo not fail on an HTTP error code (jason.dobies@redhat.com)
+- 756454 - Fixed package search with --repoids and removed eval
+  (skarmark@redhat.com)
+
 * Wed Nov 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.253-1
 - Comment out API response logging in the client(s). (jortel@redhat.com)
 - Pass the response to be logged back into the json module to let it format it

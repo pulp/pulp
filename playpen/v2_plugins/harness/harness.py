@@ -16,7 +16,6 @@ import ConfigParser
 import datetime
 import httplib
 import json
-import optparse
 import sys
 import types
 
@@ -64,7 +63,7 @@ class Harness:
         """
 
         if self.script.getboolean('general', 'run_delete_repo'):
-            self._assert_status(self.delete_repo())
+            self._assert_status(self.delete_repo(), no_fail=True)
 
         if self.script.getboolean('general', 'run_create_repo'):
             self._assert_status(self.create_repo())
@@ -261,12 +260,14 @@ class Harness:
         self.prompt.write('  Started:            %s' % item['started'])
         self.prompt.write('  Completed:          %s' % item['completed'])
         self.prompt.write('  Added Unit Count:   %s' % item['added_count'])
+        self.prompt.write('  Updated Unit Count: %s' % item['updated_count'])
         self.prompt.write('  Removed Unit Count: %s' % item['removed_count'])
-        self.prompt.write('  Plugin Log:')
+        self.prompt.write('  Report Summary:     %s' % item['summary'])
+        self.prompt.write('  Report Details:')
         self.prompt.write('---')
-        self.prompt.write(self.prompt.color(item['plugin_log'], PLUGIN_LOG_COLOR))
+        self.prompt.write(self.prompt.color(item['details'], PLUGIN_LOG_COLOR))
         self.prompt.write('---')
-
+    
         return status
 
     def load_publish_history(self):
@@ -287,9 +288,10 @@ class Harness:
         self.prompt.write('  Distributor ID:     %s' % item['distributor_id'])
         self.prompt.write('  Started:            %s' % item['started'])
         self.prompt.write('  Completed:          %s' % item['completed'])
-        self.prompt.write('  Plugin Log:')
+        self.prompt.write('  Report Summary:     %s' % item['summary'])
+        self.prompt.write('  Report Details:')
         self.prompt.write('---')
-        self.prompt.write(self.prompt.color(item['plugin_log'], PLUGIN_LOG_COLOR))
+        self.prompt.write(self.prompt.color(item['details'], PLUGIN_LOG_COLOR))
         self.prompt.write('---')
 
         return status
@@ -313,11 +315,14 @@ class Harness:
 
     # -- utilities ------------------------------------------------------------
 
-    def _assert_status(self, status):
+    def _assert_status(self, status, no_fail=False):
         """
         Determines if the script should abort based on the given HTTP status.
         """
 
+        if no_fail:
+            return
+        
         if status > 299:
             self.prompt.write('')
             self.prompt.write(self.prompt.color('Error HTTP status code from last command [%d]' % status, ERROR_COLOR))
@@ -446,19 +451,21 @@ class PulpConnection:
 
 if __name__ == '__main__':
 
-    parser = optparse.OptionParser(usage='%s -s SCRIPT_FILE' % __file__)
-    parser.add_option('-s', '--script', dest='script', default=None,
-                      help='full path to the configuration file dictating how the harness will run')
-
-    options, args = parser.parse_args()
-    if options.script is None:
-        parser.print_help()
+    if len(sys.argv) == 1:
+        print('Usage: harness.py SCENARIO_FILE')
         sys.exit(1)
 
     script = ConfigParser.SafeConfigParser()
-    script.read('scripts/_default.ini')
-    script.read(options.script)
+    script.read('scenarios/_default.ini')
+    script.read(sys.argv[1])
 
+    if len(sys.argv) > 2:
+        for o in sys.argv[2:]:
+            key, value = o.split('=')
+            section, option = key.split('.')
+            
+            script.set(section, option, value)
+            
     connection = PulpConnection()
     connection.connect()
 

@@ -48,7 +48,7 @@ def to_plugin_unit(pulp_unit, type_def):
     @rtype:  L{pulp.server.content.plugins.data.Unit}
     """
 
-    key_list = type_def['unique_indexes']
+    key_list = type_def['unit_key']
 
     unit_key = {}
 

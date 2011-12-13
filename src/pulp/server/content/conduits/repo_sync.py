@@ -45,7 +45,7 @@ import sys
 
 import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
-from pulp.server.content.plugins.model import Unit
+from pulp.server.content.plugins.model import Unit, SyncReport
 from pulp.server.managers.content._exceptions import ContentUnitNotFound
 
 # -- constants ---------------------------------------------------------------
@@ -123,6 +123,10 @@ class RepoSyncConduit:
         self.__content_manager = content_manager
         self.__content_query_manager = content_query_manager
         self.__progress_callback = progress_callback
+
+        self._added_count = 0
+        self._updated_count = 0
+        self._removed_count = 0
 
     def __str__(self):
         return _('RepoSyncConduit for repository [%(r)s]') % {'r' : self.repo_id}
@@ -273,8 +277,10 @@ class RepoSyncConduit:
                 existing_unit = self.__content_query_manager.get_content_unit_by_keys_dict(unit.type_id, unit.unit_key)
                 unit.id = existing_unit['_id']
                 self.__content_manager.update_content_unit(unit.type_id, unit.id, pulp_unit)
+                self._updated_count += 1
             except ContentUnitNotFound:
                 unit.id = self.__content_manager.add_content_unit(unit.type_id, None, pulp_unit)
+                self._added_count += 1
 
             # Associate it with the repo
             self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id)
@@ -309,6 +315,7 @@ class RepoSyncConduit:
 
         try:
             self.__association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id)
+            self._removed_count += 1
         except Exception, e:
             _LOG.exception(_('Content unit unassociation failed'))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]
@@ -333,10 +340,10 @@ class RepoSyncConduit:
         @type  to_unit: L{Unit}
         """
         try:
-            self.__content_manager.link_child_content_units(from_unit.type_id, from_unit.id, to_unit.type_id, [to_unit.id])
+            self.__content_manager.link_referenced_content_units(from_unit.type_id, from_unit.id, to_unit.type_id, [to_unit.id])
 
             if bidirectional:
-                self.__content_manager.link_child_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
+                self.__content_manager.link_referenced_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
         except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]
@@ -372,3 +379,23 @@ class RepoSyncConduit:
         except Exception, e:
             _LOG.exception(_('Error setting scratchpad for repo [%s]' % self.repo_id))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]
+
+    def build_report(self, summary, details):
+        """
+        Creates the SyncReport instance that needs to be returned to the Pulp
+        server at the end of the sync_repo call.
+
+        The added, updated, and removed unit count fields will be populated with
+        the tracking counters maintained by the conduit based on calls into it.
+        If these are inaccurate for a given plugin's implementation, the counts
+        can be changed in the returned report before returning it to Pulp.
+
+        @param summary: short log of the sync; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the sync; may be None
+        @type  details: any serializable
+        """
+        r = SyncReport(self._added_count, self._updated_count, self._removed_count,
+                       summary, details)
+        return r

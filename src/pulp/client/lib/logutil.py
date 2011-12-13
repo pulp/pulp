@@ -16,13 +16,10 @@ import sys
 import logging
 from logging import root, Formatter
 from logging.handlers import RotatingFileHandler
-from pulp.client.admin.config import AdminConfig
 
-#cfg = AdminConfig()
 USRDIR = '~/.pulp'
 LOGDIR = '/var/log/pulp'
 LOGFILE = 'client.log'
-#RESPONSE_LOG_FILE = cfg.api_response.responses_file
 
 TIME = '%(asctime)s'
 LEVEL = ' [%(levelname)s]'
@@ -72,11 +69,8 @@ def getLogger(name):
     log = logging.getLogger(name)
     return log
 
-def getResponseLogger(name):
-    logdir = __logdir()
-    if not os.path.exists(logdir):
-        os.mkdir(logdir)
-    path = os.path.join(logdir, RESPONSE_LOG_FILE)
+def getResponseLogger(name, api_response_log):
+    path = api_response_log
     response_handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
     response_handler.setFormatter(Formatter(Response_FMT))
     log = logging.getLogger(name)

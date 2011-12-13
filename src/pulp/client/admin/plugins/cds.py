@@ -11,7 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import datetime
 from gettext import gettext as _
+import logging
 from optparse import OptionGroup
 import sys
 
@@ -23,10 +25,32 @@ from pulp.client import constants
 from pulp.client.pluginlib.command import Action, Command
 from pulp.common import dateutils
 
+# -- constants ----------------------------------------------------------------
 
-# -- utilities ---------------------------------------------------------------------
+LOG = logging.getLogger(__name__)
 
-def _print_cds(cds):
+# If the next scheduled sync time is in the past, one of these two statuses
+# will be returned in the next_scheduled_sync field, depending on if the sync
+# is in the process of running (likely case) or is blocked waiting on the
+# server to free up threads. The caller should translate these statuses into
+# human readable notifications of the state. See the _next_scheduled_sync docs
+# for usage.
+SYNC_WAITING = 'sync-waiting'
+SYNC_RUNNING = 'sync-running'
+SYNC_MISSING = 'sync-missing'
+
+# Mapping of state to user-friendly display
+STATE_TRANSLATIONS = {
+    'finished'  : 'Success',
+    'scheduled' : 'Scheduled',
+    'running'   : 'Running',
+    'error'     : 'Error',
+    'timed out' : 'Timed Out',
+}
+
+# -- utilities ----------------------------------------------------------------
+
+def _print_cds(cds, next_sync=None):
     if cds['repo_ids']:
         repo_list = ', '.join(cds['repo_ids'])
     else:
@@ -46,16 +70,38 @@ def _print_cds(cds):
         last_heartbeat = dateutils.parse_iso8601_datetime(stat[1])
     else:
         last_heartbeat = stat[1]
-    print(constants.CDS_INFO % \
-        (cds['name'],
-         cds['hostname'],
-         cds['description'],
-         cds['cluster_id'],
-         cds['sync_schedule'],
-         repo_list,
-         formatted_date,
-         responding,
-         last_heartbeat,))
+
+    sync_schedule = cds['sync_schedule']
+    if sync_schedule is not None:
+        sync_schedule = dateutils.parse_iso8601_datetime(sync_schedule)
+        
+    # This is wonky but has to do with how the APIs are structured that next
+    # sync isn't available in the CDS list, so rather than hammer the server
+    # with more calls we omit it in most cases
+    if next_sync is None:
+        print(constants.CDS_INFO % \
+            (cds['name'],
+             cds['hostname'],
+             cds['description'],
+             cds['cluster_id'],
+             sync_schedule,
+             repo_list,
+             formatted_date,
+             responding,
+             last_heartbeat,))
+    else:
+        print(constants.CDS_DETAILED_INFO % \
+            (cds['name'],
+             cds['hostname'],
+             cds['description'],
+             cds['cluster_id'],
+             sync_schedule,
+             repo_list,
+             next_sync,
+             formatted_date,
+             responding,
+             last_heartbeat,))
+
 
 # -- actions ----------------------------------------------------------------------
 
@@ -85,9 +131,9 @@ class Register(CDSAction):
         schedule.add_option('--interval', dest='schedule_interval', default=None,
                             help=_('length of time between each run in iso8601 duration format'))
         schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+                            help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
-                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+                            help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option_group(schedule)
 
     def run(self):
@@ -151,9 +197,9 @@ class Update(CDSAction):
         schedule.add_option('--interval', dest='schedule_interval', default=None,
                             help=_('length of time between each run in iso8601 duration format'))
         schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+                            help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
-                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+                            help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option_group(schedule)
 
     def run(self):
@@ -343,59 +389,149 @@ class Status(CDSAction):
     def run(self):
         hostname = self.get_required_option('hostname')
 
-        # Server data retrieval
+        # -- Server Data Retrieval --------------
         cds = self.cds_api.cds(hostname)
-        weird_ordered_sync_list = self.cds_api.sync_list(hostname)
 
-        # Print the CDS details
-        print_header(_('CDS Status'))
-        _print_cds(cds)
+        try:
+            sync_list = self.cds_api.sync_list(hostname)
+        except ServerRequestError, e:
+            if e[0] == 404:
+                sync_list = []
+            else:
+                raise e, None, sys.exc_info()[2]
 
-        # Print details of the latest sync
-        if weird_ordered_sync_list is None or len(weird_ordered_sync_list) == 0:
-            return
+        try:
+            history_list = self.cds_api.sync_history(hostname)
+        except ServerRequestError, e:
+            if e[0] == 404:
+                history_list = []
+            else:
+                raise e, None, sys.exc_info()[2]
 
-        print_header(_('Most Recent Sync Tasks'))
+        # -- Data Analysis ------------------
+        next_sync_date = self._next_scheduled_sync(sync_list)
 
-        # Order the syncs in chronological order
-        sync_list = sorted(weird_ordered_sync_list, key=lambda x : x['finish_time'], reverse=True)
-
-        # Apply limit restrictions
-        if int(self.opts.num_recent_syncs) < len(sync_list):
-            upper_limit = int(self.opts.num_recent_syncs)
+        # Next Sync
+        if next_sync_date is SYNC_WAITING:
+            next_sync = _('Awaiting Execution')
+        elif next_sync_date is SYNC_RUNNING:
+            next_sync = _('In Progress')
+        elif next_sync_date is SYNC_MISSING:
+            next_sync = _('Not Scheduled')
         else:
-            upper_limit = len(sync_list)
+            next_sync = dateutils.parse_iso8601_datetime(next_sync_date)
 
-        counter = 0
-        while counter < upper_limit:
-            if sync_list[counter]['start_time'] is not None:
-                start_time = dateutils.parse_iso8601_datetime(sync_list[counter]['start_time'])
+        # -- Display ------------------------
+
+        print_header(_('CDS Status'))
+        _print_cds(cds, next_sync=next_sync)
+
+        # Sync History
+        print_header(_('Most Recent Sync Tasks'))
+        
+        if len(history_list) is 0:
+            print _('The CDS has not yet been synchronized')
+        else:
+            history_list.sort(key=lambda x : x['finish_time'])
+
+            # Apply limit restrictions
+            if int(self.opts.num_recent_syncs) < len(history_list):
+                upper_limit = int(self.opts.num_recent_syncs)
             else:
-                start_time = _('Not Started')
+                upper_limit = len(history_list)
 
-            if sync_list[counter]['finish_time'] is not None:
-                finish_time = dateutils.parse_iso8601_datetime(sync_list[counter]['finish_time'])
+            # Render each item
+            for i in range(0, upper_limit):
+                item = history_list[i]
+                start_time = item['start_time']
+                finish_time = item['finish_time']
+                sync_last_result = item['state']
+                sync_last_exception = item['exception']
+                sync_last_traceback = item['traceback']
+
+                if sync_last_result is None:
+                    last_result = 'Never'
+                else:
+                    last_result = STATE_TRANSLATIONS.get(sync_last_result, 'Unknown')
+
+                if start_time is not None:
+                    start_time = dateutils.parse_iso8601_datetime(start_time)
+
+                if finish_time is not None:
+                    finish_time = dateutils.parse_iso8601_datetime(finish_time)
+
+                print('Start Time:     %s' % start_time)
+                print('Finish Time:    %s' % finish_time)
+                print('Result:         %s' % last_result)
+
+                if item['exception'] is not None:
+                    print('Exception:      ' + sync_last_exception)
+
+                if item['traceback'] is not None:
+                    print('Traceback:')
+                    print('\n'.join(sync_last_traceback))
+
+    def _next_scheduled_sync(self, task_list):
+        """
+        Examines the given task list to determine when the next sync will occur. There
+        are three possible results from this call:
+
+        - If the next sync time is in the future, that time will be returned.
+        - If the next sync time is in the past and the task is currently executing,
+          the SYNC_RUNNING constant is returned.
+        - If the next sync time is in the past and the task is still waiting for the
+          server resources to free up and run it, the SYNC_WAITING constant is returned.
+        - If the sync list is empty, which shouldn't happen and likely represents an
+          error, the SYNC_MISSING constant is returned.
+
+        If multiple tasks are present in the given task list, the one with the earliest
+        next sync time will be used.
+
+        @param task_list: list of task objects retrieved from the server
+        @type  task_list: list of dict
+
+        @return: ISO formatted string describing the next scheduled sync time or one
+                 of the SYNC_* constants to denote that the sync is in progress
+        @rtype:  str
+        """
+
+        # This shouldn't happen, but just in case let's handle it specifically
+        if task_list is None or len(task_list) == 0:
+            return SYNC_MISSING
+
+        # Sort them so the earliest executing task is first. This is necessary in the
+        # case where there are two tasks on the queue, one for the normally scheduled
+        # repo sync and another if the user has elected to manually trigger a sync.
+        task_list.sort(key=lambda x : x['scheduled_time'])
+
+        task = None
+        for t in task_list:
+            if t['scheduled_time'] is not None:
+                task = t
+                break
+
+        if task is None:
+            LOG.exception('No task with a valid scheduled time can be found')
+            return SYNC_MISSING
+
+        next_date = dateutils.parse_iso8601_datetime(task['scheduled_time'])
+
+        if next_date < datetime.datetime.now(tz=dateutils.local_tz()):
+            # The next sync was scheduled in the past. It's either waiting for server
+            # time to run or is currently running, so figure out which.
+
+            if task['state'] == 'waiting':
+                return SYNC_WAITING
+            elif task['state'] == 'running':
+                return SYNC_RUNNING
             else:
-                finish_time = _('In Progress')
+                LOG.error('Unexpected task state found [%s]' % task['state'])
+                LOG.error(task)
+                return SYNC_MISSING # can't think of anything better to return here
+        else:
+            # Next sync is going to occur in the future, so just return that time
+            return task['scheduled_time'] # the ISO formatted string, not the date object
 
-            # Capitalize the first letter of the state for consistency
-            state = sync_list[counter]['state']
-            state = state[0].upper() + state[1:]
-
-            print(_(constants.CDS_SYNC_DETAILS % (state, start_time, finish_time)))
-
-            if sync_list[counter]['exception'] is not None:
-                msg = _(constants.CDS_HISTORY_ENTRY_ERROR % sync_list[counter]['exception'])
-                print(msg)
-
-            if sync_list[counter]['traceback'] is not None:
-                print(_('Traceback'))
-                # The spaces here are to indent the traceback so it's more obvious that
-                # it is part of the reporting and not a result of running the CLI command
-                formatted = '    ' + '      '.join(sync_list[counter]['traceback'])
-                print(formatted)
-
-            counter += 1
 
 # -- command ----------------------------------------------------------------------
 

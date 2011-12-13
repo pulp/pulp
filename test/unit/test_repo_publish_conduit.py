@@ -24,7 +24,7 @@ import mock_plugins
 
 from pulp.common import dateutils
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit, RepoPublishConduitException
-from pulp.server.content.plugins.model import Unit
+from pulp.server.content.plugins.model import Unit, PublishReport
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit, RepoDistributor
@@ -38,7 +38,7 @@ import pulp.server.managers.content.query as query_manager
 # constants --------------------------------------------------------------------
 
 TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type-2'])
-TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', [('key-2a', 'key-2b')], [], ['type-1'])
+TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'key-2b'], [], ['type-1'])
 
 # -- test cases ---------------------------------------------------------------
 
@@ -143,6 +143,19 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Test - get updated value
         self.assertEqual(value, self.conduit.get_scratchpad())
+
+    def test_build_report(self):
+        """
+        Tests the conduit utility method for putting together the publish report.
+        """
+
+        # Test
+        report = self.conduit.build_report('summary', 'details')
+
+        # Verify
+        self.assertTrue(isinstance(report, PublishReport))
+        self.assertEqual(report.summary, 'summary')
+        self.assertEqual(report.details, 'details')
 
     # -- errors tests ---------------------------------------------------------
 

@@ -196,6 +196,20 @@ Status:
    Last Heartbeat   \t%-25s
 '''
 
+CDS_DETAILED_INFO = '''
+Name                \t%-25s
+Hostname            \t%-25s
+Description         \t%-25s
+Cluster             \t%-25s
+Sync Schedule       \t%-25s
+Repos               \t%-25s
+Next Sync           \t%-25s
+Last Sync           \t%-25s
+Status:
+   Responding       \t%-25s
+   Last Heartbeat   \t%-25s
+'''
+
 CDS_HISTORY_ENTRY = '''
 Event Type          \t%-25s
 Timestamp           \t%-25s

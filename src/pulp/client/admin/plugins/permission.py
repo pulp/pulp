@@ -68,18 +68,15 @@ class Grant(PermissionAction):
         resource = self.get_required_option('resource')
         operations = self.get_required_option('operations', 'operation')
         operations = [o.upper() for o in operations]
-        for user in self.opts.users:
-            success = self.permission_api.grant_permission_to_user(resource,
-                                                              user,
-                                                              operations)
+        users = self.get_required_option('users', flag='user')
+        for user in users:
+            success = self.permission_api.grant_permission_to_user(resource, user, operations)
             if not success:
                 continue
             print _('Operations %s granted to user [ %s ] on resource [ %s ]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
-            success = self.permission_api.grant_permission_to_role(resource,
-                                                              role,
-                                                              operations)
+            success = self.permission_api.grant_permission_to_role(resource, role, operations)
             if not success:
                 continue
             print _('Operations %s granted to role [ %s ] on resource [ %s ]') % \

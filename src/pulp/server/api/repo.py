@@ -29,7 +29,6 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
-from pulp.common import dateutils
 from pulp.common.bundle import Bundle
 from pulp.server import constants
 from pulp.server import comps_util
@@ -46,16 +45,14 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
-
-from pulp.server.api.scheduled_sync import update_repo_schedule, delete_repo_schedule
+from pulp.server.api.scheduled_sync import delete_repo_schedule
 from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
 from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.exceptions import PulpException
-from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.tasking.task import task_running, task_waiting, task_error
+from pulp.server.tasking.task import task_running, task_error
 from pulp.server.agent import PulpAgent
 from pymongo.errors import DuplicateKeyError
 
@@ -253,13 +250,20 @@ class RepoApi(BaseApi):
                 relative_path = id
         else:
             relative_path = relative_path
+
         # Remove leading "/", they will interfere with symlink
         # operations for publishing a repository
         relative_path = relative_path.strip('/')
-        #try:
+
+        # Verify that the new relative path will not cause problems with existing repositories
+        all_repos = self.collection.find()
+        for existing in all_repos:
+            if not validate_relative_path(relative_path, existing['relative_path']):
+                msg  = 'New relative path [%s] conflicts with existing relative path [%s]; ' % (relative_path, existing['relative_path'])
+                msg += 'paths may not be a parent or child directory of another relative path'
+                raise PulpException(msg)
+
         r = model.Repo(id, name, arch, relative_path, feed, notes)
-        #except DuplicateKeyError, dke:
-        #    raise PulpException("A Repo with relative path `%s` already exists; failed to create repo `%s`" % (r['relative_path'], id))
 
         # Store any certificates and add the full paths to their files in the repo object
         repo_cert_utils = RepoCertUtils(config.config)
@@ -866,8 +870,8 @@ class RepoApi(BaseApi):
     def add_package(self, repoid, packageids=[]):
         """
         Adds the passed in package to this repo
-        @return:    [] on success
-                    [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error,
+        @return:    [], filtered_count on success
+                    [(package_id,(name,epoch,version,release,arch),filename,checksum)], filtered_count on error,
                     where each id represents a package id that couldn't be added
         """
         filtered_count = 0
@@ -1002,7 +1006,7 @@ class RepoApi(BaseApi):
                     log.error("Link %s already exists" % pkg_repo_path)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
-        log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
+        log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
         return errors, filtered_count
 
     def _add_package(self, repo, p):
@@ -1104,16 +1108,64 @@ class RepoApi(BaseApi):
         self._update_errata_packages(repoid, [erratumid], action='add')
         updateinfo.generate_updateinfo(repo)
 
+    def _find_filtered_erratum_packages(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+        pkglist = []
+
+        if whitelist_packages:
+            for pkg in unfiltered_pkglist:
+                for whitelist_package in whitelist_packages:
+                    w = re.compile(whitelist_package)
+                    if w.match(pkg["filename"]):
+                        pkglist.append(pkg)
+                        break
+        else:
+            pkglist = unfiltered_pkglist
+
+        if blacklist_packages:
+            for pkg in pkglist:
+                for blacklist_package in blacklist_packages:
+                    b = re.compile(blacklist_package)
+                    if b.match(pkg["filename"]):
+                        pkglist.remove(pkg)
+                        break
+
+        return pkglist
+
+
     def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
+         Returns a list of errataids which are skipped because of repository filters
         """
         repo = self._get_existing_repo(repoid)
-        for erratumid in errataids:
-            self._add_erratum(repo, erratumid)
+        filtered_errata = []
+        # Process repo filters if any
+        if repo['filters']:
+            log.info("Repo filters : %s" % repo['filters'])
+            whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
+            blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
+            log.info("combined whitelist packages = %s" % whitelist_packages)
+            log.info("combined blacklist packages = %s" % blacklist_packages)
+
+            for erratumid in errataids:
+                erratum = self.errataapi.erratum(erratumid)
+                original_pkg_objects = [p for pkg in erratum['pkglist'] for p in pkg['packages']]
+                original_pkg_count = len(original_pkg_objects)
+                pkg_objects = self._find_filtered_erratum_packages(original_pkg_objects, whitelist_packages, blacklist_packages)
+                if len(pkg_objects) != original_pkg_count:
+                    errataids.remove(erratumid)
+                    filtered_errata.append(erratumid)
+                    log.info("Filtered errata : %s" % erratumid)
+                else:
+                    self._add_erratum(repo, erratumid)
+        else:
+            for erratumid in errataids:
+                self._add_erratum(repo, erratumid)
+
         self.collection.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
+        return filtered_errata
 
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
@@ -1974,7 +2026,7 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'filter_ids'])
     def add_filters(self, id, filter_ids):
         repo = self._get_existing_repo(id)
-        if not repo['source'] or repo['source']['type'] != 'local':
+        if repo['source'] and repo['source']['type'] != 'local':
             raise PulpException("Filters can be added to repos with 'local' feed only")
         for filter_id in filter_ids:
             filter = self.filterapi.filter(filter_id)
@@ -2415,3 +2467,55 @@ class RepoApi(BaseApi):
         repo['notes'] = key_value_pairs
         self.collection.save(repo, safe=True)
  
+def validate_relative_path(new_path, existing_path):
+    """
+    Checks that the proposed new relative path will not conflict with an
+    existing path.
+
+    The primary source of contention is if the new repository
+    would cause the two repositories to be nested. In other words, given
+    an existing repository with relative path foo/bar, a repository should not
+    be created inside of that directory, for example foo/bar/baz. The opposite
+    holds true as well; if foo/bar/baz exists, a new repository at foo/bar
+    should not be allowed.
+
+    This call will apply both directions of logic and return true or false to
+    indicate whether or not the new path is valid given the existing repository.
+
+    @param new_path: propsed relative path for a newly created repository
+    @type  new_path: str
+
+    @param existing_path: relative path of a existing repository in Pulp
+    @type  existing_path: str
+
+    @return: True if the new path does not conflict with the existing path; False otherwise
+    @rtype:  bool
+    """
+
+    # Easy out clause: if they are the same, they are invalid
+    if new_path == existing_path:
+        return False
+
+    # If both paths are in the same parent directory but have different
+    # names, we're safe
+    new_path_dirname = os.path.dirname(new_path)
+    existing_path_dirname = os.path.dirname(existing_path)
+
+    if new_path_dirname == existing_path_dirname:
+        return True
+
+    # See if either path is a parent of the other. This is safe from the case of
+    # /foo/bar and /foo/bar2 since the above check will have punched out early
+    # if this was the case. If the above check wasn't there, this example would
+    # reflect as invalid when in reality it is safe.
+    
+    if existing_path.startswith(new_path):
+        log.warn('New relative path [%s] is a parent directory of existing path [%s]' % (new_path, existing_path))
+        return False
+
+    if new_path.startswith(existing_path):
+        log.warn('New relative path [%s] is nested in existing path [%s]' % (existing_path, new_path))
+        return False
+
+    # If we survived the parent/child tests, the new path is safe
+    return True

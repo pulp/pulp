@@ -1,0 +1,21 @@
+This directory contains sample plugins that can be used for testing Pulp v2
+capabilities.
+
+The plugins need to be deployed to /var/lib/pulp/plugins, each in the appropriate
+subdirectory. The install.sh script in this directory will create symlinks for
+all of the included plugins. It's a bit sloppy, so subsequent invocations of it
+will complain that the symlink already exists.
+
+Each plugin can accept different configuration parameters that dictate how it
+will behave. Details can be found in README files in each plugin directory.
+
+The harness directory includes infrastructure to script out scenarios the
+plugins should simulate. The harness.py script will use the configuration values
+in scenarios/_default.ini and the scenario file passed at the command line to
+make the appropriate REST calls to Pulp.
+
+Example:
+python harness.py scenarios/basic.ini
+
+See the _default.ini file for more information on the parameters that can be
+overridden in an individual scenario file.

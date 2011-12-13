@@ -235,10 +235,14 @@ class RemoteClass:
     @type __secret: str
     @ivar __options: Additional gofer options.
     @type __options: dict
+    @ivar __cntr: Remote class constructor arguments.
+    @type __cntr: tuple ([],{})
     @ivar __name: The remote class name.
     @type __name: str
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
+    @ivar __called: Tracks when mock constructor called.
+    @type __called: bool
     """
 
     def __init__(self, id, secret, options, name):
@@ -255,10 +259,12 @@ class RemoteClass:
         self.__id = id
         self.__secret = secret
         self.__options = options
+        self.__cntr = None
         self.__name = name
         self.__taskid = 0
+        self.__called = False
 
-    def __call__(self, task, **options):
+    def __call__(self, *args, **options):
         """
         Mock constructor.
         @param task: The associated task.
@@ -266,10 +272,15 @@ class RemoteClass:
         @return: self
         @rtype: L{AsyncClass}
         """
+        if self.__called:
+            self.__cntr = (args, options)
+            return self
+        task = args[0]
         self.taskid = task.id
         d = dict(self.__options)
         d.update(options)
         self.__options = d
+        self.__called = True
         return self
 
     def __getattr__(self, name):
@@ -286,6 +297,7 @@ class RemoteClass:
             self.__id,
             self.__secret,
             self.__name,
+            self.__cntr,
             self.__options,
             self.taskid,
             name)
@@ -300,8 +312,10 @@ class RemoteMethod:
     @type id: str
     @ivar secret: The shared secret.
     @type secret: str
-    @ivar im_class: The remote class.
-    @type im_class: classobj
+    @ivar classname: The remote class.
+    @type classname: classobj
+    @ivar cntr: Remote class constructor arguments.
+    @type cntr: tuple ([],{})
     @ivar options: Additional gofer options.
     @type options: dict
     @ivar taskid: The associated task ID.
@@ -312,7 +326,7 @@ class RemoteMethod:
 
     CTAG = 'pulp.task'
 
-    def __init__(self, id, secret, classname, options, taskid, name):
+    def __init__(self, id, secret, classname, cntr, options, taskid, name):
         """
         @param id: The consumer (agent) id.
         @type id: str
@@ -320,6 +334,8 @@ class RemoteMethod:
         @type secret: str
         @param classname: The remote object class name.
         @type classname: str
+        @param cntr: Remote class constructor arguments.
+        @type cntr: tuple ([],{})
         @param options: Additional gofer options.
         @type options: dict
         @param taskid: The associated task ID.
@@ -330,6 +346,7 @@ class RemoteMethod:
         self.id = id
         self.secret = secret
         self.classname = classname
+        self.cntr = cntr
         self.options = options
         self.taskid = taskid
         self.name = name
@@ -354,7 +371,9 @@ class RemoteMethod:
             ctag=self.CTAG,
             watchdog=watchdog,
             **self.options)
-        classobj = getattr(agent, self.classname)
+        classobj = getattr(agent, self.classname)()
+        if isinstance(self.cntr, tuple):
+            classobj(*self.cntr[0], **self.cntr[1])
         method = getattr(classobj, self.name)
         return method(*args, **kwargs)
 
@@ -392,7 +411,7 @@ class ReplyHandler(Listener):
         task = find_async(id=taskid)
         if task:
             sn = reply.sn
-            exception = reply.exval,
+            exception = reply.exval
             tb = repr(exception)
             task[0].failed(exception, tb)
         else:

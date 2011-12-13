@@ -30,29 +30,29 @@ class ContentType(Model):
     @ivar description: user-friendly explanation of the content type's purpose
     @type description: str
 
-    @ivar unique_indexes: list of unique indexes created for the type's collection
-    @type unique_indexes: list of str
+    @ivar unit_key: list of fields that compromise the unique key for units of the type
+    @type unit_key: list of str
 
     @ivar search_indexes: list of additional indexes used to optimize search
                           within this type
     @type search_indexes: list of str
 
-    @ivar child_types: list of IDs of types that may be referenced from units
-                       of this type
-    @type child_types: list of str
+    @ivar referenced_types: list of IDs of types that may be referenced from units
+                            of this type
+    @type referenced_types: list of str
     """
 
     collection_name = 'content_types'
     unique_indices = ('id',)
 
-    def __init__(self, id, display_name, description, unique_indexes, search_indexes, child_types):
+    def __init__(self, id, display_name, description, unit_key, search_indexes, referenced_types):
         self.id = id
         self._id = id
 
         self.display_name = display_name
         self.description = description
         
-        self.unique_indexes = unique_indexes
+        self.unit_key = unit_key
         self.search_indexes = search_indexes
 
-        self.child_types = child_types
+        self.referenced_types = referenced_types

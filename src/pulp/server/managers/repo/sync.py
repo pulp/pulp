@@ -147,17 +147,19 @@ class RepoSyncManager:
         # the plugin is incorrect in its return
         if sync_report is not None and isinstance(sync_report, SyncReport):
             added_count = sync_report.added_count
+            updated_count = sync_report.updated_count
             removed_count = sync_report.removed_count
-            plugin_log = sync_report.log
+            summary = sync_report.summary
+            details = sync_report.details
         else:
             _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
 
-            added_count = _('Unknown')
-            removed_count = _('Unknown')
-            plugin_log = _('Unknown')
-
+            added_count = updated_count = removed_count = -1
+            summary = details = _('Unknown')
+            
         result = RepoSyncResult.success_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
-                                               sync_start_timestamp, sync_end_timestamp, added_count, removed_count, plugin_log)
+                                               sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
+                                               removed_count, summary, details)
         sync_result_coll.save(result, safe=True)
 
         # Request any auto-distributors publish (if we're here, the sync was successful)

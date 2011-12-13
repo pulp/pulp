@@ -452,8 +452,6 @@ class Create(AdminRepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
-        self.parser.add_option("--notes", dest="notes",
-                               help=_("additional information about repo in a dictionary form inside a string"))
         self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
                                help=_("Preserves the original metadata; only works with feed repos"))
         self.parser.add_option('--content_type', dest='content_type', default="yum",
@@ -470,14 +468,6 @@ class Create(AdminRepoAction):
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
         relative_path = self.opts.relativepath
-        if self.opts.notes:
-            try:
-                notes = eval(self.opts.notes)
-            except:
-                utils.system_exit(os.EX_USAGE, _("Invalid argument for notes. Notes need to be specified in dictionary form inside a string eg. \"{'key':'value'}\""))
-
-        else:
-            notes = {}
 
         # Feed cert bundle
         feed_cert_data = None
@@ -511,7 +501,10 @@ class Create(AdminRepoAction):
             cons_cert_tmp = utils.readFile(cert)
         if key:
             cons_key_tmp = utils.readFile(key)
-        consumer_cert_data = {"ca": cons_cacert_tmp,
+        if cons_cacert_tmp is not None or \
+           cons_cert_tmp is not None or \
+           cons_key_tmp is not None:
+            consumer_cert_data = {"ca": cons_cacert_tmp,
                                   "cert": cons_cert_tmp,
                                   "key": cons_key_tmp}
         groupid = self.opts.groupid
@@ -527,7 +520,7 @@ class Create(AdminRepoAction):
                                           groupid=groupid,
                                           gpgkeys=keylist,
                                           checksum_type=self.opts.checksum_type,
-                                          notes=notes, preserve_metadata=preserve_metadata,
+                                          preserve_metadata=preserve_metadata,
                                           content_types=self.opts.content_type)
         print _("Successfully created repository [ %s ]") % repo['id']
 
@@ -634,7 +627,7 @@ class Delete(AdminRepoAction):
         id = self.get_required_option('id')
         self.get_repo(id)
         self.repository_api.delete(id=id)
-        print _("Successful deleted repository [ %s ]") % id
+        print _("Repository [ %s ] being deleted") % id
 
 
 class Update(AdminRepoAction):
@@ -759,15 +752,15 @@ class Sync(RepoProgressAction):
         self.parser.add_option('--delete-schedule', dest='delete', action='store_true', default=False,
                                help=_('delete existing schedule'))
         self.parser.add_option('--interval', dest='interval', default=None,
-                               help=_('length of time between each run in iso8601 duration format'))
+                               help=_('length of time between each run in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S (e.g. "P3Y6M4DT12H30M5S" for "three years, six months, four days, twelve hours, thirty minutes, and five seconds")'))
         self.parser.add_option('--runs', dest='runs', default=None,
-                               help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+                               help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option('--start', dest='start', default=None,
-                               help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+                               help=_('date and time of the first run in iso8601 combined date and time format (e.g. "2012-03-01T13:00:00Z"), omitting implies starting immediately'))
         self.parser.add_option('--exclude', dest='exclude', action='append', default=[],
                                help=_('elements to exclude: packages, errata and/or distribution'))
         self.parser.add_option("--timeout", dest="timeout", default=None,
-                               help=_("repository sync timeout specified in iso8601 duration format (P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
+                               help=_("repository sync timeout specified in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S:"))
         self.parser.add_option("--limit", dest="limit", default=None,
                                help=_("limit download bandwidth per thread to value in KB/sec"))
         self.parser.add_option("--threads", dest="threads", default=None,
@@ -1445,11 +1438,15 @@ class AddErrata(AdminRepoAction):
         else:
             pids = [pkg['id'] for pkg in pkgs.values()]
         try:
-            self.repository_api.add_errata(id, errataids)
+            filtered_errata = self.repository_api.add_errata(id, errataids)
             if pids:
                 # add dependencies to repo
                 self.repository_api.add_package(id, pids)
-            print _("Successfully associated Errata %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
+            if len(filtered_errata) > 0:
+                print _("Successfully associated Errata to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % id)
+                print _("Following errata could not be added due to filters associated with the repository:\n %s" % filtered_errata)
+            else:
+                print _("Successfully associated Errata %s to repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
         except Exception:
             utils.system_exit(os.EX_DATAERR, _("Unable to associate errata [%s] to repo [%s]" % (errataids, id)))
 
@@ -1833,7 +1830,7 @@ class Export(RepoProgressAction):
     def run(self):
         repoid = self.opts.id
         groupid = self.opts.groupid
-        if groupid and (self.opts.foreground or self.opts.status):
+        if groupid and self.opts.status:
             utils.system_exit(os.EX_OK, _("Use `pulp-admin job info` to check the status of group export jobs"))
         if self.opts.status:
             if not repoid:

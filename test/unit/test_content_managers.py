@@ -32,7 +32,7 @@ TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
                                   ['key-1'], ['search-1'], [])
 
 TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
-                                  [('key-2a', 'key-2b')], [], ['type-1'])
+                                  ['key-2a', 'key-2b'], [], ['type-1'])
 
 TYPE_1_UNITS = [
     {'key-1': 'A',
@@ -97,19 +97,19 @@ class PulpContentCUDTests(PulpContentTests):
     def test_link_child_unit(self):
         parent_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, TYPE_2_UNITS[0])
         child_id = self.cud_manager.add_content_unit(TYPE_1_DEF.id, None, TYPE_1_UNITS[0])
-        self.cud_manager.link_child_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
+        self.cud_manager.link_referenced_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, parent_id)
-        self.assertEqual(parent['_%s_children' % TYPE_1_DEF.id][0], child_id)
+        self.assertEqual(parent['_%s_references' % TYPE_1_DEF.id][0], child_id)
 
     def test_unlink_child_unit(self):
         parent_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, TYPE_2_UNITS[0])
         child_id = self.cud_manager.add_content_unit(TYPE_1_DEF.id, None, TYPE_1_UNITS[0])
-        self.cud_manager.link_child_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
+        self.cud_manager.link_referenced_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, parent_id)
-        self.assertEqual(len(parent['_%s_children' % TYPE_1_DEF.id]), 1)
-        self.cud_manager.unlink_child_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
+        self.assertEqual(len(parent['_%s_references' % TYPE_1_DEF.id]), 1)
+        self.cud_manager.unlink_referenced_content_units(TYPE_2_DEF.id, parent_id, TYPE_1_DEF.id, [child_id])
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, parent_id)
-        self.assertEqual(len(parent['_%s_children' % TYPE_1_DEF.id]), 0)
+        self.assertEqual(len(parent['_%s_references' % TYPE_1_DEF.id]), 0)
 
 # query unit tests -------------------------------------------------------------
 

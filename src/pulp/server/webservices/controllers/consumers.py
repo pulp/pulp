@@ -663,7 +663,7 @@ class ApplicableErrataInRepos(JSONController):
         filters = self.filters(valid_filters)
         errata = []
         if filters.has_key('repoids'):
-            repoids = eval(filters['repoids'])
+            repoids = filters['repoids']
             errata = consumer_api.get_consumers_applicable_errata(repoids)
         return self.ok(errata)
 

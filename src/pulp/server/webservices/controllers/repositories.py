@@ -160,7 +160,7 @@ class Repositories(JSONController):
 
     @error_handler
     @auth_required(READ)
-    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path', 'notes')
+    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path', 'note')
     def GET(self, spec=None):
         """
         [[wiki]]
@@ -178,17 +178,20 @@ class Repositories(JSONController):
          * arch, str, repository contect architecture
          * groupid, str, repository group id
          * relative_path, str, repository's on disk path
-         * notes, str of dict, repository notes
+         * note, str, repository note in the format key:value
         """
         # Query by notes
-        if "notes" in spec.keys() :
-            notes = eval(spec["notes"])
-            if notes == {}:
-                spec["notes"] = {}
-            else:
-                for key, value in notes.items():
-                    spec["notes."+ key] = value
-                del spec["notes"]
+        if "note" in spec.keys() :
+            try:
+                note = spec["note"].rsplit(':')
+            except:
+                return self.bad_request("Invalid note %s; correct format is key:value", note)
+
+            if len(note) != 2:
+                return self.bad_request("Invalid note %s; correct format is key:value" % note)
+
+            spec["notes."+ note[0]] = note[1]
+            del spec["note"]
 
         repositories = api.repositories(spec, default_fields)
 
@@ -226,7 +229,6 @@ class Repositories(JSONController):
          * groupid?, list of str, list of repository group ids this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
-         * notes?, dict, additional information in the form of key-value pairs
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
         """
@@ -324,7 +326,17 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
         return: a Repo object
-        parameters: any field of a Repo object except id
+        parameters:
+         * name, str, name of the repository
+         * arch, str, architecture of the repository
+         * feed_cert_data, object, feed key and certificate
+         * consumer_cert_data, object, consumers key and certificate
+         * feed, str, url of feed
+         * checksum_type, str, name of checksum algorithm (sha256, sha1, md5)
+         * addgrp?, list of str, list of group ids to add the repository to
+         * rmgrp?, list of str, list of group ids to remove the repository from
+         * addkeys?, list of str, list of keys to add to the repository
+         * rmkeys?, list of str, list of keys to remove from the repository
         """
         delta = self.params()
         if delta.pop('id', id) != id:
@@ -348,11 +360,19 @@ class Repository(JSONController):
         method: DELETE
         path: /repositories/<id>/
         permission: DELETE
-        success response: 200 OK
-        failure response: None
+        success response: 202 Accepted
+        failure response: 404 Not Found if repository does not exist
+                          409 Conflict if repository cannot be deleted
+        return: a Task object
         """
-        api.delete(id=id)
-        return self.ok({})
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        task = async.run_async(api.delete, kwargs={'id': id})
+        if task is None:
+            return self.conflict('The repository, %s, cannot be deleted' % id)
+        status = self._task_to_dict(task)
+        return self.accepted(status)
 
 class RepositoryNotes(JSONController):
 
@@ -453,7 +473,8 @@ class SchedulesResource(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found
-        return: Schedule object
+        return:
+         * Schedule object
          * type, str, type of schedule
          * schedule, str, schedule in iso8601 format
          * options, obj, options for the scheduled action
@@ -716,7 +737,7 @@ class RepositoryDeferredFields(JSONController):
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
         return field(id)
-     
+
 
 class RepositoryStatusesCollection(JSONController):
     @error_handler
@@ -1358,8 +1379,12 @@ class RepositoryActions(JSONController):
          * errataid, str, errata id
         """
         data = self.params()
-        api.add_errata(id, data['errataid'])
-        return self.ok(True)
+        for erratumid in data['errataid']:
+            erratum = errataapi.erratum(erratumid)
+            if erratum is None:
+                return self.not_found("No Erratum with id: %s found" % erratumid)
+        filtered_errata = api.add_errata(id, data['errataid'])
+        return self.ok(filtered_errata)
 
     def delete_errata(self, id):
         """

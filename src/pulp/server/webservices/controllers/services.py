@@ -538,7 +538,7 @@ class RepoGroupExport(JSONController):
         repos = rapi.repositories({'groupid': groupid}, fields=['id'])
         log.error("Repo ids in group %s" % repos)
         if not len(repos):
-            return self.bad_request("No repoisotries associated to the group id [%s]; nothing to export." % groupid)
+            return self.bad_request("No repositories associated to the group id [%s]; nothing to export." % groupid)
         job = Job()
         for repo in repos:
             repoid = repo['id']

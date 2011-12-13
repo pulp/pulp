@@ -28,9 +28,7 @@ VALID_DESCRIPTOR_1 = model.TypeDescriptor('valid_descriptor_1',
     {"id" : "rpm",
      "display_name" : "RPM",
      "description" : "Yum RPM package",
-     "unique_indexes" : [
-         ["name", "version", "release", "arch", "filename", "checksum"]
-     ],
+     "unit_key" : ["name", "version", "release", "arch", "filename", "checksum"],
      "search_indexes" : [
          ["name", "epoch", "version", "release", "arch"],
          "filename"
@@ -43,38 +41,35 @@ VALID_DESCRIPTOR_2 = model.TypeDescriptor('valid_descriptor_2',
     {"id" : "deb",
      "display_name" : "DEB",
      "description" : "Debian package",
-     "unique_indexes" : [
-         "name", "filename"
-     ],
+     "unit_key" : "name",
      "search_indexes" : [
          ["name", "filename"], "filename"
- ]}
+     ]}
    ]}
 """)
 
 MULTI_TYPE_DESCRIPTOR = model.TypeDescriptor('multi_descriptor',
 """{"types": [
     {"id" : "rpm", "display_name" : "RPM", "description" : "RPM",
-     "unique_indexes" : "name", "search_indexes" : "name"},
+     "unit_key" : "name", "search_indexes" : "name"},
     {"id" : "deb", "display_name" : "DEB", "description" : "DEB",
-     "unique_indexes" : "name", "search_indexes" : "name"}
+     "unit_key" : "name", "search_indexes" : "name"}
    ]}
 """)
 
 CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('child_descriptor',
 """{"types": [
-    {"id" : "aaa", "display_name" : "A", "description" : "A",
-     "child_types" : ["ccc"]},
-    {"id" : "bbb", "display_name" : "B", "description" : "B",
-     "child_types" : "ccc"},
-    {"id" : "ccc", "display_name" : "C", "description" : "C"}
+    {"id" : "aaa", "display_name" : "A", "description" : "A", "unit_key" : "name",
+     "referenced_types" : ["ccc"]},
+    {"id" : "bbb", "display_name" : "B", "description" : "B", "unit_key" : "name",
+     "referenced_types" : "ccc"},
+    {"id" : "ccc", "display_name" : "C", "description" : "C", "unit_key" : "name"}
    ]}
 """)
 
 BAD_CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('bad_children',
 """{"types": [
-    {"id" : "a", "display_name" : "A", "description" : "A",
-     "unique_indexes" : "i", "search_indexes" : "i", "child_types" : ["not_there"]}
+    {"id" : "a", "display_name" : "A", "description" : "A", "unit_key" : "name", "referenced_types" : ["not_there"]}
    ]}
 """)
 
@@ -112,8 +107,7 @@ class ParserTest(testutil.PulpTest):
         self.assertEqual('rpm', type_def.id)
         self.assertEqual('RPM', type_def.display_name)
 
-        self.assertEqual(1, len(type_def.unique_indexes))
-        self.assertEqual(["name", "version", "release", "arch", "filename", "checksum"], type_def.unique_indexes[0])
+        self.assertEqual(["name", "version", "release", "arch", "filename", "checksum"], type_def.unit_key)
 
         self.assertEqual(2, len(type_def.search_indexes))
         self.assertEqual(["name", "epoch", "version", "release", "arch"], type_def.search_indexes[0])
@@ -162,15 +156,15 @@ class ParserTest(testutil.PulpTest):
         self.assertEqual(3, len(definitions))
 
         aaa_def = [d for d in definitions if d.id == 'aaa'][0]
-        self.assertEqual(1, len(aaa_def.child_types))
-        self.assertTrue('ccc' in aaa_def.child_types)
+        self.assertEqual(1, len(aaa_def.referenced_types))
+        self.assertTrue('ccc' in aaa_def.referenced_types)
 
         bbb_def = [d for d in definitions if d.id == 'bbb'][0]
-        self.assertEqual(1, len(bbb_def.child_types))
-        self.assertTrue('ccc' in bbb_def.child_types)
+        self.assertEqual(1, len(bbb_def.referenced_types))
+        self.assertTrue('ccc' in bbb_def.referenced_types)
 
         ccc_def = [d for d in definitions if d.id == 'ccc'][0]
-        self.assertEqual(0, len(ccc_def.child_types))
+        self.assertEqual(0, len(ccc_def.referenced_types))
         
     def test_parse_invalid_descriptor(self):
         """
@@ -218,7 +212,7 @@ class ParserTest(testutil.PulpTest):
         extra = model.TypeDescriptor('extra',
             """{"types": [
                 {"id" : "rpm", "display_name" : "RPM", "description" : "RPM",
-                 "unique_indexes" : "name", "search_indexes" : "name",
+                 "unit_key" : "name", "search_indexes" : "name",
                  "unexpected_attribute" : "foo"}
                ]}"""
         )
@@ -240,7 +234,7 @@ class ParserTest(testutil.PulpTest):
         no_id = model.TypeDescriptor('no_id',
             """{"types": [
                 {"display_name" : "RPM", "description" : "RPM",
-                 "unique_indexes" : "name", "search_indexes" : "name"}
+                 "unit_key" : "name", "search_indexes" : "name"}
                ]}"""
         )
 
@@ -262,7 +256,7 @@ class ParserTest(testutil.PulpTest):
         bad_id = model.TypeDescriptor('bad_id',
             """{"types": [
                 {"id" : "bad-id", "display_name" : "RPM", "description" : "RPM",
-                 "unique_indexes" : "name", "search_indexes" : "name"}
+                 "unit_key" : "name", "search_indexes" : "name"}
                ]}"""
         )
 
@@ -296,9 +290,9 @@ class ParserTest(testutil.PulpTest):
         try:
             parser.parse([BAD_CHILD_TYPES_DESCRIPTOR])
             self.fail('Bad children did not raise an exception')
-        except parser.UndefinedChildIds, e:
-            self.assertEqual(1, len(e.missing_child_ids))
-            self.assertTrue('not_there' in e.missing_child_ids)
+        except parser.UndefinedReferencedIds, e:
+            self.assertEqual(1, len(e.missing_referenced_ids))
+            self.assertTrue('not_there' in e.missing_referenced_ids)
 
     # -- utility tests --------------------------------------------------------
 
@@ -309,7 +303,7 @@ class ParserTest(testutil.PulpTest):
 
         # Test
         parser._parse_descriptors([CHILD_TYPES_DESCRIPTOR])
-        child_ids = parser._all_child_type_ids([CHILD_TYPES_DESCRIPTOR])
+        child_ids = parser._all_referenced_type_ids([CHILD_TYPES_DESCRIPTOR])
 
         # Verify
         self.assertEqual(1, len(child_ids))

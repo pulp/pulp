@@ -113,13 +113,13 @@ def install():
 
     # By default, have the plugins indicate configurations are valid
     MOCK_IMPORTER.validate_config.return_value = True
-    MOCK_IMPORTER.sync_repo.return_value = SyncReport(10, 1, 'Details of the sync')
+    MOCK_IMPORTER.sync_repo.return_value = SyncReport(10, 5, 1, 'Summary of the sync', 'Details of the sync')
 
     MOCK_DISTRIBUTOR.validate_config.return_value = True
-    MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport('Details of the publish')
+    MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport('Summary of the publish', 'Details of the publish')
 
     MOCK_DISTRIBUTOR_2.validate_config.return_value = True
-    MOCK_DISTRIBUTOR_2.publish_repo.return_value = PublishReport('Details of the publish')
+    MOCK_DISTRIBUTOR_2.publish_repo.return_value = PublishReport('Summary of the publish', 'Details of the publish')
 
 def reset():
     """

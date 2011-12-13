@@ -83,9 +83,9 @@ class PluginManagerTests(testutil.PulpTest):
             self.assertEqual(found_def['id'], type_def.id)
             self.assertEqual(found_def['display_name'], type_def.display_name)
             self.assertEqual(found_def['description'], type_def.description)
-            self.assertEqual(found_def['unique_indexes'], type_def.unique_indexes)
+            self.assertEqual(found_def['unit_key'], type_def.unit_key)
             self.assertEqual(found_def['search_indexes'], type_def.search_indexes)
-            self.assertEqual(found_def['child_types'], type_def.child_types)
+            self.assertEqual(found_def['referenced_types'], type_def.referenced_types)
 
     def test_types_no_types(self):
         """

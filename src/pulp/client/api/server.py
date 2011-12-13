@@ -27,7 +27,6 @@ except ImportError:
 from M2Crypto import SSL, httpslib
 
 from pulp.client.lib.logutil import getLogger, getResponseLogger
-from pulp.client.admin.config import AdminConfig
 # current active server -------------------------------------------------------
 
 active_server = None
@@ -198,9 +197,7 @@ class PulpServer(Server):
                    'Content-Type': 'application/json'}
         self.headers.update(headers)
 
-        #self._config = AdminConfig()
         self._log = getLogger('pulp')
-        #self._response_log = getResponseLogger('api_responses')
 
         self.__certfile = None
 
@@ -270,10 +267,11 @@ class PulpServer(Server):
         except:
             pass
 
-        #if self._config.api_response.log_response.lower() == 'true':
-        #    self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
-        #    self._response_log.info("Response status and reason : %s  %s\n" % (response.status, response.reason))
-        #    self._response_log.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
+        if os.getenv("API_RESPONSE_LOG"):
+            self._response_log = getResponseLogger('api_responses', os.getenv("API_RESPONSE_LOG"))
+            self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
+            self._response_log.info("Response status and reason : %s  %s\n" % (response.status, response.reason))
+            self._response_log.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
                 
         if response.status >= 300:
             # if the server has responded with a python traceback
