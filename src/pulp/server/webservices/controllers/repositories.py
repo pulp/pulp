@@ -326,7 +326,17 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
         return: a Repo object
-        parameters: any field of a Repo object except id
+        parameters:
+         * name, str, name of the repository
+         * arch, str, architecture of the repository
+         * feed_cert_data, object, feed key and certificate
+         * consumer_cert_data, object, consumers key and certificate
+         * feed, str, url of feed
+         * checksum_type, str, name of checksum algorithm (sha256, sha1, md5)
+         * addgrp?, list of str, list of group ids to add the repository to
+         * rmgrp?, list of str, list of group ids to remove the repository from
+         * addkeys?, list of str, list of keys to add to the repository
+         * rmkeys?, list of str, list of keys to remove from the repository
         """
         delta = self.params()
         if delta.pop('id', id) != id:
