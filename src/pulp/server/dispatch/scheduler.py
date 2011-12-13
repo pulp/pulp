@@ -116,7 +116,7 @@ class Scheduler(object):
 
     def run_via_taskqueue(self, call_request):
         """
-        Run the call request directy in the task queue
+        Run the call request directly in the task queue
         """
         raise NotImplementedError()
 
