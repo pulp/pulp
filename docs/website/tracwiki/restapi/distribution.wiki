@@ -2,3 +2,39 @@
 = Distribution RESTful API = #top
 ''No description.'' [[BR]]
 [[BR]]
+
+----
+
+== Look up distribution by id. ==
+''Get a distribution object'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /distributions/<id>/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the id does not match a distribution [[BR]]
+[[BR]]
+'''return''': a Distribution object [[BR]]
+[[BR]]
+
+----
+
+== List all available distributions. ==
+''Get a list of all distributions managed by Pulp.'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /distributions/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': None [[BR]]
+[[BR]]
+'''return''': list of distribution objects, possibly empty [[BR]]
+[[BR]]
