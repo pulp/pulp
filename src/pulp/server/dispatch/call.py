@@ -20,38 +20,6 @@ from types import NoneType, TracebackType
 
 _LOG = logging.getLogger(__name__)
 
-# execution responses ----------------------------------------------------------
-
-CALL_ACCEPTED = 'accepted'
-CALL_POSTPONED = 'postponed'
-CALL_REJECTED = 'rejected'
-
-CALL_RESPONSES = (CALL_ACCEPTED,
-                  CALL_POSTPONED,
-                  CALL_REJECTED)
-
-# call states ------------------------------------------------------------------
-
-CALL_UNKNOWN = 'unknown'
-CALL_WAITING = 'waiting'
-CALL_RUNNING = 'running'
-CALL_SUSPENDED = 'suspended'
-CALL_FINISHED = 'finished'
-CALL_ERROR = 'error'
-CALL_CANCELED = 'canceled'
-
-CALL_STATES = (CALL_UNKNOWN,
-               CALL_WAITING,
-               CALL_RUNNING,
-               CALL_SUSPENDED,
-               CALL_FINISHED,
-               CALL_ERROR,
-               CALL_CANCELED)
-
-CALL_READY_STATES = (CALL_WAITING,)
-CALL_INCOMPLETE_STATES = (CALL_WAITING, CALL_RUNNING, CALL_SUSPENDED)
-CALL_COMPLETE_STATES = (CALL_FINISHED, CALL_ERROR, CALL_TIMED_OUT, CALL_CANCELED)
-
 # call request class -----------------------------------------------------------
 
 class CallRequest(object):
@@ -199,8 +167,8 @@ class CallReport(object):
     @type job_id: str
     @ivar progress: dictionary of progress information
     @type progress: dict
-    @ivar return_value: return value of the callable, if any
-    @type return_value: any
+    @ivar result: return value of the callable, if any
+    @type result: any
     @ivar exception: exception from callable, if any
     @type exception: Exception
     @ivar traceback: traceback from callable, if any
@@ -227,9 +195,9 @@ class CallReport(object):
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
 
-        self.response = response or CALL_UNKNOWN
+        self.response = response
         self.reason = reason or {}
-        self.state = state or CALL_UNKNOWN
+        self.state = state
         self.task_id = task_id
         self.job_id = job_id
         self.progress = progress or {}
