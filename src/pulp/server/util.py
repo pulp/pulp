@@ -12,6 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
+import gzip
 
 import hashlib # 3rd party on RHEL 5
 import logging
@@ -514,6 +515,11 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
             renamed_filetype_path = os.path.join(os.path.dirname(filetype_path), \
                                          ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
             os.rename(filetype_path,  renamed_filetype_path)
+            if renamed_filetype_path.endswith('.gz'):
+                # if file is gzipped, decompress before passing to modifyrepo
+                data = gzip.open(renamed_filetype_path).read().decode("utf-8", "replace")
+                renamed_filetype_path = '.'.join(renamed_filetype_path.split('.')[:-1])
+                open(renamed_filetype_path, 'w').write(data.encode("UTF-8"))
             if os.path.isfile(renamed_filetype_path):
                 log.info("Modifying repo for %s metadata" % ftype)
                 modify_repo(current_repo_dir, renamed_filetype_path)
