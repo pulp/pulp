@@ -28,7 +28,7 @@ class QueuedCall(Model):
 
 class ScheduledCall(Model):
     """
-    Serialzed scheduled call request
+    Serialized scheduled call request
     """
 
     collection_name = 'scheduled_calls'
