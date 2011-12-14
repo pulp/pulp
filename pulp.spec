@@ -475,6 +475,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Dec 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-7
+- bump release for build. (jortel@redhat.com)
+- 767618 - Fixed error when uploading content to a repo with filter
+  (skarmark@redhat.com)
+- 767246 - decompress metadata passed to modifyrepo to work around the f16
+  modifyrepo issues (pkilambi@redhat.com)
+
 * Mon Dec 12 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-6
 - bump release for build. (jortel@redhat.com)
 - 766705 - fixing UnboundLocalError when uploading a file due to filters
