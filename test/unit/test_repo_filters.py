@@ -134,13 +134,8 @@ class TestRepoFilters(testutil.PulpAsyncTest):
         self.assertTrue(repo is not None)
         self.filter_api.create('filter-test1', type="blacklist")
         self.repo_api.add_filters('some-id', ['filter-test1'])
-        try:
-            self.filter_api.delete("filter-test1")
-            self.assertTrue(False)
-        except:
-            pass
-        
-        self.filter_api.delete("filter-test1", force=True)
+
+        self.filter_api.delete("filter-test1")
         filters = self.repo_api.list_filters('some-id')
         self.assertTrue(len(filters) == 0)
         
