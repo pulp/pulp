@@ -18,6 +18,7 @@ import sys
 import time
 import traceback
 import unittest
+import shutil
 from threading import Thread
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
@@ -33,12 +34,15 @@ from pulp.server.util import get_rpm_information
 from pulp.server.util import get_repo_packages
 from pulp.server.util import get_repo_package
 from pulp.server.util import get_relative_path
+from pulp.server.util import makedirs
 
 logging.root.setLevel(logging.INFO)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
 CERTS_DIR = '/tmp/test_repo_api/repos'
+
+
 class TestUtil(testutil.PulpAsyncTest):
 
     def setUp(self):
@@ -195,6 +199,29 @@ class TestUtil(testutil.PulpAsyncTest):
                     waiting_tasks.remove(t_id)
         self.assertTrue(count < wait_count)
 
+    def test_makdirs(self):
+        root = '/tmp/test_makedirs'
+        shutil.rmtree(root, True)
+        path = os.path.join(root, 'A/B/C')
+        makedirs(path)
+        self.assertTrue(os.path.exists(path) and os.path.isdir(path))
+        for d in ('A','B','C'):
+            path = os.path.join(root, d)
+            makedirs(path)
+            self.assertTrue(os.path.exists(path) and os.path.isdir(path))
+        for d in ('C','//B','A'):
+            path = '/'.join((root, d))
+            makedirs(path)
+            self.assertTrue(os.path.exists(path) and os.path.isdir(path))
+        # test non-dir in the path
+        shutil.rmtree(root, True)
+        makedirs(root)
+        path = os.path.join(root, 'A')
+        f = open(path, 'w')
+        f.close()
+        path = os.path.join(path, 'B', 'C')
+        self.assertRaises(OSError, makedirs, path)
+        shutil.rmtree(root, True)
 
 if __name__ == '__main__':
     unittest.main()
