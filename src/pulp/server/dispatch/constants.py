@@ -11,34 +11,58 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# TODO task events
+# execution hooks --------------------------------------------------------------
+
+CALL_ENQUEUE_EXECUTION_HOOK = 0
+CALL_DEQUEUE_EXECUTION_HOOK = 1
+CALL_RUN_EXECUTION_HOOK = 2
+CALL_FINISH_EXECUTION_HOOK = 3
+CALL_ERROR_EXECUTION_HOOK = 4
+CALL_CANCEL_EXECUTION_HOOK = 5
+
+CALL_EXECUTION_HOOKS = (CALL_ENQUEUE_EXECUTION_HOOK,
+                        CALL_DEQUEUE_EXECUTION_HOOK,
+                        CALL_RUN_EXECUTION_HOOK,
+                        CALL_FINISH_EXECUTION_HOOK,
+                        CALL_ERROR_EXECUTION_HOOK,
+                        CALL_CANCEL_EXECUTION_HOOK)
+
+# control hooks ----------------------------------------------------------------
+
+CALL_CANCEL_CONTROL_HOOK = 0
+CALL_PROGRESS_CONTROL_HOOK = 1
+CALL_PRESENTATION_CONTROL_HOOK = 2
+
+CALL_CONTROL_HOOKS = (CALL_CANCEL_CONTROL_HOOK,
+                      CALL_PRESENTATION_CONTROL_HOOK,
+                      CALL_PRESENTATION_CONTROL_HOOK)
 
 # execution responses ----------------------------------------------------------
 
-CALL_ACCEPTED = 'call request accepted'
-CALL_POSTPONED = 'call request postponed'
-CALL_REJECTED = 'call request rejected'
+CALL_ACCEPTED_RESPONSE = 'call request accepted'
+CALL_POSTPONED_RESPONSE = 'call request postponed'
+CALL_REJECTED_RESPONSE = 'call request rejected'
 
-CALL_RESPONSES = (CALL_ACCEPTED,
-                  CALL_POSTPONED,
-                  CALL_REJECTED)
+CALL_RESPONSES = (CALL_ACCEPTED_RESPONSE,
+                  CALL_POSTPONED_RESPONSE,
+                  CALL_REJECTED_RESPONSE)
 
 # call states ------------------------------------------------------------------
 
-CALL_WAITING = 'call waiting'
-CALL_RUNNING = 'call running'
-CALL_SUSPENDED = 'call suspended'
-CALL_FINISHED = 'call finished'
-CALL_ERROR = 'call error'
-CALL_CANCELED = 'call canceled'
+CALL_WAITING_STATE = 'call waiting'
+CALL_RUNNING_STATE = 'call running'
+CALL_SUSPENDED_STATE = 'call suspended'
+CALL_FINISHED_STATE = 'call finished'
+CALL_ERROR_STATE = 'call error'
+CALL_CANCELED_STATE = 'call canceled'
 
-CALL_STATES = (CALL_WAITING,
-               CALL_RUNNING,
-               CALL_SUSPENDED,
-               CALL_FINISHED,
-               CALL_ERROR,
-               CALL_CANCELED)
+CALL_STATES = (CALL_WAITING_STATE,
+               CALL_RUNNING_STATE,
+               CALL_SUSPENDED_STATE,
+               CALL_FINISHED_STATE,
+               CALL_ERROR_STATE,
+               CALL_CANCELED_STATE)
 
-CALL_READY_STATES = (CALL_WAITING,)
-CALL_INCOMPLETE_STATES = (CALL_WAITING, CALL_RUNNING, CALL_SUSPENDED)
-CALL_COMPLETE_STATES = (CALL_FINISHED, CALL_ERROR, CALL_CANCELED)
+CALL_READY_STATES = (CALL_WAITING_STATE,)
+CALL_INCOMPLETE_STATES = (CALL_WAITING_STATE, CALL_RUNNING_STATE, CALL_SUSPENDED_STATE)
+CALL_COMPLETE_STATES = (CALL_FINISHED_STATE, CALL_ERROR_STATE, CALL_CANCELED_STATE)

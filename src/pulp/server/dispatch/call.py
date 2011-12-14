@@ -17,6 +17,8 @@ import logging
 import pickle
 from types import NoneType, TracebackType
 
+from pulp.server.dispatch import constants as dispatch_constants
+
 
 _LOG = logging.getLogger(__name__)
 
@@ -50,8 +52,6 @@ class CallRequest(object):
                  kwargs=None,
                  resources=None,
                  weight=1,
-                 execution_hooks=None,
-                 control_hooks=None,
                  tags=None):
 
         assert callable(call)
@@ -59,8 +59,6 @@ class CallRequest(object):
         assert isinstance(kwargs, (NoneType, dict))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
-        assert isinstance(execution_hooks, (NoneType, dict))
-        assert isinstance(control_hooks, (NoneType, dict))
         assert isinstance(tags, (NoneType, list))
 
         self.call = call
@@ -68,9 +66,9 @@ class CallRequest(object):
         self.kwargs = kwargs or {}
         self.resources = resources or {}
         self.weight = weight
-        self.execution_hooks = execution_hooks or {}
-        self.control_hooks = control_hooks or {}
         self.tags = tags or []
+        self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_EXECUTION_HOOKS))]
+        self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
 
     def callable_name(self):
         name = self.call.__name__
@@ -93,17 +91,18 @@ class CallRequest(object):
     # hooks management ---------------------------------------------------------
 
     def add_execution_hook(self, key, hook):
-        hook_list = self.execution_hooks.setdefault(key, [])
-        hook_list.append(hook)
+        assert key in dispatch_constants.CALL_EXECUTION_HOOKS
+        self.execution_hooks[key].append(hook)
 
     def add_control_hook(self, key, hook):
+        assert key in dispatch_constants.CALL_CONTROL_HOOKS
         self.control_hooks[key] = hook
 
     # call request serialization/deserialization -------------------------------
 
-    pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'execution_hooks', 'control_hooks')
     copied_fields = ('resources', 'weight', 'tags')
-    all_fields = itertools.chain(pickled_fields, copied_fields)
+    pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'execution_hooks', 'control_hooks')
+    all_fields = itertools.chain(copied_fields, pickled_fields)
 
     def serialize(self):
         """
@@ -146,7 +145,22 @@ class CallRequest(object):
             _LOG.exception(e)
             return None
 
+        execution_hooks = constructor_kwargs.pop('execution_hooks')
+        control_hooks = constructor_kwargs.pop('control_hooks')
+
         instance = cls(**constructor_kwargs)
+
+        for key in dispatch_constants.CALL_EXECUTION_HOOKS:
+            if not execution_hooks[key]:
+                continue
+            for hook in execution_hooks[key]:
+                instance.add_execution_hook(key, hook)
+
+        for key in dispatch_constants.CALL_CONTROL_HOOKS:
+            if control_hooks[key] is None:
+                continue
+            instance.add_control_hook(key, control_hooks[key])
+
         return instance
 
 # call report class ------------------------------------------------------------
