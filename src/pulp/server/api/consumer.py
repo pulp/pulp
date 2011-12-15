@@ -638,7 +638,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         consumer_errata = []
         for errataid in self._applicable_errata(consumer, types).keys():
-            consumer_errata.append( self.errataapi.erratum(errataid, fields=['id', 'title', 'type']))
+            consumer_errata.append( self.errataapi.erratum(errataid))
         return consumer_errata
 
     def list_package_updates(self, id, types=()):
