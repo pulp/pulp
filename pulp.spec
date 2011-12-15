@@ -307,11 +307,11 @@ rm -rf %{buildroot}
 # -- post - pulp server ------------------------------------------------------
 
 %post
-setfacl -m u:apache:rwx /etc/pki/pulp/content/
+chown -R apache:apache /etc/pki/pulp/content/
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
-setfacl -m u:apache:rwx /etc/pki/pulp/content/
+chown -R apache:apache /etc/pki/pulp/content/
 
 # Create the cluster related files and give them Apache ownership;
 # both httpd (apache) and gofer (root) will write to them, so to prevent
