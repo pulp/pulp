@@ -229,7 +229,9 @@ class RepoContentUnit(Model):
     # Make sure you understand how the order of these affects mongo before
     # modifying the following index
     unique_indices = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
-    search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'))
+    search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'),
+                       ('unit_type_id', 'created') # default sort order on get_units query
+                     )
 
     OWNER_TYPE_IMPORTER = 'importer'
     OWNER_TYPE_USER = 'user'

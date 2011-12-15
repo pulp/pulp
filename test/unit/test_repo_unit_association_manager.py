@@ -14,6 +14,7 @@
 
 # Python
 import datetime
+import math
 import os
 import sys
 
@@ -380,6 +381,15 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
         self._assert_default_sort(units)
 
+    def test_get_units_filter_owner_type(self):
+        # Test
+        criteria = MultipleTypeCriteria(owner_type=OWNER_TYPE_IMPORTER)
+        units = self.manager.get_units('repo-1', criteria)
+
+        # Verify
+        expected_count = reduce(lambda x, y: x + len(self.units[y]), ['alpha', 'gamma'], 0)
+        self.assertEqual(expected_count, len(units))
+
     def test_get_units_limit(self):
         # Test
         low_criteria = MultipleTypeCriteria(limit=2)
@@ -444,12 +454,13 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         # Verify
 
         # The first association in each type/owner combination will be timestamps[0],
-        # the second timestamps[1]. There are 4 such type/owner combinations.
+        # the second timestamps[1]. There are 4 such type/owner combinations,
+        # however the user associations in gamma have timestamp offsets of i+1.
 
-        self.assertEqual(self.repo_1_count - 4, len(after_units))
-        self.assertEqual(4, len(before_units))
-        self.assertEqual(self.repo_1_count - 4, len(after_equal_units))
-        self.assertEqual(8, len(before_equal_units))
+        self.assertEqual(self.repo_1_count - 3, len(after_units))
+        self.assertEqual(3, len(before_units))
+        self.assertEqual(self.repo_1_count - 3, len(after_equal_units))
+        self.assertEqual(7, len(before_equal_units))
 
     def test_get_units_remove_duplicates(self):
         # Test
@@ -467,6 +478,159 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         self.assertEqual(0, len(non_user_gamma_units))
 
     # -- get_units_by_type tests ----------------------------------------------
+
+    def test_get_units_by_type_no_criteria(self):
+        # Test
+        alpha_units = self.manager.get_units_by_type('repo-1', 'alpha')
+        beta_units = self.manager.get_units_by_type('repo-1', 'beta')
+        epsilon_units = self.manager.get_units_by_type('repo-1', 'epsilon')
+
+        # Verify
+        self.assertEqual(len(self.units['alpha']), len(alpha_units))
+        self.assertEqual(len(self.units['beta']), len(beta_units))
+        self.assertEqual(0, len(epsilon_units))
+
+        for u in alpha_units + beta_units:
+            self._assert_unit_integrity(u)
+
+        self._assert_default_sort(alpha_units)
+        self._assert_default_sort(beta_units)
+
+    def test_get_units_by_type_association_filter(self):
+        # Test
+        criteria = SingleTypeCriteria(owner_type=OWNER_TYPE_IMPORTER)
+        units = self.manager.get_units_by_type('repo-1', 'gamma', criteria)
+
+        # Verify
+
+        # There are two associations for each gamma unit, one for importer and
+        # one for unit. This verification is that only the importer set of them
+        # is returned, so the expected length is 1x gamma insetad of 2x.
+        self.assertEqual(len(self.units['gamma']), len(units))
+
+        for u in units:
+            self.assertEqual(u['owner_type'], association_manager.OWNER_TYPE_IMPORTER)
+
+    def test_get_units_by_type_unit_metadata_filter(self):
+        # Test
+        criteria = SingleTypeCriteria(unit_spec={'md_2' : 0})
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        expected = math.ceil(float(len(self.units['alpha'])) / float(2))
+        self.assertEqual(expected, len(units))
+
+        for u in units:
+            self.assertEqual(u['metadata']['md_2'], 0)
+
+    def test_get_units_by_type_association_sort_limit(self):
+        # Test
+        criteria = SingleTypeCriteria(sort=[('owner_type', association_manager.SORT_DESCENDING)], limit=2)
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        self.assertEqual(2, len(units))
+        for i in range(0, len(units) - 1):
+            u1 = units[i]
+            u2 = units[i+1]
+            self.assertTrue(u1['owner_type'] >= u2['owner_type'])
+
+    def test_get_units_by_type_unit_metadata_sort_limit(self):
+        # Test
+        criteria = SingleTypeCriteria(sort=[('md_2', association_manager.SORT_DESCENDING)], limit=2)
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        self.assertEqual(2, len(units))
+        self.assertEqual(2, len(units))
+        for i in range(0, len(units) - 1):
+            u1 = units[i]
+            u2 = units[i+1]
+            self.assertTrue(u1['metadata']['md_2'] >= u2['metadata']['md_2'])
+
+    def test_get_units_by_type_association_sort_skip(self):
+        # Test
+        criteria = SingleTypeCriteria(sort=[('owner_type', association_manager.SORT_DESCENDING)], skip=1)
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        expected_count = len(self.units['alpha']) - 1 # skip the first
+        self.assertEqual(expected_count, len(units))
+
+    def test_get_units_by_type_unit_metadata_sort_skip(self):
+        # Test
+        criteria = SingleTypeCriteria(sort=[('md_2', association_manager.SORT_DESCENDING)], skip=1)
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        expected_count = len(self.units['alpha']) - 1 # skip the first
+        self.assertEqual(expected_count, len(units))
+
+    def test_get_units_by_type_sort_association_data(self):
+        # Test
+        sort_criteria = SingleTypeCriteria(sort=[('created', association_manager.SORT_DESCENDING)])
+        sort_units = self.manager.get_units_by_type('repo-1', 'alpha', sort_criteria)
+
+        # Verify
+        self.assertEqual(len(self.units['alpha']), len(sort_units))
+
+        for i in range(0, len(sort_units) - 1):
+            u1 = sort_units[i]
+            u2 = sort_units[i+1]
+            self.assertTrue(u1['created'] >= u2['created'])
+
+    def test_get_units_by_type_sort_unit_data(self):
+        # Test
+        sort_criteria = SingleTypeCriteria(sort=[('md_2', association_manager.SORT_DESCENDING)])
+        sort_units = self.manager.get_units_by_type('repo-1', 'alpha', sort_criteria)
+
+        # Verify
+        self.assertEqual(len(self.units['alpha']), len(sort_units))
+
+        for i in range(0, len(sort_units) - 1):
+            u1 = sort_units[i]
+            u2 = sort_units[i+1]
+            self.assertTrue(u1['metadata']['md_2'] >= u2['metadata']['md_2'])
+
+    def test_get_units_by_type_remove_duplicates(self):
+        # Test
+        criteria = SingleTypeCriteria(remove_duplicates=True)
+        units = self.manager.get_units_by_type('repo-1', 'gamma', criteria)
+
+        # Verify
+        self.assertEqual(len(self.units['gamma']), len(units)) # only one association per gamma unit
+        for u in units:
+            self.assertEqual(u['owner_type'], association_manager.OWNER_TYPE_USER) # all user associations have earlier created date
+
+    def test_remove_duplicates(self):
+        # Setup
+        def unit(unit_type_id, unit_id, created):
+            return {'unit_type_id' : unit_type_id,
+                    'unit_id' : unit_id,
+                    'created' : created}
+
+        all_units = [
+            unit('t1', 'u1', self.timestamps[2]),
+            unit('t1', 'u1', self.timestamps[1]),
+            unit('t1', 'u1', self.timestamps[3]),
+            unit('t1', 'u2', self.timestamps[6]),
+            unit('t2', 'u1', self.timestamps[5]),
+        ]
+
+        # Test
+        matching = self.manager._remove_duplicate_associations(all_units)
+
+        # Verify
+        self.assertEqual(3, len(matching))
+        self.assertEqual(matching[0]['unit_type_id'], 't1')
+        self.assertEqual(matching[0]['unit_id'], 'u1')
+        self.assertEqual(matching[0]['created'], self.timestamps[1])
+        self.assertEqual(matching[1]['unit_type_id'], 't1')
+        self.assertEqual(matching[1]['unit_id'], 'u2')
+        self.assertEqual(matching[1]['created'], self.timestamps[6])
+        self.assertEqual(matching[2]['unit_type_id'], 't2')
+        self.assertEqual(matching[2]['unit_id'], 'u1')
+        self.assertEqual(matching[2]['created'], self.timestamps[5])
 
     # -- utilities ------------------------------------------------------------
 
@@ -515,3 +679,94 @@ class UnitAssociationQueryTests(testutil.PulpTest):
                 u1 = units_list[i]
                 u2 = units_list[i+1]
                 self.assertTrue(u1['created'] <= u2['created'])
+
+class GetUnitsStressTest(testutil.PulpTest):
+
+    ENABLED = False
+
+    def clean(self):
+        super(GetUnitsStressTest, self).clean()
+        database.clean()
+        RepoContentUnit.get_collection().remove()
+
+    def setUp(self):
+        super(GetUnitsStressTest, self).setUp()
+        database.update_database(_QUERY_TYPES)
+        self.manager = association_manager.RepoUnitAssociationManager()
+        self.content_manager = content_cud_manager.ContentManager()
+
+    def test_1(self):
+        """
+        Scenario: Simulates around 4 completely unique base channels and
+        searching for all units in one of them.
+
+        Test Properties:
+        - 12000 units, single unit type, 10 metadata keys each
+        - 3000 associations, importer owned
+        """
+
+        if not GetUnitsStressTest.ENABLED: return
+
+        # Setup
+        repo_id = 'repo-1'
+
+        start = datetime.datetime.now()
+        for i in range(0, 12000):
+            unit_id = 'unit_%d' % i
+            metadata = {'key_1' : unit_id}
+            for j in range(0, 10):
+                metadata['md_%d' % j] = 'value_%d' % i
+            self.content_manager.add_content_unit('alpha', unit_id, metadata)
+
+        for i in range(3000, 6000):
+            unit_id = 'unit_%d' % i
+            self.manager.associate_unit_by_id(repo_id, 'alpha', unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
+
+        end = datetime.datetime.now()
+        setup_ellapsed = (end - start).seconds
+
+        # Test
+        start = datetime.datetime.now()
+        units = self.manager.get_units(repo_id)
+        self.assertEqual(3000, len(units))
+        end = datetime.datetime.now()
+        test_ellapsed = (end - start).seconds
+
+        print('Scenario 1: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+
+    def test_2(self):
+        """
+        Scenario: Abnormally large repository with all 15,000 units spread out
+        across 5 unit types.
+
+        Test Properties:
+        - 15000 units balanced across 5 unit types, 30 metadata keys each
+        - 15000 associations, importer owned
+        """
+
+        if not GetUnitsStressTest.ENABLED: return
+
+        # Setup
+        repo_id = 'repo-2'
+
+        start = datetime.datetime.now()
+        for i in range(0, 15000):
+            unit_id = 'unit_%d' % i
+            unit_type_id = _QUERY_TYPES[i % len(_QUERY_TYPES)].id
+            metadata = {'key_1' : unit_id}
+            for j in range(0, 30):
+                metadata['md_%d' % j] = 'value_%d' % i
+            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
+            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
+
+        end = datetime.datetime.now()
+        setup_ellapsed = (end - start).seconds
+
+        # Test
+        start = datetime.datetime.now()
+        units = self.manager.get_units(repo_id)
+        self.assertEqual(15000, len(units))
+        end = datetime.datetime.now()
+        test_ellapsed = (end - start).seconds
+
+        print('Scenario 2: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))

@@ -385,7 +385,8 @@ class RepoUnitAssociationManager:
 
         type_collection = types_db.type_units_collection(type_id)
         unit_spec = {}
-        unit_spec.update(criteria.unit_spec)
+        if criteria.unit_spec is not None:
+            unit_spec.update(criteria.unit_spec)
 
         # Depending on where the sort occurs, the algorithm proceeds in
         # drastically different ways. Both of these absolutely must be stress
@@ -423,8 +424,9 @@ class RepoUnitAssociationManager:
             # Determine what our sort criteria will look like
             if criteria.sort is None:
                 # Default the sort to the unit key
-                unit_key_field = types_db.type_units_unit_key(type_id)
-                cursor.sort(unit_key_field, pymongo.ASCENDING)
+                unit_key_fields = types_db.type_units_unit_key(type_id)
+                sort_spec = [(u, SORT_ASCENDING) for u in unit_key_fields]
+                cursor.sort(sort_spec)
             else:
                 cursor.sort(criteria.sort)
 
@@ -489,7 +491,7 @@ class RepoUnitAssociationManager:
 class SingleTypeCriteria:
 
     def __init__(self, first_associated=None, last_updated=None, owner_type=None,
-                 owner_id=None, unit_fields=None,
+                 owner_id=None, unit_spec=None,
                  limit=None, skip=None,
                  remove_duplicates=False,
                  sort=None):
@@ -503,9 +505,7 @@ class SingleTypeCriteria:
         self.owner_type = owner_type
         self.owner_id = owner_id
 
-        if unit_fields is not None and not isinstance(unit_fields, (list, tuple)):
-            unit_fields = [unit_fields]
-        self.unit_fields = unit_fields
+        self.unit_spec = unit_spec
 
         self.limit = limit
         self.skip = skip
@@ -518,7 +518,7 @@ class SingleTypeCriteria:
         s += 'Last Updated [%s], ' % self.last_updated
         s += 'Owner Type [%s], ' % self.owner_type
         s += 'Owner ID [%s], ' % self.owner_id
-        s += 'Unit Fields [%s], ' % self.unit_fields
+        s += 'Unit Spec [%s], ' % self.unit_spec
         s += 'Limit [%s], ' % self.limit
         s += 'Skip [%s], ' % self.skip
         s += 'Sort [%s]' % self.sort
@@ -541,7 +541,7 @@ class SingleTypeCriteria:
 
         return spec
 
-    def association_sort_fields(self):
+    def association_sort(self):
         """
         Analyzes the given sort fields to determine if the sort is
         on the association metadata or on the unit field metadata. If any
@@ -565,7 +565,6 @@ class SingleTypeCriteria:
             return None
         else:
             return association_sorts
-
 
 
 class MultipleTypeCriteria:
