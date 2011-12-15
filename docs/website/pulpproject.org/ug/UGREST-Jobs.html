@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Jobs RESTful Interface</h1>
+<p>
+<em>RESTful interface providing access to pulp jobs.</em> <br />
+<br />
+<strong>Job object fields</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <em>unique id (usually a uuid) for the job.</em>
+</li><li><strong>tasks</strong> &lt;list&gt; <em>list of related Tasks.</em>
+</li></ul><p>
+<strong>Cancel object fields</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <em>unique id (usually a uuid) for the job.</em>
+</li><li><strong>completed</strong> &lt;list&gt; <em>list of completed Task objects that cannot be cancelled.</em>
+</li><li><strong>cancelled</strong> &lt;list&gt; <em>list of Task objects cancelled by the request.</em>
+</li></ul><p>
+<strong>Task object fields</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <em>unique task id</em>
+</li><li><strong>job_id</strong> &lt;str&gt; <em>the job id</em>
+</li><li><strong>class_name</strong> &lt;str&gt; <em>name of the class, if the task's method is an instance method</em>
+</li><li><strong>method_name</strong> &lt;str&gt; <em>name of the pulp library method that was called</em>
+</li><li><strong>state</strong> &lt;str&gt; <em>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</em>
+</li><li><strong>failure_threshold</strong> &lt;int&gt; <em>number of failures allowed this task before it is no longer scheduled</em>
+</li><li><strong>cancel_attempts</strong> &lt;int&gt; <em>the number of times cancel was called on this task</em>
+</li><li><strong>callable</strong> &lt;str&gt; <em>pickled task method</em>
+</li><li><strong>args</strong> &lt;str&gt; <em>pickled arguments for the task method</em>
+</li><li><strong>kwargs</strong> &lt;str&gt; <em>picked keyword arguments for the task method</em>
+</li><li><strong>progress</strong> &lt;object or nil&gt; <em>object representing the pulp library call's progress, nill if no information is available</em>
+</li><li><strong>timeout</strong> &lt;str&gt; <em>pickled timedelta representing the time limit for the task's run</em>
+</li><li><strong>schedule_threshold</strong> &lt;str&gt; <em>pickled timedelta representing a max difference between the scheduled_time and start_time before an error is logged</em>
+</li><li><strong>_progress_callback</strong> &lt;str&gt; <em>pickled method allowing progress information to be recorded by the task</em>
+</li><li><strong>start_time</strong> &lt;str&gt; <em>pickled datetime showing the start time of the task</em>
+</li><li><strong>finish_time</strong> &lt;str&gt; <em>pickled datetime showing the finish time of the task</em>
+</li><li><strong>result</strong> &lt;str&gt; <em>pickled result of the task call</em>
+</li><li><strong>exception</strong> &lt;str&gt; <em>pickled error, if one occurred</em>
+</li><li><strong>traceback</strong> &lt;str&gt; <em>pickled traceback, if one occured</em>
+</li></ul><hr />
+<h2 id="CancelAJob">Cancel A Job</h2>
+<p>
+<em>Cancel a waiting or running job.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /jobs/&lt;id&gt;/cancel/ <br />
+<br />
+<strong>permission</strong>: UPDATE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 404 Not Found <br />
+<br />
+<strong>return</strong>: Cancel object <br />
+<br />
+</p>
+<hr />
+<h2 id="GetAJob">Get A Job</h2>
+<p>
+<em>Get a Job object for a specific job</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /jobs/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if no such job <br />
+<br />
+<strong>return</strong>: Job object <br />
+<br />
+</p>
+<hr />
+<h2 id="GetAllJobs">Get All Jobs</h2>
+<p>
+<em>Get a list of all jobs currently in the system</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /jobs/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of job objects <br />
+<br />
+</p>
+</div>
+        
+        
+      </div>
+      
+
+    </div>
+    
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

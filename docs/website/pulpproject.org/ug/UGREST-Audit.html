@@ -30,39 +30,26 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><p>
-<div class='wiki-toc'>
-<h4>Table of Contents</h4>
-<ol><li class="active"><a href="UGREST-Audit.html#ListAuditedEvents">List Audited Events</a></li></ol></li></ol></div>
-
-</p>
-<h1 id="top">Auditing RESTful Interface</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Auditing RESTful Interface</h1>
 <p>
-<i>RESTful interface for querying events audited by the system.</i> <br />
-<i>Events are returned as Event objects.</i> <br />
+<em>RESTful interface for querying events audited by the system.</em> <br />
+<em>Events are returned as Event objects.</em> <br />
 <br />
 <strong>Event object fields</strong>: 
 </p>
-<ul><li><strong>timestamp</strong> &lt;int&gt; <i>time the event occurred</i>
-</li><li><strong>principal_type</strong> &lt;str&gt; <i>type of the principal</i>
-</li><li><strong>principal</strong> &lt;str&gt; <i>principal that triggered the event</i>
-</li><li><strong>action</strong> &lt;str&gt; <i>name of the audited action</i>
-</li><li><strong>method</strong> &lt;str&gt; <i>name of the method called</i>
-</li><li><strong>params</strong> &lt;list of str&gt; <i>parameter passed to the method</i>
-</li><li><strong>result</strong> &lt;str&gt; <i>result of the method call or null if not recorded</i>
-</li><li><strong>exception</strong> &lt;str&gt; <i>name of the error that occurred, if any</i>
-</li><li><strong>traceback</strong> &lt;str&gt; <i>code traceback for the error, if any</i>
+<ul><li><strong>timestamp</strong> &lt;int&gt; <em>time the event occurred</em>
+</li><li><strong>principal_type</strong> &lt;str&gt; <em>type of the principal</em>
+</li><li><strong>principal</strong> &lt;str&gt; <em>principal that triggered the event</em>
+</li><li><strong>action</strong> &lt;str&gt; <em>name of the audited action</em>
+</li><li><strong>method</strong> &lt;str&gt; <em>name of the method called</em>
+</li><li><strong>params</strong> &lt;list of str&gt; <em>parameter passed to the method</em>
+</li><li><strong>result</strong> &lt;str&gt; <em>result of the method call or null if not recorded</em>
+</li><li><strong>exception</strong> &lt;str&gt; <em>name of the error that occurred, if any</em>
+</li><li><strong>traceback</strong> &lt;str&gt; <em>code traceback for the error, if any</em>
 </li></ul><hr />
 <h2 id="ListAuditedEvents">List Audited Events</h2>
 <p>
-<i>List all available audited events.</i> <br />
+<em>List all available audited events.</em> <br />
 <br />
 <strong>method</strong>: GET <br />
 <br />
@@ -78,27 +65,23 @@
 <br />
 <strong>filters</strong>: 
 </p>
-<ul><li><strong>api</strong> &lt;str&gt; <i>the api name</i>
-</li><li><strong>method</strong> &lt;str&gt; <i>the method name</i>
-</li><li><strong>principal</strong> &lt;str&gt; <i>the caller of an api method</i>
-</li><li><strong>field</strong> &lt;str&gt; <i>which fields are returned for each event</i>
-</li><li><strong>limit</strong> &lt;int&gt; <i>limit the number of events returned</i>
-</li><li><strong>errors_only</strong> &lt;bool&gt; <i>only show events that have a traceback associated with them</i>
+<ul><li><strong>api</strong> &lt;str&gt; <em>the api name</em>
+</li><li><strong>method</strong> &lt;str&gt; <em>the method name</em>
+</li><li><strong>principal</strong> &lt;str&gt; <em>the caller of an api method</em>
+</li><li><strong>field</strong> &lt;str&gt; <em>which fields are returned for each event</em>
+</li><li><strong>limit</strong> &lt;int&gt; <em>limit the number of events returned</em>
+</li><li><strong>errors_only</strong> &lt;bool&gt; <em>only show events that have a traceback associated with them</em>
 </li></ul><p>
 <br />
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

@@ -1,4 +1,3 @@
-[[TOC]]
 = Repositories RESTful Interface = #top
 ''RESTful interface for the creation, querying, and management of repositories managed by Pulp.'' [[BR]]
 ''Repositories are represented as Repo objects.'' [[BR]]

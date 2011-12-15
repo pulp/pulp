@@ -30,29 +30,8 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><p>
-<div class='wiki-toc'>
-<h4>Table of Contents</h4>
-<ol><li class="active"><a href="UGFAQ.html#WhydoIgetSSLWrongHosterrorswhenrunningtheclient">Why do I get "SSL WrongHost" errors when running the client?</a></li><li class="active">
-<a href="UGFAQ.html#CanIoverridesettingsinetcpulpclient.confonaperuserbasis">Can I override settings in /etc/pulp/client.conf on a per user basis?</a></li><li class="active">
-<a href="UGFAQ.html#Whyispulptimingouthanging">Why is pulp timing out/hanging?</a></li><li class="active">
-<a href="UGFAQ.html#Whyarepackageinstallsgettingrequesttimeouts">Why are package installs getting request timeouts?</a></li><li class="active">
-<a href="UGFAQ.html#Ivejustupgradedwhyaremycredentialsfailing">I've just upgraded, why are my credentials failing?</a></li><li class="active">
-<a href="UGFAQ.html#Igetatracebackusingadmincertswithpulp-adminonfedora-14">I get a traceback using admin certs with pulp-admin on fedora-14</a></li><li class="active">
-<a href="UGFAQ.html#Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</a></li><li class="active">
-<a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a></li><li class="active">
-<a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a></li><li class="active">
-<a href="UGFAQ.html#PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</a></li><li class="active">
-<a href="UGFAQ.html#Mongo1.8.shellfreezesonf15howdoidowngrade">Mongo 1.8.* shell freezes on f15, how do i downgrade</a></li><li class="active">
-<a href="UGFAQ.html#Permissiondenied:etcpki.contentrepo_name_idonrepocreate">Permission denied: '/etc/pki.content/repo_name_id' on repo create</a></li></ol></li></ol></div>
-
+<div id="content" class="wiki"><div id="wikipage"><p>
+<a class="missing wiki">TOC?</a>
 </p>
 <h1 id="FrequentlyAskedQuestions">Frequently Asked Questions</h1>
 <hr />
@@ -133,7 +112,7 @@ This is common if you've been trying out a development version and then upgraded
     salt, hashed_password = saved_password_entry.split(",")
 ValueError: need more than 1 value to unpack
 </pre><p>
-The easiest way to correct this, is to blow away the pulp database. <strong><i>WARNING:</i></strong> This will delete any existing data you have stored.
+The easiest way to correct this, is to blow away the pulp database. <strong><em>WARNING:</em></strong> This will delete any existing data you have stored.
 </p>
 <pre class="wiki">$ service mongod stop
 $ rm -rf /var/lib/mongo/* ; on f14 -&gt; sudo rm -rf /var/lib/mongodb/*
@@ -194,7 +173,7 @@ TypeError: sequence item 0: expected string, NoneType found
 </p>
 </blockquote>
 <ul><li>You must be running older pulp version. Please upgrade to atleast pulp-0.0.80. 
-</li></ul><ul><li>Alternately, The issue is documented here: <a class="ext-link" href="http://bugs.python.org/issue10012"><span class="icon">http://bugs.python.org/issue10012</span></a> . Apply the following patch to your /usr/lib64/python2.7/httplib.py or /usr/lib/python2.7/httplib.py
+</li></ul><ul><li>Alternately, The issue is documented here: <a class="ext-link" href="http://bugs.python.org/issue10012"><span class="icon"> </span>http://bugs.python.org/issue10012</a> . Apply the following patch to your /usr/lib64/python2.7/httplib.py or /usr/lib/python2.7/httplib.py
 <pre class="wiki">$ diff -u /usr/lib64/python2.7/httplib.py /usr/lib64/python2.7/httplib.py.new 
 --- /usr/lib64/python2.7/httplib.py	2010-11-05 14:55:57.564804997 -0400
 +++ /usr/lib64/python2.7/httplib.py.new	2010-11-05 14:56:16.146805019 -0400
@@ -231,7 +210,7 @@ mongod is stopped
 <p>
 This applies to mongo 1.6 installed from EL5.  On start it writes
 "exception in initAndListen std::exception: dbpath (/var/lib/mongodb) does not exist" in the log.  This seems to be a deficiency in the rpm .spec
-where is does not create /var/lib/mongodb directory and set ower/group to user <i>mongodb</i>.  When <i>mongod</i> starts, I does not have permissions
+where is does not create /var/lib/mongodb directory and set ower/group to user <em>mongodb</em>.  When <em>mongod</em> starts, I does not have permissions
 to write the database in that directory.
 </p>
 <p>
@@ -249,7 +228,7 @@ To build the QPID rpms, follow the instructions <a class="wiki" href="UGInstallC
 <h2 id="PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</h2>
 <p>
 Some queries in pulp require mongo 1.5 or greater, yet Fedora 13 is at mongo 1.4.x.  
-The solution is to manually install 1.6.  Below are the recommended steps.  (For reference mongodb provides instructions <a class="ext-link" href="http://www.mongodb.org/display/DOCS/Quickstart+Unix"><span class="icon">here</span></a>
+The solution is to manually install 1.6.  Below are the recommended steps.  (For reference mongodb provides instructions <a class="ext-link" href="http://www.mongodb.org/display/DOCS/Quickstart+Unix"><span class="icon"> </span>here</a>
 </p>
 <pre class="wiki"> 1. Download mongo
  For 32-bit
@@ -285,18 +264,30 @@ Filesystem needs to be mounted with 'acl' support.  In particular, some Fedora E
 LABEL=79d3d2d4    /         ext4    defaults,acl         1 1
 </pre></li></ul></li><li>Run setfacl or reinstall pulp (rpm will run this as part of install)
 <pre class="wiki"> sudo setfacl -m u:apache:rwx /etc/pki/content/
-</pre></li></ul></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+</pre></li></ul><ul><li>yum on RHEL-5 has a problem reading metadata generated on Fedora 16 if <tt></tt><tt>--compress-type bz2</tt><tt></tt> was not used.  Below is a sample exception
+<pre class="wiki">File "/usr/lib/python2.4/site-packages/yum/yumRepo.py", line 1392, in &lt;lambda&gt;
+    repoXML = property(fget=lambda self: self._getRepoXML(),
+  File "/usr/lib/python2.4/site-packages/yum/yumRepo.py", line 1384, in _getRepoXML
+    self._loadRepoXML(text=self)
+  File "/usr/lib/python2.4/site-packages/yum/yumRepo.py", line 1374, in _loadRepoXML
+    return self._groupLoadRepoXML(text, ["primary"])
+  File "/usr/lib/python2.4/site-packages/yum/yumRepo.py", line 1359, in _groupLoadRepoXML
+    self._commonRetrieveDataMD(mdtypes)
+  File "/usr/lib/python2.4/site-packages/yum/yumRepo.py", line 1336, in _commonRetrieveDataMD
+    misc.bunzipFile(dl_local, local)
+  File "/usr/lib/python2.4/site-packages/yum/misc.py", line 615, in bunzipFile
+    data = s_fn.read(1024000)
+EOFError: compressed file ended before the logical end-of-stream was detected
+</pre><ul><li>Issue is that RHEL-5 yum assumes data is bzip2, yet Fedora 16 createrepo defaults to gzip when compressing primary.sqlite
+</li><li>Workaround is to use <tt>createrepo --compress-type bz2</tt> when generating metadata on Fedora 16
+</li></ul></li></ul></div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

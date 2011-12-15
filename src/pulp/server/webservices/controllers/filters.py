@@ -83,14 +83,25 @@ class Filter(JSONController):
         if api.filter(id) is None:
             return self.not_found('A filter with the id, %s, does not exist'% id)
         return self.ok(api.filter(id))
-    
+
+    @error_handler
+    @auth_required(DELETE)
+    def DELETE(self, id):
+        """
+        Delete a filter and remove it's associations with repositories, if any
+        @param id: filter id
+        @return: True on successful deletion of filter
+        """
+        if api.filter(id) is None:
+            return self.not_found('A filter with the id, %s, does not exist'% id)
+        api.delete(id)
+        return self.ok(True)
 
 class FilterActions(JSONController):
 
     exposed_actions = (
         'add_packages',
         'remove_packages',
-        'delete_filter',
     )
 
     def add_packages(self, id):
@@ -109,21 +120,6 @@ class FilterActions(JSONController):
         """
         data = self.params()
         api.remove_packages(id, data['packages'])
-        return self.ok(True)
-
-    @error_handler
-    @auth_required(DELETE)
-    def delete_filter(self, id):
-        """
-        @param id: filter id
-        @return: True on successful deletion of filter
-        """
-        data = self.params()
-        force = False
-        if 'force' in data and data['force'] == 'true':
-            force = True
-
-        api.delete(id, force)
         return self.ok(True)
 
     @error_handler

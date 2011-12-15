@@ -51,7 +51,7 @@ class FilterApi(BaseApi):
 
 
     @audit()
-    def delete(self, id, force=False):
+    def delete(self, id):
         """
         Delete filter object based on "id" key
         """
@@ -62,12 +62,9 @@ class FilterApi(BaseApi):
         associated_repo_ids = self.find_associated_repos(id)
         if not associated_repo_ids:
             self.collection.remove({'id' : id}, safe=True)
-        elif force:
+        else:
             self.remove_association_with_repos(id, associated_repo_ids)
             self.collection.remove({'id' : id}, safe=True)
-        else:
-            raise PulpException("Filter [%s] cannot be deleted because of it's association with following repos: %s. You can use --force to force deletion of filter by removing it's association with repositories." 
-                                % (id, associated_repo_ids))
 
     def filters(self, spec=None, fields=None):
         """
@@ -120,7 +117,7 @@ class FilterApi(BaseApi):
         """
         found = self.filters(fields=["id"])
         for f in found:
-            self.delete(f["id"], force=True)
+            self.delete(f["id"])
 
 
     def find_associated_repos(self, id):

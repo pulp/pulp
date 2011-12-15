@@ -878,7 +878,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
 
     def cancel_task(self):
         repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/')
         self.assertTrue(repo is not None)
         task = repo_sync.sync(repo['id'])
         task.cancel()
@@ -886,7 +886,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
     def test_sync_with_wrong_source(self):
         try:
             repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                    'foo:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                    'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/')
             self.assertTrue(repo is not None)
         except PulpException:
             pass

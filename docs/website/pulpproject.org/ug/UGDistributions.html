@@ -30,16 +30,9 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h2 id="distributions">Distributions</h2>
+<div id="content" class="wiki"><div id="wikipage"><h2 id="distributions">Distributions</h2>
 <p>
-As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <i>distribution</i>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
+As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <em>distribution</em>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
 </p>
 <p>
 Distributions in a Pulp server are retrieved using the <tt>distribution list</tt> command:
@@ -53,7 +46,8 @@ Id                    	ks-Fedora-Fedora-15-x86_64
 Description           	ks-Fedora-Fedora-15-x86_64
 Family                	Fedora                   
 Variant               	Fedora                   
-Version               	15                       
+Version               	15         
+Arch                    x86_64              
 URL                   	https://localhost/pulp/ks/fedora15/
  			https://localhost/pulp/ks/fedora15-clone/
  			https://localhost/pulp/ks/fedora15-test/
@@ -64,7 +58,8 @@ Id                    	ks-Fedora-Fedora-14-x86_64
 Description           	ks-Fedora-Fedora-14-x86_64
 Family                	Fedora                   
 Variant               	Fedora                   
-Version               	14                      
+Version               	14        
+Arch                    x86_64                            
 URL                   	https://localhost/pulp/ks/fedora14/
  			https://localhost/pulp/ks/fedora14-clone/
  			https://localhost/pulp/ks/fedora14-test/
@@ -83,7 +78,8 @@ Id                    	ks-Fedora-Fedora-14-x86_64
 Description           	ks-Fedora-Fedora-14-x86_64
 Family                	Fedora                   
 Variant               	Fedora                   
-Version               	14                      
+Version               	14    
+Arch                    x86_64                                
 URL                   	https://localhost/pulp/ks/fedora14/
  			https://localhost/pulp/ks/fedora14-clone/
  			https://localhost/pulp/ks/fedora14-test/
@@ -101,7 +97,8 @@ URL                   	https://localhost/pulp/ks/fedora15/
  			https://localhost/pulp/ks/pub/fedora/linux/releases/15/Fedora/x86_64/os/
 Family                	Fedora                   
 Variant               	Fedora                   
-Version               	15                       
+Version               	15     
+Arch                    x86_64                                
 Files                 	/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/.treeinfo
  			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/repomd.xml.lock
  			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/repomd.xml
@@ -119,17 +116,13 @@ Timestamp             	2011-05-13T15:44:30
 Distribution membership in a repository is also displayed in repository information commands. For more information, see the <a class="wiki" href="UGRepo.html#crud">Repository Display</a> documentation.
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>
