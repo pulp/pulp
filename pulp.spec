@@ -475,6 +475,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Dec 15 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-8
+- bump release for build. (jortel@redhat.com)
+- 768126 - fix typo in pulp-admin errata install. (jortel@redhat.com)
+
 * Wed Dec 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-7
 - bump release for build. (jortel@redhat.com)
 - 767618 - Fixed error when uploading content to a repo with filter
