@@ -307,11 +307,11 @@ rm -rf %{buildroot}
 # -- post - pulp server ------------------------------------------------------
 
 %post
-chown -R apache:apache /etc/pki/pulp/content/
+#chown -R apache:apache /etc/pki/pulp/content/
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
-chown -R apache:apache /etc/pki/pulp/content/
+#chown -R apache:apache /etc/pki/pulp/content/
 
 # Create the cluster related files and give them Apache ownership;
 # both httpd (apache) and gofer (root) will write to them, so to prevent
@@ -383,10 +383,10 @@ fi
 %attr(3775, apache, apache) /var/lib/pulp
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
-%attr(3775, root, root) %{_sysconfdir}/pki/pulp/content
+%attr(775, apache, apache) %{_sysconfdir}/pki/pulp
 %attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
-%{_sysconfdir}/pki/pulp/ca.key
-%{_sysconfdir}/pki/pulp/ca.crt
+#%attr(775, apache, apache) %{_sysconfdir}/pki/pulp/ca.key
+#%attr(775, apache, apache) %{_sysconfdir}/pki/pulp/ca.crt
 %{_bindir}/pulp-migrate
 # -- files - common ----------------------------------------------------------
 
@@ -452,7 +452,7 @@ fi
 %config %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%attr(3775, root, root) %{_sysconfdir}/pki/pulp/content
+%attr(775, apache, apache) %{_sysconfdir}/pki/pulp
 %attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
