@@ -1,4 +1,3 @@
-[[TOC]]
 = Jobs RESTful Interface = #top
 ''RESTful interface providing access to pulp jobs.'' [[BR]]
 [[BR]]

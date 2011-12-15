@@ -1,4 +1,3 @@
-[[TOC]]
 = Cds RESTful API = #top
 ''No description.'' [[BR]]
 [[BR]]
