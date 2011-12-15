@@ -119,6 +119,17 @@ def top_file_location():
 def top_distribution_location():
     return os.path.join(constants.LOCAL_STORAGE, "distributions")
 
+def tmp_cache_location():
+    cache_dir = os.path.join(constants.LOCAL_STORAGE, "cache")
+    if not os.path.exists(cache_dir):
+        try:
+            os.makedirs(cache_dir)
+        except OSError, e:
+            if e.errno != 17:
+                log.critical(e)
+                raise e
+    return cache_dir
+
 def relative_repo_path(path):
     """
     Convert the specified I{path} to a relative path

@@ -152,7 +152,7 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.63
-Requires:       grinder >= 0.0.133
+Requires:       grinder >= 0.0.134
 Requires:       httpd
 Requires:       mod_wsgi >= 3.2-4.pulp%{?dist}
 Requires:       mod_ssl
