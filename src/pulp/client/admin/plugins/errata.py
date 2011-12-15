@@ -186,7 +186,7 @@ class Install(ErrataAction):
         while not task_end(task):
             utils.printwait()
             task = self.task_api.info(task['id'])
-        if task_needed(task):
+        if task_succeeded(task):
             reboot = self.reboot_requested(task)
             result = task['result']
             installed = result['installed']
