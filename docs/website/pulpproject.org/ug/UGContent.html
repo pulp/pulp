@@ -30,16 +30,9 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Content">Content</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Content">Content</h1>
 <p>
-In Pulp, the term <i>content</i> refers to any file managed by a Pulp server, regardless of type (RPM, SRPM, ISOs, MSI, etc.). The term content covers files that were either synchronized from a repository feed or manually uploaded by a user.
+In Pulp, the term <em>content</em> refers to any file managed by a Pulp server, regardless of type (RPM, SRPM, ISOs, MSI, etc.). The term content covers files that were either synchronized from a repository feed or manually uploaded by a user.
 </p>
 <hr />
 <h2 id="upload">Upload</h2>
@@ -49,7 +42,7 @@ The <tt>content upload</tt> command uploads content to the Pulp server and store
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> Directory </td><td> <tt>--dir</tt> </td><td> Local path to the directory containing the files to upload. 
-</td></tr><tr><td> Repository ID </td><td> <tt>--repoid</tt> </td><td> Identifies the repository into which the content will be uploaded. Multiple repos may be specified to associate to more than one repo.
+</td></tr><tr><td> Repository ID </td><td> <tt>--repoid</tt> </td><td style="text-align: right"> Identifies the repository into which the content will be uploaded. Multiple repos may be specified to associate to more than one repo.
 </td></tr><tr><td> Signature Verification   </td><td> <tt>--nosig</tt>  </td><td> Pushes unsigned content (RPM only). 
 </td></tr><tr><td> Chunk Size </td><td> <tt>--chunksize</tt> </td><td> Chunk size to use for uploads. Default: 10485760 
 </td></tr><tr><td> Verbose </td><td> <tt>--verbose</tt> </td><td> Provides a more verbose output. 
@@ -91,17 +84,13 @@ Available content on the Pulp server is displayed using the <tt>content list</tt
 </pre><h4 id="Example:Listtherepocontent">Example: List the repo content</h4>
 <pre class="wiki">$ pulp-admin content list --repoid testrepo
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

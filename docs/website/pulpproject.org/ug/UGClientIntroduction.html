@@ -30,17 +30,10 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PulpConsumerClient">Pulp Consumer Client</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PulpConsumerClient">Pulp Consumer Client</h1>
 <h2 id="intro">Introduction</h2>
 <p>
-The <tt>pulp-consumer</tt> script is used by a system to become a Pulp <i>consumer</i>. A consumer is essentially a system that uses Pulp for repository binding and package profile tracking.
+The <tt>pulp-consumer</tt> script is used by a system to become a Pulp <em>consumer</em>. A consumer is essentially a system that uses Pulp for repository binding and package profile tracking.
 </p>
 <p>
 All commands are issued by passing the command string to the <tt>pulp-consumer</tt> script. For example, to display the consumer's history, the <tt>consumer history</tt> command is run:
@@ -94,7 +87,7 @@ The following control the locations of content served by the Pulp server. In mos
 <h3 id="Registration">Registration</h3>
 <p>
 In order to use a system as a consumer of a Pulp server, it must be
-<i>registered</i> against the server. Registration is done through the `consumer
+<em>registered</em> against the server. Registration is done through the `consumer
 register` command. When a consumer is registered, it provides a unique (to the Pulp server) ID to identify itself. For example, to register a consumer with the ID "example", the following command would be used:
 </p>
 <pre class="wiki">$ pulp-consumer consumer register --id example
@@ -115,7 +108,7 @@ A consumer can opt to remove its relationship with a Pulp server using the
 </pre><hr />
 <h2 id="history">History</h2>
 <p>
-Pulp keeps track of operations performed on its consumers in the consumer's <i>history</i>. The following operations are tracked:
+Pulp keeps track of operations performed on its consumers in the consumer's <em>history</em>. The following operations are tracked:
 </p>
 <ul><li>Consumer Registered
 </li><li>Consumer Unregistered
@@ -125,10 +118,8 @@ Pulp keeps track of operations performed on its consumers in the consumer's <i>h
 </li><li>Package Removed*
 </li><li>Errata Installed*
 </li><li>Profile Changed
+</li></ul><ul><li>Only package/errata operations that are triggered through Pulp are logged. If the consumer installs a package through another means (rpm or yum) an event will not be logged. The package profile, however, will eventually be sent to the server and will reflect any changes that have been made.
 </li></ul><p>
-* Only package/errata operations that are triggered through Pulp are logged. If the consumer installs a package through another means (rpm or yum) an event will not be logged. The package profile, however, will eventually be sent to the server and will reflect any changes that have been made.
-</p>
-<p>
 A consumer can view its own history using the <tt>consumer history</tt> command:
 </p>
 <pre class="wiki">$ pulp-consumer consumer history
@@ -164,7 +155,7 @@ A consumer's package profile is an inventory of installed packages on the client
 <h2 id="binding">Repository Binding</h2>
 <h3 id="Bind">Bind</h3>
 <p>
-A consumer can use repositories in Pulp through a process called <i>binding.</i> Once configured, bound repositories are added to the consumer's yum repository list and are available for package installation either by the <tt>pulp-admin</tt> script or through yum. All bound repositories are found in the <tt>/etc/yum.repos.d/pulp.repo</tt> file.
+A consumer can use repositories in Pulp through a process called <em>binding.</em> Once configured, bound repositories are added to the consumer's yum repository list and are available for package installation either by the <tt>pulp-admin</tt> script or through yum. All bound repositories are found in the <tt>/etc/yum.repos.d/pulp.repo</tt> file.
 </p>
 <p>
 Repositories are bound through the <tt>consumer bind</tt> command:
@@ -192,7 +183,7 @@ Publish            	True
 Clones             	[]                       
 Groups             	None
 </pre><p>
-<i>Note: The "Label" field in the above output is the value used for <tt>--repoid</tt> in the bind command.</i>
+<em>Note: The "Label" field in the above output is the value used for <tt>--repoid</tt> in the bind command.</em>
 </p>
 <h3 id="Unbind">Unbind</h3>
 <p>
@@ -201,17 +192,13 @@ A consumer can remove its association from a repository through the <tt>consumer
 <pre class="wiki">$ pulp-consumer consumer unbind --repoid example
 Successfully unsubscribed consumer [test-consumer] from repo [example]
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

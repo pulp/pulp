@@ -30,19 +30,12 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Repositories">Repositories</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Repositories">Repositories</h1>
 <p>
-In Pulp, a repository (or <i>repo</i> for short) is a collection of packages, errata, and distributions. The packages can be synchronized into Pulp from an external <i>feed</i> (yum, RHN, etc.) or manually uploaded and maintained by a Pulp admin. For feed-based repositories, the repo can be configured to keep itself updated from the source at scheduled intervals.
+In Pulp, a repository (or <em>repo</em> for short) is a collection of packages, errata, and distributions. The packages can be synchronized into Pulp from an external <em>feed</em> (yum, RHN, etc.) or manually uploaded and maintained by a Pulp admin. For feed-based repositories, the repo can be configured to keep itself updated from the source at scheduled intervals.
 </p>
 <p>
-Through Pulp, clients (or <i>consumers</i> in Pulp terminology) are <i>bound</i> to a repository, enabling them to retrieve that repository's content. This binding is covered in the <a class="wiki" href="UGConsumers.html#bind">Consumer Bind</a> section of the user guide.
+Through Pulp, clients (or <em>consumers</em> in Pulp terminology) are <em>bound</em> to a repository, enabling them to retrieve that repository's content. This binding is covered in the <a class="wiki" href="UGConsumers.html#bind">Consumer Bind</a> section of the user guide.
 </p>
 <p>
 The <tt>pulp-admin</tt> script provides ways to manipulate repositories in Pulp. The following sections describe the repository-related features that are provided.
@@ -81,7 +74,11 @@ The feed URL is just a valid url string. Supported protocols include 'http','htt
 </p>
 <pre class="wiki">$ pulp-admin repo create --id example --feed=https://example.com/repos
 $ pulp-admin repo create --id example --feed=file:///mount/data/f14/repos
-</pre><h3 id="Update">Update</h3>
+</pre><h4 id="RelativePath">Relative Path</h4>
+<p>
+A repository's relative path cannot place the repository as a child of another repository. This applies both in the case where the relative path is determined from the feed URL and when it is explicitly set using the <tt>--relativepath</tt> argument. For example, serving a repository at <tt>foo/bar</tt> and another at <tt>foo/bar/baz</tt> is invalid. Serving multiple repositories in a non-repository parent is valid, for instance <tt>rhel5/i386</tt> and <tt>rhel5/x86_64</tt>.
+</p>
+<h3 id="Update">Update</h3>
 <p>
 A repository may be updated after it has been created through the <tt>repo update</tt> command in the <tt>pulp-admin</tt> script. For example, to update a repository so it will synchronize packages from the Pulp Fedora 14 i386 repository instead of the x86_84 repository, the following command would be used:
 </p>
@@ -162,7 +159,7 @@ The following fields are displayed for each repository:
 <p>
 You can also query repositories based on certain supported filtering parameters like group id, notes.
 </p>
-<pre class="wiki">$ sudo pulp-admin repo list --notes="{'test-key':'test-value'}"
+<pre class="wiki">$ sudo pulp-admin repo list --note test-key:test-value
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
@@ -206,8 +203,7 @@ Notes               {'test-key': 'test-value'}
 </pre><p>
 You can also combine multiple query parametes:
 </p>
-<pre class="wiki">$ sudo pulp-admin repo list --notes="{'test-key':'test-value'}"
---groupid=test-grp
+<pre class="wiki">$ sudo pulp-admin repo list --note test-key:test-value --groupid=test-grp
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
@@ -313,16 +309,16 @@ In addition to the <tt>-F</tt> flag, the following options are available to the 
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> Show Schedule </td><td> <tt>--show-schedule</tt> </td><td> If specified, show the sync schedule and exit
-</td></tr><tr><td> Delete Schedule </td><td> <tt>--delete-schedule</tt> </td><td> If specified, remove the sync schedule and exit
-</td></tr><tr><td> Set Schedule Interval </td><td> <tt>--interval</tt> </td><td> If specified, schedule the sync, repeating on the given interval
-</td></tr><tr><td> Set Number of Runs </td><td> <tt>--runs</tt> </td><td> When used with <tt>--interval</tt>, limit the number of time the sync is repeated to the given number of runs
-</td></tr><tr><td> Set Start Time </td><td> <tt>--start</tt> </td><td> When used with <tt>--interval</tt>, delay the first scheduled sync until the given start time. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines. If omitted, the sync starts immediately.
-</td></tr><tr><td> Exclude Elements </td><td> <tt>--exclude</tt> </td><td> (cumulative) Exclude the element(s) specified from the sync. Valid elements are: <tt>packages</tt>, <tt>errata</tt>, and/or <tt>distribution</tt>. Note if packages is specified, but errata is not, the packages for the errata will still be synchronized.
-</td></tr><tr><td> Timeout </td><td> <tt>--timeout</tt> </td><td> Time for the sync to run before being timed out. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines.
+</td></tr><tr><td> Show Schedule </td><td> <tt>--show-schedule</tt> </td><td> If specified, show the sync schedule and exit 
+</td></tr><tr><td> Delete Schedule </td><td> <tt>--delete-schedule</tt> </td><td> If specified, remove the sync schedule and exit 
+</td></tr><tr><td> Set Schedule Interval </td><td> <tt>--interval</tt> </td><td> If specified, schedule the sync, repeating on the given interval 
+</td></tr><tr><td> Set Number of Runs </td><td> <tt>--runs</tt> </td><td> When used with <tt>--interval</tt>, limit the number of time the sync is repeated to the given number of runs 
+</td></tr><tr><td> Set Start Time </td><td> <tt>--start</tt> </td><td> When used with <tt>--interval</tt>, delay the first scheduled sync until the given start time. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines. If omitted, the sync starts immediately. 
+</td></tr><tr><td> Exclude Elements </td><td> <tt>--exclude</tt> </td><td> (cumulative) Exclude the element(s) specified from the sync. Valid elements are: <tt>packages</tt>, <tt>errata</tt>, and/or <tt>distribution</tt>. Note if packages is specified, but errata is not, the packages for the errata will still be synchronized. 
+</td></tr><tr><td> Timeout </td><td> <tt>--timeout</tt> </td><td style="text-align: right"> Time for the sync to run before being timed out. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines.
 </td></tr><tr><td> Limit Bandwidth Per Thread </td><td> <tt>--limit</tt> </td><td> If specified, will limit the bandwidth each thread uses when synchronizing yum content.  Value is expected to be in KB/sec. 
 </td></tr><tr><td> Threads </td><td> <tt>--threads</tt> </td><td> If specified, will allow this many threads to be used for synchronization. 
-</td></tr><tr><td> Sync in the Foreground </td><td> <tt>-F</tt> or <tt>--foreground</tt> </td><td> Report the sync progress on the command line. Conflicts with <tt>--start</tt>
+</td></tr><tr><td> Sync in the Foreground </td><td> <tt>-F</tt> or <tt>--foreground</tt> </td><td> Report the sync progress on the command line. Conflicts with <tt>--start</tt> 
 </td></tr></table>
 <hr />
 <h2 id="packages">Packages</h2>
@@ -419,9 +415,9 @@ There are two more types of of repository clones:
 In this case, the feed of the cloned repository will be the same as that of parent repository.  
 </p>
 <pre class="wiki"> $ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone-origin --feed origin -F
-</pre><h4 id="ClonewithoutParentOriginFeed">Clone without Parent/Origin Feed</h4>
+</pre><h4 id="ClonewithoutParentOriginFeed">Clone without <a class="missing wiki">Parent/Origin?</a> Feed</h4>
 <p>
-This is also known as a <i>feedless</i> clone. In this case, the feed of the the cloned repository is 'None'.
+This is also known as a <em>feedless</em> clone. In this case, the feed of the the cloned repository is 'None'.
 </p>
 <pre class="wiki">$ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone-feedless --feed none -F
 </pre><p>
@@ -498,9 +494,9 @@ Type         :               	blacklist
 Package List :               	[u'openoffice.org*', u'broadcom-wl-5.100.82.38-1.fc13.noarch']
 </pre><h3 id="Delete">Delete</h3>
 <p>
-A filter can be deleted using "filter delete". If a filter is associated with any repositories, "filter delete" will not delete the filter unless you provide --force option. If --force is provided, all associations of this filter are deleted along with filter.
+A filter can be deleted using "filter delete". If a filter is associated with any repositories, all associations are deleted along with filter.
 </p>
-<pre class="wiki">$ pulp-admin filter delete --id=test-filter --force
+<pre class="wiki">$ pulp-admin filter delete --id=test-filter
 Successfully deleted Filter [ test-filter ]
 </pre><h3 id="AssociationwithRepositories">Association with Repositories</h3>
 <p>
@@ -543,7 +539,7 @@ The <tt>repo discovery</tt> command takes following arguments:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> Base URL to perform discovery (required). Supports http, https and file based urls(path should be accessible by apache)
+</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> Base URL to perform discovery (required). Supports http, https and file based urls(path should be accessible by apache) 
 </td></tr><tr><td> TYPE </td><td> <tt>-t</tt> or <tt>--type</tt> </td><td>  Content type to look for during discovery (required); supported types: 'yum' 
 </td></tr><tr><td> ASSUMEYES </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically create Pulp repositories for discovered repositories (optional). 
 </td></tr><tr><td> GROUPID   </td><td> <tt>-g</tt> or <tt>--groupid</tt>   </td><td> Group IDs (one or more) to associate the discovered repos (optional). 
@@ -774,7 +770,7 @@ The <tt>repo remove_distribution</tt> command is used to remove distributions fr
 </pre><hr />
 <h2 id="notes">Repository Notes</h2>
 <p>
-Pulp provides the ability to create custom attributes for repositories using notes. These are similar to key-value attributes for consumers.
+Pulp provides the ability to create custom attributes for repositories using notes. These are similar to key-value attributes for consumers. 
 </p>
 <h3 id="CreationDeletionUpdate">Creation, Deletion, Update</h3>
 <p>
@@ -792,94 +788,90 @@ $ pulp-admin repo delete_note --id test1  --key key1
 Successfully deleted key: key1
 </pre><h3 id="List">List</h3>
 <p>
-Repository listing will show notes added to each repository:
+Repository listing will show notes added to each repository: 
 </p>
 <pre class="wiki">$ pulp-admin repo list
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
 
-Id                 	test1
-Name               	test1
+Id                 	test1                    
+Name               	test1                    
 Repo URL           	https://sunflower/pulp/repos/test1/
-Feed URL           	None
-Feed Type          	None
-Content Type       	yum
+Feed URL           	None                     
+Feed Type          	None                     
+Content Type       	yum                      
 Feed Certs         	CA:No   Cert:No
 Consumer Certs     	CA:No   Cert:No
-Architecture       	noarch
-Sync Schedule      	None
-Packages           	0
-Files              	0
-Distributions      	None
-Publish            	True
-Clones             	[]
-Groups             	None
-Filters            	[]
-Notes              	{'key1': 'value1'}
-Preserve Metadata  	False
+Architecture       	noarch                   
+Sync Schedule      	None                     
+Packages           	0                        
+Files              	0                        
+Distributions      	None                     
+Publish            	True                     
+Clones             	[]                       
+Groups             	None                     
+Filters            	[]                       
+Notes              	{'key1': 'value1'}       
+Preserve Metadata  	False               
 
 
-Id                 	test2
-Name               	test2
+Id                 	test2                    
+Name               	test2                    
 Repo URL           	https://sunflower/pulp/repos/test2/
-Feed URL           	None
-Feed Type          	None
-Content Type       	yum
+Feed URL           	None                     
+Feed Type          	None                     
+Content Type       	yum                      
 Feed Certs         	CA:No   Cert:No
 Consumer Certs     	CA:No   Cert:No
-Architecture       	noarch
-Sync Schedule      	None
-Packages           	0
-Files              	0
-Distributions      	None
-Publish            	True
-Clones             	[]
-Groups             	None
-Filters            	[]
-Notes              	{'key2': 'value2'}
-Preserve Metadata  	False
+Architecture       	noarch                   
+Sync Schedule      	None                     
+Packages           	0                        
+Files              	0                        
+Distributions      	None                     
+Publish            	True                     
+Clones             	[]                       
+Groups             	None                     
+Filters            	[]                       
+Notes              	{'key2': 'value2'}       
+Preserve Metadata  	False           
 </pre><p>
-In addition, you can also filter repositories based on notes:
+In addition, you can also filter repositories based on a note:
 </p>
 <pre class="wiki">
-$ sudo pulp-admin repo list --notes "{'key1':'value1'}"
+$ sudo pulp-admin repo list --note key1:value1
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
 
-Id                 	test1
-Name               	test1
+Id                 	test1                    
+Name               	test1                    
 Repo URL           	https://sunflower/pulp/repos/test1/
-Feed URL           	None
-Feed Type          	None
-Content Type       	yum
+Feed URL           	None                     
+Feed Type          	None                     
+Content Type       	yum                      
 Feed Certs         	CA:No   Cert:No
 Consumer Certs     	CA:No   Cert:No
-Architecture       	noarch
-Sync Schedule      	None
-Packages           	0
-Files              	0
-Distributions      	None
-Publish            	True
-Clones             	[]
-Groups             	None
-Filters            	[]
-Notes              	{'key1': 'value1'}
-Preserve Metadata  	False
+Architecture       	noarch                   
+Sync Schedule      	None                     
+Packages           	0                        
+Files              	0                        
+Distributions      	None                     
+Publish            	True                     
+Clones             	[]                       
+Groups             	None                     
+Filters            	[]                       
+Notes              	{'key1': 'value1'}       
+Preserve Metadata  	False              
 </pre><hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

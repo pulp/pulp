@@ -30,25 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PackageGroups">Package Groups</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-PackageGroups.html#List">List</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#Create">Create</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#Delete">Delete</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#AddPackage">Add Package</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#DeletePackage">Delete Package</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#Import">Import</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#Export">Export</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroups">Package Groups</h1>
 <p>
 Once you get a tepository created you can start managing package groups. Package groups exist as members of a repository.
 </p>
@@ -96,25 +78,25 @@ None
 <p>
 <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{
-u<B><span class="code-string">'demo'</span></b>: {
-  u<B><span class="code-string">'mandatory_package_names'</span></b>: [], 
-  u<B><span class="code-string">'description'</span></b>: u<B><span class="code-string">''</span></b>, 
-  u<B><span class="code-string">'repo_defined'</span></b>: False, 
-  u<B><span class="code-string">'default'</span></b>: True, 
-  u<B><span class="code-string">'display_order'</span></b>: 1024, 
-  u<B><span class="code-string">'immutable'</span></b>: False, 
-  u<B><span class="code-string">'user_visible'</span></b>: True, 
-  u<B><span class="code-string">'translated_name'</span></b>: {}, 
-  u<B><span class="code-string">'translated_description'</span></b>: {}, 
-  u<B><span class="code-string">'conditional_package_names'</span></b>: {}, 
-  u<B><span class="code-string">'default_package_names'</span></b>: [u<B><span class="code-string">'zsh'</span></b>, u<B><span class="code-string">'zsh-html'</span></b>], 
-  u<B><span class="code-string">'optional_package_names'</span></b>: [], 
-  u<B><span class="code-string">'langonly'</span></b>: None, 
-  u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'demo'</span></b>, 
-  u<B><span class="code-string">'id'</span></b>: u<B><span class="code-string">'demo'</span></b>, 
-  u<B><span class="code-string">'name'</span></b>: u<B><span class="code-string">'demo_name'</span></b>}
-}
+<div class="code"><pre><span class="p">{</span>
+<span class="s">u'demo'</span><span class="p">:</span> <span class="p">{</span>
+  <span class="s">u'mandatory_package_names'</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">u'description'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span> 
+  <span class="s">u'repo_defined'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span> 
+  <span class="s">u'default'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span> 
+  <span class="s">u'display_order'</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span> 
+  <span class="s">u'immutable'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span> 
+  <span class="s">u'user_visible'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span> 
+  <span class="s">u'translated_name'</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">u'translated_description'</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">u'conditional_package_names'</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">u'default_package_names'</span><span class="p">:</span> <span class="p">[</span><span class="s">u'zsh'</span><span class="p">,</span> <span class="s">u'zsh-html'</span><span class="p">],</span> 
+  <span class="s">u'optional_package_names'</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">u'langonly'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> 
+  <span class="s">u'_id'</span><span class="p">:</span> <span class="s">u'demo'</span><span class="p">,</span> 
+  <span class="s">u'id'</span><span class="p">:</span> <span class="s">u'demo'</span><span class="p">,</span> 
+  <span class="s">u'name'</span><span class="p">:</span> <span class="s">u'demo_name'</span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no repository
 </p>
@@ -197,7 +179,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
@@ -240,7 +222,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
@@ -283,7 +265,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
@@ -324,7 +306,7 @@ None
 <p>
 Response: 
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><hr />
 <h2 id="Export">Export</h2>
 <p>
@@ -366,30 +348,29 @@ None
 <p>
 Response: 
 </p>
-<div class="code"><pre>&lt;?xml version=<B><span class="code-string">&quot;1.0&quot;</span></b> encoding=<B><span class="code-string">&quot;UTF-8&quot;</span></b>?&gt;
-&lt;!DOCTYPE comps PUBLIC <B><span class="code-string">&quot;-//Red Hat, Inc.//DTD Comps info//EN&quot;</span></b> <B><span class="code-string">&quot;comps.dtd&quot;</span></b>&gt;
-&lt;comps&gt;
+<div class="code"><pre><span class="o">&lt;</span><span class="err">?</span>xml version<span class="o">=</span><span class="s">"1.0"</span> encoding<span class="o">=</span><span class="s">"UTF-8"</span><span class="err">?</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="err">!</span>DOCTYPE comps PUBLIC <span class="s">"-//Red Hat, Inc.//DTD Comps info//EN"</span> <span class="s">"comps.dtd"</span><span class="o">&gt;</span>
+<span class="o">&lt;</span>comps<span class="o">&gt;</span>
         
-  &lt;group&gt;
-   &lt;id&gt;admin-tools&lt;/id&gt;
-...
-&lt;/grouplist&gt;
-  &lt;/category&gt;
+  <span class="o">&lt;</span>group<span class="o">&gt;</span>
+   <span class="o">&lt;</span><span class="nb">id</span><span class="o">&gt;</span>admin<span class="o">-</span>tools<span class="o">&lt;/</span><span class="nb">id</span><span class="o">&gt;</span>
+<span class="o">...</span>
+<span class="o">&lt;/</span>grouplist<span class="o">&gt;</span>
+  <span class="o">&lt;/</span>category<span class="o">&gt;</span>
 
-&lt;/comps&gt;
+<span class="o">&lt;/</span>comps<span class="o">&gt;</span>
 </pre></div><hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

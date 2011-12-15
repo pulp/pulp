@@ -30,14 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Consumers">Consumers</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Consumers">Consumers</h1>
 <p>
 The <tt>pulp-admin</tt> script provides a number of features to remotely administer consumers. Much of the same functionality that <tt>pulp-consumer</tt> offers on a client machine is supported for administrators as well. Whereas the <tt>pulp-consumer</tt> scripts runs on the client system and automatically performs operations for its consumer, the same features when accessed through <tt>pulp-admin</tt> require a consumer to be specified as part of the invocation.
 </p>
@@ -137,6 +130,29 @@ The <tt>package install</tt> command takes the following arguments:
 For example:
 </p>
 <pre class="wiki">$ pulp-admin package install -n emacs --consumerid test-consumer
+</pre><h3 id="Update">Update</h3>
+<p>
+Once bound to a repository, a consumer can use yum to access that repo's content like normal. The <tt>package update</tt> command provides a way to remotely trigger package updates on a consumer or a consumer group.
+</p>
+<p>
+The <tt>package update</tt> command takes the following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Names </td><td> <tt>-n</tt> or <tt>--name</tt> </td><td> The (optional) name of the package to update. Multiple packages can be specified with multiple uses of this flag.  Not specified updates ALL packages. 
+</td></tr><tr><td> Future Update Time </td><td> <tt>--when</tt> </td><td> If specified, the installation will take place at a point in the future. Format: yyyy-mm-dd hh:mm 
+</td></tr><tr><td> No Wait </td><td> --nowait </td><td> Do not wait (block) until operation has completed. 
+</td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to update the package. 
+</td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the package(s) will be updated. 
+</td></tr></table>
+<p>
+For example - update <em>emacs</em>:
+</p>
+<pre class="wiki">$ pulp-admin package update -n emacs --consumerid test-consumer
+</pre><p>
+For example - update <em>ALL</em> packages:
+</p>
+<pre class="wiki">$ pulp-admin package update --consumerid test-consumer
 </pre><h3 id="Removal1">Removal</h3>
 <p>
 The <tt>package uninstall</tt> command provides a way to remotely trigger package removal on a consumer or a consumer group.
@@ -147,7 +163,7 @@ The <tt>package uninstall</tt> command takes the following arguments:
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> Names </td><td> <tt>-n</tt> or <tt>--name</tt> </td><td> Name of the package to be uninstalled. Multiple packages can be specified with multiple uses of this flag. 
-</td></tr><tr><td> Future Removal Time </td><td> <tt>--when</tt> </td><td> If specified, the removal will take place at a point in the future. Format: yyyy-mm-dd hh:mm
+</td></tr><tr><td> Future Removal Time </td><td> <tt>--when</tt> </td><td> If specified, the removal will take place at a point in the future. Format: yyyy-mm-dd hh:mm 
 </td></tr><tr><td> No Wait </td><td> --nowait </td><td> Do not wait (block) until operation has completed. 
 </td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to uninstall the package. 
 </td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the package will be uninstalled. 
@@ -187,7 +203,7 @@ The <tt>packagegroup uninstall</tt> command takes the following arguments:
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> ID of the packagegroup to be uninstalled.  
-</td></tr><tr><td> Future Removal Time </td><td> <tt>--when</tt> </td><td> If specified, the removal will take place at a point in the future. Format: yyyy-mm-dd hh:mm
+</td></tr><tr><td> Future Removal Time </td><td> <tt>--when</tt> </td><td> If specified, the removal will take place at a point in the future. Format: yyyy-mm-dd hh:mm 
 </td></tr><tr><td> No Wait </td><td> --nowait </td><td> Do not wait (block) until operation has completed. 
 </td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to uninstall the package group. 
 </td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the package group will be uninstalled. 
@@ -313,17 +329,13 @@ Note that all these are listed in the output of 'consumer get_keyvalues' cli cal
 The operations for modifying key-value pairs on a consumer group is the same as for <a class="wiki" href="UGConsumers.html#keyvalue">an individual consumer</a>. All key-value related operations are found in the <tt>pulp-admin consumergroup</tt> command.
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

@@ -30,22 +30,15 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Installation">Installation</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Installation">Installation</h1>
 <h2 id="latest">Latest Release</h2>
 <p>
-<strong>Community Release 17</strong>
+<strong>Community Release 19</strong>
 </p>
 <table class="wiki">
-<tr><td> <strong>Pulp Build</strong> </td><td> 0.244-5
-</td></tr><tr><td> <strong>Released</strong> </td><td> November 8th, 2011
-</td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 14 (i386, x86_64), Fedora 15 (i386, x86_64), Red Hat Enterprise Linux 5 (i386, x86_64), Red Hat Enterprise Linux 6 (i386, x86_64) 
+<tr><td> <strong>Pulp Build</strong> </td><td> 0.254-7 
+</td></tr><tr><td> <strong>Released</strong> </td><td> December 15th, 2011 
+</td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 15 (i386, x86_64), Fedora 16 (i386, x86_64), Red Hat Enterprise Linux 5 (i386, x86_64), Red Hat Enterprise Linux 6 (i386, x86_64) 
 </td></tr></table>
 <p>
 <strong>Repository:</strong> <tt>http://repos.fedorapeople.org/repos/pulp/pulp/</tt>
@@ -55,7 +48,7 @@
 Community Releases are built and tested at the end of each Pulp sprint (roughly every three weeks). Testing builds are created more frequently (currently every Wednesday and Friday afternoon) and contain in progress features and bug fixes. While it is recommended that users try to stick with the Community Releases, there may be times where a feature or bug fix is desired before a CR is built.
 </p>
 <p>
-The repo files for <a class="ext-link" href="http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo"><span class="icon">Fedora</span></a> and <a class="ext-link" href="http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo"><span class="icon">RHEL</span></a> contain definitions for both the community releases and our testing build repository, however the latter is disabled by default. To install or update to a testing build, simply edit the Pulp repo file and set the testing repo's <tt>enabled</tt> flag to <tt>1</tt>. The next time yum downloads Pulp, it will use the testing build.
+The repo files for <a class="ext-link" href="http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo"><span class="icon"> </span>Fedora</a> and <a class="ext-link" href="http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo"><span class="icon"> </span>RHEL</a> contain definitions for both the community releases and our testing build repository, however the latter is disabled by default. To install or update to a testing build, simply edit the Pulp repo file and set the testing repo's <tt>enabled</tt> flag to <tt>1</tt>. The next time yum downloads Pulp, it will use the testing build.
 </p>
 <hr />
 <h2 id="prereqs">Prerequisites</h2>
@@ -69,10 +62,8 @@ The repo files for <a class="ext-link" href="http://repos.fedorapeople.org/repos
 </li></ul></li></ul><hr />
 <h2 id="installation">Installation</h2>
 <h3 id="fserver">Server</h3>
-<p>
-1. Download the necessary repository configuration files:
-</p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #0000bb; background: #ddddff; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<ol><li>Download the necessary repository configuration files:
+</li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #0000bb; background: #ddddff; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #0000bb">
 Fedora
 </span>
@@ -92,12 +83,10 @@ Pulp Repository
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
 $ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 </pre>
-
 Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a>
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
 $ rpm -Uvh http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-4.noarch.rpm
 </pre>
-
 Subscribe the Pulp server to the RHN channels:
 <ul>
 <li>MRG Messaging v. 1</li>
@@ -116,16 +105,13 @@ Pulp Repository
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
 $ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 </pre>
-
 Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a> for RHEL 6
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
 $ rpm -Uvh http://download.fedora.redhat.com/pub/epel/6/i386/epel-release-6-5.noarch.rpm
 </pre>
 </div>
-<p>
-2. Install Pulp and its dependencies:
-</p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<ol start="2"><li>Install Pulp and its dependencies:
+</li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #009900">
 CentOS
 </span>
@@ -133,9 +119,7 @@ CentOS
 QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
 </div>
 <pre class="wiki">$ yum install pulp
-</pre><p>
-3. Update '/etc/pulp/pulp.conf' to reflect the hostname of the Pulp server.
-</p>
+</pre><ol start="3"><li>Update '/etc/pulp/pulp.conf' to reflect the hostname of the Pulp server.
 <ul><li>Change 'localhost' in the below to the hostname of the Pulp server. 
 <pre class="wiki">[server]
 server_name: localhost
@@ -143,20 +127,17 @@ server_name: localhost
 ...
 [messaging]
 url:        tcp://localhost:5672
-</pre></li></ul><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+</pre></li></ul></li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #bb0000">
 Red Hat Enterprise Linux 5
 </span>
 <br /><br />
 The RHEL WSGI installation does not automatically enable the Apache module. This must be explicitly done by editing the <tt>/etc/httpd/conf.d/wsgi.conf</tt> file and uncommenting the <tt>LoadModule</tt> line. If Apache is already running when this change is made, it will need to be restarted. If it is not running, the <tt>pulp-server start</tt> script will start it automatically.
-
 <br /><br />
 SELinux needs to be disabled or set to permissive for RHEL-5.
 </div>
-<p>
-4. Initialize Pulp, which starts and configures database:
-</p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<ol start="4"><li>Initialize Pulp, which starts and configures database:
+</li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #bb0000">
 Red Hat Enterprise Linux 5
 </span>
@@ -164,15 +145,11 @@ Red Hat Enterprise Linux 5
 SELinux needs to be disabled or set to permissive for RHEL-5.
 </div>
 <pre class="wiki">$ service pulp-server init
-</pre><p>
-5. Start Pulp, which starts the database, message bus broker, and web server:
-</p>
+</pre><ol start="5"><li>Start Pulp, which starts the database, message bus broker, and web server:
 <pre class="wiki">$ service pulp-server start
-</pre><p>
-6. (optional) Configure Pulp to automatically start system startup:
-</p>
+</pre></li></ol><ol start="6"><li>(optional) Configure Pulp to automatically start system startup:
 <pre class="wiki">$ chkconfig pulp-server on
-</pre><h4 id="InstallationNotes">Installation Notes</h4>
+</pre></li></ol><h4 id="InstallationNotes">Installation Notes</h4>
 <ul><li>The default user is <strong>admin</strong> with the password <strong>admin</strong>.
 </li></ul><hr />
 <h3 id="fadminclient">Admin Client</h3>
@@ -182,14 +159,10 @@ The Pulp Admin Client is used for administrative commands on the Pulp server, su
 <p>
 Pulp admin commands are accessed through the <tt>pulp-admin</tt> script.
 </p>
-<p>
-1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
-</p>
+<ol><li>Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
 <pre class="wiki">$ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
-</pre><p>
-2. Install the Pulp admin client packages:
-</p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+</pre></li></ol><ol start="2"><li>Install the Pulp admin client packages:
+</li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #009900">
 CentOS
 </span>
@@ -197,11 +170,9 @@ CentOS
 QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
 </div>
 <pre class="wiki">$ yum install pulp-admin
-</pre><p>
-3. Update the admin client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in the following places:
-</p>
+</pre><ol start="3"><li>Update the admin client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in the following places:
 <ul><li>host
-</li></ul><pre class="wiki">$ vi /etc/pulp/admin/admin.conf
+</li></ul></li></ol><pre class="wiki">$ vi /etc/pulp/admin/admin.conf
 </pre><hr />
 <h3 id="fconsumerclient">Consumer Client</h3>
 <p>
@@ -210,14 +181,10 @@ The Pulp Consumer Client is present on all systems that wish to act as a consume
 <p>
 Pulp consumer commands are accessed through the <tt>pulp-consumer</tt> script. This script must be run as <tt>root</tt> to permit access to add references to the Pulp server's repositories. More information can be found in the Pulp Consumer Client User Guide.
 </p>
-<p>
-1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
-</p>
+<ol><li>Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
 <pre class="wiki">$ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
-</pre><p>
-2. Install the Pulp consumer client packages:
-</p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+</pre></li></ol><ol start="2"><li>Install the Pulp consumer client packages:
+</li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #009900">
 CentOS
 </span>
@@ -225,24 +192,18 @@ CentOS
 QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
 </div>
 <pre class="wiki">$ yum install pulp-consumer
-</pre><p>
-3. Update the consumer client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in four places:
-</p>
+</pre><ol start="3"><li>Update the consumer client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in four places:
 <ul><li>host
 </li><li>baseurl
 </li><li>keyurl
 </li><li>ksurl
-</li></ul><pre class="wiki">$ vi /etc/pulp/consumer/consumer.conf
-</pre><p>
-4. Start the agent:
-</p>
+</li></ul></li></ol><pre class="wiki">$ vi /etc/pulp/consumer/consumer.conf
+</pre><ol start="4"><li>Start the agent:
 <pre class="wiki">$ service pulp-agent start
-</pre><hr />
+</pre></li></ol><hr />
 <h3 id="fcds">Content Delivery Server</h3>
-<p>
-1. Download the necessary repository configuration files:
-</p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #0000bb; background: #ddddff; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<ol><li>Download the necessary repository configuration files:
+</li></ol><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #0000bb; background: #ddddff; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #0000bb">
 Fedora
 </span>
@@ -261,32 +222,20 @@ Red Hat Enterprise Linux 5 and 6
 $ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 </pre>
 </div>
-<p>
-2. Install the CDS RPM and its dependencies:
-</p>
+<ol start="2"><li>Install the CDS RPM and its dependencies:
 <pre class="wiki">$ yum install pulp-cds
-</pre><p>
-3. Configure the CDS to connect to the Pulp server's message broker by editing <tt>/etc/pulp/cds.conf</tt> and changing the <tt>host</tt> property. 
-</p>
-<p>
-4. Ensure the appropriate messaging port is open on the CDS instance (see Prerequisites above for information on the port number).
-</p>
-<p>
-5. Start the Pulp CDS daemon:
-</p>
+</pre></li></ol><ol start="3"><li>Configure the CDS to connect to the Pulp server's message broker by editing <tt>/etc/pulp/cds.conf</tt> and changing the <tt>host</tt> property. 
+</li></ol><ol start="4"><li>Ensure the appropriate messaging port is open on the CDS instance (see Prerequisites above for information on the port number).
+</li></ol><ol start="5"><li>Start the Pulp CDS daemon:
 <pre class="wiki">$ service pulp-cds start
-</pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+</pre></li></ol></div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

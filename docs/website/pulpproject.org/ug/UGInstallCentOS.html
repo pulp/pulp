@@ -30,53 +30,36 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="CentOS">CentOS</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="CentOS">CentOS</h1>
 <h2 id="BuildingDependencies">Building Dependencies</h2>
 <p>
 The process of building the QPID RPMs on CentOS is relatively straight forward.  There are a few packages that must be installed for satisfy both specified and missing <tt>!BuildRequires</tt>.
 These instructions outline the approach of installing and building the source rpms rather than downloading them and rebuilding as 'rpmbuild --rebuild &lt;srpm&gt;'. However, either method should work equally.
 </p>
 <p>
-In order to get all of the dependencies needed, the <i>Extra Packages for Enterprise Linux</i> version 5 (EPEL5) repository is required. Instructions on how to do so can be found <a class="ext-link" href="http://fedoraproject.org/wiki/EPEL/FAQ#Using_EPEL"><span class="icon">here</span></a>.
+In order to get all of the dependencies needed, the <em>Extra Packages for Enterprise Linux</em> version 5 (EPEL5) repository is required. Instructions on how to do so can be found <a class="ext-link" href="http://fedoraproject.org/wiki/EPEL/FAQ#Using_EPEL"><span class="icon"> </span>here</a>.
 </p>
 <p>
 Steps:
 </p>
-<p>
-1. Install <tt>rpmbuild</tt>:
-</p>
+<ol><li>Install <tt>rpmbuild</tt>:
 <pre class="wiki">$ yum install rpm-build
-</pre><p>
-2. Create a <tt>mockbuild</tt> user:
-</p>
+</pre></li></ol><ol start="2"><li>Create a <tt>mockbuild</tt> user:
 <pre class="wiki">$ adduser mockbuild
-</pre><p>
-3. Install the source RPMs (get the latest <a class="ext-link" href="ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/"><span class="icon">here</span></a>):
-</p>
+</pre></li></ol><ol start="3"><li>Install the source RPMs (get the latest <a class="ext-link" href="ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/"><span class="icon"> </span>here</a>):
 <pre class="wiki">$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/amqp-1.0.750054-1.el5.src.rpm
 $ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/python-qpid-0.7.946106-15.el5.src.rpm
 $ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/qpid-cpp-mrg-0.7.946106-28.el5.src.rpm
-</pre><p>
-4. Install extra dependencies:
-</p>
+</pre></li></ol><ol start="4"><li>Install extra dependencies:
 <pre class="wiki">$ yum install gcc-c++ boost-devel doxygen e2fsprogs-devel libtool ruby cyrus-sasl-devel \
               libibverbs-devel librdmacm-devel nss-devel nspr-devel xqilla-devel xerces-c-devel \
               openais-devel cman-devel python-devel ruby-devel swig db4-devel libaio-devel
-</pre><p>
-5. Build the RPMs:
-</p>
+</pre></li></ol><ol start="5"><li>Build the RPMs:
 <pre class="wiki">$ cd /usr/src/redhat
 $ rpmbuild -bb SPECS/amqp.spec
 $ rpmbuild -bb SPECS/python-qpid.spec
 $ rpmbuild -bb SPECS/qpid-cpp-mrg.spec
-</pre><p>
+</pre></li></ol><p>
 The build produces the following (noarch) RPMs:
 </p>
 <ul><li>amqp-1.0.750054-1.noarch.rpm
@@ -101,17 +84,13 @@ The build produces the following RPMs:
 </li><li>qpid-cpp-server-store-0.7.946106-28.x86_64.rpm
 </li><li>rh-qpid-cpp-tests-0.7.946106-28.x86_64.rpm
 </li></ul></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

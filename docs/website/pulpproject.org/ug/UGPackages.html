@@ -30,16 +30,9 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Packages">Packages</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Packages">Packages</h1>
 <p>
-A <i>package</i> corresponds to an RPM in the Pulp server, regardless of whether it was synchronized from a repository feed or manually uploaded by a user.
+A <em>package</em> corresponds to an RPM in the Pulp server, regardless of whether it was synchronized from a repository feed or manually uploaded by a user.
 </p>
 <hr />
 <h2 id="install">Installation</h2>
@@ -92,7 +85,7 @@ pulp-cds      	0:0.0.117-1.fc14.noarch   	pulp-cds-0.0.117-1.fc14.noarch.rpm    
 gofer         	0:0.10-1.fc14.noarch      	gofer-0.10-1.fc14.noarch.rpm            	pulp-f14-64
 pulp          	0:0.0.117-1.fc14.noarch   	pulp-0.0.117-1.fc14.noarch.rpm          	pulp-f14-64
 </pre><p>
-In most cases, the number of packages present in a Pulp server will make that form of the command ineffective. In most cases, one or more search arguments will be specified to refine the results. The following search parameters are supported for package queries. In all instances, a regular expression is supplied as the value to the argument.
+In most cases, the number of packages present in a Pulp server will make that form of the command ineffective. In most cases, one or more search arguments will be specified to refine the results. The following search parameters are supported for package queries. In all instances, except repoid, a regular expression is supplied as the value to the argument. When one or more repoids are passed, search is confined to only those repositories. 
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> 
@@ -102,12 +95,15 @@ In most cases, the number of packages present in a Pulp server will make that fo
 </td></tr><tr><td> Name </td><td> <tt>-n</tt> or <tt>--name</tt> 
 </td></tr><tr><td> Release </td><td> <tt>-r</tt> or <tt>--release</tt> 
 </td></tr><tr><td> Version </td><td> <tt>-v</tt> or <tt>--version</tt> 
+</td></tr><tr><td> Repoids </td><td> <tt>-p</tt> or <tt>--repoid</tt> 
 </td></tr></table>
 <p>
 These search arguments can be combined for advanced queries:
 </p>
 <h4 id="Example:Alli386Pulppackages">Example: All i386 Pulp packages</h4>
 <pre class="wiki">$ pulp-admin package search --name 'pulp.*' --arch 'noarch'
+</pre><h4 id="Example:Alli386Pulppackagesinpulp-testandpulp-devrepositories">Example: All i386 Pulp packages in pulp-test and pulp-dev repositories</h4>
+<pre class="wiki">$ pulp-admin package search --name 'pulp.*' --arch 'noarch' --repoid 'pulp-test' --repoid 'pulp-dev'
 </pre><h4 id="Example:Allpackagesfromthex86_64versionofbuild0.0.117">Example: All packages from the x86_64 version of build 0.0.117</h4>
 <pre class="wiki">$ pulp-admin package search --arch 'x86_64' --version '117$'
 </pre><h4 id="Example:FindwhichrepoaparticularRPMisin">Example: Find which repo a particular RPM is in</h4>
@@ -158,17 +154,13 @@ glibc-2.12.1-4.x86_64.rpm
 libgcc-4.4.5-2.fc13.x86_64.rpm
 </pre><hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

@@ -30,26 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Errata">Errata</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Errata.html#ListAllAvailableErrata">List All Available Errata</a></li><li class="active">
-<a href="UGREST-Errata.html#ListErratabyRepository">List Errata by Repository</a></li><li class="active">
-<a href="UGREST-Errata.html#ListErratabyConsumer">List Errata by Consumer</a></li><li class="active">
-<a href="UGREST-Errata.html#Create">Create</a></li><li class="active">
-<a href="UGREST-Errata.html#Delete">Delete</a></li><li class="active">
-<a href="UGREST-Errata.html#Information">Information</a></li><li class="active">
-<a href="UGREST-Errata.html#InstallErrataonConsumers">Install Errata on Consumers</a></li><li class="active">
-<a href="UGREST-Errata.html#InstallErrataonConsumerGroups">Install Errata on Consumer Groups</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Errata">Errata</h1>
 <p>
 An erratum is an entity in pulp representing update metadata information for a given package update. Errata usually has associations with Packages, Repo and Consumers.   
 </p>
@@ -92,27 +73,27 @@ Filters: None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
- <B><span class="code-string">'description'</span></b>: None,
- <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'immutable'</span></b>: True,
- <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
- <B><span class="code-string">'pkglist'</span></b>: [],
- <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'reboot_suggested'</span></b>: False,
- <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
-                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
-                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
-                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
- <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
- <B><span class="code-string">'repo_defined'</span></b>: True,
- <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
- <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
- <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
- <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
- <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>},{...]
+<div class="code"><pre><span class="p">[{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+ <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@fedoraproject.org'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
+ <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
+ <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+ <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span><span class="p">),</span> 
+                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
+                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'551949'</span><span class="p">,</span>
+                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add emacs terminal mode to desktop menu'</span><span class="p">)}],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">u'Fedora 13'</span><span class="p">,</span>
+ <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'status'</span><span class="p">:</span> <span class="s">u'stable'</span><span class="p">,</span>
+ <span class="s">'title'</span><span class="p">:</span> <span class="s">u'emacs-23.2-4.fc13'</span><span class="p">,</span>
+ <span class="s">'type'</span><span class="p">:</span> <span class="s">u'bugfix'</span><span class="p">,</span>
+ <span class="s">'updated'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">u'1.4'</span><span class="p">},{</span><span class="o">...</span><span class="p">]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -158,27 +139,27 @@ Filters: None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
- <B><span class="code-string">'description'</span></b>: None,
- <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'immutable'</span></b>: True,
- <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
- <B><span class="code-string">'pkglist'</span></b>: [],
- <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'reboot_suggested'</span></b>: False,
- <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
-                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
-                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
-                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
- <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
- <B><span class="code-string">'repo_defined'</span></b>: True,
- <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
- <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
- <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
- <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
- <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+ <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@fedoraproject.org'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
+ <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
+ <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+ <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span><span class="p">),</span> 
+                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
+                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'551949'</span><span class="p">,</span>
+                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add emacs terminal mode to desktop menu'</span><span class="p">)}],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">u'Fedora 13'</span><span class="p">,</span>
+ <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'status'</span><span class="p">:</span> <span class="s">u'stable'</span><span class="p">,</span>
+ <span class="s">'title'</span><span class="p">:</span> <span class="s">u'emacs-23.2-4.fc13'</span><span class="p">,</span>
+ <span class="s">'type'</span><span class="p">:</span> <span class="s">u'bugfix'</span><span class="p">,</span>
+ <span class="s">'updated'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">u'1.4'</span><span class="p">}</span>
 
 </pre></div><p>
 Error: None
@@ -243,27 +224,27 @@ Headers:
 </p>
 <ul><li>location: '/errata/test-errata/'
 <div class="code"><pre>
-{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'test-errata'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
- <B><span class="code-string">'description'</span></b>: None,
- <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@example.org'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'TEST-ERRATA-2010-12094'</span></b>,
- <B><span class="code-string">'immutable'</span></b>: True,
- <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
- <B><span class="code-string">'pkglist'</span></b>: [],
- <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'reboot_suggested'</span></b>: False,
- <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=xxxxxx'</span></b>), 
-                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
-                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'xxxxxx'</span></b>,
-                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add test info mode to desktop menu'</span></b>)}],
- <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'Fedora 13'</span></b>,
- <B><span class="code-string">'repo_defined'</span></b>: True,
- <B><span class="code-string">'status'</span></b>: <B><span class="code-string">'stable'</span></b>,
- <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'test-rpm-23.2-4.fc13'</span></b>,
- <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'bugfix'</span></b>,
- <B><span class="code-string">'updated'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1.4'</span></b>}
+<span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'test-errata'</span><span class="p">,</span>
+ <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+ <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@example.org'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'TEST-ERRATA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
+ <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
+ <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+ <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=xxxxxx'</span><span class="p">),</span> 
+                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
+                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'xxxxxx'</span><span class="p">,</span>
+                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add test info mode to desktop menu'</span><span class="p">)}],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">'Fedora 13'</span><span class="p">,</span>
+ <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'status'</span><span class="p">:</span> <span class="s">'stable'</span><span class="p">,</span>
+ <span class="s">'title'</span><span class="p">:</span> <span class="s">'test-rpm-23.2-4.fc13'</span><span class="p">,</span>
+ <span class="s">'type'</span><span class="p">:</span> <span class="s">'bugfix'</span><span class="p">,</span>
+ <span class="s">'updated'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">'1.4'</span><span class="p">}</span>
 
 </pre></div></li></ul><p>
 Error: <strong>409 Conflict</strong> if there is an existing errata with the same id
@@ -304,7 +285,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: None
 </p>
@@ -350,27 +331,27 @@ None
 Response: <strong>200 OK</strong>
 </p>
 <div class="code"><pre>
-{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
- <B><span class="code-string">'description'</span></b>: None,
- <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'immutable'</span></b>: True,
- <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
- <B><span class="code-string">'pkglist'</span></b>: [],
- <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'reboot_suggested'</span></b>: False,
- <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
-                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
-                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
-                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
- <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
- <B><span class="code-string">'repo_defined'</span></b>: True,
- <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
- <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
- <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
- <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
- <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>}
+<span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+ <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@fedoraproject.org'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
+ <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
+ <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
+ <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+ <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span><span class="p">),</span> 
+                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
+                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'551949'</span><span class="p">,</span>
+                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add emacs terminal mode to desktop menu'</span><span class="p">)}],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">u'Fedora 13'</span><span class="p">,</span>
+ <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">'status'</span><span class="p">:</span> <span class="s">u'stable'</span><span class="p">,</span>
+ <span class="s">'title'</span><span class="p">:</span> <span class="s">u'emacs-23.2-4.fc13'</span><span class="p">,</span>
+ <span class="s">'type'</span><span class="p">:</span> <span class="s">u'bugfix'</span><span class="p">,</span>
+ <span class="s">'updated'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">u'1.4'</span><span class="p">}</span>
 
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
@@ -408,7 +389,7 @@ Filters: None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[<B><span class="code-string">'fedora-packager'</span></b>, <B><span class="code-string">'zsh'</span></b>]
+<div class="code"><pre><span class="p">[</span><span class="s">'fedora-packager'</span><span class="p">,</span> <span class="s">'zsh'</span><span class="p">]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -445,22 +426,21 @@ Filters: None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[<B><span class="code-string">'fedora-packager'</span></b>, <B><span class="code-string">'zsh'</span></b>]
+<div class="code"><pre><span class="p">[</span><span class="s">'fedora-packager'</span><span class="p">,</span> <span class="s">'zsh'</span><span class="p">]</span>
 </pre></div><p>
 Error: None
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

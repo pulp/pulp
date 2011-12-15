@@ -30,23 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PackageGroupCategories">Package Group Categories</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-PackageGroupCategories.html#List">List</a></li><li class="active">
-<a href="UGREST-PackageGroupCategories.html#Create">Create</a></li><li class="active">
-<a href="UGREST-PackageGroupCategories.html#Delete">Delete</a></li><li class="active">
-<a href="UGREST-PackageGroupCategories.html#AddaPackageGroup">Add a Package Group</a></li><li class="active">
-<a href="UGREST-PackageGroupCategories.html#DeleteaPackageGroup">Delete a Package Group</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroupCategories">Package Group Categories</h1>
 <p>
 Once you get a repository created you can start managing package group categories. Package group categories exist as members of a repository.
 </p>
@@ -102,8 +86,8 @@ None
 <p>
 <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">&quot;multimedia&quot;</span></b>: 
-  {<B><span class="code-string">&quot;description&quot;</span></b>: <B><span class="code-string">&quot;multimedia created from package kit group data&quot;</span></b>, <B><span class="code-string">&quot;repo_defined&quot;</span></b>: false, <B><span class="code-string">&quot;display_order&quot;</span></b>: 99, <B><span class="code-string">&quot;immutable&quot;</span></b>: false, <B><span class="code-string">&quot;translated_name&quot;</span></b>: {}, <B><span class="code-string">&quot;packagegroupids&quot;</span></b>: [<B><span class="code-string">&quot;sound-and-video&quot;</span></b>], <B><span class="code-string">&quot;translated_description&quot;</span></b>: {}, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;multimedia&quot;</span></b>, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;multimedia&quot;</span></b>, <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;multimedia&quot;</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">"multimedia"</span><span class="p">:</span> 
+  <span class="p">{</span><span class="s">"description"</span><span class="p">:</span> <span class="s">"multimedia created from package kit group data"</span><span class="p">,</span> <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> <span class="s">"display_order"</span><span class="p">:</span> <span class="mi">99</span><span class="p">,</span> <span class="s">"immutable"</span><span class="p">:</span> false<span class="p">,</span> <span class="s">"translated_name"</span><span class="p">:</span> <span class="p">{},</span> <span class="s">"packagegroupids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"sound-and-video"</span><span class="p">],</span> <span class="s">"translated_description"</span><span class="p">:</span> <span class="p">{},</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"multimedia"</span><span class="p">,</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"multimedia"</span><span class="p">,</span> <span class="s">"name"</span><span class="p">:</span> <span class="s">"multimedia"</span><span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no repository
 </p>
@@ -186,7 +170,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
@@ -228,7 +212,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
@@ -271,22 +255,21 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

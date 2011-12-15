@@ -30,14 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PulpGeneralReference">Pulp General Reference</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PulpGeneralReference">Pulp General Reference</h1>
 <hr />
 <h2 id="id">ID Restrictions</h2>
 <p>
@@ -51,7 +44,7 @@ For many entities in Pulp, an ID is used to uniquely identify one instance from 
 </li></ul><hr />
 <h2 id="timeunits">Time Units</h2>
 <p>
-Time units, like those used in timeout arguments, are in the <a class="ext-link" href="http://en.wikipedia.org/wiki/ISO_8601#Durations"><span class="icon">ISO8601 duration format</span></a> and allow for the following units:
+Time units, like those used in timeout arguments, are in the <a class="ext-link" href="http://en.wikipedia.org/wiki/ISO_8601#Durations"><span class="icon"> </span>ISO8601 duration format</a> and allow for the following units:
 </p>
 <ul><li>weeks [W]
 </li><li>days [D]
@@ -59,27 +52,23 @@ Time units, like those used in timeout arguments, are in the <a class="ext-link"
 </li><li>minutes [M]
 </li><li>seconds [S]
 </li></ul><p>
-The general format is <tt>PnWnDTnHnMnS</tt> where <tt>n</tt> are positive integer values. The required <tt>P</tt> designates the duration, also known as a <i>period</i> and the <tt>T</tt> is required only if hour, minute, and/or second fields are supplied to deliminate the date portion from the time portion. 
+The general format is <tt>PnWnDTnHnMnS</tt> where <tt>n</tt> are positive integer values. The required <tt>P</tt> designates the duration, also known as a <em>period</em> and the <tt>T</tt> is required only if hour, minute, and/or second fields are supplied to deliminate the date portion from the time portion. 
 </p>
 <pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64 --timeout P1DT12H
 </pre><hr />
 <h2 id="dateunits">Date Units</h2>
 <p>
-Dates are specified to both <tt>pulp-admin</tt> and <tt>pulp-consumer</tt> using the <a class="ext-link" href="http://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations"><span class="icon">ISO8601 combined date and time format</span></a>. Pulp can parse both the basic and extended formats. It is not required to provide the time portion when only a date if required. For example:
+Dates are specified to both <tt>pulp-admin</tt> and <tt>pulp-consumer</tt> using the <a class="ext-link" href="http://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations"><span class="icon"> </span>ISO8601 combined date and time format</a>. Pulp can parse both the basic and extended formats. It is not required to provide the time portion when only a date if required. For example:
 </p>
 <pre class="wiki">$ pulp-consumer consumer history --start_date 2010-01-01
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>
