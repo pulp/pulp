@@ -1,4 +1,3 @@
-[[TOC]]
 = Errata RESTful API = #top
 ''No description.'' [[BR]]
 [[BR]]

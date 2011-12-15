@@ -1,4 +1,3 @@
-[[TOC]]
 = Tasking RESTful Interface = #top
 ''RESTful interface providing an administrative and debugging api for'' [[BR]]
 ''pulp's tasking system.'' [[BR]]
