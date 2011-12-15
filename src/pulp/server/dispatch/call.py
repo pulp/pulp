@@ -85,7 +85,7 @@ class CallRequest(object):
 
     def __str__(self):
         args = ', '.join(self.callable_args_reprs())
-        kwargs = ', '.join(['%s=%s' % (k, v) for k, v in self.callable_kwargs_reprs.items()])
+        kwargs = ', '.join(['%s=%s' % (k, v) for k, v in self.callable_kwargs_reprs().items()])
         return 'CallRequest: %s(%s, %s)' % (self.callable_name(), args, kwargs)
 
     # hooks management ---------------------------------------------------------
@@ -101,7 +101,7 @@ class CallRequest(object):
     # call request serialization/deserialization -------------------------------
 
     copied_fields = ('resources', 'weight', 'tags')
-    pickled_fields = ('call', 'args', 'kwargs', 'timeout', 'execution_hooks', 'control_hooks')
+    pickled_fields = ('call', 'args', 'kwargs', 'execution_hooks', 'control_hooks')
     all_fields = itertools.chain(copied_fields, pickled_fields)
 
     def serialize(self):
