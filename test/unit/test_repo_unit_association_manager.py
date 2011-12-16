@@ -865,246 +865,309 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
     def test_1(self):
         """
-        Scenario: Double-large repository size with units split across multiple
-        types.
-
-        Test Properties:
-        - 6000 units across 3 types, 10 metadata fields each
-        - 6000 associations
+        Scenario: Repositories of increasing size retrieving units of a given
+        type.
         """
-
+        return
         if not GetUnitsByTypeStressTest.ENABLED: return
 
-        repo_id = 'repo-3'
+        repo_id = 'repo-1'
 
-        start = datetime.datetime.now()
-        for i in range(0, 6000):
-            unit_id = 'unit_%d' % i
-            unit_type_id = _QUERY_TYPES[i % 3].id
-            metadata = {'key_1' : unit_id}
-            for j in range(0, 10):
-                metadata['md_%d' % j] = 'value_%d' % i
-            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
-            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
+        header = 'Query Time   Total Num Units   Units per Type   Setup Time'
+        report = '%+10s   %+15s   %+14s   %+10s'
 
-        end = datetime.datetime.now()
-        setup_ellapsed = (end - start).seconds
+        print('Scenario: Retrieving all units of a given type from a repository')
+        print('----------------------------------------------------------------')
+        print(header)
 
-        # Test
-        start = datetime.datetime.now()
-        units = self.manager.get_units_by_type(repo_id, _QUERY_TYPES[0].id)
-        self.assertEqual(2000, len(units))
-        end = datetime.datetime.now()
-        test_ellapsed = (end - start).seconds
+        offset = 0
+        step = 3000
+        limit = 21000
+        different_types = 3
+        metadata_fields = 10
 
-        print('Scenario 1: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+        for i in range(0, limit, step):
+
+            # Setup
+            start = datetime.datetime.now()
+            for j in range(offset + i, offset + i + step):
+                unit_id = 'unit_%d' % j
+                unit_type_id = _QUERY_TYPES[j % different_types].id
+                metadata = {'key_1' : unit_id}
+                for k in range(0, metadata_fields):
+                    metadata['md_%d' % k] = 'value_%d' % k
+
+                self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
+                self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
+
+            end = datetime.datetime.now()
+            setup_ellapsed = (end - start).seconds
+
+            # Test
+            start = datetime.datetime.now()
+            units = self.manager.get_units_by_type(repo_id, _QUERY_TYPES[0].id)
+
+            expected_count = (offset + step) / different_types
+            self.assertEqual(expected_count, len(units))
+
+            end = datetime.datetime.now()
+            test_ellapsed = (end - start).seconds
+
+            offset += step
+
+            print(report % (test_ellapsed, offset, (offset / different_types), setup_ellapsed))
+
+        print('')
 
     def test_2(self):
         """
-        Scenario: Extra large repository with all units in the same type,
-        filtering units by a unit metadata field that is defined as a search
-        index by the unit type.
-
-        Test Properties:
-        - 12000 units, 1 type, 50 metadata fields each, search index is the
-          same for every 5th unit
-        - 12000 associations
+        Scenario: Filtering by association and unit metdata, both indexed and
+        non-indexed unit metadata.
         """
-
+        return
         if not GetUnitsByTypeStressTest.ENABLED: return
 
         repo_id = 'repo-2'
 
-        start = datetime.datetime.now()
-        for i in range(0, 12000):
-            unit_id = 'unit_%d' % i
-            unit_type_id = 'alpha'
-            metadata = {'key_1' : unit_id,
-                        'search_1' : 'search_%d' % (i % 5)}
-            for j in range(0, 48):
-                metadata['md_%d' % j] = 'value_%d' % i
-            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
-            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
+        header = 'Query Time   Query Type   Total Num Units   Matching   Setup Time'
+        report = '%+10s   %+10s   %+15s   %+8s   %+10s'
 
-        end = datetime.datetime.now()
-        setup_ellapsed = (end - start).seconds
+        print('Scenario: Filtering by association and unit metadata, both indexed and non-indexed, with limited unit metadata')
+        print('--------------------------------------------------------------------------------------------------------------')
+        print(header)
 
-        # Test
-        start = datetime.datetime.now()
-        criteria = SingleTypeCriteria(unit_spec={'search_1' : 'search_0'})
-        units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
-        self.assertEqual(2400, len(units))
-        end = datetime.datetime.now()
-        test_ellapsed = (end - start).seconds
+        offset = 0
+        step = 3000
+        limit = 21000
+        metadata_fields = 5
+        match_frequency = 3 # search field values will mod over this number
 
-        print('Scenario 2: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+        for i in range(0, limit, step):
+
+            # Setup
+            start = datetime.datetime.now()
+            for j in range(offset + i, offset + i + step):
+                unit_id = 'unit_%d' % j
+                unit_type_id = 'alpha'
+                metadata = {'key_1' : unit_id,
+                            'search_1' : 'search_%d' % (j % match_frequency),
+                            'non_search_1' : 'non_search_%d' % (j % match_frequency)}
+                for k in range(0, metadata_fields - 3):
+                    metadata['md_%d' % j] = 'value_%d' % k
+                self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
+                if (j % match_frequency) == 0:
+                    owner_type = OWNER_TYPE_IMPORTER
+                else:
+                    owner_type = OWNER_TYPE_USER
+                self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, owner_type, 'stress')
+
+            end = datetime.datetime.now()
+            setup_ellapsed = (end - start).seconds
+
+            # Test
+
+            #   Association Query
+            start = datetime.datetime.now()
+            criteria = SingleTypeCriteria(owner_type=OWNER_TYPE_IMPORTER)
+            units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+            expected_count = (offset + step) / match_frequency
+            self.assertEqual(expected_count, len(units))
+
+            end = datetime.datetime.now()
+            association_ellapsed = (end - start).seconds
+
+            #   Index Query
+            start = datetime.datetime.now()
+            criteria = SingleTypeCriteria(unit_spec={'search_1' : 'search_0'})
+            units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+            expected_count = (offset + step) / match_frequency
+            self.assertEqual(expected_count, len(units))
+
+            end = datetime.datetime.now()
+            index_ellapsed = (end - start).seconds
+
+            #   Non-index Query
+            start = datetime.datetime.now()
+            criteria = SingleTypeCriteria(unit_spec={'non_search_1' : 'non_search_0'})
+            units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+            expected_count = (offset + step) / match_frequency
+            self.assertEqual(expected_count, len(units))
+
+            end = datetime.datetime.now()
+            non_index_ellapsed = (end - start).seconds
+
+            offset += step
+
+            print(report % (association_ellapsed, 'Assoc', offset, (offset / match_frequency), setup_ellapsed))
+            print(report % (index_ellapsed, 'Index', offset, (offset / match_frequency), setup_ellapsed))
+            print(report % (non_index_ellapsed, 'Non-index', offset, (offset / match_frequency), setup_ellapsed))
+
+        print('')
+
+    def _run_sort_test(self, repo_id, offset, step, limit, metadata_fields, sort_entropy):
+
+        if not GetUnitsByTypeStressTest.ENABLED: return
+
+        header = 'Query Time   Query Type   Total Num Units   Setup Time'
+        report = '%+10s   %+10s   %+15s   %+10s'
+
+        print(header)
+
+        for i in range(0, limit, step):
+
+            # Setup
+            start = datetime.datetime.now()
+            for j in range(offset + i, offset + i + step):
+                unit_id = 'unit_%d' % j
+                unit_type_id = 'alpha'
+                metadata = {'key_1' : unit_id,
+                            'search_1' : 'search_%d' % (j % sort_entropy),
+                            'non_search_1' : 'non_search_%d' % (j % sort_entropy)}
+                for k in range(0, metadata_fields - 3):
+                    metadata['md_%d' % k] = 'value_%d' % k
+                self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
+                owner_id = 'owner_%d' % (j % sort_entropy)
+                self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, OWNER_TYPE_USER, owner_id)
+
+            end = datetime.datetime.now()
+            setup_ellapsed = (end - start).seconds
+
+            # Test
+            expected_count = (offset + step)
+
+            #   Association Indexed Query
+            try:
+                start = datetime.datetime.now()
+                criteria = SingleTypeCriteria(sort=[('unit_type_id', association_manager.SORT_DESCENDING), ('created', association_manager.SORT_DESCENDING)])
+
+                units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+                self.assertEqual(expected_count, len(units))
+
+                end = datetime.datetime.now()
+                association_index_ellapsed = (end - start).seconds
+            except:
+                association_index_ellapsed = 'Failed'
+
+            #   Association Non-Indexed Query
+            try:
+                start = datetime.datetime.now()
+                criteria = SingleTypeCriteria(sort=[('owner_id', association_manager.SORT_DESCENDING)])
+
+                units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+                self.assertEqual(expected_count, len(units))
+
+                end = datetime.datetime.now()
+                association_non_index_ellapsed = (end - start).seconds
+            except:
+                association_non_index_ellapsed = 'Failed'
+
+            #   Index Query
+            try:
+                start = datetime.datetime.now()
+                criteria = SingleTypeCriteria(sort=[('search_1', association_manager.SORT_DESCENDING)])
+
+                units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+                self.assertEqual(expected_count, len(units))
+
+                end = datetime.datetime.now()
+                index_ellapsed = (end - start).seconds
+            except:
+                index_ellapsed = 'Failed'
+
+            #   Non-index Query
+            try:
+                start = datetime.datetime.now()
+                criteria = SingleTypeCriteria(sort=[('non_search_1', association_manager.SORT_DESCENDING)])
+
+                units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
+
+                self.assertEqual(expected_count, len(units))
+
+                end = datetime.datetime.now()
+                non_index_ellapsed = (end - start).seconds
+            except:
+                non_index_ellapsed = 'Failed'
+
+            offset += step
+
+            print(report % (association_index_ellapsed, 'Assoc Ind', offset, setup_ellapsed))
+            print(report % (association_non_index_ellapsed, 'Assoc Non', offset, setup_ellapsed))
+            print(report % (index_ellapsed, 'User Ind', offset, setup_ellapsed))
+            print(report % (non_index_ellapsed, 'User Non', offset, setup_ellapsed))
+            print('')
 
     def test_3(self):
-        """
-        Scenario: Extra large repository with all units in the same type,
-        filtering units by a unit metadata field that is NOT defined as a search
-        index by the unit type.
-
-        Test Properties:
-        - 12000 units, 1 type, 50 metadata fields each, search index is the
-          same for every 5th unit
-        - 12000 associations
-        """
-
-        if not GetUnitsByTypeStressTest.ENABLED: return
+        print('-------------------------------------------------------------------------')
+        print('Scenario: Sorting with 5 metadata fields per unit and sort entropy at 100')
+        print('-------------------------------------------------------------------------')
 
         repo_id = 'repo-3'
+        offset = 0
+        step = 3000
+        limit = 21000
+        metadata_fields = 5
+        sort_entropy = 100 # number of unique fields in the sort column
 
-        start = datetime.datetime.now()
-        for i in range(0, 12000):
-            unit_id = 'unit_%d' % i
-            unit_type_id = 'alpha'
-            metadata = {'key_1' : unit_id,
-                        'non_search_1' : 'search_%d' % (i % 5)}
-            for j in range(0, 48):
-                metadata['md_%d' % j] = 'value_%d' % i
-            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
-            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
-
-        end = datetime.datetime.now()
-        setup_ellapsed = (end - start).seconds
-
-        # Test
-        start = datetime.datetime.now()
-        criteria = SingleTypeCriteria(unit_spec={'non_search_1' : 'search_0'})
-        units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
-        self.assertEqual(2400, len(units))
-        end = datetime.datetime.now()
-        test_ellapsed = (end - start).seconds
-
-        print('Scenario 3: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
 
     def test_4(self):
-        """
-        Scenario: Extra large repository with all units in the same type,
-        sorting based on a unit's search indexed metadata to trigger the
-        delayed sort branch.
-
-        Test Properties:
-        - 12000 units, 1 type, 50 metadata fields each, search index is the
-          same for every 5th unit
-        - 12000 associations
-        """
-
-        if not GetUnitsByTypeStressTest.ENABLED: return
+        print('-------------------------------------------------------------------------')
+        print('Scenario: Sorting with 25 metadata fields per unit and sort entropy at 100')
+        print('--------------------------------------------------------------------------')
 
         repo_id = 'repo-4'
-        unit_count = 24000
+        offset = 0
+        step = 3000
+        limit = 21000
+        metadata_fields = 25
+        sort_entropy = 100
 
-        start = datetime.datetime.now()
-        for i in range(0, unit_count):
-            unit_id = 'unit_%d' % i
-            unit_type_id = 'alpha'
-            metadata = {'key_1' : unit_id,
-                        'search_1' : 'search_%d' % (i % 5)}
-            for j in range(0, 48):
-                metadata['md_%d' % j] = 'value_%d' % i
-            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
-            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
-
-        end = datetime.datetime.now()
-        setup_ellapsed = (end - start).seconds
-
-        # Test
-        start = datetime.datetime.now()
-        criteria = SingleTypeCriteria(sort=[('search_1', association_manager.SORT_DESCENDING)])
-        units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
-        self.assertEqual(unit_count, len(units))
-        end = datetime.datetime.now()
-        test_ellapsed = (end - start).seconds
-
-        print('Scenario 4: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
 
     def test_5(self):
-        """
-        Scenario: Extra large repository with all units in the same type,
-        sorting based on a unit's non-search indexed metadata to trigger the
-        delayed sort branch.
-
-        Lessons Learned:
-        With about 3500 units or more each having 50 fields, pymongo raises an
-        error that sorting is not possible on sets that large without a search
-        index. Sorting ability seems contingent on document size and larger
-        documents require smart indexes.
-
-        Test Properties:
-        - 3200 units, 1 type, 50 metadata fields each, search index is the
-          same for every 5th unit
-        - 3200 associations
-        """
-
-        if not GetUnitsByTypeStressTest.ENABLED: return
+        print('--------------------------------------------------------------------------')
+        print('Scenario: Sorting with 50 metadata fields per unit and sort entropy at 100')
+        print('--------------------------------------------------------------------------')
 
         repo_id = 'repo-5'
-        unit_count = 3200
+        offset = 0
+        step = 3000
+        limit = 21000
+        metadata_fields = 50
+        sort_entropy = 100
 
-        start = datetime.datetime.now()
-        for i in range(0, unit_count):
-            unit_id = 'unit_%d' % i
-            unit_type_id = 'alpha'
-            metadata = {'key_1' : unit_id,
-                        'non_search_1' : 'search_%d' % (i % 5)}
-            for j in range(0, 48):
-                metadata['md_%d' % j] = 'value_%d' % i
-            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
-            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, 'stress-importer')
-
-        end = datetime.datetime.now()
-        setup_ellapsed = (end - start).seconds
-
-        # Test
-        start = datetime.datetime.now()
-        criteria = SingleTypeCriteria(sort=[('non_search_1', association_manager.SORT_DESCENDING)])
-        units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
-        self.assertEqual(unit_count, len(units))
-        end = datetime.datetime.now()
-        test_ellapsed = (end - start).seconds
-
-        print('Scenario 5: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
 
     def test_6(self):
-        """
-        Scenario: Extra large repository with all units in the same type,
-        sorting based on association metadata to trigger the early sorting code
-        branch.
+        print('--------------------------------------------------------------------------')
+        print('Scenario: Sorting with 10 metadata fields per unit and sort entropy at 2500')
+        print('--------------------------------------------------------------------------')
 
-        Test Properties:
-        - 12000 units, 1 type, 50 metadata fields each, search index is the
-          same for every 5th unit
-        - 12000 associations
-        """
+        repo_id = 'repo-5'
+        offset = 0
+        step = 3000
+        limit = 21000
+        metadata_fields = 10
+        sort_entropy = 2500
 
-        if not GetUnitsByTypeStressTest.ENABLED: return
+        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
+
+    def test_6(self):
+        print('--------------------------------------------------------------------------')
+        print('Scenario: Sorting with 50 metadata fields per unit and sort entropy at 2500')
+        print('--------------------------------------------------------------------------')
 
         repo_id = 'repo-6'
-        unit_count = 12000
+        offset = 0
+        step = 3000
+        limit = 21000
+        metadata_fields = 50
+        sort_entropy = 2500
 
-        start = datetime.datetime.now()
-        for i in range(0, unit_count):
-            unit_id = 'unit_%d' % i
-            unit_type_id = 'alpha'
-            metadata = {'key_1' : unit_id,
-                        'search_1' : 'search_%d' % (i % 5)}
-            for j in range(0, 48):
-                metadata['md_%d' % j] = 'value_%d' % i
-            self.content_manager.add_content_unit(unit_type_id, unit_id, metadata)
-            owner_id = 'stress-importer-%d' % (i % 20) # add some entropy to the sorting
-            self.manager.associate_unit_by_id(repo_id, unit_type_id, unit_id, association_manager.OWNER_TYPE_IMPORTER, owner_id)
-
-        end = datetime.datetime.now()
-        setup_ellapsed = (end - start).seconds
-
-        # Test
-        start = datetime.datetime.now()
-        criteria = SingleTypeCriteria(sort=[('owner_id', association_manager.SORT_DESCENDING)])
-        units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
-        self.assertEqual(unit_count, len(units))
-        end = datetime.datetime.now()
-        test_ellapsed = (end - start).seconds
-
-        print('Scenario 6: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
+        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
