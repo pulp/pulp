@@ -850,7 +850,7 @@ class GetUnitsStressTest(testutil.PulpTest):
 
 class GetUnitsByTypeStressTest(testutil.PulpTest):
 
-    ENABLED = True
+    ENABLED = False
 
     def clean(self):
         super(GetUnitsByTypeStressTest, self).clean()
@@ -1136,13 +1136,12 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         print('--------------------------------------------------------------------------')
 
         repo_id = 'repo-4'
-        offset = 0
         step = 3000
         limit = 21000
         metadata_fields = 25
         sort_entropy = 100
 
-        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
+        self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_5(self):
         print('--------------------------------------------------------------------------')
