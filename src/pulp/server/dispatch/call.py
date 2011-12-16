@@ -218,3 +218,6 @@ class CallReport(object):
         self.result = result
         self.exception = exception
         self.traceback = traceback
+        self.start_time = None
+        self.finish_time = None
+
