@@ -67,7 +67,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
     def test_clone(self):
 
         repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-16/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
         self.assertTrue(repo is not None)
         try:
             repo_sync._sync(repo['id'])
