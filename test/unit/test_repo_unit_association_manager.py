@@ -868,7 +868,6 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         Scenario: Repositories of increasing size retrieving units of a given
         type.
         """
-        return
         if not GetUnitsByTypeStressTest.ENABLED: return
 
         repo_id = 'repo-1'
@@ -924,7 +923,6 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         Scenario: Filtering by association and unit metdata, both indexed and
         non-indexed unit metadata.
         """
-        return
         if not GetUnitsByTypeStressTest.ENABLED: return
 
         repo_id = 'repo-2'
@@ -1007,7 +1005,23 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
         print('')
 
-    def _run_sort_test(self, repo_id, offset, step, limit, metadata_fields, sort_entropy):
+    def _run_sort_test(self, repo_id, step, limit, metadata_fields, sort_entropy):
+        """
+        @param repo_id: repo to associate against
+        @type  repo_id: str
+
+        @param step: number of units to process before running the queries
+        @type  step: int
+
+        @param limit: total number of units to have in the system before stopping
+        @type  limit: int
+
+        @param metadata_fields: number of metadata fields to add per unit
+        @type  metadata_fields: int
+
+        @param sort_entropy: number of unique values to use in the search fields
+        @type  sort_entropy: int
+        """
 
         if not GetUnitsByTypeStressTest.ENABLED: return
 
@@ -1016,6 +1030,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
         print(header)
 
+        offset = 0
         for i in range(0, limit, step):
 
             # Setup
@@ -1108,13 +1123,12 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         print('-------------------------------------------------------------------------')
 
         repo_id = 'repo-3'
-        offset = 0
         step = 3000
         limit = 21000
         metadata_fields = 5
         sort_entropy = 100 # number of unique fields in the sort column
 
-        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
+        self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_4(self):
         print('--------------------------------------------------------------------------')
@@ -1136,13 +1150,12 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         print('--------------------------------------------------------------------------')
 
         repo_id = 'repo-5'
-        offset = 0
         step = 3000
         limit = 21000
         metadata_fields = 50
         sort_entropy = 100
 
-        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
+        self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_6(self):
         print('---------------------------------------------------------------------------')
@@ -1150,13 +1163,12 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         print('---------------------------------------------------------------------------')
 
         repo_id = 'repo-5'
-        offset = 0
         step = 3000
         limit = 21000
         metadata_fields = 10
         sort_entropy = 2500
 
-        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
+        self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_7(self):
         print('---------------------------------------------------------------------------')
@@ -1164,10 +1176,9 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         print('---------------------------------------------------------------------------')
 
         repo_id = 'repo-7'
-        offset = 0
         step = 3000
         limit = 21000
         metadata_fields = 50
         sort_entropy = 2500
 
-        self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
+        self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
