@@ -11,16 +11,18 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import datetime
 import logging
 import sys
-import threading
 import time
+import types
 import uuid
 from gettext import gettext as _
 
 from pulp.common import dateutils
 from pulp.server.dispatch import call
+from pulp.server.dispatch import constants as dispatch_constants
 
 
 _LOG = logging.getLogger(__name__)
@@ -33,29 +35,25 @@ class Task(object):
     Execution wrapper for a single call request
     """
 
-    def __init__(self, call_request):
+    def __init__(self, call_request, call_report=None, asynchronous=False):
+
+        assert isinstance(call_request, call.CallRequet)
+        assert isinstance(call_report, (types.NoneType, call.CallReport))
+        assert isinstance(asynchronous, types.BooleanType)
 
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
 
         self.call_request = call_request
         self.serialized_call_request_id = None
 
-        for field in call_request.all_fields:
-            value = getattr(call_request, field)
-            setattr(self, field, value)
+        self.call_report = call_report or call.CallReport()
+        self.call_report.state = dispatch_constants.CALL_WAITING_STATE
+        self.call_report.task_id = self.id
 
-        self.state = call.CALL_WAITING
-
-        self.start_time = None
-        self.finish_time = None
+        self.asynchronous = asynchronous
 
         self.complete_callback = None
         self.progress_callback = None
-
-        self.progress = None
-        self.result = None
-        self.exception = None
-        self.traceback = None
 
     def __str__(self):
         return 'Task %s: %s' % (self.id, str(self.call_request))
@@ -68,12 +66,12 @@ class Task(object):
     # progress information -----------------------------------------------------
 
     def set_progress(self, arg, callback):
-        self.kwargs[arg] = self.progress_pass_through
+        self.call_request.kwargs[arg] = self._progress_pass_through
         self.progress_callback = callback
 
-    def progress_pass_through(self, *args, **kwargs):
+    def _progress_pass_through(self, *args, **kwargs):
         try:
-            self.progress = self.progress_callback(*args, **kwargs)
+            self.call_report.progress = self.progress_callback(*args, **kwargs)
         except Exception, e:
             _LOG.exception(e)
             raise
@@ -81,36 +79,41 @@ class Task(object):
     # task lifecycle -----------------------------------------------------------
 
     def run(self):
-        assert self.state in call.CALL_READY_STATES
-        self.state = call.CALL_RUNNING
-        self.start_time = datetime.datetime.now(dateutils.utc_tz())
+        assert self.call_report.state in dispatch_constants.CALL_READY_STATES
+        self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
+        call = self.call_request.call
+        args = copy.copy(self.call_request.args)
+        kwargs = copy.copy(self.call_request.kwargs)
+        result = None
+        if self.asynchronous:
+            kwargs['task'] = self
         try:
-            result = self.call(*self.args, **self.kwargs)
-            self.initialize(result)
+            result = call(*args, **kwargs)
         except Exception, e:
             tb = sys.exc_info()[1]
             _LOG.exception(e)
             self.failed(e, tb)
-
-    def initialize(self, result=None):
+        if self.asynchronous:
+            return
         self.succeeded(result)
 
     def succeeded(self, result):
-        self.state = call.CALL_FINISHED
-        self.result = result
+        self.call_report.state = dispatch_constants.CALL_FINISHED_STATE
+        self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
-        self.finalize()
+        self._complete()
 
     def failed(self, exception=None, traceback=None):
-        self.state = call.CALL_ERROR
-        self.exception = exception
-        self.traceback = traceback
+        self.call_report.state = dispatch_constants.CALL_ERROR_STATE
+        self.call_report.exception = exception
+        self.call_report.traceback = traceback
         _LOG.info(_('%s FAILED') % str(self))
-        self.finalize()
+        self._complete()
 
-    def finalize(self):
-        assert self.state in call.CALL_COMPLETE_STATES
-        self.finish_time = datetime.datetime.now(dateutils.utc_tz())
+    def _complete(self):
+        assert self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES
+        self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
         if self.complete_callback is None:
             return
         try:
@@ -120,41 +123,17 @@ class Task(object):
 
     # hook execution -----------------------------------------------------------
 
-    def call_execution_hook(self, name):
-        hook = self.execution_hooks(name, None)
-        if hook is None:
-            return None
-        return hook(self)
-
-    def call_control_hook(self, name):
-        hook = self.control_hooks.get(name, None)
-        if hook is None:
-            raise NotImplementedError('No %s control hook provided' % name)
-        return hook(self)
+    def call_execution_hooks(self, key):
+        for hook in self.call_request.execution_hooks[key]:
+            hook(self.call_request, self.call_report)
 
     def cancel(self):
-        if self.state in call.CALL_COMPLETE_STATES:
+        if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return
-        self.call_control_hook('cancel')
-        self.state = call.CALL_CANCELED
-        self.finalize()
+        cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
+        if cancel_hook is None:
+            raise NotImplementedError('No cancel control hook provided for Task:%s' % self.id)
+        cancel_hook(self.call_request, self.call_report)
+        self.call_report.state = dispatch_constants.CALL_CANCELED_STATE
+        self._complete()
 
-# asynchronous task ------------------------------------------------------------
-
-class AsyncTask(Task):
-
-    _current = threading.local()
-
-    @classmethod
-    def current(cls):
-        return getattr(cls._current, 'task', None)
-
-    def run(self):
-        self._current.task = self
-        try:
-            super(AsyncTask, self).run()
-        finally:
-            self._current = None
-
-    def initialize(self, result=None):
-        pass
