@@ -1098,8 +1098,8 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
             print(report % (association_index_ellapsed, 'Assoc Ind', offset, setup_ellapsed))
             print(report % (association_non_index_ellapsed, 'Assoc Non', offset, setup_ellapsed))
-            print(report % (index_ellapsed, 'User Ind', offset, setup_ellapsed))
-            print(report % (non_index_ellapsed, 'User Non', offset, setup_ellapsed))
+            print(report % (index_ellapsed, 'Unit Ind', offset, setup_ellapsed))
+            print(report % (non_index_ellapsed, 'Unit Non', offset, setup_ellapsed))
             print('')
 
     def test_3(self):
