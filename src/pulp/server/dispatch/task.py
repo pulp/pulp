@@ -37,7 +37,7 @@ class Task(object):
 
     def __init__(self, call_request, call_report=None, asynchronous=False):
 
-        assert isinstance(call_request, call.CallRequet)
+        assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
         assert isinstance(asynchronous, types.BooleanType)
 
