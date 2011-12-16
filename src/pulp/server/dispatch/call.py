@@ -72,8 +72,8 @@ class CallRequest(object):
 
     def callable_name(self):
         name = self.call.__name__
-        if hasattr(self.call, 'im_class'):
-            class_name = self.call.im_class.__name__
+        class_name = getattr(self.call, 'im_class', None)
+        if class_name is not None:
             return '.'.join((class_name, name))
         return name
 
