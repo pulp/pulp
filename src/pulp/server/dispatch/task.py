@@ -55,6 +55,10 @@ class Task(object):
         self.complete_callback = None
         self.progress_callback = None
 
+        progress_hook = self.call_request.control_hooks[dispatch_constants.CALL_PROGRESS_CONTROL_HOOK]
+        if progress_hook is not None:
+            self.set_progress('progress_callback', progress_hook)
+
     def __str__(self):
         return 'Task %s: %s' % (self.id, str(self.call_request))
 
