@@ -1117,7 +1117,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
 
     def test_4(self):
-        print('-------------------------------------------------------------------------')
+        print('--------------------------------------------------------------------------')
         print('Scenario: Sorting with 25 metadata fields per unit and sort entropy at 100')
         print('--------------------------------------------------------------------------')
 
@@ -1145,9 +1145,9 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
         self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
 
     def test_6(self):
-        print('--------------------------------------------------------------------------')
+        print('---------------------------------------------------------------------------')
         print('Scenario: Sorting with 10 metadata fields per unit and sort entropy at 2500')
-        print('--------------------------------------------------------------------------')
+        print('---------------------------------------------------------------------------')
 
         repo_id = 'repo-5'
         offset = 0
@@ -1158,12 +1158,12 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
         self._run_sort_test(repo_id, offset, step, limit, metadata_fields, sort_entropy)
 
-    def test_6(self):
-        print('--------------------------------------------------------------------------')
+    def test_7(self):
+        print('---------------------------------------------------------------------------')
         print('Scenario: Sorting with 50 metadata fields per unit and sort entropy at 2500')
-        print('--------------------------------------------------------------------------')
+        print('---------------------------------------------------------------------------')
 
-        repo_id = 'repo-6'
+        repo_id = 'repo-7'
         offset = 0
         step = 3000
         limit = 21000
