@@ -385,8 +385,6 @@ fi
 %attr(3775, apache, apache) /var/log/pulp
 %attr(775, apache, apache) %{_sysconfdir}/pki/pulp
 %attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
-#%attr(775, apache, apache) %{_sysconfdir}/pki/pulp/ca.key
-#%attr(775, apache, apache) %{_sysconfdir}/pki/pulp/ca.crt
 %{_bindir}/pulp-migrate
 # -- files - common ----------------------------------------------------------
 
@@ -528,7 +526,7 @@ fi
 - SELinux: fix for pulp_cert_t (jmatthews@redhat.com)
 - 760766 - Updated content upload cli to parse new return format for
   repo.add_packages() with filters correctly (skarmark@redhat.com)
-- SELinux: move setsebool to enable script to be executed during %post
+- SELinux: move setsebool to enable script to be executed during post
   (jmatthews@redhat.com)
 - SELinux: rewrite rules to be based off of httpd content
   (jmatthews@redhat.com)

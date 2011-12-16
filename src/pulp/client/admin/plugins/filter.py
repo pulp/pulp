@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Pulp Filter management module
 #

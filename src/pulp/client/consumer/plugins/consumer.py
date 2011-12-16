@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Pulp Registration and subscription module
 # Copyright (c) 2011 Red Hat, Inc.
