@@ -26,8 +26,7 @@ from pulp.server.content.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit
 from pulp.server.managers.repo._exceptions import InvalidOwnerType
 import pulp.server.managers.repo.unit_association as association_manager
-from pulp.server.managers.repo.unit_association import SingleTypeCriteria, MultipleTypeCriteria, DateQueryParameter
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
+from pulp.server.managers.repo.unit_association import Criteria, OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.content.cud as content_cud_manager
 
 # constants --------------------------------------------------------------------
@@ -149,7 +148,6 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         Tests that removing the association owned by one party doesn't affect another owner's association.
         """
 
-        # Setup
         # Setup
         self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
         self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_IMPORTER, 'test-importer')
@@ -368,7 +366,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_filter_type(self):
         # Test
-        criteria = MultipleTypeCriteria(type_ids=['alpha', 'beta'])
+        criteria = Criteria(type_ids=['alpha', 'beta'])
         units = self.manager.get_units('repo-1', criteria)
 
         # Verify
@@ -383,7 +381,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_filter_owner_type(self):
         # Test
-        criteria = MultipleTypeCriteria(owner_type=OWNER_TYPE_IMPORTER)
+        criteria = Criteria(association_filters={'owner_type' : OWNER_TYPE_IMPORTER})
         units = self.manager.get_units('repo-1', criteria)
 
         # Verify
@@ -392,10 +390,10 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_limit(self):
         # Test
-        low_criteria = MultipleTypeCriteria(limit=2)
+        low_criteria = Criteria(limit=2)
         low_units = self.manager.get_units('repo-1', low_criteria)
 
-        high_criteria = MultipleTypeCriteria(limit=10000)
+        high_criteria = Criteria(limit=10000)
         high_units = self.manager.get_units('repo-1', high_criteria)
 
         # Verify
@@ -408,7 +406,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_skip(self):
         # Test
-        skip_criteria = MultipleTypeCriteria(skip=2)
+        skip_criteria = Criteria(skip=2)
         skip_units = self.manager.get_units('repo-1', skip_criteria)
 
         all_units = self.manager.get_units('repo-1')
@@ -422,7 +420,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_sort(self):
         # Test
-        order_criteria = MultipleTypeCriteria(sort=[('owner_type', association_manager.SORT_DESCENDING)]) # owner_type will produce a non-default sort
+        order_criteria = Criteria(association_sort=[('owner_type', association_manager.SORT_DESCENDING)]) # owner_type will produce a non-default sort
         order_units = self.manager.get_units('repo-1', order_criteria)
 
         # Verify
@@ -435,21 +433,11 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_filter_created(self):
         # Test
-        after_param = DateQueryParameter(self.timestamps[0], DateQueryParameter.AFTER)
-        after_criteria = MultipleTypeCriteria(first_associated=after_param)
+        after_criteria = Criteria(association_filters={'created' : {'$gt' : self.timestamps[0]}})
         after_units = self.manager.get_units('repo-1', after_criteria)
 
-        before_param = DateQueryParameter(self.timestamps[1], DateQueryParameter.BEFORE)
-        before_criteria = MultipleTypeCriteria(first_associated=before_param)
+        before_criteria = Criteria(association_filters={'created' : {'$lt' : self.timestamps[1]}})
         before_units = self.manager.get_units('repo-1', before_criteria)
-
-        after_equal_param = DateQueryParameter(self.timestamps[1], DateQueryParameter.AFTER_OR_EQUAL)
-        after_equal_criteria = MultipleTypeCriteria(first_associated=after_equal_param)
-        after_equal_units = self.manager.get_units('repo-1', after_equal_criteria)
-
-        before_equal_param = DateQueryParameter(self.timestamps[1], DateQueryParameter.BEFORE_OR_EQUAL)
-        before_equal_criteria = MultipleTypeCriteria(first_associated=before_equal_param)
-        before_equal_units = self.manager.get_units('repo-1', before_equal_criteria)
 
         # Verify
 
@@ -459,12 +447,10 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
         self.assertEqual(self.repo_1_count - 3, len(after_units))
         self.assertEqual(3, len(before_units))
-        self.assertEqual(self.repo_1_count - 3, len(after_equal_units))
-        self.assertEqual(7, len(before_equal_units))
 
     def test_get_units_remove_duplicates(self):
         # Test
-        criteria = MultipleTypeCriteria(remove_duplicates=True)
+        criteria = Criteria(remove_duplicates=True)
         units = self.manager.get_units('repo-1', criteria)
 
         # Verify
@@ -498,7 +484,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_association_filter(self):
         # Test
-        criteria = SingleTypeCriteria(owner_type=OWNER_TYPE_IMPORTER)
+        criteria = Criteria(association_filters={'owner_type' : OWNER_TYPE_IMPORTER})
         units = self.manager.get_units_by_type('repo-1', 'gamma', criteria)
 
         # Verify
@@ -513,7 +499,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_unit_metadata_filter(self):
         # Test
-        criteria = SingleTypeCriteria(unit_spec={'md_2' : 0})
+        criteria = Criteria(unit_filters={'md_2' : 0})
         units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
 
         # Verify
@@ -525,7 +511,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_association_sort_limit(self):
         # Test
-        criteria = SingleTypeCriteria(sort=[('owner_type', association_manager.SORT_DESCENDING)], limit=2)
+        criteria = Criteria(association_sort=[('owner_type', association_manager.SORT_DESCENDING)], limit=2)
         units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
 
         # Verify
@@ -537,7 +523,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_unit_metadata_sort_limit(self):
         # Test
-        criteria = SingleTypeCriteria(sort=[('md_2', association_manager.SORT_DESCENDING)], limit=2)
+        criteria = Criteria(unit_sort=[('md_2', association_manager.SORT_DESCENDING)], limit=2)
         units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
 
         # Verify
@@ -550,7 +536,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_association_sort_skip(self):
         # Test
-        criteria = SingleTypeCriteria(sort=[('owner_type', association_manager.SORT_DESCENDING)], skip=1)
+        criteria = Criteria(association_sort=[('owner_type', association_manager.SORT_DESCENDING)], skip=1)
         units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
 
         # Verify
@@ -559,7 +545,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_unit_metadata_sort_skip(self):
         # Test
-        criteria = SingleTypeCriteria(sort=[('md_2', association_manager.SORT_DESCENDING)], skip=1)
+        criteria = Criteria(unit_sort=[('md_2', association_manager.SORT_DESCENDING)], skip=1)
         units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
 
         # Verify
@@ -568,7 +554,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_sort_association_data(self):
         # Test
-        sort_criteria = SingleTypeCriteria(sort=[('created', association_manager.SORT_DESCENDING)])
+        sort_criteria = Criteria(association_sort=[('created', association_manager.SORT_DESCENDING)])
         sort_units = self.manager.get_units_by_type('repo-1', 'alpha', sort_criteria)
 
         # Verify
@@ -581,7 +567,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_sort_unit_data(self):
         # Test
-        sort_criteria = SingleTypeCriteria(sort=[('md_2', association_manager.SORT_DESCENDING)])
+        sort_criteria = Criteria(unit_sort=[('md_2', association_manager.SORT_DESCENDING)])
         sort_units = self.manager.get_units_by_type('repo-1', 'alpha', sort_criteria)
 
         # Verify
@@ -594,7 +580,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_by_type_remove_duplicates(self):
         # Test
-        criteria = SingleTypeCriteria(remove_duplicates=True)
+        criteria = Criteria(remove_duplicates=True)
         units = self.manager.get_units_by_type('repo-1', 'gamma', criteria)
 
         # Verify
@@ -631,6 +617,17 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         self.assertEqual(matching[2]['unit_type_id'], 't2')
         self.assertEqual(matching[2]['unit_id'], 'u1')
         self.assertEqual(matching[2]['created'], self.timestamps[5])
+
+    def test_criteria_str(self):
+        # Setup
+        c1 = Criteria()
+        c2 = Criteria(type_ids=['a'], association_filters={'a':'a'}, unit_filters={'b':'b'},
+                      association_sort=['c'], unit_sort=['d'], limit=1, skip=2, association_fields=['e'],
+                      unit_fields=['f'], remove_duplicates=True)
+
+        # Test no exceptions are raised
+        str(c1)
+        str(c2)
 
     # -- utilities ------------------------------------------------------------
 
@@ -680,9 +677,11 @@ class UnitAssociationQueryTests(testutil.PulpTest):
                 u2 = units_list[i+1]
                 self.assertTrue(u1['created'] <= u2['created'])
 
+# -- stress tests -------------------------------------------------------------
+
 class GetUnitsStressTest(testutil.PulpTest):
 
-    ENABLED = True
+    ENABLED = False
 
     def clean(self):
         super(GetUnitsStressTest, self).clean()
@@ -840,7 +839,7 @@ class GetUnitsStressTest(testutil.PulpTest):
 
         # Test
         start = datetime.datetime.now()
-        criteria = MultipleTypeCriteria(remove_duplicates=True)
+        criteria = Criteria(remove_duplicates=True)
         units = self.manager.get_units(repo_id, criteria)
         self.assertEqual(3000, len(units))
         end = datetime.datetime.now()
@@ -966,7 +965,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
             #   Association Query
             start = datetime.datetime.now()
-            criteria = SingleTypeCriteria(owner_type=OWNER_TYPE_IMPORTER)
+            criteria = Criteria(association_filters={'owner_type' : OWNER_TYPE_IMPORTER})
             units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 
             expected_count = (offset + step) / match_frequency
@@ -977,7 +976,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
             #   Index Query
             start = datetime.datetime.now()
-            criteria = SingleTypeCriteria(unit_spec={'search_1' : 'search_0'})
+            criteria = Criteria(unit_filters={'search_1' : 'search_0'})
             units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 
             expected_count = (offset + step) / match_frequency
@@ -988,7 +987,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
 
             #   Non-index Query
             start = datetime.datetime.now()
-            criteria = SingleTypeCriteria(unit_spec={'non_search_1' : 'non_search_0'})
+            criteria = Criteria(unit_filters={'non_search_1' : 'non_search_0'})
             units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 
             expected_count = (offset + step) / match_frequency
@@ -1056,7 +1055,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
             #   Association Indexed Query
             try:
                 start = datetime.datetime.now()
-                criteria = SingleTypeCriteria(sort=[('unit_type_id', association_manager.SORT_DESCENDING), ('created', association_manager.SORT_DESCENDING)])
+                criteria = Criteria(association_sort=[('unit_type_id', association_manager.SORT_DESCENDING), ('created', association_manager.SORT_DESCENDING)])
 
                 units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 
@@ -1070,7 +1069,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
             #   Association Non-Indexed Query
             try:
                 start = datetime.datetime.now()
-                criteria = SingleTypeCriteria(sort=[('owner_id', association_manager.SORT_DESCENDING)])
+                criteria = Criteria(association_sort=[('owner_id', association_manager.SORT_DESCENDING)])
 
                 units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 
@@ -1084,7 +1083,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
             #   Index Query
             try:
                 start = datetime.datetime.now()
-                criteria = SingleTypeCriteria(sort=[('search_1', association_manager.SORT_DESCENDING)])
+                criteria = Criteria(unit_sort=[('search_1', association_manager.SORT_DESCENDING)])
 
                 units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 
@@ -1098,7 +1097,7 @@ class GetUnitsByTypeStressTest(testutil.PulpTest):
             #   Non-index Query
             try:
                 start = datetime.datetime.now()
-                criteria = SingleTypeCriteria(sort=[('non_search_1', association_manager.SORT_DESCENDING)])
+                criteria = Criteria(unit_sort=[('non_search_1', association_manager.SORT_DESCENDING)])
 
                 units = self.manager.get_units_by_type(repo_id, 'alpha', criteria)
 

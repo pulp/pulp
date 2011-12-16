@@ -218,6 +218,9 @@ class RepoUnitAssociationManager:
         than one association exists between a unit and the repository, the
         unit ID will only be listed once.
 
+        DEPRECATED: the get_units calls should be used, limiting the returned
+          fields to just the IDs.
+
         @param repo_id: identifies the repo
         @type  repo_id: str
 
@@ -274,19 +277,33 @@ class RepoUnitAssociationManager:
         - Owner ID
 
         Multiple sort fields from the above list are supported.
+
+        @param repo_id: identifies the repository
+        @type  repo_id: str
+
+        @param criteria: if specified will drive the query
+        @type  criteria: L{Criteria}
         """
 
         # For simplicity, create a criteria if one is not provided and use its defaults
         if criteria is None:
-            criteria = MultipleTypeCriteria()
+            criteria = Criteria()
 
         # -- association collection lookup ------------------------------------
 
         spec = {'repo_id' : repo_id}
 
-        # Factor in all relevant search criteria if specified
-        association_spec = criteria.association_spec()
-        spec.update(association_spec)
+        # Limit to certain type IDs if specified
+        if criteria.type_ids is not None:
+            spec['unit_type_id'] = {'$in' : criteria.type_ids}
+
+        # Just in case the caller stuffed this into the criteria
+        association_filters = criteria.association_filters
+        association_filters.pop('repo_id', None)
+        association_filters.pop('unit_type_id', None)
+
+        # Merge in the association filters
+        spec.update(association_filters)
 
         cursor = RepoContentUnit.get_collection().find(spec)
 
@@ -294,8 +311,8 @@ class RepoUnitAssociationManager:
         # or list so just pass in the sort directly. Mongo will ignore
         # multiple calls to sort and only use the last one called, so only a
         # single call is required here.
-        if criteria.sort is not None:
-            cursor.sort(criteria.sort)
+        if criteria.association_sort is not None:
+            cursor.sort(criteria.association_sort)
         else:
             # If an explicit sort is not provided, default to one for consistency
             cursor.sort([('unit_type_id', SORT_ASCENDING), ('created', SORT_ASCENDING)])
@@ -329,7 +346,7 @@ class RepoUnitAssociationManager:
 
         return units
 
-    def get_units_by_type(self, repo_id, type_id, criteria=None, fields=None):
+    def get_units_by_type(self, repo_id, type_id, criteria=None):
         """
         Retrieves data describing units of the given type associated with the
         given repository. Information on the associations themselves is also
@@ -338,17 +355,32 @@ class RepoUnitAssociationManager:
         The sort fields may be from either the association data OR the
         unit fields. A mix of both is not supported. Multiple sort fields
         are supported as long as they come from the same area.
+
+        @param repo_id: identifies the repository
+        @type  repo_id: str
+
+        @param type_id: limits returned units to the given type
+        @type  type_id: str
+
+        @param criteria: if specified will drive the query
+        @type  criteria: L{Criteria}
         """
 
         # For simplicity, create a criteria if one is not provided and use its defaults
         if criteria is None:
-            criteria = SingleTypeCriteria()
+            criteria = Criteria()
 
         # -- association collection lookup ------------------------------------
 
         spec = {'repo_id' : repo_id,
                 'unit_type_id' : type_id}
-        association_spec = criteria.association_spec()
+
+        # Stip out the type ID and repo fields if they were accidentally specified in the criteria
+        association_spec = criteria.association_filters
+        association_spec.pop('unit_type_id', None)
+        association_spec.pop('repo_id', None)
+
+        # Merge in the given association filters
         spec.update(association_spec)
 
         cursor = RepoContentUnit.get_collection().find(spec)
@@ -359,7 +391,7 @@ class RepoUnitAssociationManager:
 
         association_sorted = False # flag so we can know this later
 
-        association_sort = criteria.association_sort()
+        association_sort = criteria.association_sort
         if association_sort is not None:
             association_sorted = True
 
@@ -384,9 +416,7 @@ class RepoUnitAssociationManager:
         # specified, we can use those fields. If not, we default to the unit key.
 
         type_collection = types_db.type_units_collection(type_id)
-        unit_spec = {}
-        if criteria.unit_spec is not None:
-            unit_spec.update(criteria.unit_spec)
+        unit_spec = criteria.unit_filters
 
         # Depending on where the sort occurs, the algorithm proceeds in
         # drastically different ways. Both of these absolutely must be stress
@@ -422,13 +452,13 @@ class RepoUnitAssociationManager:
             cursor = type_collection.find(unit_spec)
 
             # Determine what our sort criteria will look like
-            if criteria.sort is None:
+            if criteria.unit_sort is None:
                 # Default the sort to the unit key
                 unit_key_fields = types_db.type_units_unit_key(type_id)
                 sort_spec = [(u, SORT_ASCENDING) for u in unit_key_fields]
                 cursor.sort(sort_spec)
             else:
-                cursor.sort(criteria.sort)
+                cursor.sort(criteria.unit_sort)
 
             # Since the sorting is done here, this is the only place we can
             # apply the limit/skip.
@@ -488,160 +518,41 @@ class RepoUnitAssociationManager:
 
 # -- association criteria -----------------------------------------------------
 
-class SingleTypeCriteria:
+class Criteria:
 
-    def __init__(self, first_associated=None, last_updated=None, owner_type=None,
-                 owner_id=None, unit_spec=None,
-                 limit=None, skip=None,
-                 remove_duplicates=False,
-                 sort=None):
+    def __init__(self, type_ids=None, association_filters=None, unit_filters=None,
+                 association_sort=None, unit_sort=None, limit=None, skip=None,
+                 association_fields=None, unit_fields=None, remove_duplicates=False):
 
-        self.first_associated = first_associated
-        self.last_updated = last_updated
+        # A default instance will be used in the case where no criteria is
+        # passed in, so use sane defaults here.
 
-        if owner_type is not None and owner_type not in _OWNER_TYPES:
-            raise ValueError('Invalid owner type [%s]' % owner_type)
-
-        self.owner_type = owner_type
-        self.owner_id = owner_id
-
-        self.unit_spec = unit_spec
-
-        self.limit = limit
-        self.skip = skip
-        self.remove_duplicates = remove_duplicates
-
-        self.sort = sort
-
-    def __str__(self):
-        s  = 'First Associated [%s], ' % self.first_associated
-        s += 'Last Updated [%s], ' % self.last_updated
-        s += 'Owner Type [%s], ' % self.owner_type
-        s += 'Owner ID [%s], ' % self.owner_id
-        s += 'Unit Spec [%s], ' % self.unit_spec
-        s += 'Limit [%s], ' % self.limit
-        s += 'Skip [%s], ' % self.skip
-        s += 'Sort [%s]' % self.sort
-        return s
-
-    def association_spec(self):
-        spec = {}
-
-        if self.first_associated is not None:
-            spec['created'] = {self.first_associated.direction : self.first_associated.timestamp}
-
-        if self.last_updated is not None:
-            spec['updated'] = {self.last_updated.direction : self.last_updated.timestamp}
-
-        if self.owner_type is not None:
-            spec['owner_type'] = self.owner_type
-
-        if self.owner_id is not None:
-            spec['owner_id'] = self.owner_id
-
-        return spec
-
-    def association_sort(self):
-        """
-        Analyzes the given sort fields to determine if the sort is
-        on the association metadata or on the unit field metadata. If any
-        association fields are provided, they will be returned from this call.
-        This effectively strips out any unit fields specified in case the caller
-        attempts to assemble a bad criteria.
-        If no sort is specified or it does not contain association fields,
-        None is returned.
-
-        @return: ordered list of fields to pass to the association-level sort
-                 if the criteria indicates to do so
-        @rtype: list of str or None
-        """
-
-        if self.sort is None:
-            return None
-
-        association_sorts = [o for o in self.sort if o[0] in _VALID_SORTS]
-
-        if len(association_sorts) is 0:
-            return None
-        else:
-            return association_sorts
-
-
-class MultipleTypeCriteria:
-
-    def __init__(self, type_ids=None, first_associated=None, last_updated=None,
-                 owner_type=None, owner_id=None,
-                 limit=None, skip=None,
-                 remove_duplicates=False,
-                 sort=None):
-
-        if type_ids is not None and not isinstance(type_ids, (list, tuple)):
-            type_ids = [type_ids]
         self.type_ids = type_ids
 
-        self.first_associated = first_associated
-        self.last_updated = last_updated
+        self.association_filters = association_filters or {}
+        self.unit_filters = unit_filters or {}
 
-        if owner_type is not None and owner_type not in _OWNER_TYPES:
-            raise ValueError('Invalid owner type [%s]' % owner_type)
-
-        self.owner_type = owner_type
-        self.owner_id = owner_id
+        self.association_sort = association_sort
+        self.unit_sort = unit_sort
 
         self.limit = limit
         self.skip = skip
+
+        self.association_fields = association_fields
+        self.unit_fields = unit_fields
+
         self.remove_duplicates = remove_duplicates
 
-        self.sort = sort
-
     def __str__(self):
-        s  = 'First Associated [%s], ' % self.first_associated
-        s += 'Last Updated [%s], ' % self.last_updated
-        s += 'Owner Type [%s], ' % self.owner_type
-        s += 'Owner ID [%s], ' % self.owner_id
-        s += 'Limit [%s], ' % self.limit
-        s += 'Skip [%s], ' % self.skip
-        s += 'Sort [%s]' % self.sort
+        s = ''
+        if self.type_ids: s += 'Type IDs [%s] ' % self.type_ids
+        if self.association_filters: s += 'Assoc Filters [%s] ' % self.association_filters
+        if self.unit_filters is not None: s += 'Unit Filters [%s] ' % self.unit_filters
+        if self.association_sort is not None: s += 'Assoc Sort [%s] ' % self.association_sort
+        if self.unit_sort is not None: s += 'Unit Sort [%s] ' % self.unit_sort
+        if self.limit: s += 'Limit [%s] ' % self.limit
+        if self.skip: s += 'Skip [%s] ' % self.skip
+        if self.association_fields: s += 'Assoc Fields [%s] ' % self.association_fields
+        if self.unit_fields: s += 'Unit Fields [%s] ' % self.unit_fields
+        s += 'Remove Duplicates [%s]' % self.remove_duplicates
         return s
-
-    def association_spec(self):
-        spec = {}
-
-        if self.first_associated is not None:
-            spec['created'] = {self.first_associated.direction : self.first_associated.timestamp}
-
-        if self.last_updated is not None:
-            spec['updated'] = {self.last_updated.direction : self.last_updated.timestamp}
-
-        if self.type_ids is not None:
-            spec['unit_type_id'] = {'$in' : self.type_ids}
-
-        if self.owner_type is not None:
-            spec['owner_type'] = self.owner_type
-
-        if self.owner_id is not None:
-            spec['owner_id'] = self.owner_id
-
-        return spec
-
-class DateQueryParameter:
-
-    BEFORE = '$lt'
-    AFTER = '$gt'
-    BEFORE_OR_EQUAL = '$lte'
-    AFTER_OR_EQUAL = '$gte'
-
-    def __init__(self, timestamp, direction):
-        self.timestamp = timestamp
-        self.direction = direction
-
-class Fields:
-
-    def __init__(self, field_names=None):
-        if field_names is None:
-            field_names = []
-        self.field_names = field_names
-
-    def add_field(self, field_name):
-
-        self.field_names.append(field_name)
