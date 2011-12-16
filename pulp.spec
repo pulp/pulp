@@ -379,7 +379,7 @@ fi
 /var/lib/pulp
 /var/www/pub
 /var/log/pulp
-%{_sysconfdir}/pki/pulp
+%config(noreplace) %{_sysconfdir}/pki/pulp
 %attr(755, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # -- files - common ----------------------------------------------------------
