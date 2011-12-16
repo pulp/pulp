@@ -1,15 +1,14 @@
-[[TOC]]
 = Jobs RESTful Interface = #top
 ''RESTful interface providing access to pulp jobs.'' [[BR]]
 [[BR]]
-'''Job object fields''':
+'''Job object fields''': 
  * '''id''' <str> ''unique id (usually a uuid) for the job.''
- * '''tasks''' <list> ''list of related Tasks.''
-'''Cancel object fields''':
+ * '''tasks''' <list of Task> ''list of related tasks.''
+'''Cancel object fields''': 
  * '''id''' <str> ''unique id (usually a uuid) for the job.''
- * '''completed''' <list> ''list of completed Task objects that cannot be cancelled.''
- * '''cancelled''' <list> ''list of Task objects cancelled by the request.''
-'''Task object fields''':
+ * completed, list of completed tasks associated with the job.
+ * cancelled, list of cancelled tasks associated with the job.
+'''Task object fields''': 
  * '''id''' <str> ''unique task id''
  * '''job_id''' <str> ''the job id''
  * '''class_name''' <str> ''name of the class, if the task's method is an instance method''

@@ -14,13 +14,14 @@
 
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock
 
 from pulp.server import async
-from pulp.server.api import repo_sync
+from pulp.server.api import repo_sync, repo_clone_task
 from pulp.server.api.synchronizers import (YumSynchronizer, 
     yum_rhn_progress_callback, local_progress_callback)
 
@@ -30,9 +31,44 @@ class TestRepoSync(testutil.PulpAsyncTest):
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
         self.mock(repo_sync, "run_async")
+        self.mock(async, 'enqueue')
 
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
+
+    def _task_to_dict(self, task):
+        """
+        Convert a task to a dictionary (non-destructive) while retaining the
+        pertinent information for a status check.
+        @type task: Task instance
+        @param task: task to convert
+        @return dict representing task
+        """
+        fields = ('id', 'state')
+        d = dict((f, getattr(task, f)) for f in fields)
+        return d
+
+    def running_task(self, task_list):
+        """
+        Iterate over a list of tasks and return one that is currently running.
+        If no such task is found, return None.
+        """
+        for task in task_list:
+            if task['state'] == 'running' or task['state'] == 'waiting':
+                return task
+        return None
+
+    def check_if_running_clone(self, id):
+        clones = [t for t in async.find_async(method_name='_clone')
+                 if (t.args and id in t.args) or
+                 (t.kwargs and id in t.kwargs.values())]
+        if clones:
+            clone_infos = []
+            for clone in clones:
+                info = self._task_to_dict(clone)
+                clone_infos.append(info)
+            running_clone = self.running_task(clone_infos)
+            return running_clone
 
     def test_sync_remote(self):
         # create a remote repo
@@ -43,21 +79,7 @@ class TestRepoSync(testutil.PulpAsyncTest):
         repo_sync.sync(remote_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, repo_sync.run_async.call_count)
-        task = repo_sync.run_async.return_value
-
-        # task.set_progress called
-        self.assertEquals(1, task.set_progress.call_count)
-        call_args = task.set_progress.call_args[0]
-        self.assertEquals(2, len(call_args))
-        self.assertEquals("progress_callback", call_args[0])
-        self.assertEquals(yum_rhn_progress_callback, call_args[1])
-
-        # task.set_synchronizer called
-        self.assertEquals(1, task.set_synchronizer.call_count)
-        call_args = task.set_synchronizer.call_args[0]
-        self.assertEquals(1, len(call_args))
-        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
+        self.assertEquals(1, async.enqueue.call_count)
 
     def test_sync_local(self):
         # create a local_repo
@@ -68,21 +90,7 @@ class TestRepoSync(testutil.PulpAsyncTest):
         repo_sync.sync(local_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, repo_sync.run_async.call_count)
-        task = repo_sync.run_async.return_value
-
-        # task.set_progress called
-        self.assertEquals(1, task.set_progress.call_count)
-        call_args = task.set_progress.call_args[0]
-        self.assertEquals(2, len(call_args))
-        self.assertEquals("progress_callback", call_args[0])
-        self.assertEquals(local_progress_callback, call_args[1])
-
-        # task.set_synchronizer called
-        self.assertEquals(1, task.set_synchronizer.call_count)
-        call_args = task.set_synchronizer.call_args[0]
-        self.assertEquals(1, len(call_args))
-        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
+        self.assertEquals(1, async.enqueue.call_count)
 
     def test_local_sync(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
@@ -108,21 +116,12 @@ class TestRepoSync(testutil.PulpAsyncTest):
         repo_sync.clone(local_repo["id"], "testrepocln_clone", "testrepocln_clone")
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, repo_sync.run_async.call_count)
-        task = repo_sync.run_async.return_value
+        self.assertEquals(1, async.enqueue.call_count)
 
-        # task.set_progress called
-        self.assertEquals(1, task.set_progress.call_count)
-        call_args = task.set_progress.call_args[0]
-        self.assertEquals(2, len(call_args))
-        self.assertEquals("progress_callback", call_args[0])
-        self.assertEquals(local_progress_callback, call_args[1])
+        running_clone = self.check_if_running_clone('testrepocln_clone')
+        while running_clone:
+            time.sleep(2)
+            running_clone = self.check_if_running_clone('testrepocln_clone')
+            print "Clone still running"
 
-        # task.set_synchronizer called
-        self.assertEquals(1, task.set_synchronizer.call_count)
-        call_args = task.set_synchronizer.call_args[0]
-        self.assertEquals(1, len(call_args))
-        self.assertTrue(isinstance(call_args[0], YumSynchronizer))
-        # validate if the clone is enabled on the synchronizer
-        self.assertEquals(local_repo["id"], call_args[0].parent)
-        self.assertEquals(True, call_args[0].is_clone)
+

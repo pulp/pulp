@@ -87,13 +87,21 @@ def _rebrand_file(filename, use_php_imports=False):
 
     # Strip out the header fluff. The best approach I could find it to look for the
     # <div id="content" class="wiki"> tag and take everything after it.
-    content_start = contents.index('<div id="content" class="wiki">')
+    content_start = contents.index('<div id="wikipage">')
 
     # Strip out the footer fluff. This one is a bit trickier. I think we can rely on the tag:
-    # <script type="text/javascript">searchHighlight()</script>
-    content_end = contents.index('<script type="text/javascript">searchHighlight()</script>')
+    #   <script type="text/javascript">searchHighlight()</script>
+    # Ya, so we can't rely on that anymore. Trying this on Dec 15, 2011, it looks
+    # like something changed on trac's end and that string is no longer present.
+    # Let's try:
+    #
+    content_end = contents.index('<div id="altlinks">')
 
-    clean_contents = contents[content_start:content_end]
+    # They screwed with the wiki format adding that "Last modified to the top.
+    # We want to strip that out but still need a header <div> tag for the wiki
+    # content itself, so we add it back here. I feel like I'm unleashing a great
+    # evil upon the codebase with this hack.
+    clean_contents = '<div id="content" class="wiki">' + contents[content_start:content_end]
 
     # Overwrite the dirty ones, inserting the PHP imports
     fout = open(filename, 'w')

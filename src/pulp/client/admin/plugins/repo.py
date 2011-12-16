@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -144,7 +143,31 @@ class AdminRepoAction(RepoAction):
             if repoid in pkg_repos:
                 return pkg
         return None
-
+    
+    def form_error_details(self, progress, num_err_display=5):
+        """
+        progress : dictionary of sync progress info
+        num_err_display: how many errors to display per type, if less than 0 will display all errors
+        """
+        ret_val = ""
+        if not progress.has_key("error_details"):
+            return ret_val
+        error_entry = {}
+        for error in progress["error_details"]:
+            if not error_entry.has_key(error["item_type"]):
+                error_entry[error["item_type"]] = []
+            if error.has_key("error"):
+                error_entry[error["item_type"]].append(error["error"])
+        for item_type in error_entry:
+            ret_val += _("%s %s Error(s):\n") % (len(error_entry[item_type]), item_type.title())
+            for index, errors in enumerate(error_entry[item_type]):
+                if num_err_display > 0 and index >= num_err_display:
+                    ret_val += _("\t... %s more error(s) occured.  See server logs for all errors.") % \
+                            (len(error_entry[item_type]) - index)
+                    break
+                else:
+                    ret_val += "\t" + str(errors) + "\n"
+        return ret_val
 
 # repo actions ----------------------------------------------------------------
 
@@ -263,32 +286,6 @@ class RepoProgressAction(AdminRepoAction):
         current += _("Total: %s/%s items\n") % (items_done, items_total)
         return current
 
-    def form_error_details(self, progress, num_err_display=5):
-        """
-        progress : dictionary of sync progress info
-        num_err_display: how many errors to display per type, if less than 0 will display all errors
-        """
-        ret_val = ""
-        if not progress.has_key("error_details"):
-            return ret_val
-        error_entry = {}
-        for error in progress["error_details"]:
-            if not error_entry.has_key(error["item_type"]):
-                error_entry[error["item_type"]] = []
-            if error.has_key("error"):
-                error_entry[error["item_type"]].append(error["error"])
-        for item_type in error_entry:
-            ret_val += _("%s %s Error(s):\n") % (len(error_entry[item_type]), item_type.title())
-            for index, errors in enumerate(error_entry[item_type]):
-                if num_err_display > 0 and index >= num_err_display:
-                    ret_val += _("\t... %s more error(s) occured.  See server logs for all errors.") % \
-                            (len(error_entry[item_type]) - index)
-                    break
-                else:
-                    ret_val += "\t" + str(errors) + "\n"
-        return ret_val
-
-
 class Status(AdminRepoAction):
 
     name = "status"
@@ -312,25 +309,30 @@ class Status(AdminRepoAction):
             last_sync = str(parse_iso8601_datetime(last_sync))
         print _('Last Sync: %s') % last_sync
         running_sync = self.repository_api.running_task(syncs)
-        if not syncs or running_sync is None:
-            if syncs and syncs[0]['state'] in ('error'):
-                print _("Last Error: %s\n%s") % \
-                        (str(parse_iso8601_datetime(syncs[0]['finish_time'])),
-                                syncs[0]['traceback'][-1])
-        else:
+        if syncs:
+            error_details = ""
+            if syncs[0].has_key("progress"):
+                error_details = self.form_error_details(syncs[0]["progress"])
+            if syncs[0]['state'] in ('error') or error_details:
+                tb = ""
+                if syncs[0]['traceback']:
+                    tb = syncs[0]['traceback'][-1]
+                if syncs[0]["finish_time"]:
+                    print _("Last Error: %s\n%s") % \
+                        (str(parse_iso8601_datetime(syncs[0]['finish_time'])), tb)
+                if error_details:
+                    print error_details
+        if running_sync:
             print _('Currently syncing:'),
             if running_sync['progress'] is None:
                 print _('progress unknown')
             else:
-                pkgs_left = running_sync['progress']['items_left']
-                pkgs_total = running_sync['progress']['items_total']
+                step = running_sync['progress']['step']
+                items_left = running_sync['progress']['items_left']
+                items_total = running_sync['progress']['items_total']
                 bytes_left = float(running_sync['progress']['size_left'])
-                bytes_total = float(running_sync['progress']['size_total'])
-                percent = 0
-                if bytes_total > 0:
-                    percent = ((bytes_total - bytes_left) / bytes_total) * 100.0
-                print _('%d%% done (%d of %d packages downloaded)') % \
-                    (int(percent), (pkgs_total - pkgs_left), pkgs_total)
+                print _('%s (%d of %d items downloaded. %s bytes remaining)') % \
+                    (step, (items_total - items_left), items_total, bytes_left)
 
         # Process cloning status, if exists
         clones = self.repository_api.clone_list(id)
@@ -627,7 +629,7 @@ class Delete(AdminRepoAction):
         id = self.get_required_option('id')
         self.get_repo(id)
         self.repository_api.delete(id=id)
-        print _("Successful deleted repository [ %s ]") % id
+        print _("Repository [ %s ] being deleted") % id
 
 
 class Update(AdminRepoAction):
@@ -752,15 +754,15 @@ class Sync(RepoProgressAction):
         self.parser.add_option('--delete-schedule', dest='delete', action='store_true', default=False,
                                help=_('delete existing schedule'))
         self.parser.add_option('--interval', dest='interval', default=None,
-                               help=_('length of time between each run in iso8601 duration format'))
+                               help=_('length of time between each run in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S (e.g. "P3Y6M4DT12H30M5S" for "three years, six months, four days, twelve hours, thirty minutes, and five seconds")'))
         self.parser.add_option('--runs', dest='runs', default=None,
                                help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option('--start', dest='start', default=None,
-                               help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
+                               help=_('date and time of the first run in iso8601 combined date and time format (e.g. "2012-03-01T13:00:00Z"), omitting implies starting immediately'))
         self.parser.add_option('--exclude', dest='exclude', action='append', default=[],
                                help=_('elements to exclude: packages, errata and/or distribution'))
         self.parser.add_option("--timeout", dest="timeout", default=None,
-                               help=_("repository sync timeout specified in iso8601 duration format (P[n]Y[n]M[n]DT[n]H[n]M[n]S)"))
+                               help=_("repository sync timeout specified in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S:"))
         self.parser.add_option("--limit", dest="limit", default=None,
                                help=_("limit download bandwidth per thread to value in KB/sec"))
         self.parser.add_option("--threads", dest="threads", default=None,

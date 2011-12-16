@@ -30,33 +30,15 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><p>
-<div class='wiki-toc'>
-<h4>Table of Contents</h4>
-<ol><li class="active"><a href="UGREST-Services.html#DisableGlobalRepositoryAuthentication">Disable Global Repository Authentication</a></li><li class="active">
-<a href="UGREST-Services.html#Disassociateacollectionoffilenamechecksumtuplesfrommultiplerepositories">Disassociate a collection of filename,checksum tuples from multiple  &hellip;</a></li><li class="active">
-<a href="UGREST-Services.html#EnableGlobalRepositoryAuthentication">Enable Global Repository Authentication</a></li><li class="active">
-<a href="UGREST-Services.html#RepositoryDiscovery">Repository Discovery</a></li><li class="active">
-<a href="UGREST-Services.html#Repositorygroupexport">Repository group export</a></li><li class="active">
-<a href="UGREST-Services.html#RepositoryContentExport">Repository Content Export</a></li></ol></li></ol></div>
-
-</p>
-<h1 id="top">Services RESTful API</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Services RESTful API</h1>
 <p>
-<i>No description.</i> <br />
+<em>No description.</em> <br />
 <br />
 </p>
 <hr />
 <h2 id="DisableGlobalRepositoryAuthentication">Disable Global Repository Authentication</h2>
 <p>
-<i>Configures the Pulp server to not authenticate access to repositories on a global level (individual repo access can still be controlled using the repo APIs).</i> <br />
+<em>Configures the Pulp server to not authenticate access to repositories on a global level (individual repo access can still be controlled using the repo APIs).</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -74,7 +56,7 @@
 <hr />
 <h2 id="Disassociateacollectionoffilenamechecksumtuplesfrommultiplerepositories">Disassociate a collection of filename,checksum tuples from multiple repositories</h2>
 <p>
-<i>Disassociate a collection of packages from a series of repositories</i> <br />
+<em>Disassociate a collection of packages from a series of repositories</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -87,16 +69,16 @@
 <strong>failure response</strong>: <br />
 <strong>return</strong>: a list of errors in the format of [{'filename':{'checksum_value':[repoid]}}] <br />
 <br />
-<strong>parameters</strong>:
+<strong>parameters</strong>: 
 </p>
-<ul><li><strong>package_info: list of tuples in the format [((filename</strong> &lt;checksum)&gt; <i>[repoids]]</i>
+<ul><li><strong>package_info: list of tuples in the format [((filename</strong> &lt;checksum)&gt; <em>[repoids]]</em>
 </li></ul><p>
 <br />
 </p>
 <hr />
 <h2 id="EnableGlobalRepositoryAuthentication">Enable Global Repository Authentication</h2>
 <p>
-<i>Configures the Pulp server to apply the given credentials to requests against all of its repositories.</i> <br />
+<em>Configures the Pulp server to apply the given credentials to requests against all of its repositories.</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -114,7 +96,7 @@
 <hr />
 <h2 id="RepositoryDiscovery">Repository Discovery</h2>
 <p>
-<i>Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls. The file based url paths should be accessible by apache to perform discovery</i> <br />
+<em>Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls. The file based url paths should be accessible by apache to perform discovery</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -130,16 +112,16 @@
 <br />
 <strong>parameters:</strong>
 </p>
-<ul><li><strong>url</strong> &lt;str&gt; <i>remote url to perform discovery</i>
-</li><li><strong>type</strong> &lt;str&gt; <i>type of content to discover (supported types : 'yum')</i>
-</li><li><strong>cert_data</strong> <i>(optional)</i> &lt;dict&gt; <i>a hash of ca and cert info to access if url is secure; {'ca' : &lt;ca&gt;,'cert': &lt;cert&gt;}</i>
+<ul><li><strong>url</strong> &lt;str&gt; <em>remote url to perform discovery</em>
+</li><li><strong>type</strong> &lt;str&gt; <em>type of content to discover (supported types : 'yum')</em>
+</li><li><strong>cert_data</strong> <em>(optional)</em> &lt;dict&gt; <em>a hash of ca and cert info to access if url is secure; {'ca' : &lt;ca&gt;,'cert': &lt;cert&gt;}</em>
 </li></ul><p>
 <br />
 </p>
 <hr />
 <h2 id="Repositorygroupexport">Repository group export</h2>
 <p>
-<i>schedule an export on a group of repositories</i> <br />
+<em>schedule an export on a group of repositories</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -154,19 +136,19 @@
 <strong>return</strong>: Job object <br />
 <br />
 <br />
-<strong>parameters</strong>:
+<strong>parameters</strong>: 
 </p>
-<ul><li><strong>groupid</strong> &lt;str&gt; <i>repository group to export</i>
-</li><li><strong>target_location</strong> &lt;str&gt; <i>target location on the server filesystem where the content needs to be exported</i>
-</li><li><strong>generate_isos</strong> <i>(optional)</i> &lt;boolean&gt; <i>wrap the exported content into iso image files.</i>
-</li><li><strong>overwrite</strong> <i>(optional)</i> &lt;boolean&gt; <i>overwrite the content in target location if not empty</i>
+<ul><li><strong>groupid</strong> &lt;str&gt; <em>repository group to export</em>
+</li><li><strong>target_location</strong> &lt;str&gt; <em>target location on the server filesystem where the content needs to be exported</em>
+</li><li><strong>generate_isos</strong> <em>(optional)</em> &lt;boolean&gt; <em>wrap the exported content into iso image files.</em>
+</li><li><strong>overwrite</strong> <em>(optional)</em> &lt;boolean&gt; <em>overwrite the content in target location if not empty</em>
 </li></ul><p>
 <br />
 </p>
 <hr />
 <h2 id="RepositoryContentExport">Repository Content Export</h2>
 <p>
-<i>Export the repository's content into target directory from its source.</i> <br />
+<em>Export the repository's content into target directory from its source.</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -176,7 +158,7 @@
 <br />
 <strong>success response</strong>: 202 Accepted <br />
 <br />
-<strong>failure response</strong>:
+<strong>failure response</strong>: 
 </p>
 <blockquote>
 <p>
@@ -189,27 +171,23 @@
 <br />
 <strong>return</strong>: a Task object <br />
 <br />
-<strong>parameters</strong>:
+<strong>parameters</strong>: 
 </p>
-<ul><li><strong>repoid</strong> &lt;str&gt; <i>repository to export</i>
-</li><li><strong>target_location</strong> &lt;str&gt; <i>target location on the server filesystem where the content needs to be exported</i>
-</li><li><strong>generate_isos</strong> <i>(optional)</i> &lt;boolean&gt; <i>wrap the exported content into iso image files.</i>
-</li><li><strong>overwrite</strong> <i>(optional)</i> &lt;boolean&gt; <i>overwrite the content in target location if not empty</i>
+<ul><li><strong>repoid</strong> &lt;str&gt; <em>repository to export</em>
+</li><li><strong>target_location</strong> &lt;str&gt; <em>target location on the server filesystem where the content needs to be exported</em>
+</li><li><strong>generate_isos</strong> <em>(optional)</em> &lt;boolean&gt; <em>wrap the exported content into iso image files.</em>
+</li><li><strong>overwrite</strong> <em>(optional)</em> &lt;boolean&gt; <em>overwrite the content in target location if not empty</em>
 </li></ul><p>
 <br />
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

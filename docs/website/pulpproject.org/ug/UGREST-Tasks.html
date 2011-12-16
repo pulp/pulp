@@ -30,70 +30,51 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><p>
-<div class='wiki-toc'>
-<h4>Table of Contents</h4>
-<ol><li class="active"><a href="UGREST-Tasks.html#CancelATask">Cancel A Task</a></li><li class="active">
-<a href="UGREST-Tasks.html#DeleteATaskSnapshot">Delete A Task Snapshot</a></li><li class="active">
-<a href="UGREST-Tasks.html#GetATaskSnapshot">Get A Task Snapshot</a></li><li class="active">
-<a href="UGREST-Tasks.html#GetAllTaskSnapshots">Get All Task Snapshots</a></li><li class="active">
-<a href="UGREST-Tasks.html#RemoveATask">Remove A Task</a></li><li class="active">
-<a href="UGREST-Tasks.html#GetATask">Get A Task</a></li><li class="active">
-<a href="UGREST-Tasks.html#GetAllTasks">Get All Tasks</a></li></ol></li></ol></div>
-
-</p>
-<h1 id="top">Tasking RESTful Interface</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Tasking RESTful Interface</h1>
 <p>
-<i>RESTful interface providing an administrative and debugging api for</i> <br />
-<i>pulp's tasking system.</i> <br />
+<em>RESTful interface providing an administrative and debugging api for</em> <br />
+<em>pulp's tasking system.</em> <br />
 <br />
 <strong>Task object fields</strong>: 
 </p>
-<ul><li><strong>id</strong> &lt;str&gt; <i>unique id (usually a uuid) for the task</i>
-</li><li><strong>job_id</strong> &lt;str&gt; <i>associate job id</i>
-</li><li><strong>class_name</strong> &lt;str&gt; <i>name of the class, if the task's method is an instance method</i>
-</li><li><strong>method_name</strong> &lt;str&gt; <i>name of the pulp library method that was called</i>
-</li><li><strong>state</strong> &lt;str&gt; <i>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</i>
-</li><li><strong>start_time</strong> &lt;str or nil&gt; <i>time the task started running in iso8601 format, nil if the task has not yet started</i>
-</li><li><strong>finish_time</strong> &lt;or nil&gt; <i>time the task finished running in iso8601 format, nil if the task has not yet finished</i>
-</li><li><strong>result</strong> &lt;object or nil&gt; <i>the result of the pulp library method upon return, usually nil</i>
-</li><li><strong>exception</strong> &lt;str or nil&gt; <i>a string representation of an error in the pulp librry call, if any</i>
-</li><li><strong>traceback</strong> &lt;str or nil&gt; <i>a string print out of the trace back for the exception, if any</i>
-</li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
-</li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <i>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</i>
-</li><li><strong>snapshot_id</strong> &lt;str&gt; <i>id of task's snapshot, if it has one</i>
+<ul><li><strong>id</strong> &lt;str&gt; <em>unique id (usually a uuid) for the task</em>
+</li><li><strong>job_id</strong> &lt;str&gt; <em>associate job id</em>
+</li><li><strong>class_name</strong> &lt;str&gt; <em>name of the class, if the task's method is an instance method</em>
+</li><li><strong>method_name</strong> &lt;str&gt; <em>name of the pulp library method that was called</em>
+</li><li><strong>state</strong> &lt;str&gt; <em>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</em>
+</li><li><strong>start_time</strong> &lt;str or nil&gt; <em>time the task started running in iso8601 format, nil if the task has not yet started</em>
+</li><li><strong>finish_time</strong> &lt;or nil&gt; <em>time the task finished running in iso8601 format, nil if the task has not yet finished</em>
+</li><li><strong>result</strong> &lt;object or nil&gt; <em>the result of the pulp library method upon return, usually nil</em>
+</li><li><strong>exception</strong> &lt;str or nil&gt; <em>a string representation of an error in the pulp librry call, if any</em>
+</li><li><strong>traceback</strong> &lt;str or nil&gt; <em>a string print out of the trace back for the exception, if any</em>
+</li><li><strong>progress</strong> &lt;object or nil&gt; <em>object representing the pulp library call's progress, nill if no information is available</em>
+</li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <em>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</em>
+</li><li><strong>snapshot_id</strong> &lt;str&gt; <em>id of task's snapshot, if it has one</em>
 </li></ul><p>
 <strong>TaskSnapshot object fields</strong>: 
 </p>
-<ul><li><strong>id</strong> &lt;str&gt; <i>unique task id</i>
-</li><li><strong>class_name</strong> &lt;str&gt; <i>name of the class, if the task's method is an instance method</i>
-</li><li><strong>method_name</strong> &lt;str&gt; <i>name of the pulp library method that was called</i>
-</li><li><strong>state</strong> &lt;str&gt; <i>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</i>
-</li><li><strong>failure_threshold</strong> &lt;int&gt; <i>number of failures allowed this task before it is no longer scheduled</i>
-</li><li><strong>cancel_attempts</strong> &lt;int&gt; <i>the number of times cancel was called on this task</i>
-</li><li><strong>callable</strong> &lt;str&gt; <i>pickled task method</i>
-</li><li><strong>args</strong> &lt;str&gt; <i>pickled arguments for the task method</i>
-</li><li><strong>kwargs</strong> &lt;str&gt; <i>picked keyword arguments for the task method</i>
-</li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
-</li><li><strong>timeout</strong> &lt;str&gt; <i>pickled timedelta representing the time limit for the task's run</i>
-</li><li><strong>schedule_threshold</strong> &lt;str&gt; <i>pickled timedelta representing a max difference between the scheduled_time and start_time before an error is logged</i>
-</li><li><strong>_progress_callback</strong> &lt;str&gt; <i>pickled method allowing progress information to be recorded by the task</i>
-</li><li><strong>start_time</strong> &lt;str&gt; <i>pickled datetime showing the start time of the task</i>
-</li><li><strong>finish_time</strong> &lt;str&gt; <i>pickled datetime showing the finish time of the task</i>
-</li><li><strong>result</strong> &lt;str&gt; <i>pickled result of the task call</i>
-</li><li><strong>exception</strong> &lt;str&gt; <i>pickled error, if one occurred</i>
-</li><li><strong>traceback</strong> &lt;str&gt; <i>pickled traceback, if one occured</i>
+<ul><li><strong>id</strong> &lt;str&gt; <em>unique task id</em>
+</li><li><strong>class_name</strong> &lt;str&gt; <em>name of the class, if the task's method is an instance method</em>
+</li><li><strong>method_name</strong> &lt;str&gt; <em>name of the pulp library method that was called</em>
+</li><li><strong>state</strong> &lt;str&gt; <em>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</em>
+</li><li><strong>failure_threshold</strong> &lt;int&gt; <em>number of failures allowed this task before it is no longer scheduled</em>
+</li><li><strong>cancel_attempts</strong> &lt;int&gt; <em>the number of times cancel was called on this task</em>
+</li><li><strong>callable</strong> &lt;str&gt; <em>pickled task method</em>
+</li><li><strong>args</strong> &lt;str&gt; <em>pickled arguments for the task method</em>
+</li><li><strong>kwargs</strong> &lt;str&gt; <em>picked keyword arguments for the task method</em>
+</li><li><strong>progress</strong> &lt;object or nil&gt; <em>object representing the pulp library call's progress, nill if no information is available</em>
+</li><li><strong>timeout</strong> &lt;str&gt; <em>pickled timedelta representing the time limit for the task's run</em>
+</li><li><strong>schedule_threshold</strong> &lt;str&gt; <em>pickled timedelta representing a max difference between the scheduled_time and start_time before an error is logged</em>
+</li><li><strong>_progress_callback</strong> &lt;str&gt; <em>pickled method allowing progress information to be recorded by the task</em>
+</li><li><strong>start_time</strong> &lt;str&gt; <em>pickled datetime showing the start time of the task</em>
+</li><li><strong>finish_time</strong> &lt;str&gt; <em>pickled datetime showing the finish time of the task</em>
+</li><li><strong>result</strong> &lt;str&gt; <em>pickled result of the task call</em>
+</li><li><strong>exception</strong> &lt;str&gt; <em>pickled error, if one occurred</em>
+</li><li><strong>traceback</strong> &lt;str&gt; <em>pickled traceback, if one occured</em>
 </li></ul><hr />
 <h2 id="CancelATask">Cancel A Task</h2>
 <p>
-<i>Cancel a waiting or running task.</i> <br />
+<em>Cancel a waiting or running task.</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -111,7 +92,7 @@
 <hr />
 <h2 id="DeleteATaskSnapshot">Delete A Task Snapshot</h2>
 <p>
-<i>Delete the snapshot for a given task</i> <br />
+<em>Delete the snapshot for a given task</em> <br />
 <br />
 <strong>method</strong>: DELETE <br />
 <br />
@@ -128,7 +109,7 @@
 </p>
 <h2 id="GetATaskSnapshot">Get A Task Snapshot</h2>
 <p>
-<i>Get a TaskSnapshot object for the give task</i> <br />
+<em>Get a TaskSnapshot object for the give task</em> <br />
 <br />
 <strong>method</strong>: GET <br />
 <br />
@@ -146,7 +127,7 @@
 <hr />
 <h2 id="GetAllTaskSnapshots">Get All Task Snapshots</h2>
 <p>
-<i>Get a list of all task snapshots currently in the system</i> <br />
+<em>Get a list of all task snapshots currently in the system</em> <br />
 <br />
 <strong>method</strong>: GET <br />
 <br />
@@ -164,7 +145,7 @@
 <hr />
 <h2 id="RemoveATask">Remove A Task</h2>
 <p>
-<i>Remove a task from the tasking sub-system. This does not interrupt the task if it is running</i> <br />
+<em>Remove a task from the tasking sub-system. This does not interrupt the task if it is running</em> <br />
 <br />
 <strong>method</strong>: DELETE <br />
 <br />
@@ -181,7 +162,7 @@
 </p>
 <h2 id="GetATask">Get A Task</h2>
 <p>
-<i>Get a Task object for a specific task</i> <br />
+<em>Get a Task object for a specific task</em> <br />
 <br />
 <strong>method</strong>: GET <br />
 <br />
@@ -199,7 +180,7 @@
 <hr />
 <h2 id="GetAllTasks">Get All Tasks</h2>
 <p>
-<i>Get a list of all tasks currently in the tasking system</i> <br />
+<em>Get a list of all tasks currently in the tasking system</em> <br />
 <br />
 <strong>method</strong>: GET <br />
 <br />
@@ -215,22 +196,18 @@
 <br />
 <strong>filters</strong>: 
 </p>
-<ul><li><strong>state</strong> &lt;str&gt; <i>tasking system task state: waiting, running, complete, incomplete, all</i>
+<ul><li><strong>state</strong> &lt;str&gt; <em>tasking system task state: waiting, running, complete, incomplete, all</em>
 </li></ul><p>
 <br />
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

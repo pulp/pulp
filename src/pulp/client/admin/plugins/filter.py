@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Pulp Filter management module
 #
@@ -126,19 +125,11 @@ class Delete(FilterAction):
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("filter id (required)"))
-        self.parser.add_option("--force", action="store_false", dest="force", default=True,
-                               help=_("force deletion of filter by removing association with repositories"))
-
 
     def run(self):
         id = self.get_required_option('id')
         filter = self.get_filter(id)
-        force = getattr(self.opts, 'force', True)
-        if force:
-            force_value = 'false'
-        else:
-            force_value = 'true'
-        deleted = self.filter_api.delete(id=id, force=force_value)
+        deleted = self.filter_api.delete(id=id)
         if deleted:
             print _("Successfully deleted Filter [ %s ]") % id
         else:

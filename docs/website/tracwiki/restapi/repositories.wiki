@@ -1,4 +1,3 @@
-[[TOC]]
 = Repositories RESTful Interface = #top
 ''RESTful interface for the creation, querying, and management of repositories managed by Pulp.'' [[BR]]
 ''Repositories are represented as Repo objects.'' [[BR]]
@@ -143,7 +142,6 @@
  * '''groupid''' ''(optional)'' <list of str> ''list of repository group ids this repository belongs to''
  * '''gpgkeys''' ''(optional)'' <list of str> ''list of gpg keys used for signing content''
  * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
- * '''notes''' ''(optional)'' <dict> ''additional information in the form of key-value pairs''
  * '''preserve_metadata''' ''(optional)'' <bool> ''will not regenerate metadata and treats the repo as a mirror''
  * '''content_types''' ''(optional)'' <str> ''content type allowed in this repository; default:yum; supported: [yum, file]''
 [[BR]]
@@ -159,11 +157,13 @@
 [[BR]]
 '''permission''': DELETE [[BR]]
 [[BR]]
-'''success response''': 200 OK [[BR]]
+'''success response''': 202 Accepted [[BR]]
 [[BR]]
-'''failure response''': None [[BR]]
+'''failure response''': 
+ 404 Not Found if repository does not exist [[BR]]
+ 409 Conflict if repository cannot be deleted [[BR]]
 [[BR]]
-'''return''': Unspecified [[BR]]
+'''return''': a Task object [[BR]]
 [[BR]]
 
 == Get A Repository ==
@@ -197,7 +197,17 @@
 [[BR]]
 '''return''': a Repo object [[BR]]
 [[BR]]
-'''parameters''': any field of a Repo object except id [[BR]]
+'''parameters''': 
+ * '''name''' <str> ''name of the repository''
+ * '''arch''' <str> ''architecture of the repository''
+ * '''feed_cert_data''' <object> ''feed key and certificate''
+ * '''consumer_cert_data''' <object> ''consumers key and certificate''
+ * '''feed''' <str> ''url of feed''
+ * '''checksum_type''' <str> ''name of checksum algorithm (sha256, sha1, md5)''
+ * '''addgrp''' ''(optional)'' <list of str> ''list of group ids to add the repository to''
+ * '''rmgrp''' ''(optional)'' <list of str> ''list of group ids to remove the repository from''
+ * '''addkeys''' ''(optional)'' <list of str> ''list of keys to add to the repository''
+ * '''rmkeys''' ''(optional)'' <list of str> ''list of keys to remove from the repository''
 [[BR]]
 
 ----

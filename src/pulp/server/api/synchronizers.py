@@ -721,7 +721,8 @@ class YumSynchronizer(BaseSynchronizer):
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
                                 proxy_url=self.proxy_url, proxy_port=self.proxy_port,
                                 proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
-                                max_speed=limit_in_KB, distro_location=pulp.server.util.top_distribution_location())
+                                max_speed=limit_in_KB, distro_location=pulp.server.util.top_distribution_location(),
+                                tmp_path = pulp.server.util.tmp_cache_location())
             relative_path = repo['relative_path']
             if relative_path:
                 store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)

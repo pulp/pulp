@@ -1,6 +1,5 @@
 /etc/init.rd/pulp-server gen_context(system_u:object_r:initrc_exec_t,s0)
 /etc/pki/pulp(/.*)? gen_context(system_u:object_r:pulp_cert_t,s0)
-/etc/pki/content(/.*)? gen_context(system_u:object_r:pulp_cert_t,s0)
 /etc/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_content_t,s0)
 
 /srv/pulp/cds.wsgi gen_context(system_u:object_r:httpd_sys_content_t,s0)

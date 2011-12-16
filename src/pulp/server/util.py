@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -12,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
+import gzip
 
 import hashlib # 3rd party on RHEL 5
 import logging
@@ -30,6 +30,7 @@ import time
 import commands
 import rpm
 import yum
+import errno
 
 from pulp.server import config, constants
 from pulp.server.exceptions import PulpException
@@ -116,6 +117,17 @@ def top_file_location():
 
 def top_distribution_location():
     return os.path.join(constants.LOCAL_STORAGE, "distributions")
+
+def tmp_cache_location():
+    cache_dir = os.path.join(constants.LOCAL_STORAGE, "cache")
+    if not os.path.exists(cache_dir):
+        try:
+            os.makedirs(cache_dir)
+        except OSError, e:
+            if e.errno != 17:
+                log.critical(e)
+                raise e
+    return cache_dir
 
 def relative_repo_path(path):
     """
@@ -522,6 +534,11 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
             renamed_filetype_path = os.path.join(os.path.dirname(filetype_path), \
                                          ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
             os.rename(filetype_path,  renamed_filetype_path)
+            if renamed_filetype_path.endswith('.gz'):
+                # if file is gzipped, decompress before passing to modifyrepo
+                data = gzip.open(renamed_filetype_path).read().decode("utf-8", "replace")
+                renamed_filetype_path = '.'.join(renamed_filetype_path.split('.')[:-1])
+                open(renamed_filetype_path, 'w').write(data.encode("UTF-8"))
             if os.path.isfile(renamed_filetype_path):
                 log.info("Modifying repo for %s metadata" % ftype)
                 modify_repo(current_repo_dir, renamed_filetype_path)
@@ -632,6 +649,32 @@ def compile_regular_expression(reg_exp):
         raise RegularExpressionError(
             "The regular expression '%s' is not valid: %s"
             % (reg_exp, str(e)))
+
+def makedirs(path, mode=0777):
+    """
+    Make directory.
+    Creates leaf directory and intermediate directories as needed.
+    Mitigates: http://bugs.python.org/issue1675
+    @param path: A directory path.
+    @type path: str
+    """
+    leaf = 1
+    if path.startswith('/'):
+        root = path[0]
+        path = path[1:]
+    else:
+        root = ''
+    part = [p for p in path.split('/') if p]
+    while leaf <= len(part):
+        subpath = root+os.path.join(*part[0:leaf])
+        leaf += 1
+        try:
+            os.mkdir(subpath, mode)
+        except OSError, e:
+            if e.errno == errno.EEXIST and os.path.isdir(subpath):
+                pass # already exists
+            else:
+                raise
 
 class Singleton(type):
     """

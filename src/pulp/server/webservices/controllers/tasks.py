@@ -54,9 +54,11 @@ TaskSnapshot object fields:
 import web
 from gettext import gettext as _
 
+import pymongo
+
 from pulp.server import async
 from pulp.server.api import task_history
-from pulp.server.db.model.persistence import TaskSnapshot
+from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
 from pulp.server.auth.authorization import READ, UPDATE
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
@@ -80,23 +82,35 @@ class Tasks(JSONController):
         failure response: None
         return: list of task objects
         filters:
-         * state, str, tasking system task state: waiting, running, complete, incomplete, all
+         * id, str, task id
+         * state, str, tasking system task state: waiting, running, complete, incomplete, current, archived (current is the same as waiting, running, complete, and imcomplete, also the same as ommitting the state filter; archived looks into the the task history, will not return archived tasks without this filter)
         """
+        def _archived(ids):
+            collection = TaskHistory.get_collection()
+            query_doc = {}
+            if ids:
+                query_doc['id'] = {'$in': ids}
+            cursor = collection.find(query_doc)
+            cursor.sort('finish_time', pymongo.DESCENDING)
+            archived_tasks = [dict(t) for t in cursor]
+            return archived_tasks
+
         def _serialize(t):
             d = self._task_to_dict(t)
             d['snapshot_id'] = t.snapshot_id
             return d
 
-        valid_filters = ('state',)
-        valid_states = ('waiting', 'running', 'complete', 'incomplete', 'all')
+        valid_filters = ('id', 'state',)
+        valid_states = ('waiting', 'running', 'complete', 'incomplete', 'current', 'archived')
         filters = self.filters(valid_filters)
+        ids = filters.pop('id', [])
         states = [s.lower() for s in filters.pop('state', [])]
         for s in states:
             if s in valid_states:
                 continue
             return self.bad_request(_('Unknown state: %s') % s)
         tasks = set()
-        if not states or 'all' in states:
+        if not states or 'current' in states:
             tasks.update(async.all_async())
         if 'waiting' in states:
             tasks.update(async.waiting_async())
@@ -106,7 +120,13 @@ class Tasks(JSONController):
             tasks.update(async.complete_async())
         if 'incomplete' in states:
             tasks.update(async.incomplete_async())
-        return self.ok([_serialize(t) for t in tasks])
+        if ids:
+            tasks = [t for t in tasks if t.id in ids]
+        serialized_tasks = [_serialize(t) for t in tasks]
+        if 'archived' in states:
+            archived_tasks = _archived(ids)
+            serialized_tasks.extend(archived_tasks)
+        return self.ok(serialized_tasks)
 
 # task controller --------------------------------------------------------------
 

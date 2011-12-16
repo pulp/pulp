@@ -411,7 +411,7 @@ class ReplyHandler(Listener):
         task = find_async(id=taskid)
         if task:
             sn = reply.sn
-            exception = reply.exval,
+            exception = reply.exval
             tb = repr(exception)
             task[0].failed(exception, tb)
         else:

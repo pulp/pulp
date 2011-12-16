@@ -18,14 +18,14 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.254
+Version:        0.0.255
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
 License:        GPLv2
 URL:            https://fedorahosted.org/pulp/
-Source0:        %{name}-%{version}.tar.gz
+Source0:        https://fedorahosted.org/releases/p/u/pulp/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
@@ -152,7 +152,7 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.63
-Requires:       grinder >= 0.0.126
+Requires:       grinder >= 0.0.134
 Requires:       httpd
 Requires:       mod_wsgi >= 3.2-4.pulp%{?dist}
 Requires:       mod_ssl
@@ -236,7 +236,7 @@ mkdir -p %{buildroot}/etc/pki/pulp
 mkdir -p %{buildroot}/etc/pki/consumer
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
-mkdir -p %{buildroot}/etc/pki/content
+mkdir -p %{buildroot}/etc/pki/pulp/content
 
 # Pulp Runtime
 mkdir -p %{buildroot}/var/lib/pulp
@@ -307,11 +307,11 @@ rm -rf %{buildroot}
 # -- post - pulp server ------------------------------------------------------
 
 %post
-setfacl -m u:apache:rwx /etc/pki/content/
+#chown -R apache:apache /etc/pki/pulp/content/
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
-setfacl -m u:apache:rwx /etc/pki/content/
+#chown -R apache:apache /etc/pki/pulp/content/
 
 # Create the cluster related files and give them Apache ownership;
 # both httpd (apache) and gofer (root) will write to them, so to prevent
@@ -322,10 +322,6 @@ touch /var/lib/pulp-cds/.cluster-members
 chown apache:apache /var/lib/pulp-cds/.cluster-members-lock
 chown apache:apache /var/lib/pulp-cds/.cluster-members
 
-#%if %{pulp_selinux}
-# Enable SELinux policy modules
-#%{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
-#%endif
 # -- post - pulp consumer ------------------------------------------------------
 
 %post consumer
@@ -340,7 +336,7 @@ if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
 fi
 
-# restorcecon wasn't reading new file contexts we added when running under %post so moved to %posttrans
+# restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
 # Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
 %posttrans
 if /usr/sbin/selinuxenabled ; then
@@ -370,27 +366,21 @@ fi
 # -- files - pulp server -----------------------------------------------------
 
 %files
-%defattr(-,root,root,-)
+%defattr(-,apache,apache,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulp/server/
-%{python_sitelib}/pulp/repo_auth/
-%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%config(noreplace) %{_sysconfdir}/pulp/logging
-%config %{_sysconfdir}/httpd/conf.d/pulp.conf
+%attr(-, root, root) %{python_sitelib}/pulp/server/
+%attr(-, root, root) %{python_sitelib}/pulp/repo_auth/
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
+%config(noreplace) %{_sysconfdir}/pulp
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
-%attr(775, apache, apache) %{_sysconfdir}/pulp
-%attr(775, apache, apache) /srv/pulp
-%attr(750, apache, apache) /srv/pulp/webservices.wsgi
-%attr(750, apache, apache) /srv/pulp/repo_auth.wsgi
-%attr(3775, apache, apache) /var/lib/pulp
-%attr(3775, apache, apache) /var/www/pub
-%attr(3775, apache, apache) /var/log/pulp
-%attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
-%{_sysconfdir}/pki/pulp/ca.key
-%{_sysconfdir}/pki/pulp/ca.crt
+%attr(-, apache, apache) /srv/pulp/webservices.wsgi
+%attr(-, apache, apache) /srv/pulp/repo_auth.wsgi
+/var/lib/pulp
+/var/www/pub
+/var/log/pulp
+%config(noreplace) %{_sysconfdir}/pki/pulp
+%attr(755, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # -- files - common ----------------------------------------------------------
 
@@ -445,7 +435,7 @@ fi
 # -- files - pulp cds --------------------------------------------------------
 
 %files cds
-%defattr(-,root,root,-)
+%defattr(-,apache,apache,-)
 %doc
 %{python_sitelib}/pulp/cds/
 %{python_sitelib}/pulp/repo_auth/
@@ -456,7 +446,7 @@ fi
 %config %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%attr(3775, root, root) %{_sysconfdir}/pki/content
+%attr(775, apache, apache) %{_sysconfdir}/pki/pulp
 %attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
@@ -475,6 +465,89 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Dec 15 2011 Jeff Ortel <jortel@redhat.com> 0.0.255-1
+- Bump grinder to 0.133 (jmatthews@redhat.com)
+- 766944 - exposing all fields when querying consumer errata
+  (pkilambi@redhat.com)
+- 745142 - changing delete filter api to more restful DELETE on
+  /filters/filter_id and removing 'force' delete option (skarmark@redhat.com)
+- 767618 - Fixed error when uploading content to a repo with filter
+  (skarmark@redhat.com)
+- 767246 - decompress metadata passed to modifyrepo to work around the f16
+  modifyrepo issues (pkilambi@redhat.com)
+- 729760 - Repo Sync - seems to be hung and status is confusing
+  (jmatthews@redhat.com)
+- 760458 - add makedirs() that fixes http://bugs.python.org/issue1675.
+  (jortel@redhat.com)
+- ran restapi.py (jconnor@redhat.com)
+- 752803 added detailed list of parameters that can be updated to wiki doc
+  (jconnor@redhat.com)
+- 761039 - Task.exception = str(exception); more complete exception
+  information. (jortel@redhat.com)
+- 760777 added examples provided by mmccune :) (jconnor@redhat.com)
+- 750302 added generic error exit for required append options along with
+  utilization in users for permission grant (jconnor@redhat.com)
+- 747975 made repo delete async (jconnor@redhat.com)
+- 766705 - fixing UnboundLocalError when uploading a file due to filters
+  (pkilambi@redhat.com)
+- 765853 fixing race condition between task snapshot and setting of progress
+  callback for repo clone and sync (jconnor@redhat.com)
+- fist pass at /tasks/ controller testing (jconnor@redhat.com)
+- added archived tasks to /tasks/ collection iff state=archived is passed in
+  (jconnor@redhat.com)
+- added id as valid filter on /tasks/ (jconnor@redhat.com)
+- 765874 - Fixed amqp event handler loading. (jortel@redhat.com)
+- Refinements to the relative path validation logic (jason.dobies@redhat.com)
+- Automatic commit of package [python-isodate] minor release [0.4.4-4.pulp].
+  (jslagle@redhat.com)
+- removing yum_repo_grinder_lock from YumSynchronizer (skarmark@redhat.com)
+- 760673 - Fix consumer group package install; Add support for remote class
+  constuctor args. (jortel@redhat.com)
+- 761205 - Nested relative paths are no longer allowed by Pulp
+  (jason.dobies@redhat.com)
+- Removing instantiation of repoapi from RepoCloneTask which can cause pickling
+  of threading lock issue (skarmark@redhat.com)
+- 742320 - fix group logicwhen running createrepo to use tyep.ext instead of
+  whole filename causing file name too long errors (pkilambi@redhat.com)
+- requires gofer 0.63; bump for project alignment. (jortel@redhat.com)
+- SELinux: relabel files when rpm is uninstalled (jmatthews@redhat.com)
+- 761232 - fix applied to pulp-cds for F16 compat. (jortel@redhat.com)
+- SELinux: Change pulp log files to httpd_sys_content_rw_t
+  (jmatthews@redhat.com)
+- 761232 - replace /etc/init.d/ references to use /sbin/service instead for F16
+  compat. (jortel@redhat.com)
+- 760958 - Fixing DB validation error (skarmark@redhat.com)
+- SELinux: quiet output from uninstall (jmatthews@redhat.com)
+- 760310 - fix cloning a empty repo to handle gracefully (pkilambi@redhat.com)
+- SELinux: fix for pulp_cert_t (jmatthews@redhat.com)
+- 760766 - Updated content upload cli to parse new return format for
+  repo.add_packages() with filters correctly (skarmark@redhat.com)
+- SELinux: move setsebool to enable script to be executed during post
+  (jmatthews@redhat.com)
+- SELinux: rewrite rules to be based off of httpd content
+  (jmatthews@redhat.com)
+- Fixed 8 typos in the word "omitting" (jason.dobies@redhat.com)
+- 710153 - Significant reworking of CDS status CLI command. Brought in line
+  with the work done in this area on RHUI 2.0. (jason.dobies@redhat.com)
+- SELinux: add file context for initrc script pulp-server
+  (jmatthews@redhat.com)
+- SELinux: changes for certs pulp creates, pulp_certs_t (jmatthews@redhat.com)
+- 760745 - The CLI should pass None for consumer client bundle if no entries
+  are present. (jason.dobies@redhat.com)
+- Added updated count to harness display (jason.dobies@redhat.com)
+- SELinux: leveraging apache_content_template(pulp) macro to simplify rules
+  Updates for developer setup/uninstall scripts (jmatthews@redhat.com)
+- SELinux: added error checking to making a policy (jmatthews@redhat.com)
+- SELinux:  Adding bools to allow http to network and execute tmp files
+  (jmatthews@redhat.com)
+- SELinux rules update to leverage apache_content_template macro
+  (jmatthews@redhat.com)
+- Adding filtering capability for manually uploaded packages and custom errata
+  (skarmark@redhat.com)
+- 760607 - fixing the pkg list param (pkilambi@redhat.com)
+- 745458 - Separated asynchronous operations in cloning process from
+  synchronous operations such that clone task can be reloaded from db from a
+  saved state in case pulp-server dies during cloning (skarmark@redhat.com)
 * Fri Dec 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.254-1
 - fixing the clone to accoutn for el5 type metadata paths causing missing
   imports (pkilambi@redhat.com)
@@ -802,7 +875,7 @@ fi
 - 712496 - adding server-side check for existence of user (jconnor@redhat.com)
 - adding check for existing user before attempting update (jconnor@redhat.com)
 - added db version 27 to fix 26 mistake (jconnor@redhat.com)
-- 742240 Change our config files to %config(noreplace) in the spec file.
+- 742240 Change our config files to config(noreplace) in the spec file.
   (jslagle@redhat.com)
 - Sync Enhancements for #744021, #749289 * import the pkg and file information
   before metadata is regenerated * modify the checksum to use the pkg checksum

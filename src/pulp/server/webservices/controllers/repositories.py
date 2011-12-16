@@ -326,7 +326,17 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
         return: a Repo object
-        parameters: any field of a Repo object except id
+        parameters:
+         * name, str, name of the repository
+         * arch, str, architecture of the repository
+         * feed_cert_data, object, feed key and certificate
+         * consumer_cert_data, object, consumers key and certificate
+         * feed, str, url of feed
+         * checksum_type, str, name of checksum algorithm (sha256, sha1, md5)
+         * addgrp?, list of str, list of group ids to add the repository to
+         * rmgrp?, list of str, list of group ids to remove the repository from
+         * addkeys?, list of str, list of keys to add to the repository
+         * rmkeys?, list of str, list of keys to remove from the repository
         """
         delta = self.params()
         if delta.pop('id', id) != id:
@@ -350,11 +360,19 @@ class Repository(JSONController):
         method: DELETE
         path: /repositories/<id>/
         permission: DELETE
-        success response: 200 OK
-        failure response: None
+        success response: 202 Accepted
+        failure response: 404 Not Found if repository does not exist
+                          409 Conflict if repository cannot be deleted
+        return: a Task object
         """
-        api.delete(id=id)
-        return self.ok({})
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        task = async.run_async(api.delete, kwargs={'id': id})
+        if task is None:
+            return self.conflict('The repository, %s, cannot be deleted' % id)
+        status = self._task_to_dict(task)
+        return self.accepted(status)
 
 class RepositoryNotes(JSONController):
 

@@ -449,7 +449,7 @@ class Task(object):
         @type tb: str
         """
         self.state = task_error
-        self.exception = repr(exception)
+        self.exception = str(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
         self.consecutive_failures += 1
         _log.error(_('Task failed: %s\n%s') % (str(self), ''.join(self.traceback)))

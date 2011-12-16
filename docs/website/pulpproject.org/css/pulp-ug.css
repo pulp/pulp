@@ -43,7 +43,7 @@ td {
 }
 
 /* Main content pane for wiki -> HTML generated pages */
-.wikipage {
+#wikipage {
   margin-top: 20px;
   margin-left: 40px;
   margin-right: 40px;

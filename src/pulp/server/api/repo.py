@@ -314,7 +314,7 @@ class RepoApi(BaseApi):
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
@@ -364,11 +364,11 @@ class RepoApi(BaseApi):
 
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):
-            os.makedirs(self.published_path)
+            pulp.server.util.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                                    repo["relative_path"])
         if not os.path.isdir(source_path):
-            os.makedirs(source_path)
+            pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
         pulp.server.util.create_rel_symlink(source_path, link_path)
 
@@ -895,7 +895,7 @@ class RepoApi(BaseApi):
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         packages = {}
         nevras = {}
         filenames = {}
@@ -906,6 +906,13 @@ class RepoApi(BaseApi):
         for p in result:
             pkg_objects[p["id"]] = p
         log.info("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
+
+        for pkg_id in packageids:
+            if not pkg_objects.has_key(pkg_id):
+                # Detect if any packageids passed in could not be located
+                log.warn("No Package with id: %s found" % pkg_id)
+                errors.append((pkg_id, (None, None, None, None, None), None, None))
+                packageids.remove(pkg_id)
 
         # Process repo filters if any
         if repo['filters']:
@@ -922,17 +929,17 @@ class RepoApi(BaseApi):
         pkg_objects = self._find_filtered_package_list(pkg_objects, whitelist_packages, blacklist_packages)
         if original_pkg_objects_count > len(pkg_objects):
             filtered_count = original_pkg_objects_count - len(pkg_objects)
+            for pkg_id in packageids:
+                if not pkg_objects.has_key(pkg_id):
+                    # Detect filtered package ids
+                    packageids.remove(pkg_id)
+
         if not pkg_objects:
             log.info("No packages left to be added after removing filtered packages")
             return [], filtered_count
 
         # Desire to keep the order dictated by calling arg of 'packageids'
         for pkg_id in packageids:
-            if not pkg_objects.has_key(pkg_id):
-                # Detect if any packageids passed in could not be located
-                log.warn("No Package with id: %s found" % pkg_id)
-                errors.append((pkg_id, (None, None, None, None, None), None, None))
-                continue
             pkg = pkg_objects[pkg_id]
             pkg_tup = get_pkg_tup(pkg)
 
@@ -1059,7 +1066,7 @@ class RepoApi(BaseApi):
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         return errors
 
     def find_repos_by_package(self, pkgid):
@@ -1874,11 +1881,11 @@ class RepoApi(BaseApi):
 
     def _create_ks_link(self, repo):
         if not os.path.isdir(self.distro_path):
-            os.makedirs(self.distro_path)
+            pulp.server.util.makedirs(self.distro_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                                    repo["relative_path"])
         if not os.path.isdir(source_path):
-            os.makedirs(source_path)
+            pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Linking %s" % link_path)
         pulp.server.util.create_rel_symlink(source_path, link_path)
@@ -2196,7 +2203,7 @@ class RepoApi(BaseApi):
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
         if repo['content_types'] in ('yum'):
             pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])

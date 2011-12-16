@@ -2,7 +2,6 @@
 
 /sbin/restorecon -R /etc/httpd/conf.d/pulp.conf
 /sbin/restorecon -R /etc/pulp
-/sbin/restorecon -R /etc/pki/content
 /sbin/restorecon -R /etc/pki/pulp
 /sbin/restorecon -R /etc/init.d/pulp-server
 /sbin/restorecon -R /srv/pulp

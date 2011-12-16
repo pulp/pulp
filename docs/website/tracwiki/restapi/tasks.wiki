@@ -1,4 +1,3 @@
-[[TOC]]
 = Tasking RESTful Interface = #top
 ''RESTful interface providing an administrative and debugging api for'' [[BR]]
 ''pulp's tasking system.'' [[BR]]
@@ -159,5 +158,6 @@
 '''return''': list of task objects [[BR]]
 [[BR]]
 '''filters''': 
- * '''state''' <str> ''tasking system task state: waiting, running, complete, incomplete, all''
+ * '''id''' <str> ''task id''
+ * '''state''' <str> ''tasking system task state: waiting, running, complete, incomplete, current, archived (current is the same as waiting, running, complete, and imcomplete, also the same as ommitting the state filter; archived looks into the the task history, will not return archived tasks without this filter)''
 [[BR]]
