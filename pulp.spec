@@ -366,25 +366,21 @@ fi
 # -- files - pulp server -----------------------------------------------------
 
 %files
-%defattr(-,root,root,-)
+%defattr(-,apache,apache,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulp/server/
-%{python_sitelib}/pulp/repo_auth/
-%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%config(noreplace) %{_sysconfdir}/pulp/logging
-%config %{_sysconfdir}/httpd/conf.d/pulp.conf
+%attr(-, root, root) %{python_sitelib}/pulp/server/
+%attr(-, root, root) %{python_sitelib}/pulp/repo_auth/
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
+%config(noreplace) %{_sysconfdir}/pulp
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
-%attr(775, apache, apache) %{_sysconfdir}/pulp
-%attr(775, apache, apache) /srv/pulp
-%attr(750, apache, apache) /srv/pulp/webservices.wsgi
-%attr(750, apache, apache) /srv/pulp/repo_auth.wsgi
-%attr(3775, apache, apache) /var/lib/pulp
-%attr(3775, apache, apache) /var/www/pub
-%attr(3775, apache, apache) /var/log/pulp
-%attr(775, apache, apache) %{_sysconfdir}/pki/pulp
-%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
+%attr(-, apache, apache) /srv/pulp/webservices.wsgi
+%attr(-, apache, apache) /srv/pulp/repo_auth.wsgi
+/var/lib/pulp
+/var/www/pub
+/var/log/pulp
+%{_sysconfdir}/pki/pulp
+%attr(755, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # -- files - common ----------------------------------------------------------
 
@@ -439,7 +435,7 @@ fi
 # -- files - pulp cds --------------------------------------------------------
 
 %files cds
-%defattr(-,root,root,-)
+%defattr(-,apache,apache,-)
 %doc
 %{python_sitelib}/pulp/cds/
 %{python_sitelib}/pulp/repo_auth/
