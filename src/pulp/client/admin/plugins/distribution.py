@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Pulp Distribution management module
 #

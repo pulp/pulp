@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Pulp Repo management module
 #

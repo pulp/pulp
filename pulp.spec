@@ -236,7 +236,7 @@ mkdir -p %{buildroot}/etc/pki/pulp
 mkdir -p %{buildroot}/etc/pki/consumer
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
-mkdir -p %{buildroot}/etc/pki/content
+mkdir -p %{buildroot}/etc/pki/pulp/content
 
 # Pulp Runtime
 mkdir -p %{buildroot}/var/lib/pulp
@@ -307,11 +307,11 @@ rm -rf %{buildroot}
 # -- post - pulp server ------------------------------------------------------
 
 %post
-setfacl -m u:apache:rwx /etc/pki/content/
+#chown -R apache:apache /etc/pki/pulp/content/
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
-setfacl -m u:apache:rwx /etc/pki/content/
+#chown -R apache:apache /etc/pki/pulp/content/
 
 # Create the cluster related files and give them Apache ownership;
 # both httpd (apache) and gofer (root) will write to them, so to prevent
@@ -366,27 +366,21 @@ fi
 # -- files - pulp server -----------------------------------------------------
 
 %files
-%defattr(-,root,root,-)
+%defattr(-,apache,apache,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulp/server/
-%{python_sitelib}/pulp/repo_auth/
-%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%config(noreplace) %{_sysconfdir}/pulp/logging
-%config %{_sysconfdir}/httpd/conf.d/pulp.conf
+%attr(-, root, root) %{python_sitelib}/pulp/server/
+%attr(-, root, root) %{python_sitelib}/pulp/repo_auth/
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
+%config(noreplace) %{_sysconfdir}/pulp
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
-%attr(775, apache, apache) %{_sysconfdir}/pulp
-%attr(775, apache, apache) /srv/pulp
-%attr(750, apache, apache) /srv/pulp/webservices.wsgi
-%attr(750, apache, apache) /srv/pulp/repo_auth.wsgi
-%attr(3775, apache, apache) /var/lib/pulp
-%attr(3775, apache, apache) /var/www/pub
-%attr(3775, apache, apache) /var/log/pulp
-%attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
-%{_sysconfdir}/pki/pulp/ca.key
-%{_sysconfdir}/pki/pulp/ca.crt
+%attr(-, apache, apache) /srv/pulp/webservices.wsgi
+%attr(-, apache, apache) /srv/pulp/repo_auth.wsgi
+/var/lib/pulp
+/var/www/pub
+/var/log/pulp
+%config(noreplace) %{_sysconfdir}/pki/pulp
+%attr(755, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # -- files - common ----------------------------------------------------------
 
@@ -441,7 +435,7 @@ fi
 # -- files - pulp cds --------------------------------------------------------
 
 %files cds
-%defattr(-,root,root,-)
+%defattr(-,apache,apache,-)
 %doc
 %{python_sitelib}/pulp/cds/
 %{python_sitelib}/pulp/repo_auth/
@@ -452,7 +446,7 @@ fi
 %config %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%attr(3775, root, root) %{_sysconfdir}/pki/content
+%attr(775, apache, apache) %{_sysconfdir}/pki/pulp
 %attr(775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds/repos
@@ -528,7 +522,7 @@ fi
 - SELinux: fix for pulp_cert_t (jmatthews@redhat.com)
 - 760766 - Updated content upload cli to parse new return format for
   repo.add_packages() with filters correctly (skarmark@redhat.com)
-- SELinux: move setsebool to enable script to be executed during %post
+- SELinux: move setsebool to enable script to be executed during post
   (jmatthews@redhat.com)
 - SELinux: rewrite rules to be based off of httpd content
   (jmatthews@redhat.com)

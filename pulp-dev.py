@@ -30,7 +30,7 @@ DIRS = (
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
-    '/etc/pki/content',
+    '/etc/pki/pulp/content',
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',
@@ -152,13 +152,15 @@ def install(opts):
 
     # Grant apache write access to the pulp tools log file and pulp
     # packages dir
-    os.system('setfacl -m user:apache:rwx /var/log/pulp')
-    os.system('setfacl -m user:apache:rwx /var/lib/pulp')
-    os.system('setfacl -m user:apache:rwx /var/lib/pulp/published')
+    os.system('chown -R apache:apache /var/log/pulp')
+    os.system('chown -R apache:apache /var/lib/pulp')
+    os.system('chown -R apache:apache /var/lib/pulp/published')
     # guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
+    # Update for certs
+    os.system('chown -R apache:apache /etc/pki/pulp')
 
     # Disable existing SSL configuration
     #if os.path.exists('/etc/httpd/conf.d/ssl.conf'):
