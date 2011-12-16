@@ -305,7 +305,7 @@ class RepoUnitAssociationManager:
         # Merge in the association filters
         spec.update(association_filters)
 
-        cursor = RepoContentUnit.get_collection().find(spec)
+        cursor = RepoContentUnit.get_collection().find(spec, fields=criteria.association_fields)
 
         # Add the sort clauses if specified; sort can take either a string
         # or list so just pass in the sort directly. Mongo will ignore
@@ -383,7 +383,7 @@ class RepoUnitAssociationManager:
         # Merge in the given association filters
         spec.update(association_spec)
 
-        cursor = RepoContentUnit.get_collection().find(spec)
+        cursor = RepoContentUnit.get_collection().find(spec, fields=criteria.association_fields)
 
         # If the sort clause applies to the association metadata, we
         # apply the limit and skips here as well. If the sort is not
@@ -430,7 +430,7 @@ class RepoUnitAssociationManager:
             for u in unit_associations:
                 spec = copy.copy(unit_spec)
                 spec['_id'] = u['unit_id']
-                metadata = type_collection.find_one(spec)
+                metadata = type_collection.find_one(spec, fields=criteria.unit_fields)
                 u['metadata'] = metadata
 
             return unit_associations
@@ -449,7 +449,7 @@ class RepoUnitAssociationManager:
             # the unit IDs we found earlier.
             unit_spec['_id'] = {'$in' : associations_by_id.keys()}
 
-            cursor = type_collection.find(unit_spec)
+            cursor = type_collection.find(unit_spec, fields=criteria.unit_fields)
 
             # Determine what our sort criteria will look like
             if criteria.unit_sort is None:
@@ -537,6 +537,13 @@ class Criteria:
 
         self.limit = limit
         self.skip = skip
+
+        # The unit_id and unit_type_id are required as association returned data;
+        # frankly it doesn't make sense without them but it's also a technical
+        # requirement for the algorithm to run. Make sure they are there.
+        if association_fields is not None:
+            if 'unit_id' not in association_fields: association_fields.append('unit_id')
+            if 'unit_type_id' not in association_fields: association_fields.append('unit_type_id')
 
         self.association_fields = association_fields
         self.unit_fields = unit_fields

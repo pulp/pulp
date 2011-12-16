@@ -463,6 +463,18 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         non_user_gamma_units = [u for u in units if u['unit_type_id'] == 'gamma' and u['owner_type'] != OWNER_TYPE_USER]
         self.assertEqual(0, len(non_user_gamma_units))
 
+    def test_get_units_with_fields(self):
+        # Test
+        criteria = Criteria(association_fields=['owner_type'])
+        units = self.manager.get_units('repo-1', criteria)
+
+        # Verify
+        for u in units:
+            self.assertTrue('owner_type' in u)
+            self.assertFalse('owner_id' in u)
+            self.assertFalse('created' in u)
+            self.assertFalse('updated' in u)
+
     # -- get_units_by_type tests ----------------------------------------------
 
     def test_get_units_by_type_no_criteria(self):
@@ -587,6 +599,38 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         self.assertEqual(len(self.units['gamma']), len(units)) # only one association per gamma unit
         for u in units:
             self.assertEqual(u['owner_type'], association_manager.OWNER_TYPE_USER) # all user associations have earlier created date
+
+    def test_get_units_by_type_with_assoc_fields(self):
+        # Test
+        criteria = Criteria(association_fields=['owner_type'])
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        for u in units:
+            self.assertTrue('owner_type' in u)
+            self.assertFalse('owner_id' in u)
+            self.assertFalse('created' in u)
+
+            # Make sure the unit fields are untouched by the filter
+            self.assertTrue('key_1' in u['metadata'])
+            self.assertTrue('md_1' in u['metadata'])
+
+    def test_get_units_by_type_with_unit_fields(self):
+        # Test
+        criteria = Criteria(unit_fields=['key_1', 'md_1'])
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        for u in units:
+            # Make sure the association fields are untouched by the filter
+            self.assertTrue('owner_type' in u)
+            self.assertTrue('owner_id' in u)
+            self.assertTrue('created' in u)
+
+            self.assertTrue('key_1' in u['metadata'])
+            self.assertTrue('md_1' in u['metadata'])
+            self.assertFalse('md_2' in u['metadata'])
+            self.assertFalse('md_3' in u['metadata'])
 
     def test_remove_duplicates(self):
         # Setup
