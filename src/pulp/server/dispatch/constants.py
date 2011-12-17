@@ -19,13 +19,15 @@ CALL_RUN_EXECUTION_HOOK = 2
 CALL_FINISH_EXECUTION_HOOK = 3
 CALL_ERROR_EXECUTION_HOOK = 4
 CALL_CANCEL_EXECUTION_HOOK = 5
+CALL_COMPLETE_EXECUTION_HOOK = 6
 
 CALL_EXECUTION_HOOKS = (CALL_ENQUEUE_EXECUTION_HOOK,
                         CALL_DEQUEUE_EXECUTION_HOOK,
                         CALL_RUN_EXECUTION_HOOK,
                         CALL_FINISH_EXECUTION_HOOK,
                         CALL_ERROR_EXECUTION_HOOK,
-                        CALL_CANCEL_EXECUTION_HOOK)
+                        CALL_CANCEL_EXECUTION_HOOK,
+                        CALL_COMPLETE_EXECUTION_HOOK)
 
 # control hooks ----------------------------------------------------------------
 
