@@ -15,9 +15,9 @@ import datetime
 import logging
 import threading
 
-from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.util import Singleton
 
 
@@ -51,8 +51,7 @@ class Scheduler(object):
         self.__condition = threading.Condition(self.__lock)
         self.__dispatcher = None
 
-
-    # scheduled calls dispatch -------------------------------------------------
+    # scheduled calls dispatch methods -----------------------------------------
 
     def __dispatch(self):
         """
@@ -66,10 +65,44 @@ class Scheduler(object):
                     self.__lock.release()
                 return
             try:
-                self.run_scheduled_calls()
+                self._run_scheduled_calls()
             except Exception, e:
                 _LOG.critical('Unhandled exception in scheduler dispatch: %s' % repr(e))
                 _LOG.exception(e)
+
+    def _run_scheduled_calls(self):
+        """
+        Find call requests that are currently scheduled to run
+        """
+        now = datetime.datetime.utcnow()
+        query = {'next_run': {'$lte': now}}
+        for scheduled_call in self.scheduled_call_collection.find(query):
+            if not scheduled_call['enabled']:
+            # update the next run information for disabled calls
+                self.update_next_run(scheduled_call)
+                continue
+            serialized_call_request = scheduled_call['serialized_call_request']
+            call_request = call.CallRequest.deserialize(serialized_call_request)
+            self._run_via_legacy_tasking(call_request)
+            self.update_last_run(scheduled_call)
+
+    def _run_via_legacy_tasking(self, call_request):
+        """
+        Run the call request in the legacy tasking sub-system
+        """
+        raise NotImplementedError()
+
+    def _run_via_task_queue(self, call_request):
+        """
+        Run the call request directly in the task queue
+        """
+        raise NotImplementedError()
+
+    def _run_via_coordinator(self, call_request):
+        """
+        Run the call request through the coordinator
+        """
+        raise NotImplementedError()
 
     def start(self):
         """
@@ -92,45 +125,11 @@ class Scheduler(object):
         self.__dispatcher.join()
         self.__dispatcher = None
 
-    def run_scheduled_calls(self):
-        """
-        Find call requests that are currently scheduled to run
-        """
-        now = datetime.datetime.utcnow()
-        query = {'next_run': {'$lte': now}}
-        for scheduled_call in self.scheduled_call_collection.find(query):
-            if not scheduled_call['enabled']:
-            # update the next run information for disabled calls
-                self.update_next_run(scheduled_call)
-                continue
-            serialized_call_request = scheduled_call['serialized_call_request']
-            call_request = call.CallRequest.deserialize(serialized_call_request)
-            self.run_via_legacy_tasking(call_request)
-            self.update_last_run(scheduled_call)
-
-    def run_via_legacy_tasking(self, call_request):
-        """
-        Run the call request in the legacy tasking sub-system
-        """
-        raise NotImplementedError()
-
-    def run_via_taskqueue(self, call_request):
-        """
-        Run the call request directly in the task queue
-        """
-        raise NotImplementedError()
-
-    def run_via_coordinator(self, call_request):
-        """
-        Run the call request through the coordinator
-        """
-        raise NotImplementedError()
-
-    # scheduling ---------------------------------------------------------------
+    # scheduling methods -------------------------------------------------------
 
     def update_last_run(self, scheduled_call):
         """
-        Update the metadata for a schedulded call that has been run
+        Update the metadata for a scheduled call that has been run
         @param scheduled_call: scheduled call to be updated
         @type  scheduled_call: dict
         """
@@ -180,18 +179,18 @@ class Scheduler(object):
             next_run += interval
         return next_run
 
-    def call_finished_callback(self, task):
+    def call_finished_callback(self, call_request, call_report):
         """
         Call back for task (call_request) results and rescheduling
         """
-        # NOTE the "call_request" is acually a task, but the scheduler doesn't care
-        i = task.tags.index(SCHEDULED_TAG)
-        schedule_id = task.tags[i + 1]
-        scheduled_call = self.get(schedule_id)
+        # NOTE the "call_request" is actually a task, but the scheduler doesn't care
+        i = call_request.tags.index(SCHEDULED_TAG)
+        schedule_id = call_request.tags[i + 1]
+        scheduled_call = self.scheduled_call_collection.find({'_id': schedule_id})
         self.update_last_run(scheduled_call)
         self.update_next_run(scheduled_call)
 
-    # schedule control ---------------------------------------------------------
+    # schedule control methods -------------------------------------------------
 
     def add(self, call_request, schedule, last_run=None):
         """
@@ -206,7 +205,7 @@ class Scheduler(object):
         @rtype:  str or None
         """
         call_request.tags.append(SCHEDULED_TAG)
-        call_request.add_execution_hook('dequeue', self.call_finished_callback)
+        call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, self.call_finished_callback)
         scheduled_call = ScheduledCall(call_request, schedule, last_run)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
