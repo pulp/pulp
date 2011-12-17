@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import itertools
 import logging
 import threading
 
@@ -34,9 +35,9 @@ class TaskQueue(object):
         self.archived_call_collection = ArchivedCall.get_collection()
         self.queued_call_collection = QueuedCall.get_collection()
 
-        self._waiting = []
-        self._running = []
-        self._canceled = []
+        self.__waiting_tasks = []
+        self.__running_tasks = []
+        self.__canceled_tasks = []
 
         self.__running_weight = 0
         self.__exit = False
@@ -64,8 +65,11 @@ class TaskQueue(object):
     def _get_ready_tasks(self):
         tasks = []
         available_weight = self.concurrency_threshold - self.__running_weight
-        while self._waiting and self._waiting[0].call_request.weight <= available_weight:
-            task = self._waiting.pop(0)
+        for task in self.__waiting_tasks:
+            if task.blocking_tasks:
+                continue
+            if task.call_request.weight > available_weight:
+                continue
             available_weight -= task.call_request.weight
             tasks.append(task)
         return tasks
@@ -73,8 +77,8 @@ class TaskQueue(object):
     def _run_ready_task(self, task):
         self.__lock.acquire()
         try:
-            self._waiting.remove(task)
-            self._running.append(task)
+            self.__waiting_tasks.remove(task)
+            self.__running_tasks.append(task)
             self.__running_weight += task.call_request.weight
             task_thread = threading.Thread(target=task.run)
             task_thread.start()
@@ -83,7 +87,7 @@ class TaskQueue(object):
             self.__lock.release()
 
     def _cancel_tasks(self):
-        for task in self._canceled:
+        for task in self.__canceled_tasks:
             try:
                 task.cancel()
             except Exception, e:
@@ -116,15 +120,29 @@ class TaskQueue(object):
 
     # task management methods --------------------------------------------------
 
-    def enqueue(self, task, blockers=None):
+    def enqueue(self, task):
         self.__lock.acquire()
         try:
             queued_call = QueuedCall(task.call_request)
             task.queued_call_id = queued_call['_id']
             self.queued_call_collection.save(queued_call, safe=True)
             task.complete_callback = self._complete
-            self._waiting.append(task)
+            self._validate_blocking_tasks(task)
+            self.__waiting_tasks.append(task)
             task.call_execution_hooks(dispatch_constants.CALL_ENQUEUE_EXECUTION_HOOK)
+            self.__condition.notify()
+        finally:
+            self.__lock.release()
+
+    def _validate_blocking_tasks(self, task):
+        self.__lock.acquire()
+        try:
+            valid_blocking_tasks = set()
+            for potential_blocking_task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
+                if potential_blocking_task.id not in task.blocking_tasks:
+                    continue
+                valid_blocking_tasks.add(potential_blocking_task.id)
+            task.blocking_tasks = valid_blocking_tasks
         finally:
             self.__lock.release()
 
@@ -133,11 +151,20 @@ class TaskQueue(object):
         try:
             self.queued_call_collection.remove({'_id': task.queued_call_id}, safe=True)
             task.queued_call_id = None
-            if task in self._waiting:
-                self._waiting.remove(task)
-            if task in self._running:
-                self._running.remove(task)
+            if task in self.__waiting_tasks:
+                self.__waiting_tasks.remove(task)
+            if task in self.__running_tasks:
+                self.__running_tasks.remove(task)
+            self._unblock_tasks(task)
             task.call_execution_hooks(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK)
+        finally:
+            self.__lock.release()
+
+    def _unblock_tasks(self, task):
+        self.__lock.acquire()
+        try:
+            for potentially_blocked_task in self.__waiting_tasks:
+                potentially_blocked_task.blocking_tasks.discard(task.id)
         finally:
             self.__lock.release()
 
@@ -155,7 +182,7 @@ class TaskQueue(object):
         try:
             if task.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK] is None:
                 return False
-            self._canceled.append(task)
+            self.__canceled_tasks.append(task)
             return True
         finally:
             self.__lock.release()
@@ -163,8 +190,46 @@ class TaskQueue(object):
     # task query methods -------------------------------------------------------
 
     def get(self, task_id):
-        pass
+        self.__lock.acquire()
+        try:
+            for task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
+                if task.id != task_id:
+                    continue
+                return task
+        finally:
+            self.__lock.release()
 
     def find(self, *tags):
-        pass
+        self.__lock.acquire()
+        try:
+            tasks = []
+            for task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
+                for tag in tags:
+                    if tag not in task.call_request.tags:
+                        break
+                else:
+                    tasks.append(task)
+            return tasks
+        finally:
+            self.__lock.release()
 
+    def waiting_tasks(self):
+        self.__lock.acquire()
+        try:
+            return self.__waiting_tasks[:]
+        finally:
+            self.__lock.release()
+
+    def running_tasks(self):
+        self.__lock.acquire()
+        try:
+            return self.__running_tasks[:]
+        finally:
+            self.__lock.release()
+
+    def all_tasks(self):
+        self.__lock.acquire()
+        try:
+            return itertools.chain(self.__waiting_tasks[:], self.__running_tasks[:])
+        finally:
+            self.__lock.release()
