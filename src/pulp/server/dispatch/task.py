@@ -44,7 +44,7 @@ class Task(object):
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
 
         self.call_request = call_request
-        self.serialized_call_request_id = None
+        self.queued_call_id = None
 
         self.call_report = call_report or call.CallReport()
         self.call_report.state = dispatch_constants.CALL_WAITING_STATE
@@ -106,6 +106,7 @@ class Task(object):
         self.call_report.state = dispatch_constants.CALL_FINISHED_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
+        self.call_execution_hooks(dispatch_constants.CALL_FINISH_EXECUTION_HOOK)
         self._complete()
 
     def failed(self, exception=None, traceback=None):
@@ -113,11 +114,13 @@ class Task(object):
         self.call_report.exception = exception
         self.call_report.traceback = traceback
         _LOG.info(_('%s FAILED') % str(self))
+        self.call_execution_hooks(dispatch_constants.CALL_ERROR_EXECUTION_HOOK)
         self._complete()
 
     def _complete(self):
         assert self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
+        self.call_execution_hooks(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK)
         if self.complete_callback is None:
             return
         try:
