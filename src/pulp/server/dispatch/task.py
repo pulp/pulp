@@ -54,6 +54,7 @@ class Task(object):
 
         self.complete_callback = None
         self.progress_callback = None
+        self.blocking_tasks = set()
 
         progress_hook = self.call_request.control_hooks[dispatch_constants.CALL_PROGRESS_CONTROL_HOOK]
         if progress_hook is not None:
