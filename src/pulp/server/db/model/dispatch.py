@@ -25,6 +25,10 @@ class QueuedCall(Model):
     collection_name = 'queued_calls'
     unique_indices = ()
 
+    def __init__(self, call_request):
+        super(QueuedCall, self).__init__()
+        self.serialized_call_request = call_request.serialize()
+
 
 class ScheduledCall(Model):
     """
@@ -54,3 +58,17 @@ class ScheduledCall(Model):
         self.runs = runs
 
         self.next_run = None # will calculated and set by the scheduler
+
+
+class ArchivedCall(Model):
+    """
+    Call history
+    """
+
+    collection_name = 'archived_calls'
+    unique_indices = ()
+    search_indices = ()
+
+    def __init__(self, call_request, call_report):
+        super(ArchivedCall, self).__init__()
+
