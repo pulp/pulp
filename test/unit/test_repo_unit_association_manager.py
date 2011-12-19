@@ -682,6 +682,11 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         str(c1)
         str(c2)
 
+    def test_criteria_init(self):
+        # Test
+        c = Criteria(type_ids='single')
+        self.assertEqual(['single'], c.type_ids)
+
     # -- utilities ------------------------------------------------------------
 
     def _assert_unit_integrity(self, unit):

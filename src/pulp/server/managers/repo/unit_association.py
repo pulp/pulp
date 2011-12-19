@@ -505,7 +505,7 @@ class RepoUnitAssociationManager:
         # Flag for each unit in units; if False it will not be included in the returned list
         keep_units = [True for i in range(len(units))]
 
-        def _unit_uuid(self, unit_association):
+        def _unit_uuid(unit_association):
             return unit_association['unit_type_id'] + '+' + unit_association['unit_id']
 
         for i in range(0, len(units)):
@@ -540,10 +540,14 @@ class Criteria:
 
     def __init__(self, type_ids=None, association_filters=None, unit_filters=None,
                  association_sort=None, unit_sort=None, limit=None, skip=None,
-                 association_fields=None, unit_fields=None, remove_duplicates=False):
+                 association_fields=None, unit_fields=None, remove_duplicates=None):
         """
+        There are a number of entry points into creating one of these instances:
+        multiple REST interfaces, the plugins, etc. As such, this constructor
+        does quite a bit of validation on the parameter values.
+
         @param type_ids: list of types to search
-        @type  type_ids: list of str
+        @type  type_ids: [str]
 
         @param association_filters: mongo spec describing search parameters on
                association metadata
@@ -555,11 +559,11 @@ class Criteria:
 
         @param association_sort: ordered list of fields and directions; may only
                contain association metadata
-        @type  association_sort: list of tuples (str, <SORT_* constant>)
+        @type  association_sort: [(str, <SORT_* constant>)]
 
         @param unit_sort: ordered list of fields and directions; only used when
                a single type ID is specified
-        @type  unit_sort: list of tuples (str, <SORT_* constant>)
+        @type  unit_sort: [(str, <SORT_* constant>)]
 
         @param limit: maximum number of results to return
         @type  limit: int
@@ -577,13 +581,15 @@ class Criteria:
         @type  unit_fields: list of str
 
         @param remove_duplicates: if True, units with multiple associations will
-               only return a single association
+               only return a single association; defaults to False
         @type  remove_duplicates: bool
         """
 
         # A default instance will be used in the case where no criteria is
         # passed in, so use sane defaults here.
 
+        if type_ids is not None and  not isinstance(type_ids, (list, tuple)):
+            type_ids = [type_ids]
         self.type_ids = type_ids
 
         self.association_filters = association_filters or {}
@@ -605,6 +611,8 @@ class Criteria:
         self.association_fields = association_fields
         self.unit_fields = unit_fields
 
+        if remove_duplicates is None:
+            remove_duplicates = False
         self.remove_duplicates = remove_duplicates
 
     def __str__(self):
