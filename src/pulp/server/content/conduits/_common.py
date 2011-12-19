@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp.server.content.plugins.model import Unit
+from pulp.server.content.plugins.model import AssociatedUnit
 
 
 def to_pulp_unit(plugin_unit):
@@ -45,7 +45,7 @@ def to_plugin_unit(pulp_unit, type_def):
     @type  type_def: L{pulp.server.db.model.content.ContentType}
 
     @return: plugin unit representation of the given unit
-    @rtype:  L{pulp.server.content.plugins.data.Unit}
+    @rtype:  L{pulp.server.content.plugins.data.AssociatedUnit}
     """
 
     key_list = type_def['unit_key']
@@ -53,12 +53,17 @@ def to_plugin_unit(pulp_unit, type_def):
     unit_key = {}
 
     for k in key_list:
-        unit_key[k] = pulp_unit.pop(k)
+        unit_key[k] = pulp_unit['metadata'].pop(k)
 
     storage_path = pulp_unit.pop('_storage_path', None)
-    unit_id = pulp_unit.pop('_id', None)
+    unit_id = pulp_unit.pop('unit_id', None)
+    created = pulp_unit.pop('created', None)
+    updated = pulp_unit.pop('updated', None)
+    owner_type = pulp_unit.pop('owner_type', None)
+    owner_id = pulp_unit.pop('owner_id', None)
 
-    u = Unit(type_def['id'], unit_key, pulp_unit, storage_path)
+    u = AssociatedUnit(type_def['id'], unit_key, pulp_unit['metadata'], storage_path,
+                       created, updated, owner_type, owner_id)
     u.id = unit_id
 
     return u

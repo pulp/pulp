@@ -47,7 +47,7 @@ import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import Unit, SyncReport
 from pulp.server.managers.content._exceptions import ContentUnitNotFound
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER, Criteria
 
 # -- constants ---------------------------------------------------------------
 
@@ -172,7 +172,7 @@ class RepoSyncConduit:
 
     # -- unit lifecycle -------------------------------------------------------
 
-    def get_units(self):
+    def get_units(self, criteria=None):
         """
         Returns the collection of content units associated with the repository
         being synchronized. 
@@ -180,26 +180,30 @@ class RepoSyncConduit:
         Units returned from this call will have the id field populated and are
         useable in any calls in this conduit that require the id field.
 
+        @param criteria: used to scope the returned results or the data within
+        @type  criteria: L{Criteria}
+
         @return: list of unit instances
-        @rtype:  list of L{Unit}
+        @rtype:  list of L{AssociatedUnit}
         """
 
         try:
-            units_by_type = self.__association_manager.get_units(self.repo_id)
+            units = self.__association_manager.get_units(self.repo_id, criteria=criteria)
 
             all_units = []
-            for type_id, type_units in units_by_type.items():
 
-                # Handle old units in the database after a content type has been
-                # removed from the server
-                type_def = types_db.type_definition(type_id)
-                if type_def is None:
-                    continue
+            # Load all type definitions in use so we don't hammer the database
+            unique_type_defs = set([u['unit_type_id'] for u in units])
+            type_defs = {}
+            for def_id in unique_type_defs:
+                type_def = types_db.type_definition(def_id)
+                type_defs[def_id] = type_def
 
-                # Convert to transfer object
-                for unit in type_units:
-                    u = common_utils.to_plugin_unit(unit, type_def)
-                    all_units.append(u)
+            # Convert to transfer object
+            for unit in units:
+                type_id = unit['unit_type_id']
+                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+                all_units.append(u)
 
             return all_units
 
