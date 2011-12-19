@@ -27,6 +27,7 @@ import traceback
 from threading import Lock
 from urlparse import urlparse
 import datetime
+from bson import SON
 
 import yum
 from grinder.BaseFetch import BaseFetch
@@ -238,6 +239,8 @@ class BaseSynchronizer(object):
                     (repo['id'], len(added_packages), endTime - startTime))
         else:
             log.info("Skipping package imports from sync process")
+        if self.stopped:
+            raise CancelException()
         self.repo_api.collection.save(repo, safe=True)
         return added_packages
 
@@ -293,26 +296,8 @@ class BaseSynchronizer(object):
                 log.info("combined whitelist packages = %s" % whitelist_packages)
                 log.info("combined blacklist packages = %s" % blacklist_packages)
             # apply any filters
-            package_list = []
-            if whitelist_packages:
-                for pkg in unfiltered_pkglist:
-                    for whitelist_package in whitelist_packages:
-                        w = re.compile(whitelist_package)
-                        if w.match(pkg['filename']):
-                            package_list.append(pkg)
-                            break
-            else:
-                package_list = list(unfiltered_pkglist)
-            if blacklist_packages:
-                to_remove = []
-                for pkg in package_list:
-                    for blacklist_package in blacklist_packages:
-                        b = re.compile(blacklist_package)
-                        if b.match(pkg['filename']):
-                            to_remove.append(pkg)
-                            break
-                for pkg in to_remove:
-                    package_list.remove(pkg)
+            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+
             for package in package_list:
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package['name'], package['version'], \
                                                           package['release'], package['arch'], package['checksum'].values()[0][:3], package['filename'])
@@ -323,6 +308,8 @@ class BaseSynchronizer(object):
                     added_packages[package["id"]] = package
         else:
             log.info("Skipping package imports from sync process")
+        if self.stopped:
+            raise CancelException()
         self.repo_api.collection.save(repo, safe=True)
         return added_packages
 
@@ -572,6 +559,8 @@ class BaseSynchronizer(object):
             log.debug("Parsed %s, %s UpdateNotices were returned." %
                       (updateinfo_xml_path, len(errata)))
             for e in errata:
+                if self.stopped:
+                    raise CancelException()
                 eids.append(e['id'])
                 # Replace existing errata if the update date is newer
                 found = self.errata_api.erratum(e['id'])
@@ -656,7 +645,7 @@ class BaseSynchronizer(object):
         real_src_file_path = os.path.realpath(src_file_path)
         # make sure the real path isnt missing and create a symlink
         if os.path.exists(real_src_file_path):
-            repo_file_path = os.path.join(dst_repo_dir, filename) #os.path.basename(pkg))
+            repo_file_path = "%s/%s" % (dst_repo_dir, filename) #os.path.basename(pkg))
             if not os.path.islink(repo_file_path):
                 pulp.server.util.create_rel_symlink(real_src_file_path, repo_file_path)
             self.progress['num_download'] += 1
@@ -854,7 +843,8 @@ class YumSynchronizer(BaseSynchronizer):
             for pkg in unfiltered_pkglist:
                 for whitelist_package in whitelist_packages:
                     w = re.compile(whitelist_package)
-                    if w.match(os.path.basename(pkg.relativepath)):
+                    pkg_name = self.__get_package_name_by_instance(pkg)
+                    if w.match(os.path.basename(pkg_name)):
                         pkglist.append(pkg)
                         break
         else:
@@ -865,13 +855,23 @@ class YumSynchronizer(BaseSynchronizer):
             for pkg in pkglist:
                 for blacklist_package in blacklist_packages:
                     b = re.compile(blacklist_package)
-                    if b.match(os.path.basename(pkg.relativepath)):
+                    pkg_name = self.__get_package_name_by_instance(pkg)
+                    if b.match(os.path.basename(pkg_name)):
                         to_remove.append(pkg)
                         break
             for pkg in to_remove:
                 pkglist.remove(pkg)
 
         return pkglist
+
+    def __get_package_name_by_instance(self, pkg):
+        if isinstance(pkg, pulp.server.util.Package):
+            pkg_name = pkg.relativepath
+        elif isinstance(pkg, SON):
+            pkg_name = pkg['filename']
+        else:
+            pkg_name = pkg
+        return pkg_name
 
     def _sync_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
                    progress_callback=None):
@@ -891,10 +891,7 @@ class YumSynchronizer(BaseSynchronizer):
             try:
                 rpm_name = os.path.basename(pkg.relativepath)
                 log.debug("Processing rpm: %s" % rpm_name)
-                if self.is_clone:
-                    self._create_clone(pkg.relativepath, src_repo_dir, dst_repo_dir)
-                else:
-                    self._process_rpm(pkg, src_repo_dir, dst_repo_dir)
+                self._process_rpm(pkg, src_repo_dir, dst_repo_dir)
                 self.progress['details']["rpm"]["num_success"] += 1
                 self.progress["num_success"] += 1
                 self.progress["item_type"] = BaseFetch.RPM
@@ -936,6 +933,46 @@ class YumSynchronizer(BaseSynchronizer):
             if epkg not in source_pkgs:
                 log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
                 os.remove(os.path.join(dst_repo_dir, epkg))
+
+    def _clone_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, progress_callback=None):
+        # Compute and clone packages
+        unfiltered_pkglist = self.list_rpms(src_repo_dir)
+        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+        if progress_callback is not None:
+            self.progress['step'] = ProgressReport.DownloadItems
+            progress_callback(self.progress)
+        log.debug("Processing %s potential packages" % (len(pkglist)))
+        for count, pkg in enumerate(pkglist):
+            if self.stopped:
+                raise CancelException()
+            pkg_relativepath = pkg.split(os.path.normpath(src_repo_dir + '/'))[-1]
+            try:
+                rpm_name = os.path.basename(pkg_relativepath)
+                self._create_clone(pkg_relativepath, src_repo_dir, dst_repo_dir)
+                self.progress['details']["rpm"]["num_success"] += 1
+                self.progress["num_success"] += 1
+                self.progress["item_type"] = BaseFetch.RPM
+                self.progress["item_name"] = rpm_name
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
+                self._add_error_details(pkg, "rpm", error_info)
+            self.progress["step"] = ProgressReport.DownloadItems
+            item_size = self._calculate_bytes(src_repo_dir, [pkg])#_relativepath])
+            self.progress['size_left'] -= item_size
+            self.progress['items_left'] -= 1
+            self.progress['details']["rpm"]["items_left"] -= 1
+            self.progress['details']["rpm"]["size_left"] -= item_size
+
+            if progress_callback is not None:
+                progress_callback(self.progress)
+                self.progress["item_type"] = ""
+                self.progress["item_name"] = ""
+        log.info("Finished cloning %s packages" % (len(pkglist)))
 
     def _sync_drpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
         # Compute and import delta rpms
@@ -1036,6 +1073,8 @@ class YumSynchronizer(BaseSynchronizer):
         # process ks files associated to distribution
         for imfile in imlist:
             try:
+                if self.stopped:
+                    raise CancelException()
                 skip_copy = False
                 rel_file_path = imfile.split('/images/')[-1]
                 dst_file_path = os.path.join(distro_path, rel_file_path)
@@ -1120,9 +1159,16 @@ class YumSynchronizer(BaseSynchronizer):
                 os.makedirs(dst_repo_dir)
             if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
                 log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
-                                progress_callback)
-                log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
+                if self.is_clone:
+                    self._clone_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, 
+                            blacklist_packages, progress_callback)
+                    log.debug("Completed _clone_rpms(%s,%s)" %
+                            (dst_repo_dir, src_repo_dir))
+                else:
+                    self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages,
+                            blacklist_packages, progress_callback)
+                    log.debug("Completed _sync_rpms(%s,%s)" %
+                            (dst_repo_dir, src_repo_dir))
                 log.debug("Starting _sync_drpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
                 self._sync_drpms(dst_repo_dir, src_repo_dir, progress_callback)
                 log.debug("Completed _sync_drpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
@@ -1136,45 +1182,27 @@ class YumSynchronizer(BaseSynchronizer):
             else:
                 log.info("Skipping distribution imports from sync process")
 
-            src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
-            if os.path.isfile(src_repomd_xml):
-                dst_repomd_xml = os.path.join(dst_repo_dir, "repodata/repomd.xml")
-                if not os.path.isdir(os.path.dirname(dst_repomd_xml)):
-                    os.makedirs(os.path.dirname(dst_repomd_xml))
-                shutil.copy(src_repomd_xml, dst_repomd_xml)
-            src_repodata_files = self.list_repodata_files(src_repo_dir)
             if progress_callback is not None:
                 self.progress['step'] = "Exporting repo metadata"
                 progress_callback(self.progress)
+            src_repodata_dir = os.path.join(src_repo_dir, "repodata")
             dst_repodata_dir = os.path.join(dst_repo_dir, "repodata")
-            if not os.path.exists(dst_repodata_dir):
-                os.makedirs(dst_repodata_dir)
-            for count, mdfile in enumerate(src_repodata_files):
-                if self.stopped:
-                    raise CancelException()
-                log.debug("Processing repo metadata %s" % mdfile)
-                try:
-                    src_mdfile_checksum = pulp.server.util.get_file_checksum(filename=mdfile)
-                    dst_mdfile_path = os.path.join(dst_repodata_dir, os.path.basename(mdfile))
-                    if not pulp.server.util.check_package_exists(dst_mdfile_path, src_mdfile_checksum):
-                        if os.path.exists(dst_mdfile_path):
-                            os.remove(dst_mdfile_path)
-                        shutil.copyfile(mdfile, dst_mdfile_path)
-                    else:
-                        log.debug("mdfile %s already exists with same checksum. skip import" % \
-                                 os.path.basename(mdfile))
-                        skip_copy = True
-                        log.debug("Imported mdfile %s " % dst_mdfile_path)
-                except (IOError, OSError):
-                    log.error("%s" % (traceback.format_exc()))
-                    error_info = {}
-                    exctype, value = sys.exc_info()[:2]
-                    error_info["error_type"] = str(exctype)
-                    error_info["error"] = str(value)
-                    error_info["traceback"] = traceback.format_exc().splitlines()
+            if self.stopped:
+                raise CancelException()
+            try:
+                log.info("Copying repodata from %s to %s" % (src_repodata_dir, dst_repodata_dir))
+                if os.path.exists(dst_repodata_dir):
+                    shutil.rmtree(dst_repodata_dir)
+                shutil.copytree(src_repodata_dir, dst_repodata_dir)
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
             if progress_callback is not None:
                 progress_callback(self.progress)
-
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))
             raise
