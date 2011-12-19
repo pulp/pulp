@@ -48,6 +48,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model import Delta, DuplicateKeyError
 from pulp.server.tasking.exception import CancelException
+from pulp.server.db import model
 
 
 log = logging.getLogger(__name__)
@@ -281,11 +282,10 @@ class BaseSynchronizer(object):
             if not parent_pkglist:
                 return added_packages
             unfiltered_pkglist = []
-            for packageid in parent_pkglist:
-                pobj = self.package_api.package(packageid)
-                if not pobj:
-                    continue
-                unfiltered_pkglist.append(pobj)
+            # Convert package ids to package objects
+            pkg_coll = model.Package.get_collection()
+            unfiltered_pkglist = pkg_coll.find({"id":{"$in":parent_pkglist}})
+
             # Process repo filters if any
             whitelist_packages = []
             blacklist_packages = []
