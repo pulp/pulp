@@ -327,6 +327,30 @@ chown apache:apache /var/lib/pulp-cds/.cluster-members
 %post consumer
 if [ "$1" = "1" ]; then
   ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
+else
+  #######################################################################
+  # MOVE THE OLD CERT LOCATION
+  # THIS SHOULD BE REMOVED AROUND VER: 0.260
+  # NOTE: THIS ONLY WORKS FOR DEFAULT CERT LOCATION SO IF USER CHANGES
+  #       IN THE consumer.conf, THIS WONT WORK.
+  #######################################################################
+  CERT="cert.pem"
+  OLDDIR="/tmp/etc/pki/consumer/pulp/"
+  NEWDIR="/tmp/etc/pki/pulp/consumer/"
+  if [ -d $OLDDIR ]
+  then
+    cd $OLDDIR
+    if [ -f $CERT ]
+    then
+      if [ ! -e $NEWDIR ]
+      then
+        mkdir -p $NEWDIR
+      fi
+      mv $CERT $NEWDIR
+      rmdir --ignore-fail-on-non-empty $OLDDIR
+    fi
+  fi
+  #######################################################################
 fi
 
 %if %{pulp_selinux}
