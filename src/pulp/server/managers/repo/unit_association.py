@@ -276,7 +276,8 @@ class RepoUnitAssociationManager:
         - Owner Type
         - Owner ID
 
-        Multiple sort fields from the above list are supported.
+        Multiple sort fields from the above list are supported. If no sort is
+        provided, units will be sorted by unit_type_id and created (in order).
 
         @param repo_id: identifies the repository
         @type  repo_id: str
@@ -355,6 +356,9 @@ class RepoUnitAssociationManager:
         The sort fields may be from either the association data OR the
         unit fields. A mix of both is not supported. Multiple sort fields
         are supported as long as they come from the same area.
+
+        If a sort is not provided, the units will be sorted ascending by each
+        value in the unit key for the given type.
 
         @param repo_id: identifies the repository
         @type  repo_id: str
@@ -482,7 +486,18 @@ class RepoUnitAssociationManager:
             return merged_units
 
     def _remove_duplicate_associations(self, units):
-        # The association with the earliest created date will be kept.
+        """
+        For units that are associated with a repository more than once, this
+        method will strip out all duplicate associations, only returning the
+        association with the earliest created date.
+
+        @param units: list of unit dicts retrieved from the database
+        @type  units: list of dict
+
+        @return: new list of units (the parameter list will not be affected);
+                 len(returned_units) <= len(units)
+        @rtype:  list
+        """
 
         # Used to hold on to the earliest created association for comparison
         uuid_to_associations = {}
@@ -490,8 +505,11 @@ class RepoUnitAssociationManager:
         # Flag for each unit in units; if False it will not be included in the returned list
         keep_units = [True for i in range(len(units))]
 
+        def _unit_uuid(self, unit_association):
+            return unit_association['unit_type_id'] + '+' + unit_association['unit_id']
+
         for i in range(0, len(units)):
-            unit_uuid = self._unit_uuid(units[i])
+            unit_uuid = _unit_uuid(units[i])
 
             if unit_uuid not in uuid_to_associations:
                 # First association for the unit, store its index and unit and move on
@@ -512,17 +530,56 @@ class RepoUnitAssociationManager:
         clean_units = [u for b, u in zip(keep_units, units) if b]
         return clean_units
 
-    def _unit_uuid(self, unit_association):
-        return unit_association['unit_type_id'] + '+' + unit_association['unit_id']
-
-
 # -- association criteria -----------------------------------------------------
 
 class Criteria:
 
+    # Shadowed here for convenience
+    SORT_ASCENDING = pymongo.ASCENDING
+    SORT_DESCENDING = pymongo.DESCENDING
+
     def __init__(self, type_ids=None, association_filters=None, unit_filters=None,
                  association_sort=None, unit_sort=None, limit=None, skip=None,
                  association_fields=None, unit_fields=None, remove_duplicates=False):
+        """
+        @param type_ids: list of types to search
+        @type  type_ids: list of str
+
+        @param association_filters: mongo spec describing search parameters on
+               association metadata
+        @type  association_filters: dict
+
+        @param unit_filters: mongo spec describing search parameters on unit
+               metadata; only used when a single type ID is specified
+        @type  unit_filters: dict
+
+        @param association_sort: ordered list of fields and directions; may only
+               contain association metadata
+        @type  association_sort: list of tuples (str, <SORT_* constant>)
+
+        @param unit_sort: ordered list of fields and directions; only used when
+               a single type ID is specified
+        @type  unit_sort: list of tuples (str, <SORT_* constant>)
+
+        @param limit: maximum number of results to return
+        @type  limit: int
+
+        @param skip: number of results to skip
+        @type  skip: int
+
+        @param association_fields: if specified, only the given fields from the
+               association's metadata will be included in returned units
+        @type  association_fields: list of str
+
+        @param unit_fields: if specified, only the given fields from the unit's
+               metadata are returned; only applies when a single type ID is
+               specified
+        @type  unit_fields: list of str
+
+        @param remove_duplicates: if True, units with multiple associations will
+               only return a single association
+        @type  remove_duplicates: bool
+        """
 
         # A default instance will be used in the case where no criteria is
         # passed in, so use sane defaults here.
