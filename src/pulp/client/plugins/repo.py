@@ -33,6 +33,39 @@ class RepoAction(Action):
         self.parser.add_option("--id", dest="id",
                                help=_("repository id (required)"))
 
+    def print_repo(self, repo):
+        feedUrl = feedType = None
+        if repo['source']:
+            feedUrl = repo['source']['url']
+            feedType = repo['source']['type']
+        filters = []
+        for filter in repo['filters']:
+            filters.append(str(filter))
+
+        feed_cert = 'No'
+        if repo.has_key('feed_cert') and repo['feed_cert']:
+            feed_cert = 'Yes'
+        feed_ca = 'No'
+        if repo.has_key('feed_ca') and repo['feed_ca']:
+            feed_ca = 'Yes'
+
+        consumer_cert = 'No'
+        if repo.has_key('consumer_cert') and repo['consumer_cert']:
+            consumer_cert = 'Yes'
+        consumer_ca = 'No'
+        if repo.has_key('consumer_ca') and repo['consumer_ca']:
+            consumer_ca = 'Yes'
+
+        repo['files_count'] = len(self.repository_api.list_files(repo['id']))
+        print constants.AVAILABLE_REPOS_LIST % (
+                repo["id"], repo["name"], repo['uri'], feedUrl, feedType,
+                repo["content_types"], feed_ca, feed_cert, consumer_ca,
+                consumer_cert, repo["arch"], repo["sync_schedule"],
+                repo['package_count'], repo['files_count'],
+                ' '.join(repo['distributionid']) or None, repo['publish'],
+                repo['clone_ids'], repo['groupid'] or None, filters,
+                repo['notes'], repo['preserve_metadata'], repo['checksum_type'])
+
 # repo actions ----------------------------------------------------------------
 
 class List(RepoAction):
@@ -58,37 +91,7 @@ class List(RepoAction):
             system_exit(os.EX_OK, _("No repositories available to list"))
         print_header(_('List of Available Repositories'))
         for repo in repos:
-            feedUrl = feedType = None
-            if repo['source']:
-                feedUrl = repo['source']['url']
-                feedType = repo['source']['type']
-            filters = []
-            for filter in repo['filters']:
-                filters.append(str(filter))
-
-            feed_cert = 'No'
-            if repo.has_key('feed_cert') and repo['feed_cert']:
-                feed_cert = 'Yes'
-            feed_ca = 'No'
-            if repo.has_key('feed_ca') and repo['feed_ca']:
-                feed_ca = 'Yes'
-
-            consumer_cert = 'No'
-            if repo.has_key('consumer_cert') and repo['consumer_cert']:
-                consumer_cert = 'Yes'
-            consumer_ca = 'No'
-            if repo.has_key('consumer_ca') and repo['consumer_ca']:
-                consumer_ca = 'Yes'
-
-            repo['files_count'] = len(self.repository_api.list_files(repo['id']))
-            print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], repo['uri'], feedUrl, feedType,
-                    repo["content_types"], feed_ca, feed_cert, consumer_ca,
-                    consumer_cert, repo["arch"], repo["sync_schedule"],
-                    repo['package_count'], repo['files_count'],
-                    ' '.join(repo['distributionid']) or None, repo['publish'],
-                    repo['clone_ids'], repo['groupid'] or None, filters,
-                    repo['notes'], repo['preserve_metadata'], repo['checksum_type'])
+            self.print_repo(repo)
 
 # repo command ----------------------------------------------------------------
 

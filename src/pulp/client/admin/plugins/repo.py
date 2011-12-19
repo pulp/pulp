@@ -2058,7 +2058,15 @@ class UpdateNote(AdminRepoAction):
         print _("Successfully updated key-value pair %s:%s") % (key, value)
 
 
+class Info(AdminRepoAction):
 
+    name = "info"
+    description = "info for a repository"
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        repo = self.get_repo(repoid)
+        return self.print_repo(repo)
 
 # repo command ----------------------------------------------------------------
 
@@ -2068,6 +2076,7 @@ class AdminRepo(Repo):
     description = _('repository specific actions to pulp server')
 
     actions = [ List,
+                Info,
                 Status,
                 Content,
                 Create,
