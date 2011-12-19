@@ -290,6 +290,7 @@ def write_docs_for_module(dir, module_name, docs):
     file_name = '%s.wiki' % title
     file_path = os.path.join(os.path.abspath(dir), file_name)
     file = open(file_path, 'w')
+    file.write('[[PageOutline]]\n')
     file.write('\n'.join(docs))
     file.close()
 
