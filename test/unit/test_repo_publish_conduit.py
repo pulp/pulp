@@ -91,8 +91,6 @@ class RepoSyncConduitTests(testutil.PulpTest):
         # Verify
         self.assertEqual(100, len(units))
         self.assertTrue(isinstance(units[0], Unit)) # make sure its the transfer object
-        self.assertEqual(units[0].id, 'unit_99') # spot check
-        self.assertEqual(units[0].unit_key['key-1'], 'value_99')
 
     def test_get_units_no_units(self):
         """
