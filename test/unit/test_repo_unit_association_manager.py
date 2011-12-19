@@ -521,6 +521,15 @@ class UnitAssociationQueryTests(testutil.PulpTest):
         for u in units:
             self.assertEqual(u['metadata']['md_2'], 0)
 
+    def test_get_units_by_type_filter_wildcard(self):
+        # Test
+        criteria = Criteria(unit_filters={'key_1' : {'$regex' : 'aa.*'}})
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        self.assertEqual(1, len(units))
+        self.assertEqual('aardvark', units[0]['metadata']['key_1'])
+
     def test_get_units_by_type_association_sort_limit(self):
         # Test
         criteria = Criteria(association_sort=[('owner_type', association_manager.SORT_DESCENDING)], limit=2)
