@@ -1,3 +1,4 @@
+[[PageOutline]]
 = Auditing RESTful Interface = #top
 ''RESTful interface for querying events audited by the system.'' [[BR]]
 ''Events are returned as Event objects.'' [[BR]]

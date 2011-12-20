@@ -339,6 +339,6 @@ class RepoSyncConduitTests(testutil.PulpTest):
         """
         Convenience method for creating a conduit.
         """
-        conduit = RepoSyncConduit(repo_id, self.repo_manager, self.importer_manager, self.sync_manager,
+        conduit = RepoSyncConduit(repo_id, 'test-importer', self.repo_manager, self.importer_manager, self.sync_manager,
                                   self.association_manager, self.content_manager, self.query_manager)
         return conduit

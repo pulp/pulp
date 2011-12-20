@@ -115,47 +115,37 @@ class RepoPublishConduit:
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
-    def get_units(self, unit_type_id=None, filters=None, fields=None):
+    def get_units(self, criteria=None):
         """
         Returns the collection of content units associated with the repository
         being published.
-        
-        @param unit_type_id: type of units to be returned, None means all types
-        @type  unit_type_id: None or str
 
-        @param filters: mongo spec document used to filter the results
-        @type  filters: None or dict
+        @param criteria: used to scope the returned results or the data within
+        @type  criteria: L{Criteria}
 
-        @param fields: list of fields in the returned content units
-        @type  fields: None or list (str, ...)
-
-        @return: list of the content units associated with the repo
-        @rtype:  list (dict, ...)
+        @return: list of unit instances
+        @rtype:  list of L{AssociatedUnit}
         """
 
         try:
-            # FIXME: the filters is a little bit of a hack as we shouldn't expose
-            # mongo db semantics to the plugin developer
-            content_units = []
-            associated = self.__association_manager.get_unit_ids(self.repo_id, unit_type_id)
+            units = self.__association_manager.get_units(self.repo_id, criteria=criteria)
 
-            for unit_type, unit_ids in associated.items():
-                spec = filters or {}
-                spec.update({'_id': {'$in': unit_ids}})
-                units = self.__content_query_manager.list_content_units(unit_type, spec, fields)
+            all_units = []
 
-                # Handle old units in the database after a content type has been
-                # removed from the server
-                type_def = types_db.type_definition(unit_type)
-                if type_def is None:
-                    continue
+            # Load all type definitions in use so we don't hammer the database
+            unique_type_defs = set([u['unit_type_id'] for u in units])
+            type_defs = {}
+            for def_id in unique_type_defs:
+                type_def = types_db.type_definition(def_id)
+                type_defs[def_id] = type_def
 
-                # Convert to transfer object
-                for unit in units:
-                    u = common_utils.to_plugin_unit(unit, type_def)
-                    content_units.append(u)
+            # Convert to transfer object
+            for unit in units:
+                type_id = unit['unit_type_id']
+                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+                all_units.append(u)
 
-            return content_units
+            return all_units
         except Exception, e:
             _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
             raise RepoPublishConduitException(e), None, sys.exc_info()[2]
