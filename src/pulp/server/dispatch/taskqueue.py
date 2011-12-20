@@ -63,16 +63,25 @@ class TaskQueue(object):
             self._cancel_tasks()
 
     def _get_ready_tasks(self):
-        tasks = []
-        available_weight = self.concurrency_threshold - self.__running_weight
-        for task in self.__waiting_tasks:
-            if task.blocking_tasks:
-                continue
-            if task.call_request.weight > available_weight:
-                continue
-            available_weight -= task.call_request.weight
-            tasks.append(task)
-        return tasks
+        """
+        Algorithm at the heart of the task scheduler. Gets the tasks that are
+        ready to run (i.e. not blocked) within the limits of the available
+        concurrency threshold and returns them.
+        """
+        self.__lock.acquire()
+        try:
+            tasks = []
+            available_weight = self.concurrency_threshold - self.__running_weight
+            for task in self.__waiting_tasks:
+                if task.blocking_tasks:
+                    continue
+                if task.call_request.weight > available_weight:
+                    continue
+                available_weight -= task.call_request.weight
+                tasks.append(task)
+            return tasks
+        finally:
+            self.__lock.release()
 
     def _run_ready_task(self, task):
         self.__lock.acquire()
@@ -87,11 +96,18 @@ class TaskQueue(object):
             self.__lock.release()
 
     def _cancel_tasks(self):
-        for task in self.__canceled_tasks:
-            try:
-                task.cancel()
-            except Exception, e:
-                _LOG.exception(e)
+        """
+        Asynchronously cancel tasks that have been marked for cancellation
+        """
+        self.__lock.acquire()
+        try:
+            for task in self.__canceled_tasks:
+                try:
+                    task.cancel()
+                except Exception, e:
+                    _LOG.exception(e)
+        finally:
+            self.__lock.release()
 
     def start(self):
         """
