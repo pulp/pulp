@@ -354,10 +354,11 @@ class RepoStatus(Model):
     """
 
     def __init__(self, repoid, state=None, progress=None, exception=None,
-                 traceback=None):
+                 traceback=None, next_sync_time=None):
         self.repoid = repoid
         self.state = state
         self.progress = progress
         self.exception = exception
         self.traceback = traceback
+        self.next_sync_time = next_sync_time
 
