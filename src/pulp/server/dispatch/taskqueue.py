@@ -25,6 +25,14 @@ _LOG = logging.getLogger(__name__)
 # task queue class -------------------------------------------------------------
 
 class TaskQueue(object):
+    """
+    TaskQueue class
+    Manager and dispatcher of concurrent, asynchronous task execution
+    @ivar concurrency_threshold: measurement of total allowed concurrency
+    @type concurrency_threshold: int
+    @ivar dispatch_interval: time, in seconds, between checks for ready tasks
+    @type dispatch_interval: float
+    """
 
     __metaclass__ = Singleton
 
@@ -49,7 +57,7 @@ class TaskQueue(object):
 
     def __dispatch(self):
         """
-        dispatcher thread loop
+        Dispatcher thread loop
         """
         self.__lock.acquire()
         while True:
@@ -84,6 +92,9 @@ class TaskQueue(object):
             self.__lock.release()
 
     def _run_ready_task(self, task):
+        """
+        Run a ready task in a new thread
+        """
         self.__lock.acquire()
         try:
             self.__waiting_tasks.remove(task)
@@ -137,6 +148,11 @@ class TaskQueue(object):
     # task management methods --------------------------------------------------
 
     def enqueue(self, task):
+        """
+        Enqueue (i.e. add) a task to the task queue.
+        @param task: task to be run
+        @type  task: pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             queued_call = QueuedCall(task.call_request)
@@ -151,6 +167,13 @@ class TaskQueue(object):
             self.__lock.release()
 
     def _validate_blocking_tasks(self, task):
+        """
+        Validate a task's blocking tasks.
+        NOTE: A task cannot be blocked by a task that is not currently (already)
+              in the task queue
+        @param task: task to have its blockers validated
+        @type  task: pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             valid_blocking_tasks = set()
@@ -163,6 +186,12 @@ class TaskQueue(object):
             self.__lock.release()
 
     def dequeue(self, task):
+        """
+        Dequeue (i.e. remove) a task from the task queue
+        NOTE: This has no direct effect on whether the task gets run or not
+        @param task: task to be removed
+        @type  task: pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             self.queued_call_collection.remove({'_id': task.queued_call_id}, safe=True)
@@ -177,6 +206,11 @@ class TaskQueue(object):
             self.__lock.release()
 
     def _unblock_tasks(self, task):
+        """
+        Remove a task from all other tasks' list of blockers
+        @param task: task to be removed
+        @type  task: pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             for potentially_blocked_task in self.__waiting_tasks:
@@ -185,6 +219,13 @@ class TaskQueue(object):
             self.__lock.release()
 
     def _complete(self, task):
+        """
+        Go through the necessary steps for a task that has completed its
+        execution
+        NOTE: This method is used as a callback for the task itself
+        @param task: task that has completed
+        @type  task: pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             archived_call = ArchivedCall(task.call_request, task.call_report)
@@ -194,6 +235,13 @@ class TaskQueue(object):
             self.__lock.release()
 
     def cancel(self, task):
+        """
+        Cancel a task's execution, if it has a cancel control hook
+        @param task: task to be canceled
+        @type  task: pulp.server.dispatch.task.Task
+        @return: True if the task was marked for cancellation, False otherwise
+        @rtype:  bool
+        """
         self.__lock.acquire()
         try:
             if task.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK] is None:
@@ -206,16 +254,31 @@ class TaskQueue(object):
     # task query methods -------------------------------------------------------
 
     def get(self, task_id):
+        """
+        Get a single task by its id
+        @param task_id: unique task id
+        @type  task_id: str
+        @return: task instance if found, otherwise None
+        @rtype:  pulp.server.dispatch.task.Task or None
+        """
         self.__lock.acquire()
         try:
             for task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
                 if task.id != task_id:
                     continue
                 return task
+            return None
         finally:
             self.__lock.release()
 
     def find(self, *tags):
+        """
+        Find tasks that match the given call request tags
+        @param tags: list of tags to match
+        @type  tags: list of str
+        @return: (potentially empty) list of tasks with matching tags
+        @rtype:  list of pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             tasks = []
@@ -230,6 +293,11 @@ class TaskQueue(object):
             self.__lock.release()
 
     def waiting_tasks(self):
+        """
+        List all of the tasks waiting to be executed
+        @return: (potentially empty) list of tasks that are waiting
+        @rtype:  list of pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             return self.__waiting_tasks[:]
@@ -237,6 +305,11 @@ class TaskQueue(object):
             self.__lock.release()
 
     def running_tasks(self):
+        """
+        List of all the tasks currently being executed
+        @return: (potentially empty) list of tasks that are running
+        @rtype:  list of pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             return self.__running_tasks[:]
@@ -244,6 +317,11 @@ class TaskQueue(object):
             self.__lock.release()
 
     def all_tasks(self):
+        """
+        List of all tasks currently in the queue
+        @return: (potentially empty) iterator of all tasks in the queue
+        @rtype:  iterator over pulp.server.dispatch.task.Task
+        """
         self.__lock.acquire()
         try:
             return itertools.chain(self.__waiting_tasks[:], self.__running_tasks[:])
