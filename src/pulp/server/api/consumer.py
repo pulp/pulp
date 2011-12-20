@@ -77,7 +77,7 @@ class ConsumerApi(BaseApi):
         self.collection.insert(c, safe=True)
         for key, value in key_value_pairs.items():
             self.add_key_value_pair(c.id, key, value)
-        self.consumer_history_api.consumer_created(c.id)
+        self.consumer_history_api.consumer_registered(c.id)
         return c
 
     @audit()
@@ -126,7 +126,7 @@ class ConsumerApi(BaseApi):
         agent_consumer.unregistered()
 
         self.collection.remove(dict(id=id), safe=True)
-        self.consumer_history_api.consumer_deleted(id)
+        self.consumer_history_api.consumer_unregistered(id)
 
 
     def find_consumergroup_with_conflicting_keyvalues(self, id, key, value):

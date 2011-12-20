@@ -3,7 +3,7 @@
      "display_name" : "Test Harness Type 1",
      "description" : "Parent to child types: [harness_type_two]",
      "unit_key" : ["name"],
-     "search_indexes" : ["field_1"],
+     "search_indexes" : ["search_1", "search_2"],
      "referenced_types" : ["harness_type_two"]},
     {"id" : "harness_type_two",
      "display_name" : "Test Harness Type 2",

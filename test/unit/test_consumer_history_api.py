@@ -36,12 +36,12 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         self.user = User('admin', '12345', 'admin', 'Admin')
         principal.set_principal(self.user)
 
-    def test_consumer_created(self):
+    def test_consumer_registered(self):
         # Test
-        self.consumer_history_api.consumer_created(123)
+        self.consumer_history_api.consumer_registered(123)
         time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
-        self.consumer_history_api.consumer_created(123)
+        self.consumer_history_api.consumer_registered(123)
 
         # Verify
         entries = self.consumer_history_api.query()
@@ -50,21 +50,21 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         entry = entries[1]
         self.assertEqual(entry['consumer_id'], 123)
         self.assertEqual(entry['originator'], 'admin')
-        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_REGISTERED)
         self.assertTrue(entry['timestamp'] is not None)
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
         self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
-        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_REGISTERED)
         self.assertTrue(entry['timestamp'] is not None)
 
-    def test_consumer_deleted(self):
+    def test_consumer_unregistered(self):
         # Test
-        self.consumer_history_api.consumer_deleted(123)
+        self.consumer_history_api.consumer_unregistered(123)
         time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
-        self.consumer_history_api.consumer_deleted(123)
+        self.consumer_history_api.consumer_unregistered(123)
 
         # Verify
         entries = self.consumer_history_api.query()
@@ -73,13 +73,13 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         entry = entries[1]
         self.assertEqual(entry['consumer_id'], 123)
         self.assertEqual(entry['originator'], 'admin')
-        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_UNREGISTERED)
         self.assertTrue(entry['timestamp'] is not None)
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
         self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
-        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_UNREGISTERED)
         self.assertTrue(entry['timestamp'] is not None)
 
     def test_repo_bound(self):
@@ -325,13 +325,13 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         self._populate_for_queries()
 
         # Test
-        results_created = self.consumer_history_api.query(event_type=consumer_history.TYPE_CONSUMER_CREATED)
+        results_registered = self.consumer_history_api.query(event_type=consumer_history.TYPE_CONSUMER_REGISTERED)
         results_bound = self.consumer_history_api.query(event_type=consumer_history.TYPE_REPO_BOUND)
 
         # Verify
-        self.assertEqual(len(results_created), 2)
-        for entry in results_created:
-            self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
+        self.assertEqual(len(results_registered), 2)
+        for entry in results_registered:
+            self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_REGISTERED)
 
         self.assertEqual(len(results_bound), 5)
         for entry in results_bound:
@@ -380,10 +380,10 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
 
     def test_query_sort_directions(self):
         # Setup
-        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
         self.consumer_history_api.collection.insert(e1, safe=True)
 
-        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_DELETED, None)
+        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_UNREGISTERED, None)
         e2.timestamp = datetime.datetime.now() + datetime.timedelta(days=1)
         self.consumer_history_api.collection.insert(e2, safe=True)
 
@@ -397,9 +397,9 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         self.assertEqual(len(descending), 2)
         self.assertEqual(len(default_sort), 2)
 
-        self.assertEqual(ascending[0]['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
-        self.assertEqual(descending[0]['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
-        self.assertEqual(default_sort[0]['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
+        self.assertEqual(ascending[0]['type_name'], consumer_history.TYPE_CONSUMER_REGISTERED)
+        self.assertEqual(descending[0]['type_name'], consumer_history.TYPE_CONSUMER_UNREGISTERED)
+        self.assertEqual(default_sort[0]['type_name'], consumer_history.TYPE_CONSUMER_UNREGISTERED)
 
     def test_query_start_range(self):
         # Setup
@@ -424,8 +424,8 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
 
         # Verify
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0]['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
-        self.assertEqual(results[1]['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
+        self.assertEqual(results[0]['type_name'], consumer_history.TYPE_CONSUMER_UNREGISTERED)
+        self.assertEqual(results[1]['type_name'], consumer_history.TYPE_CONSUMER_REGISTERED)
 
     def test_query_start_end_range(self):
         # Setup
@@ -439,7 +439,7 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         # Verify
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0]['type_name'], consumer_history.TYPE_REPO_BOUND)
-        self.assertEqual(results[1]['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
+        self.assertEqual(results[1]['type_name'], consumer_history.TYPE_CONSUMER_UNREGISTERED)
 
     def test_query_start_end_range_edge_cases(self):
         # Setup
@@ -492,8 +492,8 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         date range tests.
         '''
 
-        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
-        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_DELETED, None)
+        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
+        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_UNREGISTERED, None)
         e3 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_REPO_BOUND, None)
         e4 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_REPO_UNBOUND, None)
 
@@ -513,11 +513,11 @@ class TestConsumerHistoryApi(testutil.PulpAsyncTest):
         testing the cull functionality.
         '''
 
-        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
-        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
-        e3 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
-        e4 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
-        e5 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
+        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
+        e3 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
+        e4 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
+        e5 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_REGISTERED, None)
 
         now = datetime.datetime.now()
         days_ago_30 = datetime.timedelta(days=30)

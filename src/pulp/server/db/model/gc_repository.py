@@ -11,8 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import datetime
 import traceback as traceback_module
 
+import pulp.common.dateutils as dateutils
 from pulp.server.db.model.base import Model
 
 # -- classes -----------------------------------------------------------------
@@ -192,6 +194,12 @@ class RepoContentUnit(Model):
     same content unit may be mapped to multiple repos, in which case there will
     be multiple documents in this collection that reference the same unit.
 
+    There may be multiple associations between a unit and a repository. For
+    instance, associated by an importer during a sync or by a user during
+    a unit copy or upload. The owner variables are used to distinguish between
+    them. Queries should take this into account since in most cases the query
+    will only want to know if it's associated at all, not how many times.
+
     @ivar repo_id: identifies the repo
     @type repo_id: str
 
@@ -200,12 +208,35 @@ class RepoContentUnit(Model):
 
     @ivar unit_type_id: identifies the type of content unit being associated
     @type unit_type_id: str
+
+    @ivar owner_type: distinguishes between importer and user initiated associations;
+                      must be one of the OWNER_TYPE_* constants in this class
+    @type owner_type: str
+
+    @ivar owner_id: ID of the importer or user who created the association
+    @type owner_id: str
+
+    @ivar created: iso8601 formatted timestamp indicating when the association was first created
+    @type created: str
+
+    @ivar updated: iso8601 formatted timestamp indicating the last time the association was
+                   updated (effectively when it was attempted to be created again but already existed)
+    @type updated: str
     """
 
     collection_name = 'gc_repo_content_unit'
-    unique_indices = ( ('repo_id', 'unit_id', 'unit_type_id'), )
 
-    def __init__(self, repo_id, unit_id, unit_type_id):
+    # Make sure you understand how the order of these affects mongo before
+    # modifying the following index
+    unique_indices = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
+    search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'),
+                       ('unit_type_id', 'created') # default sort order on get_units query
+                     )
+
+    OWNER_TYPE_IMPORTER = 'importer'
+    OWNER_TYPE_USER = 'user'
+
+    def __init__(self, repo_id, unit_id, unit_type_id, owner_type, owner_id):
 
         # Generate a UUID for _id
         Model.__init__(self)
@@ -216,9 +247,11 @@ class RepoContentUnit(Model):
         self.unit_type_id = unit_type_id
 
         # Association Metadata
-        #   We can add extra information about the relationship between the
-        #   repo and the content unit in this collection. For instance, if
-        #   we want to track when the association was made.
+        self.owner_type = owner_type
+        self.owner_id = owner_id
+
+        self.created = dateutils.format_iso8601_datetime(datetime.datetime.now())
+        self.updated = self.created
 
 class RepoSyncResult(Model):
     """

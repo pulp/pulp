@@ -167,8 +167,8 @@ CONSUMER_HISTORY_REPO = """Repo ID               \t%-25s"""
 CONSUMER_HISTORY_PACKAGES = """Packages"""
 
 CONSUMER_HISTORY_EVENT_TYPES = {
-    'consumer_created' : 'Consumer Created',
-    'consumer_deleted' : 'Consumer Deleted',
+    'consumer_registered' : 'Consumer Registered',
+    'consumer_unregistered' : 'Consumer Unregistered',
     'repo_bound' : 'Repo Bound',
     'repo_unbound' : 'Repo Unbound',
     'package_installed' : 'Package Installed',

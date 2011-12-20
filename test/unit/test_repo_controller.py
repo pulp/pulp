@@ -14,6 +14,7 @@
 
 # Python
 import datetime
+import mock
 import os
 import sys
 
@@ -26,6 +27,7 @@ from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo.unit_association import Criteria
 
 class RepoCollectionTest(testutil.PulpWebserviceTest):
 
@@ -960,3 +962,101 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
         r = RepoPublishResult.success_result(repo_id, distributor_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), '', '')
         RepoPublishResult.get_collection().save(r, safe=True)
 
+class RepoUnitAssociationQueryTest(testutil.PulpWebserviceTest):
+
+    def setUp(self):
+        testutil.PulpWebserviceTest.setUp(self)
+        self.repo_manager = manager_factory.repo_manager()
+        self.repo_manager.create_repo('repo-1')
+
+        self.association_mock = mock.Mock()
+        manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = self.association_mock
+
+    def clean(self):
+        testutil.PulpWebserviceTest.clean(self)
+        Repo.get_collection().remove()
+        manager_factory.reset()
+
+    def test_post_single_type(self):
+        """
+        Passes in a full query document to test the parsing into criteria.
+        """
+
+        # Setup
+        self.association_mock.get_units_by_type.return_value = []
+
+        query = {
+            'type_ids' : ['rpm'],
+            'filters' : {
+                'unit' : {'key' : {'$in' : 'zsh'}},
+                'association' : {'owner_type' : 'importer'}
+            },
+            'sort' : {
+                'unit' : [ ['name', 'ascending'], ['version', '-1'] ],
+                'association' : [ ['created', '-1'], ['updated', '1'] ]
+            },
+            'limit' : '100',
+            'skip' : '200',
+            'fields' : {
+                'unit' : ['name', 'version', 'arch'],
+                'association' : ['created']
+            },
+            'remove_duplicates' : 'True'
+        }
+
+        params = {'query' : query}
+        status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
+
+        # Verify
+        self.assertEqual(200, status)
+
+        self.assertEqual(0, self.association_mock.get_units.call_count)
+        self.assertEqual(1, self.association_mock.get_units_by_type.call_count)
+
+        criteria = self.association_mock.get_units_by_type.call_args[1]['criteria']
+        self.assertTrue(isinstance(criteria, Criteria))
+        self.assertEqual(query['type_ids'], criteria.type_ids)
+        self.assertEqual(query['filters']['association'], criteria.association_filters)
+        self.assertEqual(query['filters']['unit'], criteria.unit_filters)
+        self.assertEqual([('created', Criteria.SORT_DESCENDING), ('updated', Criteria.SORT_ASCENDING)], criteria.association_sort)
+        self.assertEqual([('name', Criteria.SORT_ASCENDING), ('version', Criteria.SORT_DESCENDING)], criteria.unit_sort)
+        self.assertEqual(int(query['limit']), criteria.limit)
+        self.assertEqual(int(query['skip']), criteria.skip)
+        self.assertEqual(query['fields']['unit'], criteria.unit_fields)
+        self.assertEqual(query['fields']['association'] + ['unit_id', 'unit_type_id'], criteria.association_fields)
+        self.assertEqual(bool(query['remove_duplicates']), criteria.remove_duplicates)
+
+    def test_post_multiple_type(self):
+        """
+        Passes in a multiple typed query to ensure the correct manager method is called.
+        """
+
+        # Setup
+        self.association_mock.get_units.return_value = []
+
+        query = {'type_ids' : ['rpm', 'errata']}
+
+        params = {'query' : query}
+        status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
+
+        # Verify
+        self.assertEqual(200, status)
+
+        self.assertEqual(0, self.association_mock.get_units_by_type.call_count)
+        self.assertEqual(1, self.association_mock.get_units.call_count)
+        self.assertTrue(isinstance(self.association_mock.get_units.call_args[1]['criteria'], Criteria))
+
+    def test_post_missing_query(self):
+        # Test
+        status, body = self.post('/v2/repositories/repo-1/search/units/')
+
+        # Verify
+        self.assertEqual(status, 400)
+
+    def test_post_bad_query(self):
+        # Test
+        params = {'query' : {'limit' : 'fus'}}
+        status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
+
+        # Verify
+        self.assertEqual(400, status)

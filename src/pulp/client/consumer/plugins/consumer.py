@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Pulp Registration and subscription module
 # Copyright (c) 2011 Red Hat, Inc.
@@ -46,6 +47,28 @@ class ConsumerClientActionMixIn(object):
         bundle = ConsumerBundle()
         return bundle.getid()
 
+    def check_write_perms(self, path):
+        """
+        Check that write permissions are present for the given path.  If parts
+        of the path do not yet exist, check if it can be created.
+        """
+        if os.path.exists(path):
+            if not os.access(path, os.W_OK):
+                system_exit(os.EX_NOPERM, _("Write permission is required for %s to perform this operation." %
+                    path))
+            else:
+                return True
+        else:
+            self.check_write_perms(os.path.split(path)[0])
+
+    def check_bind_path(self):
+        return self.check_write_perms(self.cfg.client.repo_file)
+
+    def check_bundle_path(self):
+        bundle = ConsumerBundle()
+        return self.check_write_perms(bundle.crtpath())
+
+
 # consumer actions ------------------------------------------------------------
 
 class Register(ConsumerAction, ConsumerClientActionMixIn):
@@ -65,9 +88,10 @@ class Register(ConsumerAction, ConsumerClientActionMixIn):
         description = getattr(self.opts, 'description', id)
         if self.consumerid:
             system_exit(os.EX_DATAERR, _("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid))
+        self.check_bundle_path()
+        bundle = ConsumerBundle()
         consumer = self.consumer_api.create(id, description)
         crt = self.consumer_api.certificate(id)
-        bundle = ConsumerBundle()
         bundle.write(crt)
         pkginfo = get_profile("rpm").collect()
         self.consumer_api.package_profile(id, pkginfo)
@@ -98,6 +122,7 @@ class ClientUnbind(Unbind, ConsumerClientActionMixIn):
     def run(self):
         consumerid = self.consumerid
         repoid = self.get_required_option('repoid')
+        self.check_bind_path()
         Unbind.run(self, consumerid, repoid)
         self.unbind_repo(repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
@@ -125,6 +150,7 @@ class ClientUnregister(Unregister, ConsumerClientActionMixIn):
 
     def run(self):
         consumerid = self.consumerid
+        self.check_bundle_path()
         Unregister.run(self, consumerid)
         bundle = ConsumerBundle()
         self.delete_files(bundle)
@@ -141,8 +167,8 @@ class ClientBind(Bind, ConsumerClientActionMixIn):
     def run(self):
         consumerid = self.consumerid
         repoid = self.get_required_option('repoid')
+        self.check_bind_path()
         bind_data = Bind.run(self, consumerid, repoid)
-
         if bind_data:
             self.bind_repo(repoid, bind_data)
             print _("Successfully subscribed consumer [%s] to repo [%s]") % \

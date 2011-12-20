@@ -18,10 +18,11 @@ Contains importer plugins and functionality for the Pulp plugin testing harness.
 import datetime
 import logging
 import os
+import random
+import string
 import time
 
 from pulp.server.content.plugins.importer import Importer
-from pulp.server.content.plugins.model import SyncReport
 
 # -- constants ----------------------------------------------------------------
 
@@ -85,6 +86,7 @@ class HarnessImporter(Importer):
 
         # Add type 1 units
         num_units = int(config.get('num_units'))
+        search_entropy = int(config.get('search_entropy', 5))
         write_files = config.get('write_files').lower() == 'true'
 
         _LOG.info('Saving [%d] units of type "harness_type_one"' % num_units)
@@ -96,7 +98,11 @@ class HarnessImporter(Importer):
         for i in range(0, num_units):
             # Collect unit metadata
             unit_key = {'name' : 'harness_unit_%d' % i}
-            metadata = {'field_1' : 'value_%d' % i}
+            metadata = {
+                'search_1' : 'value_%d' % i,
+                'search_2'  : 'value_%d' % (i % search_entropy),
+                'random_1' : ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(4)),
+            }
             relative_path = 'chunk_%d/%s.unit' % (i % 5, unit_key['name'])
 
             # Initialize the unit

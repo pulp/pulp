@@ -23,6 +23,7 @@ import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._exceptions as errors
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.queries.repo import unit_association_criteria
 from pulp.server.webservices.serialization.error import http_error_obj
 
 # -- constants ----------------------------------------------------------------
@@ -428,6 +429,38 @@ class RepoPublish(JSONController):
         
         return self.ok(True)
 
+class RepoUnitAdvancedSearch(JSONController):
+
+    # Scope: Search
+    # POST:  Advanced search for repo unit associations
+
+    @auth_required(READ)
+    def POST(self, repo_id):
+        # Params
+        params = self.params()
+        query = params.get('query', None)
+
+        if query is None:
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
+
+        try:
+            criteria = unit_association_criteria(query)
+        except ValueError,e :
+            _LOG.exception('Error parsing association criteria [%s]' % query)
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
+
+        # Data lookup
+        manager = manager_factory.repo_unit_association_manager()
+        if criteria.type_ids is not None and len(criteria.type_ids) == 1:
+            type_id = criteria.type_ids[0]
+            units = manager.get_units_by_type(repo_id, type_id, criteria=criteria)
+        else:
+            units = manager.get_units(repo_id, criteria=criteria)
+
+        return self.ok(units)
+
 # -- web.py application -------------------------------------------------------
 
 # These are defined under /v2/repositories/ (see application.py to double-check)
@@ -444,8 +477,10 @@ urls = (
     '/([^/]+)/sync_history/$', 'RepoSyncHistory', # sub-collection
     '/([^/]+)/publish_history/([^/]+)/$', 'RepoPublishHistory', # sub-collection
 
-    '/([^/]+)/actions/sync/$', 'RepoSync', # sub-resource action
-    '/([^/]+)/actions/publish/$', 'RepoPublish', # sub-resource action
+    '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
+    '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
+
+    '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
 )
 
 application = web.application(urls, globals())

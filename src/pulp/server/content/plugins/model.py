@@ -86,6 +86,20 @@ class Unit:
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
 
+class AssociatedUnit(Unit):
+    """
+    Adds association metadata on top of normal unit data.
+    """
+
+    def __init__(self, type_id, unit_key, metadata, storage_path, created, updated,
+                 owner_type, owner_id):
+        Unit.__init__(self, type_id, unit_key, metadata, storage_path)
+
+        self.created = created
+        self.updated = updated
+        self.owner_type = owner_type
+        self.owner_id = owner_id
+
 class SyncReport:
     """
     Returned to the Pulp server at the end of a sync call. This is used by the

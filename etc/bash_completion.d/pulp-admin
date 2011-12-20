@@ -465,7 +465,7 @@ _pulp_admin()
                             --id --consumerid' \
                             -- "$cur" ) )
                     ;;
-                    status|delete|cancel_sync|list_keys|list_metadata|cancel_export)
+                    status|delete|cancel_sync|list_keys|list_metadata|cancel_export|info)
                         COMPREPLY=( $( compgen -W '
                             --id' \
                             -- "$cur" ) )

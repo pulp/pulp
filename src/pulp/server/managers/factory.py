@@ -44,6 +44,10 @@ TYPE_REPO_SYNC        = 'repo-sync-manager'
 # Initialized to a copy of the defaults so changes won't break the defaults
 _CLASSES = {}
 
+# Mapping of key to a particular instance that will be returned by the factory
+# method. This should only be used for testing purposes to inject a mock object.
+_INSTANCES = {}
+
 # -- exceptions ---------------------------------------------------------------
 
 class InvalidType(Exception):
@@ -198,6 +202,10 @@ def get_manager(type_key):
     if type_key not in _CLASSES:
         raise InvalidType(type_key)
 
+    # If a specific object is provided, return that
+    if type_key in _INSTANCES:
+        return _INSTANCES[type_key]
+
     cls = _CLASSES[type_key]
     manager = cls()
 
@@ -223,6 +231,9 @@ def reset():
     Resets the type to class mappings back to the defaults. This should be called
     in test cleanup to prepare the state for other test runs.
     """
+
+    global _INSTANCES
+    _INSTANCES = {}
 
     global _CLASSES
     _CLASSES = {}

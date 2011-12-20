@@ -245,3 +245,12 @@ class AutoPublishException(Exception):
         dist_ids = [d[0] for d in self.dist_traceback_tuples]
         return _('Exception [%(e)s] raised for repository [%(r)s] on distributors [%(d)s]' % \
                {'e' : self.__class__.__name__, 'r' : self.repo_id, 'd' : ', '.join(dist_ids)})
+
+# -- association exceptions ---------------------------------------------------
+
+class InvalidOwnerType(Exception):
+    """
+    Internal only exception, largely used for unit test purposes, to indicate
+    an incorrect owner type was passed into the associate call.
+    """
+    pass

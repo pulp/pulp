@@ -484,12 +484,21 @@ class SchedulesResource(JSONController):
         repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
         if repo is None:
             return self.not_found('No repository %s' % repo_id)
+        next_sync_time = None
+        if repo['sync_schedule']:
+            scheduled_task_list = async.find_async(method_name="_sync",
+                repo_id=repo_id)
+            if scheduled_task_list:
+                scheduled_task = scheduled_task_list[0]
+                next_sync_time = format_iso8601_datetime(
+                    scheduled_task.scheduled_time)
         data = {
             'id': repo_id,
             'href': serialization.repo.v1_href(repo),
             'type': schedule_type,
             'schedule': repo['sync_schedule'],
             'options': repo['sync_options'],
+            'next_sync_time': next_sync_time,
         }
         return self.ok(data)
 

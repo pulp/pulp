@@ -30,6 +30,7 @@ from urlparse import urlparse
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
 from pulp.common.bundle import Bundle
+from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
@@ -1707,6 +1708,10 @@ class RepoApi(BaseApi):
             repo_sync_status["progress"] = task.progress
             repo_sync_status["exception"] = task.exception
             repo_sync_status["traceback"] = task.traceback
+
+            if task.scheduled_time:
+                repo_sync_status["next_sync_time"] = format_iso8601_datetime(
+                    task.scheduled_time)
 
         return repo_sync_status
 
