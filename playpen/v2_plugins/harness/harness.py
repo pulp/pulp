@@ -89,6 +89,9 @@ class Harness:
         if self.script.getboolean('general', 'run_list_units'):
             self._assert_status(self.list_units())
 
+        if self.script.getboolean('general', 'run_list_associations'):
+            self._assert_status(self.list_associated_units())
+
     def delete_repo(self):
         self._print_divider()
 
@@ -312,6 +315,116 @@ class Harness:
         self.prompt.write('Retrieved [%d] units' % len(body))
 
         return status
+
+    def list_associated_units(self):
+        self._print_divider()
+
+        repo_id = self.script.get('general', 'repo_id')
+        type_id = 'harness_type_one'
+        url = '/v2/repositories/%s/search/units/' % repo_id
+
+        # -- Build up criteria ------------------------------------------------
+        query = {'type_ids' : [type_id]}
+
+        # Unit Filters
+
+        def unit_filter(filter_name, query):
+
+            if self.script.has_option('query', filter_name):
+                filters = query.setdefault('filters', {})
+                unit_filters = filters.setdefault('unit', {})
+
+                # Minor hack to support regex
+                filter_value = self.script.get('query', filter_name)
+                if '*' in filter_value:
+                    filter_value = {'$regex' : filter_value}
+
+                unit_filters[filter_name] = filter_value
+
+        unit_filter('search_1', query)
+        unit_filter('search_2', query)
+        unit_filter('random_1', query)
+
+        # Sort
+
+        def sort(name, query):
+
+            if self.script.has_option('query', name + '_sort'):
+                sort = query.setdefault('sort', {})
+
+                direction = 'ascending'
+                if self.script.has_option('query', 'sort_direction'):
+                    direction = self.script.get('query', 'sort_direction')
+
+                sort_list = sort.setdefault(name, [])
+                for f in self.script.get('query', name + '_sort').split():
+                    sort_list.append([f, direction])
+
+        sort('association', query)
+        sort('unit', query)
+
+        # Limit & Skip
+
+        if self.script.has_option('query', 'limit'):
+            query['limit'] = self.script.getint('query', 'limit')
+
+        if self.script.has_option('query', 'skip'):
+            query['skip'] = self.script.getint('query', 'skip')
+
+        # Fields
+
+        if self.script.has_option('query', 'unit_fields'):
+            fields = query.setdefault('fields', {})
+            fields['unit'] = self.script.get('query', 'unit_fields').split()
+
+        # -- Run the query ----------------------------------------------------
+        self.prompt.write('Retrieving associated units of type [%s]' % type_id)
+        self.prompt.write('')
+        self.prompt.write('Query Criteria:')
+        indent = self.script.getint('output', 'json_indent')
+        formatted_body = json.dumps(query, indent=indent)
+        self.prompt.write(formatted_body)
+
+        self._pause()
+        status, body = self._call('POST', url, {'query' : query})
+        self._print_response(status, body)
+        self.prompt.write('')
+
+        #  -- Report ----------------------------------------------------------
+        self.prompt.write('Number of matching units: %s' % len(body))
+        self.prompt.write('')
+
+        headers = ('Unit ID', 'Type ID', 'Name', 'Search 1', 'Search 2', 'Random 1')
+        report_line = '%+10s  %+10s  %+15s  %+10s  %+10s  %+10s'
+        header_line = report_line % headers
+        divider = '-' * len(header_line)
+
+        self.prompt.write(self.prompt.color(header_line, prompt.COLOR_BG_BLUE))
+        # self.prompt.write(header_line)
+        self.prompt.write(divider)
+
+        flipper = 0
+        highlights = (prompt.COLOR_WHITE, prompt.COLOR_LIGHT_PURPLE)
+        for unit in body:
+            unit_id = unit['unit_id'][:10]
+            type_id = unit['unit_type_id'][len(unit['unit_type_id']) - 10:]
+            created = unit['created']
+            updated = unit['updated']
+
+            missing = self.prompt.color('<missing>', prompt.COLOR_LIGHT_GRAY)
+
+            name = unit['metadata'].get('name', missing)
+            search_1 = unit['metadata'].get('search_1', missing)
+            search_2 = unit['metadata'].get('search_2', missing)
+            random_1 = unit['metadata'].get('random_1', missing)
+
+            r = report_line % (unit_id, type_id, name, search_1, search_2, random_1)
+            self.prompt.write(self.prompt.color(r, highlights[flipper % len(highlights)]))
+
+            flipper += 1
+            flipper = 0 # comment to enable per row highlighting
+
+        self.prompt.write('')
 
     # -- utilities ------------------------------------------------------------
 
