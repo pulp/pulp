@@ -107,7 +107,7 @@ class Errata(Model):
     def __init__(self, id, title, description, version, release, type, status=u"",
             updated=u"", issued=u"", pushcount=1, from_str=u"",
             reboot_suggested=False, references=[], pkglist=[], severity=u"",
-            rights=u"", summary=u"", solution=u"", repo_defined=False, immutable=False):
+            rights=u"", summary=u"", solution=u"", repo_defined=False, immutable=False, repoids=[]):
         self._id = id
         self.id = id
         self.title = title
@@ -132,6 +132,7 @@ class Errata(Model):
         self.summary = summary
         self.solution = solution
         self.immutable = immutable
+        self.repoids = repoids
 
 # package models --------------------------------------------------------------
 
@@ -141,11 +142,11 @@ class Package(Model):
     unique_indices = (('name', 'epoch', 'version', 'release', 'arch',
                         'filename', 'checksum'),)
     search_indices = ('name', 'filename', 'checksum', 'epoch', 'version',
-                      'release', 'arch', 'description')
+                      'release', 'arch', 'description', 'repoids')
 
     def __init__(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, vendor=None, size=None,
-            buildhost=u"", license=u"", group=u"", repo_defined=False):
+            buildhost=u"", license=u"", group=u"", repo_defined=False, repoids=[]):
         Model.__init__(self)
         # ID is initialized in Model.__init__()
         self.name = name
@@ -166,6 +167,7 @@ class Package(Model):
         self.buildhost = buildhost
         self.license = license
         self.group = group
+        self.repoids = repoids
 
 
 class PackageGroup(Model):

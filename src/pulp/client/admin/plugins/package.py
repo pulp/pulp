@@ -408,14 +408,14 @@ class Search(PackageAction):
         evra_field_size = self.get_field_size(pkgs, msg="%s:%s-%s.%s",
                 field_names=("epoch", "version", "release", "arch"))
         filename_field_size = self.get_field_size(pkgs, field_name="filename")
-        repos_field_size = self.get_field_size(pkgs, field_name="repos")
+        repos_field_size = self.get_field_size(pkgs, field_name="repoids")
         print_header(_("Package Information"))
         print _("%s\t%s\t%s\t%s" % (self.form_item_string("Name", name_field_size),
                 self.form_item_string("EVRA", evra_field_size),
                 self.form_item_string("Filename", filename_field_size),
                 self.form_item_string("Repositories", repos_field_size)))
         for pkg in pkgs:
-            repos = ", ".join(pkg["repos"])
+            repos = ", ".join(pkg["repoids"])
             print "%s\t%s\t%s\t%s" % \
                     (self.form_item_string(pkg["name"], name_field_size),
                     self.form_item_string("%s:%s-%s.%s" % (pkg["epoch"], pkg["version"],

@@ -139,7 +139,7 @@ class AdminRepoAction(RepoAction):
                                                   checksum=checksum,
                                                   checksum_type=checksum_type, regex=False)
         for pkg in pkgobj:
-            pkg_repos = pkg["repos"]
+            pkg_repos = pkg["repoids"]
             if repoid in pkg_repos:
                 return pkg
         return None

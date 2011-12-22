@@ -149,12 +149,9 @@ class PackageSearch(JSONController):
             repoids = data["repoids"]
         initial_search_end = time.time()
 
-        for p in pkgs:
-            p["repos"] = rapi.find_repos_by_package(p["id"])
-
         # select packages only from given repositories
         if repoids:
-            pkgs = [p for p in pkgs if ( set(p["repos"]) & set(repoids) )]
+            pkgs = [p for p in pkgs if ( set(p["repoids"]) & set(repoids) )]
 
         repo_lookup_time = time.time()
         log.info("Search [%s]: package lookup: %s, repo correlation: %s, total: %s" % \

@@ -506,6 +506,11 @@ class BaseSynchronizer(object):
                     + repo['relative_path'] \
                     + "/" \
                     + file_name
+
+                if not newpkg.has_key("repoids"):
+                    newpkg["repoids"] = []
+                if repo['id'] not in newpkg["repoids"]:
+                    newpkg["repoids"].append(repo['id'])
             newpkg = pulp.server.util.translate_to_utf8(newpkg)
             delta = Delta(newpkg, filter)
             self.package_api.update(newpkg["id"], delta)

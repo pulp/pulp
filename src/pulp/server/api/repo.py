@@ -997,6 +997,7 @@ class RepoApi(BaseApi):
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
         log.info("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
+        pkg_collection = model.Package.get_collection()
 
         for index, pid in enumerate(packages):
             pkg = packages[pid]
@@ -1012,6 +1013,10 @@ class RepoApi(BaseApi):
                     pulp.server.util.create_rel_symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
+            if repo['id'] not in p['repoids']:
+                # Add the repoid to the list on the package
+                p['repoids'].append(repo['id'])
+                pkg_collection.save(p, safe=True)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
         log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
@@ -1050,6 +1055,7 @@ class RepoApi(BaseApi):
             # Nothing to perform, return
             return errors
         repo = self._get_existing_repo(repoid)
+        pkg_collection = model.Package.get_collection()
         for pkg in pkgobjs:
             if pkg['id'] not in repo['packages']:
                 log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"], repoid))
@@ -1057,6 +1063,9 @@ class RepoApi(BaseApi):
                 continue
             repo['packages'].remove(pkg['id'])
             repo['package_count'] = repo['package_count'] - 1
+            if repoid in pkg['repoids']:
+                del pkg['repoids'][pkg['repoids'].index(repoid)]
+                pkg_collection.save(pkg, safe=True)
             # Remove package from repo location on file system
             pkg_repo_path = pulp.server.util.get_repo_package_path(
                 repo['relative_path'], pkg["filename"])
@@ -1221,7 +1230,10 @@ class RepoApi(BaseApi):
             errata[erratum['type']] = []
 
         errata[erratum['type']].append(erratum['id'])
-
+        if repo['id'] not in erratum['repoids']:
+            erratum['repoids'].append(repo['id'])
+            err_collection = model.Errata.get_collection()
+            err_collection.save(erratum, safe=True)
 
     @audit()
     def delete_erratum(self, repoid, erratumid):
@@ -1258,6 +1270,10 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
+            if repo['id'] in erratum['repoids']:
+                del erratum['repoids'][erratum['repoids'].index(repo['id'])]
+                err_collection = model.Errata.get_collection()
+                err_collection.save(erratum, safe=True)
         except Exception, e:
             raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
 

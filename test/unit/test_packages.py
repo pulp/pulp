@@ -203,7 +203,7 @@ class TestApi(testutil.PulpAsyncTest):
         self.assertTrue(pkgs[packageid]['filename'] == test_filename)
 
         # Remove package from repo
-        self.repo_api.remove_package(repo['id'], p)
+        self.repo_api.remove_package(repo['id'], saved_pkg)
         repo = self.repo_api.repository(repo['id'])
         self.assertTrue(p['id'] not in repo["packages"])
 
