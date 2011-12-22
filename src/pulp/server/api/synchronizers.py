@@ -306,6 +306,9 @@ class BaseSynchronizer(object):
                     continue
                 if (package is not None):
                     added_packages[package["id"]] = package
+                    if repo['id'] not in package['repoids']:
+                        package['repoids'].append(repo['id'])
+                        pkg_coll.save(package, safe=True)
         else:
             log.info("Skipping package imports from sync process")
         if self.stopped:
