@@ -20,19 +20,20 @@ _LOG = logging.getLogger('pulp')
 version = 35
 
 def _migrate_packages():
-    collection = Package.get_collection()
-    all_packages = list(collection.find())
+    pkg_collection = Package.get_collection()
+    repo_collection = Repo.get_collection()
+    all_packages = list(pkg_collection.find())
     _LOG.info('migrating %s packages' % len(all_packages))
     for pkg in all_packages:
         try:
             modified = False
-            found = collection.find({"packages":pkg['id']}, fields=["id"])
+            found = repo_collection.find({"packages":pkg['id']}, fields=["id"])
             repos = [r["id"] for r in found]
             if not pkg.has_key('repoids') or not pkg['repoids']:
                 pkg['repoids'] = repos
                 modified =True
             if modified:
-                collection.save(pkg, safe=True)
+                pkg_collection.save(pkg, safe=True)
         except Exception, e:
             _LOG.critical(e)
             return False
