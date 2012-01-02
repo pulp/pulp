@@ -23,7 +23,7 @@ class ConsumerGroupAPI(PulpAPI):
                               "description": description,
                               "consumerids": consumerids}
         path = "/consumergroups/"
-        return self.server.PUT(path, consumergroup_data)[1]
+        return self.server.POST(path, consumergroup_data)[1]
 
     def update(self, id, delta):
         path = "/consumergroups/%s/" % id
@@ -101,8 +101,7 @@ class ConsumerGroupAPI(PulpAPI):
         return self.server.POST(path, body)[1]
 
     def installerrata(self, id, errataids, types=[], importkeys=False, when=None):
-        erratainfo = {'consumerid': id,
-                      'errataids': errataids,
+        erratainfo = {'errataids': errataids,
                       'types':   types,
                       'importkeys': importkeys,
                       'scheduled_time': when}
