@@ -99,8 +99,7 @@ class List(ListAction):
     def job(self, job):
         s = []
         id = job['id']
-        completed = job['completed']
-        cancelled = job['cancelled']
+        tasks = job['tasks']
         s.append(JOB % (id, self.pct(tasks), len(tasks)))
         for t in tasks:
             s.append(self.task(t))
