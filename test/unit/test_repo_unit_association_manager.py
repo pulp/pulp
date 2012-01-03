@@ -349,6 +349,73 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     # -- get_units tests ------------------------------------------------------
 
+    class GetUnitsMock(association_manager.RepoUnitAssociationManager):
+
+        def __init__(self):
+            self.called_get_units_by_type = False
+            self.get_units_by_type_repo = None
+            self.get_units_by_type_criteria = None
+
+            self.called_get_units_across_types = False
+            self.get_units_across_types_repo = None
+            self.get_units_across_types_criteria = None
+
+        def get_units_by_type(self, repo_id, type_id, criteria=None):
+            self.called_get_units_by_type = True
+            self.get_units_by_type_repo = repo_id
+            self.get_units_by_type_criteria = criteria
+
+        def get_units_across_types(self, repo_id, criteria=None):
+            self.called_get_units_across_types = True
+            self.get_units_across_types_repo = repo_id
+            self.get_units_across_types_criteria = criteria
+
+    def test_get_units_multiple_types(self):
+        # Setup
+        mock_manager = self.GetUnitsMock()
+
+        # Test
+        criteria = Criteria(type_ids=['fus', 'ro'])
+        mock_manager.get_units('repo-1', criteria=criteria)
+
+        # Verify
+        self.assertTrue(mock_manager.called_get_units_across_types)
+        self.assertFalse(mock_manager.called_get_units_by_type)
+
+        self.assertEqual('repo-1', mock_manager.get_units_across_types_repo)
+        self.assertEqual(criteria, mock_manager.get_units_across_types_criteria)
+
+    def test_get_units_single_type(self):
+        # Setup
+        mock_manager = self.GetUnitsMock()
+
+        # Test
+        criteria = Criteria(type_ids=['fus'])
+        mock_manager.get_units('repo-1', criteria=criteria)
+
+        # Verify
+        self.assertFalse(mock_manager.called_get_units_across_types)
+        self.assertTrue(mock_manager.called_get_units_by_type)
+
+        self.assertEqual('repo-1', mock_manager.get_units_by_type_repo)
+        self.assertEqual(criteria, mock_manager.get_units_by_type_criteria)
+
+    def test_get_units_no_criteria(self):
+    # Setup
+        mock_manager = self.GetUnitsMock()
+
+        # Test
+        mock_manager.get_units('repo-1')
+
+        # Verify
+        self.assertTrue(mock_manager.called_get_units_across_types)
+        self.assertFalse(mock_manager.called_get_units_by_type)
+
+        self.assertEqual('repo-1', mock_manager.get_units_across_types_repo)
+        self.assertEqual(None, mock_manager.get_units_across_types_criteria)
+
+    # -- get_units_across_types tests -----------------------------------------
+
     def test_get_units_no_criteria(self):
         # Test
         units_1 = self.manager.get_units_across_types('repo-1')

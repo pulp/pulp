@@ -317,6 +317,27 @@ class RepoUnitAssociationManager:
 
         return unit_ids
 
+    def get_units(self, repo_id, criteria=None):
+        """
+        Delegates to the appropriate get_units_* call depending on the contents
+        of the criteria.
+
+        @param repo_id: identifies the repository
+        @type  repo_id: str
+
+        @param criteria: if specified will drive the query
+        @type  criteria: L{Criteria}
+        """
+
+        if criteria is not None and \
+           criteria.type_ids is not None and \
+           len(criteria.type_ids) == 1:
+
+            type_id = criteria.type_ids[0]
+            return self.get_units_by_type(repo_id, type_id, criteria=criteria)
+        else:
+            return self.get_units_across_types(repo_id, criteria=criteria)
+
     def get_units_across_types(self, repo_id, criteria=None):
         """
         Retrieves data describing units associated with the given repository
