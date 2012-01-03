@@ -395,8 +395,8 @@ class Harness:
         self.prompt.write('')
 
         headers = ('Unit ID', 'Type ID', 'Name', 'Search 1', 'Search 2', 'Random 1')
-        report_line = '%+10s  %+10s  %+15s  %+10s  %+10s  %+10s'
-        header_line = report_line % headers
+        report_template = '%-10s  %-10s  %-15s  %-10s  %-10s  %-10s'
+        header_line = report_template % headers
         divider = '-' * len(header_line)
 
         self.prompt.write(self.prompt.color(header_line, prompt.COLOR_BG_BLUE))
@@ -418,7 +418,7 @@ class Harness:
             search_2 = unit['metadata'].get('search_2', missing)
             random_1 = unit['metadata'].get('random_1', missing)
 
-            r = report_line % (unit_id, type_id, name, search_1, search_2, random_1)
+            r = report_template % (unit_id, type_id, name, search_1, search_2, random_1)
             self.prompt.write(self.prompt.color(r, highlights[flipper % len(highlights)]))
 
             flipper += 1
