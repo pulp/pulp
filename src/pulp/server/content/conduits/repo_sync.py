@@ -47,7 +47,7 @@ import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import Unit, SyncReport
 from pulp.server.managers.content._exceptions import ContentUnitNotFound
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER, Criteria
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
 # -- constants ---------------------------------------------------------------
 
