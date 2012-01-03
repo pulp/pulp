@@ -21,8 +21,10 @@ import logging
 import pymongo
 
 import pulp.server.content.types.database as types_db
+import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import RepoContentUnit
-from pulp.server.managers.repo._exceptions import InvalidOwnerType
+import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingRepo
 
 # -- constants ----------------------------------------------------------------
 
@@ -140,6 +142,58 @@ class RepoUnitAssociationManager:
 
         for unit_id in unit_id_list:
             self.associate_unit_by_id(repo_id, unit_type_id, unit_id, owner_type, owner_id)
+
+    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None):
+        """
+        Creates associations in a repository based on the contents of a source
+        repository. Units from the source repository can be filtered by
+        specifying a criteria object.
+
+        The destination repository must have an importer that can support
+        the types of units being associated. This is done by analyzing the
+        unit list and the importer metadata and takes place before the
+        destination repository is called.
+
+        Pulp does not actually perform the associations as part of this call.
+        The unit list is determined and passed to the destination repository's
+        importer. It is the job of the importer to make the associate calls
+        back into Pulp where applicable.
+
+        @param source_repo_id: identifies the source repository
+        @type  source_repo_id: str
+
+        @param dest_repo_id: identifies the destination repository
+        @type  dest_repo_id: str
+
+        @param criteria: optional; if specified, will filter the units retrieved
+                         from the source repository
+        @type  criteria: L{Criteria}
+
+        @raises MissingRepo: if either of the specified repositories don't exist
+        @raises MissingImporter: if the destination repository does not have
+                a configured importer
+        """
+
+        # Validation
+        repo_query_manager = manager_factory.repo_query_manager()
+        importer_manager = manager_factory.repo_importer_manager()
+
+        source_repo = repo_query_manager.find_by_id(source_repo_id)
+        if source_repo is None:
+            raise MissingRepo(source_repo_id)
+
+        dest_repo = repo_query_manager.find_by_id(dest_repo_id)
+        if dest_repo is None:
+            raise MissingRepo(dest_repo_id)
+
+        # This will raise MissingImporter if there isn't one, which is the
+        # behavior we want this method to exhibit, so just let it bubble up.
+        importer = importer_manager.get_importer(dest_repo_id)
+
+        supported_type_ids = plugin_loader.list_importer_types(importer['importer_type_id'])
+
+        # Retrieve the units to be associated
+
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
         """
@@ -263,7 +317,7 @@ class RepoUnitAssociationManager:
 
         return unit_ids
 
-    def get_units(self, repo_id, criteria=None):
+    def get_units_across_types(self, repo_id, criteria=None):
         """
         Retrieves data describing units associated with the given repository
         along with information on the association itself.

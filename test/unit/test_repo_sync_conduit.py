@@ -282,7 +282,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
     def test_get_units_with_error(self):
         # Setup
         self.conduit._RepoSyncConduit__association_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__association_manager.get_units.side_effect = Exception()
+        self.conduit._RepoSyncConduit__association_manager.get_units_across_types.side_effect = Exception()
 
         # Test
         try:

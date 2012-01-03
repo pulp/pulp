@@ -457,7 +457,7 @@ class RepoUnitAdvancedSearch(JSONController):
             type_id = criteria.type_ids[0]
             units = manager.get_units_by_type(repo_id, type_id, criteria=criteria)
         else:
-            units = manager.get_units(repo_id, criteria=criteria)
+            units = manager.get_units_across_types(repo_id, criteria=criteria)
 
         return self.ok(units)
 

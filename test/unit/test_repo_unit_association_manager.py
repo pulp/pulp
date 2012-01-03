@@ -351,8 +351,8 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
     def test_get_units_no_criteria(self):
         # Test
-        units_1 = self.manager.get_units('repo-1')
-        units_2 = self.manager.get_units('repo-2')
+        units_1 = self.manager.get_units_across_types('repo-1')
+        units_2 = self.manager.get_units_across_types('repo-2')
 
         # Verify
         self.assertEqual(len(units_1), self.repo_1_count)
@@ -367,7 +367,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_filter_type(self):
         # Test
         criteria = Criteria(type_ids=['alpha', 'beta'])
-        units = self.manager.get_units('repo-1', criteria)
+        units = self.manager.get_units_across_types('repo-1', criteria)
 
         # Verify
         expected_count = reduce(lambda x, y: x + len(self.units[y]), ['alpha', 'beta'], 0)
@@ -382,7 +382,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_filter_owner_type(self):
         # Test
         criteria = Criteria(association_filters={'owner_type' : OWNER_TYPE_IMPORTER})
-        units = self.manager.get_units('repo-1', criteria)
+        units = self.manager.get_units_across_types('repo-1', criteria)
 
         # Verify
         expected_count = reduce(lambda x, y: x + len(self.units[y]), ['alpha', 'gamma'], 0)
@@ -391,10 +391,10 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_limit(self):
         # Test
         low_criteria = Criteria(limit=2)
-        low_units = self.manager.get_units('repo-1', low_criteria)
+        low_units = self.manager.get_units_across_types('repo-1', low_criteria)
 
         high_criteria = Criteria(limit=10000)
-        high_units = self.manager.get_units('repo-1', high_criteria)
+        high_units = self.manager.get_units_across_types('repo-1', high_criteria)
 
         # Verify
         self.assertEqual(2, len(low_units))
@@ -407,9 +407,9 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_skip(self):
         # Test
         skip_criteria = Criteria(skip=2)
-        skip_units = self.manager.get_units('repo-1', skip_criteria)
+        skip_units = self.manager.get_units_across_types('repo-1', skip_criteria)
 
-        all_units = self.manager.get_units('repo-1')
+        all_units = self.manager.get_units_across_types('repo-1')
 
         # Verify
         self.assertEqual(self.repo_1_count -2, len(skip_units))
@@ -421,7 +421,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_sort(self):
         # Test
         order_criteria = Criteria(association_sort=[('owner_type', association_manager.SORT_DESCENDING)]) # owner_type will produce a non-default sort
-        order_units = self.manager.get_units('repo-1', order_criteria)
+        order_units = self.manager.get_units_across_types('repo-1', order_criteria)
 
         # Verify
         self.assertEqual(self.repo_1_count, len(order_units))
@@ -434,10 +434,10 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_filter_created(self):
         # Test
         after_criteria = Criteria(association_filters={'created' : {'$gt' : self.timestamps[0]}})
-        after_units = self.manager.get_units('repo-1', after_criteria)
+        after_units = self.manager.get_units_across_types('repo-1', after_criteria)
 
         before_criteria = Criteria(association_filters={'created' : {'$lt' : self.timestamps[1]}})
-        before_units = self.manager.get_units('repo-1', before_criteria)
+        before_units = self.manager.get_units_across_types('repo-1', before_criteria)
 
         # Verify
 
@@ -451,7 +451,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_remove_duplicates(self):
         # Test
         criteria = Criteria(remove_duplicates=True)
-        units = self.manager.get_units('repo-1', criteria)
+        units = self.manager.get_units_across_types('repo-1', criteria)
 
         # Verify
 
@@ -466,7 +466,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
     def test_get_units_with_fields(self):
         # Test
         criteria = Criteria(association_fields=['owner_type'])
-        units = self.manager.get_units('repo-1', criteria)
+        units = self.manager.get_units_across_types('repo-1', criteria)
 
         # Verify
         for u in units:
@@ -784,7 +784,7 @@ class GetUnitsStressTest(testutil.PulpTest):
 
         # Test
         start = datetime.datetime.now()
-        units = self.manager.get_units(repo_id)
+        units = self.manager.get_units_across_types(repo_id)
         self.assertEqual(3000, len(units))
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
@@ -821,7 +821,7 @@ class GetUnitsStressTest(testutil.PulpTest):
 
         # Test
         start = datetime.datetime.now()
-        units = self.manager.get_units(repo_id)
+        units = self.manager.get_units_across_types(repo_id)
         self.assertEqual(15000, len(units))
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
@@ -858,7 +858,7 @@ class GetUnitsStressTest(testutil.PulpTest):
 
         # Test
         start = datetime.datetime.now()
-        units = self.manager.get_units(repo_id)
+        units = self.manager.get_units_across_types(repo_id)
         self.assertEqual(50000, len(units))
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
@@ -898,7 +898,7 @@ class GetUnitsStressTest(testutil.PulpTest):
         # Test
         start = datetime.datetime.now()
         criteria = Criteria(remove_duplicates=True)
-        units = self.manager.get_units(repo_id, criteria)
+        units = self.manager.get_units_across_types(repo_id, criteria)
         self.assertEqual(3000, len(units))
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds

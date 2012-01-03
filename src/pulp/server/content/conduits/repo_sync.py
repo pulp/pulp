@@ -188,7 +188,7 @@ class RepoSyncConduit:
         """
 
         try:
-            units = self.__association_manager.get_units(self.repo_id, criteria=criteria)
+            units = self.__association_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
             all_units = []
 

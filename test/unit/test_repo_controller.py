@@ -1010,7 +1010,7 @@ class RepoUnitAssociationQueryTest(testutil.PulpWebserviceTest):
         # Verify
         self.assertEqual(200, status)
 
-        self.assertEqual(0, self.association_mock.get_units.call_count)
+        self.assertEqual(0, self.association_mock.get_units_across_types.call_count)
         self.assertEqual(1, self.association_mock.get_units_by_type.call_count)
 
         criteria = self.association_mock.get_units_by_type.call_args[1]['criteria']
@@ -1032,7 +1032,7 @@ class RepoUnitAssociationQueryTest(testutil.PulpWebserviceTest):
         """
 
         # Setup
-        self.association_mock.get_units.return_value = []
+        self.association_mock.get_units_across_types.return_value = []
 
         query = {'type_ids' : ['rpm', 'errata']}
 
@@ -1043,8 +1043,8 @@ class RepoUnitAssociationQueryTest(testutil.PulpWebserviceTest):
         self.assertEqual(200, status)
 
         self.assertEqual(0, self.association_mock.get_units_by_type.call_count)
-        self.assertEqual(1, self.association_mock.get_units.call_count)
-        self.assertTrue(isinstance(self.association_mock.get_units.call_args[1]['criteria'], Criteria))
+        self.assertEqual(1, self.association_mock.get_units_across_types.call_count)
+        self.assertTrue(isinstance(self.association_mock.get_units_across_types.call_args[1]['criteria'], Criteria))
 
     def test_post_missing_query(self):
         # Test
