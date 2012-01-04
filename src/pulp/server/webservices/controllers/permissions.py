@@ -47,7 +47,7 @@ class Permissions(JSONController):
         }
         }}}
         parameters:
-         * resource!, str, unique resource id
+         * resource!, str, resource path
         """
 
         try:
