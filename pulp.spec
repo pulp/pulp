@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.255
+Version:        0.0.256
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,95 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jan 04 2012 Jeff Ortel <jortel@redhat.com> 0.0.256-1
+- Fix job list. (jortel@redhat.com)
+- Move consumer cert to: /etc/pki/pulp/consumer/ (jortel@redhat.com)
+- fixed bug the wrongfully required user on permission grant
+  (jconnor@redhat.com)
+- added do not edit header to genereated wiki pages (jconnor@redhat.com)
+- Refactored out the unit association query stuff into its own manager, it was
+  getting way too big. (jason.dobies@redhat.com)
+- changed resource description to be less confusing (jconnor@redhat.com)
+- added correct failure reponse to show permissions (jconnor@redhat.com)
+- Untested implementation of association from repo. Need to refactor out query
+  stuff from that manager to reduce the noise before I write the tests.
+  (jason.dobies@redhat.com)
+- Removed unused import (jason.dobies@redhat.com)
+- re-ran restapi.py (jconnor@redhat.com)
+- added example key, preformatted formatted :), and required list entries
+  (jconnor@redhat.com)
+- Moved logic for differentiating between get_units_* calls into the manager
+  (jason.dobies@redhat.com)
+- Changed reporting output in the test harness (jason.dobies@redhat.com)
+- Renamed get_units to get_units_across_types to make room for a syntactic
+  sugar get_units method that makes the appropriate differentiation
+  (jason.dobies@redhat.com)
+- Bump grinder to 0.136 (jmatthews@redhat.com)
+- 710153 - Fixed incorrect parsing of intervals in sync schedules. Added
+  iso8601 format examples to --help. (jason.dobies@redhat.com)
+- Changing return codes for some of the consumer group apis for more restful
+  approach (skarmark@redhat.com)
+- fix migrate script to use right collection (pkilambi@redhat.com)
+- add cloned repoid to packages during the clone process (pkilambi@redhat.com)
+- 765849 - RFE: include repoids reference in packages and errata * db change to
+  include repoid for packages and errata * migration script * manager layer
+  changes * client updates * unit test updates (pkilambi@redhat.com)
+- Added association query support to the v2 harness (jason.dobies@redhat.com)
+- 750847 Expose next sync time on repo schedule and sync status
+  (jslagle@redhat.com)
+- 760172 Change consumer history logging from consumer created/deleted to
+  registered/unregistered (jslagle@redhat.com)
+- Add RHEL-6-SE to list of commented out brew tags that are used
+  (jslagle@redhat.com)
+- 713576 Check for write permission to correct paths before attempting consumer
+  register, unregister, bind, or unbind. (jslagle@redhat.com)
+- 760717 Add info subcommand to pulp-admin repo command. (jslagle@redhat.com)
+- Brought the conduits in line with new unit association query functionality
+  (jason.dobies@redhat.com)
+- improving the package import step during clone (pkilambi@redhat.com)
+- Implemented unit association advanced query (jason.dobies@redhat.com)
+- Made it easier to use mock objects in the manager factory
+  (jason.dobies@redhat.com)
+- Added validation and integrity logic to Criteria (jason.dobies@redhat.com)
+- Adding some performance enhancements to cloning rpms step
+  (pkilambi@redhat.com)
+- Added regex example for filter value (jason.dobies@redhat.com)
+- Working around for unittests since rhel5 has a problem syncing our f16 repos
+  (jmatthews@redhat.com)
+- Added ability to control the returned fields (jason.dobies@redhat.com)
+- Greatly cleaned up criteria objects (jason.dobies@redhat.com)
+- Fixed unfinished refactoring; offset doesn't have to be a parameter
+  (jason.dobies@redhat.com)
+- Having been the dev to come up with the name "content unit", you'd think I
+  wouldn't accidentally call it "user" half the time. (jason.dobies@redhat.com)
+- rpmlint fix for anything under /etc being marked as config
+  (jmatthews@redhat.com)
+- SELinux fix for cds httpd mod_wsgi configuration (jmatthews@redhat.com)
+- rpmlint: removing zero-length file (jmatthews@redhat.com)
+- rpmlint adjustments for permissions (jmatthews@redhat.com)
+- rpmlint fixes to get ready for Fedora submission (jmatthews@redhat.com)
+-  747661 - more pulp.spec changes (jmatthews@redhat.com)
+- 747661 - Content Certificate permission errors in an AWS guest
+  (jmatthews@redhat.com)
+- 760683 - Move location of certs away from /etc/pki/content to a Pulp specific
+  directory (jmatthews@redhat.com)
+- 768126 - fix typo in pulp-admin errata install. (jortel@redhat.com)
+- Flushed out get_units_by_type tests and starting on stress tests.
+  (jason.dobies@redhat.com)
+- 761173 - SELinux related: Move grinder usage of /tmp/grinder to
+  /var/run/grinder (jmatthews@redhat.com)
+- Massive work towards unit association queries. Still need some cleaning up
+  and to write the tests for get_units_by_type, but this is enough work that I
+  really wanted it backed up. (jason.dobies@redhat.com)
+- Added webservice controllers to v2 test script (jason.dobies@redhat.com)
+- Added script to run tests and coverage numbers for v2 code
+  (jason.dobies@redhat.com)
+- Propagated owner API changes to the sync conduit (jason.dobies@redhat.com)
+- Association manager changes to accomodate association owner
+  (jason.dobies@redhat.com)
+- Added owner and timestamp information to unit association
+  (jason.dobies@redhat.com)
+
 * Thu Dec 15 2011 Jeff Ortel <jortel@redhat.com> 0.0.255-1
 - Bump grinder to 0.133 (jmatthews@redhat.com)
 - 766944 - exposing all fields when querying consumer errata
