@@ -28,6 +28,28 @@ class Permissions(JSONController):
     @error_handler
     @auth_required(super_user_only=True)
     def POST(self):
+        """
+        [[wiki]]
+        title: Show Permissions
+        description: Show the permissions for a given resource
+        method: POST
+        path: /permissions/show/
+        permission: super user only
+        success response: 200 OK
+        failure response: None
+        return: permissions for given resource
+        example:
+        {{{
+        #!js
+        {"id": "78daa991-ec1f-4908-9b59-5c1010bde7a6",
+         "resource": "/",
+         "users": {"admin": ["CREATE", "READ", "UPDATE", "DELETE", "EXECUTE"]}
+        }
+        }}}
+        parameters:
+         * resource!, str, unique resource id
+        """
+
         try:
             resource = self.params()['resource']
         except KeyError:
@@ -52,6 +74,22 @@ class PermissionActions(JSONController):
     revoke_action = 'revoke'
 
     def _grant_to_user(self, data):
+        """
+        [[wiki]]
+        title: Grant User Permissions
+        description: Grant permissions for a resource to a user
+        method: POST
+        path: /permissions/user/grant/
+        permission: READ
+        success response: 200 OK
+        failure response: 400 Bad Request if the required parameters are not present
+        return: true
+        parameters:
+         * username!, str, login of user to grant permissions to
+         * resource!, str, uri path of resource to grant permissions on
+         * operations!, list of strings, valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE
+        """
+
         try:
             user = data['username']
             resource = data['resource']
@@ -63,6 +101,22 @@ class PermissionActions(JSONController):
         return self.ok(val)
 
     def _revoke_from_user(self, data):
+        """
+        [[wiki]]
+        title: Revoke User Permissions
+        description: Revoke permissions for a resource from a user
+        method: POST
+        path: /permissions/user/revoke/
+        permission: READ
+        success response: 200 OK
+        failure response: 400 Bad Request if the required parameters are not present
+        return: true
+        parameters:
+         * username!, str, login of user to revoke permissions from
+         * resource!, str, uri path of resource to revoke permissions on
+         * operations!, list of strings, valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE
+        """
+
         try:
             user = data['username']
             resource = data['resource']
@@ -74,6 +128,22 @@ class PermissionActions(JSONController):
         return self.ok(val)
 
     def _grant_to_role(self, data):
+        """
+        [[wiki]]
+        title: Grant Role Permissions
+        description: Grant permissions for a resource to a role
+        method: POST
+        path: /permissions/role/grant/
+        permission: READ
+        success response: 200 OK
+        failure response: 400 Bad Request if the required parameters are not present
+        return: true
+        parameters:
+         * rolename!, str, name of role to grant permissions to
+         * resource!, str, uri path of resource to grant permissions on
+         * operations!, list of strings, valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE
+        """
+
         try:
             role = data['rolename']
             resource = data['resource']
@@ -85,6 +155,22 @@ class PermissionActions(JSONController):
         return self.ok(val)
 
     def _revoke_from_role(self, data):
+        """
+        [[wiki]]
+        title: Revoke Role Permissions
+        description: Revoke permissions for a resource from a role
+        method: POST
+        path: /permissions/role/revoke/
+        permission: READ
+        success response: 200 OK
+        failure response: 400 Bad Request if the required parameters are not present
+        return: true
+        parameters:
+         * rolename!, str, name of role to revoke permissions from
+         * resource!, str, uri path of resource to revoke permissions on
+         * operations!, list of strings, valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE
+        """
+
         try:
             role = data['rolename']
             resource = data['resource']
