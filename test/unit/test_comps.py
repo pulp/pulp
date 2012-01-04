@@ -354,8 +354,7 @@ class TestComps(testutil.PulpAsyncTest):
         os.unlink(tmp_repomd_path)
         os.unlink(tmp_comps_path)
 
-    def immutable_groups(self):
-        #TODO  until we fix group import, this tests needs to be commented out
+    def test_immutable_groups(self):
 
         repo_path = os.path.join(self.data_path, "repo_with_groups")
         # Create repo with 1 group
@@ -421,8 +420,7 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue(found is None)
 
 
-    def comps_resync_with_group_changes(self):
-        #TODO: until we fix group import this needs to be commented out
+    def test_comps_resync_with_group_changes(self):
 
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         repo = self.repo_api.create('test_comps_resync_with_group_changes',
