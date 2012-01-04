@@ -233,7 +233,7 @@ cp -R srv %{buildroot}
 
 # Pulp PKI
 mkdir -p %{buildroot}/etc/pki/pulp
-mkdir -p %{buildroot}/etc/pki/consumer
+mkdir -p %{buildroot}/etc/pki/pulp/consumer
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
 mkdir -p %{buildroot}/etc/pki/pulp/content
@@ -327,31 +327,31 @@ chown apache:apache /var/lib/pulp-cds/.cluster-members
 %post consumer
 if [ "$1" = "1" ]; then
   ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
-else
-  #######################################################################
-  # MOVE THE OLD CERT LOCATION
-  # THIS SHOULD BE REMOVED AROUND VER: 0.260
-  # NOTE: THIS ONLY WORKS FOR DEFAULT CERT LOCATION SO IF USER CHANGES
-  #       IN THE consumer.conf, THIS WONT WORK.
-  #######################################################################
-  CERT="cert.pem"
-  OLDDIR="/tmp/etc/pki/consumer/pulp/"
-  NEWDIR="/tmp/etc/pki/pulp/consumer/"
-  if [ -d $OLDDIR ]
-  then
-    cd $OLDDIR
-    if [ -f $CERT ]
-    then
-      if [ ! -e $NEWDIR ]
-      then
-        mkdir -p $NEWDIR
-      fi
-      mv $CERT $NEWDIR
-      rmdir --ignore-fail-on-non-empty $OLDDIR
-    fi
-  fi
-  #######################################################################
 fi
+#######################################################################
+# MOVE THE OLD CERT LOCATION
+# THIS SHOULD BE REMOVED AROUND VER: 0.260
+# NOTE: THIS ONLY WORKS FOR DEFAULT CERT LOCATION SO IF USER CHANGES
+#       IN THE consumer.conf, THIS WONT WORK.
+#######################################################################
+CERT="cert.pem"
+OLDDIR="/etc/pki/consumer/pulp/"
+NEWDIR="/etc/pki/pulp/consumer/"
+if [ -d $OLDDIR ]
+then
+  cd $OLDDIR
+  if [ -f $CERT ]
+  then
+    if [ ! -e $NEWDIR ]
+    then
+      mkdir -p $NEWDIR
+    fi
+    mv $CERT $NEWDIR
+    rmdir --ignore-fail-on-non-empty $OLDDIR
+  fi
+fi
+#######################################################################
+
 
 %if %{pulp_selinux}
 %post selinux-server
@@ -439,7 +439,7 @@ fi
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
-%attr(755,root,root) %{_sysconfdir}/pki/consumer/
+%attr(755,root,root) %{_sysconfdir}/pki/pulp/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %config(noreplace) %{_sysconfdir}/pulp/consumer/consumer.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
