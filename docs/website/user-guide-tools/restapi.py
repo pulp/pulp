@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import inspect
+import itertools
 import os
 import re
 import sys
@@ -61,6 +62,10 @@ def import_modules():
 # -----------------------------------------------------------------------------
 
 doc_marker = re.compile(r'\[\[wiki\]\]', re.I)
+
+required_keys = ('title', 'description')
+default_keys = ('method', 'path', 'permission', 'success response', 'failure response', 'return')
+optional_keys = ('example', 'parameters', 'filters')
 
 
 class WikiDict(dict):
@@ -119,7 +124,8 @@ def format_lines(lines):
 
 
 def format_list_entry(entry):
-    entry = entry[2:].strip()
+    #entry = entry[2:].strip()
+    entry = entry.strip()[2:]
     try:
         # try to split it out in to name, type, description
         n, t, d = entry.split(',', 2)
@@ -129,6 +135,9 @@ def format_list_entry(entry):
         if n.endswith('?'):
             n = bold(n[:-1])
             n += " %s" % italic('(optional)')
+        elif n.endswith('!'):
+            n = bold(n[:-1])
+            n += ' %s' % italic('(required)')
         else:
             n = bold(n)
         entry = "%s <%s> %s" % (n, t, italic(d))
@@ -142,6 +151,11 @@ def format_bulleted_list(blist):
     return '\n' + '\n'.join(format_list_entry(e) for e in blist) + '\n'
 
 
+def format_preformatted(preformatted):
+    index = preformatted[0].find('{{{')
+    return '\n' + '\n'.join(l[index:] for l in preformatted) + '\n'
+
+
 def format_value(key, value):
     if not value:
         return ''
@@ -149,11 +163,23 @@ def format_value(key, value):
         return format_title(value)
     if key == 'description':
         return format_description(value)
-    if value[-1].startswith('*'):
+    if value[-1].strip().startswith('*'):
         return format_bulleted_list(value)
+    if value[0].strip().startswith('{{{'):
+        return format_preformatted(value)
     return format_lines(value)
 
 # -----------------------------------------------------------------------------
+
+def _is_key_line(line):
+    if line.endswith(':'):
+        return True
+    for key in itertools.chain(required_keys, default_keys, optional_keys):
+        key_sentinal = key + ':'
+        if key_sentinal in line:
+            return True
+    return False
+
 
 def wiki_doc_to_dict(doc):
     """
@@ -166,14 +192,8 @@ def wiki_doc_to_dict(doc):
     last_key = None
     last_value = []
     lines = doc.splitlines()
-    for num, line in enumerate(lines):
-        line = line.strip()
-        if line.find(':') < 0 or line.startswith('*'):
-            if last_key is None:
-                raise WikiFormatError('bad wiki formatting:\n%s' % '\n'.join(lines[:num]))
-            if line:
-                last_value.append(line)
-        else:
+    for line in lines:
+        if _is_key_line(line):
             if last_key is not None:
                 wiki_dict[last_key] = format_value(last_key, last_value)
             key, remainder = line.split(':', 1)
@@ -182,6 +202,11 @@ def wiki_doc_to_dict(doc):
             remainder = remainder.strip()
             if remainder:
                 last_value.append(remainder)
+        else:
+            if last_key is None:
+                raise WikiFormatError('bad wiki formatting:\n%s' % line)
+            if line:
+                last_value.append(line)
         if last_key is not None:
             wiki_dict[last_key] = format_value(last_key, last_value)
     return wiki_dict
@@ -198,9 +223,8 @@ def format_method_wiki_doc(doc):
     wiki_doc = '== %s ==\n' % wiki_dict.get('title', 'Untitled').strip()
     wiki_doc += wiki_dict.get('description', "%s [[BR]]\n" % italic('No description.'))
     wiki_doc += '[[BR]]\n'
-    for key in ('method', 'path', 'permission', 'success response',
-                'failure response', 'return', 'parameters', 'filters'):
-        if key in ('parameters', 'filters') and key not in wiki_dict:
+    for key in itertools.chain(default_keys, optional_keys):
+        if key in optional_keys and key not in wiki_dict:
             continue
         value = wiki_dict.get(key, 'Unspecified [[BR]]\n')
         wiki_doc += "%s: %s" % (bold(key), value)
