@@ -17,7 +17,8 @@ TESTS="test/unit/test_content_managers.py \
        test/unit/test_repo_unit_association_manager.py \
        test/unit/test_repo_unit_association_query_manager.py \
        test/unit/test_types_database.py \
-       test/unit/test_types_parser.py
+       test/unit/test_types_parser.py \
+       test/unit/test_unit_import_conduit.py
        "
 
 nosetests --with-coverage --cover-html  --cover-erase --cover-package $PACKAGES $TESTS
