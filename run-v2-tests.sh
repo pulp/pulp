@@ -15,6 +15,7 @@ TESTS="test/unit/test_content_managers.py \
        test/unit/test_repo_sync_conduit.py \
        test/unit/test_repo_sync_manager.py \
        test/unit/test_repo_unit_association_manager.py \
+       test/unit/test_repo_unit_association_query_manager.py \
        test/unit/test_types_database.py \
        test/unit/test_types_parser.py
        "
