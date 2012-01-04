@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+#
 # Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -33,12 +33,48 @@ class Roles(JSONController):
     @error_handler
     @auth_required(super_user_only=True)
     def GET(self):
+        """
+        [[wiki]]
+        title: List Roles
+        description: List currently defined roles
+        method: GET
+        path: /roles/
+        permission: super user only
+        success response: 200 OK
+        failure response: None
+        return: list of roles
+        sample:
+        {{{
+        #!js
+        ["super-users", "consumer-users", "custom-role"]
+        }}}
+        """
         roles = [r['name'] for r in _role_api.roles(fields=['name'])]
         return self.ok(roles)
 
     @error_handler
     @auth_required(super_user_only=True)
     def POST(self):
+        """
+        [[wiki]]
+        title: Create a Role
+        description: Create a new role
+        method: POST
+        path: /roles/
+        permission: super user only
+        success response: 200 OK
+        failure response: 400 Bad Request if required parameters are not found
+        return: role object
+        sample:
+        {{{
+        #!js
+        {"name": "new-role",
+         "permissions": {}
+        }
+        }}}
+        parameters:
+         * rolename!, str, name of the role
+        """
         try:
             role_name = self.params()['rolename']
         except KeyError:
@@ -61,6 +97,25 @@ class Role(JSONController):
     @error_handler
     @auth_required(super_user_only=True)
     def GET(self, role_name):
+        """
+        [[wiki]]
+        title: Get a Role
+        description: Get a the object representation of the given role
+        method: GET
+        path: /roles/<role name>/
+        permission: super user only
+        success response: 200 OK
+        failure response: 404 Not Found
+        return: role object
+        sample:
+        {{{
+        #!js
+        {"name": "example",
+         "permissions": {"/": ["READ", "UPDATE"]},
+         "users": ["joe", "jessy"],
+        }
+        }}}
+        """
         role = _role_api.role(role_name)
         if role is None:
             return self.not_found(_('no such role: %s') % role_name)
@@ -74,6 +129,17 @@ class Role(JSONController):
     @error_handler
     @auth_required(super_user_only=True)
     def DELETE(self, role_name):
+        """
+        [[wiki]]
+        title: Delete a Role
+        description: Delete a role
+        method: DELETE
+        path: /roles/<role name>/
+        permission: super user only
+        success response: 200 OK
+        failure response: 404 Not Found
+        return: true
+        """
         role = _role_api.role(role_name)
         if role is None:
             return self.not_found(_('no such role: %s') % role_name)
@@ -90,6 +156,19 @@ class RoleActions(JSONController):
     )
 
     def add(self, role_name):
+        """
+        [[wiki]]
+        title: Add a User
+        description: Add a user to the given role
+        method: POST
+        path: /roles/<role name>/add/
+        permission: super user only
+        success response: 200 OK
+        failure response: 400 Bad Request if required parameters are not found
+        return: true or false if the user is already a member of the role
+        parameters:
+         * username!, str, login of user to add to role
+        """
         try:
             user_name = self.params()['username']
         except KeyError:
@@ -103,6 +182,20 @@ class RoleActions(JSONController):
             return self.ok(val)
 
     def remove(self, role_name):
+        """
+        [[wiki]]
+        title: Remove a User
+        description: Remove a user from the given role
+        method: POST
+        path: /roles/<role name>/remove/
+        permission: super user only
+        success response: 200 OK
+        failure response: 400 Bad Request if required parameters are not found
+                          400 Bad Request is the user is the last member of the super-users role
+        return: true or false if the user is not a member of the role
+        parameters:
+         * username!, str, login of user to remove from role
+        """
         try:
             user_name = self.params()['username']
         except KeyError:
