@@ -20,11 +20,17 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+import mock_plugins
 
+from pulp.server.content.conduits.unit_import import ImportUnitConduit
+from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.types import database, model
-from pulp.server.db.model.gc_repository import RepoContentUnit
-from pulp.server.managers.repo._exceptions import InvalidOwnerType
+from pulp.server.db.model.gc_repository import RepoContentUnit, Repo, RepoImporter
+from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingImporter, MissingRepo, UnsupportedTypes, ImporterAssociationException
+import pulp.server.managers.repo.cud as repo_manager
+import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.unit_association as association_manager
+from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.content.cud as content_cud_manager
 
@@ -36,6 +42,9 @@ TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
 TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
                                   ['key-2a', 'key-2b'], [], ['type-1'])
 
+MOCK_TYPE_DEF = model.TypeDefinition('mock-type', 'Mock Type', 'Used by the mock importer',
+                                     ['key-1'], [], [])
+
 # -- cud test cases -----------------------------------------------------------
 
 class RepoUnitAssociationManagerTests(testutil.PulpTest):
@@ -44,12 +53,21 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         super(RepoUnitAssociationManagerTests, self).clean()
         database.clean()
         RepoContentUnit.get_collection().remove()
+        RepoImporter.get_collection().remove()
+        Repo.get_collection().remove()
 
+    def tearDown(self):
+        super(RepoUnitAssociationManagerTests, self).tearDown()
+        mock_plugins.reset()
 
     def setUp(self):
         super(RepoUnitAssociationManagerTests, self).setUp()
-        database.update_database([TYPE_1_DEF, TYPE_2_DEF])
+        database.update_database([TYPE_1_DEF, TYPE_2_DEF, MOCK_TYPE_DEF])
+        mock_plugins.install()
+
         self.manager = association_manager.RepoUnitAssociationManager()
+        self.repo_manager = repo_manager.RepoManager()
+        self.importer_manager = importer_manager.RepoImporterManager()
         self.content_manager = content_cud_manager.ContentManager()
 
     def test_associate_by_id(self):
@@ -183,3 +201,176 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-1', 'unit_id' : 'unit-3'}) is not None)
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-1'}) is not None)
         self.assertTrue(unit_coll.find_one({'repo_id' : 'repo-1', 'unit_type_id' : 'type-2', 'unit_id' : 'unit-2'}) is not None)
+
+    def test_associate_from_repo_no_criteria(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1'})
+        self.content_manager.add_content_unit('mock-type', 'unit-2', {'key-1' : 'unit-2'})
+        self.content_manager.add_content_unit('mock-type', 'unit-3', {'key-1' : 'unit-3'})
+
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-2', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3', OWNER_TYPE_USER, 'admin')
+
+        # Test
+        self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+
+        # Verify
+        self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
+
+        args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
+        self.assertEqual(args[0]['id'], 'dest-repo') # repo importing units into
+        self.assertEqual(3, len(args[1])) # units to import
+        self.assertTrue(isinstance(args[2], ImportUnitConduit)) # conduit
+        self.assertTrue(isinstance(args[3], PluginCallConfiguration)) # config
+
+    def test_associate_from_repo_with_criteria(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1'})
+        self.content_manager.add_content_unit('mock-type', 'unit-2', {'key-1' : 'unit-2'})
+        self.content_manager.add_content_unit('mock-type', 'unit-3', {'key-1' : 'unit-3'})
+
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-2', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3', OWNER_TYPE_USER, 'admin')
+
+        # Test
+        criteria = Criteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
+        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
+
+        # Verify
+        self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
+
+        args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
+        self.assertEqual(1, len(args[1]))
+        self.assertEqual(args[1][0].id, 'unit-2')
+
+    def test_associate_from_repo_dest_has_no_importer(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        self.manager.associate_unit_by_id(source_repo_id, 'bad-type', 'unit-1', OWNER_TYPE_USER, 'admin')
+
+        # Test
+        try:
+            self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+            self.fail('Exception expected')
+        except UnsupportedTypes, e:
+            self.assertEqual(e.repo_id, dest_repo_id)
+            self.assertEqual(1, len(e.type_ids))
+            self.assertEqual('bad-type', e.type_ids[0])
+            print(e) # for coverage
+
+    def test_associate_from_repo_dest_unsupported_types(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+
+        # Test
+        try:
+            self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+            self.fail('Exception expected')
+        except MissingImporter, e:
+            print(e)
+
+    def test_associate_from_repo_importer_error(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        mock_plugins.MOCK_IMPORTER.import_units.side_effect = Exception()
+
+        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1'})
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-1', OWNER_TYPE_USER, 'admin')
+
+
+        # Test
+        try:
+            self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+            self.fail('Exception expected')
+        except ImporterAssociationException:
+            pass
+
+        # Cleanup
+        mock_plugins.MOCK_IMPORTER.import_units.side_effect = None
+
+    def test_associate_from_repo_no_matching_units(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        # Test
+        self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+
+        # Verify
+        self.assertEqual(0, mock_plugins.MOCK_IMPORTER.import_units.call_count)
+
+    def test_associate_from_repo_missing_source(self):
+        # Setup
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        # Test
+        try:
+            self.manager.associate_from_repo('missing', dest_repo_id)
+            self.fail('Exception expected')
+        except MissingRepo, e:
+            self.assertEqual(e.repo_id, 'missing')
+
+    def test_associate_from_repo_missing_destination(self):
+        # Setup
+        source_repo_id = 'source-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        # Test
+        try:
+            self.manager.associate_from_repo(source_repo_id, 'missing')
+            self.fail('Exception expected')
+        except MissingRepo, e:
+            self.assertEqual(e.repo_id, 'missing')

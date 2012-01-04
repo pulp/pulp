@@ -195,7 +195,9 @@ class RepoUnitAssociationManager:
         # behavior we want this method to exhibit, so just let it bubble up.
         repo_importer = importer_manager.get_importer(dest_repo_id)
 
-        supported_type_ids = plugin_loader.list_importer_types(repo_importer['importer_type_id'])
+        # The docs are incorrect on the list_importer_types call; it actually
+        # returns a dict with the types under key "types" for some reason.
+        supported_type_ids = plugin_loader.list_importer_types(repo_importer['importer_type_id'])['types']
 
         # The plugin should get all of the information for each unit, so in case
         # the user specified filters remove them
@@ -206,6 +208,10 @@ class RepoUnitAssociationManager:
         # Retrieve the units to be associated
         association_query_manager = manager_factory.repo_unit_association_query_manager()
         associate_us = association_query_manager.get_units(source_repo_id, criteria=criteria)
+
+        # If there are no matching units, there's no need to bother the plugin
+        if len(associate_us) is 0:
+            return
 
         # Now we can make sure the destination repository's importer is capable
         # of importing the selected units

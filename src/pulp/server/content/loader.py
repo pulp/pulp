@@ -195,10 +195,20 @@ def list_distributor_types(id):
 def list_importer_types(id):
     """
     List the supported content types for the given importer id.
+
+    This should be the signature:
+      return: tuple of types supported by the importer
+      rtype: tuple
+    However it's actually returning a dict where the types are under key
+    "types". I don't have time to dig into what is calling this to fix it,
+    so for now I'm fixing the docs.
+
     @param id: id of the importer
     @type id: str
-    @return: tuple of types supported by the importer
-    @rtype: tuple
+
+    @return: dict containing the type IDs at key "types"
+    @rtype:  dict {str : list}
+
     @raise: L{PluginNotFound} if no importer corresponds to the id
     """
     assert _is_initialized()
