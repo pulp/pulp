@@ -1,7 +1,7 @@
 [[PageOutline]]
 = Tasking RESTful Interface = #top
 ''RESTful interface providing an administrative and debugging api for'' [[BR]]
-''pulp's tasking system.'' [[BR]]
+''             pulp's tasking system.'' [[BR]]
 [[BR]]
 '''Task object fields''': 
  * '''id''' <str> ''unique id (usually a uuid) for the task''

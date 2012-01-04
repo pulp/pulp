@@ -1,8 +1,8 @@
 [[PageOutline]]
 = Repositories RESTful Interface = #top
-''RESTful interface for the creation, querying, and management of repositories managed by Pulp.'' [[BR]]
-''Repositories are represented as Repo objects.'' [[BR]]
-''Some operations on repositories happen asynchronously, as such, these operations return Task objects.'' [[BR]]
+'' RESTful interface for the creation, querying, and management of repositories managed by Pulp.'' [[BR]]
+'' Repositories are represented as Repo objects.'' [[BR]]
+'' Some operations on repositories happen asynchronously, as such, these operations return Task objects.'' [[BR]]
 [[BR]]
 '''Repo object fields''': 
  * '''id''' <str> ''repository identifier''
@@ -162,7 +162,7 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if repository does not exist [[BR]]
- 409 Conflict if repository cannot be deleted [[BR]]
+                           409 Conflict if repository cannot be deleted [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
@@ -215,8 +215,8 @@
 
 == List Actions ==
 ''Get a list of actions that were executed asynchronously on a repository.'' [[BR]]
-''This method only works for actions that returned a 202 Accepted response.'' [[BR]]
-''e.g. /repositories/my-repo/sync/'' [[BR]]
+''        This method only works for actions that returned a 202 Accepted response.'' [[BR]]
+''        e.g. /repositories/my-repo/sync/'' [[BR]]
 [[BR]]
 '''method''': GET [[BR]]
 [[BR]]
@@ -244,8 +244,8 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source [[BR]]
- 409 Conflict if a sync is already in progress for the repository [[BR]]
+                           406 Not Acceptable if the repository does not have a source [[BR]]
+                           409 Conflict if a sync is already in progress for the repository [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
@@ -403,7 +403,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': nil [[BR]]
 [[BR]]
@@ -425,7 +425,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': nil [[BR]]
 [[BR]]
@@ -466,7 +466,7 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 409 Conflict if the parameters match an existing repository [[BR]]
+                           409 Conflict if the parameters match an existing repository [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
@@ -492,7 +492,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': [[BR]]
 '''parameters''': 
@@ -514,7 +514,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': !PackageGroupCategory object [[BR]]
 [[BR]]
@@ -575,7 +575,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': nil [[BR]]
 [[BR]]
@@ -597,7 +597,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': nil [[BR]]
 [[BR]]
@@ -618,7 +618,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': nil [[BR]]
 [[BR]]
@@ -640,7 +640,7 @@
 [[BR]]
 '''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
- 404 Not Found if the id does not match a repository [[BR]]
+                           404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
 '''return''': nil [[BR]]
 [[BR]]
@@ -650,7 +650,7 @@
 
 == download custom metadata filetype from Repository Metadata ==
 ''download an xml file for the filetype specified'' [[BR]]
-''if exists in a repository metadata; else None.'' [[BR]]
+''                     if exists in a repository metadata; else None.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -681,8 +681,8 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source [[BR]]
- 409 Conflict if a export is already in progress for the repository [[BR]]
+                           406 Not Acceptable if the repository does not have a source [[BR]]
+                           409 Conflict if a export is already in progress for the repository [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
@@ -705,8 +705,8 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source [[BR]]
- 409 Conflict if a metadata is already in progress for the repository [[BR]]
+                           406 Not Acceptable if the repository does not have a source [[BR]]
+                           409 Conflict if a metadata is already in progress for the repository [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
@@ -770,7 +770,7 @@
 
 == list metadata filetype information from a Repository ==
 ''lists information about all the filetypes present in metadata'' [[BR]]
-''and their info such as size, checksum, path etc.'' [[BR]]
+''                    and their info such as size, checksum, path etc.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -863,7 +863,7 @@
 
 == remove metadata filetype from Repository Metadata ==
 ''remove the specified metadata filetype'' [[BR]]
-''if exists from a repository metadata; else None.'' [[BR]]
+''                     if exists from a repository metadata; else None.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -913,8 +913,8 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source [[BR]]
- 409 Conflict if a sync is already in progress for the repository [[BR]]
+                           406 Not Acceptable if the repository does not have a source [[BR]]
+                           409 Conflict if a sync is already in progress for the repository [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
@@ -927,8 +927,8 @@
 
 == Update Publish ==
 ''Update a repository's 'publish' state.'' [[BR]]
-''True means the repository is exposed through Apache.'' [[BR]]
-''False means to stop exposing from Apache.'' [[BR]]
+''                     True means the repository is exposed through Apache.'' [[BR]]
+''                     False means to stop exposing from Apache.'' [[BR]]
 [[BR]]
 '''method''': POST [[BR]]
 [[BR]]
@@ -1131,7 +1131,7 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if given repository does not exist [[BR]]
- 404 Not Found if given key does not exist [[BR]]
+                           404 Not Found if given key does not exist [[BR]]
 [[BR]]
 '''return''': Unspecified [[BR]]
 [[BR]]
@@ -1149,7 +1149,7 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if given repository does not exist [[BR]]
- 404 Not Found if given key does not exist [[BR]]
+                           404 Not Found if given key does not exist [[BR]]
 [[BR]]
 '''return''': a Repo object [[BR]]
 [[BR]]
@@ -1171,7 +1171,7 @@
 [[BR]]
 '''failure response''': 
  404 Not found if given repository does not exist [[BR]]
- 409 Conflict if given key already exists [[BR]]
+                           409 Conflict if given key already exists [[BR]]
 [[BR]]
 '''return''': repo object [[BR]]
 [[BR]]

@@ -21,6 +21,10 @@
 [[BR]]
 '''parameters''': 
  * '''pkgnames''' <list> ''list of package names in the format name, name.arch, name-ver-rel.arch, name-ver,''
+ * '''me-ver-rel''' <epoch:name-ver-rel.arch> ''name-epoch:ver-rel.arch.''
+ * '''repoids''' <list> ''list of repo ids''
+ * '''recursive''' ''(optional)'' <boolean> ''performs dependency resolution recursively''
+ * '''make_tree''' ''(optional)'' <boolean> ''constrcts a dependency results as a tree form''
 [[BR]]
 
 ----
@@ -141,8 +145,8 @@
 [[BR]]
 '''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source [[BR]]
- 409 Conflict if a export is already in progress for the repository [[BR]]
+                           406 Not Acceptable if the repository does not have a source [[BR]]
+                           409 Conflict if a export is already in progress for the repository [[BR]]
 [[BR]]
 '''return''': a Task object [[BR]]
 [[BR]]
