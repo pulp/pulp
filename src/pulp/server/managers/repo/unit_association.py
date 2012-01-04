@@ -19,12 +19,16 @@ repositories and content units.
 import copy
 import logging
 import pymongo
+import sys
 
-import pulp.server.content.types.database as types_db
+import pulp.server.content.conduits._common as common_utils
+from pulp.server.content.conduits.unit_import import ImportUnitConduit
 import pulp.server.content.loader as plugin_loader
+from pulp.server.content.plugins.config import PluginCallConfiguration
+import pulp.server.content.types.database as types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
-from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingRepo
+from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingRepo, UnsupportedTypes, ImporterAssociationException
 
 # -- constants ----------------------------------------------------------------
 
@@ -172,6 +176,8 @@ class RepoUnitAssociationManager:
         @raises MissingRepo: if either of the specified repositories don't exist
         @raises MissingImporter: if the destination repository does not have
                 a configured importer
+        @raises UnsupportedTypes: if one or more units that would be associated
+                are of types not supported by the destination repository's importer
         """
 
         # Validation
@@ -188,12 +194,50 @@ class RepoUnitAssociationManager:
 
         # This will raise MissingImporter if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
-        importer = importer_manager.get_importer(dest_repo_id)
+        repo_importer = importer_manager.get_importer(dest_repo_id)
 
-        supported_type_ids = plugin_loader.list_importer_types(importer['importer_type_id'])
+        supported_type_ids = plugin_loader.list_importer_types(repo_importer['importer_type_id'])
+
+        # The plugin should get all of the information for each unit, so in case
+        # the user specified filters remove them
+        if criteria is not None:
+            criteria.association_fields = None
+            criteria.unit_fields = None
 
         # Retrieve the units to be associated
+        associate_us = self.get_units(source_repo_id, criteria=criteria)
 
+        # Now we can make sure the destination repository's importer is capable
+        # of importing the selected units
+        associated_unit_type_ids = set([u['unit_type_id'] for u in associate_us])
+        unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
+
+        if len(unsupported_types) > 0:
+            raise UnsupportedTypes(dest_repo_id, unsupported_types)
+
+        # Convert all of the units into the plugin standard representation
+        type_defs = {}
+        for def_id in associated_unit_type_ids:
+            type_def = types_db.type_definition(def_id)
+            type_defs[def_id] = type_def
+
+        transfer_units = []
+        for unit in associate_us:
+            type_id = unit['unit_type_id']
+            u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+            transfer_units.append(u)
+
+        # Invoke the importer
+        importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
+
+        call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
+        conduit = ImportUnitConduit(dest_repo_id, repo_importer['id'], self, importer_manager)
+
+        try:
+            importer_instance.import_units(dest_repo, transfer_units, conduit, call_config)
+        except Exception:
+            _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (repo_importer['importer_type_id'], dest_repo_id))
+            raise ImporterAssociationException(), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
         """
