@@ -36,7 +36,7 @@ class Permissions(JSONController):
         path: /permissions/show/
         permission: super user only
         success response: 200 OK
-        failure response: None
+        failure response: 400 Bad Request if the required parameters are not present
         return: permissions for given resource
         example:
         {{{
@@ -47,7 +47,7 @@ class Permissions(JSONController):
         }
         }}}
         parameters:
-         * resource!, str, unique resource id
+         * resource!, str, resource path
         """
 
         try:

@@ -102,7 +102,7 @@
 [[BR]]
 '''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response''': None [[BR]]
+'''failure response''': 400 Bad Request if the required parameters are not present [[BR]]
 [[BR]]
 '''return''': permissions for given resource [[BR]]
 [[BR]]
@@ -116,5 +116,5 @@
 }}}
 [[BR]]
 '''parameters''': 
- * '''resource''' ''(required)'' <str> ''unique resource id''
+ * '''resource''' ''(required)'' <str> ''resource path''
 [[BR]]
