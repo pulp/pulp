@@ -68,8 +68,9 @@ class Grant(PermissionAction):
         resource = self.get_required_option('resource')
         operations = self.get_required_option('operations', 'operation')
         operations = [o.upper() for o in operations]
-        users = self.get_required_option('users', flag='user')
-        for user in users:
+        if not self.opts.users and not self.opts.roles:
+            system_exit(os.EX_NOINPUT, _('Either a user or a role is required'))
+        for user in self.opts.users:
             success = self.permission_api.grant_permission_to_user(resource, user, operations)
             if not success:
                 continue
