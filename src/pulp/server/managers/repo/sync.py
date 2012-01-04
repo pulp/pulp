@@ -100,12 +100,13 @@ class RepoSyncManager:
 
         # Assemble the data needed for the sync
         association_manager = manager_factory.repo_unit_association_manager()
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
         repo_manager = manager_factory.repo_manager()
         repo_importer_manager = manager_factory.repo_importer_manager()
         content_manager = manager_factory.content_manager()
         content_query_manager = manager_factory.content_query_manager()
         conduit = RepoSyncConduit(repo_id, repo_importer['id'], repo_manager, repo_importer_manager, self, association_manager,
-                                  content_manager, content_query_manager)
+                                  association_query_manager, content_manager, content_query_manager)
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], sync_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)

@@ -452,7 +452,7 @@ class RepoUnitAdvancedSearch(JSONController):
             return self.bad_request(serialized)
 
         # Data lookup
-        manager = manager_factory.repo_unit_association_manager()
+        manager = manager_factory.repo_unit_association_query_manager()
         if criteria.type_ids is not None and len(criteria.type_ids) == 1:
             type_id = criteria.type_ids[0]
             units = manager.get_units_by_type(repo_id, type_id, criteria=criteria)

@@ -20,7 +20,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
+from pulp.server.db.model.gc_repository import RepoContentUnit
 
 # -- constants ----------------------------------------------------------------
 
@@ -75,7 +75,7 @@ class ImportUnitConduit:
         """
 
         try:
-            self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.importer_id)
+            self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, RepoContentUnit.OWNER_TYPE_IMPORTER, self.importer_id)
             return unit
         except Exception, e:
             _LOG.exception(_('Content unit association failed [%s]' % str(unit)))

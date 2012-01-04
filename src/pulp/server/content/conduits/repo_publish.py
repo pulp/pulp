@@ -59,6 +59,7 @@ class RepoPublishConduit:
                  repo_distributor_manager,
                  repo_publish_manager,
                  repo_association_manager,
+                 repo_association_query_manager,
                  content_query_manager,
                  progress_callback=None):
         """
@@ -91,6 +92,7 @@ class RepoPublishConduit:
         self.__repo_publish_manager = repo_publish_manager
         self.__repo_distributor_manager = repo_distributor_manager
         self.__association_manager = repo_association_manager
+        self.__association_query_manager = repo_association_query_manager
         self.__content_query_manager = content_query_manager
         self.__progress_callback = progress_callback
 
@@ -128,7 +130,7 @@ class RepoPublishConduit:
         """
 
         try:
-            units = self.__association_manager.get_units_across_types(self.repo_id, criteria=criteria)
+            units = self.__association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
             all_units = []
 

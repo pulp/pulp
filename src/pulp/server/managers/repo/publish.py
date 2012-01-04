@@ -88,9 +88,10 @@ class RepoPublishManager:
         repo_manager = manager_factory.repo_manager()
         distributor_manager = manager_factory.repo_distributor_manager()
         association_manager = manager_factory.repo_unit_association_manager()
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
         content_query_manager = manager_factory.content_query_manager()
         conduit = RepoPublishConduit(repo_id, distributor_id, repo_manager, distributor_manager,
-                                     self, association_manager, content_query_manager)
+                                     self, association_manager, association_query_manager, content_query_manager)
 
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'], publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)

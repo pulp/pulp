@@ -84,6 +84,7 @@ class RepoSyncConduit:
                  repo_importer_manager,
                  repo_sync_manager,
                  repo_association_manager,
+                 repo_association_query_manager,
                  content_manager,
                  content_query_manager,
                  progress_callback=None):
@@ -126,6 +127,7 @@ class RepoSyncConduit:
         self.__importer_manager = repo_importer_manager
         self.__sync_manager = repo_sync_manager
         self.__association_manager = repo_association_manager
+        self.__association_query_manager = repo_association_query_manager
         self.__content_manager = content_manager
         self.__content_query_manager = content_query_manager
         self.__progress_callback = progress_callback
@@ -188,7 +190,7 @@ class RepoSyncConduit:
         """
 
         try:
-            units = self.__association_manager.get_units_across_types(self.repo_id, criteria=criteria)
+            units = self.__association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
             all_units = []
 

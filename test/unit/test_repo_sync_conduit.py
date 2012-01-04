@@ -30,6 +30,7 @@ import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.sync as sync_manager
 import pulp.server.managers.repo.unit_association as association_manager
+import pulp.server.managers.repo.unit_association_query as association_query_manager
 import pulp.server.managers.content.cud as content_manager
 import pulp.server.managers.content.query as query_manager
 
@@ -58,6 +59,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.importer_manager = importer_manager.RepoImporterManager()
         self.sync_manager = sync_manager.RepoSyncManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
+        self.association_query_manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.content_manager = content_manager.ContentManager()
         self.query_manager = query_manager.ContentQueryManager()
 
@@ -281,8 +283,8 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
     def test_get_units_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__association_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__association_manager.get_units_across_types.side_effect = Exception()
+        self.conduit._RepoSyncConduit__association_query_manager = mock.Mock()
+        self.conduit._RepoSyncConduit__association_query_manager.get_units_across_types.side_effect = Exception()
 
         # Test
         try:
@@ -340,5 +342,5 @@ class RepoSyncConduitTests(testutil.PulpTest):
         Convenience method for creating a conduit.
         """
         conduit = RepoSyncConduit(repo_id, 'test-importer', self.repo_manager, self.importer_manager, self.sync_manager,
-                                  self.association_manager, self.content_manager, self.query_manager)
+                                  self.association_manager, self.association_query_manager, self.content_manager, self.query_manager)
         return conduit

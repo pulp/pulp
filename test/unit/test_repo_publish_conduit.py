@@ -32,6 +32,7 @@ import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
 import pulp.server.managers.repo.unit_association as association_manager
+import pulp.server.managers.repo.unit_association_query as association_query_manager
 import pulp.server.managers.content.cud as content_manager
 import pulp.server.managers.content.query as query_manager
 
@@ -60,6 +61,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.distributor_manager = distributor_manager.RepoDistributorManager()
         self.publish_manager = publish_manager.RepoPublishManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
+        self.association_query_manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.content_manager = content_manager.ContentManager()
         self.query_manager = query_manager.ContentQueryManager()
 
@@ -159,8 +161,8 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
     def test_get_units_with_error(self):
         # Setup
-        self.conduit._RepoPublishConduit__association_manager = mock.Mock()
-        self.conduit._RepoPublishConduit__association_manager.get_units_across_types.side_effect = Exception()
+        self.conduit._RepoPublishConduit__association_query_manager = mock.Mock()
+        self.conduit._RepoPublishConduit__association_query_manager.get_units_across_types.side_effect = Exception()
 
         # Test
         try:
@@ -194,5 +196,5 @@ class RepoSyncConduitTests(testutil.PulpTest):
         Convenience method for creating a conduit.
         """
         conduit = RepoPublishConduit(repo_id, dist_id, self.repo_manager, self.distributor_manager,
-                                     self.publish_manager, self.association_manager, self.query_manager)
+                                     self.publish_manager, self.association_manager, self.association_query_manager, self.query_manager)
         return conduit
