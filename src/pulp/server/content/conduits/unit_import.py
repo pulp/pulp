@@ -58,6 +58,9 @@ class ImportUnitConduit:
         self.__association_manager = repo_association_manager
         self.__importer_manager = repo_importer_manager
 
+    def __str__(self):
+        return _('ImportUnitConduit for repository [%(r)s]') % {'r' : self.repo_id}
+
     # -- public ---------------------------------------------------------------
 
     def associate_unit(self, unit):
