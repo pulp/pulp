@@ -241,7 +241,7 @@ class RepoUnitAssociationManager:
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
-        conduit = ImportUnitConduit(dest_repo_id, repo_importer['id'], self, importer_manager)
+        conduit = ImportUnitConduit(dest_repo_id, repo_importer['id'])
 
         try:
             importer_instance.import_units(transfer_repo, transfer_units, conduit, call_config)

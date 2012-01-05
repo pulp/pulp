@@ -21,11 +21,12 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock_plugins
 
-from pulp.server.content.conduits.unit_import import ImportUnitConduit, ImportConduitException
+from pulp.server.content.conduits.unit_import import ImportUnitConduit, UnitImportConduitException
 from pulp.server.content.conduits._common import to_plugin_unit
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
+import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.unit_association as association_manager
@@ -66,7 +67,11 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.repo_manager.create_repo('dest_repo')
         self.importer_manager.set_importer('dest_repo', 'mock-importer', {})
 
-        self.conduit = self._conduit('dest_repo')
+        self.conduit = ImportUnitConduit('dest_repo', 'test-importer')
+
+    def tearDown(self):
+        super(RepoSyncConduitTests, self).tearDown()
+        manager_factory.reset()
 
     def test_str(self):
         """
@@ -99,21 +104,13 @@ class RepoSyncConduitTests(testutil.PulpTest):
         # Setup
         mock_association_manager = mock.Mock()
         mock_association_manager.associate_unit_by_id.side_effect = Exception()
+        manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = mock_association_manager
 
-        conduit = ImportUnitConduit('dest_repo', 'test-importer', mock_association_manager, self.importer_manager)
+        conduit = ImportUnitConduit('dest_repo', 'test-importer')
 
         # Test
         try:
            conduit.associate_unit(None)
            self.fail('Exception expected')
-        except ImportConduitException:
+        except UnitImportConduitException:
             pass
-
-    # -- utilities ------------------------------------------------------------
-
-    def _conduit(self, repo_id):
-        """
-        Convenience method for creating a conduit.
-        """
-        conduit = ImportUnitConduit(repo_id, 'test-importer', self.association_manager, self.importer_manager)
-        return conduit

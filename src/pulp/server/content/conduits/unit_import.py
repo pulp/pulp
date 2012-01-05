@@ -20,7 +20,9 @@ from gettext import gettext as _
 import logging
 import sys
 
+from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
 from pulp.server.db.model.gc_repository import RepoContentUnit
+import pulp.server.managers.factory as manager_factory
 
 # -- constants ----------------------------------------------------------------
 
@@ -28,7 +30,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- exceptions ---------------------------------------------------------------
 
-class ImportConduitException(Exception):
+class UnitImportConduitException(ImporterConduitException):
     """
     General exception that wraps any server exception resulting from a conduit call.
     """
@@ -36,7 +38,7 @@ class ImportConduitException(Exception):
 
 # -- classes ------------------------------------------------------------------
 
-class ImportUnitConduit:
+class ImportUnitConduit(BaseImporterConduit):
     """
     Used to interact with the Pulp server while importing units into a
     repository. Instances of this class should *not* be cached between import
@@ -49,14 +51,14 @@ class ImportUnitConduit:
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, importer_id, repo_association_manager,
-                 repo_importer_manager):
+    def __init__(self, repo_id, importer_id):
+        BaseImporterConduit.__init__(self, repo_id, importer_id)
 
         self.repo_id = repo_id
         self.importer_id = importer_id
 
-        self.__association_manager = repo_association_manager
-        self.__importer_manager = repo_importer_manager
+        self.__association_manager = manager_factory.repo_unit_association_manager()
+        self.__importer_manager = manager_factory.repo_importer_manager()
 
     def __str__(self):
         return _('ImportUnitConduit for repository [%(r)s]') % {'r' : self.repo_id}
@@ -82,37 +84,4 @@ class ImportUnitConduit:
             return unit
         except Exception, e:
             _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
-            raise ImportConduitException(e), None, sys.exc_info()[2]
-
-    # -- importer utilities ---------------------------------------------------
-
-    def get_scratchpad(self):
-        """
-        Returns the value set in the scratchpad for this repository. If no
-        value has been set, None is returned.
-
-        @return: value saved for the repository being synchronized
-        @rtype:  <serializable>
-        """
-        try:
-            return self.__importer_manager.get_importer_scratchpad(self.repo_id)
-        except Exception, e:
-            _LOG.exception(_('Error getting scratchpad for repo [%s]' % self.repo_id))
-            raise ImportConduitException(e), None, sys.exc_info()[2]
-
-    def set_scratchpad(self, value):
-        """
-        Saves the given value to the scratchpad for this repository. It can later
-        be retrieved in subsequent syncs through get_scratchpad. The type for
-        the given value is anything that can be stored in the database (string,
-        list, dict, etc.).
-
-        @param value: will overwrite the existing scratchpad
-        @type  value: <serializable>
-        """
-        try:
-            self.__importer_manager.set_importer_scratchpad(self.repo_id, value)
-        except Exception, e:
-            _LOG.exception(_('Error setting scratchpad for repo [%s]' % self.repo_id))
-            raise ImportConduitException(e), None, sys.exc_info()[2]
-
+            raise UnitImportConduitException(e), None, sys.exc_info()[2]

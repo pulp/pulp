@@ -4,7 +4,8 @@
 # if something is in the list
 
 PACKAGES="pulp.server.managers,pulp.server.content,pulp.server.db.model.gc_repository,pulp.server.db.model.gc_content,pulp.server.webservices.controllers.gc_contents,pulp.server.webservices.controllers.gc_plugins,pulp.server.webservices.controllers.gc_repositories"
-TESTS="test/unit/test_content_managers.py \
+TESTS="test/unit/test_base_importer_conduit.py \
+       test/unit/test_content_managers.py \
        test/unit/test_content_plugin_loader.py \
        test/unit/test_repo_controller.py \
        test/unit/test_repo_importer_manager.py \
