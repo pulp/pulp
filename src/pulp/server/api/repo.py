@@ -1626,12 +1626,11 @@ class RepoApi(BaseApi):
             f = open(repo["group_xml_path"], "w")
             f.write(xml.encode("utf-8"))
             f.close()
-            if repo["group_gz_xml_path"]:
-                gz = gzip.open(repo["group_gz_xml_path"], "wb")
-                gz.write(xml.encode("utf-8"))
-                gz.close()
-            return comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
-                                                     repo["group_xml_path"], repo["group_gz_xml_path"])
+            #if repo["group_gz_xml_path"]:
+            #    gz = gzip.open(repo["group_gz_xml_path"], "wb")
+            #    gz.write(xml.encode("utf-8"))
+            #    gz.close()
+            return comps_util.update_repomd_xml_file(repo["repomd_xml_path"], repo["group_xml_path"])
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
             log.warn("Traceback: %s" % (traceback.format_exc()))

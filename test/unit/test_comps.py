@@ -466,3 +466,130 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue(self.repo_api.packagegroupcategory(
             repo["id"], "development") is not None)
 
+    def test_metadata_regen_with_group_changes(self):
+        log.info("Start test_metadata_regen_with_group_changes")
+        # Create a feedless repo
+        repo = self.repo_api.create("test_metadata_regen_with_group_changes", "test_name", "i386")
+        # Create a package group and add to repo
+        group_id = "test_group_id"
+        group_name = "test_group_name"
+        description = "test_description"
+        pkggrp = self.repo_api.create_packagegroup(repo["id"], group_id, group_name, description)
+        repo = self.repo_api.repository(repo["id"])
+
+        # Verify it's present with pulp
+        grps = self.repo_api.packagegroups(repo["id"])
+        self.assertEqual(len(grps), 1)
+        log.info("Added a PackageGroup id=<%s> to Repo <%s>" % (pkggrp["id"], repo["id"]))
+
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        self.assertTrue(mddata.has_key("group"))
+        self.assertTrue(mddata["group"].has_key("location"))
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        # Verify yum can parse the info from repomd.xml
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+        self.assertTrue(group_id in yum_group_ids)
+        ###
+        # Trigger metadata regen
+        ###
+        self.repo_api._generate_metadata(repo["id"])
+        log.info("Ran metadata regenerate")
+
+        # Verify packagegroup is still shown in metadata
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        # Verify yum can parse the info from repomd.xml
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+        self.assertTrue(group_id in yum_group_ids)
+
+        # Add a second group
+        group_id_B = "test_group_id_B"
+        group_name_B = "test_group_name_B"
+        description_B = "test_description_B"
+        pkggrp_B = self.repo_api.create_packagegroup(repo["id"], group_id_B, group_name_B, description_B)
+        repo = self.repo_api.repository(repo["id"])
+
+        # Verify it's present with Pulp
+        grps = self.repo_api.packagegroups(repo["id"])
+        self.assertEqual(len(grps), 2)
+        log.info("Added a second PackageGroup id=<%s> to Repo <%s>" % (pkggrp_B["id"], repo["id"]))
+
+        # Verify group info is present from the 'group' metadata referenced by repomd.xml
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        #for key in ("group", "group_gz"):
+        #    if mddata.has_key(key):
+        #        log.info("The location for '%s' is '%s'" % (key, mddata[key]["location"]))
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        log.info("Will parse <%s> for group data" % (group_path))
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+        # Verify both package groups are in the group file repomd.xml references
+        self.assertTrue(group_id in yum_group_ids)
+        self.assertTrue(group_id_B in yum_group_ids)
+        #cmd = "ls %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata"))
+        #os.system(cmd)
+
+        #####
+        # Trigger second metadata regen
+        #####
+        self.repo_api._generate_metadata(repo["id"])
+        log.info("Ran second metadata regenerate")
+
+        # Verify new metadata still has group information
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        log.info("Will parse <%s> for group data" % (group_path))
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+
+    def test_multiple_package_group_additions(self):
+        log.info("Start test_multiple_package_group_additions")
+        repo = self.repo_api.create("test_multiple_package_group_additions", "test_name", "i386")
+        group_count = 50
+        for i in range(0,group_count):
+            pkggrp = self.repo_api.create_packagegroup(repo["id"], "groupid_%s" % (i), "group_name_%s" % (i), "description_%s" % (i))
+        repo = self.repo_api.repository(repo["id"])
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        self.assertEqual(len(yum_group_ids), group_count) 
+        
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+    
+        # Be sure we are cleaning up the old group data on each addition
+        repodata_dir_listing = os.listdir(os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata"))
+        self.assertTrue(len(repodata_dir_listing) < 15) # typically there are about 10 repodata files
+
+        # Regenerate metadata and ensure we still see all the groups we've added
+        self.repo_api._generate_metadata(repo["id"])
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        self.assertEqual(len(yum_group_ids), group_count) 
