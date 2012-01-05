@@ -24,6 +24,7 @@ import mock_plugins
 
 from pulp.server.content.conduits.unit_import import ImportUnitConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
+from pulp.server.content.plugins.model import Repository
 from pulp.server.content.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit, Repo, RepoImporter
 from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingImporter, MissingRepo, UnsupportedTypes, ImporterAssociationException
@@ -228,7 +229,8 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
 
         args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
-        self.assertEqual(args[0]['id'], 'dest-repo') # repo importing units into
+        self.assertTrue(isinstance(args[0], Repository)) # repository transfer object
+        self.assertEqual(args[0].id, 'dest-repo') # repo importing units into
         self.assertEqual(3, len(args[1])) # units to import
         self.assertTrue(isinstance(args[2], ImportUnitConduit)) # conduit
         self.assertTrue(isinstance(args[3], PluginCallConfiguration)) # config

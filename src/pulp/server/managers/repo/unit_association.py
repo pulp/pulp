@@ -20,7 +20,7 @@ import logging
 import pymongo
 import sys
 
-import pulp.server.content.conduits._common as common_utils
+import pulp.server.content.conduits._common as conduit_common_utils
 from pulp.server.content.conduits.unit_import import ImportUnitConduit
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
@@ -28,6 +28,7 @@ import pulp.server.content.types.database as types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingRepo, UnsupportedTypes, ImporterAssociationException
+import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
 
@@ -230,8 +231,11 @@ class RepoUnitAssociationManager:
         transfer_units = []
         for unit in associate_us:
             type_id = unit['unit_type_id']
-            u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+            u = conduit_common_utils.to_plugin_unit(unit, type_defs[type_id])
             transfer_units.append(u)
+
+        transfer_repo = common_utils.to_transfer_repo(dest_repo)
+        transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], dest_repo['id'], mkdir=True)
 
         # Invoke the importer
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
@@ -240,7 +244,7 @@ class RepoUnitAssociationManager:
         conduit = ImportUnitConduit(dest_repo_id, repo_importer['id'], self, importer_manager)
 
         try:
-            importer_instance.import_units(dest_repo, transfer_units, conduit, call_config)
+            importer_instance.import_units(transfer_repo, transfer_units, conduit, call_config)
         except Exception:
             _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (repo_importer['importer_type_id'], dest_repo_id))
             raise ImporterAssociationException(), None, sys.exc_info()[2]
