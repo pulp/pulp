@@ -86,6 +86,9 @@ class Harness:
         if self.script.getboolean('general', 'run_publish_history'):
             self._assert_status(self.load_publish_history())
 
+        if self.script.getboolean('general', 'run_associate_units'):
+            self._assert_status(self.associate_units())
+
         if self.script.getboolean('general', 'run_list_units'):
             self._assert_status(self.list_units())
 
@@ -299,6 +302,40 @@ class Harness:
 
         return status
 
+    def associate_units(self):
+        self._print_divider()
+
+        source_repo_id = self.script.get('associate', 'source_repo_id')
+        dest_repo_id = self.script.get('associate', 'dest_repo_id')
+        type_id = 'harness_type_one'
+
+        url = '/v2/repositories/%s/actions/associate/' % dest_repo_id
+
+        # Build up criteria
+        criteria = {'type_ids' : [type_id]}
+
+        self._unit_filter('associate', 'search_1', criteria)
+        self._unit_filter('associate', 'search_2', criteria)
+        self._unit_filter('associate', 'random_1', criteria)
+
+        # Assemble the parameters
+        body = {'source_repo_id' : source_repo_id,
+                'criteria' : criteria}
+
+        self.prompt.write('Associating units from [%s] to [%s]' % (source_repo_id, dest_repo_id))
+        self.prompt.write('')
+        self.prompt.write('Association Criteria:')
+        indent = self.script.getint('output', 'json_indent')
+        formatted_body = json.dumps(criteria, indent=indent)
+        self.prompt.write(formatted_body)
+
+        self._pause()
+        status, body = self._call('POST', url, body)
+
+        self._print_response(status, body)
+
+        self.prompt.write('Association complete')
+
     def list_units(self):
         self._print_divider()
 
@@ -324,26 +361,14 @@ class Harness:
         url = '/v2/repositories/%s/search/units/' % repo_id
 
         # -- Build up criteria ------------------------------------------------
+
         query = {'type_ids' : [type_id]}
 
         # Unit Filters
 
-        def unit_filter(filter_name, query):
-
-            if self.script.has_option('query', filter_name):
-                filters = query.setdefault('filters', {})
-                unit_filters = filters.setdefault('unit', {})
-
-                # Minor hack to support regex
-                filter_value = self.script.get('query', filter_name)
-                if '*' in filter_value:
-                    filter_value = {'$regex' : filter_value}
-
-                unit_filters[filter_name] = filter_value
-
-        unit_filter('search_1', query)
-        unit_filter('search_2', query)
-        unit_filter('random_1', query)
+        self._unit_filter('query', 'search_1', query)
+        self._unit_filter('query', 'search_2', query)
+        self._unit_filter('query', 'random_1', query)
 
         # Sort
 
@@ -427,6 +452,19 @@ class Harness:
         self.prompt.write('')
 
     # -- utilities ------------------------------------------------------------
+
+    def _unit_filter(self, script_section, filter_name, query):
+
+        if self.script.has_option(script_section, filter_name):
+            filters = query.setdefault('filters', {})
+            unit_filters = filters.setdefault('unit', {})
+
+            # Minor hack to support regex
+            filter_value = self.script.get(script_section, filter_name)
+            if '*' in filter_value:
+                filter_value = {'$regex' : filter_value}
+
+            unit_filters[filter_name] = filter_value
 
     def _assert_status(self, status, no_fail=False):
         """
