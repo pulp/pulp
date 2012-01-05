@@ -21,44 +21,43 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import mock_plugins
 import testutil
 
-from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
+from pulp.server.content.conduits._base import BaseDistributorConduit, DistributorConduitException
 import pulp.server.content.types.database as types_database
 from pulp.server.db.model.gc_repository import Repo
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.cud import RepoManager
-from pulp.server.managers.repo.importer import RepoImporterManager
+from pulp.server.managers.repo.distributor import RepoDistributorManager
 
 # -- test cases ---------------------------------------------------------------
 
-class BaseImporterConduitTests(testutil.PulpTest):
+class BaseDistributorConduitTests(testutil.PulpTest):
 
     def clean(self):
-        super(BaseImporterConduitTests, self).clean()
+        super(BaseDistributorConduitTests, self).clean()
         types_database.clean()
 
         Repo.get_collection().remove()
 
     def setUp(self):
-        super(BaseImporterConduitTests, self).setUp()
+        super(BaseDistributorConduitTests, self).setUp()
         mock_plugins.install()
 
         self.repo_manager = RepoManager()
-        self.importer_manager = RepoImporterManager()
+        self.distributor_manager = RepoDistributorManager()
 
         self.repo_manager.create_repo('repo-1')
-        self.conduit = BaseImporterConduit('repo-1', 'test-importer')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {}, True, distributor_id='test-distributor')
+
+        self.conduit = BaseDistributorConduit('repo-1', 'test-distributor')
 
     def tearDown(self):
-        super(BaseImporterConduitTests, self).tearDown()
+        super(BaseDistributorConduitTests, self).tearDown()
         manager_factory.reset()
 
     def test_get_set_scratchpad(self):
         """
         Tests scratchpad calls.
         """
-
-        # Setup
-        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
 
         # Test - get no scratchpad
         self.assertTrue(self.conduit.get_scratchpad() is None)
@@ -72,12 +71,12 @@ class BaseImporterConduitTests(testutil.PulpTest):
 
     def test_scratchpad_with_error(self):
         # Setup
-        mock_manager = mock.Mock()
-        mock_manager.get_importer_scratchpad.side_effect = Exception()
-        mock_manager.set_importer_scratchpad.side_effect = Exception()
+        mock_distributor_manager = mock.Mock()
+        mock_distributor_manager.get_distributor_scratchpad.side_effect = Exception()
+        mock_distributor_manager.set_distributor_scratchpad.side_effect = Exception()
 
-        manager_factory._INSTANCES[manager_factory.TYPE_REPO_IMPORTER] = mock_manager
+        manager_factory._INSTANCES[manager_factory.TYPE_REPO_DISTRIBUTOR] = mock_distributor_manager
 
         # Test
-        self.assertRaises(ImporterConduitException, self.conduit.get_scratchpad)
-        self.assertRaises(ImporterConduitException, self.conduit.set_scratchpad, 'foo')
+        self.assertRaises(DistributorConduitException, self.conduit.get_scratchpad)
+        self.assertRaises(DistributorConduitException, self.conduit.set_scratchpad, 'foo')
