@@ -283,10 +283,7 @@ class Install(PackageGroupAction):
         while not task_end(task):
             printwait()
             task = self.task_api.info(task['id'])
-        if task_succeeded(task):
-            print _('\n%s installed on %s') % (task['result'], id)
-        else:
-            print("\nInstall failed: %s" % task['exception'])
+        print_packages_installed(id, task)
 
     def on_group(self, id, grpids):
         when = parse_at_schedule(self.opts.when)
@@ -306,15 +303,9 @@ class Install(PackageGroupAction):
             job = self.job_api.info(job['id'])
             printwait()
         print _('\nInstall Summary:')
-        for t in job['tasks']:
-            state = t['state']
-            exception = t['exception']
-            id, packages = t['args']
-            if exception:
-                details = str(exception)
-            else:
-                details = 'groups installed: %s' %  t['result']
-            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+        for task in job['tasks']:
+            id, packages = task['args']
+            print_packages_installed(id, task)
 
     def getunavailable(self, ids):
         lst = []
@@ -364,10 +355,7 @@ class Uninstall(Install):
         while not task_end(task):
             printwait()
             task = self.task_api.info(task['id'])
-        if task_succeeded(task):
-            print _('\n%s uninstalled on %s') % (task['result'], id)
-        else:
-            print("\nUninstall failed: %s" % task['exception'])
+        print_packages_removed(id, task)
 
     def on_group(self, id, grpids):
         when = parse_at_schedule(self.opts.when)
@@ -387,16 +375,9 @@ class Uninstall(Install):
             job = self.job_api.info(job['id'])
             printwait()
         print _('\nUninstall Summary:')
-        for t in job['tasks']:
-            state = t['state']
-            exception = t['exception']
-            id, packages = t['args']
-            if exception:
-                details = str(exception)
-            else:
-                details = 'groups uninstalled: %s' %  t['result']
-            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
-
+        for task in job['tasks']:
+            id, packages = task['args']
+            print_packages_removed(id, task)
 
 # --- Package Group Category Operations ---
 class ListCategory(PackageGroupAction):
@@ -645,6 +626,79 @@ class ExportComps(PackageGroupAction):
                 system_exit(os.EX_OK, _("Successfully exported the comps data to [%s]" % self.opts.out))
             else:
                 print comps_xml.encode("utf8")
+
+def print_packages_installed(consumerid, task):
+    if task_succeeded(task):
+        print '\nConsumer ID: %s  [ SUCCEEDED ]' % consumerid
+    else:
+        print '\nConsumer ID: %s  [ FAILED ] %s' % (consumerid, task['exception'])
+        return
+    installed = task['result']
+    resolved = installed['resolved']
+    if not resolved:
+        print _('\nNothing to do')
+        return
+    print '====================================================================='
+    print _('Package                           Arch     Version    Repository')
+    print '====================================================================='
+    print _('Installed:')
+    for pkg in sorted_packages(resolved):
+        print '%-33s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+    deps = installed['deps']
+    if not deps:
+        return
+    print _('\nInstalled for dependencies:')
+    for pkg in sorted_packages(deps):
+        print '%-32s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+
+def print_packages_removed(consumerid, task):
+    if task_succeeded(task):
+        print '\nConsumer ID: %s  [ SUCCEEDED ]' % consumerid
+    else:
+        print '\nConsumer ID: %s  [ FAILED ] %s' % (consumerid, task['exception'])
+        return
+    uninstalled = task['result']
+    resolved = uninstalled['resolved']
+    if not resolved:
+        print _('\nNothing to do')
+        return
+    print '====================================================================='
+    print _('Package                           Arch     Version    Repository')
+    print '====================================================================='
+    print _('Removed:')
+    for pkg in sorted_packages(resolved):
+        print '%-33s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+    deps = uninstalled['deps']
+    if not deps:
+        return
+    print _('\nRemoved for dependencies:')
+    for pkg in sorted_packages(deps):
+        print '%-32s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+
+def sorted_packages(packages):
+    d = {}
+    result = []
+    for p in packages:
+        d[p['name']] = p
+    for k in sorted(d.keys()):
+        result.append(d[k])
+    return result
     
 # package group command -------------------------------------------------------
 

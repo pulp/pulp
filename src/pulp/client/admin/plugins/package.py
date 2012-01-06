@@ -137,13 +137,7 @@ class Install(PackageAction):
         while not task_end(task):
             printwait()
             task = self.task_api.info(task['id'])
-        if task_succeeded(task):
-            result = task['result']
-            installed = result['installed']
-            print _('\n%s installed on %s') % (installed, id)
-        else:
-            print _('\nInstall failed: %s' % task['exception'])
-            system_exit(-1)
+        print_packages_installed(id, task)
 
     def on_group(self, id, pnames):
         when = parse_at_schedule(self.opts.when)
@@ -163,17 +157,9 @@ class Install(PackageAction):
             job = self.job_api.info(job['id'])
             printwait()
         print _('\nInstall Summary:')
-        for t in job['tasks']:
-            state = t['state']
-            exception = t['exception']
-            id, packages = t['args']
-            if not exception:
-                result = t['result']
-                installed = result['installed']
-                details = 'packages installed: %s' % installed
-            else:
-                details = str(exception)
-            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+        for task in job['tasks']:
+            id, packages = task['args']
+            print_packages_installed(id, task)
 
     def getunavailable(self, ids):
         lst = []
@@ -253,15 +239,7 @@ class Update(Install):
         while not task_end(task):
             printwait()
             task = self.task_api.info(task['id'])
-        if task_succeeded(task):
-            updated = task['result']['updated']
-            print _('\n[%d] packages:') % len(updated)
-            for u in sorted([u[0] for u in updated]):
-                print '  %s' % u
-            print _('\nupdated on %s') % id
-        else:
-            print _('\nUpdate failed: %s' % task['exception'])
-            system_exit(-1)
+        print_packages_updated(id, task)
 
     def on_group(self, id, pnames):
         when = parse_at_schedule(self.opts.when)
@@ -281,20 +259,9 @@ class Update(Install):
             job = self.job_api.info(job['id'])
             printwait()
         print _('\nUpdate Summary:')
-        for t in job['tasks']:
-            state = t['state']
-            exception = t['exception']
-            id, packages = t['args']
-            if exception:
-                details = str(exception)
-                print _('\t[ %-8s ] %s: failed: %s') % (state.upper(), id, details)
-                continue
-            updated = t['result']['updated']
-            pkgs = sorted([u[0] for u in updated])
-            print _('\t[ %-8s ] %s: [%d] packages updated:') % \
-                (state.upper(), id, len(pkgs))
-            for p in pkgs:
-                print '\t%-13s%s' % ('',p)
+        for task in job['tasks']:
+            id, packages = task['args']
+            print_packages_updated(id, task)
 
 
 class Uninstall(Install):
@@ -333,11 +300,7 @@ class Uninstall(Install):
         while not task_end(task):
             printwait()
             task = self.task_api.info(task['id'])
-        if task_succeeded(task):
-            print _('\n%s uninstalled on %s') % (task['result'], id)
-        else:
-            print _('\nUninstall failed: %s' % task['exception'])
-            system_exit(-1)
+        print_packages_removed(id, task)
 
     def on_group(self, id, pnames):
         when = parse_at_schedule(self.opts.when)
@@ -357,16 +320,9 @@ class Uninstall(Install):
             job = self.job_api.info(job['id'])
             printwait()
         print _('\nUninstall Summary:')
-        for t in job['tasks']:
-            state = t['state']
-            exception = t['exception']
-            id, packages = t['args']
-            if exception:
-                details = str(exception)
-            else:
-                uninstalled = t['result']
-                details = 'packages uninstalled: %s' % uninstalled
-            print _('\t[ %-8s ] %s; %s' % (state.upper(), id, details))
+        for task in job['tasks']:
+            id, packages = task['args']
+            print_packages_removed(id, task)
 
 
 class Search(PackageAction):
@@ -484,6 +440,113 @@ class DependencyList(PackageAction):
         for dep, pkgs in deps['resolved'].items():
             for pkg in pkgs:
                 print str(pkg['filename'])
+
+# install package output -----------------------------------------------------
+
+def print_packages_installed(consumerid, task):
+    if task_succeeded(task):
+        print '\nConsumer ID: %s  [ SUCCEEDED ]' % consumerid
+    else:
+        print '\nConsumer ID: %s  [ FAILED ] %s' % (consumerid, task['exception'])
+        return
+    installed = task['result']['installed']
+    resolved = installed['resolved']
+    if not resolved:
+        print _('\nNothing to do')
+        return
+    print '====================================================================='
+    print _('Package                           Arch     Version    Repository')
+    print '====================================================================='
+    print _('Installed:')
+    for pkg in sorted_packages(resolved):
+        print '%-33s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+    deps = installed['deps']
+    if not deps:
+        return
+    print _('\nInstalled for dependencies:')
+    for pkg in sorted_packages(deps):
+        print '%-32s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+
+def print_packages_updated(consumerid, task):
+    if task_succeeded(task):
+        print '\nConsumer ID: %s  [ SUCCEEDED ]' % consumerid
+    else:
+        print '\nConsumer ID: %s  [ FAILED ] %s' % (consumerid, task['exception'])
+        return
+    updated = task['result']['updated']
+    resolved = updated['resolved']
+    if not resolved:
+        print _('\nNothing to do')
+        return
+    print '====================================================================='
+    print _('Package                           Arch     Version    Repository')
+    print '====================================================================='
+    print _('Updated:')
+    for pkg in sorted_packages(resolved):
+        print '%-33s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+    deps = updated['deps']
+    if not deps:
+        return
+    print _('\nInstalled/Updated for dependencies:')
+    for pkg in sorted_packages(deps):
+        print '%-32s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+
+def print_packages_removed(consumerid, task):
+    if task_succeeded(task):
+        print '\nConsumer ID: %s  [ SUCCEEDED ]' % consumerid
+    else:
+        print '\nConsumer ID: %s  [ FAILED ] %s' % (consumerid, task['exception'])
+        return
+    uninstalled = task['result']
+    resolved = uninstalled['resolved']
+    if not resolved:
+        print _('\nNothing to do')
+        return
+    print '====================================================================='
+    print _('Package                           Arch     Version    Repository')
+    print '====================================================================='
+    print _('Removed:')
+    for pkg in sorted_packages(resolved):
+        print '%-33s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+    deps = uninstalled['deps']
+    if not deps:
+        return
+    print _('\nRemoved for dependencies:')
+    for pkg in sorted_packages(deps):
+        print '%-32s %-8s %-10s %s' % \
+            (pkg['name'],
+             pkg['arch'],
+             pkg['version'],
+             pkg['repoid'])
+
+def sorted_packages(packages):
+    d = {}
+    result = []
+    for p in packages:
+        d[p['name']] = p
+    for k in sorted(d.keys()):
+        result.append(d[k])
+    return result
 
 # package command -------------------------------------------------------------
 

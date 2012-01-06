@@ -188,7 +188,7 @@ class Install(ErrataAction):
         if task_succeeded(task):
             reboot = self.reboot_requested(task)
             result = task['result']
-            installed = result['installed']
+            installed = result['installed']['resolved']+result['installed']['deps']
             reboot_scheduled = result['reboot_scheduled']
             if installed:
                 print _('\nErrata applied to [%s]; packages installed: %s' % \
@@ -232,7 +232,7 @@ class Install(ErrataAction):
                 s = []
                 reboot = self.reboot_requested(t)
                 result = t['result']
-                installed = result['installed']
+                installed = result['installed']['resolved']+result['installed']['deps']
                 reboot_scheduled = result['reboot_scheduled']
                 if reboot and not reboot_scheduled:
                     s.append('reboot needed')
