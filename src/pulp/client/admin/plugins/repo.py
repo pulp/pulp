@@ -586,13 +586,6 @@ class Clone(RepoProgressAction):
         id = self.get_required_option('id')
         self.get_repo(id)
 
-        # find if sync in progress for parent repo
-        tasks = self.repository_api.sync_list(id)
-        running = self.repository_api.running_task(tasks)
-        if running is not None:
-            print _('Sync for parent repository %s already in progress') % id
-            return running
-
         clone_id = self.get_required_option('clone_id')
         clone_name = self.opts.clone_name or clone_id
         feed = self.opts.feed or 'parent'
