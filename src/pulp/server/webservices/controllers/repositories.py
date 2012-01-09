@@ -1315,6 +1315,7 @@ class RepositoryActions(JSONController):
         success response: 202 Accepted
         failure response: 404 Not Found if the id does not match a repository
                           409 Conflict if the parameters match an existing repository
+                          409 Conflict if the parent repository is currently syncing
         return: a Task object
         parameters:
          * clone_id, str, the id of the clone repository
@@ -1325,8 +1326,11 @@ class RepositoryActions(JSONController):
          * filters?, list of objects, synchronization filters to apply to the clone
         """
         repo_data = self.params()
-        if api.repository(id, default_fields) is None:
+        parent_repo = api.repository(id)
+        if parent_repo is None:
             return self.not_found('A repository with the id, %s, does not exist' % id)
+        if parent_repo['sync_in_progress']:
+            return self.conflict('The repository %s is currently syncing, cannot create clone util it is finished' % id)
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
         if repo_data['feed'] not in ['parent','origin','none']:
