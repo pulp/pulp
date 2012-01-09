@@ -873,9 +873,25 @@ class RepositoryDeferredFields(JSONController):
         example:
         {{{
         #!js
-        {'group-1': ['package_name', 'another_package_name'],
-         'group-1': [...],
-         ...
+        {"pkg_group_id_1": {
+            "mandatory_package_names": [],
+            "description": "pkg_grp_description_1",
+            "repo_defined": false,
+            "default": true,
+            "name": "pkg_group_name_1",
+            "display_order": 1024,
+            "user_visible": true,
+            "translated_name": {},
+            "translated_description": {},
+            "conditional_package_names": {},
+            "default_package_names": [],
+            "id": "pkg_group_id_1",
+            "langonly": null,
+            "_id": "pkg_group_id_1",
+            "immutable": false,
+            "optional_package_names": []
+          }
+        }
         }}}
         filters:
          * filter_missing_packages, bool, True means to filter results to remove missing package names
@@ -908,9 +924,20 @@ class RepositoryDeferredFields(JSONController):
         example:
         {{{
         #!js
-        ['category-1',
-         'category-2',
-         ...]
+         {
+          "cat_id_1": {
+            "description": "cat_descrp_1",
+            "repo_defined": false,
+            "display_order": 99,
+            "immutable": false,
+            "translated_name": {},
+            "packagegroupids": [],
+            "translated_description": {},
+            "_id": "cat_id_1",
+            "id": "cat_id_1",
+            "name": "cat_name_1"
+          }
+        }
         }}}
         filters:
          * id, str, package group category id
@@ -1429,6 +1456,11 @@ class RepositoryActions(JSONController):
         parameters:
          * groupid, str, package group id
          * packagenames, list of str, list of packages to add to the package group
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         p = self.params()
         if "groupid" not in p:
@@ -1461,6 +1493,11 @@ class RepositoryActions(JSONController):
         parameters:
          * groupid, str, package group id
          * name, str, package name to remove
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         p = self.params()
         if "groupid" not in p:
@@ -1490,6 +1527,28 @@ class RepositoryActions(JSONController):
          * groupid, str, id of the package group
          * groupname, str, name of the package group
          * description, str, package group description
+        example response:
+        {{{
+        #!js
+         {
+          "mandatory_package_names": [],
+          "description": "pkg_grp_description_1",
+          "repo_defined": false,
+          "default": true,
+          "name": "pkg_grp_name_1",
+          "display_order": 1024,
+          "user_visible": true,
+          "translated_name": {},
+          "translated_description": {},
+          "conditional_package_names": {},
+          "default_package_names": [],
+          "id": "pkg_grp_id_1",
+          "langonly": null,
+          "_id": "pkg_grp_id_1",
+          "immutable": false,
+          "optional_package_names": []
+        }
+        }}}
         """
         p = self.params()
         if "groupid" not in p:
@@ -1512,11 +1571,52 @@ class RepositoryActions(JSONController):
         method: POST
         path: /repositories/<id>/import_comps/
         permission: EXECUTE
-        success response: 200 OK
+        success response: 201 Created
         failure response: 404 Not Found if the id does not match a repository
         return: True on success, False on failure
         parameters:
          * xml comps file body
+        example response:
+        {{{
+        #!js
+         {
+          "package_count": 0,
+          "distributionid": [],
+          "consumer_cert": null,
+          "consumer_ca": null,
+          "filters": [],
+          "last_sync": null,
+          "id": "test_comps_import",
+          "repomd_xml_path": "/var/lib/pulp//repos/test_comps_import/repodata/repomd.xml",
+          "preserve_metadata": false,
+          "group_xml_path": "",
+          "publish": true,
+          "source": null,
+          "sync_in_progress": false,
+          "packagegroups": {},
+          "files": [],
+          "relative_path": "test_comps_import",
+          "arch": "noarch",
+          "sync_schedule": null,
+          "packages": [],
+          "group_gz_xml_path": "",
+          "feed_cert": null,
+          "name": "test_comps_import",
+          "uri_ref": "/pulp/api/repositories/test_comps_import/",
+          "feed_ca": null,
+          "notes": {},
+          "groupid": [],
+          "content_types": "yum",
+          "clone_ids": [],
+          "packagegroupcategories": {},
+          "_ns": "repos",
+          "release": null,
+          "checksum_type": "sha256",
+          "sync_options": {},
+          "_id": "test_comps_import",
+          "errata": {}
+        }
+        }}}
         """
         comps_data = self.params()
         return self.ok(repo_sync.import_comps(id, comps_data))
@@ -1535,12 +1635,12 @@ class RepositoryActions(JSONController):
         return: nil
         parameters:
          * groupid, str, id of the package group
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
-#        """
-#        Removes a packagegroup from a repository
-#        @param id: repository id
-#        @return:
-#        """
         p = self.params()
         if "groupid" not in p:
             return self.bad_request('No groupid specified')
@@ -1563,6 +1663,22 @@ class RepositoryActions(JSONController):
          * categoryid, str, package group category id
          * categoryname, str, package group category name
          * description, str, description of the package group category
+        example response:
+        {{{
+        #!js
+          {
+          "description": "cat_descrp_1",
+          "repo_defined": false,
+          "display_order": 99,
+          "translated_name": {},
+          "packagegroupids": [],
+          "translated_description": {},
+          "id": "cat_id_1",
+          "_id": "cat_id_1",
+          "immutable": false,
+          "name": "cat_name_1"
+        }
+        }}}
         """
         _log.info("create_packagegroupcategory invoked")
         p = self.params()
@@ -1592,6 +1708,11 @@ class RepositoryActions(JSONController):
         return: nil
         parameters:
          * categoryid, str, package group category id
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         _log.info("delete_packagegroupcategory invoked")
         p = self.params()
@@ -1615,6 +1736,11 @@ class RepositoryActions(JSONController):
         parameters:
          * categoryid, str, package group category id
          * groupid, str, package group id
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         _log.info("add_packagegroup_to_category invoked")
         p = self.params()
@@ -1641,6 +1767,11 @@ class RepositoryActions(JSONController):
         parameters:
          * categoryid, str, package group category id
          * groupid, str, package group id
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         _log.info("delete_packagegroup_from_category")
         p = self.params()
