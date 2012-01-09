@@ -1106,7 +1106,7 @@ class RepoApi(BaseApi):
         # For each erratum find id, title and type
         repo_errata = []
         for errataid in errataids:
-            errata_obj = self.errataapi.erratum(errataid, fields=['id', 'title', 'type', 'severity']) 
+            errata_obj = self.errataapi.erratum(errataid, fields=['id', 'title', 'type', 'severity', 'repoids'])
             if severity:
                 if errata_obj['severity'] in severity:
                     repo_errata.append(errata_obj)
