@@ -172,6 +172,47 @@ class Repositories(JSONController):
         success response: 200 OK
         failure response: None
         return: list of Repo objects, possibly empty
+        example:
+        {{{
+        #!js
+        [
+         {'arch': 'noarch',
+          'checksum_type': 'sha256',
+          'clone_ids': ['0ad-clone', '0ad-clone-again'],
+          'comps': '/pulp/api/repositories/0ad/comps/',
+          'consumer_ca': None,
+          'consumer_cert': None,
+          'content_types': 'yum',
+          'distribution': '/pulp/api/repositories/0ad/distribution/',
+          'distributionid': [],
+          'errata': '/pulp/api/repositories/0ad/errata/',
+          'feed_ca': None,
+          'feed_cert': None,
+          'files': '/pulp/api/repositories/0ad/files/',
+          'files_count': 0,
+          'filters': [],
+          'groupid': [],
+          'id': '0ad',
+          'keys': '/pulp/api/repositories/0ad/keys/',
+          'last_sync': '2012-01-04T13:55:11-07:00',
+          'name': '0ad',
+          'notes': {},
+          'package_count': 2,
+          'packagegroupcategories': '/pulp/api/repositories/0ad/packagegroupcategories/',
+          'packagegroups': '/pulp/api/repositories/0ad/packagegroups/',
+          'packages': '/pulp/api/repositories/0ad/packages/',
+          'preserve_metadata': False,
+          'publish': True,
+          'relative_path': 'repos/bioinfornatics/0ad/fedora-16/x86_64',
+          'source': {'type': 'remote',
+          'url': 'http://repos.fedorapeople.org/repos/bioinfornatics/0ad/fedora-16/x86_64/'},
+          'sync_options': {'skip': {}},
+          'sync_schedule': '2011-12-13T13:45:00-07:00/PT5M',
+          'uri': 'https://localhost/pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/',
+          'uri_ref': '/pulp/api/repositories/0ad/'},
+        ...
+        ]
+        }}}
         filters:
          * id, str, repository id
          * name, str, repository name
@@ -218,6 +259,43 @@ class Repositories(JSONController):
         success response: 201 Created
         failure response: 409 Conflict if the parameters matches an existing repository
         return: new Repo object
+        example:
+        {{{
+        #!js
+        {'arch': 'noarch',
+         'checksum_type': 'sha256',
+         'clone_ids': [],
+         'consumer_ca': None,
+         'consumer_cert': None,
+         'content_types': 'yum',
+         'distributionid': [],
+         'errata': {},
+         'feed_ca': None,
+         'feed_cert': None,
+         'files': [],
+         'filters': [],
+         'group_gz_xml_path': '',
+         'group_xml_path': '',
+         'groupid': [],
+         'id': 'my-repo',
+         'last_sync': None,
+         'name': 'my-repo',
+         'notes': {},
+         'package_count': 0,
+         'packagegroupcategories': {},
+         'packagegroups': {},
+         'packages': [],
+         'preserve_metadata': False,
+         'publish': True,
+         'relative_path': 'yum/repo',
+         'release': None,
+         'repomd_xml_path': '/var/lib/pulp//repos/yum/repo/repodata/repomd.xml',
+         'source': {'type': 'remote', 'url': 'http://example.org/yum/repo/'},
+         'sync_in_progress': False,
+         'sync_options': {},
+         'sync_schedule': None,
+         'uri_ref': '/pulp/api/repositories/my-repo/'}
+        }}}
         parameters:
          * id, str, the repository's unique id
          * name, str, a human-friendly name for the repsitory
@@ -294,6 +372,44 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: a Repo object
+        example:
+        {{{
+        #!js
+        {'arch': 'noarch',
+         'checksum_type': 'sha256',
+         'clone_ids': ['0ad-clone', '0ad-clone-again'],
+         'comps': '/pulp/api/repositories/0ad/comps/',
+         'consumer_ca': None,
+         'consumer_cert': None,
+         'content_types': 'yum',
+         'distribution': '/pulp/api/repositories/0ad/distribution/',
+         'distributionid': [],
+         'errata': '/pulp/api/repositories/0ad/errata/',
+         'feed_ca': None,
+         'feed_cert': None,
+         'files': '/pulp/api/repositories/0ad/files/',
+         'files_count': 0,
+         'filters': [],
+         'groupid': [],
+         'id': '0ad',
+         'keys': '/pulp/api/repositories/0ad/keys/',
+         'last_sync': '2012-01-04T13:55:11-07:00',
+         'name': '0ad',
+         'notes': {},
+         'package_count': 2,
+         'packagegroupcategories': '/pulp/api/repositories/0ad/packagegroupcategories/',
+         'packagegroups': '/pulp/api/repositories/0ad/packagegroups/',
+         'packages': '/pulp/api/repositories/0ad/packages/',
+         'preserve_metadata': False,
+         'publish': True,
+         'relative_path': 'repos/bioinfornatics/0ad/fedora-16/x86_64',
+         'source': {'type': 'remote',
+         'url': 'http://repos.fedorapeople.org/repos/bioinfornatics/0ad/fedora-16/x86_64/'},
+         'sync_options': {'skip': {}},
+         'sync_schedule': '2011-12-13T13:45:00-07:00/PT5M',
+         'uri': 'https://localhost/pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/',
+         'uri_ref': '/pulp/api/repositories/0ad/'}
+        }}}
         """
         repo = api.repository(id, default_fields)
         if repo is None:
@@ -326,6 +442,43 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
         return: a Repo object
+        example:
+        {{{
+        #!js
+        {'arch': 'noarch',
+         'checksum_type': 'sha256',
+         'clone_ids': [],
+         'consumer_ca': None,
+         'consumer_cert': None,
+         'content_types': 'yum',
+         'distributionid': [],
+         'errata': {},
+         'feed_ca': None,
+         'feed_cert': None,
+         'files': [],
+         'filters': [],
+         'group_gz_xml_path': '',
+         'group_xml_path': '',
+         'groupid': [],
+         'id': 'my-repo',
+         'last_sync': None,
+         'name': 'my-repo',
+         'notes': {},
+         'package_count': 0,
+         'packagegroupcategories': {},
+         'packagegroups': {},
+         'packages': [],
+         'preserve_metadata': False,
+         'publish': True,
+         'relative_path': 'yum/repo',
+         'release': None,
+         'repomd_xml_path': '/var/lib/pulp//repos/yum/repo/repodata/repomd.xml',
+         'source': {'type': 'remote', 'url': 'http://example.org/yum/repo/'},
+         'sync_in_progress': False,
+         'sync_options': {},
+         'sync_schedule': None,
+         'uri_ref': '/pulp/api/repositories/my-repo/'}
+        }}}
         parameters:
          * name, str, name of the repository
          * arch, str, architecture of the repository
@@ -364,6 +517,24 @@ class Repository(JSONController):
         failure response: 404 Not Found if repository does not exist
                           409 Conflict if repository cannot be deleted
         return: a Task object
+        example:
+        {{{
+        #!js
+        {'args': [],
+         'class_name': 'RepoApi',
+         'exception': None,
+         'finish_time': None,
+         'id': '1a58cd4f-372f-11e1-bdbc-52540005f34c',
+         'job_id': None,
+         'method_name': 'delete',
+         'progress': None,
+         'result': None,
+         'scheduled_time': '2012-01-04T23:52:04Z',
+         'scheduler': 'immediate',
+         'start_time': None,
+         'state': 'waiting',
+         'traceback': None}
+        }}}
         """
         repo = api.repository(id)
         if repo is None:
@@ -388,6 +559,7 @@ class RepositoryNotes(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if given repository does not exist
                           404 Not Found if given key does not exist
+        return: true
         """
         repo = api.repository(id)
         if repo is None:
@@ -410,7 +582,7 @@ class RepositoryNotes(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if given repository does not exist
                           404 Not Found if given key does not exist
-        return: a Repo object
+        return: true
         parameters: new value of the key
         """
         data = self.params()
@@ -436,7 +608,7 @@ class RepositoryNotesCollection(JSONController):
         success response: 200 OK
         failure response: 404 Not found if given repository does not exist
                           409 Conflict if given key already exists
-        return: repo object
+        return: true
         parameters:
          * key, str, key to be added
          * value, str, value of key
@@ -473,11 +645,16 @@ class SchedulesResource(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found
-        return:
-         * Schedule object
-         * type, str, type of schedule
-         * schedule, str, schedule in iso8601 format
-         * options, obj, options for the scheduled action
+        return: Schedule object
+        example:
+        {{{
+        #!js
+        {u'href': u'/pulp/api/repositories/0ad/',
+         u'id': u'0ad',
+         u'options': {u'skip': {}},
+         u'schedule': u'2011-12-13T13:45:00-07:00/PT5M',
+         u'type': u'sync'}
+        }}}
         """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
@@ -514,6 +691,15 @@ class SchedulesResource(JSONController):
         permission: DELETE
         success response: 200 OK
         failure response: 404 Not Found
+        return: (empty) Schedule object
+        example:
+        {{{
+        #!js
+        {u'href': u'/pulp/api/repositories/0ad/',
+         u'id': u'0ad',
+         u'options': null,
+         u'schedule': null}
+        }}}
         """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
@@ -543,6 +729,16 @@ class SchedulesResource(JSONController):
         parameters:
          * schedule, str, schedule for given type in iso8601 format
          * options, obj, options for the scheduled action
+        return: Schedule object
+        example:
+        {{{
+        #!js
+        {u'href': u'/pulp/api/repositories/0ad/',
+         u'id': u'0ad',
+         u'options': {u'skip': {}},
+         u'schedule': u'2011-12-13T13:45:00-07:00/PT5M',
+         u'type': u'sync'}
+        }}}
         """
         if schedule_type not in self.schedule_types:
             return self.not_found('No schedule type: %s' % schedule_type)
@@ -590,6 +786,58 @@ class RepositoryDeferredFields(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: list of Package objects
+        example:
+        {{{
+        #!js
+        [{u'arch': u'x86_64',
+          u'buildhost': u'x86-05.phx2.fedoraproject.org',
+          u'checksum': {u'sha256': u'46d0ca0bc9f943d38bd0819b849072c5a48c4107fd6e17bb7a1f9782fa1dccfe'},
+          u'description': u'0 A.D. (pronounced "zero ey-dee") is a free, open-source, cross-platform real-time\nstrategy (RTS) game of ancient warfare. In short, it is a historically-based\nwar/economy game that allows players to relive or rewrite the history of Western\ncivilizations, focusing on the years between 500 B.C. and 500 A.D. The project is\nhighly ambitious, involving state-of-the-art 3D graphics, detailed artwork, sound,\nand a flexible and powerful custom-built game engine.\nThe game has been in development by Wildfire Games (WFG), a group of volunteer,\nhobbyist game developers, since 2001.',
+          u'download_url': u'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+          u'epoch': u'0',
+          u'filename': u'0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+          u'group': u'Amusements/Games',
+          u'id': u'e8c7520d-00ee-44b9-863e-b50db7ac9252',
+          u'license': u'GPLv2+ and MIT',
+          u'name': u'0ad',
+          u'provides': [u'0ad(x86-64)',
+                        u'0ad',
+                        u'libnvtt.so()(64bit)',
+                        u'libnvmath.so()(64bit)',
+                        u'libnvimage.so()(64bit)',
+                        ...],
+          u'release': u'15.20111230svn10836.fc16',
+          u'repo_defined': True,
+          u'requires': [u'libstdc++.so.6(GLIBCXX_3.4)(64bit)',
+                        u'librt.so.1()(64bit)',
+                        u'libpthread.so.0()(64bit)',
+                        u'libstdc++.so.6(CXXABI_1.3.1)(64bit)',
+                        u'libcurl.so.4()(64bit)',
+                        ...],
+          u'size': 3592509,
+          u'vendor': u'Fedora Project',
+          u'version': u'0.10836'},
+        {u'_id': u'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
+         u'_ns': u'packages',
+         u'arch': u'x86_64',
+         u'buildhost': u'x86-05.phx2.fedoraproject.org',
+         u'checksum': {u'sha256': u'bde5b50d462142a9cd8aee02b8fbc6665eda3ddfb324c0d9c072817a2babb4f8'},
+         u'description': u'This package provides debug information for package 0ad.\nDebug information is useful when developing applications that use this\npackage or when debugging this package.',
+         u'download_url': u'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+         u'epoch': u'0',
+         u'filename': u'0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+         u'group': u'Development/Debug',
+         u'id': u'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
+         u'license': u'GPLv2+ and MIT',
+         u'name': u'0ad-debuginfo',
+         u'provides': [u'0ad-debuginfo(x86-64)', u'0ad-debuginfo'],
+         u'release': u'15.20111230svn10836.fc16',
+         u'repo_defined': True,
+         u'requires': [],
+         u'size': 41946553,
+         u'vendor': u'Fedora Project',
+         u'version': u'0.10836'}]
+        }}}
         filters:
          * name, str, package name
          * version, str, package version
@@ -621,7 +869,14 @@ class RepositoryDeferredFields(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return: list of package group names
+        return: Package Groups object
+        example:
+        {{{
+        #!js
+        {'group-1': ['package_name', 'another_package_name'],
+         'group-1': [...],
+         ...
+        }}}
         filters:
          * filter_missing_packages, bool, True means to filter results to remove missing package names
          * filter_incomplete_groups, bool, True means to filter results to remove groups with missing packages
@@ -649,7 +904,14 @@ class RepositoryDeferredFields(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return: list of package group catagory names
+        return: list of package group category names
+        example:
+        {{{
+        #!js
+        ['category-1',
+         'category-2',
+         ...]
+        }}}
         filters:
          * id, str, package group category id
          * packagegroupcategories, str, package group category name
@@ -670,6 +932,19 @@ class RepositoryDeferredFields(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: list of Errata objects
+        example:
+        {{{
+        #!js
+        [{'id': '',
+          'title': '',
+          'type': '',
+          'severity': null},
+         {'id': '',
+          'title': '',
+          'type': '',
+          'severity': ''},
+         ...]
+        }}}
         filters:
          * type, str, type of errata
         """
