@@ -649,11 +649,11 @@ class SchedulesResource(JSONController):
         example:
         {{{
         #!js
-        {u'href': u'/pulp/api/repositories/0ad/',
-         u'id': u'0ad',
-         u'options': {u'skip': {}},
-         u'schedule': u'2011-12-13T13:45:00-07:00/PT5M',
-         u'type': u'sync'}
+        {'href': '/pulp/api/repositories/0ad/',
+         'id': '0ad',
+         'options': {'skip': {}},
+         'schedule': '2011-12-13T13:45:00-07:00/PT5M',
+         'type': 'sync'}
         }}}
         """
         if schedule_type not in self.schedule_types:
@@ -695,10 +695,10 @@ class SchedulesResource(JSONController):
         example:
         {{{
         #!js
-        {u'href': u'/pulp/api/repositories/0ad/',
-         u'id': u'0ad',
-         u'options': null,
-         u'schedule': null}
+        {'href': '/pulp/api/repositories/0ad/',
+         'id': '0ad',
+         'options': null,
+         'schedule': null}
         }}}
         """
         if schedule_type not in self.schedule_types:
@@ -733,11 +733,11 @@ class SchedulesResource(JSONController):
         example:
         {{{
         #!js
-        {u'href': u'/pulp/api/repositories/0ad/',
-         u'id': u'0ad',
-         u'options': {u'skip': {}},
-         u'schedule': u'2011-12-13T13:45:00-07:00/PT5M',
-         u'type': u'sync'}
+        {'href': '/pulp/api/repositories/0ad/',
+         'id': '0ad',
+         'options': {'skip': {}},
+         'schedule': '2011-12-13T13:45:00-07:00/PT5M',
+         'type': 'sync'}
         }}}
         """
         if schedule_type not in self.schedule_types:
@@ -789,54 +789,54 @@ class RepositoryDeferredFields(JSONController):
         example:
         {{{
         #!js
-        [{u'arch': u'x86_64',
-          u'buildhost': u'x86-05.phx2.fedoraproject.org',
-          u'checksum': {u'sha256': u'46d0ca0bc9f943d38bd0819b849072c5a48c4107fd6e17bb7a1f9782fa1dccfe'},
-          u'description': u'0 A.D. (pronounced "zero ey-dee") is a free, open-source, cross-platform real-time\nstrategy (RTS) game of ancient warfare. In short, it is a historically-based\nwar/economy game that allows players to relive or rewrite the history of Western\ncivilizations, focusing on the years between 500 B.C. and 500 A.D. The project is\nhighly ambitious, involving state-of-the-art 3D graphics, detailed artwork, sound,\nand a flexible and powerful custom-built game engine.\nThe game has been in development by Wildfire Games (WFG), a group of volunteer,\nhobbyist game developers, since 2001.',
-          u'download_url': u'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
-          u'epoch': u'0',
-          u'filename': u'0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
-          u'group': u'Amusements/Games',
-          u'id': u'e8c7520d-00ee-44b9-863e-b50db7ac9252',
-          u'license': u'GPLv2+ and MIT',
-          u'name': u'0ad',
-          u'provides': [u'0ad(x86-64)',
-                        u'0ad',
-                        u'libnvtt.so()(64bit)',
-                        u'libnvmath.so()(64bit)',
-                        u'libnvimage.so()(64bit)',
+        [{'arch': 'x86_64',
+          'buildhost': 'x86-05.phx2.fedoraproject.org',
+          'checksum': {'sha256': '46d0ca0bc9f943d38bd0819b849072c5a48c4107fd6e17bb7a1f9782fa1dccfe'},
+          'description': '0 A.D. (pronounced "zero ey-dee") is a free, open-source, cross-platform real-time\nstrategy (RTS) game of ancient warfare. In short, it is a historically-based\nwar/economy game that allows players to relive or rewrite the history of Western\ncivilizations, focusing on the years between 500 B.C. and 500 A.D. The project is\nhighly ambitious, involving state-of-the-art 3D graphics, detailed artwork, sound,\nand a flexible and powerful custom-built game engine.\nThe game has been in development by Wildfire Games (WFG), a group of volunteer,\nhobbyist game developers, since 2001.',
+          'download_url': 'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+          'epoch': '0',
+          'filename': '0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+          'group': 'Amusements/Games',
+          'id': 'e8c7520d-00ee-44b9-863e-b50db7ac9252',
+          'license': 'GPLv2+ and MIT',
+          'name': '0ad',
+          'provides': ['0ad(x86-64)',
+                        '0ad',
+                        'libnvtt.so()(64bit)',
+                        'libnvmath.so()(64bit)',
+                        'libnvimage.so()(64bit)',
                         ...],
-          u'release': u'15.20111230svn10836.fc16',
-          u'repo_defined': True,
-          u'requires': [u'libstdc++.so.6(GLIBCXX_3.4)(64bit)',
-                        u'librt.so.1()(64bit)',
-                        u'libpthread.so.0()(64bit)',
-                        u'libstdc++.so.6(CXXABI_1.3.1)(64bit)',
-                        u'libcurl.so.4()(64bit)',
+          'release': '15.20111230svn10836.fc16',
+          'repo_defined': True,
+          'requires': ['libstdc++.so.6(GLIBCXX_3.4)(64bit)',
+                        'librt.so.1()(64bit)',
+                        'libpthread.so.0()(64bit)',
+                        'libstdc++.so.6(CXXABI_1.3.1)(64bit)',
+                        'libcurl.so.4()(64bit)',
                         ...],
-          u'size': 3592509,
-          u'vendor': u'Fedora Project',
-          u'version': u'0.10836'},
-        {u'_id': u'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
-         u'_ns': u'packages',
-         u'arch': u'x86_64',
-         u'buildhost': u'x86-05.phx2.fedoraproject.org',
-         u'checksum': {u'sha256': u'bde5b50d462142a9cd8aee02b8fbc6665eda3ddfb324c0d9c072817a2babb4f8'},
-         u'description': u'This package provides debug information for package 0ad.\nDebug information is useful when developing applications that use this\npackage or when debugging this package.',
-         u'download_url': u'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
-         u'epoch': u'0',
-         u'filename': u'0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
-         u'group': u'Development/Debug',
-         u'id': u'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
-         u'license': u'GPLv2+ and MIT',
-         u'name': u'0ad-debuginfo',
-         u'provides': [u'0ad-debuginfo(x86-64)', u'0ad-debuginfo'],
-         u'release': u'15.20111230svn10836.fc16',
-         u'repo_defined': True,
-         u'requires': [],
-         u'size': 41946553,
-         u'vendor': u'Fedora Project',
-         u'version': u'0.10836'}]
+          'size': 3592509,
+          'vendor': 'Fedora Project',
+          'version': '0.10836'},
+        {'_id': 'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
+         '_ns': 'packages',
+         'arch': 'x86_64',
+         'buildhost': 'x86-05.phx2.fedoraproject.org',
+         'checksum': {'sha256': 'bde5b50d462142a9cd8aee02b8fbc6665eda3ddfb324c0d9c072817a2babb4f8'},
+         'description': 'This package provides debug information for package 0ad.\nDebug information is useful when developing applications that use this\npackage or when debugging this package.',
+         'download_url': 'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+         'epoch': '0',
+         'filename': '0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+         'group': 'Development/Debug',
+         'id': 'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
+         'license': 'GPLv2+ and MIT',
+         'name': '0ad-debuginfo',
+         'provides': ['0ad-debuginfo(x86-64)', '0ad-debuginfo'],
+         'release': '15.20111230svn10836.fc16',
+         'repo_defined': True,
+         'requires': [],
+         'size': 41946553,
+         'vendor': 'Fedora Project',
+         'version': '0.10836'}]
         }}}
         filters:
          * name, str, package name
