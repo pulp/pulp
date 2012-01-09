@@ -311,8 +311,9 @@ class Status(AdminRepoAction):
         running_sync = self.repository_api.running_task(syncs)
         if syncs:
             error_details = ""
-            if syncs[0].has_key("progress"):
-                error_details = self.form_error_details(syncs[0]["progress"])
+            progress = syncs[0].get('progress')
+            if isinstance(progress, dict):
+                error_details = self.form_error_details(progress)
             if syncs[0]['state'] in ('error') or error_details:
                 tb = ""
                 if syncs[0]['traceback']:

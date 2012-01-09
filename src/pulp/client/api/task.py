@@ -16,6 +16,8 @@ from pulp.client.api.server import ServerRequestError
 
 
 def task_end(task):
+    if task is None:
+        return True
     return task['state'] in ('finished', 'error', 'canceled', 'timed_out')
 
 def task_succeeded(task):
