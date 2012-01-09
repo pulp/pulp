@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.256
+Version:        0.0.257
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,40 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jan 09 2012 Jeff Ortel <jortel@redhat.com> 0.0.257-1
+- Refit for upstream agent API changes; requires gofer 0.64.
+  (jortel@redhat.com)
+- 772707 - fix to handle checksum mismatch when a sync uses sha va sha256
+  (pkilambi@redhat.com)
+- Update example responses for package group/categories (jmatthews@redhat.com)
+- 772711 - fixing the repoids field in package objects (pkilambi@redhat.com)
+- removing superfluous error: prefixes (jconnor@redhat.com)
+- 767763 removing superfluous and weird client-side check for running sync
+  (jconnor@redhat.com)
+- 767763 - changed the clone action to return a conflict if the parent repo is
+  syncing (jconnor@redhat.com)
+- 772350 - fixed improper handling of None progress (jconnor@redhat.com)
+- expose repoids when quering repo errata (pkilambi@redhat.com)
+- 772348 - added missing command at the end of valid_filters to get a list
+  instead of string of repoids as input to the api (skarmark@redhat.com)
+- 761653 - adding package groups to repo broken (jmatthews@redhat.com)
+- Change to logging for unittest code, logs in unittest drivers will
+  additionally log to their own file, /tmp/pulp_unittests_only.log
+  (jmatthews@redhat.com)
+- Refactored out a base distributor conduit (jason.dobies@redhat.com)
+- Refactored out some base functionality for importer conduits
+  (jason.dobies@redhat.com)
+- Added support for unit association to test harness (jason.dobies@redhat.com)
+- Fixed call into conduit to use the repo transfer object
+  (jason.dobies@redhat.com)
+- Added associate_from_repo REST call and unit tests (jason.dobies@redhat.com)
+- These are not expected to be strings but rather serialized exceptions. The
+  methods themselves need to be cleaned up, but for now removing the type
+  indicator from the docstring so it's not flagged as a warning when passing in
+  a serialized error dict. (jason.dobies@redhat.com)
+- Minor changes to consumer webservices to fix return codes
+  (skarmark@redhat.com)
+- Minor consumer api fixes correcting return codes (skarmark@redhat.com)
 * Wed Jan 04 2012 Jeff Ortel <jortel@redhat.com> 0.0.256-1
 - Fix job list. (jortel@redhat.com)
 - Move consumer cert to: /etc/pki/pulp/consumer/ (jortel@redhat.com)
