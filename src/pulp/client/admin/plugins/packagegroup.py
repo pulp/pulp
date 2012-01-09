@@ -653,7 +653,7 @@ def print_packages_installed(consumerid, task):
         return
     print _('\nInstalled for dependencies:')
     for pkg in sorted_packages(deps):
-        print '%-32s %-8s %-10s %s' % \
+        print '%-33s %-8s %-10s %s' % \
             (pkg['name'],
              pkg['arch'],
              pkg['version'],
@@ -685,7 +685,7 @@ def print_packages_removed(consumerid, task):
         return
     print _('\nRemoved for dependencies:')
     for pkg in sorted_packages(deps):
-        print '%-32s %-8s %-10s %s' % \
+        print '%-33s %-8s %-10s %s' % \
             (pkg['name'],
              pkg['arch'],
              pkg['version'],
