@@ -940,7 +940,7 @@ If you do edit this page directly, please remove this comment
 [[BR]]
 '''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response''': 200 OK [[BR]]
+'''success response''': 201 Created [[BR]]
 [[BR]]
 '''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
@@ -1265,9 +1265,20 @@ If you do edit this page directly, please remove this comment
 '''example''': 
 {{{
 #!js
-['category-1',
- 'category-2',
- ...]
+ {
+  "cat_id_1": {
+    "description": "cat_descrp_1",
+    "repo_defined": false,
+    "display_order": 99,
+    "immutable": false,
+    "translated_name": {},
+    "packagegroupids": [],
+    "translated_description": {},
+    "_id": "cat_id_1",
+    "id": "cat_id_1",
+    "name": "cat_name_1"
+  }
+}
 }}}
 [[BR]]
 '''filters''': 
@@ -1293,9 +1304,25 @@ If you do edit this page directly, please remove this comment
 '''example''': 
 {{{
 #!js
-{'group-1': ['package_name', 'another_package_name'],
- 'group-1': [...],
- ...
+{"pkg_group_id_1": {
+    "mandatory_package_names": [],
+    "description": "pkg_grp_description_1",
+    "repo_defined": false,
+    "default": true,
+    "name": "pkg_group_name_1",
+    "display_order": 1024,
+    "user_visible": true,
+    "translated_name": {},
+    "translated_description": {},
+    "conditional_package_names": {},
+    "default_package_names": [],
+    "id": "pkg_group_id_1",
+    "langonly": null,
+    "_id": "pkg_group_id_1",
+    "immutable": false,
+    "optional_package_names": []
+  }
+}
 }}}
 [[BR]]
 '''filters''': 
