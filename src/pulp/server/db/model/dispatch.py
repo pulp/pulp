@@ -39,13 +39,15 @@ class ScheduledCall(Model):
     unique_indices = ()
     search_indices = ('serialized_call_request.tags', 'last_run', 'next_run')
 
-    def __init__(self, call_request, schedule, last_run=None, enabled=True):
+    def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
 
         call_request.tags.append(self._id)
 
         self.serialized_call_request = call_request.serialize()
         self.schedule = schedule
+        self.failure_threshold = failure_threshold
+        self.consecutive_failures = 0
         self.last_run = dateutils.to_naive_utc_datetime(last_run)
         self.enabled = enabled
 
