@@ -154,3 +154,17 @@ class HarnessImporter(Importer):
         details += 'Global sync count:        %d' % all_sync_count
 
         return sync_conduit.build_report(summary, details)
+
+    def import_units(self, repo, units, import_conduit, config):
+        _LOG.info('Import units called for repository [%s]' % repo)
+
+        import_list_filename = os.path.join(repo.working_dir, 'import_list')
+
+        f = open(import_list_filename, 'w')
+
+        for u in units:
+            _LOG.info('Importing unit with key [%s]' % u.unit_key)
+            f.write(u.unit_key['name'] + '\n')
+            import_conduit.associate_unit(u)
+
+        f.close()

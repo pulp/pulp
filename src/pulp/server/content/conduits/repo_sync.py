@@ -44,10 +44,12 @@ import logging
 import sys
 
 import pulp.server.content.conduits._common as common_utils
+from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import Unit, SyncReport
 from pulp.server.managers.content._exceptions import ContentUnitNotFound
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER, Criteria
+import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
 # -- constants ---------------------------------------------------------------
 
@@ -55,7 +57,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- exceptions --------------------------------------------------------------
 
-class RepoSyncConduitException(Exception):
+class RepoSyncConduitException(ImporterConduitException):
     """
     General exception that wraps any server exception coming out of a conduit
     call.
@@ -64,7 +66,7 @@ class RepoSyncConduitException(Exception):
 
 # -- classes -----------------------------------------------------------------
 
-class RepoSyncConduit:
+class RepoSyncConduit(BaseImporterConduit):
     """
     Used to communicate back into the Pulp server while an importer performs
     a repo sync. Instances of this class should *not* be cached between repo
@@ -80,12 +82,6 @@ class RepoSyncConduit:
     def __init__(self,
                  repo_id,
                  importer_id,
-                 repo_cud_manager,
-                 repo_importer_manager,
-                 repo_sync_manager,
-                 repo_association_manager,
-                 content_manager,
-                 content_query_manager,
                  progress_callback=None):
         """
         @param repo_id: identifies the repo being synchronized
@@ -94,40 +90,19 @@ class RepoSyncConduit:
         @param importer_id: identifies the importer performing the sync
         @type  importer_id: str
 
-        @param repo_cud_manager: server manager instance for manipulating repos
-        @type  repo_cud_manager: L{RepoManager}
-
-        @param repo_importer_manager: server manager for manipulating importers
-        @type  repo_importer_manager: L{RepoImporterManager}
-
-        @param repo_sync_manager: server manager instance for sync-related operations
-        @type  repo_sync_manager: L{RepoSyncManager}
-
-        @param repo_association_manager: server manager instance for manipulating
-                   repo to content unit associations
-        @type  repo_association_manager: L{RepoUnitAssociationManager}
-
-        @param content_manager: server manager instance for manipulating content
-                                types and units
-        @type  content_manager: L{ContentManager}
-
-        @param content_query_manager: server manager instance for querying
-                                      content types and units
-        @type  content_query_manager: L{ContentQueryManager}
-
         @param progress_callback: used to update the server's knowledge of the
                                   sync progress
         @type  progress_callback: TBD
         """
-        self.repo_id = repo_id
-        self.importer_id = importer_id
+        BaseImporterConduit.__init__(self, repo_id, importer_id)
 
-        self.__repo_manager = repo_cud_manager
-        self.__importer_manager = repo_importer_manager
-        self.__sync_manager = repo_sync_manager
-        self.__association_manager = repo_association_manager
-        self.__content_manager = content_manager
-        self.__content_query_manager = content_query_manager
+        self.__repo_manager = manager_factory.repo_manager()
+        self.__importer_manager = manager_factory.repo_importer_manager()
+        self.__sync_manager = manager_factory.repo_sync_manager()
+        self.__association_manager = manager_factory.repo_unit_association_manager()
+        self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
+        self.__content_manager = manager_factory.content_manager()
+        self.__content_query_manager = manager_factory.content_query_manager()
         self.__progress_callback = progress_callback
 
         self._added_count = 0
@@ -188,7 +163,7 @@ class RepoSyncConduit:
         """
 
         try:
-            units = self.__association_manager.get_units(self.repo_id, criteria=criteria)
+            units = self.__association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
             all_units = []
 
@@ -356,38 +331,6 @@ class RepoSyncConduit:
                 self.__content_manager.link_referenced_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
         except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
-            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
-
-    # -- importer utilities ---------------------------------------------------
-
-    def get_scratchpad(self):
-        """
-        Returns the value set in the scratchpad for this repository. If no
-        value has been set, None is returned.
-
-        @return: value saved for the repository being synchronized
-        @rtype:  <serializable>
-        """
-        try:
-            return self.__importer_manager.get_importer_scratchpad(self.repo_id)
-        except Exception, e:
-            _LOG.exception(_('Error getting scratchpad for repo [%s]' % self.repo_id))
-            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
-
-    def set_scratchpad(self, value):
-        """
-        Saves the given value to the scratchpad for this repository. It can later
-        be retrieved in subsequent syncs through get_scratchpad. The type for
-        the given value is anything that can be stored in the database (string,
-        list, dict, etc.).
-
-        @param value: will overwrite the existing scratchpad
-        @type  value: <serializable>
-        """
-        try:
-            self.__importer_manager.set_importer_scratchpad(self.repo_id, value)
-        except Exception, e:
-            _LOG.exception(_('Error setting scratchpad for repo [%s]' % self.repo_id))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     def build_report(self, summary, details):

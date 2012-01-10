@@ -71,9 +71,7 @@ def _print_cds(cds, next_sync=None):
         last_heartbeat = stat[1]
 
     sync_schedule = cds['sync_schedule']
-    if sync_schedule is not None:
-        sync_schedule = dateutils.parse_iso8601_datetime(sync_schedule)
-        
+
     # This is wonky but has to do with how the APIs are structured that next
     # sync isn't available in the CDS list, so rather than hammer the server
     # with more calls we omit it in most cases
@@ -128,9 +126,9 @@ class Register(CDSAction):
 
         schedule = OptionGroup(self.parser, _('CDS Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
-                            help=_('length of time between each run in iso8601 duration format'))
+                            help=_('length of time between each run in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S (e.g. "P3Y6M4DT12H30M5S" for "three years, six months, four days, twelve hours, thirty minutes, and five seconds")'))
         schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
+                            help=_('date and time of the first run in iso8601 combined date and time format (e.g. "2012-03-01T13:00:00Z"), omitting implies starting immediately'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
                             help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option_group(schedule)
@@ -194,9 +192,9 @@ class Update(CDSAction):
 
         schedule = OptionGroup(self.parser, _('CDS Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
-                            help=_('length of time between each run in iso8601 duration format'))
+                            help=_('length of time between each run in iso8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S (e.g. "P3Y6M4DT12H30M5S" for "three years, six months, four days, twelve hours, thirty minutes, and five seconds")'))
         schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
+                            help=_('date and time of the first run in iso8601 combined date and time format (e.g. "2012-03-01T13:00:00Z"), omitting implies starting immediately'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
                             help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
         self.parser.add_option_group(schedule)

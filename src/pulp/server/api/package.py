@@ -45,12 +45,12 @@ class PackageApi(BaseApi):
 
     @audit()
     def create(self, name, epoch, version, release, arch, description,
-            checksum_type, checksum, filename, repo_defined=False):
+            checksum_type, checksum, filename, repo_defined=False, repoids=[]):
         """
         Create a new Package object and return it
         """
         p = model.Package(name, epoch, version, release, arch, description,
-                checksum_type, checksum, filename, repo_defined=repo_defined)
+                checksum_type, checksum, filename, repo_defined=repo_defined, repoids=repoids)
         self.collection.insert(p, safe=True)
         return p
 
@@ -113,7 +113,7 @@ class PackageApi(BaseApi):
 
     def packages(self, name=None, epoch=None, version=None, release=None, arch=None,
             filename=None, checksum_type=None, checksum=None, regex=False,
-            fields=["id", "name", "epoch", "version", "release", "arch", "filename", "checksum"]):
+            fields=["id", "name", "epoch", "version", "release", "arch", "filename", "checksum", "repoids"]):
         """
         Return a list of all package version objects matching search terms
         """

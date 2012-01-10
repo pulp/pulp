@@ -83,7 +83,7 @@ class Tasks(JSONController):
         return: list of task objects
         filters:
          * id, str, task id
-         * state, str, tasking system task state: waiting, running, complete, incomplete, current, archived (current is the same as waiting, running, complete, and imcomplete, also the same as ommitting the state filter; archived looks into the the task history, will not return archived tasks without this filter)
+         * state, str, tasking system task state: waiting, running, complete, incomplete, current, archived (current is the same as waiting, running, complete, and incomplete, also the same as omitting the state filter; archived looks into the the task history, will not return archived tasks without this filter)
         """
         def _archived(ids):
             collection = TaskHistory.get_collection()

@@ -32,7 +32,7 @@ class Consumer(Bundle):
     @type CRT: str
     """
 
-    ROOT = '/etc/pki/consumer/pulp'
+    ROOT = '/etc/pki/pulp/consumer'
     CRT = 'cert.pem'
 
     @classmethod

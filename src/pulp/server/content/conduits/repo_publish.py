@@ -20,9 +20,11 @@ from gettext import gettext as _
 import logging
 import sys
 
+from pulp.server.content.conduits._base import BaseDistributorConduit, DistributorConduitException
 import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import PublishReport
+import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
 
@@ -30,7 +32,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- exceptions --------------------------------------------------------------
 
-class RepoPublishConduitException(Exception):
+class RepoPublishConduitException(DistributorConduitException):
     """
     General exception that wraps any server exception coming out of a conduit
     call.
@@ -39,7 +41,7 @@ class RepoPublishConduitException(Exception):
 
 # -- classes -----------------------------------------------------------------
 
-class RepoPublishConduit:
+class RepoPublishConduit(BaseDistributorConduit):
     """
     Used to communicate back into the Pulp server while a distributor is
     publishing a repo. Instances of this call should *not* be cached between
@@ -55,11 +57,6 @@ class RepoPublishConduit:
     def __init__(self,
                  repo_id,
                  distributor_id,
-                 repo_manager,
-                 repo_distributor_manager,
-                 repo_publish_manager,
-                 repo_association_manager,
-                 content_query_manager,
                  progress_callback=None):
         """
         @param repo_id: identifies the repo being published
@@ -68,30 +65,21 @@ class RepoPublishConduit:
         @param distributor_id: identifies the distributor being published
         @type  distributor_id: str
 
-        @param repo_manager: repo CUD manager used by the conduit
-        @type  repo_manager: L{RepoManager}
-
-        @param repo_distributor_manager: distributor manager
-        @type  repo_distributor_manager: L{RepoDistributorManager}
-
-        @param repo_publish_manager: repo publish manager used by this conduit
-        @type  repo_publish_manager: L{RepoPublishManager}
-
-        @param content_query_manager: content query manager used by this conduit
-        @type  content_query_manager: L{ContentQueryManager}
-
         @param progress_callback: used to update the server's knowledge of the
                                   publish progress
         @type  progress_callback: ?
         """
+        BaseDistributorConduit.__init__(self, repo_id, distributor_id)
+
         self.repo_id = repo_id
         self.distributor_id = distributor_id
 
-        self.__repo_manager = repo_manager
-        self.__repo_publish_manager = repo_publish_manager
-        self.__repo_distributor_manager = repo_distributor_manager
-        self.__association_manager = repo_association_manager
-        self.__content_query_manager = content_query_manager
+        self.__repo_manager = manager_factory.repo_manager()
+        self.__repo_publish_manager = manager_factory.repo_publish_manager()
+        self.__repo_distributor_manager = manager_factory.repo_distributor_manager()
+        self.__association_manager = manager_factory.repo_unit_association_manager()
+        self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
+        self.__content_query_manager = manager_factory.content_manager()
         self.__progress_callback = progress_callback
 
     def __str__(self):
@@ -128,7 +116,7 @@ class RepoPublishConduit:
         """
 
         try:
-            units = self.__association_manager.get_units(self.repo_id, criteria=criteria)
+            units = self.__association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
             all_units = []
 
@@ -148,30 +136,6 @@ class RepoPublishConduit:
             return all_units
         except Exception, e:
             _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
-            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
-
-    def get_scratchpad(self):
-        """
-        Returns the value set in the scratchpad for this repository. If no
-        value has been set, None is returned.
-        """
-        try:
-            return self.__repo_distributor_manager.get_distributor_scratchpad(self.repo_id, self.distributor_id)
-        except Exception, e:
-            _LOG.exception('Error getting scratchpad for repository [%s]' % self.repo_id)
-            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
-
-    def set_scratchpad(self, value):
-        """
-        Saves the given value to the scratchpad for this repository. It can later
-        be retrieved in subsequent syncs through get_scratchpad. The type for
-        the given value is anything that can be stored in the database (string,
-        list, dict, etc.).
-        """
-        try:
-            self.__repo_distributor_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
-        except Exception, e:
-            _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
     def build_report(self, summary, details):

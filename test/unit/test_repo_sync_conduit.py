@@ -30,6 +30,7 @@ import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.sync as sync_manager
 import pulp.server.managers.repo.unit_association as association_manager
+import pulp.server.managers.repo.unit_association_query as association_query_manager
 import pulp.server.managers.content.cud as content_manager
 import pulp.server.managers.content.query as query_manager
 
@@ -58,11 +59,12 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.importer_manager = importer_manager.RepoImporterManager()
         self.sync_manager = sync_manager.RepoSyncManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
+        self.association_query_manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.content_manager = content_manager.ContentManager()
         self.query_manager = query_manager.ContentQueryManager()
 
         self.repo_manager.create_repo('repo-1')
-        self.conduit = self._conduit('repo-1')
+        self.conduit = RepoSyncConduit('repo-1', 'test-importer')
 
     def test_str(self):
         """
@@ -224,24 +226,6 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.assertTrue('_type_2_references' in parent)
         self.assertTrue(unit_2.id in parent['_type_2_references'])
 
-    def test_get_set_scratchpad(self):
-        """
-        Tests scratchpad calls.
-        """
-
-        # Setup
-        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
-
-        # Test - get no scratchpad
-        self.assertTrue(self.conduit.get_scratchpad() is None)
-
-        # Test - set scrathpad
-        value = 'dragon'
-        self.conduit.set_scratchpad(value)
-
-        # Test - get updated value
-        self.assertEqual(value, self.conduit.get_scratchpad())
-
     def test_build_report(self):
         """
         Tests that the conduit correctly inserts the count values into the report.
@@ -281,8 +265,8 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
     def test_get_units_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__association_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__association_manager.get_units.side_effect = Exception()
+        self.conduit._RepoSyncConduit__association_query_manager = mock.Mock()
+        self.conduit._RepoSyncConduit__association_query_manager.get_units_across_types.side_effect = Exception()
 
         # Test
         try:
@@ -322,23 +306,3 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
         # Test
         self.assertRaises(RepoSyncConduitException, self.conduit.link_unit, None, None)
-
-    def test_scratchpad_with_error(self):
-        # Setup
-        self.conduit._RepoSyncConduit__importer_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__importer_manager.get_importer_scratchpad.side_effect = Exception()
-        self.conduit._RepoSyncConduit__importer_manager.set_importer_scratchpad.side_effect = Exception()
-
-        # Test
-        self.assertRaises(RepoSyncConduitException, self.conduit.get_scratchpad)
-        self.assertRaises(RepoSyncConduitException, self.conduit.set_scratchpad, 'foo')
-
-    # -- utilities ------------------------------------------------------------
-
-    def _conduit(self, repo_id):
-        """
-        Convenience method for creating a conduit.
-        """
-        conduit = RepoSyncConduit(repo_id, 'test-importer', self.repo_manager, self.importer_manager, self.sync_manager,
-                                  self.association_manager, self.content_manager, self.query_manager)
-        return conduit

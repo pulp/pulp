@@ -182,7 +182,7 @@ class Consumer(JSONController):
         """
         consumer = consumer_api.consumer(id)
         if consumer is None:
-            return self.conflict('Consumer [%s] does not exist' % id)
+            return self.not_found('Consumer [%s] does not exist' % id)
         user = user_api.user(id)
         if user is not None:
             revoke_all_permissions_from_user(user['login'])
@@ -339,7 +339,7 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         if not repo_api.repository(data):
-            return self.conflict('Repo [%s] does not exist' % data)
+            return self.not_found('Repo [%s] does not exist' % data)
         bind_data = consumer_api.bind(id, data)
         return self.ok(bind_data)
 
@@ -351,9 +351,9 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         if not repo_api.repository(data):
-            return self.conflict('Repo [%s] does not exist' % data)
+            return self.not_found('Repo [%s] does not exist' % data)
         consumer_api.unbind(id, data)
-        return self.ok(None)
+        return self.ok(True)
 
     def add_key_value_pair(self, id):
         """
@@ -381,7 +381,7 @@ class ConsumerActions(JSONController):
         consumer = consumer_api.consumer(id)
         key_value_pairs = consumer['key_value_pairs']
         if data not in key_value_pairs.keys():
-            return self.conflict('Given key [%s] does not exist' % data)
+            return self.not_found('Given key [%s] does not exist' % data)
         consumer_api.delete_key_value_pair(id, data)
         return self.ok(True)
 
@@ -396,7 +396,7 @@ class ConsumerActions(JSONController):
         consumer = consumer_api.consumer(id)
         key_value_pairs = consumer['key_value_pairs']
         if data['key'] not in key_value_pairs.keys():
-            return self.conflict('Given key [%s] does not exist' % data['key'])
+            return self.not_found('Given key [%s] does not exist' % data['key'])
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
 
@@ -599,7 +599,7 @@ class ConsumerActions(JSONController):
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         if not self.validate_consumer(id):
-            return self.conflict('Consumer [%s] does not exist' % id)
+            return self.not_found('Consumer [%s] does not exist' % id)
         return action(id)
 
 
@@ -658,12 +658,10 @@ class ApplicableErrataInRepos(JSONController):
         failure response: None
         return: list of object that are mappings of errata id in given repoids to applicable consumers
         """
-        valid_filters = ('repoids')
+        valid_filters = ('repoids',)
         filters = self.filters(valid_filters)
-        errata = []
-        if filters.has_key('repoids'):
-            repoids = filters['repoids']
-            errata = consumer_api.get_consumers_applicable_errata(repoids)
+        repoids = filters.pop('repoids', [])
+        errata = consumer_api.get_consumers_applicable_errata(repoids)
         return self.ok(errata)
 
 

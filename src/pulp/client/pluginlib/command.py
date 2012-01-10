@@ -223,10 +223,10 @@ class Action(object):
             sys.exit(1)
         except NoCredentialsError, nce:
             _log.error("error: %s" % nce)
-            system_exit(nce.args[0], _('error: operation failed: ') + nce.args[1])
+            system_exit(nce.args[0], _('operation failed: ') + nce.args[1])
         except ServerRequestError, re:
             _log.error("error: %s" % re)
-            system_exit(re.args[0], _('error: operation failed: ') + re.args[1])
+            system_exit(re.args[0], _('operation failed: ') + re.args[1])
         except KeyboardInterrupt:
             system_exit(os.EX_NOUSER)
         except Exception, e:

@@ -26,19 +26,20 @@ do so may indirectly break other tests.
 # -- constants ----------------------------------------------------------------
 
 # Keys used to look up a specific builtin manager (please alphabetize)
-TYPE_CDS              = 'cds-manager'
-TYPE_CONTENT          = 'content-manager'
-TYPE_CONTENT_QUERY    = 'content-query-manager'
-TYPE_CONTENT_UPLOAD   = 'content-upload-manager'
-TYPE_PLUGIN_MANAGER   = 'plugin-manager'
-TYPE_REPO             = 'repo-manager'
-TYPE_REPO_IMPORTER    = 'repo-importer-manager'
-TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
-TYPE_REPO_ASSOCIATION = 'repo-association-manager'
-TYPE_REPO_CLONE       = 'repo-clone-manager'
-TYPE_REPO_PUBLISH     = 'repo-publish-manager'
-TYPE_REPO_QUERY       = 'repo-query-manager'
-TYPE_REPO_SYNC        = 'repo-sync-manager'
+TYPE_CDS                    = 'cds-manager'
+TYPE_CONTENT                = 'content-manager'
+TYPE_CONTENT_QUERY          = 'content-query-manager'
+TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
+TYPE_PLUGIN_MANAGER         = 'plugin-manager'
+TYPE_REPO                   = 'repo-manager'
+TYPE_REPO_IMPORTER          = 'repo-importer-manager'
+TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
+TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
+TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
+TYPE_REPO_CLONE             = 'repo-clone-manager'
+TYPE_REPO_PUBLISH           = 'repo-publish-manager'
+TYPE_REPO_QUERY             = 'repo-query-manager'
+TYPE_REPO_SYNC              = 'repo-sync-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
@@ -93,6 +94,12 @@ def repo_unit_association_manager():
     @rtype: L{pulp.server.managers.repo.unit_association.RepoUnitAssociationManager}
     """
     return get_manager(TYPE_REPO_ASSOCIATION)
+
+def repo_unit_association_query_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.unit_association_qiery.RepoUnitAssociationQueryManager}
+    """
+    return get_manager(TYPE_REPO_ASSOCIATION_QUERY)
 
 def repo_clone_manager():
     """
@@ -158,6 +165,7 @@ def initialize():
     from pulp.server.managers.repo.importer import RepoImporterManager
     from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
+    from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.repo.clone import RepoCloneManager
     from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
@@ -173,6 +181,7 @@ def initialize():
         TYPE_REPO_IMPORTER: RepoImporterManager,
         TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
+        TYPE_REPO_ASSOCIATION_QUERY : RepoUnitAssociationQueryManager,
         TYPE_REPO_CLONE: RepoCloneManager,
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,

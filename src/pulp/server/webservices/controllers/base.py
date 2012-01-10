@@ -196,7 +196,6 @@ class JSONController(object):
     def bad_request(self, msg=None):
         """
         Return a not found error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -206,7 +205,6 @@ class JSONController(object):
     def unauthorized(self, msg=None):
         """
         Return an unauthorized error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -216,7 +214,6 @@ class JSONController(object):
     def not_found(self, msg=None):
         """
         Return a not found error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -226,7 +223,6 @@ class JSONController(object):
     def method_not_allowed(self, msg=None):
         """
         Return a method not allowed error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -236,7 +232,6 @@ class JSONController(object):
     def not_acceptable(self, msg=None):
         """
         Return a not acceptable error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -246,7 +241,6 @@ class JSONController(object):
     def conflict(self, msg=None):
         """
         Return a conflict error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -256,7 +250,6 @@ class JSONController(object):
     def internal_server_error(self, msg=None):
         """
         Return an internal server error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -267,7 +260,6 @@ class JSONController(object):
         """
         Return a not implemented error.
         @param msg: optional error message
-        @type msg: None or str
         @return: JSON encoded response
         @rtype: str
         """

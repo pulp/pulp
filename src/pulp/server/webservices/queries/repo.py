@@ -16,7 +16,7 @@ Repo module containing repo queries based on HTTP query parameters.
 """
 
 from pulp.server.db.model.resource import Repo
-from pulp.server.managers.repo.unit_association import Criteria
+from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.webservices import http
 from pulp.server.webservices.queries.common import OPERATION_FILTERS
 

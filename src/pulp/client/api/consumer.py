@@ -26,7 +26,7 @@ class ConsumerAPI(PulpAPI):
                         "description": description,
                         "key_value_pairs": key_value_pairs}
         path = "/consumers/"
-        return self.server.PUT(path, consumerdata)[1]
+        return self.server.POST(path, consumerdata)[1]
 
     def update(self, id, delta):
         path = "/consumers/%s/" % id

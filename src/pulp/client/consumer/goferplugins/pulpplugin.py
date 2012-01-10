@@ -167,7 +167,15 @@ class ProfileUpdateAction:
             
 class Packages:
     """
-    Package management object.
+    Package management.
+    Returned I{Package} NEVRA+ objects:
+      - qname   : qualified name
+      - repoid  : repository id
+      - name    : package name
+      - epoch   : package epoch
+      - version : package version
+      - release : package release
+      - arch    : package arch
     """
 
     def __init__(self, importkeys=False):
@@ -187,7 +195,8 @@ class Packages:
         @param reboot: Request reboot after packages are installed.
         @type reboot: bool
         @return: {installed=, reboot=}
-          - installed : A list of installed packages
+          - installed : Installed packages
+              {resolved=[Package,],deps=[Package,]}
           - rebooted : A reboot was scheduled.
         @rtype: dict
         """
@@ -208,7 +217,8 @@ class Packages:
         @param reboot: Request reboot after packages are installed.
         @type reboot: bool
         @return: {updated=, reboot=}
-          - updated : A list of (pkg, {updates=[],obsoletes=[]})
+          - updated : Updated packages.
+              {resolved=[Package,],deps=[Package,]}
           - rebooted : A reboot was scheduled.
         @rtype: dict
         """
@@ -226,8 +236,9 @@ class Packages:
         Uninstall (erase) packages by name.
         @param names: A list of package names to be removed.
         @type names: list
-        @return: A list of erased packages.
-        @rtype: list
+        @return: Removed packages.
+            {resolved=[Package,],deps=[Package,]}
+        @rtype: dict
         """
         p = Package()
         uninstalled = p.uninstall(names)
@@ -261,7 +272,10 @@ class PackageGroups:
         """
         Install package groups by name.
         @param names: A list of package names.
-        @param names: str
+        @type names: str
+        @return: Installed packages.
+            {resolved=[Package,],deps=[Package,]}
+        @rtype: dict
         """
         g = PackageGroup(importkeys=self.importkeys)
         installed = g.install(names)
@@ -273,7 +287,10 @@ class PackageGroups:
         """
         Uninstall package groups by name.
         @param names: A list of package group names.
-        @param names: str
+        @type names: str
+        @return: Removed packages.
+            {resolved=[Package,],deps=[Package,]}
+        @rtype: dict
         """
         g = PackageGroup()
         uninstalled = g.uninstall(names)

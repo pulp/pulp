@@ -56,6 +56,8 @@ class ConsumerGroups(JSONController):
         @return: consumer group metadata on successful creation
         """
         consumergroup_data = self.params()
+        if api.consumergroup(consumergroup_data['id']) is not None:
+            return self.conflict('A consumer group with the id, %s, already exists' % consumergroup_data['id'])
         consumergroup = api.create(consumergroup_data['id'], consumergroup_data['description'],
                                    consumergroup_data['consumerids'])
         resource = resource_path(extend_uri_path(consumergroup['id']))
@@ -107,6 +109,8 @@ class ConsumerGroup(JSONController):
         @param id: consumer group id
         @return: True on successful deletion of consumer
         """
+        if api.consumergroup(id) is None:
+            return self.not_found("A consumer group with id, %s, does not exist" % id)
         api.delete(id=id)
         return self.ok(True)
 
@@ -152,7 +156,7 @@ class ConsumerGroupActions(JSONController):
         """
         data = self.params()
         api.unbind(id, data)
-        return self.ok(None)
+        return self.ok(True)
 
     def add_key_value_pair(self, id):
         """
@@ -189,7 +193,7 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
-            return self.conflict('Consumer [%s] does not exist' % data)
+            return self.not_found('Consumer [%s] does not exist' % data)
         api.add_consumer(id, data)
         return self.ok(True)
 
@@ -201,7 +205,7 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
-            return self.conflict('Consumer [%s] does not exist' % data)
+            return self.not_found('Consumer [%s] does not exist' % data)
         api.delete_consumer(id, data)
         return self.ok(None)
 
@@ -331,7 +335,7 @@ class ConsumerGroupActions(JSONController):
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         if not self.validate_consumergroup(id):
-            return self.conflict('Consumer Group [%s] does not exist' % id)
+            return self.not_found('Consumer Group [%s] does not exist' % id)
         return action(id)
 
 

@@ -405,7 +405,7 @@ class RepoSync(JSONController):
         repo_sync_manager = manager_factory.repo_sync_manager()
         repo_sync_manager.sync(repo_id, overrides)
 
-        return self.ok(True)
+        return self.ok({})
 
 class RepoPublish(JSONController):
 
@@ -427,7 +427,43 @@ class RepoPublish(JSONController):
         repo_publish_manager = manager_factory.repo_publish_manager()
         repo_publish_manager.publish(repo_id, distributor_id, overrides)
         
-        return self.ok(True)
+        return self.ok({})
+
+class RepoAssociate(JSONController):
+
+    # Scope: Action
+    # POST:  Associate units from a repository into the given repository
+
+    @auth_required(UPDATE)
+    def POST(self, dest_repo_id):
+
+        # Params
+        params = self.params()
+        source_repo_id = params.get('source_repo_id', None)
+
+        if source_repo_id is None:
+            serialized = http_error_obj(400)
+            return self.bad_request(serialized)
+
+        criteria = params.get('criteria', None)
+        if criteria is not None:
+            try:
+                criteria = unit_association_criteria(criteria)
+            except Exception:
+                _LOG.exception('Error parsing association criteria [%s]' % criteria)
+                serialized = http_error_obj(400)
+                return self.bad_request(serialized)
+
+        # TODO: Make this run asynchronously
+
+        # This should probably handle the exceptions and convert them to HTTP
+        # status codes, but I'm still unsure of how we're going to handle these
+        # in the async world, so for now a 500 is fine.
+
+        association_manager = manager_factory.repo_unit_association_manager()
+        association_manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
+
+        return self.ok({})
 
 class RepoUnitAdvancedSearch(JSONController):
 
@@ -446,18 +482,18 @@ class RepoUnitAdvancedSearch(JSONController):
 
         try:
             criteria = unit_association_criteria(query)
-        except ValueError,e :
+        except Exception:
             _LOG.exception('Error parsing association criteria [%s]' % query)
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
 
         # Data lookup
-        manager = manager_factory.repo_unit_association_manager()
+        manager = manager_factory.repo_unit_association_query_manager()
         if criteria.type_ids is not None and len(criteria.type_ids) == 1:
             type_id = criteria.type_ids[0]
             units = manager.get_units_by_type(repo_id, type_id, criteria=criteria)
         else:
-            units = manager.get_units(repo_id, criteria=criteria)
+            units = manager.get_units_across_types(repo_id, criteria=criteria)
 
         return self.ok(units)
 
@@ -479,6 +515,7 @@ urls = (
 
     '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
     '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
+    '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
 
     '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
 )

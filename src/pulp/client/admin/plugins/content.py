@@ -95,7 +95,7 @@ class Upload(ContentAction):
                 exit_code = os.EX_DATAERR
                 if self.opts.verbose:
                     print msg
-                continue 
+                continue
             try:
                 metadata = utils.processFile(f)
             except utils.FileError, e:
@@ -113,12 +113,12 @@ class Upload(ContentAction):
             existing_pkg_checksums = {}
             if pkgobj:
                 for pobj in pkgobj:
-                    existing_pkg_checksums[pobj['checksum']['sha256']] = pobj
+                    existing_pkg_checksums[pobj['checksum'][pobj['checksum'].keys()[0]]] = pobj
 
             if metadata['checksum'] in existing_pkg_checksums.keys():
                 pobj = existing_pkg_checksums[metadata['checksum']]
                 msg = _("Content [%s] already exists on the server with checksum [%s]") % \
-                            (pobj['filename'], pobj['checksum']['sha256'])
+                            (pobj['filename'], pobj['checksum'][pobj['checksum'].keys()[0]])
                 log.info(msg)
                 if self.opts.verbose:
                     print msg
@@ -274,7 +274,8 @@ class Delete(ContentAction):
                     continue
                 else:
                     for fo in pkgobj:
-                        if fo['filename'] == filename and fo['checksum']['sha256'] == checksum:
+                        if fo['filename'] == filename and \
+                           fo['checksum'][fo['checksum'].keys()[0]] == checksum:
                             pobj = fo
             else:
                 pobj = pkgobj[0]
@@ -283,8 +284,7 @@ class Delete(ContentAction):
                 print _("Content with filename [%s] could not be found on server; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
-            
-            if len(pobj['repos']):
+            if len(pobj['repoids']):
                 print _("Content with filename [%s] is currently associated a repository; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue

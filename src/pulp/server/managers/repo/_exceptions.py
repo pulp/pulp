@@ -254,3 +254,23 @@ class InvalidOwnerType(Exception):
     an incorrect owner type was passed into the associate call.
     """
     pass
+
+class UnsupportedTypes(Exception):
+    """
+    Raised when units were requested to be associated into a repository that
+    cannot support one or more of the unit types.
+    """
+    def __init__(self, repo_id, type_ids):
+        Exception.__init__(self)
+        self.repo_id = repo_id
+        self.type_ids = type_ids
+
+    def __str__(self):
+        return _('Types [%(t)s] unsupported by repository [%(r)s]' % \
+               {'t' : self.type_ids, 'r' : self.repo_id})
+
+class ImporterAssociationException(Exception):
+    """
+    Wraps any exception raised from the importer during an import.
+    """
+    pass

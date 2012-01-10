@@ -139,7 +139,7 @@ class AdminRepoAction(RepoAction):
                                                   checksum=checksum,
                                                   checksum_type=checksum_type, regex=False)
         for pkg in pkgobj:
-            pkg_repos = pkg["repos"]
+            pkg_repos = pkg["repoids"]
             if repoid in pkg_repos:
                 return pkg
         return None
@@ -311,8 +311,9 @@ class Status(AdminRepoAction):
         running_sync = self.repository_api.running_task(syncs)
         if syncs:
             error_details = ""
-            if syncs[0].has_key("progress"):
-                error_details = self.form_error_details(syncs[0]["progress"])
+            progress = syncs[0].get('progress')
+            if isinstance(progress, dict):
+                error_details = self.form_error_details(progress)
             if syncs[0]['state'] in ('error') or error_details:
                 tb = ""
                 if syncs[0]['traceback']:
@@ -584,13 +585,6 @@ class Clone(RepoProgressAction):
     def get_task(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-
-        # find if sync in progress for parent repo
-        tasks = self.repository_api.sync_list(id)
-        running = self.repository_api.running_task(tasks)
-        if running is not None:
-            print _('Sync for parent repository %s already in progress') % id
-            return running
 
         clone_id = self.get_required_option('clone_id')
         clone_name = self.opts.clone_name or clone_id

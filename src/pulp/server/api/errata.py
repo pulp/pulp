@@ -38,14 +38,15 @@ class ErrataApi(BaseApi):
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
             reboot_suggested="", references=(), pkglist=(), severity="",
-            rights="", summary="", solution="", repo_defined=False, immutable=False):
+            rights="", summary="", solution="", repo_defined=False, 
+            immutable=False, repoids=[]):
         """
         Create a new Errata object and return it
         """
         e = model.Errata(id, title, description, version, release, type,
                 status, updated, issued, pushcount, from_str,
                 reboot_suggested, references, pkglist, severity, rights,
-                summary, solution, repo_defined, immutable)
+                summary, solution, repo_defined, immutable, repoids)
         self.collection.insert(e, safe=True)
         return e
 
