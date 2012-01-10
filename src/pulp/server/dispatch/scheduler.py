@@ -184,8 +184,8 @@ class Scheduler(object):
         Call back for task (call_request) results and rescheduling
         """
         # NOTE the "call_request" is actually a task, but the scheduler doesn't care
-        i = call_request.tags.index(SCHEDULED_TAG)
-        schedule_id = call_request.tags[i + 1]
+        index = call_request.tags.index(SCHEDULED_TAG)
+        schedule_id = call_request.tags[index + 1]
         scheduled_call = self.scheduled_call_collection.find({'_id': schedule_id})
         self.update_last_run(scheduled_call)
         self.update_next_run(scheduled_call)
