@@ -83,19 +83,19 @@ class Scheduler(object):
                 continue
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            self._run_via_legacy_tasking(call_request)
-
-    def _run_via_legacy_tasking(self, call_request):
-        """
-        Run the call request in the legacy tasking sub-system
-        """
-        raise NotImplementedError()
+            self._run_via_task_queue(call_request)
 
     def _run_via_task_queue(self, call_request):
         """
         Run the call request directly in the task queue
         """
-        raise NotImplementedError()
+        from pulp.server import config
+        from pulp.server.dispatch.task import Task
+        from pulp.server.dispatch.taskqueue import TaskQueue
+        concurrency_threshold = config.config.getint('tasking', 'concurrency_threshold')
+        task_queue = TaskQueue(concurrency_threshold)
+        task = Task(call_request)
+        task_queue.enqueue(task)
 
     def _run_via_coordinator(self, call_request):
         """
