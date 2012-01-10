@@ -84,7 +84,6 @@ class Scheduler(object):
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
             self._run_via_legacy_tasking(call_request)
-            self.update_last_run(scheduled_call)
 
     def _run_via_legacy_tasking(self, call_request):
         """
@@ -127,19 +126,32 @@ class Scheduler(object):
 
     # scheduling methods -------------------------------------------------------
 
-    def update_last_run(self, scheduled_call):
+    def update_last_run(self, scheduled_call, call_report=None):
         """
         Update the metadata for a scheduled call that has been run
         @param scheduled_call: scheduled call to be updated
         @type  scheduled_call: dict
         """
         schedule_id = scheduled_call['_id']
+        update = {}
         # use scheduled time instead of current to prevent schedule drift
-        last_run = scheduled_call['next_run']
-        scheduled_call['last_run'] = last_run
+        delta = update.setdefault('$set', {})
+        delta['last_run'] = scheduled_call['next_run']
+        state = getattr(call_report, 'state', None)
+        # if we finished in an error state, make sure we haven't crossed the threshold
+        if state == dispatch_constants.CALL_ERROR_STATE:
+            inc = update.setdefault('$inc', {})
+            inc['consecutive_failures'] = 1
+            failure_threshold = scheduled_call['failure_threshold']
+            consecutive_failures = scheduled_call['consecutive_failures']
+            if failure_threshold is not None and failure_threshold >= consecutive_failures + 1:
+                delta = update.setdefault('$set', {})
+                delta['enabled'] = False
+                # TODO log me
+        # decrement the remaining runs, if we're tracking that
         if scheduled_call['runs'] is not None:
-            scheduled_call['runs'] -= 1
-        update = {'$set': {'last_run': last_run}}
+            inc = update.setdefault('$inc', {})
+            inc['runs'] = -1
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def update_next_run(self, scheduled_call):
@@ -183,11 +195,10 @@ class Scheduler(object):
         """
         Call back for task (call_request) results and rescheduling
         """
-        # NOTE the "call_request" is actually a task, but the scheduler doesn't care
         index = call_request.tags.index(SCHEDULED_TAG)
         schedule_id = call_request.tags[index + 1]
-        scheduled_call = self.scheduled_call_collection.find({'_id': schedule_id})
-        self.update_last_run(scheduled_call)
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
+        self.update_last_run(scheduled_call, call_report)
         self.update_next_run(scheduled_call)
 
     # schedule control methods -------------------------------------------------
