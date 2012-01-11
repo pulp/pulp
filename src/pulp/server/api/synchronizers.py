@@ -436,7 +436,7 @@ class BaseSynchronizer(object):
         pulp.server.util.create_rel_symlink(source_path, link_path)
         log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
 
-    def __import_package_with_retry(self, package, repo_defined=False, num_retries=5):
+    def __import_package_with_retry(self, package, repo, repo_defined=False, num_retries=5):
         file_name = os.path.basename(package.relativepath)
         hashtype = package.checksum_type
         checksum = package.checksum
@@ -451,7 +451,7 @@ class BaseSynchronizer(object):
                 hashtype,
                 checksum,
                 file_name,
-                repo_defined=repo_defined)
+                repo_defined=repo_defined, repoids=[repo['id']])
         except DuplicateKeyError, e:
             found = self.lookup_package(package)
             if not found and num_retries > 0:
@@ -479,7 +479,7 @@ class BaseSynchronizer(object):
         """
         try:
             file_name = os.path.basename(package.relativepath)
-            newpkg = self.__import_package_with_retry(package, repo_defined)
+            newpkg = self.__import_package_with_retry(package, repo, repo_defined)
             # update dependencies
             for dep in package.requires:
                 if not newpkg.has_key("requires"):
@@ -496,7 +496,7 @@ class BaseSynchronizer(object):
             newpkg["vendor"]  = package.vendor
             # update filter
             filter = ['requires', 'provides', 'buildhost',
-                      'size' , 'group', 'license', 'vendor']
+                      'size' , 'group', 'license', 'vendor', 'repoids']
             # set the download URL
             if repo:
                 filter.append('download_url')
@@ -509,9 +509,6 @@ class BaseSynchronizer(object):
                     + repo['relative_path'] \
                     + "/" \
                     + file_name
-
-                if not newpkg.has_key("repoids"):
-                    newpkg["repoids"] = []
                 if repo['id'] not in newpkg["repoids"]:
                     newpkg["repoids"].append(repo['id'])
             newpkg = pulp.server.util.translate_to_utf8(newpkg)
