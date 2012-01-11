@@ -33,6 +33,22 @@ class Task(object):
     """
     Task class
     Execution wrapper for a single call request
+    @ivar id: unique uuid string
+    @type id: str
+    @ivar call_request: call request object task was created for
+    @type call_request: CallRequest instance
+    @ivar call_report: call report for the execution of the call_request
+    @type call_report: CallReport instance
+    @ivar queued_call_id: db id for serialized queued call
+    @type queued_call_id: str
+    @ivar asynchronous: toggle asynchronous control flow
+    @type asynchronous: bool
+    @ivar complete_callback: task queue callback called on completion
+    @type complete_callback: callable or None
+    @ivar progress_callback: call request progress callback called to report execution progress
+    @type progress_callback: callable or None
+    @ivar blocking_tasks: set of task ids that block the execution of this task
+    @type blocking_tasks: set
     """
 
     def __init__(self, call_request, call_report=None, asynchronous=False):
@@ -71,10 +87,20 @@ class Task(object):
     # progress information -----------------------------------------------------
 
     def set_progress(self, arg, callback):
+        """
+        Set the call request progress callback as the given key word argument.
+        @param arg: name of the key word argument
+        @type  arg: str
+        @param callback: progress callback function, method, or functor
+        @type  callback: callable
+        """
         self.call_request.kwargs[arg] = self._progress_pass_through
         self.progress_callback = callback
 
     def _progress_pass_through(self, *args, **kwargs):
+        """
+        Progress callback pass through used as a surrogate for the progress back.
+        """
         try:
             self.call_report.progress = self.progress_callback(*args, **kwargs)
         except Exception, e:
@@ -84,6 +110,9 @@ class Task(object):
     # task lifecycle -----------------------------------------------------------
 
     def run(self):
+        """
+        Run the call request.
+        """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
@@ -104,6 +133,12 @@ class Task(object):
         self.succeeded(result)
 
     def succeeded(self, result):
+        """
+        Mark the task completion as successful.
+        If asynchronous is False, this is called automatically on success by run().
+        @param result: result of the call
+        @type  result: any
+        """
         self.call_report.state = dispatch_constants.CALL_FINISHED_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
@@ -111,6 +146,14 @@ class Task(object):
         self._complete()
 
     def failed(self, exception=None, traceback=None):
+        """
+        Mark the task completion as a failure.
+        If asynchronous is False, this is called automatically on an exception by run().
+        @param exception: exception that occurred, if any
+        @type  exception: Exception instance or None
+        @param traceback: traceback information, if any
+        @type  traceback: TracebackType instance
+        """
         self.call_report.state = dispatch_constants.CALL_ERROR_STATE
         self.call_report.exception = exception
         self.call_report.traceback = traceback
@@ -119,6 +162,9 @@ class Task(object):
         self._complete()
 
     def _complete(self):
+        """
+        Cleanup and state finalization for call on either success or failure.
+        """
         assert self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
         self.call_execution_hooks(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK)
@@ -132,15 +178,24 @@ class Task(object):
     # hook execution -----------------------------------------------------------
 
     def call_execution_hooks(self, key):
+        """
+        Execute all the execution hooks for the given key.
+        Key must be a member of dispatch_constants.CALL_EXECUTION_HOOKS
+        """
+        assert key in dispatch_constants.CALL_EXECUTION_HOOKS
         for hook in self.call_request.execution_hooks[key]:
             hook(self.call_request, self.call_report)
 
     def cancel(self):
+        """
+        Call the cancel control hook if available, otherwise rains a 
+        NotImplemented exception.
+        """
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
         if cancel_hook is None:
-            raise NotImplementedError('No cancel control hook provided for Task:%s' % self.id)
+            raise NotImplementedError('No cancel control hook provided for Task: %s' % self.id)
         cancel_hook(self.call_request, self.call_report)
         self.call_report.state = dispatch_constants.CALL_CANCELED_STATE
         self._complete()
