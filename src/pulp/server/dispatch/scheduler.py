@@ -14,6 +14,7 @@
 import datetime
 import logging
 import threading
+from gettext import gettext as _
 
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
@@ -147,7 +148,11 @@ class Scheduler(object):
             if failure_threshold is not None and failure_threshold >= consecutive_failures + 1:
                 delta = update.setdefault('$set', {})
                 delta['enabled'] = False
-                # TODO log me
+                msg = _('Scheduled task [%s] disabled after %d consecutive failures')
+                _LOG.error(msg % (schedule_id, consecutive_failures))
+        else:
+            delta = update.setdefault('$set', {})
+            delta['consecutive_failures'] = 0
         # decrement the remaining runs, if we're tracking that
         if scheduled_call['runs'] is not None:
             inc = update.setdefault('$inc', {})
