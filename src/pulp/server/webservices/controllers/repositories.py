@@ -231,7 +231,7 @@ class Repositories(JSONController):
             if len(note) != 2:
                 return self.bad_request("Invalid note %s; correct format is key:value" % note)
 
-            spec["notes."+ note[0]] = note[1]
+            spec["notes." + note[0]] = note[1]
             del spec["note"]
 
         repositories = api.repositories(spec, default_fields)
@@ -908,7 +908,7 @@ class RepositoryDeferredFields(JSONController):
         filter_incomplete_groups = False
         if filters.has_key("filter_incomplete_groups") and filters["filter_incomplete_groups"]:
             filter_incomplete_groups = True
-        return self.ok(api.packagegroups(id, filter_missing_packages,filter_incomplete_groups))
+        return self.ok(api.packagegroups(id, filter_missing_packages, filter_incomplete_groups))
 
     def packagegroupcategories(self, id):
         """
@@ -1357,10 +1357,10 @@ class RepositoryActions(JSONController):
         if parent_repo is None:
             return self.not_found('A repository with the id, %s, does not exist' % id)
         if parent_repo['sync_in_progress']:
-            return self.conflict('The repository %s is currently syncing, cannot create clone util it is finished' % id)
+            return self.conflict('The repository %s is currently syncing, cannot create clone until it is finished' % id)
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
-        if repo_data['feed'] not in ['parent','origin','none']:
+        if repo_data['feed'] not in ['parent', 'origin', 'none']:
             return self.bad_request('Invalid feed, %s, see --help' % repo_data['feed'])
         if repo_data['feed'] == 'origin' and repo_data.get('filters'):
             return self.bad_request('Filters cannot be applied to clones with origin feed')
