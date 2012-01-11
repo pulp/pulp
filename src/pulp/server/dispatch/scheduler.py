@@ -132,20 +132,22 @@ class Scheduler(object):
         Update the metadata for a scheduled call that has been run
         @param scheduled_call: scheduled call to be updated
         @type  scheduled_call: dict
+        @param call_report: call report from last run, if available
+        @type  call_report: CallReport instance or None
         """
         schedule_id = scheduled_call['_id']
         update = {}
         # use scheduled time instead of current to prevent schedule drift
         delta = update.setdefault('$set', {})
         delta['last_run'] = scheduled_call['next_run']
-        state = getattr(call_report, 'state', None)
         # if we finished in an error state, make sure we haven't crossed the threshold
+        state = getattr(call_report, 'state', None)
         if state == dispatch_constants.CALL_ERROR_STATE:
             inc = update.setdefault('$inc', {})
             inc['consecutive_failures'] = 1
             failure_threshold = scheduled_call['failure_threshold']
-            consecutive_failures = scheduled_call['consecutive_failures']
-            if failure_threshold is not None and failure_threshold >= consecutive_failures + 1:
+            consecutive_failures = scheduled_call['consecutive_failures'] + 1
+            if failure_threshold >= consecutive_failures: # valid for failure_threshold of None
                 delta = update.setdefault('$set', {})
                 delta['enabled'] = False
                 msg = _('Scheduled task [%s] disabled after %d consecutive failures')
