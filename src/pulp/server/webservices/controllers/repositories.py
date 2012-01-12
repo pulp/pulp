@@ -309,6 +309,7 @@ class Repositories(JSONController):
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
+         * publish?, bool, sets the publish state on a repository
         """
         repo_data = self.params()
 
@@ -328,7 +329,8 @@ class Repositories(JSONController):
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
                           notes=repo_data.get('notes', None),
                           preserve_metadata=repo_data.get('preserve_metadata', False),
-                          content_types=repo_data.get('content_types', 'yum'))
+                          content_types=repo_data.get('content_types', 'yum'),
+                          publish=repo_data.get('publish', None),)
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
@@ -1351,6 +1353,7 @@ class RepositoryActions(JSONController):
          * relative_path?, str, clone repository on disk path
          * groupid?, str, repository groups that clone belongs to
          * filters?, list of objects, synchronization filters to apply to the clone
+         * publish?, bool, sets the publish state on a repository 
         """
         repo_data = self.params()
         parent_repo = api.repository(id)
@@ -1370,7 +1373,8 @@ class RepositoryActions(JSONController):
                          repo_data['feed'],
                          relative_path=repo_data.get('relative_path', None),
                          groupid=repo_data.get('groupid', None),
-                         filters=repo_data.get('filters', []))
+                         filters=repo_data.get('filters', []),
+                         publish=repo_data.get('publish', None))
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
         task_info = self._task_to_dict(task)

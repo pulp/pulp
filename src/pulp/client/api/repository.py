@@ -27,7 +27,7 @@ class RepositoryAPI(PulpAPI):
     def create(self, id, name, arch, feed=None,
                feed_cert_data=None, consumer_cert_data=None,
                relative_path=None, groupid=None, gpgkeys=None, checksum_type="sha256",
-               preserve_metadata=False, content_types="yum"):
+               preserve_metadata=False, content_types="yum", publish=True):
         path = "/repositories/"
         repodata = {"id": id,
                     "name": name,
@@ -40,7 +40,8 @@ class RepositoryAPI(PulpAPI):
                     "gpgkeys": gpgkeys,
                     "checksum_type" : checksum_type,
                     "preserve_metadata" : preserve_metadata,
-                    "content_types" : content_types}
+                    "content_types" : content_types,
+                    "publish" : publish,}
         return self.server.PUT(path, repodata)[1]
 
     def repository(self, id, fields=()):
@@ -53,7 +54,7 @@ class RepositoryAPI(PulpAPI):
         return repo
 
     def clone(self, repoid, clone_id, clone_name, feed='parent',
-              relative_path=None, groupid=None, timeout=None, filters=()):
+              relative_path=None, groupid=None, timeout=None, filters=(), publish=True):
         path = "/repositories/%s/clone/" % repoid
         data = {"clone_id": clone_id,
                 "clone_name": clone_name,
@@ -61,7 +62,8 @@ class RepositoryAPI(PulpAPI):
                 "relative_path": relative_path,
                 "groupid": groupid,
                 "timeout": timeout,
-                "filters": filters}
+                "filters": filters,
+                "publish": publish,}
         return self.server.POST(path, data)[1]
 
     def repositories(self, queries):

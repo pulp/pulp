@@ -1569,3 +1569,19 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertTrue(repo.validate_relative_path('foo', 'bar'))
         self.assertFalse(repo.validate_relative_path('foo', 'foo/bar'))
         self.assertFalse(repo.validate_relative_path('foo/bar', 'foo'))
+
+    def test_repo_publish_on_create(self):
+        repo = self.repo_api.create('repo_publish_true', 'some name',
+            'i386', 'http://example.com', publish=True)
+        assert(repo is not None)
+        self.assertEquals(repo['publish'], True)
+
+        repo = self.repo_api.create('repo_publish_false', 'some name',
+            'i386', 'http://example.com', publish=False)
+        assert(repo is not None)
+        self.assertEquals(repo['publish'], False)
+
+        repo = self.repo_api.create('repo_publish_default', 'some name',
+            'i386', 'http://example.com')
+        assert(repo is not None)
+        self.assertEquals(repo['publish'], True)

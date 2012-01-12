@@ -53,7 +53,7 @@ type_classes = {
 
 @audit()
 def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None,
-        progress_callback=None, timeout=None, filters=[]):
+        progress_callback=None, timeout=None, filters=[], publish=None):
     """
     Run a repo clone asynchronously.
     @rtype pulp.server.tasking.task or None
@@ -95,12 +95,12 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     log.info("Creating [%s] feed repo [%s] cloned from [%s] with relative_path [%s]" % (feed, clone_id, id, relative_path))
     repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
                     relative_path=relative_path, feed_cert_data=feed_cert_data,
-                    consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], content_types=content_types)
+                    consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], 
+                    content_types=content_types, publish=publish)
 
     # Associate filters if specified
     if len(filters) > 0:
         repo_api.add_filters(clone_id, filter_ids=filters)
-
 
     task = RepoCloneTask(_clone,
                          [clone_id],

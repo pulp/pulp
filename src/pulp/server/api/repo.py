@@ -218,7 +218,7 @@ class RepoApi(BaseApi):
     def create(self, id, name, arch=None, feed=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
-               preserve_metadata=False, content_types="yum"):
+               preserve_metadata=False, content_types="yum", publish=None):
         """
         Create a new Repository object and return it
         """
@@ -319,8 +319,10 @@ class RepoApi(BaseApi):
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
-        default_to_publish = \
-            config.config.getboolean('repos', 'default_to_published')
+        if publish is None:
+            default_to_publish = config.config.getboolean('repos', 'default_to_published')
+        else:
+            default_to_publish = publish
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
         created = self.repository(r["id"])
