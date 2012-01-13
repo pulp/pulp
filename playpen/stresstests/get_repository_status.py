@@ -46,11 +46,13 @@ class TestThread(Thread):
     def run(self):
         counter = 0
         while not self.stopped:
+            start = time.time()
             status = self.protected_fetch(url=self.url)
-            print "%s %s Status <%s> Thread <%s> Iteration <%s>" % (time.ctime(), self.url, status, counter, self.threadid)
+            end = time.time()
+            print "%s %s Status <%s> Thread <%s> Iteration <%s> took %s seconds" % (time.ctime(), self.url, status, self.threadid, counter, end-start)
             counter += 1
             if status != 200:
-                print "Bad Status: %s at %s" % (status, time.ctime())
+                print "Bad Status: %s at %s, call took %s seconds" % (status, time.ctime(), end-start)
                 stop_threads()
                 sys.exit(1)
 
