@@ -422,6 +422,19 @@ class TestRepoApi(testutil.PulpAsyncTest):
         repo = self.repo_api.repository(id)
         assert(repo is None)
 
+    def test_delete_non_existing_clone_id(self):
+        id = 'some-id'
+        repo = self.repo_api.create(id, 'some name', 'i386', 'http://example.com')
+        repo = self.repo_api.repository(id)
+        assert(repo is not None)
+        clone_ids = repo['clone_ids']
+        clone_ids.append("non_existing_clone_id")
+        repo['clone_ids'] = clone_ids
+        self.repo_api.collection.save(repo, safe=True)
+        self.repo_api.delete(id=id)
+        repo = self.repo_api.repository(id)
+        assert(repo is None)
+
     def test_delete_feedless(self):
         id = 'some-id-no-feed'
         repo = self.repo_api.create(id, 'some name', 'i386')
