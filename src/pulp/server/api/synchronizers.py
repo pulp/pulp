@@ -320,14 +320,22 @@ class BaseSynchronizer(object):
         repo = self.repo_api.repository(repo_id)
         if not skip.has_key('distribution') or skip['distribution'] != 1:
             # process kickstart files/images part of the repo
+            if self.stopped:
+                raise CancelException()
             self._process_repo_images(dir, repo)
         else:
             log.info("skipping distribution imports from sync process")
+        if self.stopped:
+            raise CancelException()
         self.repo_api.collection.save(repo, safe=True)
 
     def add_files_from_dir(self, dir, repo_id, skip=None):
         repo = self.repo_api.repository(repo_id)
+        if self.stopped:
+            raise CancelException()
         added_files = self._process_files(dir, repo)
+        if self.stopped:
+            raise CancelException()
         self.repo_api.collection.save(repo, safe=True)
         return added_files
 
@@ -367,6 +375,8 @@ class BaseSynchronizer(object):
                         (updateinfo_xml_path, repo["id"]))
             else:
                 log.info("Skipping errata imports from sync process")
+        if self.stopped:
+            raise CancelException()
         self.repo_api.collection.save(repo, safe=True)
         return added_errataids
 
