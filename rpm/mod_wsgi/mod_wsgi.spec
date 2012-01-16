@@ -9,7 +9,6 @@ URL:            http://modwsgi.org
 Source0:        http://modwsgi.googlecode.com/files/%{name}-%{version}.tar.gz
 Source1:        wsgi.conf
 Patch0:         mod_wsgi-3.3-mod_ssl.patch
-Patch1:         mod_wsgi-3.3-KeyError.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  httpd-devel
@@ -26,7 +25,6 @@ existing WSGI adapters for mod_python or CGI.
 %prep
 %setup -q
 %patch0 -p2
-%patch1 -p2
 
 
 %build
