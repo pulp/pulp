@@ -642,6 +642,37 @@ class ConsumerProfileUpdate(JSONController):
         return self.ok(packages)
     
 
+class BindEnabled(JSONController):
+
+    @error_handler
+    @auth_required(UPDATE)
+    def PUT(self, id):
+        """
+        The agent has reported the list of eanbled repositories.
+        This is NOT intented to be used with stand-alone pulp or in other
+        cases where pulp is managing yum repo definitions on the consumer.
+        This is propably a RepoAssociation in v2.
+        @param id: The consumer id
+        @type id: str
+        """
+        reported = self.params()
+        log.info('Consumer [%s] reported enabled repositories: %s', id, reported)
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.bad_request('Consumer [%s] does not exist' % id)
+        repoids = consumer.get('repoids', [])
+        # disabled
+        for repoid in repoids:
+            if repoid in reported:
+                continue
+            consumer_api.unbind(id, repoid, soft=True)
+        # enabled
+        for repoid in reported:
+            if repoid in repoids:
+                continue
+            consumer_api.bind(id, repoid, soft=True)
+        return self.ok(True)
+
 class ApplicableErrataInRepos(JSONController):
 
     @error_handler
@@ -674,6 +705,7 @@ URLS = (
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
     '/([^/]+)/package_profile/$', 'ConsumerProfileUpdate',
+    '/([^/]+)/bind/enabled/$', 'BindEnabled',
 
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields),
     'ConsumerDeferredFields',
