@@ -315,24 +315,23 @@ class ConsumerApi(BaseApi):
         return consumers
 
     @audit()
-    def bind(self, id, repoid):
+    def bind(self, id, repoid, soft=False):
         '''
         Binds (subscribe) the consumer identified by id to an existing repo. If the
         consumer is already bound to the repo, this call has no effect.
-
         See consumer_utils.build_bind_data for more information on the contents of the
         bind data dictionary.
-
         @param id: identifies the consumer; a consumer with this ID must exist
         @type  id: string
-
         @param repoid: identifies the repo to bind; a repo with this ID must exist
         @type  repoid: string
-
+        @param soft: Indicates "soft" bind and consumer is NOT reconfigured.
+            Soft bind not intended to be used in stand-alone pulp installations or in any
+            other cases where pulp is managing the repository definitions on the consumer.
+        @type soft: bool
         @return: dictionary containing details about the repo that will describe how
                  to use the bound repo; None if no binding took place
         @rtype:  dict
-
         @raise PulpException: if either the consumer or repo cannot be found
         '''
 
@@ -350,10 +349,16 @@ class ConsumerApi(BaseApi):
         if repoid in repoids:
             return None
 
+        log.info('Bind consumer:%s, repoid: %s', id, repoid)
+
         # Update the consumer with the new repo, adding an entry to its history
         repoids.append(repoid)
         self.collection.save(consumer, safe=True)
         self.consumer_history_api.repo_bound(id, repoid)
+
+        # soft configuration, agent is NOT reconfigured.
+        if soft:
+            return
 
         # Collect the necessary information to return to the caller (see __doc__ above)
         host_list = round_robin.generate_cds_urls(repoid)
@@ -372,17 +377,18 @@ class ConsumerApi(BaseApi):
         return bind_data
 
     @audit()
-    def unbind(self, id, repo_id):
+    def unbind(self, id, repo_id, soft=False):
         '''
         Unbinds a consumer from the given repo. If the consumer is not bound to the
         repo, this call has no effect.
-
         @param id: identifies the consumer; this must represent a consumer currently in the DB
         @type  id: string
-
         @param repo_id: identifies the repo being unbound
         @type  repo_id: string
-
+        @param soft: Indicates "soft" bind and consumer is NOT reconfigured.
+            Soft bind is not intended to be used in stand-alone pulp installations or in any
+            other cases where pulp is managing the repository definitions on the consumer.
+        @type soft: bool
         @raise PulpException: if the consumer cannot be found
         '''
 
@@ -396,9 +402,15 @@ class ConsumerApi(BaseApi):
         if repo_id not in repoids:
             return
 
+        log.info('Unbind consumer:%s, repoid: %s', id, repo_id)
+
         # Update the consumer entry in the DB
         repoids.remove(repo_id)
         self.collection.save(consumer, safe=True)
+
+        # soft configuration, agent is NOT reconfigured.
+        if soft:
+            return
 
         agent = PulpAgent(consumer, async=True)
         agent_consumer = agent.Consumer()

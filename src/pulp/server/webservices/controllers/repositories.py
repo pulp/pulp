@@ -309,7 +309,7 @@ class Repositories(JSONController):
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
-         * publish?, bool, sets the publish state on a repository
+         * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
         """
         repo_data = self.params()
 
@@ -1353,7 +1353,7 @@ class RepositoryActions(JSONController):
          * relative_path?, str, clone repository on disk path
          * groupid?, str, repository groups that clone belongs to
          * filters?, list of objects, synchronization filters to apply to the clone
-         * publish?, bool, sets the publish state on a repository 
+         * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
         """
         repo_data = self.params()
         parent_repo = api.repository(id)

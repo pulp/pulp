@@ -45,6 +45,26 @@ class Distributions(JSONController):
         success response: 200 OK
         failure response: None
         return: list of distribution objects, possibly empty
+        example:
+        {{{
+        #!js
+        [{'_id': 'ks-Fedora-Fedora-14-x86_64',
+          '_ns': 'distribution',
+          'description': None,
+          'id': 'ks-Fedora-Fedora-14-x86_64',
+          'family' : 'Fedora',
+          'variant' : 'Fedora',
+          'version' : '14',
+          'arch' : 'x86_64',
+          'timestamp' : '2011-05-13T15:44:30',
+          'files': ['/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/install.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/efiboot.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/boot.iso',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/efidisk.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/pxeboot/initrd.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/pxeboot/vmlinuz'],
+          'relativepath' : '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64'},]
+        }}}
         """
         distributions = api.distributions(spec)
         return self.ok(distributions)
@@ -65,6 +85,28 @@ class Distribution(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a distribution
         return: a Distribution object
+        example:
+        {{{
+        #!js
+        { "id": "ks-Fedora-None-16-x86_64",
+          "_id": "ks-Fedora-None-16-x86_64",
+          "_ns": "distribution",
+          "description": "ks-Fedora-Fedora-16-x86_64",
+         "family": "Fedora",
+         "relativepath": "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64",
+         "variant": Fedora,
+         "version": "16",
+         "timestamp": "2011-11-03T07:39:38",
+         "arch": "x86_64",
+         "url": ["http://localhost/pulp/ks/released/F-16/GOLD/Everything/x86_64/os/"]}
+         "files": ["/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/initrd.img",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/repomd.xml",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/vmlinuz",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/.treeinfo",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efiboot.img",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/boot.iso",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efidisk.img"]}
+        }}}
         """  
         distro = api.distribution(id)
         if distro is None:
