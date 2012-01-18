@@ -142,7 +142,7 @@ class X509TestCase(unittest.TestCase):
         cn.set_data("Hello There!")
         assert cn.get_data().as_text() == "Hello There!", cn.get_data().as_text()
 
-        assert n.as_hash() == 1697185131
+        assert n.as_hash() == 333998119
         
         self.assertRaises(IndexError, lambda: n[100])
         self.assert_(n[10])
@@ -536,12 +536,82 @@ class X509_ExtTestCase(unittest.TestCase):
         x509_ext_ptr = m2.x509v3_ext_conf(lhash, ctx, name, value)
         x509_ext = X509.X509_Extension(x509_ext_ptr, 1)
 
-class X509_Store_ContextTestCase(unittest.TestCase):
-    def test_verify_with_crl(self):
+class X509_StoreContextTestCase(unittest.TestCase):
+
+    def test_verify_cert(self):
+        # Test with the CA that signed tests/x509.pem
+        ca = X509.load_cert('tests/ca.pem')
+        cert = X509.load_cert('tests/x509.pem')
+        store = X509.X509_Store()
+        store.add_x509(ca)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, cert)
+        assert store_ctx.verify_cert() == 1
+
+        # Test with the wrong CA, this CA did not sign tests/x509.pem
+        wrong_ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
+        cert = X509.load_cert('tests/x509.pem')
+        store = X509.X509_Store()
+        store.add_x509(wrong_ca)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, cert)
+        assert store_ctx.verify_cert() == 0
+
+    def test_verify_with_add_crl(self):
+        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
+        valid_cert = X509.load_cert('tests/crl_data/certs/valid_cert.pem')
+        revoked_cert = X509.load_cert('tests/crl_data/certs/revoked_cert.pem')
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+
         # Verify that a good cert is verified OK
-        # Verify that a revoked cert is verified as Revoked
-        #  get error code from context and verify it's correct
-        pass
+        store = X509.X509_Store()
+        store.add_x509(ca)
+        store.add_crl(crl)
+        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
+                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, valid_cert)
+        assert store_ctx.verify_cert() == 1
+
+        # Verify that a revoked cert is not verified
+        store = X509.X509_Store()
+        store.add_x509(ca)
+        store.add_crl(crl)
+        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
+                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, revoked_cert)
+        assert store_ctx.verify_cert() == 0
+
+    def test_verify_with_add_crls(self):
+        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
+        valid_cert = X509.load_cert('tests/crl_data/certs/valid_cert.pem')
+        revoked_cert = X509.load_cert('tests/crl_data/certs/revoked_cert.pem')
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+
+        # Verify that a good cert is verified OK
+        store = X509.X509_Store()
+        store.add_x509(ca)
+        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
+                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
+        crl_stack = X509.CRL_Stack()
+        crl_stack.push(crl)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, valid_cert)
+        store_ctx.add_crls(crl_stack)
+        assert store_ctx.verify_cert() == 1
+
+        # Verify that a revoked cert is not verified
+        store = X509.X509_Store()
+        store.add_x509(ca)
+        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
+                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
+        crl_stack = X509.CRL_Stack()
+        crl_stack.push(crl)
+        store_ctx = X509.X509_Store_Context()
+        store_ctx.init(store, revoked_cert)
+        store_ctx.add_crls(crl_stack)
+        assert store_ctx.verify_cert() == 0
 
     def test_add_crls_to_ctx(self):
         # Add CRLs to a X509_Store_Context and verify they can be retrieved
