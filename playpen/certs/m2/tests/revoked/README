@@ -1,0 +1,8 @@
+1) Run `./create_certs_to_revoke.sh` to generate test data of:
+ CA:            ./certs/revoking_ca.pem
+ CRL:           ./certs/revoking_crl.pem
+ Revoked Cert:  ./certs/revoked_cert.pem
+
+Use the example verify_* scripts to test out openssl commands for verifying a cert has been revoked with a CRL.
+
+
