@@ -21,12 +21,38 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.agent import Agent
+from pulp.common.bundle import Bundle
 from pulp.server.exceptions import PulpException
 
+# default capabilities
+CAPABILITIES = dict(heartbeat=True, bind=True)
 
 # -- test cases ---------------------------------------------------------------------------
 
 class TestConsumerApi(testutil.PulpAsyncTest):
+    
+    # -- create test cases ---------------------------------------------------------------
+    
+    def test_registrations(self):
+        '''
+        Tests the happy path of registration.
+        '''
+        
+        # Setup
+        id = 'test-consumer'
+        description = 'my excellent description'
+        created = self.consumer_api.create(id, description, CAPABILITIES)
+        
+        # Test
+        fetched = self.consumer_api.consumer(id)
+        
+        # Verify
+        self.assertTrue(Bundle.hasboth(created['certificate']))
+        self.assertEqual(description, fetched['description'])
+        self.assertEqual(CAPABILITIES, fetched['capabilities'])
+        self.assertTrue(Bundle.hascrt(fetched['certificate']))
+        self.assertFalse(Bundle.haskey(fetched['certificate']))
+
 
     # -- bind test cases -----------------------------------------------------------------
 
@@ -37,7 +63,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        self.consumer_api.create('test-consumer', None, capabilities=dict(bind=True))
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
 
         # Test
         returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
@@ -195,7 +221,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None, capabilities=dict(bind=True))
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
 
         self.consumer_api.bind('test-consumer', 'test-repo')
@@ -226,7 +252,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None, capabilities=dict(bind=True))
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
         self.repo_api.create('test-repo-1', 'Test Repo', 'noarch')
         self.repo_api.create('test-repo-2', 'Test Repo', 'noarch')
 
