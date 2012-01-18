@@ -82,35 +82,6 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         bindargs = lastbind[0]
         verify_bind_data(bindargs[1])
 
-    def test_soft_bind(self):
-        '''
-        Tests the happy path of binding a consumer to a repo.
-        Soft binding which means the consumer is not reconfigured.
-        Soft bind is NOT intented to be used with stand-alone pulp or in other
-        cases where pulp is managing yum repo definitions on the consumer.
-        '''
-
-        # Setup
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        self.consumer_api.create('test-consumer', None)
-
-        # Test
-        returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo', soft=True)
-
-        # Verify
-
-        # Database
-        consumer = self.consumer_api.consumer('test-consumer')
-        self.assertTrue(consumer is not None)
-        self.assertTrue('test-repo' in consumer['repoids'])
-
-        # Verify
-        #   Messaging bind data
-        agent = Agent('test-consumer')
-        repoproxy = agent.Consumer()
-        calls = repoproxy.bind.history()
-        self.assertEqual(len(calls), 0)
-
     def __bind_with_keys(self):
         '''
         Tests that binding to a repo with GPG keys returns a mapping of keys to contents.
@@ -247,37 +218,6 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         lastunbind = calls[-1]
         unbindargs = lastunbind[0]
         self.assertEqual(unbindargs[0], 'test-repo')
-
-    def test_soft_unbind(self):
-        '''
-        Tests the happy path of unbinding a repo that is bound to the consumer.
-        Soft binding which means the consumer is not reconfigured.
-        Soft bind is NOT intented to be used with stand-alone pulp or in other
-        cases where pulp is managing yum repo definitions on the consumer.
-        '''
-
-        # Setup
-        self.consumer_api.create('test-consumer', None)
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-
-        self.consumer_api.bind('test-consumer', 'test-repo')
-
-        consumer = self.consumer_api.consumer('test-consumer')
-        self.assertTrue('test-repo' in consumer['repoids'])
-
-        # Test
-        self.consumer_api.unbind('test-consumer', 'test-repo', soft=True)
-
-        # Verify
-        consumer = self.consumer_api.consumer('test-consumer')
-        self.assertTrue('test-repo' not in consumer['repoids'])
-
-        # Verify
-        #   Messaging unbind data
-        agent = Agent('test-consumer')
-        repoproxy = agent.Consumer()
-        calls = repoproxy.unbind.history()
-        self.assertEqual(len(calls), 0)
 
     def test_unbind_existing_repos(self):
         '''
