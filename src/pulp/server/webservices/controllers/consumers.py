@@ -689,10 +689,13 @@ class ApplicableErrataInRepos(JSONController):
         failure response: None
         return: list of object that are mappings of errata id in given repoids to applicable consumers
         """
-        valid_filters = ('repoids',)
+        valid_filters = ('repoids','send_only_applicable_errata',)
         filters = self.filters(valid_filters)
         repoids = filters.pop('repoids', [])
-        errata = consumer_api.get_consumers_applicable_errata(repoids)
+        send_only_applicable_errata = filters.pop('send_only_applicable_errata', ['true'])
+        if send_only_applicable_errata[0] not in ['true','false']:
+            return self.bad_request("Invalid input for send_only_applicable_errata. Accepted inputs are 'true' or 'false'")
+        errata = consumer_api.get_consumers_applicable_errata(repoids, send_only_applicable_errata[0])
         return self.ok(errata)
 
 

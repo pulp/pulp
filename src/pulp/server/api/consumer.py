@@ -730,7 +730,7 @@ class ConsumerApi(BaseApi):
 
 
     @audit()
-    def get_consumers_applicable_errata(self, repoids):
+    def get_consumers_applicable_errata(self, repoids, send_only_applicable_errata='true'):
         """
         List all errata associated with a group of repositories along with consumers that it is applicable to
         """
@@ -747,7 +747,8 @@ class ConsumerApi(BaseApi):
         # Initialize applicable_errata_consumers with errata id and empty list of applicable consumers
         applicable_errata_consumers = {}
         for erratum in all_repo_errata:
-            applicable_errata_consumers[erratum] = []
+            applicable_errata_consumers[erratum] = {}
+            applicable_errata_consumers[erratum]['consumerids'] = []
 
         for repoid in repoids:
             registered_consumers = [ consumer for consumer in self.consumers() \
@@ -763,7 +764,22 @@ class ConsumerApi(BaseApi):
                 applicable_errata = self._applicable_errata(consumer=consumer, repoids=[repoid])
                 for repo_errataid in repo_errataids:
                     if repo_errataid in applicable_errata:
-                        applicable_errata_consumers[repo_errataid].append(consumer['id'])
+                        applicable_errata_consumers[repo_errataid]['consumerids'].append(consumer['id'])
+
+        # if send_only_applicable_errata is true, remove all other errata
+        if send_only_applicable_errata == 'true':
+            for errataid, info in applicable_errata_consumers.items():
+                if not info['consumerids']:
+                    del applicable_errata_consumers[errataid]
+
+        # add errata details
+        for errataid, info in applicable_errata_consumers.items():
+            e = self.errataapi.erratum(errataid, fields=['title','type','severity','repoids'])
+            info['title'] = e['title']
+            info['type'] = e['type']
+            info['severity'] = e['severity']
+            info['repoids'] = e['repoids']
+            applicable_errata_consumers[errataid] = info
 
         return applicable_errata_consumers
 
