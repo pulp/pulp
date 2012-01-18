@@ -450,6 +450,9 @@ class BaseSynchronizer(object):
         file_name = os.path.basename(package.relativepath)
         hashtype = package.checksum_type
         checksum = package.checksum
+        repoids = []
+        if repo is not None:
+            repoids = [repo['id']]
         try:
             newpkg = self.package_api.create(
                 package.name,
@@ -461,7 +464,7 @@ class BaseSynchronizer(object):
                 hashtype,
                 checksum,
                 file_name,
-                repo_defined=repo_defined, repoids=[repo['id']])
+                repo_defined=repo_defined, repoids=repoids)
         except DuplicateKeyError, e:
             found = self.lookup_package(package)
             if not found and num_retries > 0:
