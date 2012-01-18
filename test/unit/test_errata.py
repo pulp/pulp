@@ -626,10 +626,15 @@ class TestErrata(testutil.PulpAsyncTest):
  
         result1 = self.consumer_api.get_consumers_applicable_errata([r['id'], r1['id'], repo['id']])
         result2 = self.consumer_api.get_consumers_applicable_errata([r['id'], r1['id']])
+        result3 = self.consumer_api.get_consumers_applicable_errata([r['id'], r1['id'], repo['id']], send_only_applicable_errata='false')
+        result4 = self.consumer_api.get_consumers_applicable_errata([r['id'], r1['id']], send_only_applicable_errata='false')
         
         assert(result1 != result2)
         assert(len(result1) == len(result2) + 1)
-        assert(result1['test_errata_id_1'] == ['test-consumer'])
+        assert(result3 != result4)
+        assert(len(result3) == len(result4) + 1)
+        assert(result1['test_errata_id_1']['consumerids'] == ['test-consumer'])
+        assert(result3['test_errata_id_1']['consumerids'] == ['test-consumer'])
         
         # Try with empty repoids
         result = self.consumer_api.get_consumers_applicable_errata([])

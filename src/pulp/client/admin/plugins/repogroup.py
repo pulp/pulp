@@ -57,12 +57,12 @@ class RepoGroupAction(Action):
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("repository group id (required)"))
-    
+
     def find_repogroup_update_delta(self, optdict={}):
         feed_cert_bundle = None
         consumer_cert_bundle = None
         delta = {}
-        
+
         for k, v in optdict.items():
             if not v:
                 continue
@@ -155,17 +155,6 @@ class Update(RepoGroupAction):
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
 
-        schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
-        schedule.add_option('--interval', dest='schedule_interval', default=None,
-                            help=_('length of time between each run in iso8601 duration format'))
-        schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format, omitting implies starting immediately'))
-        schedule.add_option('--runs', dest='schedule_runs', default=None,
-                            help=_('number of times to run the scheduled sync, omitting implies running indefinitely'))
-        schedule.add_option('--delete-schedule', dest='delete_schedule',
-                            action='store_true', default=False, help=_('delete existing schedule'))
-        self.parser.add_option_group(schedule)
-
     def run(self):
         id = self.get_required_option('id')
         optdict = vars(self.opts)
@@ -177,24 +166,6 @@ class Update(RepoGroupAction):
             system_exit(os.EX_OK, _("There are no repositories belonging to this group"))
         failed_update_repos = {}
         for repo in grouprepos:
-            # process schedule update parameters for each repo in the group
-            for k, v in optdict.items():
-                if k in ('schedule_interval', 'schedule_start', 'schedule_runs'):
-                    k = 'sync_schedule'
-                    if k in  delta:
-                        continue
-                    repo = self.repository_api.repository(repo['id'])
-                    interval = start = runs = None
-                    if repo[k] is not None:
-                        interval, start, runs = parse_iso8601_interval(repo[k])
-                        interval = interval and format_iso8601_duration(interval)
-                        start = start and format_iso8601_datetime(start)
-                        runs = runs and str(runs)
-                    interval = self.opts.schedule_interval or interval
-                    start = self.opts.schedule_start or start
-                    runs = self.opts.schedule_runs or runs
-                    v = parse_interval_schedule(interval, start, runs)
-                    delta[k] = v
             if delta == {}:
                 system_exit(os.EX_OK, _('No update parameters provided. Please add one or more parameters to update.'))
             try:
@@ -202,13 +173,13 @@ class Update(RepoGroupAction):
             except Exception, e:
                 error_code, error_msg, traceback = e
                 failed_update_repos[repo['id']] = error_msg
-                
+
         if failed_update_repos == {}:
             print _("Successfully updated repositories belonging to group[ %s ]") % id
         else:
             print _("Successfully updated repositories belonging to group[ %s ] except for the following repositories: ") % id
             for k, v in failed_update_repos.items():
-                print _("\n[ %s ]\n%s" % (k, v)) 
+                print _("\n[ %s ]\n%s" % (k, v))
 
 
 class KeyReader:

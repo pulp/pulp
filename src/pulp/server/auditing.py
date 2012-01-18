@@ -375,8 +375,10 @@ def cull_audited_events():
 
 def init_culling_task():
     interval = datetime.timedelta(hours=12)
-    tz = dateutils.utc_tz()
+    tz = dateutils.local_tz()
     now = datetime.datetime.now(tz)
+    if now.hour >= 13:
+        now += interval
     start_time = datetime.datetime(now.year, now.month, now.day, 13, tzinfo=tz)
     scheduler = IntervalScheduler(interval, start_time)
     task = Task(cull_audited_events, scheduler=scheduler)

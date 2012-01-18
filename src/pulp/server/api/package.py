@@ -79,7 +79,8 @@ class PackageApi(BaseApi):
                        'size',
                        'group',
                        'license',
-                       'vendor',):
+                       'vendor',
+                       'repoids',):
                 pkg[key] = value
                 continue
             raise Exception, \

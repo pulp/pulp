@@ -335,6 +335,8 @@ def init_culling_task():
     interval = datetime.timedelta(days=1)
     tz = dateutils.local_tz()
     now = datetime.datetime.now(tz)
+    if now.hour > 1:
+        now += interval
     start_time = datetime.datetime(now.year, now.month, now.day, 1, tzinfo=tz)
     scheduler = IntervalScheduler(interval, start_time)
     task = Task(cull_history, scheduler=scheduler)

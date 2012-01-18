@@ -36,6 +36,7 @@ INVALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_
 CERT = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/cert.crt'
 
 CRL_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl'
+CRL_EXPIRED_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl_expired'
 
 # -- test cases ----------------------------------------------------------------------
 
@@ -426,7 +427,27 @@ class TestCertVerify(testutil.PulpAsyncTest):
         f.close()
 
         # Test
-        self.assertTrue(self.utils.validate_certificate_pem(cert, ca))
+        self.assertTrue(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_TEST_DATA))
+    
+    def test_cert_with_expired_crl(self):
+        '''
+        Tests that verifying a valid PEM encoded cert string with a CA and expired CRL returns false.
+        '''
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        good_cert_path = os.path.join(CRL_TEST_DATA, "ok/Pulp_client.cert")
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(good_cert_path)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertFalse(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_EXPIRED_TEST_DATA))
 
     def test_revoked_cert_with_crl(self):
         '''
@@ -448,3 +469,4 @@ class TestCertVerify(testutil.PulpAsyncTest):
 
         # Test
         self.assertFalse(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_TEST_DATA))
+    

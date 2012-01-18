@@ -116,7 +116,7 @@ class Task(object):
         # task resources
         self.callable = callable
         self.args = args or []
-        self.kwargs = kwargs or {}
+        self.kwargs = dict(kwargs or {})
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout_delta = timeout
         self.weight = weight

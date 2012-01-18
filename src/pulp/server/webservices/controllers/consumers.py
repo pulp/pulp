@@ -642,6 +642,37 @@ class ConsumerProfileUpdate(JSONController):
         return self.ok(packages)
     
 
+class BindEnabled(JSONController):
+
+    @error_handler
+    @auth_required(UPDATE)
+    def PUT(self, id):
+        """
+        The agent has reported the list of eanbled repositories.
+        This is NOT intented to be used with stand-alone pulp or in other
+        cases where pulp is managing yum repo definitions on the consumer.
+        This is propably a RepoAssociation in v2.
+        @param id: The consumer id
+        @type id: str
+        """
+        reported = self.params()
+        log.info('Consumer [%s] reported enabled repositories: %s', id, reported)
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.bad_request('Consumer [%s] does not exist' % id)
+        repoids = consumer.get('repoids', [])
+        # disabled
+        for repoid in repoids:
+            if repoid in reported:
+                continue
+            consumer_api.unbind(id, repoid, soft=True)
+        # enabled
+        for repoid in reported:
+            if repoid in repoids:
+                continue
+            consumer_api.bind(id, repoid, soft=True)
+        return self.ok(True)
+
 class ApplicableErrataInRepos(JSONController):
 
     @error_handler
@@ -658,10 +689,13 @@ class ApplicableErrataInRepos(JSONController):
         failure response: None
         return: list of object that are mappings of errata id in given repoids to applicable consumers
         """
-        valid_filters = ('repoids',)
+        valid_filters = ('repoids','send_only_applicable_errata',)
         filters = self.filters(valid_filters)
         repoids = filters.pop('repoids', [])
-        errata = consumer_api.get_consumers_applicable_errata(repoids)
+        send_only_applicable_errata = filters.pop('send_only_applicable_errata', ['true'])
+        if send_only_applicable_errata[0] not in ['true','false']:
+            return self.bad_request("Invalid input for send_only_applicable_errata. Accepted inputs are 'true' or 'false'")
+        errata = consumer_api.get_consumers_applicable_errata(repoids, send_only_applicable_errata[0])
         return self.ok(errata)
 
 
@@ -674,6 +708,7 @@ URLS = (
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
     '/([^/]+)/package_profile/$', 'ConsumerProfileUpdate',
+    '/([^/]+)/bind/enabled/$', 'BindEnabled',
 
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields),
     'ConsumerDeferredFields',

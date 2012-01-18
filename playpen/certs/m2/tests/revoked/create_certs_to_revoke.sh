@@ -1,11 +1,15 @@
-CERT_DIR=./certs
-REVOKED_KEY=${CERT_DIR}/revoked_key.pem
-REVOKED_CERT=${CERT_DIR}/revoked_cert.pem
-REVOKED_CSR=${CERT_DIR}/revoked_csr
-CA_CERT=${CERT_DIR}/revoking_ca.pem
-CA_KEY=${CERT_DIR}/revoking_ca_key.pem
-CA_SERIAL=${CERT_DIR}/revoking_ca_serial
-CRL_FILE=${CERT_DIR}/revoking_crl.pem
+#!/bin/sh
+
+export CERT_DIR=./certs
+export REVOKED_KEY=${CERT_DIR}/revoked_key.pem
+export REVOKED_CERT=${CERT_DIR}/revoked_cert.pem
+export REVOKED_CSR=${CERT_DIR}/revoked_csr
+export CA_CERT=${CERT_DIR}/revoking_ca.pem
+export CA_KEY=${CERT_DIR}/revoking_ca_key.pem
+export CA_SERIAL=${CERT_DIR}/revoking_ca_serial
+export CRL_FILE=${CERT_DIR}/revoking_crl.pem
+export CA_COMMON_NAME="CA_SIGNER"
+export CLIENT_COMMON_NAME="CLIENT"
 # INDEX AND CRLNUMBER need to match the setting in the
 # openssl conf
 INDEX=${CERT_DIR}/index
@@ -20,7 +24,7 @@ fi
 #
 echo "Creating a test CA"
 openssl genrsa -out ${CA_KEY} 2048
-openssl req -new -x509 -days 1095 -key ${CA_KEY} -out ${CA_CERT} -subj '/CN=Revoking-CA'
+openssl req -new -x509 -days 1095 -key ${CA_KEY} -out ${CA_CERT} -subj "/CN=${CA_COMMON_NAME}"
 if [ ! -e ${CA_SERIAL} ]; then
     echo "Initializing ${CA_SERIAL}"
     echo "01" > ${CA_SERIAL}
@@ -30,7 +34,7 @@ fi
 #
 echo "Creating a test cert to revoke in later step: ${REVOKED_CERT}"
 openssl genrsa -out ${REVOKED_KEY} 2048
-openssl req -new -key ${REVOKED_KEY} -out ${REVOKED_CSR} -subj '/CN=Test_Revoked_Cert'
+openssl req -new -key ${REVOKED_KEY} -out ${REVOKED_CSR} -subj "/CN=${CLIENT_COMMON_NAME}"
 openssl x509 -req -days 1095 -CA ${CA_CERT} -CAkey ${CA_KEY} -in ${REVOKED_CSR} -out ${REVOKED_CERT} -CAserial ${CA_SERIAL}
 #
 # Setup CRL database info for CRL revoking

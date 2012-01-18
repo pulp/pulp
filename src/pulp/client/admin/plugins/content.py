@@ -284,7 +284,7 @@ class Delete(ContentAction):
                 print _("Content with filename [%s] could not be found on server; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
-            if len(pobj['repoids']):
+            if pobj.has_key('repoids') and len(pobj['repoids']):
                 print _("Content with filename [%s] is currently associated a repository; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue

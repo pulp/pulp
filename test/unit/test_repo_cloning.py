@@ -164,3 +164,27 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
         except Exception:
             self.assertTrue(True)
 
+    def test_clone_publish(self):
+
+        repo = self.repo_api.create('some-id', 'some name', 'i386',
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+        self.assertTrue(repo is not None)
+        try:
+            repo_sync._sync(repo['id'])
+        except Exception:
+            raise
+
+        repo_sync.clone(repo['id'], 'clone-publish-true', 'clone-publish-true', publish=True)
+        clone_repo = self.repo_api.repository('clone-publish-true')
+        self.assertEquals(clone_repo['publish'], True)
+
+        repo_sync.clone(repo['id'], 'clone-publish-false', 'clone-publish-false', publish=False)
+        clone_repo = self.repo_api.repository('clone-publish-false')
+        self.assertEquals(clone_repo['publish'], False)
+
+        repo_sync.clone(repo['id'], 'clone-publish-default', 'clone-publish-false')
+        clone_repo = self.repo_api.repository('clone-publish-default')
+        self.assertEquals(clone_repo['publish'], True)
+
+
+

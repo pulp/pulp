@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.257
+Version:        0.0.258
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -51,7 +51,7 @@ Requires: python-ldap
 Requires: python-gofer >= 0.64
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi >= 3.2-4.pulp%{?dist}
+Requires: mod_wsgi >= 3.3-1.pulp%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
@@ -154,7 +154,7 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.64
 Requires:       grinder >= 0.0.136
 Requires:       httpd
-Requires:       mod_wsgi >= 3.2-4.pulp%{?dist}
+Requires:       mod_wsgi >= 3.3-1.pulp%{?dist}
 Requires:       mod_ssl
 %if 0%{?rhel} == 5
 Requires: m2crypto
@@ -489,6 +489,31 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jan 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.258-1
+- Add support for enabled repository reporting; add support for soft bind.
+  (jortel@redhat.com)
+- updating publish help and adding response examples to distro api
+  (pkilambi@redhat.com)
+- 760601 - updated code for adding distribution and files to catch
+  CancelException in case of cancel_clone or cancel_sync (skarmark@redhat.com)
+- 773344 - fixed repo delete failure for non existing clone ids by adding
+  exception handling (skarmark@redhat.com)
+- Adding publish option to repo create and clone api calls
+  (pkilambi@redhat.com)
+- file objects dont currently have repoids (pkilambi@redhat.com)
+- changed auditing interval to use local timezone (jconnor@redhat.com)
+- 707884 fixed both comsumer history and auditing initialization to start in
+  the future (jconnor@redhat.com)
+- 773375 - fix for syncs to set the repoids directly instead of post pkg object
+  creation (pkilambi@redhat.com)
+- 772282 removed schedule update options from repogroup update
+  (jconnor@redhat.com)
+- 767763 changed util to until... (jconnor@redhat.com)
+- 772072 - must use _usr/lib/ instead of _libdir macro for yum plugins.
+  (jortel@redhat.com)
+- Removed about half a year's changelog entries; it needed some pruning.
+  (jason.dobies@redhat.com)
+
 * Mon Jan 09 2012 Jeff Ortel <jortel@redhat.com> 0.0.257-1
 - Refit for upstream agent API changes; requires gofer 0.64.
   (jortel@redhat.com)

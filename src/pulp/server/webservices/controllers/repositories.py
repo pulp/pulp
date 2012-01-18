@@ -231,7 +231,7 @@ class Repositories(JSONController):
             if len(note) != 2:
                 return self.bad_request("Invalid note %s; correct format is key:value" % note)
 
-            spec["notes."+ note[0]] = note[1]
+            spec["notes." + note[0]] = note[1]
             del spec["note"]
 
         repositories = api.repositories(spec, default_fields)
@@ -309,6 +309,7 @@ class Repositories(JSONController):
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
+         * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
         """
         repo_data = self.params()
 
@@ -328,7 +329,8 @@ class Repositories(JSONController):
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
                           notes=repo_data.get('notes', None),
                           preserve_metadata=repo_data.get('preserve_metadata', False),
-                          content_types=repo_data.get('content_types', 'yum'))
+                          content_types=repo_data.get('content_types', 'yum'),
+                          publish=repo_data.get('publish', None),)
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
@@ -908,7 +910,7 @@ class RepositoryDeferredFields(JSONController):
         filter_incomplete_groups = False
         if filters.has_key("filter_incomplete_groups") and filters["filter_incomplete_groups"]:
             filter_incomplete_groups = True
-        return self.ok(api.packagegroups(id, filter_missing_packages,filter_incomplete_groups))
+        return self.ok(api.packagegroups(id, filter_missing_packages, filter_incomplete_groups))
 
     def packagegroupcategories(self, id):
         """
@@ -1351,16 +1353,17 @@ class RepositoryActions(JSONController):
          * relative_path?, str, clone repository on disk path
          * groupid?, str, repository groups that clone belongs to
          * filters?, list of objects, synchronization filters to apply to the clone
+         * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
         """
         repo_data = self.params()
         parent_repo = api.repository(id)
         if parent_repo is None:
             return self.not_found('A repository with the id, %s, does not exist' % id)
         if parent_repo['sync_in_progress']:
-            return self.conflict('The repository %s is currently syncing, cannot create clone util it is finished' % id)
+            return self.conflict('The repository %s is currently syncing, cannot create clone until it is finished' % id)
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
-        if repo_data['feed'] not in ['parent','origin','none']:
+        if repo_data['feed'] not in ['parent', 'origin', 'none']:
             return self.bad_request('Invalid feed, %s, see --help' % repo_data['feed'])
         if repo_data['feed'] == 'origin' and repo_data.get('filters'):
             return self.bad_request('Filters cannot be applied to clones with origin feed')
@@ -1370,7 +1373,8 @@ class RepositoryActions(JSONController):
                          repo_data['feed'],
                          relative_path=repo_data.get('relative_path', None),
                          groupid=repo_data.get('groupid', None),
-                         filters=repo_data.get('filters', []))
+                         filters=repo_data.get('filters', []),
+                         publish=repo_data.get('publish', None))
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
         task_info = self._task_to_dict(task)
