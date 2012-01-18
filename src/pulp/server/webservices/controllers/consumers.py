@@ -46,7 +46,7 @@ user_api = UserApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
-default_fields = ['id', 'description', 'key_value_pairs',]
+default_fields = ['id', 'description', 'capabilities', 'key_value_pairs',]
 
 # controllers -----------------------------------------------------------------
 
@@ -96,8 +96,12 @@ class Consumers(JSONController):
         if user is not None:
             return self.conflict(
                 'Cannot create corresponding auth credentials: user with id %s alreay exists' % id)
-        consumer = consumer_api.create(id, consumer_data['description'],
-                                       consumer_data['key_value_pairs'])
+        consumer = \
+            consumer_api.create(
+                id,
+                consumer_data['description'],
+                capabilities=consumer_data['capabilities'],
+                key_value_pairs=consumer_data['key_value_pairs'])
         # create corresponding user for auth credentials
         user = user_api.create(id)
         add_user_to_role(consumer_users_role, user['login'])
@@ -200,7 +204,6 @@ class ConsumerDeferredFields(JSONController):
     exposed_fields = (
         'package_profile',
         'repoids',
-        'certificate',
         'keyvalues',
         'package_updates',
         'errata_package_updates',
@@ -232,19 +235,6 @@ class ConsumerDeferredFields(JSONController):
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
-
-    def certificate(self, id):
-        """
-        Get a X509 Certificate for this Consumer.  Useful for uniquely and securely
-        identifying this Consumer later.
-        @type id: str ID of the Consumer
-        @param id: consumer id
-        @return: X509 PEM Certificate
-        """
-        valid_filters = ('id')
-        filters = self.filters(valid_filters)
-        bundle = consumer_api.certificate(id)
-        return self.ok(bundle)
 
     def keyvalues(self, id):
         """

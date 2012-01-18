@@ -35,6 +35,7 @@ from pulp.server.exceptions import PulpException
 from pulp.server.tasking.task import Task
 from pulp.server.util import chunks, compare_packages
 from pulp.server.agent import PulpAgent
+from pulp.common.bundle import Bundle
 
 
 log = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class ConsumerApi(BaseApi):
 
     @event(subject='consumer.created')
     @audit()
-    def create(self, id, description, key_value_pairs={}):
+    def create(self, id, description, capabilities={}, key_value_pairs={}):
         """
         Create a new Consumer object and return it
         """
@@ -73,11 +74,16 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer:
             raise PulpException("Consumer [%s] already exists" % id)
+        expiration_date = config.config.getint('security', 'consumer_cert_expiration')
+        key, crt = cert_generator.make_cert(id, expiration_date)
         c = model.Consumer(id, description)
+        c.capabilities = capabilities
+        c.certificate = crt.strip()
         self.collection.insert(c, safe=True)
         for key, value in key_value_pairs.items():
             self.add_key_value_pair(c.id, key, value)
         self.consumer_history_api.consumer_registered(c.id)
+        c.certificate = Bundle.join(key, crt)
         return c
 
     @audit()
@@ -250,24 +256,6 @@ class ConsumerApi(BaseApi):
         return self.consumers({consumer_key: value}, fields)
 
     @audit()
-    def certificate(self, id):
-        """
-        Create a X509 Consumer Identity Certificate to associate with the
-        given Consumer
-        """
-        consumer = self.consumer(id)
-        if not consumer:
-            raise PulpException('Consumer [%s] not found', id)
-        bundle = consumer.get('certificate')
-        if not bundle:
-            expiration_date = config.config.getint('security', 'consumer_cert_expiration')
-            bundle = cert_generator.make_cert(id, expiration_date)
-            bundle = ''.join(bundle)
-            consumer['certificate'] = bundle
-            self.collection.save(consumer, safe=True)
-        return bundle
-
-    @audit()
     def bulkcreate(self, consumers):
         """
         Create a set of Consumer objects in a bulk manner
@@ -361,9 +349,11 @@ class ConsumerApi(BaseApi):
         bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
         # Send the bind request over to the consumer
-        agent = PulpAgent(consumer, async=True)
-        agent_consumer = agent.Consumer()
-        agent_consumer.bind(repoid, bind_data)
+        # only if bind() supported in capabilities
+        if consumer['capabilities'].get('bind'):
+            agent = PulpAgent(consumer, async=True)
+            agent_consumer = agent.Consumer()
+            agent_consumer.bind(repoid, bind_data)
 
         # Return the bind data to the caller
         return bind_data
@@ -396,9 +386,12 @@ class ConsumerApi(BaseApi):
         repoids.remove(repo_id)
         self.collection.save(consumer, safe=True)
 
-        agent = PulpAgent(consumer, async=True)
-        agent_consumer = agent.Consumer()
-        agent_consumer.unbind(repo_id)
+        # Send the bind request over to the consumer
+        # only if bind() supported in capabilities
+        if consumer['capabilities'].get('bind'):
+            agent = PulpAgent(consumer, async=True)
+            agent_consumer = agent.Consumer()
+            agent_consumer.unbind(repo_id)
 
         self.consumer_history_api.repo_unbound(id, repo_id)
 

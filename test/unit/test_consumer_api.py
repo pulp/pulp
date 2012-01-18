@@ -37,7 +37,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, capabilities=dict(bind=True))
 
         # Test
         returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
@@ -195,7 +195,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, capabilities=dict(bind=True))
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
 
         self.consumer_api.bind('test-consumer', 'test-repo')
@@ -226,7 +226,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, capabilities=dict(bind=True))
         self.repo_api.create('test-repo-1', 'Test Repo', 'noarch')
         self.repo_api.create('test-repo-2', 'Test Repo', 'noarch')
 

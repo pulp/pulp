@@ -77,7 +77,8 @@ class List(ConsumerAdminAction):
                     last_heartbeat = stat[1]
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"],
-                         con["description"], \
+                         con["description"],
+                         con["capabilities"],
                          con["repoids"].keys(),
                          responding,
                          last_heartbeat,
@@ -131,6 +132,7 @@ class Info(ConsumerAdminAction):
         print constants.AVAILABLE_CONSUMER_INFO % \
                 (cons["id"],
                  cons["description"],
+                 cons["capabilities"],
                  cons["repoids"].keys(),
                  responding,
                  last_heartbeat,

@@ -48,6 +48,7 @@ Additional info    \t%-25s
 AVAILABLE_CONSUMER_INFO = """
 Id                 \t%-25s
 Description        \t%-25s
+Capabilities       \t%-25s
 Subscribed Repos   \t%-25s
 Agent:
    Responding      \t%-25s
