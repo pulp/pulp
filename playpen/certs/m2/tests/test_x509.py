@@ -546,7 +546,7 @@ class X509_StoreContextTestCase(unittest.TestCase):
         store.add_x509(ca)
         store_ctx = X509.X509_Store_Context()
         store_ctx.init(store, cert)
-        assert store_ctx.verify_cert() == 1
+        self.assertTrue(store_ctx.verify_cert())
 
         # Test with the wrong CA, this CA did not sign tests/x509.pem
         wrong_ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
@@ -555,7 +555,7 @@ class X509_StoreContextTestCase(unittest.TestCase):
         store.add_x509(wrong_ca)
         store_ctx = X509.X509_Store_Context()
         store_ctx.init(store, cert)
-        assert store_ctx.verify_cert() == 0
+        self.assertFalse(store_ctx.verify_cert())
 
     def test_verify_with_add_crl(self):
         ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
@@ -571,7 +571,7 @@ class X509_StoreContextTestCase(unittest.TestCase):
                        X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
         store_ctx = X509.X509_Store_Context()
         store_ctx.init(store, valid_cert)
-        assert store_ctx.verify_cert() == 1
+        self.assertTrue(store_ctx.verify_cert())
 
         # Verify that a revoked cert is not verified
         store = X509.X509_Store()
@@ -581,7 +581,7 @@ class X509_StoreContextTestCase(unittest.TestCase):
                        X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
         store_ctx = X509.X509_Store_Context()
         store_ctx.init(store, revoked_cert)
-        assert store_ctx.verify_cert() == 0
+        self.assertFalse(store_ctx.verify_cert())
 
     def test_verify_with_add_crls(self):
         ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
@@ -599,7 +599,7 @@ class X509_StoreContextTestCase(unittest.TestCase):
         store_ctx = X509.X509_Store_Context()
         store_ctx.init(store, valid_cert)
         store_ctx.add_crls(crl_stack)
-        assert store_ctx.verify_cert() == 1
+        self.assertTrue(store_ctx.verify_cert())
 
         # Verify that a revoked cert is not verified
         store = X509.X509_Store()
@@ -611,31 +611,28 @@ class X509_StoreContextTestCase(unittest.TestCase):
         store_ctx = X509.X509_Store_Context()
         store_ctx.init(store, revoked_cert)
         store_ctx.add_crls(crl_stack)
-        assert store_ctx.verify_cert() == 0
-
-    def test_add_crls_to_ctx(self):
-        # Add CRLs to a X509_Store_Context and verify they can be retrieved
-        pass
-
-class X509_StoreTestCase(unittest.TestCase):
-
-    def test_add_crl(self):
-        pass
-
-    def test_set_flags(self):
-        pass
+        self.assertFalse(store_ctx.verify_cert())
 
 class CRL_StackTestCase(unittest.TestCase):
     def test_new(self):
-        pass
+        crl_stack = X509.CRL_Stack()
+        self.assertIsNotNone(crl_stack)
+        self.assertEqual(len(crl_stack), 0)
 
     def test_push_and_pop(self):
-        # Create a CRL
-        # Push to Stack
-        # Verify Count
-        # Pop to Stack
-        # Verify Count and CRL
-        pass
+        crl_stack = X509.CRL_Stack()
+        crl_a = X509.CRL()
+        crl_b = X509.CRL()
+        self.assertNotEqual(crl_a, crl_b)
+        crl_stack.push(crl_a)
+        crl_stack.push(crl_b)
+        self.assertEquals(len(crl_stack), 2)
+        popped_b = crl_stack.pop()
+        self.assertEquals(crl_b, popped_b)
+        self.assertEquals(len(crl_stack), 1)
+        popped_a = crl_stack.pop()
+        self.assertEqual(crl_a, popped_a)
+        self.assertEqual(len(crl_stack), 0)
 
 class CRLTestCase(unittest.TestCase):
     def test_new(self):
@@ -644,15 +641,50 @@ class CRLTestCase(unittest.TestCase):
                          'Certificate Revocation List (CRL):')
 
     def test_verify(self):
-        pass
+        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+        self.assertTrue(crl.verify(ca.get_pubkey()))
+
+        wrong_ca = X509.load_cert('tests/ca.pem')
+        self.assertFalse(crl.verify(wrong_ca.get_pubkey()))
+
+    def test_get_issuer(self):
+        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+        ca_issuer = ca.get_issuer()
+        crl_issuer = crl.get_issuer()
+        self.assertEqual(ca_issuer.as_hash(), crl_issuer.as_hash())
+
+        wrong_ca = X509.load_cert('tests/ca.pem')
+        wrong_ca_issuer = wrong_ca.get_issuer()
+        self.assertNotEqual(wrong_ca_issuer.as_hash(), crl_issuer.as_hash())
 
     def test_load_crl(self):
-        pass
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+        self.assertIsNotNone(crl)
+        self.assertIsInstance(crl, X509.CRL)
 
     def test_load_crl_string(self):
-        pass
+        f = open('tests/crl_data/certs/revoking_crl.pem')
+        data = f.read()
+        f.close()
+        crl = X509.load_crl_string(data)
+        self.assertIsInstance(crl, X509.CRL)
 
+        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
+        ca_issuer = ca.get_issuer()
+        crl_issuer = crl.get_issuer()
+        self.assertEqual(ca_issuer.as_hash(), crl_issuer.as_hash())
 
+    def test_get_last_updated(self):
+        expected_lastUpdate = "Jan 19 16:55:58 2012 GMT"
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+        self.assertEquals(str(crl.get_lastUpdate()), expected_lastUpdate)
+
+    def test_get_next_update(self):
+        expected_nextUpdate = "Jan 18 16:55:58 2015 GMT"
+        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
+        self.assertEquals(str(crl.get_nextUpdate()), expected_nextUpdate)
 
 
 def suite():
@@ -660,7 +692,6 @@ def suite():
     suite.addTest(unittest.makeSuite(X509TestCase))
     suite.addTest(unittest.makeSuite(X509_StackTestCase))
     suite.addTest(unittest.makeSuite(X509_ExtTestCase))
-    suite.addTest(unittest.makeSuite(X509_StoreTestCase))
     suite.addTest(unittest.makeSuite(X509_StoreContextTestCase))
     suite.addTest(unittest.makeSuite(CRLTestCase))
     suite.addTest(unittest.makeSuite(CRL_StackTestCase))
