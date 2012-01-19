@@ -312,6 +312,9 @@ class PackageApi(BaseApi):
         @param restrict_ids: optional, restrict the search to this list of possible package ids, used to restrict result to packages in a particular repo
         @return fields:  what fields to return
         """
+        if not pkg_info:
+            # cannot pass empty list to $or query
+            return []
         q = {}
         q["$or"] = pkg_info
         if restrict_ids != None:

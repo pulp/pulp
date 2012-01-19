@@ -107,7 +107,9 @@ class AdminRepoAction(RepoAction):
                                 'id'      : pkg['id']})
         new_deps = []
         if tgtrepo:
-            avail_deps = self.repository_api.find_package_by_nvrea(tgtrepo, deplist) or []
+            avail_deps = []
+            if deplist:
+                avail_deps = self.repository_api.find_package_by_nvrea(tgtrepo, deplist) or []
             for dep, pkgs in deps.items():
                 for pkg in pkgs:
                     if pkg['filename'] not in avail_deps:
