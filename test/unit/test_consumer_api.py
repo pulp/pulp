@@ -23,6 +23,7 @@ import testutil
 from pulp.server.agent import Agent
 from pulp.common.bundle import Bundle
 from pulp.server.exceptions import PulpException
+from pulp.server.auth.certificate import Certificate
 
 # default capabilities
 CAPABILITIES = dict(heartbeat=True, bind=True)
@@ -44,14 +45,33 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         created = self.consumer_api.create(id, description, CAPABILITIES)
         
         # Test
+        all = self.consumer_api.consumers()
         fetched = self.consumer_api.consumer(id)
         
         # Verify
-        self.assertTrue(Bundle.hasboth(created['certificate']))
+        self.assertEqual(len(all), 1)
+        self.assertEqual(all[0]['id'], fetched['id'])
         self.assertEqual(description, fetched['description'])
+        self.assertTrue(Bundle.hasboth(created['certificate']))
         self.assertEqual(CAPABILITIES, fetched['capabilities'])
         self.assertTrue(Bundle.hascrt(fetched['certificate']))
         self.assertFalse(Bundle.haskey(fetched['certificate']))
+        crt = Certificate()
+        crt.update(str(fetched['certificate']))
+        subject = crt.subject()
+        self.assertEqual(id, subject.get('CN', None))
+        
+    def test_consumer_delete(self):
+        # Setup
+        id = 'delete-me'
+        self.consumer_api.create(id, '')
+        self.assertTrue(self.consumer_api.consumer(id) is not None)
+
+        # Test
+        self.consumer_api.delete(id)
+
+        # Verify
+        self.assertTrue(self.consumer_api.consumer(id) is None)
 
 
     # -- bind test cases -----------------------------------------------------------------

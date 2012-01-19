@@ -30,7 +30,7 @@ class TestUsers(testutil.PulpAsyncTest):
     def test_consumer_create_with_keyvalues(self):
         cid = 'client1'
         test_keyvalues = {"foo.bar":"bar.foo", "a.b":"b.a"}
-        c = self.consumer_api.create(cid, 'some consumer desc', test_keyvalues)
+        c = self.consumer_api.create(cid, None, key_value_pairs=test_keyvalues)
         self.assertTrue(c is not None)
         
     def test_consumer_add_keyvalue(self):
