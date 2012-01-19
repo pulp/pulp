@@ -138,6 +138,7 @@ class Task(object):
         @param result: result of the call
         @type  result: any
         """
+        assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.state = dispatch_constants.CALL_FINISHED_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
@@ -153,6 +154,7 @@ class Task(object):
         @param traceback: traceback information, if any
         @type  traceback: TracebackType instance
         """
+        assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.state = dispatch_constants.CALL_ERROR_STATE
         self.call_report.exception = exception
         self.call_report.traceback = traceback
