@@ -124,13 +124,12 @@ class Task(object):
             kwargs['task'] = self
         try:
             result = call(*args, **kwargs)
-        except Exception, e:
-            tb = sys.exc_info()[1]
+        except:
+            e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
-            self.failed(e, tb)
-        if self.asynchronous:
-            return
-        self.succeeded(result)
+            return self.failed(e, tb)
+        if not self.asynchronous:
+            return self.succeeded(result)
 
     def succeeded(self, result):
         """
