@@ -194,13 +194,13 @@ class AsyncTaskTests(testutil.PulpTest):
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_RUNNING_STATE)
 
     def test_succeeded(self):
-        self.assertRaises(AssertionError, self.task.succeeded, None)
+        self.assertRaises(AssertionError, self.task._succeeded, None)
         self.task.run()
-        self.task.succeeded(None)
+        self.task._succeeded(None)
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_FINISHED_STATE)
 
     def test_failed(self):
-        self.assertRaises(AssertionError, self.task.failed, None)
+        self.assertRaises(AssertionError, self.task._failed, None)
         self.task.run()
-        self.task.failed()
+        self.task._failed()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_ERROR_STATE)

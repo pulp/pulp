@@ -41,8 +41,6 @@ class Task(object):
     @type call_report: CallReport instance
     @ivar queued_call_id: db id for serialized queued call
     @type queued_call_id: str
-    @ivar asynchronous: toggle asynchronous control flow
-    @type asynchronous: bool
     @ivar complete_callback: task queue callback called on completion
     @type complete_callback: callable or None
     @ivar progress_callback: call request progress callback called to report execution progress
@@ -51,11 +49,10 @@ class Task(object):
     @type blocking_tasks: set
     """
 
-    def __init__(self, call_request, call_report=None, asynchronous=False):
+    def __init__(self, call_request, call_report=None):
 
         assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
-        assert isinstance(asynchronous, types.BooleanType)
 
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
 
@@ -65,8 +62,6 @@ class Task(object):
         self.call_report = call_report or call.CallReport()
         self.call_report.state = dispatch_constants.CALL_WAITING_STATE
         self.call_report.task_id = self.id
-
-        self.asynchronous = asynchronous
 
         self.complete_callback = None
         self.progress_callback = None
@@ -120,55 +115,56 @@ class Task(object):
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
         result = None
-        if self.asynchronous:
-            kwargs['task'] = self
         try:
             result = call(*args, **kwargs)
         except:
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
-            return self.failed(e, tb)
-        if not self.asynchronous:
-            return self.succeeded(result)
+            return self._failed(e, tb)
+        return self._succeeded(result)
 
-    def succeeded(self, result=None):
+    def _succeeded(self, result=None):
         """
         Mark the task completion as successful.
-        If asynchronous is False, this is called automatically on success by run().
         @param result: result of the call
         @type  result: any
         """
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
-        self.call_report.state = dispatch_constants.CALL_FINISHED_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
-        self.call_execution_hooks(dispatch_constants.CALL_FINISH_EXECUTION_HOOK)
-        self._complete()
+        self._call_execution_hooks(dispatch_constants.CALL_FINISH_EXECUTION_HOOK)
+        self._complete(dispatch_constants.CALL_FINISHED_STATE)
 
-    def failed(self, exception=None, traceback=None):
+    def _failed(self, exception=None, traceback=None):
         """
         Mark the task completion as a failure.
-        If asynchronous is False, this is called automatically on an exception by run().
         @param exception: exception that occurred, if any
         @type  exception: Exception instance or None
         @param traceback: traceback information, if any
         @type  traceback: TracebackType instance
         """
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
-        self.call_report.state = dispatch_constants.CALL_ERROR_STATE
         self.call_report.exception = exception
         self.call_report.traceback = traceback
         _LOG.info(_('%s FAILED') % str(self))
-        self.call_execution_hooks(dispatch_constants.CALL_ERROR_EXECUTION_HOOK)
-        self._complete()
+        self._call_execution_hooks(dispatch_constants.CALL_ERROR_EXECUTION_HOOK)
+        self._complete(dispatch_constants.CALL_ERROR_STATE)
 
-    def _complete(self):
+    def _complete(self, state=dispatch_constants.CALL_FINISHED_STATE):
         """
         Cleanup and state finalization for call on either success or failure.
         """
-        assert self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES
+        assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        self.call_execution_hooks(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK)
+        self._call_execution_hooks(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK)
+        self._call_complete_callback()
+        # don't set the state to complete until the task is actually complete
+        self.call_report.state = state
+
+    def _call_complete_callback(self):
+        """
+        Safely call the complete_callback, if there is one.
+        """
         if self.complete_callback is None:
             return
         try:
@@ -178,7 +174,7 @@ class Task(object):
 
     # hook execution -----------------------------------------------------------
 
-    def call_execution_hooks(self, key):
+    def _call_execution_hooks(self, key):
         """
         Execute all the execution hooks for the given key.
         Key must be a member of dispatch_constants.CALL_EXECUTION_HOOKS
@@ -198,6 +194,37 @@ class Task(object):
         if cancel_hook is None:
             raise NotImplementedError('No cancel control hook provided for Task: %s' % self.id)
         cancel_hook(self.call_request, self.call_report)
-        self.call_report.state = dispatch_constants.CALL_CANCELED_STATE
-        self._complete()
+        self._complete(dispatch_constants.CALL_CANCELED_STATE)
 
+# asynchronous task ------------------------------------------------------------
+
+class AsyncTask(Task):
+    """
+    Task class whose control flow is not solely determined by the run method.
+    Instead, the run method executes the call and passes in its _succeeded and
+    _failed methods as key word callbacks to be called externally upon the
+    task's success or failure.
+    NOTE: failing to call one of these methods will result in the task failing
+    to complete.
+    """
+
+    def run(self):
+        """
+        Run the call request
+        """
+        assert self.call_report.state in dispatch_constants.CALL_READY_STATES
+        self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
+        call = self.call_request.call
+        args = copy.copy(self.call_request.args)
+        kwargs = copy.copy(self.call_request.kwargs)
+        kwargs['succeeded'] = self._succeeded
+        kwargs['failed'] = self._failed
+        result = None
+        try:
+            result = call(*args, **kwargs)
+        except:
+            e, tb = sys.exc_info()[1:]
+            _LOG.exception(e)
+            return self._failed(e, tb)
+        return result

@@ -132,7 +132,7 @@ class TaskExecutionTests(TaskQueueTests):
         self.queue.enqueue(task)
         self.wait_for_task_to_start(task)
         self.assertTrue(self.queue.get(task.id) is task)
-        task.succeeded()
+        task._succeeded()
         self.wait_for_task_to_complete(task)
         self.assertTrue(self.queue.get(task.id) is None)
 
@@ -145,11 +145,11 @@ class TaskExecutionTests(TaskQueueTests):
         self.wait_for_task_to_start(task_1)
         # task_2 cannot start because it is blocked by task_1
         self.assertTrue(task_2.call_report.state is dispatch_constants.CALL_WAITING_STATE)
-        task_1.succeeded()
+        task_1._succeeded()
         self.wait_for_task_to_complete(task_1)
         # task_2 can start because task_1 has completed and unblocked it
         self.wait_for_task_to_start(task_2)
-        task_2.succeeded()
+        task_2._succeeded()
         self.wait_for_task_to_complete(task_2)
 
     def test_exceed_concurrency(self):
@@ -164,14 +164,14 @@ class TaskExecutionTests(TaskQueueTests):
         self.wait_for_task_to_start(task_2)
         # task_3 cannot start because the concurrency threshold is 2
         self.assertTrue(task_3.call_report.state is dispatch_constants.CALL_WAITING_STATE)
-        task_1.succeeded()
-        task_2.succeeded()
+        task_1._succeeded()
+        task_2._succeeded()
         self.wait_for_task_to_complete(task_1)
         self.wait_for_task_to_complete(task_2)
         # task_3 can start because task_1 and task_2 have completed
         self.wait_for_task_to_start(task_3)
         self.assertTrue(task_3.call_report.state is dispatch_constants.CALL_RUNNING_STATE)
-        task_3.succeeded()
+        task_3._succeeded()
         self.wait_for_task_to_complete(task_3)
 
     def test_archived_call(self):
