@@ -131,7 +131,7 @@ class Task(object):
         if not self.asynchronous:
             return self.succeeded(result)
 
-    def succeeded(self, result):
+    def succeeded(self, result=None):
         """
         Mark the task completion as successful.
         If asynchronous is False, this is called automatically on success by run().
