@@ -32,6 +32,7 @@ class Consumer(Model):
         self._id = id
         self.id = id
         self.description = description
+        self.capabilities = {}
         self.certificate = None
         self.package_profile = []
         self.repoids = []

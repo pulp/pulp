@@ -21,10 +21,12 @@ class ConsumerAPI(PulpAPI):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, description, key_value_pairs={}):
-        consumerdata = {"id": id,
-                        "description": description,
-                        "key_value_pairs": key_value_pairs}
+    def create(self, id, description, capabilities={}, key_value_pairs={}):
+        consumerdata = {
+            "id": id,
+            "description": description,
+            "capabilities" : capabilities,
+            "key_value_pairs": key_value_pairs,}
         path = "/consumers/"
         return self.server.POST(path, consumerdata)[1]
 
@@ -54,11 +56,6 @@ class ConsumerAPI(PulpAPI):
     def packages(self, id):
         path = "/consumers/%s/packages/" % str(id)
         return self.server.GET(path)[1]
-
-    def certificate(self, id):
-        path = "/consumers/%s/certificate/" % str(id)
-        cert_dict = self.server.GET(path)[1]
-        return cert_dict
 
     def consumers(self):
         path = "/consumers/"

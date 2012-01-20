@@ -1,6 +1,9 @@
 #!/bin/sh
 
 export CERT_DIR=./certs
+export VALID_KEY=${CERT_DIR}/valid_key.pem
+export VALID_CERT=${CERT_DIR}/valid_cert.pem
+export VALID_CSR=${CERT_DIR}/valid_csr
 export REVOKED_KEY=${CERT_DIR}/revoked_key.pem
 export REVOKED_CERT=${CERT_DIR}/revoked_cert.pem
 export REVOKED_CSR=${CERT_DIR}/revoked_csr
@@ -29,6 +32,15 @@ if [ ! -e ${CA_SERIAL} ]; then
     echo "Initializing ${CA_SERIAL}"
     echo "01" > ${CA_SERIAL}
 fi
+# 
+# Create a valid cert that will _not_ be revoked
+#
+echo "Creating a test cert that will remain valid: ${VALID_CERT}"
+openssl genrsa -out ${VALID_KEY} 2048
+openssl req -new -key ${VALID_KEY} -out ${VALID_CSR} -subj "/CN=${CLIENT_COMMON_NAME}"
+openssl x509 -req -days 1095 -CA ${CA_CERT} -CAkey ${CA_KEY} -in ${VALID_CSR} -out ${VALID_CERT} -CAserial ${CA_SERIAL}
+
+
 #
 # Create a test cert so we can revoke it later
 #

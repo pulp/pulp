@@ -450,6 +450,9 @@ class BaseSynchronizer(object):
         file_name = os.path.basename(package.relativepath)
         hashtype = package.checksum_type
         checksum = package.checksum
+        repoids = []
+        if repo is not None:
+            repoids = [repo['id']]
         try:
             newpkg = self.package_api.create(
                 package.name,
@@ -461,7 +464,7 @@ class BaseSynchronizer(object):
                 hashtype,
                 checksum,
                 file_name,
-                repo_defined=repo_defined, repoids=[repo['id']])
+                repo_defined=repo_defined, repoids=repoids)
         except DuplicateKeyError, e:
             found = self.lookup_package(package)
             if not found and num_retries > 0:
@@ -1315,7 +1318,7 @@ class FileSynchronizer(BaseSynchronizer):
                     if self.is_clone:
                         self._create_clone(os.path.basename(pkg), src_repo_dir, dst_repo_dir)
                     else:
-                        src_file_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+                        src_file_checksum = pulp.server.util.get_file_checksum(hashtype="sha256", filename=pkg)
                         dst_file_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                         if not pulp.server.util.check_package_exists(dst_file_path, src_file_checksum):
                             shutil.copy(pkg, dst_file_path)

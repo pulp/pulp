@@ -10,7 +10,7 @@
 Summary: Support for using OpenSSL in python scripts
 Name: m2crypto
 Version: 0.21.1.pulp
-Release: 5%{?dist}
+Release: 7%{?dist}
 Source0: http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-%{version}.tar.gz
 # https://bugzilla.osafoundation.org/show_bug.cgi?id=2341
 Patch0: m2crypto-0.21.1-timeouts.patch
@@ -120,6 +120,10 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/M2Crypto-*.egg-info
 
 %changelog
+* Thu Jan 19 2012 John Matthews <jmatthews@redhat.com> 0.21.1.pulp-7
+- Bumping M2Crypto.spec to include getLastUpdate/getNextUpdate CRL support as
+  well as M2Crypto unit tests (jmatthews@redhat.com)
+
 * Wed Sep 21 2011 John Matthews <jmatthews@redhat.com> 0.21.1.pulp-5
 - 739555 - m2crypto spec update, remove patch for memoryview, conflicts with
   el6 (jmatthews@redhat.com)

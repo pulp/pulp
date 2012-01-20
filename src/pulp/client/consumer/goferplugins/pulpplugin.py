@@ -57,14 +57,15 @@ def pulpserver():
 def getsecret():
     """
     Get the shared secret used for auth of RMI requests.
-    @return: The sha256 for the certificate & key
+    @return: The sha256 for the certificate
     @rtype: str
     """
     bundle = ConsumerBundle()
     content = bundle.read()
+    crt = bundle.split(content)[1]
     if content:
         hash = sha256()
-        hash.update(content)
+        hash.update(crt)
         return hash.hexdigest()
     else:
         return None

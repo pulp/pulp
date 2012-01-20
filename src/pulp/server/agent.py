@@ -79,7 +79,7 @@ class PulpAgent(Agent):
         certificate = consumer.get('certificate')
         if certificate:
             hash = hashlib.sha256()
-            hash.update(certificate)
+            hash.update(certificate.strip())
             secret = hash.hexdigest()
         return secret
 

@@ -38,7 +38,6 @@ from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server.api import repo, repo_sync
 from pulp.server.api.package import PackageHasReferences
 from pulp.server.api.keystore import KeyStore
-from pulp.server.auth.certificate import Certificate
 from pulp.server.db.model import Delta
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import persistence
@@ -783,39 +782,6 @@ class TestRepoApi(testutil.PulpAsyncTest):
         assert(group['id'] in found['packagegroups'])
         assert(found['packagegroupcategories'] is not None)
         assert(category['id'] in found['packagegroupcategories'])
-
-    def test_consumer_create(self):
-        c = self.consumer_api.create('test-consumer', 'some consumer desc')
-        self.assertTrue(c is not None)
-        found = self.consumer_api.consumer('test-consumer')
-        self.assertTrue(found is not None)
-
-        # test that we get back the consumer from the list method
-        consumers = self.consumer_api.consumers()
-        self.assertTrue(len(consumers) == 1)
-        self.assertTrue(c['id'] == consumers[0]['id'])
-
-    def test_consumer_delete(self):
-        # Setup
-        id = 'delete-me'
-        self.consumer_api.create(id, '')
-        self.assertTrue(self.consumer_api.consumer(id) is not None)
-
-        # Test
-        self.consumer_api.delete(id)
-
-        # Verify
-        self.assertTrue(self.consumer_api.consumer(id) is None)
-
-    def test_consumer_certificate(self):
-        c = self.consumer_api.create('test-consumer', 'some consumer desc')
-        pem = self.consumer_api.certificate(c['id'])
-        self.assertTrue(pem is not None)
-        cert = Certificate()
-        cert.update(str(pem))
-        subject = cert.subject()
-        consumer_cert_uid = subject.get('CN', None)
-        self.assertEqual(c['id'], consumer_cert_uid)
 
     def __test_consumer_installpackages(self):
         cid = 'bindconsumerid'

@@ -131,7 +131,7 @@ class Bundle:
         begin = begin.start(0)
         end = end.end(0)
         crt= bundle[begin:end]
-        return (key, crt)
+        return (key.strip(), crt.strip())
 
     @classmethod
     def join(cls, key, crt):

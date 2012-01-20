@@ -21,12 +21,58 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.server.agent import Agent
+from pulp.common.bundle import Bundle
 from pulp.server.exceptions import PulpException
+from pulp.server.auth.certificate import Certificate
 
+# default capabilities
+CAPABILITIES = dict(heartbeat=True, bind=True)
 
 # -- test cases ---------------------------------------------------------------------------
 
 class TestConsumerApi(testutil.PulpAsyncTest):
+    
+    # -- create test cases ---------------------------------------------------------------
+    
+    def test_registrations(self):
+        '''
+        Tests the happy path of registration.
+        '''
+        
+        # Setup
+        id = 'test-consumer'
+        description = 'my excellent description'
+        created = self.consumer_api.create(id, description, CAPABILITIES)
+        
+        # Test
+        all = self.consumer_api.consumers()
+        fetched = self.consumer_api.consumer(id)
+        
+        # Verify
+        self.assertEqual(len(all), 1)
+        self.assertEqual(all[0]['id'], fetched['id'])
+        self.assertEqual(description, fetched['description'])
+        self.assertTrue(Bundle.hasboth(created['certificate']))
+        self.assertEqual(CAPABILITIES, fetched['capabilities'])
+        self.assertTrue(Bundle.hascrt(fetched['certificate']))
+        self.assertFalse(Bundle.haskey(fetched['certificate']))
+        crt = Certificate()
+        crt.update(str(fetched['certificate']))
+        subject = crt.subject()
+        self.assertEqual(id, subject.get('CN', None))
+        
+    def test_consumer_delete(self):
+        # Setup
+        id = 'delete-me'
+        self.consumer_api.create(id, '')
+        self.assertTrue(self.consumer_api.consumer(id) is not None)
+
+        # Test
+        self.consumer_api.delete(id)
+
+        # Verify
+        self.assertTrue(self.consumer_api.consumer(id) is None)
+
 
     # -- bind test cases -----------------------------------------------------------------
 
@@ -37,7 +83,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
 
         # Test
         returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
@@ -81,35 +127,6 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         lastbind = calls[-1]
         bindargs = lastbind[0]
         verify_bind_data(bindargs[1])
-
-    def test_soft_bind(self):
-        '''
-        Tests the happy path of binding a consumer to a repo.
-        Soft binding which means the consumer is not reconfigured.
-        Soft bind is NOT intented to be used with stand-alone pulp or in other
-        cases where pulp is managing yum repo definitions on the consumer.
-        '''
-
-        # Setup
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        self.consumer_api.create('test-consumer', None)
-
-        # Test
-        returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo', soft=True)
-
-        # Verify
-
-        # Database
-        consumer = self.consumer_api.consumer('test-consumer')
-        self.assertTrue(consumer is not None)
-        self.assertTrue('test-repo' in consumer['repoids'])
-
-        # Verify
-        #   Messaging bind data
-        agent = Agent('test-consumer')
-        repoproxy = agent.Consumer()
-        calls = repoproxy.bind.history()
-        self.assertEqual(len(calls), 0)
 
     def __bind_with_keys(self):
         '''
@@ -224,7 +241,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
 
         self.consumer_api.bind('test-consumer', 'test-repo')
@@ -248,37 +265,6 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         unbindargs = lastunbind[0]
         self.assertEqual(unbindargs[0], 'test-repo')
 
-    def test_soft_unbind(self):
-        '''
-        Tests the happy path of unbinding a repo that is bound to the consumer.
-        Soft binding which means the consumer is not reconfigured.
-        Soft bind is NOT intented to be used with stand-alone pulp or in other
-        cases where pulp is managing yum repo definitions on the consumer.
-        '''
-
-        # Setup
-        self.consumer_api.create('test-consumer', None)
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-
-        self.consumer_api.bind('test-consumer', 'test-repo')
-
-        consumer = self.consumer_api.consumer('test-consumer')
-        self.assertTrue('test-repo' in consumer['repoids'])
-
-        # Test
-        self.consumer_api.unbind('test-consumer', 'test-repo', soft=True)
-
-        # Verify
-        consumer = self.consumer_api.consumer('test-consumer')
-        self.assertTrue('test-repo' not in consumer['repoids'])
-
-        # Verify
-        #   Messaging unbind data
-        agent = Agent('test-consumer')
-        repoproxy = agent.Consumer()
-        calls = repoproxy.unbind.history()
-        self.assertEqual(len(calls), 0)
-
     def test_unbind_existing_repos(self):
         '''
         Tests that calling unbind when there are other repos bound does not affect
@@ -286,7 +272,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
         self.repo_api.create('test-repo-1', 'Test Repo', 'noarch')
         self.repo_api.create('test-repo-2', 'Test Repo', 'noarch')
 
