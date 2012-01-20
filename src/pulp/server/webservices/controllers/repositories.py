@@ -541,7 +541,7 @@ class Repository(JSONController):
         repo = api.repository(id)
         if repo is None:
             return self.not_found('A repository with the id, %s, does not exist' % id)
-        task = async.run_async(api.delete, kwargs={'id': id})
+        task = async.run_async(api.delete, args=[id])
         if task is None:
             return self.conflict('The repository, %s, cannot be deleted' % id)
         status = self._task_to_dict(task)
