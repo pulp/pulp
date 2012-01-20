@@ -23,7 +23,7 @@ from pulp.server import config
 from pulp.server.agent import Agent
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import (
-    NonUniqueTaskException, DuplicateSnapshotError)
+    NonUniqueTaskException, DuplicateSnapshotError, UnscheduledTaskException)
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import SnapshotStorage
@@ -63,6 +63,11 @@ def enqueue(task, unique=True):
         return None
     except DuplicateSnapshotError, e:
         log.error(traceback.format_exc())
+        task.remove_enqueue_hook(grant)
+        task.remove_dequeue_hook(revoke)
+        return None
+    except UnscheduledTaskException:
+        log.info(traceback.format_exc())
         task.remove_enqueue_hook(grant)
         task.remove_dequeue_hook(revoke)
         return None
