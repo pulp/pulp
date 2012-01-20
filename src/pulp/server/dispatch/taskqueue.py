@@ -126,6 +126,7 @@ class TaskQueue(object):
         """
         assert self.__dispatcher is None
         self.__lock.acquire()
+        self.__exit = False # needed for re-start
         try:
             self.__dispatcher = threading.Thread(target=self.__dispatch)
             self.__dispatcher.setDaemon(True)

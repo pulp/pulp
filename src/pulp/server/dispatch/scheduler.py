@@ -109,9 +109,14 @@ class Scheduler(object):
         Start the scheduler
         """
         assert self.__dispatcher is None
-        self.__dispatcher = threading.Thread(target=self.__dispatch)
-        self.__dispatcher.setDaemon(True)
-        self.__dispatcher.start()
+        self.__lock.acquire()
+        self.__exit = False # needed for re-start
+        try:
+            self.__dispatcher = threading.Thread(target=self.__dispatch)
+            self.__dispatcher.setDaemon(True)
+            self.__dispatcher.start()
+        finally:
+            self.__lock.release()
 
     def stop(self):
         """
