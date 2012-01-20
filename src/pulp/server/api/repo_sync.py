@@ -318,6 +318,11 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
         now = datetime.now(dateutils.local_tz())
         repo_api.collection.update({"id":repo_id},
                                    {"$set":{"last_sync":dateutils.format_iso8601_datetime(now)}})
+
+        # Throw cancel exception when sync is canceled during package and errata removal
+        if synchronizer.stopped:
+            raise CancelException()
+
         synchronizer.progress_callback(step="Finished")
         return True
     finally:
