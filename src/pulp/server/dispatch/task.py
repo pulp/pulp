@@ -171,6 +171,9 @@ class Task(object):
             self.complete_callback(self)
         except Exception, e:
             _LOG.exception(e)
+        # reset the complete callback so that it doesn't accidentally get
+        # called more than once
+        self.complete_callback = None
 
     # hook execution -----------------------------------------------------------
 
@@ -224,6 +227,9 @@ class AsyncTask(Task):
         try:
             result = call(*args, **kwargs)
         except:
+            # NOTE: this is making an assumption here that the call failed to
+            # execute, if this isn't the case, or it got far enough, we may be
+            # faced with _succeeded or _failed being called again
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
             return self._failed(e, tb)
