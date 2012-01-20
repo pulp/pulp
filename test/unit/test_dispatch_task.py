@@ -124,7 +124,8 @@ class TaskTests(testutil.PulpTest):
         self.assertTrue(callback.call_count == 1)
         self.assertTrue(callback.call_args[0][0] is self.call_request)
         self.assertTrue(callback.call_args[0][1] is self.call_report)
-        self.assertTrue(self.call_report.state is dispatch_constants.CALL_CANCELED_STATE)
+        self.assertTrue(self.call_report.state is dispatch_constants.CALL_CANCELED_STATE,
+                        self.call_report.state)
 
     def test_finish_execution_hook(self):
         hooks = [mock.Mock(), mock.Mock()]
