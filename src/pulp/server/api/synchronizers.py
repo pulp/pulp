@@ -116,6 +116,7 @@ class BaseSynchronizer(object):
         self.repo_dir = None
         self.is_clone = False
         self.parent = None
+        self.do_update_metadata = False
 
     def stop(self):
         self.stopped = True
@@ -879,7 +880,9 @@ class YumSynchronizer(BaseSynchronizer):
                         break
             for pkg in to_remove:
                 pkglist.remove(pkg)
-
+        if len(list(unfiltered_pkglist)) and len(list(unfiltered_pkglist)) != len(pkglist):
+            # filters modified the repo state, trigger metadata update
+            self.do_update_metadata = True
         return pkglist
 
     def __get_package_name_by_instance(self, pkg):

@@ -363,6 +363,9 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
         synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     else:
         added_packages = synchronizer.clone_packages_from_source(repo_id, skip_dict)
+        if synchronizer.do_update_metadata:
+            # updating Metadata
+            synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     # Process Distribution
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
     # Process Files
