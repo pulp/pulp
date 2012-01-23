@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.259
+Version:        0.0.260
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jan 23 2012 James Slagle <jslagle@redhat.com> 0.0.260-1
+- Automatic commit of package [mod_wsgi] minor release [3.3-2.pulp].
+  (jslagle@redhat.com)
+
 * Fri Jan 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.259-1
 - 760601 - Added missing CancelException during removal of packages and errata
   that no longer exist in the sync task (skarmark@redhat.com)
