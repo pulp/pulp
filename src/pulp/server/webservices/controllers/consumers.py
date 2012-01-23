@@ -100,8 +100,8 @@ class Consumers(JSONController):
             consumer_api.create(
                 id,
                 consumer_data['description'],
-                capabilities=consumer_data['capabilities'],
-                key_value_pairs=consumer_data['key_value_pairs'])
+                capabilities=consumer_data.get('capabilities', {}),
+                key_value_pairs=consumer_data.get('key_value_pairs', {}))
         # create corresponding user for auth credentials
         user = user_api.create(id)
         add_user_to_role(consumer_users_role, user['login'])
