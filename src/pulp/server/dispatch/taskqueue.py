@@ -229,6 +229,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
+            # TODO move me to Task._complete
             archived_call = ArchivedCall(task.call_request, task.call_report)
             self.archived_call_collection.save(archived_call, safe=True)
             self.dequeue(task)
