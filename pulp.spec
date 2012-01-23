@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.260
+Version:        0.0.261
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jan 23 2012 Jeff Ortel <jortel@redhat.com> 0.0.261-1
+- 784098 - make 'capabilities' optional in consumer registration as intended.
+  (jortel@redhat.com)
+- trigger metadata update if a filter alters the repo state during clone
+  (pkilambi@redhat.com)
+- 783499 - fixing key error when selective syncing (pkilambi@redhat.com)
+- Examples of CA Certificate Chain verification (jmatthews@redhat.com)
+
 * Mon Jan 23 2012 James Slagle <jslagle@redhat.com> 0.0.260-1
 - Automatic commit of package [mod_wsgi] minor release [3.3-2.pulp].
   (jslagle@redhat.com)
