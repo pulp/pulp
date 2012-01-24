@@ -13,6 +13,7 @@
 
 from pulp.client.api.base import PulpAPI
 from pulp.client.api.server import ServerRequestError
+from pulp.common import dateutils
 
 
 repository_deferred_fields = ('packages',
@@ -116,6 +117,14 @@ class RepositoryAPI(PulpAPI):
             return self.server.GET(path)[1]
         except ServerRequestError:
             return []
+
+    def latest_task(self,task_list):
+        if not task_list:
+            return None
+        def key(t):
+            return dateutils.parse_iso8601_datetime(t['finished_time'])
+        sorted_task_list = sorted(task_list, key=key)
+        return sorted_task_list[-1]
 
     def running_task(self, task_list):
         """

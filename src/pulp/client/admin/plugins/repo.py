@@ -310,21 +310,22 @@ class Status(AdminRepoAction):
         else:
             last_sync = str(parse_iso8601_datetime(last_sync))
         print _('Last Sync: %s') % last_sync
-        running_sync = self.repository_api.running_task(syncs)
-        if syncs:
+        latest_sync = self.repository_api.latest_task(syncs)
+        if latest_sync is not None:
             error_details = ""
-            progress = syncs[0].get('progress')
+            progress = latest_sync.get('progress')
             if isinstance(progress, dict):
                 error_details = self.form_error_details(progress)
-            if syncs[0]['state'] in ('error') or error_details:
+            if latest_sync['state'] in ('error') or error_details:
                 tb = ""
-                if syncs[0]['traceback']:
-                    tb = syncs[0]['traceback'][-1]
-                if syncs[0]["finish_time"]:
+                if latest_sync['traceback']:
+                    tb = latest_sync['traceback'][-1]
+                if latest_sync["finish_time"]:
                     print _("Last Error: %s\n%s") % \
-                        (str(parse_iso8601_datetime(syncs[0]['finish_time'])), tb)
+                        (str(parse_iso8601_datetime(latest_sync['finish_time'])), tb)
                 if error_details:
                     print error_details
+        running_sync = self.repository_api.running_task(syncs)
         if running_sync:
             print _('Currently syncing:'),
             if running_sync['progress'] is None:
