@@ -51,7 +51,7 @@ class Task(object):
     @type blocking_tasks: set
     """
 
-    def __init__(self, call_request, call_report=None, progress_callback_kwarg_name='progress_callback'):
+    def __init__(self, call_request, call_report=None):
 
         assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
@@ -69,10 +69,6 @@ class Task(object):
         self.progress_callback = None
         self.blocking_tasks = set()
 
-        progress_hook = self.call_request.control_hooks[dispatch_constants.CALL_PROGRESS_CONTROL_HOOK]
-        if progress_hook is not None:
-            self.set_progress(progress_callback_kwarg_name, progress_hook)
-
     def __str__(self):
         return 'Task %s: %s' % (self.id, str(self.call_request))
 
@@ -83,15 +79,19 @@ class Task(object):
 
     # progress information -----------------------------------------------------
 
-    def set_progress(self, arg, callback):
+    def set_progress_callback(self, kwarg_name, callback):
         """
         Set the call request progress callback as the given key word argument.
-        @param arg: name of the key word argument
-        @type  arg: str
+        @param kwarg_name: name of the key word argument
+        @type  kwarg_name: str
         @param callback: progress callback function, method, or functor
         @type  callback: callable
         """
-        self.call_request.kwargs[arg] = self._progress_pass_through
+        spec = inspect.getargspec(self.call_request.call)
+        if kwarg_name not in spec.args:
+            # TODO raise proper exception
+            raise Exception('')
+        self.call_request.kwargs[kwarg_name] = self._progress_pass_through
         self.progress_callback = callback
 
     def _progress_pass_through(self, *args, **kwargs):
@@ -116,7 +116,6 @@ class Task(object):
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
-        result = None
         try:
             result = call(*args, **kwargs)
         except:
@@ -215,10 +214,9 @@ class AsyncTask(Task):
     """
 
     def __init__(self, call_request, call_report=None,
-                 progress_callback_kwarg_name='progress_callback',
                  success_callback_kwarg_name='succeeded',
                  failure_callback_kwarg_name='failed'):
-        super(AsyncTask, self).__init__(call_request, call_report, progress_callback_kwarg_name)
+        super(AsyncTask, self).__init__(call_request, call_report)
         self._validate_async_call_request(call_request,
                                           success_callback_kwarg_name,
                                           failure_callback_kwarg_name)
