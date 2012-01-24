@@ -119,12 +119,16 @@ class RepositoryAPI(PulpAPI):
             return []
 
     def latest_task(self,task_list):
-        if not task_list:
-            return None
-        def key(t):
+        def ft(t):
             return dateutils.parse_iso8601_datetime(t['finish_time'])
-        sorted_task_list = sorted(task_list, key=key)
-        return sorted_task_list[-1]
+        def lt(a, b):
+            if ft(a) > ft(b):
+                return a
+            return b
+        finished_tasks = [t for t in task_list if t['finished_time'] is not None]
+        if finished_tasks:
+            return reduce(lt, finished_tasks)
+        return None
 
     def running_task(self, task_list):
         """
