@@ -551,4 +551,3 @@ class TestCertVerify(testutil.PulpAsyncTest):
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca.pem")
         ca_chain_pems = open(ca_chain_path).read()
         self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
-
