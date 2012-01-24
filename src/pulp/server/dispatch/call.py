@@ -38,8 +38,6 @@ class CallRequest(object):
     @type resources: dict
     @ivar weight: weight of callable in relation concurrency resources
     @type weight: int
-    @ivar asynchronous: flag the call as asynchronous
-    @type asynchronous: bool
     @ivar execution_hooks: callbacks to be executed during lifecycle of callable
     @type execution_hooks: dict
     @ivar control_hooks: callbacks used to control the lifecycle of the callable
@@ -54,7 +52,6 @@ class CallRequest(object):
                  kwargs=None,
                  resources=None,
                  weight=1,
-                 asynchronous=False,
                  tags=None):
 
         assert callable(call)
@@ -69,7 +66,6 @@ class CallRequest(object):
         self.kwargs = kwargs or {}
         self.resources = resources or {}
         self.weight = weight
-        self.asynchronous = asynchronous
         self.tags = tags or []
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_EXECUTION_HOOKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
