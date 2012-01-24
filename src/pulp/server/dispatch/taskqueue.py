@@ -55,7 +55,7 @@ class TaskQueue(object):
 
     # task dispatch methods ----------------------------------------------------
 
-    def __dispatch(self):
+    def _dispatch(self):
         """
         Dispatcher thread loop
         """
@@ -128,7 +128,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         self.__exit = False # needed for re-start
         try:
-            self.__dispatcher = threading.Thread(target=self.__dispatch)
+            self.__dispatcher = threading.Thread(target=self._dispatch)
             self.__dispatcher.setDaemon(True)
             self.__dispatcher.start()
         finally:
