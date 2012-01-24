@@ -195,6 +195,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
+            task.complete_callback = None
             self.queued_call_collection.remove({'_id': task.queued_call_id}, safe=True)
             task.queued_call_id = None
             if task in self.__waiting_tasks:
@@ -229,9 +230,6 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            # TODO move me to Task._complete
-            archived_call = ArchivedCall(task.call_request, task.call_report)
-            self.archived_call_collection.save(archived_call, safe=True)
             self.dequeue(task)
         finally:
             self.__lock.release()

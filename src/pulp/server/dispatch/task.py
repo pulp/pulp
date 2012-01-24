@@ -21,6 +21,7 @@ import uuid
 from gettext import gettext as _
 
 from pulp.common import dateutils
+from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 
@@ -160,6 +161,10 @@ class Task(object):
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
+        # archive the completed call
+        archived_call_collection = ArchivedCall.get_collection()
+        archived_call = ArchivedCall(self.call_request, self.call_report)
+        archived_call_collection.save(archived_call, safe=True)
 
     def _call_complete_callback(self):
         """
@@ -171,9 +176,6 @@ class Task(object):
             self.complete_callback(self)
         except Exception, e:
             _LOG.exception(e)
-        # reset the complete callback so that it doesn't accidentally get
-        # called more than once
-        self.complete_callback = None
 
     # hook execution -----------------------------------------------------------
 
