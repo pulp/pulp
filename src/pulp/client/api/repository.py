@@ -125,7 +125,7 @@ class RepositoryAPI(PulpAPI):
             if ft(a) > ft(b):
                 return a
             return b
-        finished_tasks = [t for t in task_list if t['finished_time'] is not None]
+        finished_tasks = [t for t in task_list if t['finish_time'] is not None]
         if finished_tasks:
             return reduce(lt, finished_tasks)
         return None
