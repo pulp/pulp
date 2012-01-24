@@ -13,6 +13,7 @@
 
 import copy
 import datetime
+import inspect
 import logging
 import sys
 import time
@@ -213,6 +214,32 @@ class AsyncTask(Task):
     to complete.
     """
 
+    def __init__(self, call_request, call_report=None,
+                 progress_callback_kwarg_name='progress_callback',
+                 success_callback_kwarg_name='succeeded',
+                 failure_callback_kwarg_name='failed'):
+        super(AsyncTask, self).__init__(call_request, call_report, progress_callback_kwarg_name)
+        self._validate_async_call_request(call_request,
+                                          success_callback_kwarg_name,
+                                          failure_callback_kwarg_name)
+        self.callback_kwargs = {success_callback_kwarg_name: self._succeeded,
+                                failure_callback_kwarg_name: self._failed}
+
+    def _validate_async_call_request(self, call_request,
+                                     success_callback_kwarg_name,
+                                     failure_callback_kwarg_name):
+        call = call_request.call
+        spec = inspect.getargspec(call)
+        missing = []
+        if success_callback_kwarg_name not in spec.args:
+            missing.append(success_callback_kwarg_name)
+        if failure_callback_kwarg_name not in spec.args:
+            missing.append(failure_callback_kwarg_name)
+        if not missing:
+            return
+        # TODO raise validation error
+        raise Exception('wtf async')
+
     def run(self):
         """
         Run the call request
@@ -223,11 +250,9 @@ class AsyncTask(Task):
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
-        kwargs['succeeded'] = self._succeeded
-        kwargs['failed'] = self._failed
-        result = None
+        kwargs.update(self.callback_kwargs)
         try:
-            result = call(*args, **kwargs)
+            return call(*args, **kwargs)
         except:
             # NOTE: this is making an assumption here that the call failed to
             # execute, if this isn't the case, or it got far enough, we may be
@@ -235,4 +260,4 @@ class AsyncTask(Task):
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
             return self._failed(e, tb)
-        return result
+
