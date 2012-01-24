@@ -890,7 +890,7 @@ class RepoApi(BaseApi):
             return dict(zip(("name", "epoch", "version", "release", "arch"), get_pkg_tup(package)))
         def form_error_tup(pkg, error_message=None):
             pkg_tup = get_pkg_tup(pkg)
-            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"], error_message)
+            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"].values()[0], error_message)
 
         start_add_packages = time.time()
         errors = []
@@ -951,12 +951,12 @@ class RepoApi(BaseApi):
 
             if nevras.has_key(pkg_tup):
                 log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
-                         % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
+                         % (pkg_tup, pkg["id"], pkg["checksum"].values()[0]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
-                    % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
+                    % (pkg["filename"], pkg["id"], pkg["checksum"].values()[0])
                 log.warn(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
@@ -2191,7 +2191,7 @@ class RepoApi(BaseApi):
             rm_pkg_errors = self.remove_packages(repo_id, to_remove_pkgs)
             for p in rm_pkg_errors:
                 filename = p["filename"]
-                checksum = p["checksum"]["sha256"]
+                checksum = p["checksum"].values()[0]
                 if not errors.has_key(filename):
                     errors[filename] = {}
                 if not errors[filename].has_key(checksum):

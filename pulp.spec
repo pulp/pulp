@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.258
+Version:        0.0.261
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,55 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jan 23 2012 Jeff Ortel <jortel@redhat.com> 0.0.261-1
+- 784098 - make 'capabilities' optional in consumer registration as intended.
+  (jortel@redhat.com)
+- trigger metadata update if a filter alters the repo state during clone
+  (pkilambi@redhat.com)
+- 783499 - fixing key error when selective syncing (pkilambi@redhat.com)
+- Examples of CA Certificate Chain verification (jmatthews@redhat.com)
+
+* Mon Jan 23 2012 James Slagle <jslagle@redhat.com> 0.0.260-1
+- Automatic commit of package [mod_wsgi] minor release [3.3-2.pulp].
+  (jslagle@redhat.com)
+
+* Fri Jan 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.259-1
+- 760601 - Added missing CancelException during removal of packages and errata
+  that no longer exist in the sync task (skarmark@redhat.com)
+- 782109 added better error handling for UnscheduledTaskException in
+  async.enqueue (jconnor@redhat.com)
+- 781559 changed from using kwargs to args to that the uniqueness detection in
+  the tasking subsystem will recognize different repo deletes as unique
+  (jconnor@redhat.com)
+- 782844 - fix the or query to check if the query is empty before woring on or
+  query; also fix the cli to not make an api call to lookup deps if deps are
+  empty (pkilambi@redhat.com)
+- Automatic commit of package [m2crypto] minor release [0.21.1.pulp-7].
+  (jmatthews@redhat.com)
+- Bumping M2Crypto.spec to include getLastUpdate/getNextUpdate CRL support as
+  well as M2Crypto unit tests (jmatthews@redhat.com)
+- Added getLastUpdate, getNextUpdate to M2Crypto CRL wrapper plus M2Crypto
+  tests (jmatthews@redhat.com)
+- 782877 - fix the file syncs to use the default checksum; also fixed empty
+  files default to null in mongo causing metadata parse errors
+  (pkilambi@redhat.com)
+- Fix unit tests. (jortel@redhat.com)
+- 782480 - private key no longer stored; shared secret updated; consumer
+  capabilities added; database version 36 (jortel@redhat.com)
+- Update for location of temp CA&CRL combination (jmatthews@redhat.com)
+- 782841 - fixing the package upload with no repoids (pkilambi@redhat.com)
+- Updated generation of CRL/CA/Cert data for m2crypto unit tests
+  (jmatthews@redhat.com)
+- 773439 - enhanced GET /consumers/applicable_errata_in_repos/ api to accept
+  send_only_applicable_errata flag and return more information about errata
+  (skarmark@redhat.com)
+- 757825 assure the kwargs is a dict (jconnor@redhat.com)
+- 757825 add only copies of the task to the history so that editing them does
+  not edit the task (jconnor@redhat.com)
+- 772660 Update requires on mod_wsgi in pulp.spec (jslagle@redhat.com)
+- 772660 Remove KeyError patch from mod_wsgi build, it is already included in
+  version 3.3 (jslagle@redhat.com)
+- 772660 Bump mod_wsgi version to 3.3 (jslagle@redhat.com)
 * Mon Jan 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.258-1
 - Add support for enabled repository reporting; add support for soft bind.
   (jortel@redhat.com)

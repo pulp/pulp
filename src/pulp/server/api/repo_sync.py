@@ -318,6 +318,11 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
         now = datetime.now(dateutils.local_tz())
         repo_api.collection.update({"id":repo_id},
                                    {"$set":{"last_sync":dateutils.format_iso8601_datetime(now)}})
+
+        # Throw cancel exception when sync is canceled during package and errata removal
+        if synchronizer.stopped:
+            raise CancelException()
+
         synchronizer.progress_callback(step="Finished")
         return True
     finally:
@@ -358,6 +363,9 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
         synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     else:
         added_packages = synchronizer.clone_packages_from_source(repo_id, skip_dict)
+        if synchronizer.do_update_metadata:
+            # updating Metadata
+            synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
     # Process Distribution
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
     # Process Files

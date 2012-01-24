@@ -35,6 +35,7 @@ INVALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_
 # Test certificate
 CERT = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/cert.crt'
 
+CA_CHAIN_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/chain'
 CRL_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl'
 CRL_EXPIRED_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl_expired'
 
@@ -469,4 +470,85 @@ class TestCertVerify(testutil.PulpAsyncTest):
 
         # Test
         self.assertFalse(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_TEST_DATA))
-    
+
+    def test_revoked_cert_with_crl_with_single_CRL(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        revoked_cert_path = os.path.join(CRL_TEST_DATA, "revoked/Pulp_client.cert")
+        crl_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CRL.pem")
+
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(revoked_cert_path)
+        cert = f.read()
+        f.close()
+
+        f = open(crl_path)
+        crl_pem = f.read()
+        f.close()
+
+        # Test
+        self.assertFalse(self.utils.validate_certificate_pem(cert, ca, [crl_pem]))
+
+    def test_get_certs_from_string_empty(self):
+        certs = self.utils.get_certs_from_string("")
+        self.assertEquals(len(certs), 0)
+
+    def test_get_certs_from_string_misformed(self):
+        certs = self.utils.get_certs_from_string("BAD_DATA")
+        self.assertEquals(len(certs), 0)
+
+    def test_get_certs_from_string_single_CA(self):
+        root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        data = open(root_ca_path).read()
+        certs = self.utils.get_certs_from_string(data)
+        self.assertEquals(len(certs), 1)
+        self.assertIsInstance(certs[0], X509.X509)
+
+    def test_get_certs_from_string_valid(self):
+        root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        sub_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+
+        expected_root_ca_cert = X509.load_cert(root_ca_path)
+        self.assertTrue(expected_root_ca_cert.check_ca())
+
+        expected_sub_ca_cert = X509.load_cert(sub_ca_path)
+        self.assertTrue(expected_sub_ca_cert.check_ca())
+
+        data = open(ca_chain_path).read()
+        certs = self.utils.get_certs_from_string(data)
+        self.assertEquals(len(certs), 2)
+        self.assertTrue(certs[0].check_ca())
+        self.assertTrue(expected_root_ca_cert.get_subject().as_hash(), certs[0].get_subject().as_hash())
+        self.assertTrue(expected_root_ca_cert.get_issuer().as_hash(), certs[0].get_issuer().as_hash())
+
+        self.assertTrue(certs[1].check_ca())
+        self.assertTrue(expected_sub_ca_cert.get_subject().as_hash(), certs[1].get_subject().as_hash())
+        self.assertTrue(expected_sub_ca_cert.get_issuer().as_hash(), certs[1].get_issuer().as_hash())
+
+    def test_validate_certificate_pem_with_ca_chain(self):
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        test_cert_pem = open(test_cert_path).read()
+
+        self.assertTrue(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
+
+    def test_validate_certificate_pem_with_incomplete_ca_chain(self):
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        test_cert_pem = open(test_cert_path).read()
+        self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
+
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca.pem")
+        ca_chain_pems = open(ca_chain_path).read()
+        self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
+

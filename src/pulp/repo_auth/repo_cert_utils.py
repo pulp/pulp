@@ -49,7 +49,7 @@ from threading import RLock
 import os
 
 from glob import glob
-from M2Crypto import X509
+from M2Crypto import X509, BIO
 
 LOG = logging.getLogger(__name__)
 try:
@@ -273,7 +273,7 @@ class RepoCertUtils:
         @param cert_pem: PEM encoded certificate
         @type  cert_pem: str
 
-        @param ca_pem: PEM encoded CA certificate
+        @param ca_pem: PEM encoded CA certificates, allows chain of CA certificates if concatenated together
         @type  ca_pem: str
 
         @param crl_pems: List of CRLs, each CRL is a PEM encoded string
@@ -288,28 +288,33 @@ class RepoCertUtils:
         @return: true if the certificate was signed by the given CA; false otherwise
         @rtype:  boolean
         '''
-        ca_cert = X509.load_cert_string(ca_pem)
         cert = X509.load_cert_string(cert_pem)
         if not M2CRYPTO_HAS_CRL_SUPPORT:
+            # Will only be able to use first CA from the ca_pem if it was a chain
+            ca_cert = X509.load_cert_string(ca_pem)
             return cert.verify(ca_cert.get_pubkey())
+        ca_chain = self.get_certs_from_string(ca_pem)
         crl_stack = X509.CRL_Stack()
         if check_crls:
-            ca_hash = ca_cert.get_issuer().as_hash()
-            crl_stack = self.get_crl_stack(ca_hash, crl_dir=crl_dir)
+            for ca in ca_chain:
+                ca_hash = ca.get_issuer().as_hash()
+                stack = self.get_crl_stack(ca_hash, crl_dir=crl_dir)
+                for c in stack:
+                    crl_stack.push(c)
             if crl_pems:
                 for c in crl_pems:
-                    crl_stack.push(c)
-        return self.x509_verify_cert(cert, ca_cert, crl_stack)
+                    crl_stack.push(X509.load_crl_string(c))
+        return self.x509_verify_cert(cert, ca_chain, crl_stack)
 
-    def x509_verify_cert(self, cert, ca_cert, crl_stack=None):
+    def x509_verify_cert(self, cert, ca_certs, crl_stack=None):
         """
         Validates a Certificate against a CA Certificate and a Stack of CRLs
 
         @param  cert:  Client certificate to verify
         @type   cert:  M2Crypto.X509.X509
 
-        @param  ca_cert:  CA certificate
-        @type   ca_cert: M2Crypto.X509.X509
+        @param  ca_certs:  Chain of CA Certificates
+        @type   ca_certs:  [M2Crypto.X509.X509]
 
         @param  crl_stack: Stack of CRLs, default is None
         @type   crl_stack: M2Crypto.X509.CRL_Stack
@@ -318,7 +323,8 @@ class RepoCertUtils:
         @rtype:  boolean
         """
         store = X509.X509_Store()
-        store.add_cert(ca_cert)
+        for ca in ca_certs:
+            store.add_cert(ca)
         if crl_stack and len(crl_stack) > 0:
             store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
                        X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
@@ -378,6 +384,33 @@ class RepoCertUtils:
                 except:
                     LOG.exception("Unable to load CRL file: %s" % (c))
         return crl_stack
+
+    def get_certs_from_string(self, data):
+        """
+        @param data: A single string of concatenated X509 Certificates in PEM format
+        @type data: str
+
+        @return list of X509 Certificates
+        @rtype: [M2Crypto.X509.X509]
+        """
+        # Refer to OpenSSL crypto/x509/by_file.c
+        # Function: X509_load_cert_file() to see how they parse a chain file and add
+        # the certificates to a X509_Store.  Below follows a similar procedure.
+        bio = BIO.MemoryBuffer(data)
+        certs = []
+        try:
+            while True:
+                # Read one cert at a time, 'bio' stores the last location read
+                # Exception is raised when no more cert data is available
+                cert = X509.load_cert_bio(bio)
+                if not cert:
+                    # This is likely to never occur, a X509Error should always be raised
+                    break
+                certs.append(cert)
+        except X509.X509Error:
+            # This is the normal return path.
+            return certs
+        return certs
 
     # -- private ----------------------------------------------------------------------------
 
