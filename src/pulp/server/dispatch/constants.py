@@ -32,12 +32,8 @@ CALL_EXECUTION_HOOKS = (CALL_ENQUEUE_EXECUTION_HOOK,
 # control hooks ----------------------------------------------------------------
 
 CALL_CANCEL_CONTROL_HOOK = 0
-CALL_PROGRESS_CONTROL_HOOK = 1
-CALL_PRESENTATION_CONTROL_HOOK = 2
 
-CALL_CONTROL_HOOKS = (CALL_CANCEL_CONTROL_HOOK,
-                      CALL_PROGRESS_CONTROL_HOOK,
-                      CALL_PRESENTATION_CONTROL_HOOK)
+CALL_CONTROL_HOOKS = (CALL_CANCEL_CONTROL_HOOK,)
 
 # execution responses ----------------------------------------------------------
 
