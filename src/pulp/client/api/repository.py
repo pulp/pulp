@@ -119,6 +119,11 @@ class RepositoryAPI(PulpAPI):
             return []
 
     def latest_task(self,task_list):
+        """
+        Iterate of a list of tasks and return the most recently finished task.
+        @param task_list: list of tasks
+        @return: most recent finished task, None if no task meets the criteria
+        """
         def ft(t):
             return dateutils.parse_iso8601_datetime(t['finish_time'])
         def lt(a, b):
