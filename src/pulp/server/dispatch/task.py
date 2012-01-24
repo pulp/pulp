@@ -49,7 +49,7 @@ class Task(object):
     @type blocking_tasks: set
     """
 
-    def __init__(self, call_request, call_report=None):
+    def __init__(self, call_request, call_report=None, progress_callback_kwarg_name='progress_callback'):
 
         assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
@@ -69,7 +69,7 @@ class Task(object):
 
         progress_hook = self.call_request.control_hooks[dispatch_constants.CALL_PROGRESS_CONTROL_HOOK]
         if progress_hook is not None:
-            self.set_progress('progress_callback', progress_hook)
+            self.set_progress(progress_callback_kwarg_name, progress_hook)
 
     def __str__(self):
         return 'Task %s: %s' % (self.id, str(self.call_request))
