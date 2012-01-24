@@ -122,7 +122,7 @@ class RepositoryAPI(PulpAPI):
         if not task_list:
             return None
         def key(t):
-            return dateutils.parse_iso8601_datetime(t['finished_time'])
+            return dateutils.parse_iso8601_datetime(t['finish_time'])
         sorted_task_list = sorted(task_list, key=key)
         return sorted_task_list[-1]
 
