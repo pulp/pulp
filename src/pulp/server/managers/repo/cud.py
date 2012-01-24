@@ -197,6 +197,9 @@ class RepoManager:
         if 'description' in delta:
             repo['description'] = delta['description']
 
+        if 'notes' in delta:
+            repo['notes'] = delta['notes']
+
         repo_coll.save(repo, safe=True)
 
         return repo
