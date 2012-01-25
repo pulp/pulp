@@ -40,7 +40,7 @@ class RepoAction(Action):
             feedType = repo['source']['type']
         filters = []
         for filter in repo['filters']:
-            filters.append(str(filter))
+            filters.append(filter)
 
         feed_cert = 'No'
         if repo.has_key('feed_cert') and repo['feed_cert']:

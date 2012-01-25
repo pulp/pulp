@@ -522,7 +522,7 @@ class TestCertVerify(testutil.PulpAsyncTest):
 
         data = open(ca_chain_path).read()
         certs = self.utils.get_certs_from_string(data)
-        self.assertEquals(len(certs), 2)
+        self.assertEquals(len(certs), 3)
         self.assertTrue(certs[0].check_ca())
         self.assertTrue(expected_root_ca_cert.get_subject().as_hash(), certs[0].get_subject().as_hash())
         self.assertTrue(expected_root_ca_cert.get_issuer().as_hash(), certs[0].get_issuer().as_hash())
@@ -552,3 +552,43 @@ class TestCertVerify(testutil.PulpAsyncTest):
         ca_chain_pems = open(ca_chain_path).read()
         self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
 
+    def test_validate_certificate_pem_with_ca_chain_and_crl_and_valid_cert(self):
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
+        root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
+        sub_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca_CRL.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        test_cert_pem = open(test_cert_path).read()
+        root_ca_crl_pem = open(root_ca_crl_path).read()
+        sub_ca_crl_pem = open(sub_ca_crl_path).read()
+        self.assertTrue(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems, [root_ca_crl_pem, sub_ca_crl_pem]))
+
+    def test_validate_certificate_pem_with_ca_chain_and_crl_and_revoked_cert(self):
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        revoked_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/revoked_cert.pem")
+        root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
+        sub_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca_CRL.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        revoked_cert_pem = open(revoked_cert_path).read()
+        root_ca_crl_pem = open(root_ca_crl_path).read()
+        sub_ca_crl_pem = open(sub_ca_crl_path).read()
+        self.assertFalse(self.utils.validate_certificate_pem(revoked_cert_pem, ca_chain_pems, [root_ca_crl_pem, sub_ca_crl_pem]))
+
+
+    def test_validate_certificate_pem_with_ca_chain_and_crl_with_revoked_CA(self):
+        """
+        Test that when a CA itself is revoked, a certificate it issued is failed for verification
+        """
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        revoked_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/from_revoked_ca_cert.pem")
+        root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        revoked_cert_pem = open(revoked_cert_path).read()
+        root_ca_crl_pem = open(root_ca_crl_path).read()
+        # Verify the cert is valid and looks legit
+        self.assertTrue(self.utils.validate_certificate_pem(revoked_cert_pem, ca_chain_pems))
+        # Now we include the CRL info stating that this cert's issuing CA was revoked
+        self.assertFalse(self.utils.validate_certificate_pem(revoked_cert_pem, ca_chain_pems, [root_ca_crl_pem]))

@@ -465,8 +465,13 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
                 if renamed_comps_file and os.path.isfile(renamed_comps_file):
                     cmd = "createrepo --database --checksum %s -g %s --update %s " % \
                           (checksum_type, renamed_comps_file, dir)
+
     #shlex doesn't like unicode strings
-    cmd = shlex.split(cmd.encode('ascii', 'ignore'))
+    try:
+        cmd = shlex.split(cmd.encode('ascii', 'ignore'))
+    except:
+        cmd = shlex.split(cmd)
+
     log.info("started repo metadata update: %s" % (cmd))
     handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return handle

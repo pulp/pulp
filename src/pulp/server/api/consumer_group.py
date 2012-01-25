@@ -48,7 +48,6 @@ class ConsumerGroupApi(BaseApi):
         """
         Create a new ConsumerGroup object and return it
         """
-        self.check_id(id)
         consumergroup = self.consumergroup(id)
         if(consumergroup):
             raise PulpException("A Consumer Group with id %s already exists" % id)

@@ -222,7 +222,6 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
-        self.check_id(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -314,8 +313,15 @@ class RepoApi(BaseApi):
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
-        if not os.path.exists(repo_path):
-            pulp.server.util.makedirs(repo_path)
+
+        try:
+            if not os.path.exists(repo_path):
+                pulp.server.util.makedirs(repo_path)
+        except UnicodeEncodeError:
+            repo_path = repo_path.encode('utf-8')
+            if not os.path.exists(repo_path):
+                pulp.server.util.makedirs(repo_path)
+
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
@@ -378,9 +384,15 @@ class RepoApi(BaseApi):
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
             link_path = os.path.join(self.published_path, repo["relative_path"])
-            if os.path.lexists(link_path):
-                # need to use lexists so we will return True even for broken links
-                os.unlink(link_path)
+            try:
+                if os.path.lexists(link_path):
+                    # need to use lexists so we will return True even for broken links
+                    os.unlink(link_path)
+            except UnicodeEncodeError:
+                link_path = link_path.encode('utf-8')
+                if os.path.lexists(link_path):
+                    # need to use lexists so we will return True even for broken links
+                    os.unlink(link_path)
 
 
 
@@ -562,7 +574,10 @@ class RepoApi(BaseApi):
 
         # delete gpg key links
         path = repo['relative_path']
-        ks = KeyStore(path)
+        try:
+            ks = KeyStore(path)
+        except UnicodeEncodeError:
+            ks = KeyStore(path.encode('utf-8'))
         ks.clean(True)
 
         #remove packages
@@ -629,6 +644,7 @@ class RepoApi(BaseApi):
                 fpath = os.path.join(repo_location, repo[field])
             else:
                 fpath = repo[field]
+            fpath = fpath.encode('utf-8')
             if fpath and os.path.exists(fpath):
                 try:
                     if os.path.isfile(fpath):
