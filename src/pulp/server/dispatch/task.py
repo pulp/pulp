@@ -44,6 +44,8 @@ class Task(object):
     @type call_report: CallReport instance
     @ivar queued_call_id: db id for serialized queued call
     @type queued_call_id: str
+    @ivar archive: toggle call archival on completion
+    @type archive: bool
     @ivar complete_callback: task queue callback called on completion
     @type complete_callback: callable or None
     @ivar progress_callback: call request progress callback called to report execution progress
@@ -52,7 +54,7 @@ class Task(object):
     @type blocking_tasks: set
     """
 
-    def __init__(self, call_request, call_report=None):
+    def __init__(self, call_request, call_report=None, archive=False):
 
         assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
@@ -65,6 +67,8 @@ class Task(object):
         self.call_report = call_report or call.CallReport()
         self.call_report.state = dispatch_constants.CALL_WAITING_STATE
         self.call_report.task_id = self.id
+
+        self.archive = archive
 
         self.complete_callback = None
         self.progress_callback = None
@@ -161,6 +165,8 @@ class Task(object):
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
+        if not self.archive:
+            return
         # archive the completed call
         archived_call_collection = ArchivedCall.get_collection()
         archived_call = ArchivedCall(self.call_request, self.call_report)
