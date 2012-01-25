@@ -25,7 +25,7 @@ import testutil
 from pulp.common import dateutils
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallReport, CallRequest
-from pulp.server.dispatch.task import Task
+from pulp.server.dispatch.task import AsyncTask, Task
 
 # testing data -----------------------------------------------------------------
 
@@ -50,7 +50,6 @@ class TaskInstanceTests(testutil.PulpTest):
         try:
             Task(call_request)
             Task(call_request, call_report)
-            Task(call_request, call_report, True)
         except:
             self.fail(traceback.format_exc())
 
@@ -106,9 +105,12 @@ class TaskTests(testutil.PulpTest):
         self.assertTrue(callback.call_args[0][0] is self.task)
 
     def test_progress_control_callback(self):
+        def _call(progress_callback=None):
+            pass
+        self.call_request.call = _call
         callback = mock.Mock()
-        self.call_request.add_control_hook(dispatch_constants.CALL_PROGRESS_CONTROL_HOOK, callback)
         task = Task(self.call_request, self.call_report)
+        task.set_progress_callback('progress_callback', callback)
         self.assertTrue(task.progress_callback is callback)
         self.assertTrue('progress_callback' in self.call_request.kwargs)
         self.assertTrue(self.call_request.kwargs['progress_callback'] == task._progress_pass_through,
@@ -182,7 +184,7 @@ class AsyncTaskTests(testutil.PulpTest):
     def setUp(self):
         self.call_request = CallRequest(Call(), call_args, call_kwargs)
         self.call_report = CallReport()
-        self.task = Task(self.call_request, self.call_report, asynchronous=True)
+        self.task = AsyncTask(self.call_request, self.call_report)
 
     def tearDown(self):
         self.call_request = None
