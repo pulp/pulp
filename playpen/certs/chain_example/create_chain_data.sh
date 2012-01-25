@@ -1,6 +1,7 @@
 #!/bin/sh
 
 export DAYS=1095
+export EXT_FILE=./extensions.txt
 export SSL_CONF=./example_ssl.conf
 export CERT_DIR=./certs
 export CA_CHAIN_FILE=${CERT_DIR}/ca_chain
@@ -68,7 +69,7 @@ fi
 echo "Creating a test cert: ${TEST_CERT}"
 openssl genrsa -out ${TEST_KEY} 2048
 openssl req -new -key ${TEST_KEY} -out ${TEST_CSR} -subj "/CN=${TEST_COMMON_NAME}"
-openssl x509 -req -days 1095 -CA ${SUB_CA_CERT} -CAkey ${SUB_CA_KEY} -in ${TEST_CSR} -out ${TEST_CERT} -CAserial ${SUB_CA_SERIAL}
+openssl x509 -req -days 1095 -CA ${SUB_CA_CERT} -CAkey ${SUB_CA_KEY} -extfile ${EXT_FILE} -extensions pulp-repos -in ${TEST_CSR} -out ${TEST_CERT} -CAserial ${SUB_CA_SERIAL}
 
 cat ${ROOT_CA_CERT} > ${CA_CHAIN_FILE}
 cat ${SUB_CA_CERT} >> ${CA_CHAIN_FILE}
