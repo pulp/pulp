@@ -125,6 +125,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         self.__exit = False # needed for re-start
         try:
+            # TODO add queued_call reconstitution
             self.__dispatcher = threading.Thread(target=self._dispatch)
             self.__dispatcher.setDaemon(True)
             self.__dispatcher.start()
