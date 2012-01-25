@@ -22,15 +22,19 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
 import mock
 import testutil
 
+from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallReport, CallRequest
-from pulp.server.dispatch.task import Task
+from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
 # call request test data -------------------------------------------------------
 
 class NamedMock(mock.Mock):
     __name__ = 'NamedMock'
+
+def call(*args, **kwargs):
+    pass
 
 # instantiation testing --------------------------------------------------------
 
@@ -42,7 +46,7 @@ class TaskQueueInstantiationTests(testutil.PulpTest):
         except:
             self.fail(traceback.format_exc())
 
-    def test_singleton(self):
+    def _test_singleton(self):
         # task queues with same concurrency threshold
         queue_1 = TaskQueue(1)
         queue_2 = TaskQueue(1)
@@ -84,12 +88,17 @@ class TaskQueueTests(testutil.PulpTest):
     def setUp(self):
         super(TaskQueueTests, self).setUp()
         self.queue = TaskQueue(2)
-        self.queue.start()
+        # NOTE we are not starting the queue (i.e. firing up the dispatcher thread)
 
     def tearDown(self):
         super(TaskQueueTests, self).tearDown()
-        self.queue.stop()
         self.queue = None
+
+    def gen_task(self, call=call):
+        return Task(CallRequest(call))
+
+    def gen_async_task(self, call=call):
+        return AsyncTask(CallRequest(call))
 
     def wait_for_task_to_start(self, task, interval=0.1, timeout=1.0):
         elapsed = 0.0
@@ -109,82 +118,180 @@ class TaskQueueTests(testutil.PulpTest):
                 continue
             self.fail('Task [%s] failed to complete after %.2f seconds' % (task.id, timeout))
 
-# task execution testing -------------------------------------------------------
+# task queue control flow tests ------------------------------------------------
 
-class TaskExecutionTests(TaskQueueTests):
+class TaskQueueControlFlowTests(TaskQueueTests):
 
     def test_task_enqueue(self):
-        pass
+        task = self.gen_task()
+        try:
+            self.queue.enqueue(task)
+        except:
+            self.fail(traceback.format_exc())
+        self.assertTrue(task in self.queue.waiting_tasks())
 
-    def test_task_dequeue(self):
-        pass
-
-    def test_task_queue_complete(self):
-        pass
-
-    def test_queued_call(self):
-        pass
-
-    def test_task_run(self):
-        request = CallRequest(NamedMock())
-        report = CallReport()
-        task = Task(request, report, asynchronous=True)
+    def test_task_enqueue_execution_hook(self):
+        task = self.gen_task()
+        hook = NamedMock()
+        task.call_request.add_execution_hook(dispatch_constants.CALL_ENQUEUE_EXECUTION_HOOK, hook)
         self.queue.enqueue(task)
-        self.wait_for_task_to_start(task)
-        self.assertTrue(self.queue.get(task.id) is task)
-        task._succeeded()
-        self.wait_for_task_to_complete(task)
-        self.assertTrue(self.queue.get(task.id) is None)
+        self.assertTrue(hook.call_count == 1)
+        self.assertTrue(task.call_request in hook.call_args[0])
+        self.assertTrue(task.call_report in hook.call_args[0])
 
-    def test_blocking_task_run(self):
-        task_1 = Task(CallRequest(NamedMock()), asynchronous=True)
-        task_2 = Task(CallRequest(NamedMock()), asynchronous=True)
+    def test_queued_call_collection(self):
+        task = self.gen_task()
+        collection = QueuedCall.get_collection()
+        try:
+            self.queue.enqueue(task)
+        except:
+            self.fail(traceback.format_exc())
+        queued_call = collection.find_one({'_id': task.queued_call_id})
+        self.assertFalse(queued_call is None)
+
+    def test_multi_enqueue(self):
+        task_1 = self.gen_task()
+        task_2 = self.gen_task()
+        task_3 = self.gen_task()
+        for t in (task_1, task_2, task_3):
+            self.queue.enqueue(t)
+        self.assertTrue(task_1 in self.queue.waiting_tasks())
+        self.assertTrue(task_2 in self.queue.waiting_tasks())
+        self.assertTrue(task_3 in self.queue.waiting_tasks())
+
+    def test_validate_blocking_task(self):
+        task_1 = self.gen_task()
+        task_2 = self.gen_task()
         task_2.blocking_tasks.add(task_1.id)
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
-        self.wait_for_task_to_start(task_1)
-        # task_2 cannot start because it is blocked by task_1
-        self.assertTrue(task_2.call_report.state is dispatch_constants.CALL_WAITING_STATE)
-        task_1._succeeded()
-        self.wait_for_task_to_complete(task_1)
-        # task_2 can start because task_1 has completed and unblocked it
-        self.wait_for_task_to_start(task_2)
-        task_2._succeeded()
-        self.wait_for_task_to_complete(task_2)
+        # blocking_tasks are actually replaced
+        self.assertTrue(task_1.id in task_2.blocking_tasks)
 
-    def test_exceed_concurrency(self):
-        # this test relies on a concurrency threshold of 2
-        task_1 = Task(CallRequest(NamedMock()), asynchronous=True)
-        task_2 = Task(CallRequest(NamedMock()), asynchronous=True)
-        task_3 = Task(CallRequest(NamedMock()), asynchronous=True)
+    def test_invalid_blocking_task(self):
+        task_1 = self.gen_task()
+        task_2 = self.gen_task()
+        task_2.blocking_tasks.add(task_1.id)
+        self.queue.enqueue(task_2)
+        # task_1 cannot block task_2 because it is not queued
+        self.assertFalse(task_1.id in task_2.blocking_tasks)
+
+    def test_get_ready_task(self):
+        task = self.gen_task()
+        self.queue.enqueue(task)
+        task_list = self.queue._get_ready_tasks()
+        self.assertTrue(task in task_list)
+
+    def test_get_ready_tasks(self):
+        task_1 = self.gen_task()
+        task_2 = self.gen_task()
+        task_3 = self.gen_task()
+        for t in (task_1, task_2, task_3):
+            self.queue.enqueue(t)
+        task_list = self.queue._get_ready_tasks()
+        self.assertTrue(task_1 in task_list)
+        self.assertTrue(task_2 in task_list)
+        self.assertFalse(task_3 in task_list)
+
+    def test_get_ready_tasks_blocking(self):
+        task_1 = self.gen_task()
+        task_2 = self.gen_task()
+        task_2.blocking_tasks.add(task_1.id)
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
-        self.queue.enqueue(task_3)
+        task_list = self.queue._get_ready_tasks()
+        self.assertTrue(task_1 in task_list)
+        self.assertFalse(task_2 in task_list)
+
+    def test_run_ready_task(self):
+        task = self.gen_async_task()
+        self.queue.enqueue(task)
+        self.queue._run_ready_task(task)
+        self.wait_for_task_to_start(task)
+        self.assertFalse(task in self.queue.waiting_tasks())
+        self.assertTrue(task in self.queue.running_tasks())
+
+    def test_run_ready_task_complete(self):
+        task = self.gen_async_task()
+        self.queue.enqueue(task)
+        self.queue._run_ready_task(task)
+        self.wait_for_task_to_start(task)
+        task._succeeded()
+        self.wait_for_task_to_complete(task)
+        self.assertFalse(task in self.queue.waiting_tasks())
+        self.assertFalse(task in self.queue.running_tasks())
+
+    def test_run_ready_task_blocked(self):
+        task_1 = self.gen_async_task()
+        task_2 = self.gen_task()
+        task_2.blocking_tasks.add(task_1.id)
+        self.queue.enqueue(task_1)
+        self.queue.enqueue(task_2)
+        self.queue._run_ready_task(task_1)
         self.wait_for_task_to_start(task_1)
-        self.wait_for_task_to_start(task_2)
-        # task_3 cannot start because the concurrency threshold is 2
-        self.assertTrue(task_3.call_report.state is dispatch_constants.CALL_WAITING_STATE)
+        task_list = self.queue._get_ready_tasks()
+        self.assertFalse(task_1 in task_list)
+        self.assertFalse(task_2 in task_list)
         task_1._succeeded()
-        task_2._succeeded()
         self.wait_for_task_to_complete(task_1)
-        self.wait_for_task_to_complete(task_2)
-        # task_3 can start because task_1 and task_2 have completed
-        self.wait_for_task_to_start(task_3)
-        self.assertTrue(task_3.call_report.state is dispatch_constants.CALL_RUNNING_STATE)
-        task_3._succeeded()
-        self.wait_for_task_to_complete(task_3)
+        task_list = self.queue._get_ready_tasks()
+        self.assertTrue(task_2 in task_list)
 
-    def test_archived_call(self):
-        pass
+    def test_task_dequeue(self):
+        task = self.gen_task()
+        self.queue.enqueue(task)
+        self.assertTrue(task in self.queue.waiting_tasks())
+        self.queue.dequeue(task)
+        self.assertFalse(task in self.queue.all_tasks())
 
-    def test_task_cancel(self):
-        pass
+    def test_task_dequeue_execution_hook(self):
+        task = self.gen_task()
+        hook = NamedMock()
+        task.call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, hook)
+        self.queue.enqueue(task)
+        self.queue.dequeue(task)
+        self.assertTrue(hook.call_count == 1)
+        self.assertTrue(task.call_request in hook.call_args[0])
+        self.assertTrue(task.call_report in hook.call_args[0])
 
-    def test_task_get(self):
-        pass
+    def task_dequeue_blocking(self):
+        task_1 = self.gen_task()
+        task_2 = self.gen_task()
+        task_2.blocking_tasks.add(task_1.id)
+        self.queue.enqueue(task_1)
+        self.queue.enqueue(task_2)
+        self.assertTrue(task_1.id in task_2.blocking_tasks)
+        self.queue.dequeue(task_1)
+        self.assertFalse(task_1.id in task_2.blocking_tasks)
 
-    def test_task_find(self):
-        pass
+# task queue query tests -------------------------------------------------------
 
-    def test_task_waiting_running_all(self):
-        pass
+class TaskQueueQueryTests(TaskQueueTests):
+
+    def test_get(self):
+        task_1 = self.gen_task()
+        self.queue.enqueue(task_1)
+        task_2 = self.queue.get(task_1.id)
+        self.assertTrue(task_2 is task_1)
+
+    def test_find_single_tag(self):
+        tag = 'TAG'
+        task = self.gen_task()
+        task.call_request.tags.append(tag)
+        self.queue.enqueue(task)
+        task_list = self.queue.find(tag)
+        self.assertTrue(len(task_list) == 1)
+        self.assertTrue(task in task_list)
+
+    def test_find_multi_tags(self):
+        tags = ['FEE', 'FIE', 'FOE', 'FOO']
+        task = self.gen_task()
+        task.call_request.tags.extend(tags)
+        self.queue.enqueue(task)
+        task_list = self.queue.find(*tags[1:3]) # only passes in 'FIE', 'FOE'
+        self.assertTrue(task in task_list)
+
+
+
+
+
