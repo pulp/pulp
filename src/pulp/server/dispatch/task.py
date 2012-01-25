@@ -197,8 +197,7 @@ class Task(object):
             return
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
         if cancel_hook is None:
-            # TODO create custom exception for this
-            raise NotImplementedError('No cancel control hook provided for Task: %s' % self.id)
+            raise dispatch_exceptions.MissingCancelControlHook(str(self))
         cancel_hook(self.call_request, self.call_report)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
 

@@ -15,6 +15,15 @@ from pulp.server.exceptions import PulpRuntimeError, PulpValidationError
 
 # call exceptions --------------------------------------------------------------
 
+class CallRuntimeError(PulpRuntimeError):
+    pass
+
+class MissingControlHook(CallRuntimeError):
+    pass
+
+class MissingCancelControlHook(MissingControlHook):
+    pass
+
 class CallValidationError(PulpValidationError):
     pass
 
@@ -29,3 +38,4 @@ class MissingSuccessCallbackKeywordArgument(InvalidCallKeywordArgument):
 
 class MissingFailureCallbackKeywordArgument(InvalidCallKeywordArgument):
     pass
+
