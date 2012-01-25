@@ -25,6 +25,7 @@ from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import exceptions as dispatch_exceptions
 
 
 _LOG = logging.getLogger(__name__)
@@ -89,8 +90,7 @@ class Task(object):
         """
         spec = inspect.getargspec(self.call_request.call)
         if kwarg_name not in spec.args:
-            # TODO raise proper exception
-            raise Exception('')
+            raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(kwarg_name)
         self.call_request.kwargs[kwarg_name] = self._progress_pass_through
         self.progress_callback = callback
 
@@ -197,6 +197,7 @@ class Task(object):
             return
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
         if cancel_hook is None:
+            # TODO create custom exception for this
             raise NotImplementedError('No cancel control hook provided for Task: %s' % self.id)
         cancel_hook(self.call_request, self.call_report)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
@@ -213,30 +214,16 @@ class AsyncTask(Task):
     to complete.
     """
 
-    def __init__(self, call_request, call_report=None,
-                 success_callback_kwarg_name='succeeded',
-                 failure_callback_kwarg_name='failed'):
-        super(AsyncTask, self).__init__(call_request, call_report)
-        self._validate_async_call_request(call_request,
-                                          success_callback_kwarg_name,
-                                          failure_callback_kwarg_name)
-        self.callback_kwargs = {success_callback_kwarg_name: self._succeeded,
-                                failure_callback_kwarg_name: self._failed}
-
-    def _validate_async_call_request(self, call_request,
-                                     success_callback_kwarg_name,
-                                     failure_callback_kwarg_name):
-        call = call_request.call
-        spec = inspect.getargspec(call)
-        missing = []
+    def set_success_failure_callback_kwargs(self,
+                                            success_callback_kwarg_name,
+                                            failure_callback_kwarg_name):
+        spec = inspect.getargspec(self.call_request.call)
         if success_callback_kwarg_name not in spec.args:
-            missing.append(success_callback_kwarg_name)
+            raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(success_callback_kwarg_name)
         if failure_callback_kwarg_name not in spec.args:
-            missing.append(failure_callback_kwarg_name)
-        if not missing:
-            return
-        # TODO raise validation error
-        raise Exception('wtf async')
+            raise dispatch_exceptions.MissingFailureCallbackKeywordArgument(failure_callback_kwarg_name)
+        self.call_request.kwargs[success_callback_kwarg_name] = self._succeeded
+        self.call_request.kwargs[failure_callback_kwarg_name] = self._failed
 
     def run(self):
         """

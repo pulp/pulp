@@ -13,3 +13,19 @@
 
 from pulp.server.exceptions import PulpRuntimeError, PulpValidationError
 
+# call exceptions --------------------------------------------------------------
+
+class CallValidationError(PulpValidationError):
+    pass
+
+class InvalidCallKeywordArgument(CallValidationError):
+    pass
+
+class MissingProgressCallbackKeywordArgument(InvalidCallKeywordArgument):
+    pass
+
+class MissingSuccessCallbackKeywordArgument(InvalidCallKeywordArgument):
+    pass
+
+class MissingFailureCallbackKeywordArgument(InvalidCallKeywordArgument):
+    pass
