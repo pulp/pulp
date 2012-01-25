@@ -113,7 +113,8 @@ class OidValidator:
                 return False
 
             # Make sure the client cert is signed by the correct CA
-            is_valid = self.repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'], log_func=log_func)
+            is_valid = self.repo_cert_utils.validate_certificate_pem(cert_pem,
+                global_bundle['ca'], log_func=log_func)
             if not is_valid:
                 log_func('Client certificate did not match the global repo auth CA certificate')
                 return False
