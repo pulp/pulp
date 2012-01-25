@@ -222,6 +222,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        self.check_id(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -313,15 +314,8 @@ class RepoApi(BaseApi):
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
-
-        try:
-            if not os.path.exists(repo_path):
-                pulp.server.util.makedirs(repo_path)
-        except UnicodeEncodeError:
-            repo_path = repo_path.encode('utf-8')
-            if not os.path.exists(repo_path):
-                pulp.server.util.makedirs(repo_path)
-
+        if not os.path.exists(repo_path):
+            pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])

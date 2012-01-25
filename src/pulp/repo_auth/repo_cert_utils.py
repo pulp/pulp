@@ -552,26 +552,18 @@ class RepoCertUtils:
 
         try:
             # Create the cert directory if it doesn't exist
-            try:
-                if not os.path.exists(cert_dir):
-                    os.makedirs(cert_dir)
-            except UnicodeEncodeError:
-                cert_dir = cert_dir.encode('utf-8')
-                if not os.path.exists(cert_dir):
-                    os.makedirs(cert_dir)
+            if not os.path.exists(cert_dir):
+                os.makedirs(cert_dir)
 
             # For each item in the cert bundle, save it to disk using the given prefix
             # to identify the type of bundle it belongs to. If the value is None, the
             # item is being deleted.
             cert_files = {}
             for key, value in bundle.items():
-                try:
-                    filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
-                except UnicodeDecodeError:
-                    filename = os.path.join(cert_dir.decode('utf-8'), '%s.%s' % (file_prefix, key))
+                filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
 
                 try:
-                    filename = filename.encode('utf-8')
+
                     if value is None:
                         if os.path.exists(filename):
                             LOG.info('Removing repo cert file [%s]' % filename)

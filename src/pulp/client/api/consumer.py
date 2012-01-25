@@ -47,7 +47,7 @@ class ConsumerAPI(PulpAPI):
         return self.server.DELETE(path)[1]
 
     def consumer(self, id):
-        path = "/consumers/%s/" % id
+        path = "/consumers/%s/" % str(id)
         consumer = self.server.GET(path)[1]
         for field in consumer_deferred_fields:
             consumer[field] = self.server.GET('%s%s/' % (path, field))[1]
@@ -61,7 +61,7 @@ class ConsumerAPI(PulpAPI):
         path = "/consumers/"
         consumers = self.server.GET(path)[1]
         for c in consumers:
-            consumer_link = "/consumers/%s/" % c["id"]
+            consumer_link = "/consumers/%s/" % str(c["id"])
             c['repoids'] = self.server.GET('%s%s/' % (consumer_link, 'repoids'))[1]
         return consumers
 
@@ -92,7 +92,7 @@ class ConsumerAPI(PulpAPI):
         return self.server.POST(path, key_value_dict)[1]
 
     def get_keyvalues(self, id):
-        path = "/consumers/%s/keyvalues/" % id
+        path = "/consumers/%s/keyvalues/" % str(id)
         return self.server.GET(path)[1]
 
     def package_profile(self, id, profile):

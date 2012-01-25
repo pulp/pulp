@@ -240,10 +240,7 @@ def extend_uri_path(suffix):
     # all urls are paths, so need a trailing '/'
     # make sure the path is properly encoded
     prefix = uri_path()
-    try:
-        suffix = urllib.pathname2url(suffix)
-    except KeyError:
-        suffix = urllib.pathname2url(suffix.encode('utf-8'))
+    suffix = urllib.pathname2url(suffix)
     path = os.path.normpath(os.path.join(prefix, suffix))
     return ensure_ending_slash(path)
 

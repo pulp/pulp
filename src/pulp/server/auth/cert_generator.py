@@ -91,12 +91,8 @@ def make_cert(uid, expiration):
     @return: X509 PEM encoded certificate string
     @rtype:  string
     """
-    # Ensure we are dealing with a string. If not convert it to binary from unicode.
-    try:
-        uid = str(uid)
-    except UnicodeEncodeError:
-        uid = uid.encode('utf-8')
-
+    # Ensure we are dealing with a string and not unicode
+    uid = str(uid)
     log.debug("make_cert: [%s]" % uid)
     
     #Make a private key
