@@ -356,16 +356,8 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
     if progress_callback is not None:
         synchronizer.progress['step'] = "Importing data into pulp"
         progress_callback(synchronizer.progress)
-    if not synchronizer.is_clone:
-        # Process Packages
-        added_packages = synchronizer.add_packages_from_dir(repo_dir, repo_id, skip_dict)
-        # updating Metadata
-        synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
-    else:
-        added_packages = synchronizer.clone_packages_from_source(repo_id, skip_dict)
-        if synchronizer.do_update_metadata:
-            # updating Metadata
-            synchronizer.update_metadata(repo_dir, repo_id, progress_callback)
+    # Process Packages
+    added_packages = synchronizer.process_packages_from_source(repo_dir, repo_id, skip_dict, progress_callback)
     # Process Distribution
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
     # Process Files
