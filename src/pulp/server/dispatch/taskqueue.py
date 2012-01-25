@@ -102,7 +102,7 @@ class TaskQueue(object):
             self.__running_weight += task.call_request.weight
             task_thread = threading.Thread(target=task.run)
             task_thread.start()
-            task._call_execution_hooks(dispatch_constants.CALL_RUN_EXECUTION_HOOK)
+            task.call_execution_hooks(dispatch_constants.CALL_RUN_EXECUTION_HOOK)
         finally:
             self.__lock.release()
 

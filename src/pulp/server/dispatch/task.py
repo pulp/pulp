@@ -137,7 +137,7 @@ class Task(object):
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
-        self._call_execution_hooks(dispatch_constants.CALL_FINISH_EXECUTION_HOOK)
+        self.call_execution_hooks(dispatch_constants.CALL_FINISH_EXECUTION_HOOK)
         self._complete(dispatch_constants.CALL_FINISHED_STATE)
 
     def _failed(self, exception=None, traceback=None):
@@ -152,7 +152,7 @@ class Task(object):
         self.call_report.exception = exception
         self.call_report.traceback = traceback
         _LOG.info(_('%s FAILED') % str(self))
-        self._call_execution_hooks(dispatch_constants.CALL_ERROR_EXECUTION_HOOK)
+        self.call_execution_hooks(dispatch_constants.CALL_ERROR_EXECUTION_HOOK)
         self._complete(dispatch_constants.CALL_ERROR_STATE)
 
     def _complete(self, state=dispatch_constants.CALL_FINISHED_STATE):
@@ -161,7 +161,7 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        self._call_execution_hooks(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK)
+        self.call_execution_hooks(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK)
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
@@ -185,7 +185,7 @@ class Task(object):
 
     # hook execution -----------------------------------------------------------
 
-    def _call_execution_hooks(self, key):
+    def call_execution_hooks(self, key):
         """
         Execute all the execution hooks for the given key.
         Key must be a member of dispatch_constants.CALL_EXECUTION_HOOKS
