@@ -55,7 +55,7 @@ def to_plugin_unit(pulp_unit, type_def):
     for k in key_list:
         unit_key[k] = pulp_unit['metadata'].pop(k)
 
-    storage_path = pulp_unit.pop('_storage_path', None)
+    storage_path = pulp_unit['metadata'].pop('_storage_path', None)
     unit_id = pulp_unit.pop('unit_id', None)
     created = pulp_unit.pop('created', None)
     updated = pulp_unit.pop('updated', None)
