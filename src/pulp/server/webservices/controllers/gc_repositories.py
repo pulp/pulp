@@ -43,7 +43,16 @@ class RepoCollection(JSONController):
         repo_query_manager = manager_factory.repo_query_manager()
         all_repos = repo_query_manager.find_all()
 
-        # TODO: clean up serialized repos for return
+        # Load the importer/distributor information into each repository
+        importer_manager = manager_factory.repo_importer_manager()
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        for r in all_repos:
+            importers = importer_manager.get_importers(r['id'])
+            r['importers'] = importers
+
+            distributors = distributor_manager.get_distributors(r['id'])
+            r['distributors'] = distributors
 
         # Return the repos or an empty list; either way it's a 200
         return self.ok(all_repos)
@@ -64,7 +73,6 @@ class RepoCollection(JSONController):
 
         try:
             repo = repo_manager.create_repo(id, display_name, description, notes)
-            # TODO: explicitly serialize repo for return
             return self.created(None, repo)
         except errors.DuplicateRepoId:
             _LOG.exception('Duplicate repo ID [%s]' % id)
@@ -91,8 +99,18 @@ class RepoResource(JSONController):
         if repo is None:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        else:
-            return self.ok(repo)
+
+        # Load the importer/distributor information into the repository
+        importer_manager = manager_factory.repo_importer_manager()
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        importers = importer_manager.get_importers(id)
+        repo['importers'] = importers
+
+        distributors = distributor_manager.get_distributors(id)
+        repo['distributors'] = distributors
+
+        return self.ok(repo)
 
     @auth_required(DELETE)
     def DELETE(self, id):
