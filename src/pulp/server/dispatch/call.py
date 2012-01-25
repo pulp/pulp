@@ -87,7 +87,8 @@ class CallRequest(object):
     def __str__(self):
         args = ', '.join(self.callable_args_reprs())
         kwargs = ', '.join(['%s=%s' % (k, v) for k, v in self.callable_kwargs_reprs().items()])
-        return 'CallRequest: %s(%s, %s)' % (self.callable_name(), args, kwargs)
+        all_args = ', '.join((args, kwargs))
+        return 'CallRequest: %s(%s)' % (self.callable_name(), all_args)
 
     # hooks management ---------------------------------------------------------
 
