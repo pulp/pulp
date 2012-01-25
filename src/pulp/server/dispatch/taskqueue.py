@@ -17,7 +17,6 @@ import threading
 
 from pulp.server.db.model.dispatch import ArchivedCall, QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.util import Singleton
 
 
 _LOG = logging.getLogger(__name__)
@@ -33,8 +32,6 @@ class TaskQueue(object):
     @ivar dispatch_interval: time, in seconds, between checks for ready tasks
     @type dispatch_interval: float
     """
-
-    __metaclass__ = Singleton
 
     def __init__(self, concurrency_threshold, dispatch_interval=0.5):
 
