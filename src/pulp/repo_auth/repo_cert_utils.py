@@ -99,10 +99,15 @@ class RepoCertUtils:
         @type  repo_id: str
         '''
         repo_dir = self._repo_cert_directory(repo_id)
-
-        if os.path.exists(repo_dir):
-            LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
-            shutil.rmtree(repo_dir)
+        try:
+            if os.path.exists(repo_dir):
+                LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
+                shutil.rmtree(repo_dir)
+        except UnicodeEncodeError:
+            repo_dir = repo_dir.encode('utf-8')
+            if os.path.exists(repo_dir):
+                LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
+                shutil.rmtree(repo_dir)
 
     def delete_global_cert_bundle(self):
         '''

@@ -469,8 +469,8 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
     #shlex doesn't like unicode strings
     try:
         cmd = shlex.split(cmd.encode('ascii', 'ignore'))
-    except UnicodeDecodeError:
-        cmd = shlex.split(cmd.decode('utf-8'))
+    except:
+        cmd = shlex.split(cmd)
 
     log.info("started repo metadata update: %s" % (cmd))
     handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
