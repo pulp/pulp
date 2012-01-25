@@ -216,6 +216,10 @@ class AsyncTask(Task):
     def set_success_failure_callback_kwargs(self,
                                             success_callback_kwarg_name,
                                             failure_callback_kwarg_name):
+        """
+        Set the success and failure callback keyword arguments to the task's
+        _succeeded and _failed methods.
+        """
         spec = inspect.getargspec(self.call_request.call)
         if success_callback_kwarg_name not in spec.args:
             raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(success_callback_kwarg_name)
@@ -234,7 +238,7 @@ class AsyncTask(Task):
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
-        kwargs.update(self.callback_kwargs)
+        # TODO check to see that the _succeeded and _failed callbacks were set
         try:
             return call(*args, **kwargs)
         except:
