@@ -15,8 +15,10 @@ import copy
 import itertools
 import logging
 import pickle
+import traceback
 from types import NoneType, TracebackType
 
+from pulp.common import dateutils
 from pulp.server.dispatch import constants as dispatch_constants
 
 
@@ -223,3 +225,25 @@ class CallReport(object):
         self.start_time = None
         self.finish_time = None
 
+    def serialize(self):
+        data = {}
+        for field in ('response', 'reason', 'state', 'task_id', 'job_id',
+                      'progress', 'result',):
+            data[field] = getattr(self, field)
+        ex = getattr(self, 'exception')
+        if ex is not None:
+            data['exception'] = traceback.format_exception_only(type(ex), ex)
+        else:
+            data['exception'] = None
+        tb = getattr(self, 'traceback')
+        if tb is not None:
+            data['traceback'] = traceback.format_tb(tb)
+        else:
+            data['traceback'] = None
+        for field in ('start_time', 'finish_time'):
+            dt = getattr(self, field)
+            if dt is not None:
+                data[field] = dateutils.format_iso8601_datetime(dt)
+            else:
+                data[field] = None
+        return data

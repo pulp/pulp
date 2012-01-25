@@ -23,7 +23,9 @@ import mock
 import testutil
 
 from pulp.common import dateutils
+from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 
@@ -39,6 +41,21 @@ class Call(mock.Mock):
 
 def fail():
     raise RuntimeError('fail')
+
+def call_without_callbacks():
+    pass
+
+def call_with_progress_callback(progress_callback=None):
+    pass
+
+def call_with_success_callback(success_callback=None):
+    pass
+
+def call_with_failure_callback(failure_callback=None):
+    pass
+
+def call_with_success_and_failure_callbacks(success_callback=None, failure_callback=None):
+    pass
 
 # task instance testing --------------------------------------------------------
 
@@ -74,11 +91,13 @@ class TaskInstanceTests(testutil.PulpTest):
 class TaskTests(testutil.PulpTest):
 
     def setUp(self):
+        super(TaskTests, self).setUp()
         self.call_request = CallRequest(Call(), call_args, call_kwargs)
         self.call_report = CallReport()
         self.task = Task(self.call_request, self.call_report)
 
     def tearDown(self):
+        super(TaskTests, self).tearDown()
         self.call_request = None
         self.call_report = None
         self.task = None
@@ -104,19 +123,7 @@ class TaskTests(testutil.PulpTest):
         self.assertTrue(callback.call_count == 1)
         self.assertTrue(callback.call_args[0][0] is self.task)
 
-    def test_progress_control_callback(self):
-        def _call(progress_callback=None):
-            pass
-        self.call_request.call = _call
-        callback = mock.Mock()
-        task = Task(self.call_request, self.call_report)
-        task.set_progress_callback('progress_callback', callback)
-        self.assertTrue(task.progress_callback is callback)
-        self.assertTrue('progress_callback' in self.call_request.kwargs)
-        self.assertTrue(self.call_request.kwargs['progress_callback'] == task._progress_pass_through,
-                        str(self.call_request.kwargs['progress_callback']))
-
-    def test_cancel_control_callback(self):
+    def test_cancel_control_hook(self):
         callback = mock.Mock()
         self.call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, callback)
         try:
@@ -206,3 +213,61 @@ class AsyncTaskTests(testutil.PulpTest):
         self.task.run()
         self.task._failed()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_ERROR_STATE)
+
+# dynamic task callback testing ------------------------------------------------
+
+class TaskCallbackTests(testutil.PulpTest):
+
+    def test_progress_callback(self):
+        task = Task(CallRequest(call_with_progress_callback))
+        callback = mock.Mock()
+        try:
+            task.set_progress_callback('progress_callback', callback)
+        except:
+            self.fail(traceback.format_exc())
+        self.assertTrue('progress_callback' in task.call_request.kwargs)
+        self.assertTrue(task.progress_callback is callback)
+        self.assertTrue(task.call_request.kwargs['progress_callback'] == task._progress_pass_through)
+
+    def test_progress_callback_failure(self):
+        task = Task(CallRequest(call_without_callbacks))
+        self.assertRaises(dispatch_exceptions.MissingProgressCallbackKeywordArgument,
+                          task.set_progress_callback, 'progress_callback', mock.Mock())
+
+    def test_success_callback_failure(self):
+        task = AsyncTask(CallRequest(call_with_success_callback))
+        self.assertRaises(dispatch_exceptions.MissingFailureCallbackKeywordArgument,
+                          task.set_success_failure_callback_kwargs,
+                          'success_callback', 'failure_callback')
+
+    def test_failure_callback_failure(self):
+        task = AsyncTask(CallRequest(call_with_failure_callback))
+        self.assertRaises(dispatch_exceptions.MissingSuccessCallbackKeywordArgument,
+                          task.set_success_failure_callback_kwargs,
+                          'success_callback', 'failure_callback')
+
+    def test_success_failure_callbacks(self):
+        task = AsyncTask(CallRequest(call_with_success_and_failure_callbacks))
+        try:
+            task.set_success_failure_callback_kwargs('success_callback', 'failure_callback')
+        except:
+            self.fail(traceback.format_exc())
+        self.assertTrue('success_callback' in task.call_request.kwargs)
+        self.assertTrue(task.call_request.kwargs['success_callback'] == task._succeeded)
+        self.assertTrue('failure_callback' in task.call_request.kwargs)
+        self.assertTrue(task.call_request.kwargs['failure_callback'] == task._failed)
+
+# task archival tests ----------------------------------------------------------
+
+class TaskArchivalTests(testutil.PulpTest):
+
+    def test_task_archival(self):
+        task = Task(CallRequest(call_without_callbacks), archive=True)
+        try:
+            task.run()
+        except:
+            self.fail(traceback.format_exc())
+        collection = ArchivedCall.get_collection()
+        archived_call = collection.find_one({'serialized_call_report.task_id': task.id})
+        self.assertFalse(archived_call is None)
+
