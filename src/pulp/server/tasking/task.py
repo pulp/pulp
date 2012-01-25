@@ -189,10 +189,7 @@ class Task(object):
             return '.'.join((self.class_name, self.method_name))
         # task arguments
         def _args():
-            try:
-                return ', '.join([str(a) for a in self.args])
-            except UnicodeEncodeError:
-                return ', '.join([a.encode('utf-8') for a in self.args])
+            return ', '.join([str(a) for a in self.args])
         # task keyword arguments
         def _kwargs():
             return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])

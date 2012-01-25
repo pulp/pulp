@@ -384,15 +384,9 @@ class RepoApi(BaseApi):
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
             link_path = os.path.join(self.published_path, repo["relative_path"])
-            try:
-                if os.path.lexists(link_path):
-                    # need to use lexists so we will return True even for broken links
-                    os.unlink(link_path)
-            except UnicodeEncodeError:
-                link_path = link_path.encode('utf-8')
-                if os.path.lexists(link_path):
-                    # need to use lexists so we will return True even for broken links
-                    os.unlink(link_path)
+            if os.path.lexists(link_path):
+                # need to use lexists so we will return True even for broken links
+                os.unlink(link_path)
 
 
 
@@ -574,10 +568,7 @@ class RepoApi(BaseApi):
 
         # delete gpg key links
         path = repo['relative_path']
-        try:
-            ks = KeyStore(path)
-        except UnicodeEncodeError:
-            ks = KeyStore(path.encode('utf-8'))
+        ks = KeyStore(path)
         ks.clean(True)
 
         #remove packages
@@ -644,7 +635,6 @@ class RepoApi(BaseApi):
                 fpath = os.path.join(repo_location, repo[field])
             else:
                 fpath = repo[field]
-            fpath = fpath.encode('utf-8')
             if fpath and os.path.exists(fpath):
                 try:
                     if os.path.isfile(fpath):
