@@ -261,6 +261,10 @@ class TaskCallbackTests(testutil.PulpTest):
 
 class TaskArchivalTests(testutil.PulpTest):
 
+    def tearDown(self):
+        super(TaskArchivalTests, self).tearDown()
+        ArchivedCall.get_collection().drop()
+
     def test_task_archival(self):
         task = Task(CallRequest(call_without_callbacks), archive=True)
         try:
