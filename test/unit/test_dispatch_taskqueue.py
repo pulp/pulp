@@ -24,7 +24,7 @@ import testutil
 
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport, CallRequest
+from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
@@ -92,6 +92,7 @@ class TaskQueueTests(testutil.PulpTest):
 
     def tearDown(self):
         super(TaskQueueTests, self).tearDown()
+        QueuedCall.get_collection().drop()
         self.queue = None
 
     def gen_task(self, call=call):
