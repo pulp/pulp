@@ -37,6 +37,7 @@ def _run_via_task_queue(call_request):
     task = Task(call_request)
     task_queue.enqueue(task)
 
+
 def _run_via_coordinator(call_request):
     """
     Run the call request through the coordinator
