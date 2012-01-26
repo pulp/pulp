@@ -532,6 +532,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertTrue(expected_sub_ca_cert.get_issuer().as_hash(), certs[1].get_issuer().as_hash())
 
     def test_validate_certificate_pem_with_ca_chain(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
         test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
 
@@ -541,6 +543,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertTrue(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
 
     def test_validate_certificate_pem_with_incomplete_ca_chain(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
         test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
 
@@ -553,6 +557,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
 
     def test_validate_certificate_pem_with_ca_chain_and_crl_and_valid_cert(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
         test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
         root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
@@ -565,6 +571,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertTrue(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems, [root_ca_crl_pem, sub_ca_crl_pem]))
 
     def test_validate_certificate_pem_with_ca_chain_and_crl_and_revoked_cert(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
         revoked_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/revoked_cert.pem")
         root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
@@ -581,6 +589,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         """
         Test that when a CA itself is revoked, a certificate it issued is failed for verification
         """
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
         revoked_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/from_revoked_ca_cert.pem")
         root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")

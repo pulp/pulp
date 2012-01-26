@@ -50,7 +50,7 @@ class RepoImporterManager:
 
         @return: list of key-value pairs describing the importers in use; empty
                  list if the repo has no importers
-        @rtype:  list of dict or None
+        @rtype:  list of dict
 
         @raises MissingRepo: if the given repo doesn't exist
         """

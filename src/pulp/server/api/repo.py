@@ -2514,6 +2514,17 @@ class RepoApi(BaseApi):
             key_value_pairs[key] = value
         repo['notes'] = key_value_pairs
         self.collection.save(repo, safe=True)
+
+    def has_parent(self, id):
+        """
+        Check if a repo has a parent
+        @param id: repository Id
+        @return: True if success; else False
+        """
+        parent_repos = self.repositories({'clone_ids' : id})
+        if len(parent_repos):
+            return True
+        return False
  
 def validate_relative_path(new_path, existing_path):
     """

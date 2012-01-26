@@ -41,7 +41,7 @@ def enable_repo_auth(repo_auth_config="/etc/pulp/repo_auth.conf"):
     return run_command(cmd)
 
 if __name__ == "__main__":
-    default_install_dir = "/etc/pki/content"
+    default_install_dir = "/etc/pki/pulp/content"
     parser = get_parser(limit_options=["server_key", "server_cert", "ca_cert"])
     parser.add_option("--install_dir", action="store", 
             help="Install directory for server SSL cert/key.  Default is %s" % (default_install_dir), 

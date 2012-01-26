@@ -202,6 +202,24 @@ class BaseSynchronizer(object):
         """
         raise NotImplementedError('base synchronizer class method called')
 
+    def process_packages_from_source(self, dir, repo_id, skip_dict=None, progress_callback=None):
+        if self.is_clone:
+            # clone or re-clone operation
+            added_packages = self.clone_packages_from_source(repo_id, skip_dict)
+            if self.do_update_metadata:
+                # updating Metadata since the repo state has been changed by filters
+                self.update_metadata(dir, repo_id, progress_callback)
+        else:
+            # Usual sync, Process Packages
+            added_packages = self.add_packages_from_dir(dir, repo_id, skip_dict)
+            # check if the repo has a parent
+            if not self.repo_api.has_parent(repo_id):
+                # updating Metadata
+                self.update_metadata(dir, repo_id, progress_callback)
+            else:
+                log.info("The repo [%s] has a parent; skipping metadata update to reuse the source metadata" % repo_id)
+        return added_packages
+
     # Point of this method is to return what packages exist in the repo after being syncd
     def add_packages_from_dir(self, dir, repo_id, skip=None):
         repo = self.repo_api._get_existing_repo(repo_id)
@@ -669,7 +687,6 @@ class BaseSynchronizer(object):
                 pulp.server.util.create_rel_symlink(real_src_file_path, repo_file_path)
             self.progress['num_download'] += 1
 
-
 class YumSynchronizer(BaseSynchronizer):
     """
      Yum synchronizer class to sync rpm, drpms, errata, distributions from remote or local yum feeds
@@ -847,7 +864,7 @@ class YumSynchronizer(BaseSynchronizer):
             if not os.path.exists(pkg_dirname):
                 os.makedirs(pkg_dirname)
             src_pkg_path = "%s/%s" % (src_repo_dir, pkg.relativepath)
-            log.error(" source path %s ; dst path %s" % (src_pkg_path, dst_pkg_path))
+            log.debug(" source path %s ; dst path %s" % (src_pkg_path, dst_pkg_path))
             shutil.copy(src_pkg_path, dst_pkg_path)
 
             self.progress['num_download'] += 1
