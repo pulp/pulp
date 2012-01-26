@@ -1034,10 +1034,10 @@ class RepoApi(BaseApi):
                     pulp.server.util.create_rel_symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
-            if repo['id'] not in p['repoids']:
+            if repo['id'] not in pkg['repoids']:
                 # Add the repoid to the list on the package
-                p['repoids'].append(repo['id'])
-                pkg_collection.save(p, safe=True)
+                pkg['repoids'].append(repo['id'])
+                pkg_collection.save(pkg, safe=True)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
         log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
