@@ -236,6 +236,7 @@ class Scheduler(object):
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             return None
+        scheduled_call['next_run'] = next_run
         self.scheduled_call_collection.insert(scheduled_call, safe=True)
         return scheduled_call['_id']
 
