@@ -291,7 +291,18 @@ class TaskQueueQueryTests(TaskQueueTests):
         task_list = self.queue.find(*tags[1:3]) # only passes in 'FIE', 'FOE'
         self.assertTrue(task in task_list)
 
-
-
-
+    def test_find_multi_tasks(self):
+        tags = ['one', 'two', 'three', 'four']
+        task_1 = self.gen_task()
+        task_1.call_request.tags.extend(tags[:2])
+        task_2 = self.gen_task()
+        task_2.call_request.tags.extend(tags[1:3])
+        task_3 = self.gen_task()
+        task_3.call_request.tags.extend(tags[2:])
+        for t in (task_1, task_2, task_3):
+            self.queue.enqueue(t)
+        task_list = self.queue.find('two')
+        self.assertTrue(task_1 in task_list)
+        self.assertTrue(task_2 in task_list, str(task_2.call_request.tags))
+        self.assertFalse(task_3 in task_list)
 
