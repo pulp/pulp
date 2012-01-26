@@ -23,6 +23,26 @@ from pulp.server.dispatch import constants as dispatch_constants
 
 _LOG = logging.getLogger(__name__)
 
+# call request run functions ---------------------------------------------------
+
+def _run_via_task_queue(call_request):
+    """
+    Run the call request directly in the task queue
+    """
+    from pulp.server import config
+    from pulp.server.dispatch.task import Task
+    from pulp.server.dispatch.taskqueue import TaskQueue
+    concurrency_threshold = config.config.getint('tasking', 'concurrency_threshold')
+    task_queue = TaskQueue(concurrency_threshold)
+    task = Task(call_request)
+    task_queue.enqueue(task)
+
+def _run_via_coordinator(call_request):
+    """
+    Run the call request through the coordinator
+    """
+    raise NotImplementedError()
+
 # tags -------------------------------------------------------------------------
 
 SCHEDULED_TAG = 'scheduled'
@@ -39,10 +59,12 @@ class Scheduler(object):
     @type scheduled_call_collection: pymongo.collection.Collection
     """
 
-    def __init__(self, dispatch_interval=30):
+    def __init__(self, dispatch_interval=30, run_method=_run_via_task_queue):
 
         self.dispatch_interval = dispatch_interval
         self.scheduled_call_collection = ScheduledCall.get_collection()
+
+        self._run_method = run_method
 
         self.__exit = False
         self.__lock = threading.RLock()
@@ -76,30 +98,12 @@ class Scheduler(object):
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
             if not scheduled_call['enabled']:
-            # update the next run information for disabled calls
+                # update the next run information for disabled calls
                 self.update_next_run(scheduled_call)
                 continue
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            self._run_via_task_queue(call_request)
-
-    def _run_via_task_queue(self, call_request):
-        """
-        Run the call request directly in the task queue
-        """
-        from pulp.server import config
-        from pulp.server.dispatch.task import Task
-        from pulp.server.dispatch.taskqueue import TaskQueue
-        concurrency_threshold = config.config.getint('tasking', 'concurrency_threshold')
-        task_queue = TaskQueue(concurrency_threshold)
-        task = Task(call_request)
-        task_queue.enqueue(task)
-
-    def _run_via_coordinator(self, call_request):
-        """
-        Run the call request through the coordinator
-        """
-        raise NotImplementedError()
+            self._run_method(call_request)
 
     def start(self):
         """
