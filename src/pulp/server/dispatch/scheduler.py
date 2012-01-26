@@ -19,7 +19,6 @@ from gettext import gettext as _
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.util import Singleton
 
 
 _LOG = logging.getLogger(__name__)
@@ -39,8 +38,6 @@ class Scheduler(object):
     @ivar scheduled_call_collection: db collection of scheduled call requests
     @type scheduled_call_collection: pymongo.collection.Collection
     """
-
-    __metaclass__ = Singleton
 
     def __init__(self, dispatch_interval=30):
 
