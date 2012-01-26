@@ -48,16 +48,15 @@ class ScheduledCall(Model):
         self.schedule = schedule
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
-        self.last_run = dateutils.to_naive_utc_datetime(last_run)
+        self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
         self.enabled = enabled
 
         interval, start_date, runs = dateutils.parse_iso8601_interval(schedule)
-        if start_date is None:
-            start_date = datetime.utcnow()
+        start_date = start_date or datetime.now()
 
-        self.interval = interval
+        self.interval_in_seconds = interval.total_seconds()
         self.start_date = dateutils.to_naive_utc_datetime(start_date)
-        self.runs = runs
+        self.remaining_runs = runs
 
         self.next_run = None # will calculated and set by the scheduler
 
