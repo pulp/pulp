@@ -239,7 +239,6 @@ def update_repomd_xml_file(repomd_path, comps_path):
         "%s-%s" % (compsxml_checksum, os.path.split(comps_orig)[1]))
     shutil.copyfile(comps_orig, comps_path)
     compsxml_timestamp = pulp.server.util.get_file_timestamp(comps_path)
-
     # Create gzipped version of comps.xml
     comps_gz_path_orig = "%s.gz" % (comps_orig)
     f_in = open(comps_path, 'rb')
@@ -255,7 +254,6 @@ def update_repomd_xml_file(repomd_path, comps_path):
         "%s-%s.gz" % (compsxml_gz_checksum, os.path.split(comps_orig)[1]))
     shutil.move(comps_gz_path_orig, comps_gz_path)
     compsxml_gz_timestamp = pulp.server.util.get_file_timestamp(comps_gz_path)
-
     # Save current group and group_gz file paths so we may cleanup after the update
     old_mddata = pulp.server.util.get_repomd_filetype_dump(repomd_path)
 
@@ -280,21 +278,25 @@ def update_repomd_xml_file(repomd_path, comps_path):
         log.error(e)
         log.error("Unable to update group info for %s" % (repomd_path))
         return False
-
+    current_mddata = pulp.server.util.get_repomd_filetype_dump(repomd_path)
     # Remove old groups and groups_gz
     if old_mddata.has_key("group") and old_mddata["group"].has_key("location"):
         group_path = os.path.join(os.path.dirname(repomd_path), "../", old_mddata["group"]["location"])
-        try:
-            if os.path.basename(group_path) != "comps.xml":
-                log.info("Removing old group metadata: %s" % (group_path))
-                os.unlink(group_path)
-        except:
-            log.exception("Unable to delete old group metadata: %s" % (group_path))
+        if old_mddata["group"]["location"] != current_mddata["group"]["location"]:
+            # For the case when no change occured to metadata, don't delete the 'old', since 'old' == current
+            try:
+                if os.path.basename(group_path) != "comps.xml":
+                    log.info("Removing old group metadata: %s" % (group_path))
+                    os.unlink(group_path)
+            except:
+                log.exception("Unable to delete old group metadata: %s" % (group_path))
     if old_mddata.has_key("group_gz") and old_mddata["group_gz"].has_key("location"):
         group_gz_path = os.path.join(os.path.dirname(repomd_path), "../", old_mddata["group_gz"]["location"])
-        try:
-            log.info("Removing old group_gz metadata: %s" % (group_gz_path))
-            os.unlink(group_gz_path)
-        except:
-            log.exception("Unable to delete old group_gz metadata: %s" % (group_gz_path))
+        if old_mddata["group_gz"]["location"] != current_mddata["group_gz"]["location"]:
+            # For the case when no change occured to metadata, don't delete the 'old', since 'old' == current
+            try:
+                log.info("Removing old group_gz metadata: %s" % (group_gz_path))
+                os.unlink(group_gz_path)
+            except:
+                log.exception("Unable to delete old group_gz metadata: %s" % (group_gz_path))
     return True

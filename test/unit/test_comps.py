@@ -22,6 +22,7 @@ import xml.dom.minidom
 import time
 import random
 from tempfile import gettempdir
+from pulp.server import comps_util
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
@@ -593,3 +594,17 @@ class TestComps(testutil.PulpAsyncTest):
         comps.add(group_path)
         yum_group_ids = [x.groupid for x in comps.groups]
         self.assertEqual(len(yum_group_ids), group_count) 
+
+    def test_update_repomd_xml_file_called_with_no_change_to_comps_data(self):
+        repo = self.repo_api.create("test_update_repomd_xml_file", "test_name", "i386")
+        pkggrp1 = self.repo_api.create_packagegroup(repo["id"], "groupid_1", "group_name_1", "description_1")
+        mddata_A = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        repo = self.repo_api.repository(repo["id"])
+        comps_util.update_repomd_xml_file(repo["repomd_xml_path"], repo["group_xml_path"])
+        mddata_B = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        self.assertEquals(mddata_A["group"]["location"], mddata_B["group"]["location"])
+        self.assertEquals(mddata_A["group_gz"]["location"], mddata_B["group_gz"]["location"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), repo["id"], mddata_B["group"]["location"])
+        group_gz_path = os.path.join(pulp.server.util.top_repos_location(), repo["id"], mddata_B["group_gz"]["location"])
+        self.assertTrue(os.path.isfile(group_path))
+        self.assertTrue(os.path.isfile(group_gz_path))
