@@ -158,9 +158,9 @@ class Scheduler(object):
             delta = update.setdefault('$set', {})
             delta['consecutive_failures'] = 0
         # decrement the remaining runs, if we're tracking that
-        if scheduled_call['runs'] is not None:
+        if scheduled_call['remaining_runs'] is not None:
             inc = update.setdefault('$inc', {})
-            inc['runs'] = -1
+            inc['remaining_runs'] = -1
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def update_next_run(self, scheduled_call):
@@ -186,7 +186,7 @@ class Scheduler(object):
         @return: datetime of scheduled call's next run or None if there is no next run
         @rtype:  datetime.datetime or None
         """
-        if scheduled_call['runs'] == 0:
+        if scheduled_call['remaining_runs'] == 0:
             return None
 
         now = datetime.datetime.utcnow()
@@ -195,7 +195,7 @@ class Scheduler(object):
             return scheduled_call['start_date']
 
         next_run = last_run
-        interval = scheduled_call['interval']
+        interval = datetime.timedelta(seconds=scheduled_call['interval_in_seconds'])
         while next_run < now:
             next_run += interval
         return next_run
