@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.261
+Version:        0.0.262
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,28 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jan 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.262-1
+- dep solver on el5 picks up some false positives as search provides in yum
+  only uses name. Adding a CheckProc to verify if the po is indeed providing
+  the dep (pkilambi@redhat.com)
+- Fix to skip metadata update on re-promotions if the repo has a parent
+  associated (pkilambi@redhat.com)
+- Add importer/distributor information to retrieve repo calls
+  (jason.dobies@redhat.com)
+- 782128 - Add support to repo auth code to verify requests against a CA chain
+  file (jmatthews@redhat.com)
+- 783251 - added support to be able to create pulp entities(except consumers)
+  with i18n id (skarmark@redhat.com)
+- 783251 - added support to be able to create pulp entities(except consumers)
+  with i18n id (skarmark@redhat.com)
+- Added ability to update notes in repo update (jason.dobies@redhat.com)
+- added docstring (jconnor@redhat.com)
+- fixed bug in bug fix that would erroniously compare None and datetime
+  instances (jconnor@redhat.com)
+- changing reliance on ordering of sync tasks from server to actually find the
+  latest task (jconnor@redhat.com)
+- 782128 - Add support to repo auth code to verify requests against a CA chain
+  file (jmatthews@redhat.com)
 * Mon Jan 23 2012 Jeff Ortel <jortel@redhat.com> 0.0.261-1
 - 784098 - make 'capabilities' optional in consumer registration as intended.
   (jortel@redhat.com)
