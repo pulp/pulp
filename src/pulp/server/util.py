@@ -615,6 +615,7 @@ def modify_repo(repodata_dir, new_file, remove=False):
         cmd = "modifyrepo --remove %s %s" % (new_file, repodata_dir)
     else:
         cmd = "modifyrepo %s %s" % (new_file, repodata_dir)
+    cmd = encode_unicode(cmd)
     status, out = commands.getstatusoutput(cmd)
     if status != 0:
         log.error("modifyrepo on %s failed" % repodata_dir)

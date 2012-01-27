@@ -35,7 +35,7 @@ import pymongo.json_util
 
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
-from pulp.server.api import repo, repo_sync
+from pulp.server.api import repo, repo_sync, consumer
 from pulp.server.api.package import PackageHasReferences
 from pulp.server.api.keystore import KeyStore
 from pulp.server.db.model import Delta
@@ -139,6 +139,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
 
     def deleteRepos(self):
         repo.RepoApi().clean()
+        consumer.ConsumerApi().clean()
 
     def test_repo_create(self, repo_id = 'some-repo-id'):
         repo = self.repo_api.create(repo_id, 'some name',
