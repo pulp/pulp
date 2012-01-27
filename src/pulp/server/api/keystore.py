@@ -16,7 +16,7 @@ import os
 
 from pulp.server.util import top_gpg_location as lnkdir
 from pulp.server.util import top_repos_location as keydir
-
+from pulp.server.util import encode_unicode
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ class KeyStore:
         """
         while path.startswith('/'):
             path = path[1:]
+        path = encode_unicode(path)
         self.path = path
         self.mkdir()
 

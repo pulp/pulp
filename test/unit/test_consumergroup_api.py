@@ -28,162 +28,167 @@ from pulp.server.agent import Agent
 
 class TestConsumerApi(testutil.PulpAsyncTest):
 
-    def test_create_consumergroup(self):
-        cg = self.consumer_group_api.create('some-id', 'some description')
-        found = self.consumer_group_api.consumergroup('some-id')
+    def clean(self):
+        self.consumer_group_api.clean()
+        self.consumer_api.clean()
+        self.repo_api.clean()
+
+    def test_create_consumergroup(self, id = 'some-id'):
+        cg = self.consumer_group_api.create(id, 'some description')
+        found = self.consumer_group_api.consumergroup(id)
         assert(found is not None)
         assert(found['description'] == 'some description')
-        assert(found['id'] == 'some-id')
+        assert(found['id'] == id)
 
         found = self.consumer_group_api.consumergroup('some-id-that-doesnt-exist')
         assert(found is None)
         
         # try creating another consumer group with same id
         try:
-            cg = self.consumer_group_api.create('some-id', 'some description')
+            cg = self.consumer_group_api.create(id, 'some description')
             assert(False)
         except PulpException:
             pass
         
-    def test_create_consumergroup_with_consumerids(self):
+    def test_create_consumergroup_with_consumerids(self, id = 'some-id'):
         try:
-            cg = self.consumer_group_api.create('some-id', 'some description', consumerids=['con-test1','con-test2'])
+            cg = self.consumer_group_api.create(id, 'some description', consumerids=['con-test1','con-test2'])
             assert(False)
         except PulpException:
             pass    
         
         self.consumer_api.create('con-test1', 'con-test1')
         self.consumer_api.create('con-test2', 'con-test2')
-        cg = self.consumer_group_api.create('some-id', 'some description', consumerids=['con-test1','con-test2'])
+        cg = self.consumer_group_api.create(id, 'some description', consumerids=['con-test1','con-test2'])
         assert('con-test1' in cg['consumerids'])
         assert('con-test2' in cg['consumerids'])
         
-    def test_consumergroup_update(self):
+    def test_consumergroup_update(self, id = 'some-id'):
         cgs = self.consumer_group_api.consumergroups()
         assert(len(cgs) == 0)
         
         try:
-            self.consumer_group_api.update('some-id', {'description':'some other description'})
+            self.consumer_group_api.update(id, {'description':'some other description'})
             assert(False)
         except:
             pass
         
-        self.consumer_group_api.create('some-id', 'some description')
-        self.consumer_group_api.update('some-id', {'description':'some other description'})
+        self.consumer_group_api.create(id, 'some description')
+        self.consumer_group_api.update(id, {'description':'some other description'})
         cgs = self.consumer_group_api.consumergroups()
         assert(len(cgs) == 1)
         
         try:
-            self.consumer_group_api.update('some-id', {'foo':'bar'})
+            self.consumer_group_api.update(id, {'foo':'bar'})
             assert(False)
         except:
             pass
         
     
-    def test_add_consumer(self):
+    def test_add_consumer(self, id = 'groupid'):
         try:
-            self.consumer_group_api.add_consumer('groupid', 'consumerid')
+            self.consumer_group_api.add_consumer(id, 'consumerid')
             assert(False)
         except:
             pass
         
-        self.consumer_group_api.create('groupid', 'some description')
+        self.consumer_group_api.create(id, 'some description')
         try:
-            self.consumer_group_api.add_consumer('groupid', 'consumerid')
+            self.consumer_group_api.add_consumer(id, 'consumerid')
             assert(False)
         except:
             pass
         self.consumer_api.create('consumerid', 'consumerid')
-        self.consumer_group_api.add_consumer('groupid', 'consumerid')
+        self.consumer_group_api.add_consumer(id, 'consumerid')
         # try adding it again 
-        self.consumer_group_api.add_consumer('groupid', 'consumerid')
+        self.consumer_group_api.add_consumer(id, 'consumerid')
         
-        assert('consumerid' in self.consumer_group_api.consumers('groupid'))
+        assert('consumerid' in self.consumer_group_api.consumers(id))
         
         
-    def test_delete_consumer(self):
+    def test_delete_consumer(self, id = 'groupid'):
         try:
-            self.consumer_group_api.delete_consumer('groupid', 'consumerid')
+            self.consumer_group_api.delete_consumer(id, 'consumerid')
             assert(False)
         except:
             pass
         
         self.consumer_api.create('consumerid', 'consumerid')
-        self.consumer_group_api.create('groupid', 'some description', ['consumerid'])
-        self.consumer_group_api.delete_consumer('groupid', 'consumerid')
+        self.consumer_group_api.create(id, 'some description', ['consumerid'])
+        self.consumer_group_api.delete_consumer(id, 'consumerid')
         # deleting again should not result in error
-        self.consumer_group_api.delete_consumer('groupid', 'consumerid')
-        assert('consumerid' not in self.consumer_group_api.consumers('groupid'))
+        self.consumer_group_api.delete_consumer(id, 'consumerid')
+        assert('consumerid' not in self.consumer_group_api.consumers(id))
         
-    def test_bind_repo(self):
+    def test_bind_repo(self, id = 'groupid'):
         try:
-            self.consumer_group_api.bind('groupid', 'test-repo')
+            self.consumer_group_api.bind(id, 'test-repo')
             assert(False)
         except:
             pass
         
         self.consumer_api.create('consumerid1', 'consumerid1')
         self.consumer_api.create('consumerid2', 'consumerid2')
-        self.consumer_group_api.create('groupid', 'some description', ['consumerid1', 'consumerid2'])
+        self.consumer_group_api.create(id, 'some description', ['consumerid1', 'consumerid2'])
         
         try:
-            self.consumer_group_api.bind('groupid', 'test-repo')
+            self.consumer_group_api.bind(id, 'test-repo')
             assert(False)
         except:
             pass
         
         self.repo_api.create(id='test-repo', name='test-repo', arch='i386')
         
-        self.consumer_group_api.bind('groupid', 'test-repo')
+        self.consumer_group_api.bind(id, 'test-repo')
         c1 = self.consumer_api.consumer('consumerid1')
         c2 = self.consumer_api.consumer('consumerid2')
         assert('test-repo' in c1['repoids'])
         assert('test-repo' in c2['repoids'])
         
-    def test_unbind_repo(self):
+    def test_unbind_repo(self, id = 'groupid'):
         try:
-            self.consumer_group_api.unbind('groupid', 'test-repo')
+            self.consumer_group_api.unbind(id, 'test-repo')
             assert(False)
         except:
             pass
         
         self.consumer_api.create('consumerid1', 'consumerid1')
         self.consumer_api.create('consumerid2', 'consumerid2')
-        self.consumer_group_api.create('groupid', 'some description', ['consumerid1', 'consumerid2'])
+        self.consumer_group_api.create(id, 'some description', ['consumerid1', 'consumerid2'])
         
         try:
-            self.consumer_group_api.unbind('groupid', 'test-repo')
+            self.consumer_group_api.unbind(id, 'test-repo')
             assert(False)
         except:
             pass
         
         self.repo_api.create(id='test-repo', name='test-repo', arch='i386')
         
-        self.consumer_group_api.bind('groupid', 'test-repo')
-        self.consumer_group_api.unbind('groupid', 'test-repo')
+        self.consumer_group_api.bind(id, 'test-repo')
+        self.consumer_group_api.unbind(id, 'test-repo')
         c1 = self.consumer_api.consumer('consumerid1')
         c2 = self.consumer_api.consumer('consumerid2')
         assert('test-repo' not in c1['repoids'])
         assert('test-repo' not in c2['repoids'])
         
-    def test_add_consumer_with_conflicting_key_value(self):
+    def test_add_consumer_with_conflicting_key_value(self, id = 'groupid'):
         self.consumer_api.create('consumerid', 'consumerid')
         self.consumer_api.add_key_value_pair('consumerid', 'key1', 'value1')
         
-        self.consumer_group_api.create('groupid', 'some description')
-        self.consumer_group_api.add_key_value_pair('groupid', 'key1', 'value2')
+        self.consumer_group_api.create(id, 'some description')
+        self.consumer_group_api.add_key_value_pair(id, 'key1', 'value2')
         
         try:
-            self.consumer_group_api.add_consumer('groupid', 'consumerid')
+            self.consumer_group_api.add_consumer(id, 'consumerid')
             assert(False)
         except:
             pass
 
         self.consumer_api.delete_key_value_pair('consumerid', 'key1')
-        self.consumer_group_api.add_consumer('groupid', 'consumerid')
+        self.consumer_group_api.add_consumer(id, 'consumerid')
 
 
-    def test_package_install(self):
+    def test_package_install(self, cgid = 'A'):
         '''
         Test package install
         '''
@@ -192,12 +197,12 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         packages = ['zsh',]
         self.consumer_api.create(id[0], None)
         self.consumer_api.create(id[1], None)
-        self.consumer_group_api.create(id[0], '')
-        self.consumer_group_api.add_consumer(id[0], id[0])
-        self.consumer_group_api.add_consumer(id[0], id[1])
+        self.consumer_group_api.create(cgid, '')
+        self.consumer_group_api.add_consumer(cgid, id[0])
+        self.consumer_group_api.add_consumer(cgid, id[1])
         
         # Test
-        job = self.consumer_group_api.installpackages(id[0], packages)
+        job = self.consumer_group_api.installpackages(cgid, packages)
         self.assertTrue(job is not None)
         self.assertEqual(len(job.tasks), len(id))
         for task in job.tasks:
@@ -211,7 +216,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             last = calls[-1]
             self.assertEqual(last.args[0], packages)
 
-    def test_package_uninstall(self):
+    def test_package_uninstall(self, cgid = 'A'):
         '''
         Test package uninstall
         '''
@@ -220,12 +225,12 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         packages = ['zsh',]
         self.consumer_api.create(id[0], None)
         self.consumer_api.create(id[1], None)
-        self.consumer_group_api.create(id[0], '')
-        self.consumer_group_api.add_consumer(id[0], id[0])
-        self.consumer_group_api.add_consumer(id[0], id[1])
+        self.consumer_group_api.create(cgid, '')
+        self.consumer_group_api.add_consumer(cgid, id[0])
+        self.consumer_group_api.add_consumer(cgid, id[1])
 
         # Test
-        job = self.consumer_group_api.uninstallpackages(id[0], packages)
+        job = self.consumer_group_api.uninstallpackages(cgid, packages)
         self.assertTrue(job is not None)
         self.assertEqual(len(job.tasks), len(id))
         for task in job.tasks:
@@ -239,7 +244,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             last = calls[-1]
             self.assertEqual(last.args[0], packages)
 
-    def test_packagegrp_install(self):
+    def test_packagegrp_install(self, cgid = 'A'):
         '''
         Test package install
         '''
@@ -248,14 +253,14 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         packages = ['zsh',]
         self.consumer_api.create(id[0], None)
         self.consumer_api.create(id[1], None)
-        self.consumer_group_api.create(id[0], '')
-        self.consumer_group_api.add_consumer(id[0], id[0])
-        self.consumer_group_api.add_consumer(id[0], id[1])
+        self.consumer_group_api.create(cgid, '')
+        self.consumer_group_api.add_consumer(cgid, id[0])
+        self.consumer_group_api.add_consumer(cgid, id[1])
 
         grpid = 'test-group'
 
         # Test
-        job = self.consumer_group_api.installpackagegroups(id[0], [grpid,])
+        job = self.consumer_group_api.installpackagegroups(cgid, [grpid,])
         self.assertTrue(job is not None)
         self.assertEqual(len(job.tasks), len(id))
         for task in job.tasks:
@@ -269,7 +274,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             last = calls[-1]
             self.assertEqual(last.args[0], [grpid,])
 
-    def test_packagegrp_uninstall(self):
+    def test_packagegrp_uninstall(self, cgid = 'A'):
         '''
         Test package uninstall
         '''
@@ -278,14 +283,14 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         packages = ['zsh',]
         self.consumer_api.create(id[0], None)
         self.consumer_api.create(id[1], None)
-        self.consumer_group_api.create(id[0], '')
-        self.consumer_group_api.add_consumer(id[0], id[0])
-        self.consumer_group_api.add_consumer(id[0], id[1])
+        self.consumer_group_api.create(cgid, '')
+        self.consumer_group_api.add_consumer(cgid, id[0])
+        self.consumer_group_api.add_consumer(cgid, id[1])
 
         grpid = 'test-group'
 
         # Test
-        job = self.consumer_group_api.uninstallpackagegroups(id[0], [grpid,])
+        job = self.consumer_group_api.uninstallpackagegroups(cgid, [grpid,])
         self.assertTrue(job is not None)
         self.assertEqual(len(job.tasks), len(id))
         for task in job.tasks:
@@ -298,3 +303,30 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             calls = proxy.uninstall.history()
             last = calls[-1]
             self.assertEqual(last.args[0], [grpid,])
+
+    def test_consumergroup_with_i18n_id(self):
+        cgid = id =  u'\u0938\u093e\u092f\u0932\u0940'
+        self.test_add_consumer(id)
+        self.clean()
+        self.test_add_consumer_with_conflicting_key_value(id)
+        self.clean()
+        self.test_bind_repo(id)
+        self.clean()
+        self.test_consumergroup_update(id)
+        self.clean()
+        self.test_create_consumergroup(id)
+        self.clean()
+        self.test_create_consumergroup_with_consumerids(id)
+        self.clean()
+        self.test_delete_consumer(id)
+        self.clean()
+        self.test_package_install(cgid)
+        self.clean()
+        self.test_package_uninstall(cgid)
+        self.clean()
+        self.test_packagegrp_install(cgid)
+        self.clean()
+        self.test_packagegrp_uninstall(cgid)
+        self.clean()
+        self.test_unbind_repo(id)
+        self.clean()

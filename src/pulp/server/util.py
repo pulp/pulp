@@ -118,6 +118,22 @@ def top_file_location():
 def top_distribution_location():
     return os.path.join(constants.LOCAL_STORAGE, "distributions")
 
+def encode_unicode(path):
+    """
+    Check if given path is a unicode and if yes, return utf-8 encoded path
+    """
+    if type(path) is unicode:
+        path = path.encode('utf-8')
+    return path
+
+def decode_unicode(path):
+    """
+    Check if given path is of type str and if yes, convert it to unicode
+    """
+    if type(path) is str:
+        path = path.decode('utf-8')
+    return path
+
 def tmp_cache_location():
     cache_dir = os.path.join(constants.LOCAL_STORAGE, "cache")
     if not os.path.exists(cache_dir):
@@ -445,10 +461,18 @@ def create_symlinks(source_path, link_path):
         os.symlink(source_path, link_path)
         
 def _create_repo(dir, groups=None, checksum_type="sha256"):
-    cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
+    try:
+        cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
+    except UnicodeDecodeError:
+        checksum_type = decode_unicode(checksum_type)
+        if groups:
+            groups = decode_unicode(groups)
+        dir = decode_unicode(dir)
+        cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     if not groups:
         cmd = "createrepo --database --checksum %s --update %s " % (checksum_type, dir)
         repodata_file = os.path.join(dir, "repodata", "repomd.xml")
+        repodata_file = encode_unicode(repodata_file)
         if os.path.isfile(repodata_file):
             log.info("Checking what metadata types are available: %s" % \
                     (get_repomd_filetypes(repodata_file)))
@@ -464,9 +488,10 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
                 os.rename(filetype_path, renamed_comps_file)
                 if renamed_comps_file and os.path.isfile(renamed_comps_file):
                     cmd = "createrepo --database --checksum %s -g %s --update %s " % \
-                          (checksum_type, renamed_comps_file, dir)
+                        (checksum_type, renamed_comps_file, dir)
 
-    #shlex doesn't like unicode strings
+    # shlex now can handle unicode strings as well
+    cmd = encode_unicode(cmd)
     try:
         cmd = shlex.split(cmd.encode('ascii', 'ignore'))
     except:
@@ -488,6 +513,7 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
         # Note: backup_repo_dir is used to store presto metadata and possibly other custom metadata types
         # they will be copied back into new 'repodata' if needed.
         backup_repo_dir = None
+        current_repo_dir = encode_unicode(current_repo_dir)
         if os.path.exists(current_repo_dir):
             log.info("metadata found; taking backup.")
             backup_repo_dir = os.path.join(dir, "repodata.old")
@@ -589,6 +615,7 @@ def modify_repo(repodata_dir, new_file, remove=False):
         cmd = "modifyrepo --remove %s %s" % (new_file, repodata_dir)
     else:
         cmd = "modifyrepo %s %s" % (new_file, repodata_dir)
+    cmd = encode_unicode(cmd)
     status, out = commands.getstatusoutput(cmd)
     if status != 0:
         log.error("modifyrepo on %s failed" % repodata_dir)

@@ -247,7 +247,6 @@ class PulpServer(Server):
             path = urllib.quote(path.encode('utf-8'))
         except UnicodeDecodeError:
             path = urllib.quote(path.decode('utf-8'))
-
         queries = urllib.urlencode(queries)
         if queries:
             path = '?'.join((path, queries))

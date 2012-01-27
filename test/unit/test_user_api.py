@@ -25,19 +25,18 @@ import testutil
 
 class TestUsers(testutil.PulpAsyncTest):
 
-    def test_create(self):
+    def test_create(self, login='login-test'):
         clear_txt_pass = 'some password'
-        user = self.user_api.create('login-test', id=str(uuid.uuid4()),
+        user = self.user_api.create(login, id=str(uuid.uuid4()),
                                 password=clear_txt_pass,
                                 name='Fred Franklin')
         self.assertTrue(user is not None)
-        user = self.user_api.user('login-test')
+        user = self.user_api.user(login)
         self.assertTrue(user is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
-    def test_duplicate(self):
+    def test_duplicate(self, login='dupe-test'):
         id = uuid.uuid4()
-        login = 'dupe-test'
         user = self.user_api.create(login=login, id=id)
         try:
             user = self.user_api.create(login=login, id=id)
@@ -45,26 +44,24 @@ class TestUsers(testutil.PulpAsyncTest):
         except:
             pass
 
-    def test_user_list(self):
-        user = self.user_api.create('login-test')
+    def test_user_list(self, login='login-test'):
+        user = self.user_api.create(login)
         users = self.user_api.users()
         assert(len(users) == 1)
 
-    def test_clean(self):
-        user = self.user_api.create('login-test')
+    def test_clean(self, login='login-test'):
+        user = self.user_api.create(login)
         self.user_api.clean()
         users = self.user_api.users()
         assert(len(users) == 0)
 
-    def test_delete(self):
-        login = 'some-login'
+    def test_delete(self, login = 'some-login'):
         user = self.user_api.create(login)
         self.user_api.delete(login=login)
         user = self.user_api.user(login)
         assert(user is None)
 
-    def test_update_password(self):
-        login = 'some-login'
+    def test_update_password(self, login = 'some-login'):
         clear_txt_pass = 'some password'
         user = self.user_api.create(login)
         d = dict(password=clear_txt_pass)
@@ -76,6 +73,14 @@ class TestUsers(testutil.PulpAsyncTest):
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
+    def test_user_with_i18n_login(self):
+        login = u'\u0938\u093e\u092f\u0932\u0940'
+        self.test_create(login)
+        self.test_duplicate(login)
+        self.test_delete(login)
+        self.test_update_password(login)
+        self.test_clean(login)
+        self.test_user_list(login)
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

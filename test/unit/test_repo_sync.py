@@ -36,6 +36,9 @@ class TestRepoSync(testutil.PulpAsyncTest):
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
 
+    def clean(self):
+        self.repo_api.clean()
+
     def _task_to_dict(self, task):
         """
         Convert a task to a dictionary (non-destructive) while retaining the
@@ -70,37 +73,37 @@ class TestRepoSync(testutil.PulpAsyncTest):
             running_clone = self.running_task(clone_infos)
             return running_clone
 
-    def test_sync_remote(self):
+    def test_sync_remote(self, id = "testrepoid"):
         # create a remote repo
-        remote_repo = self.repo_api.create("testrepoid", "testrepoid", "x86_64",
+        remote_repo = self.repo_api.create(id, "testrepoid", "x86_64",
             "http://www.example.com")
-
+        orig_async_count = async.enqueue.call_count
         # sync the remote_repo
         repo_sync.sync(remote_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, async.enqueue.call_count)
+        self.assertEquals(1 + orig_async_count, async.enqueue.call_count)
 
-    def test_sync_local(self):
+    def test_sync_local(self, id = "testrepoid2"):
         # create a local_repo
-        local_repo = self.repo_api.create("testrepoid2", "testrepoid2", "x86_64",
+        local_repo = self.repo_api.create(id, "testrepoid2", "x86_64",
             "file://repo")
-
+        orig_async_count = async.enqueue.call_count
         # sync the local_repo
         repo_sync.sync(local_repo["id"])
 
         # run_async called once, and a task is returned
-        self.assertEquals(1, async.enqueue.call_count)
+        self.assertEquals(1 + orig_async_count, async.enqueue.call_count)
 
-    def test_local_sync(self):
+    def test_local_sync(self, id = 'some-id'):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir = my_dir + "/data/repo_resync_b"
         print "Data DIR %s" % datadir
-        repo = self.repo_api.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create(id, 'some name', 'i386',
                                 'file://%s' % datadir)
 
-        repo_sync._sync(repo['id'])
-        found = self.repo_api.repository(repo['id'])
+        repo_sync._sync(id)
+        found = self.repo_api.repository(id)
         packages = found['packages']
         print "Packages :: %s" % packages
         assert(packages is not None)
@@ -109,8 +112,8 @@ class TestRepoSync(testutil.PulpAsyncTest):
         assert(p is not None)
         # versions = p['versions']
 
-    def test_clone(self):
-        local_repo = self.repo_api.create("testrepocln", "testrepocln", "x86_64",
+    def test_clone(self, id = "testrepocln"):
+        local_repo = self.repo_api.create(id, "testrepocln", "x86_64",
             "file://repo")
         # clone
         repo_sync.clone(local_repo["id"], "testrepocln_clone", "testrepocln_clone")
@@ -124,4 +127,10 @@ class TestRepoSync(testutil.PulpAsyncTest):
             running_clone = self.check_if_running_clone('testrepocln_clone')
             print "Clone still running"
 
-
+    def test_repo_sync_with_i18n_id(self):
+        id = u'\u0938\u093e\u092f\u0932\u0940'
+        self.test_clone(id)
+        self.clean()
+        self.test_sync_local(id)
+        self.clean()
+        self.test_sync_remote(id)

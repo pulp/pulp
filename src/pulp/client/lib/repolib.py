@@ -108,11 +108,7 @@ def bind(repo_filename,
         # may be None.
 
         if repo_data is not None:
-            try:
-                repo = _convert_repo(repo_id, repo_data)
-            except UnicodeEncodeError:
-                repo = _convert_repo(repo_id.encode('utf-8'), repo_data)
-
+            repo = _convert_repo(repo_id, repo_data)
         else:
             repo = repo_file.get_repo(repo_id)
 
@@ -226,8 +222,7 @@ def _convert_repo(repo_id, repo_data):
     @return: repo instance in the repo file format
     @rtype:  L{Repo}
     '''
-    repo = Repo(repo_id)
-
+    repo = Repo(str(repo_id))
     repo['name'] = repo_data['name']
 
     # This probably won't be an issue; you shouldn't be able to bind to an unpublished repo

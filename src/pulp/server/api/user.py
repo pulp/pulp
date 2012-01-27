@@ -20,7 +20,6 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 
-
 log = logging.getLogger(__name__)
 
 user_fields = model.User(None, None, None, None).keys()

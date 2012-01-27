@@ -14,6 +14,7 @@
 # in this software or its documentation
 
 import logging
+import re
 import shutil
 import sys
 import yum
@@ -110,6 +111,7 @@ class DepSolver:
 
     def __locateDeps(self, pkgs):
         results = {}
+        regex_filename_match = re.compile('[/*?]|\[[^]]*/[^]]*\]').match
         for pkg in pkgs:
             results[pkg] = {}
             reqs = pkg.requires
@@ -123,7 +125,8 @@ class DepSolver:
                 for po in self.__whatProvides(r, f, v):
                     # verify this po indeed provides the dep,
                     # el5 version could give some false positives
-                    if po.checkPrco('provides', (r, f, v)):
+                    if regex_filename_match(r) or \
+                       po.checkPrco('provides', (r, f, v)):
                         satisfiers.append(po)
                 pkgresults[req] = satisfiers
         return results
