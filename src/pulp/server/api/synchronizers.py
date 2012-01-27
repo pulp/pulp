@@ -361,14 +361,22 @@ class BaseSynchronizer(object):
     def import_metadata(self, dir, repo_id, skip=None):
         added_errataids = []
         repo = self.repo_api.repository(repo_id)
-        repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
-        if os.path.isfile(repomd_xml_path):
+        try:
+            repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
+        except UnicodeDecodeError:
+            dir = pulp.server.util.decode_unicode(dir)
+            repomd_xml_path = os.path.join(dir, 'repodata/repomd.xml')
+        if os.path.isfile(pulp.server.util.encode_unicode(repomd_xml_path)):
             repo["repomd_xml_path"] = repomd_xml_path
-            ftypes = pulp.server.util.get_repomd_filetypes(repomd_xml_path)
+            ftypes = pulp.server.util.get_repomd_filetypes(pulp.server.util.encode_unicode(repomd_xml_path))
             log.debug("repodata has filetypes of %s" % (ftypes))
             if "group" in ftypes:
-                group_xml_path = pulp.server.util.get_repomd_filetype_path(repomd_xml_path, "group")
-                group_xml_path = os.path.join(dir.encode("ascii", "ignore"), group_xml_path)
+                group_xml_path = pulp.server.util.get_repomd_filetype_path(repomd_xml_path.encode('utf-8'), "group")
+                if type(dir) is unicode:
+                    group_xml_path = os.path.join(dir, group_xml_path)
+                else:
+                    group_xml_path = os.path.join(dir.encode("ascii", "ignore"), group_xml_path)
+                group_xml_path = pulp.server.util.encode_unicode(group_xml_path)
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
@@ -378,15 +386,21 @@ class BaseSynchronizer(object):
                     log.info("Group info not found at file: %s" % (group_xml_path))
             if "group_gz" in ftypes:
                 group_gz_xml_path = pulp.server.util.get_repomd_filetype_path(
-                        repomd_xml_path, "group_gz")
-                group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
-                        group_gz_xml_path)
+                        pulp.server.util.encode_unicode(repomd_xml_path), "group_gz")
+                if type(dir) is unicode:
+                    group_gz_xml_path = os.path.join(dir, group_gz_xml_path)
+                else:
+                    group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
+                                                     group_gz_xml_path)
                 repo['group_gz_xml_path'] = group_gz_xml_path
             if "updateinfo" in ftypes and (not skip.has_key('errata') or skip['errata'] != 1):
                 updateinfo_xml_path = pulp.server.util.get_repomd_filetype_path(
-                        repomd_xml_path, "updateinfo")
-                updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
-                        updateinfo_xml_path)
+                        pulp.server.util.encode_unicode(repomd_xml_path), "updateinfo")
+                if type(dir) is unicode:
+                    updateinfo_xml_path = os.path.join(dir, updateinfo_xml_path)
+                else:
+                    updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
+                                                       updateinfo_xml_path)
                 log.info("updateinfo is found in repomd.xml, it's path is %s" % \
                         (updateinfo_xml_path))
                 added_errataids = self.sync_updateinfo_data(updateinfo_xml_path, repo)
@@ -1190,11 +1204,14 @@ class YumSynchronizer(BaseSynchronizer):
                 whitelist_packages = []
                 blacklist_packages = []
 
+            src_repo_dir = pulp.server.util.encode_unicode(src_repo_dir)
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
 
+            dst_repo_dir = pulp.server.util.encode_unicode(dst_repo_dir)
             if not os.path.exists(dst_repo_dir):
                 os.makedirs(dst_repo_dir)
+
             if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
                 log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
                 if self.is_clone:

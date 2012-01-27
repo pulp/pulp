@@ -28,6 +28,7 @@ from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.job import Job
 from pulp.server.async import AsyncAgent
 from pulp.server.agent import PulpAgent
+from pulp.server.util import encode_unicode
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class ConsumerGroupApi(BaseApi):
         """
         Create a new ConsumerGroup object and return it
         """
-        self.check_id(id)
+        id = encode_unicode(id)
         consumergroup = self.consumergroup(id)
         if(consumergroup):
             raise PulpException("A Consumer Group with id %s already exists" % id)

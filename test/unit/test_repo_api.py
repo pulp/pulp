@@ -137,33 +137,35 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.repo_cert_utils = RepoCertUtils(self.config)
         self.protected_repo_utils = ProtectedRepoUtils(self.config)
 
-    def test_repo_create(self):
-        repo = self.repo_api.create('some-repo-id', 'some name',
+    def deleteRepos(self):
+        repo.RepoApi().clean()
+
+    def test_repo_create(self, repo_id = 'some-repo-id'):
+        repo = self.repo_api.create(repo_id, 'some name',
             'i386', 'http://example.com')
         assert(repo is not None)
 
-    def test_repo_create_with_notes(self):
+    def test_repo_create_with_notes(self, repo_id = 'some-repo-with-notes-id'):
         notes = {'key':'value','k':'v'}
-        repo = self.repo_api.create('some-repo-with-notes-id', 'some name',
+        repo = self.repo_api.create(repo_id, 'some name',
             'i386', 'http://example.com', notes=notes)
         assert(repo is not None)
         assert(repo['notes'] == notes)
 
-    def test_repo_create_feedless(self):
-        repo = self.repo_api.create('some-id-no-feed', 'some name', 'i386')
+    def test_repo_create_feedless(self, repo_id = 'some-id-no-feed'):
+        repo = self.repo_api.create(repo_id, 'some name', 'i386')
         assert(repo is not None)
 
-    def test_repo_create_bad_arch(self):
-        self.assertRaises(PulpException, self.repo_api.create, 'valid-id', 'valid-name', 'bad-arch')
+    def test_repo_create_bad_arch(self, repo_id = 'valid-id'):
+        self.assertRaises(PulpException, self.repo_api.create, repo_id, 'valid-name', 'bad-arch')
 
-    def test_repo_create_with_feed_certs(self):
+    def test_repo_create_with_feed_certs(self, repo_id = 'test_feed_cert'):
         '''
         Tests that creating a repo specifying a feed cert bundle correctly writes them
         to disk.
         '''
 
         # Setup
-        repo_id = 'test_feed_cert'
         bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
 
         # Test
@@ -179,14 +181,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
 
-    def test_repo_create_with_consumer_certs(self):
+    def test_repo_create_with_consumer_certs(self, repo_id = 'test_consumer_cert'):
         '''
         Tests that creating a repo specifying a consumer cert bundle correctly writes them
         to disk.
         '''
 
         # Setup
-        repo_id = 'test_consumer_cert'
         bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
 
         # Test
@@ -205,14 +206,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
         protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id in protected_repos.values())
 
-    def test_repo_create_with_both_certs(self):
+    def test_repo_create_with_both_certs(self, repo_id = 'test_both_cert'):
         '''
         Tests that creating a repo specifying both consumer and feed bundles correctly
         write them to disk
         '''
 
         # Setup
-        repo_id = 'test_both_cert'
         feed_bundle = {'ca' : 'FOO', 'key' : KEY, 'cert' : CERTIFICATE}
         consumer_bundle = {'ca' : 'WOMBAT', 'cert' : BUNDLE}
 
@@ -245,7 +245,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         f.close()
         self.assertTrue(cert.strip(), BUNDLE.strip())
 
-    def test_repo_create_conflicting_relative_path(self):
+    def test_repo_create_conflicting_relative_path(self, repo_id = 'existing'):
         """
         Tests that creating a repository whose relative path conflicts with an existing repository raises the correct error.
         """
@@ -256,13 +256,12 @@ class TestRepoApi(testutil.PulpAsyncTest):
         # Test
         self.assertRaises(PulpException, self.repo_api.create, 'proposed', 'Proposed', 'noarch', relative_path='foo/bar/baz')
 
-    def test_repo_update_with_feed_certs(self):
+    def test_repo_update_with_feed_certs(self, repo_id = 'test_feed_cert'):
         '''
         Tests that updating a repo by adding feed certs properly stores the certs.
         '''
 
         # Setup
-        repo_id = 'test_feed_cert'
         self.repo_api.create(repo_id, 'Test Feed Cert', 'noarch')
 
         # Test
@@ -277,13 +276,12 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
 
-    def test_repo_update_with_consumer_certs(self):
+    def test_repo_update_with_consumer_certs(self, repo_id = 'test_consumer_cert'):
         '''
         Tests that updating a repo by adding consumer certs properly stores the certs.
         '''
 
         # Setup
-        repo_id = 'test_consumer_cert'
         self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch')
 
         # Test
@@ -303,13 +301,12 @@ class TestRepoApi(testutil.PulpAsyncTest):
         protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id in protected_repos.values())
 
-    def test_repo_update_remove_consumer_certs(self):
+    def test_repo_update_remove_consumer_certs(self, repo_id = 'test_consumer_cert'):
         '''
         Tests updating a repo by removing its consumer certs.
         '''
 
         # Setup
-        repo_id = 'test_consumer_cert'
         bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
         self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
@@ -328,13 +325,12 @@ class TestRepoApi(testutil.PulpAsyncTest):
         protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(not repo_id in protected_repos.values())
 
-    def test_repo_delete_with_feed_certs(self):
+    def test_repo_delete_with_feed_certs(self, repo_id = 'test_feed_cert'):
         '''
         Tests that deleting a repo with feed certs assigned properly removes the certs.
         '''
 
         # Setup
-        repo_id = 'test_feed_cert'
         bundle = {'ca' : 'FOO', 'key' : KEY, 'cert' : CERTIFICATE}
         self.repo_api.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=bundle)
 
@@ -345,14 +341,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
         repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(not os.path.exists(repo_cert_dir))
 
-    def test_repo_delete_with_consumer_certs(self):
+    def test_repo_delete_with_consumer_certs(self, repo_id = 'test_consumer_cert'):
         '''
         Tests that deleting a repo with consumer certs properly cleans them up from the
         protected repo listing.
         '''
 
         # Setup
-        repo_id = 'test_consumer_cert'
         bundle = {'ca' : 'FOO', 'key' : KEY, 'cert' : CERTIFICATE}
         self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
@@ -371,49 +366,47 @@ class TestRepoApi(testutil.PulpAsyncTest):
         protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id not in protected_repos.values())
 
-    def test_repo_duplicate(self):
-        id = 'some-id'
+    def test_repo_duplicate(self, repo_id = 'some-id'):
         name = 'some name'
         arch = 'i386'
         feed = 'http://example.com'
-        repo = self.repo_api.create(id, name, arch, feed)
+        repo = self.repo_api.create(repo_id, name, arch, feed)
         try:
-            repo = self.repo_api.create(id, name, arch, feed)
+            repo = self.repo_api.create(repo_id, name, arch, feed)
             raise Exception, 'Duplicate allowed'
         except:
             pass
 
-    def test_feed_types(self):
+    def test_feed_types(self, repo_id = 'some-id'):
         failed = False
         try:
-            repo = self.repo_api.create('some-id', 'some name',
+            repo = self.repo_api.create(repo_id, 'some name',
                 'i386', 'foo://example.com/')
         except:
             failed = True
         assert(failed)
 
         try:
-            repo = self.repo_api.create('some-id', 'some name',
+            repo = self.repo_api.create(repo_id, 'some name',
                 'i386', 'blippybloopyfoo')
         except:
             failed = True
         assert(failed)
 
 
-        repo = self.repo_api.create('some-id', 'some name',
+        repo = self.repo_api.create(repo_id, 'some name',
             'i386', 'http://example.com')
         assert(repo is not None)
         assert(repo['source']['type'] == 'remote')
 
-    def test_clean(self):
-        repo = self.repo_api.create('some-id', 'some name',
+    def test_clean(self, repo_id = 'some-id'):
+        repo = self.repo_api.create(repo_id, 'some name',
             'i386', 'http://example.com')
         self.repo_api.clean()
         repos = self.repo_api.repositories()
         assert(len(repos) == 0)
 
-    def test_delete(self):
-        id = 'some-id'
+    def test_delete(self, id = 'some-id'):
         repo = self.repo_api.create(id, 'some name', 'i386', 'http://example.com')
         repo = self.repo_api.repository(id)
         assert(repo is not None)
@@ -421,8 +414,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         repo = self.repo_api.repository(id)
         assert(repo is None)
 
-    def test_delete_non_existing_clone_id(self):
-        id = 'some-id'
+    def test_delete_non_existing_clone_id(self, id = 'some-id'):
         repo = self.repo_api.create(id, 'some name', 'i386', 'http://example.com')
         repo = self.repo_api.repository(id)
         assert(repo is not None)
@@ -434,8 +426,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         repo = self.repo_api.repository(id)
         assert(repo is None)
 
-    def test_delete_feedless(self):
-        id = 'some-id-no-feed'
+    def test_delete_feedless(self, id = 'some-id-no-feed'):
         repo = self.repo_api.create(id, 'some name', 'i386')
         repo = self.repo_api.repository(id)
         assert(repo is not None)
@@ -443,8 +434,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         repo = self.repo_api.repository(id)
         assert(repo is None)
 
-    def test_repositories(self):
-        repo = self.repo_api.create('some-id', 'some name',
+    def test_repositories(self, repo_id = 'some-id'):
+        repo = self.repo_api.create(repo_id, 'some name',
             'i386', 'http://example.com')
 
         # list all the repos
@@ -453,33 +444,33 @@ class TestRepoApi(testutil.PulpAsyncTest):
         assert(len(repos) > 0)
         for r in repos:
             ## TODO: See if we can get dot notation here on id field
-            if (r['id'] == 'some-id'):
+            if (r['id'] == repo_id):
                 found = True
 
         assert(found)
 
-    def test_repository(self):
-        repo = self.repo_api.create('some-id', 'some name', \
+    def test_repository(self, id = 'some-id'):
+        repo = self.repo_api.create(id, 'some name', \
             'i386', 'http://example.com')
 
-        found = self.repo_api.repository('some-id')
+        found = self.repo_api.repository(id)
         assert(found is not None)
-        assert(found['id'] == 'some-id')
+        assert(found['id'] == id)
 
-    def test_repository_with_groupid(self):
-        repo = self.repo_api.create('some-id', 'some name', \
+    def test_repository_with_groupid(self, id = 'some-id'):
+        repo = self.repo_api.create(id, 'some name', \
             'i386', 'http://example.com/mypath', groupid=["testgroup"])
-        found = self.repo_api.repository('some-id')
+        found = self.repo_api.repository(id)
         assert(found is not None)
-        assert(found['id'] == 'some-id')
+        assert(found['id'] == id)
         assert(found['groupid'] == ["testgroup"])
 
-    def test_repository_with_relativepath(self):
+    def test_repository_with_relativepath(self, id = 'some-id-mypath'):
         repo = self.repo_api.create('some-id-mypath', 'some name', \
             'i386', 'http://example.com/mypath', relative_path="/mypath/")
-        found = self.repo_api.repository('some-id-mypath')
+        found = self.repo_api.repository(id)
         assert(found is not None)
-        assert(found['id'] == 'some-id-mypath')
+        assert(found['id'] == id)
         assert(found['relative_path'] == "mypath")
 
         # default path
@@ -567,8 +558,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0], path)
 
-    def test_repo_update(self):
-        id = 'fedora'
+    def test_repo_update(self, id = 'fedora'):
         relativepath = 'f11/i386'
         feed = 'http://abc.com/%s' % relativepath
         repo = self.repo_api.create(id, 'Fedora', 'noarch', feed=feed)
@@ -617,9 +607,9 @@ class TestRepoApi(testutil.PulpAsyncTest):
         errata = self.repo_api.errata('some-id', types=['bugfix'])
         self.assertTrue(len(errata) == 0)
 
-    def test_consumer_errata(self):
+    def test_consumer_errata(self, repo_id = 'some-id'):
         my_dir = os.path.abspath(os.path.dirname(__file__))
-        repo = self.repo_api.create('some-id', 'some name', \
+        repo = self.repo_api.create(repo_id, 'some name', \
             'x86_64', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
@@ -809,9 +799,9 @@ class TestRepoApi(testutil.PulpAsyncTest):
         n = len(all)
         assert(n == 1005)
 
-    def test_consumerwithpackage(self):
+    def test_consumerwithpackage(self, id = 'some-id'):
         c = self.consumer_api.create('test-consumer', 'some consumer desc')
-        repo = self.repo_api.create('some-id', 'some name',
+        repo = self.repo_api.create(id, 'some name',
                 'i386', 'http://example.com')
         my_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -855,8 +845,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         assert(parsed is not None)
         print parsed
 
-    def cancel_task(self):
-        repo = self.repo_api.create('some-id', 'some name', 'i386',
+    def cancel_task(self, id = 'some-id'):
+        repo = self.repo_api.create(id, 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/')
         self.assertTrue(repo is not None)
         task = repo_sync.sync(repo['id'])
@@ -995,11 +985,11 @@ class TestRepoApi(testutil.PulpAsyncTest):
         assert(packages is not None)
         assert(len(packages) > 0)
 
-    def resync_removes_deleted_package(self):
+    def resync_removes_deleted_package(self, id = 'test_resync_removes_deleted_package'):
         # Since a repo with 3 packages, simulate the repo source deleted 1 package
         # Re-sync ensure we delete the removed package
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        r = self.repo_api.create('test_resync_removes_deleted_package',
+        r = self.repo_api.create(id,
                 'test_name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(r != None)
         repo_sync._sync(r["id"])
@@ -1231,8 +1221,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         # test delete orphaned package
         self.package_api.delete(p3['id'])
 
-    def test_add_2_pkg_same_nevra_same_repo(self):
-        repo = self.repo_api.create('some-same-nevra-id1', 'some name', \
+    def test_add_2_pkg_same_nevra_same_repo(self, id = 'some-same-nevra-id1'):
+        repo = self.repo_api.create(id, 'some name', \
             'i386', 'http://example.com')
         p1 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.package_api, 'test_pkg_by_name', filename="test01.rpm", checksum="blah2")
@@ -1244,8 +1234,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(errors[0][2], p2["filename"])
         self.assertEqual(errors[0][3], p2["checksum"]["sha256"])
 
-    def test_associate_packages(self):
-        repo1 = self.repo_api.create('some-associate-pkg-id1', 'some name', \
+    def test_associate_packages(self, id = 'some-associate-pkg-id1'):
+        repo1 = self.repo_api.create(id, 'some name', \
             'i386', 'http://example.com')
         repo2 = self.repo_api.create('some-associate-pkg-id2', 'some name', \
             'i386', 'http://example.com')
@@ -1355,8 +1345,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
         found = self.repo_api.get_packages_by_nvrea(repo1["id"], [nevra], verify_existing=False)
         self.assertEquals(len(found), 0)
 
-    def test_duplicate_syncs(self):
-        repo = self.repo_api.create('some-dup-sync-id', 'some name',
+    def test_duplicate_syncs(self, id = 'some-dup-sync-id'):
+        repo = self.repo_api.create(id, 'some name',
             'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         self.assertTrue(self.repo_api.set_sync_in_progress(repo["id"], True))
         caught = False
@@ -1366,9 +1356,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
             caught = True
         self.assertTrue(caught)
 
-    def test_repo_create_with_checksum_type(self):
+    def test_repo_create_with_checksum_type(self, id = 'some-id-no-feed-checksum-type'):
         checksum_type = 'sha1'
-        id = 'some-id-no-feed-checksum-type'
         repo = self.repo_api.create(id, 'some name', 'i386', checksum_type=checksum_type)
         repo = self.repo_api.repository(id)
         assert(repo is not None)
@@ -1389,8 +1378,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
             assert(repo is not None)
             assert(repo['arch'] is not arch)
 
-    def test_empty_repo(self):
-        repo1 = self.repo_api.create("test_empty_repo_1", 'some name', 'i386', 'http://example.com', preserve_metadata=True)
+    def test_empty_repo(self, id = "test_empty_repo_1"):
+        repo1 = self.repo_api.create(id, 'some name', 'i386', 'http://example.com', preserve_metadata=True)
         repodata_file1 = "%s/%s/%s/%s" % (top_repos_location(),
                                          repo1['relative_path'],
                                          'repodata', 'repomd.xml')
@@ -1403,9 +1392,9 @@ class TestRepoApi(testutil.PulpAsyncTest):
         # metadata should exists
         self.assertTrue(os.path.exists(repodata_file2))
         
-    def test_add_note(self):
+    def test_add_note(self, id = 'some-add-note-id1'):
         # repo with and without notes added at the creation time 
-        repo1 = self.repo_api.create('some-add-note-id1', 'some name', 'i386', 'http://example.com')
+        repo1 = self.repo_api.create(id, 'some name', 'i386', 'http://example.com')
         repo2 = self.repo_api.create('some-add-note-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
         self.repo_api.add_note(repo1['id'], "key2", "value2")
         self.repo_api.add_note(repo2['id'], "key2", "value2")
@@ -1421,8 +1410,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
             caught = True
         self.assertTrue(caught)
         
-    def test_delete_note(self):
-        repo1 = self.repo_api.create('some-del-note-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
+    def test_delete_note(self, id = 'some-del-note-id1'):
+        repo1 = self.repo_api.create(id, 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
         repo2 = self.repo_api.create('some-del-note-id2', 'some name', 'i386', 'http://example.com', notes={"key1":"value1"})
         self.repo_api.delete_note(repo1['id'], "key1")
         self.repo_api.delete_note(repo2['id'], "key1")
@@ -1445,8 +1434,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
             caught = True
         self.assertTrue(caught)
         
-    def test_update_repo_notes(self):
-        repo1 = self.repo_api.create('some-update-note-id1', 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
+    def test_update_repo_notes(self, id = 'some-update-note-id1'):
+        repo1 = self.repo_api.create(id, 'some name', 'i386', 'http://example.com', notes={"key1":"value1","key2":"value2"})
         self.repo_api.update_note(repo1['id'], "key1", "value1-changed")
         repo1 = self.repo_api.repository(repo1['id'])
         assert(repo1["notes"]["key1"] == "value1-changed")
@@ -1456,8 +1445,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
             caught = True
         self.assertTrue(caught)
 
-    def test_repo_update_checksum_type(self):
-        repo_id = 'test_repo_checksum_type'
+    def test_repo_update_checksum_type(self, repo_id = 'test_repo_checksum_type'):
         self.repo_api.create(repo_id, 'Test checksum type', 'noarch')
 
         #test valid checksum update 
@@ -1564,3 +1552,70 @@ class TestRepoApi(testutil.PulpAsyncTest):
             'i386', 'http://example.com')
         assert(repo is not None)
         self.assertEquals(repo['publish'], True)
+
+    def test_repo_create_with_i18n_id(self):
+        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
+        self.test_repo_create(repo_id)
+        self.deleteRepos()
+        self.test_repo_create_bad_arch(repo_id)
+        self.deleteRepos()
+        self.test_repo_create_conflicting_relative_path(repo_id)
+        self.deleteRepos()
+        self.test_repo_create_feedless(repo_id)
+        self.deleteRepos()
+        self.test_repo_create_with_checksum_type(id)
+        self.deleteRepos()
+        self.test_repo_create_with_feed_certs(repo_id)
+        self.deleteRepos()
+        self.test_repo_create_with_notes(repo_id)
+        self.deleteRepos()
+
+    def test_repo_delete_with_i18n_id(self):
+        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
+        self.test_delete(id)
+        self.deleteRepos()
+        self.test_delete_feedless(id)
+        self.deleteRepos()
+        self.test_delete_non_existing_clone_id(id)
+        self.deleteRepos()
+        self.test_delete_note(id)
+        self.deleteRepos()
+        self.test_repo_delete_with_consumer_certs(repo_id)
+        self.deleteRepos()
+        self.test_repo_delete_with_feed_certs(repo_id)
+        self.deleteRepos()
+
+    def test_repo_update_with_i18n_id(self):
+        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
+        self.test_update_repo_notes(id)
+        self.deleteRepos()
+        self.test_repo_update(id)
+        self.deleteRepos()
+        self.test_repo_update_checksum_type(repo_id)
+        self.deleteRepos()
+        #self.test_repo_update_with_feed_certs(repo_id)
+        #self.deleteRepos()
+
+    def test_repo_with_i18n_id(self):
+        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
+        #self.cancel_task(id)
+        #self.deleteRepos()
+        #self.resync_removes_deleted_package(id)
+        #self.deleteRepos()
+        self.test_add_2_pkg_same_nevra_same_repo(id)
+        self.deleteRepos()
+        self.test_add_note(id)
+        self.deleteRepos()
+        self.test_associate_packages(id)
+        self.deleteRepos()
+        self.test_clean(repo_id)
+        self.deleteRepos()
+        self.test_consumer_errata(repo_id)
+        self.deleteRepos()
+        self.test_consumerwithpackage(id)
+        self.deleteRepos()
+        self.test_duplicate_syncs(id)
+        self.deleteRepos()
+        self.test_empty_repo()
+        self.deleteRepos()
+

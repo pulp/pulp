@@ -222,7 +222,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
-        self.check_id(id)
+        id = pulp.server.util.encode_unicode(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -259,6 +259,7 @@ class RepoApi(BaseApi):
         # Verify that the new relative path will not cause problems with existing repositories
         all_repos = self.collection.find()
         for existing in all_repos:
+            existing['relative_path'] = pulp.server.util.encode_unicode(existing['relative_path'])
             if not validate_relative_path(relative_path, existing['relative_path']):
                 msg  = 'New relative path [%s] conflicts with existing relative path [%s]; ' % (relative_path, existing['relative_path'])
                 msg += 'paths may not be a parent or child directory of another relative path'
@@ -314,6 +315,7 @@ class RepoApi(BaseApi):
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
+        repo_path = pulp.server.util.encode_unicode(repo_path)
         if not os.path.exists(repo_path):
             pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
@@ -363,6 +365,7 @@ class RepoApi(BaseApi):
         except Exception, e:
             log.error(e)
             return False
+
         return True
 
     def _create_published_link(self, repo):
@@ -370,13 +373,16 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                                    repo["relative_path"])
+        source_path = pulp.server.util.encode_unicode(source_path)
         if not os.path.isdir(source_path):
             pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
+        link_path = pulp.server.util.encode_unicode(link_path)
         pulp.server.util.create_rel_symlink(source_path, link_path)
 
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
+            repo["relative_path"] = pulp.server.util.encode_unicode(repo["relative_path"])
             link_path = os.path.join(self.published_path, repo["relative_path"])
             if os.path.lexists(link_path):
                 # need to use lexists so we will return True even for broken links
@@ -1918,6 +1924,7 @@ class RepoApi(BaseApi):
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Unlinking %s" % link_path)
+        link_path = pulp.server.util.encode_unicode(link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)

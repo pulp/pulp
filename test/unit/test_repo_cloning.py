@@ -42,6 +42,9 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
         d = dict((f, getattr(task, f)) for f in fields)
         return d
 
+    def clean(self):
+        pulp.server.api.repo.RepoApi().clean()
+
     def running_task(self, task_list):
         """
         Iterate over a list of tasks and return one that is currently running.
@@ -64,9 +67,10 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
             running_clone = self.running_task(clone_infos)
             return running_clone
 
-    def test_clone(self):
+    def test_clone(self, id = 'some-id', clone_id = 'clone-some-id-parent', clone_id1 = 'clone-some-id-origin',
+                   clone_id2 = 'clone-some-id-none'):
 
-        repo = self.repo_api.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create(id, 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
         self.assertTrue(repo is not None)
         try:
@@ -79,22 +83,22 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
         # Try repo cloning default case: feed = parent
         try:
-            repo_sync.clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')
+            repo_sync.clone(repo['id'], clone_id, 'clone-some-id-parent')
         except Exception, e:
             print "Exception caught: ", e
             self.assertTrue(False)
             raise
 
-        running_clone = self.check_if_running_clone('clone-some-id-parent')
+        running_clone = self.check_if_running_clone(clone_id)
         while running_clone:
             time.sleep(2)
-            running_clone = self.check_if_running_clone('clone-some-id-parent')
+            running_clone = self.check_if_running_clone(clone_id)
             print "Clone still running"
 
         # Check that local storage has dir and rpms
-        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-parent')
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + clone_id)
         assert(len(dirList) > 0)
-        found = self.repo_api.repository('clone-some-id-parent')
+        found = self.repo_api.repository(clone_id)
         packages = found['packages']
         assert(packages is not None)
         #assert(len(packages) > 0)
@@ -103,70 +107,71 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
         # Try repo cloning with origin feed
         try:
-            repo_sync.clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
+            repo_sync.clone(repo['id'], clone_id1, 'clone-some-id-origin', feed="origin")
         except Exception:
             self.assertTrue(False)
 
-        running_clone = self.check_if_running_clone('clone-some-id-parent')
+        running_clone = self.check_if_running_clone(clone_id1)
         while running_clone:
             time.sleep(2)
-            running_clone = self.check_if_running_clone('clone-some-id-parent')
+            running_clone = self.check_if_running_clone(clone_id1)
             print "Clone still running"
 
         # Check that local storage has dir and rpms
-        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-origin')
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + clone_id1)
         assert(len(dirList) > 0)
-        found = self.repo_api.repository('clone-some-id-origin')
+        found = self.repo_api.repository(clone_id1)
         packages = found['packages']
         assert(packages is not None)
         #assert(len(packages) > 0)
 
         # Try repo cloning with no feed
         try:
-            repo_sync.clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
+            repo_sync.clone(repo['id'], clone_id2, 'clone-some-id-none', feed="none")
         except Exception:
             self.assertTrue(False)
 
-        running_clone = self.check_if_running_clone('clone-some-id-parent')
+        running_clone = self.check_if_running_clone(clone_id2)
         while running_clone:
             time.sleep(2)
-            running_clone = self.check_if_running_clone('clone-some-id-parent')
+            running_clone = self.check_if_running_clone(clone_id2)
             print "Clone still running"
 
         # Check that local storage has dir and rpms
-        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-none')
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + clone_id2)
         assert(len(dirList) > 0)
-        found = self.repo_api.repository('clone-some-id-none')
+        found = self.repo_api.repository(clone_id2)
         packages = found['packages']
         assert(packages is not None)
         #assert(len(packages) > 0)
 
 
-    def test_clone_non_existent_repo(self):
+    def test_clone_non_existent_repo(self, id = 'some-random-id', clone_id = 'clone-some-id-parent'):
         # Negative case where parent repo does not exist
         try:
-            repo_api.clone('some-random-id', 'clone-some-id-parent', 'clone-some-id-parent')
+            repo_api.clone(id, clone_id, 'clone-some-id-parent')
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
 
-    def test_clone_repo_with_same_id(self):
+    def test_clone_repo_with_same_id(self, id = 'some-id1', clone_id = 'some-id2'):
         # negative case where repo with clone_id exists
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        repo = self.repo_api.create('some-id', 'some name', 'x86_64', 'file://%s' % (repo_path))
+        repo = self.repo_api.create(id, 'some name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(repo is not None)
-        repo1 = self.repo_api.create('some-id-1', 'some name', 'x86_64', 'file://%s' % (repo_path))
+        repo1 = self.repo_api.create(clone_id, 'some name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(repo1 is not None)
 
         try:
-            repo_api.clone('some-id-1', 'some-id', 'clone-some-id-parent')
+            repo_api.clone(id, clone_id, 'clone-some-id-parent')
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
 
-    def test_clone_publish(self):
+    def test_clone_publish(self, id = 'some-id', clone_id = 'clone-publish-true', clone_id1 = 'clone-publish-false',
+                           clone_id2 = 'clone-publish-default'):
 
-        repo = self.repo_api.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create(id, 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
         self.assertTrue(repo is not None)
         try:
@@ -174,17 +179,27 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
         except Exception:
             raise
 
-        repo_sync.clone(repo['id'], 'clone-publish-true', 'clone-publish-true', publish=True)
-        clone_repo = self.repo_api.repository('clone-publish-true')
+        repo_sync.clone(repo['id'], clone_id, 'clone-publish-true', publish=True)
+        clone_repo = self.repo_api.repository(clone_id)
         self.assertEquals(clone_repo['publish'], True)
 
-        repo_sync.clone(repo['id'], 'clone-publish-false', 'clone-publish-false', publish=False)
-        clone_repo = self.repo_api.repository('clone-publish-false')
+        repo_sync.clone(repo['id'], clone_id1, 'clone-publish-false', publish=False)
+        clone_repo = self.repo_api.repository(clone_id1)
         self.assertEquals(clone_repo['publish'], False)
 
-        repo_sync.clone(repo['id'], 'clone-publish-default', 'clone-publish-false')
-        clone_repo = self.repo_api.repository('clone-publish-default')
+        repo_sync.clone(repo['id'], clone_id2, 'clone-publish-false')
+        clone_repo = self.repo_api.repository(clone_id2)
         self.assertEquals(clone_repo['publish'], True)
 
-
-
+    def test_repo_clone_with_i18n_id(self):
+        id = u'\u0938\u093e\u092f\u0932\u0940'
+        clone_id = u'\u0938\u093e\u092f\u0932'
+        clone_id1 = u'\u0938\u093e\u092f'
+        clone_id2 = u'\u0938\u093e'
+        self.test_clone(id, clone_id, clone_id1, clone_id2)
+        self.clean()
+        self.test_clone_repo_with_same_id(id, clone_id)
+        self.clean()
+        self.test_clone_non_existent_repo(id, clone_id)
+        self.clean()
+        self.test_clone_publish(id, clone_id, clone_id1, clone_id2)

@@ -99,7 +99,8 @@ class RepoCertUtils:
         @type  repo_id: str
         '''
         repo_dir = self._repo_cert_directory(repo_id)
-
+        if type(repo_dir) is unicode:
+            repo_dir = repo_dir.encode('utf8')
         if os.path.exists(repo_dir):
             LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
             shutil.rmtree(repo_dir)

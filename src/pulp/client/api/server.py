@@ -240,8 +240,13 @@ class PulpServer(Server):
         # build the request url from the path and queries dict or tuple
         if not path.startswith(self.path_prefix):
             path = '/'.join((self.path_prefix, path))
-        # make sure the path is ascii and uses appropriate characters
-        path = urllib.quote(str(path))
+        # Check if path is ascii and uses appropriate characters, else convert to binary or unicode as necessary.
+        try:
+            path = urllib.quote(str(path))
+        except UnicodeEncodeError:
+            path = urllib.quote(path.encode('utf-8'))
+        except UnicodeDecodeError:
+            path = urllib.quote(path.decode('utf-8'))
         queries = urllib.urlencode(queries)
         if queries:
             path = '?'.join((path, queries))
