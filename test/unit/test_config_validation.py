@@ -154,8 +154,7 @@ class TestConfigValidator(testutil.PulpAsyncTest):
                   TEST_MISSING_REQUIRED_VALUE,
                   TEST_INVALID_VALUE,):
             cfg = self.read(s)
-            with self.assertRaises(ValidationException):
-                validator.validate(cfg)
+            self.assertRaises(ValidationException, validator.validate, cfg)
 
     def test_extras(self):
         validator = Validator(SCHEMA)

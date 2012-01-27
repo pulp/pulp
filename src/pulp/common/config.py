@@ -161,7 +161,10 @@ class Validator:
         """
         for section in self.schema:
             s = Section(section)
-            s.validate(cfg[s.name])
+            try:
+                s.validate(cfg[s.name])
+            except KeyError:
+                raise SectionNotFound(s.name)
         return self.undefined(cfg)
 
     def undefined(self, cfg):
