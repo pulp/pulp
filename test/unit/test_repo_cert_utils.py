@@ -507,7 +507,7 @@ class TestCertVerify(testutil.PulpAsyncTest):
         data = open(root_ca_path).read()
         certs = self.utils.get_certs_from_string(data)
         self.assertEquals(len(certs), 1)
-        self.assertIsInstance(certs[0], X509.X509)
+        self.assertTrue(isinstance(certs[0], X509.X509))
 
     def test_get_certs_from_string_valid(self):
         root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
