@@ -24,6 +24,7 @@ import testutil
 
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
@@ -87,6 +88,7 @@ class TaskQueueTests(testutil.PulpTest):
 
     def setUp(self):
         super(TaskQueueTests, self).setUp()
+        pickling.initialize()
         self.queue = TaskQueue(2)
         # NOTE we are not starting the queue (i.e. firing up the dispatcher thread)
 
@@ -141,7 +143,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
         self.assertTrue(task.call_report in hook.call_args[0])
 
     def test_queued_call_collection(self):
-        task = self.gen_task()
+        task = self.gen_task(call=call)
         collection = QueuedCall.get_collection()
         try:
             self.queue.enqueue(task)
@@ -149,6 +151,12 @@ class TaskQueueControlFlowTests(TaskQueueTests):
             self.fail(traceback.format_exc())
         queued_call = collection.find_one({'_id': task.queued_call_id})
         self.assertFalse(queued_call is None)
+        self.assertFalse(queued_call['serialized_call_request'] is None)
+        try:
+            call_request = CallRequest.deserialize(queued_call['serialized_call_request'])
+        except:
+            self.fail(traceback.format_exc())
+        self.assertFalse(call_request is None)
 
     def test_multi_enqueue(self):
         task_1 = self.gen_task()
