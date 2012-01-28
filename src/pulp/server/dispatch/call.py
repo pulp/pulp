@@ -139,11 +139,14 @@ class CallRequest(object):
         @rtype: CallRequest
         """
 
-        constructor_kwargs = copy.copy(data)
+        if data is None:
+            return None
+
+        constructor_kwargs = dict(data)
 
         try:
             for field in cls.pickled_fields:
-                constructor_kwargs[field] = pickle.loads(data[field])
+                constructor_kwargs[field] = pickle.loads(data[field].encode('ascii'))
 
         except Exception, e:
             _LOG.exception(e)
