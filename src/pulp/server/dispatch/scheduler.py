@@ -104,6 +104,7 @@ class Scheduler(object):
                 continue
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
+            call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, self.call_finished_callback)
             self._run_method(call_request)
 
     def start(self):
@@ -232,7 +233,6 @@ class Scheduler(object):
         @rtype:  str or None
         """
         call_request.tags.append(SCHEDULED_TAG)
-        call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, self.call_finished_callback)
         scheduled_call = ScheduledCall(call_request, schedule, failure_threshold, last_run)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
