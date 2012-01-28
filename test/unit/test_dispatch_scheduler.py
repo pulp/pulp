@@ -25,6 +25,7 @@ import testutil
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.scheduler import Scheduler
 
@@ -64,6 +65,7 @@ class SchedulerTests(testutil.PulpTest):
 
     def setUp(self):
         super(SchedulerTests, self).setUp()
+        pickling.initialize()
         self.scheduler = Scheduler(run_method=mock.Mock())
         # NOTE we are not starting the scheduler
 
@@ -180,21 +182,23 @@ class SchedulerSchedulingTests(SchedulerTests):
 
 class SchedulerQueryTests(SchedulerTests):
 
-    # XXX fix me
-    def _test_get(self):
+    def setUp(self):
+        super(SchedulerQueryTests, self).setUp()
+        self.scheduler._run_method = call
+
+    def test_get(self):
         call_request_1 = CallRequest(call)
         schedule_id = self.scheduler.add(call_request_1, SCHEDULE_3_RUNS)
         self.assertFalse(schedule_id is None)
         call_request_2, schedule = self.scheduler.get(schedule_id)
-        self.assertFalse(call_request_2 is None)
         self.assertFalse(schedule is None)
+        self.assertFalse(call_request_2 is None)
         self.assertTrue(call_request_1.call == call_request_2.call)
         self.assertTrue(call_request_1.args == call_request_2.args)
         self.assertTrue(call_request_1.kwargs == call_request_2.kwargs)
         self.assertTrue(SCHEDULE_3_RUNS == schedule)
 
-    # XXX fix me
-    def _test_find_single_tag(self):
+    def test_find_single_tag(self):
         tag = 'TAG'
         call_request_1 = CallRequest(call)
         call_request_1.tags.append(tag)
