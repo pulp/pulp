@@ -386,8 +386,12 @@ class RepoApi(BaseApi):
             link_path = os.path.join(self.published_path, repo["relative_path"])
             if os.path.lexists(link_path):
                 # need to use lexists so we will return True even for broken links
-                os.unlink(link_path)
-
+                try:
+                    os.unlink(link_path)
+                    # after unlinking, make sure to clean up the directory tree
+                    pulp.server.util.delete_empty_directories(os.path.dirname(link_path))
+                except Exception, e:
+                    log.error(e)
 
 
     @audit(params=['groupid', 'content_set'])

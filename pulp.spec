@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.262
+Version:        0.0.263
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,19 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jan 27 2012 Jeff Ortel <jortel@redhat.com> 0.0.263-1
+- fix depsolver to include file based deps (pkilambi@redhat.com)
+- 783251 - Implements support for i18n ids for entities like repo, user,
+  filter, consumer group etc. Also includes unit tests to avoid regressions
+  related to unicode handling. (skarmark@redhat.com)
+- Revert "783251 - reverting previous fix to add a more effficient fix with
+  less code" (skarmark@redhat.com)
+- "783251 - reverting part of the fix for i18n ids" (skarmark@redhat.com)
+- 784724 - fix add package to use the correct package object when setting the
+  repo id  value (pkilambi@redhat.com)
+- 773752 - pulp-admin packagegroup add_package does not add pkg to repo
+  (jmatthews@redhat.com)
+
 * Thu Jan 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.262-1
 - dep solver on el5 picks up some false positives as search provides in yum
   only uses name. Adding a CheckProc to verify if the po is indeed providing

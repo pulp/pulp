@@ -85,7 +85,38 @@ def getbool(value, default=False):
         return value.upper() in ('YES','TRUE','1')
     else:
         return default
-
+    
+def getsection(cfg, name):
+    """
+    Safely get a section by name.
+    Used for python < 2.7 compat.
+    @param cfg: An config object.
+    @type cfg: INIConfig
+    @param name: A section name.
+    @type name: str
+    @return: The section.
+    @rtype: ini.Section
+    """
+    try:
+        return cfg[name]
+    except KeyError:
+        return Undefined(name, None)
+    
+def getproperty(section, name):
+    """
+    Safely get a property value by name.
+    Used for python < 2.7 compat.
+    @param section: An section object.
+    @type section: ini.Section
+    @param name: A property name.
+    @type name: str
+    @return: The property value.
+    @rtype: any
+    """
+    try:
+        return section[name]
+    except KeyError:
+        return Undefined(None, name)
 
 # Validation
 
@@ -161,7 +192,8 @@ class Validator:
         """
         for section in self.schema:
             s = Section(section)
-            s.validate(cfg[s.name])
+            section = getsection(cfg, s.name)
+            s.validate(section)
         return self.undefined(cfg)
 
     def undefined(self, cfg):
@@ -293,7 +325,8 @@ class Section:
         """
         p = Property(property)
         try:
-            p.validate(section[p.name])
+            property = getproperty(section, p.name)
+            p.validate(property)
         except PropertyException, pe:
             pe.name = '.'.join((self.name, pe.name))
             raise pe
