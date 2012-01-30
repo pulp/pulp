@@ -75,3 +75,16 @@ class ArchivedCall(Model):
         self.serialized_call_request = call_request.serialize()
         self.serialized_call_report = call_report.serialize()
 
+
+class CoordinatorTask(Model):
+    """
+    Task record including resources and operations.
+    """
+
+    collection_name = 'coordinator_tasks'
+    unique_indices = ('task_id')
+    search_indices = ('resources')
+
+    def __init__(self, task_id, resources):
+        self.task_id = task_id
+        self.resources = resources
