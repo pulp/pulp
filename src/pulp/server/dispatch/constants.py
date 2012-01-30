@@ -29,11 +29,37 @@ CALL_EXECUTION_HOOKS = (CALL_ENQUEUE_EXECUTION_HOOK,
                         CALL_CANCEL_EXECUTION_HOOK,
                         CALL_COMPLETE_EXECUTION_HOOK)
 
+
+_CALL_EXECUTION_HOOK_STRINGS = (
+    'enqueue',
+    'dequeue',
+    'run',
+    'finish',
+    'error',
+    'cancel',
+    'complete'
+)
+
+def call_execution_hook_to_string(hook_number):
+    assert isinstance(hook_number, int)
+    assert hook_number >= 0 and hook_number < len(_CALL_EXECUTION_HOOK_STRINGS)
+    return _CALL_EXECUTION_HOOK_STRINGS[hook_number]
+
 # control hooks ----------------------------------------------------------------
 
 CALL_CANCEL_CONTROL_HOOK = 0
 
 CALL_CONTROL_HOOKS = (CALL_CANCEL_CONTROL_HOOK,)
+
+
+_CALL_CONTROL_HOOK_STRINGS = (
+    'cancel',
+)
+
+def call_control_hook_to_string(hook_number):
+    assert isinstance(hook_number, int)
+    assert hook_number >= 0 and hook_number < len(_CALL_CONTROL_HOOK_STRINGS)
+    return _CALL_CONTROL_HOOK_STRINGS[hook_number]
 
 # execution responses ----------------------------------------------------------
 
