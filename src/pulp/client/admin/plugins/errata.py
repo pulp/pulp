@@ -248,7 +248,9 @@ class Install(ErrataAction):
         stats = self.service_api.agentstatus(ids)
         for id in ids:
             stat = stats[id]
-            if stat[0]:
+            if stat['online']:
+                continue
+            if not stat['capabilities'].get('heartbeat'):
                 continue
             lst.append(id)
         return lst

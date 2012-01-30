@@ -20,6 +20,7 @@ from pulp.server import async
 from pulp.server.api import exporter
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
+from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
@@ -46,6 +47,7 @@ cds_api = CdsApi()
 rapi = RepoApi()
 papi = PackageApi()
 fapi = FileApi()
+capi = ConsumerApi()
 log = logging.getLogger(__name__)
 
 # services controllers --------------------------------------------------------
@@ -354,12 +356,21 @@ class AgentStatus(JSONController):
     def POST(self):
         """
         Get the availabiliy of an agent.
-        @return: {uuid:{status:bool,heatbeat:str}}
+        @return: {uuid:{online:bool,heatbeat:str,capabilities:bool}}
         """
         data = self.params()
         filter = data.get('filter', [])
         log.info("agent status:   GET received")
-        return self.ok(Agent.status(filter))
+        report = Agent.status(filter)
+        for k,v in report.items():
+            report[k] = dict(online=v[0], heartbeat=v[1], capabilities={})
+        query = {'id':{'$in':report.keys()}}
+        fields = {'id':1,'capabilities':1}
+        for consumer in capi.consumers(query, fields):
+            cid = consumer['id']
+            for k in ('capabilities',):
+                report[cid][k] = consumer[k]
+        return self.ok(report)
 
 class EnableGlobalRepoAuth(JSONController):
 
