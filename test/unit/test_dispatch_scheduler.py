@@ -93,11 +93,6 @@ class SchedulerCallControlTests(SchedulerTests):
         cursor = collection.find()
         self.assertTrue(cursor.count() == 0)
 
-    def test_add_execution_hook(self):
-        call_request = CallRequest(call)
-        self.scheduler.add(call_request, SCHEDULE_INDEFINITE_RUNS)
-        self.assertTrue(self.scheduler.call_finished_callback in call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK])
-
     def test_remove(self):
         call_request = CallRequest(call)
         schedule_id = self.scheduler.add(call_request, SCHEDULE_START_TIME)
