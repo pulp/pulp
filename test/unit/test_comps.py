@@ -55,8 +55,11 @@ class TestComps(testutil.PulpAsyncTest):
         testutil.PulpAsyncTest.setUp(self)
         logging.root.setLevel(logging.ERROR)
 
-    def test_sync_groups_data(self):
-        repo = self.repo_api.create('test_sync_groups_data_id',
+    def clean(self):
+        self.repo_api.clean()
+
+    def test_sync_groups_data(self, repo_id = 'test_sync_groups_data_id'):
+        repo = self.repo_api.create(repo_id,
                 'test_sync_groups_data_id', 'i386',
                 'http://example.com/')
         # Parse existing comps.xml
@@ -107,8 +110,8 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue("pulp-test-package" in groups[0].default_packages)
         self.assertTrue("pulp-test-package" not in groups[0].mandatory_packages)
 
-    def test_basic_comps(self):
-        repo = self.repo_api.create('test_comps_id', 'test_comps_name',
+    def test_basic_comps(self, repo_id = 'test_comps_id'):
+        repo = self.repo_api.create(repo_id, 'test_comps_name',
             'i386', 'http://example.com/')
         grp = pulp.server.db.model.PackageGroup("groupid1", "groupname1",
             "description", "user_visible", "display_order", "default"
@@ -141,8 +144,8 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue("groupid1" in found["packagegroupids"])
 
 
-    def test_delete_group_category(self):
-        repo = self.repo_api.create('test_delete_group_category',
+    def test_delete_group_category(self, repo_id = 'test_delete_group_category'):
+        repo = self.repo_api.create(repo_id,
                 'test_delete_group_category', 'i386',
                 'http://example.com/')
         cat = self.repo_api.create_packagegroupcategory(repo["id"],
@@ -203,7 +206,7 @@ class TestComps(testutil.PulpAsyncTest):
         #log.debug("Category XML = %s" % (xml))
         self.assertTrue(len(xml) > 0)
 
-    def test_full_read_parse_write_to_xml(self):
+    def test_full_read_parse_write_to_xml(self, repo_id = 'test_comps_id'):
         """
         Test full cycle of Groups/Categories, import a comps.xml, parse it
         modify the entries, then write them out to XML
@@ -216,7 +219,7 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue(len(comps.get_categories()) != 0)
 
         # Create empty repo, we will populate it with our groups/categories
-        repo = self.repo_api.create('test_comps_id', 'test_comps_name',
+        repo = self.repo_api.create(repo_id, 'test_comps_name',
                 'i386', 'http://example.com/')
         found = self.repo_api.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
@@ -355,11 +358,11 @@ class TestComps(testutil.PulpAsyncTest):
         os.unlink(tmp_repomd_path)
         os.unlink(tmp_comps_path)
 
-    def test_immutable_groups(self):
+    def test_immutable_groups(self, repo_id = 'test_immutable_groups_id'):
 
         repo_path = os.path.join(self.data_path, "repo_with_groups")
         # Create repo with 1 group
-        repo = self.repo_api.create('test_immutable_groups_id',
+        repo = self.repo_api.create(repo_id,
                 'test_import_groups_data_id', 'i386',
                 'file://%s' % (repo_path))
         repo_sync._sync(repo["id"])
@@ -421,10 +424,10 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue(found is None)
 
 
-    def test_comps_resync_with_group_changes(self):
+    def test_comps_resync_with_group_changes(self, repo_id = 'test_comps_resync_with_group_changes'):
 
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        repo = self.repo_api.create('test_comps_resync_with_group_changes',
+        repo = self.repo_api.create(repo_id,
                 'test_comps_resync_with_group_changes_name', 'i386',
                 'file://%s' % (repo_path))
         repo_sync._sync(repo["id"])
@@ -467,10 +470,10 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue(self.repo_api.packagegroupcategory(
             repo["id"], "development") is not None)
 
-    def test_metadata_regen_with_group_changes(self):
+    def test_metadata_regen_with_group_changes(self, repo_id = "test_metadata_regen_with_group_changes"):
         log.info("Start test_metadata_regen_with_group_changes")
         # Create a feedless repo
-        repo = self.repo_api.create("test_metadata_regen_with_group_changes", "test_name", "i386")
+        repo = self.repo_api.create(repo_id, "test_name", "i386")
         # Create a package group and add to repo
         group_id = "test_group_id"
         group_name = "test_group_name"
@@ -561,9 +564,9 @@ class TestComps(testutil.PulpAsyncTest):
         yum_group_ids = [x.groupid for x in comps.groups]
         log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
 
-    def test_multiple_package_group_additions(self):
+    def test_multiple_package_group_additions(self, repo_id = "test_multiple_package_group_additions"):
         log.info("Start test_multiple_package_group_additions")
-        repo = self.repo_api.create("test_multiple_package_group_additions", "test_name", "i386")
+        repo = self.repo_api.create(repo_id, "test_name", "i386")
         group_count = 50
         for i in range(0,group_count):
             pkggrp = self.repo_api.create_packagegroup(repo["id"], "groupid_%s" % (i), "group_name_%s" % (i), "description_%s" % (i))
@@ -595,8 +598,8 @@ class TestComps(testutil.PulpAsyncTest):
         yum_group_ids = [x.groupid for x in comps.groups]
         self.assertEqual(len(yum_group_ids), group_count) 
 
-    def test_update_repomd_xml_file_called_with_no_change_to_comps_data(self):
-        repo = self.repo_api.create("test_update_repomd_xml_file", "test_name", "i386")
+    def test_update_repomd_xml_file_called_with_no_change_to_comps_data(self, repo_id = "test_update_repomd_xml_file"):
+        repo = self.repo_api.create(repo_id, "test_name", "i386")
         pkggrp1 = self.repo_api.create_packagegroup(repo["id"], "groupid_1", "group_name_1", "description_1")
         mddata_A = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
         repo = self.repo_api.repository(repo["id"])
@@ -608,3 +611,24 @@ class TestComps(testutil.PulpAsyncTest):
         group_gz_path = os.path.join(pulp.server.util.top_repos_location(), repo["id"], mddata_B["group_gz"]["location"])
         self.assertTrue(os.path.isfile(group_path))
         self.assertTrue(os.path.isfile(group_gz_path))
+
+    def test_comps_with_i18n_repoid(self):
+        def get_random_unicode():
+            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
+        self.test_basic_comps(get_random_unicode())
+        self.clean()
+        #self.test_comps_resync_with_group_changes(get_random_unicode())
+        #self.clean()
+        self.test_delete_group_category(get_random_unicode())
+        self.clean()
+        self.test_full_read_parse_write_to_xml(get_random_unicode())
+        self.clean()
+        #self.test_immutable_groups(get_random_unicode())
+        #self.clean()
+        self.test_metadata_regen_with_group_changes(get_random_unicode())
+        self.clean()
+        self.test_multiple_package_group_additions(get_random_unicode())
+        self.clean()
+        self.test_sync_groups_data(get_random_unicode())
+        self.clean()
+        self.test_update_repomd_xml_file_called_with_no_change_to_comps_data(get_random_unicode())

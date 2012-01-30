@@ -96,13 +96,14 @@ class RepoCollectionTest(testutil.PulpWebserviceTest):
         """
 
         # Setup
-        body = {'id' : 'HA! This is so totally invalid'}
+        body = {'id' : 'HA! This looks so totally invalid, but we do allow this ID now :)'}
 
         # Test
         status, body = self.post('/v2/repositories/', params=body)
 
         # Verify
-        self.assertEqual(400, status)
+        self.assertEqual(201, status)
+        self.assertEqual(body['id'], 'HA! This looks so totally invalid, but we do allow this ID now :)')
 
     def test_post_conflict(self):
         """

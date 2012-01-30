@@ -65,8 +65,8 @@ class RepoManager:
         """
 
         # Validation
-        if not is_repo_id_valid(repo_id):
-            raise InvalidRepoId(repo_id)
+        #if not is_repo_id_valid(repo_id):
+        #    raise InvalidRepoId(repo_id)
 
         existing_repo = Repo.get_collection().find_one({'id' : repo_id})
         if existing_repo is not None:
