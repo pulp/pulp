@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,7 +489,8 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
-* Tue Jan 31 2012 James Slagle <jslagle@redhat.com> 0.0.263-2
+
+* Tue Jan 31 2012 James Slagle <jslagle@redhat.com> 0.0.263-3
 - Add releasers.conf (jslagle@redhat.com)
 - Merge with pulp-0.0.263-1 (jslagle@redhat.com)
 - no need to generate updateinfo.xml if metadata is preserved
