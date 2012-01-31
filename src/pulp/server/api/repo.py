@@ -31,6 +31,7 @@ import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
 from pulp.common.bundle import Bundle
 from pulp.common.dateutils import format_iso8601_datetime
+from pulp.server import async
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
@@ -658,6 +659,15 @@ class RepoApi(BaseApi):
         # Remove this repo from the protected repos list in case that existed
         protected_repo_utils = ProtectedRepoUtils(config.config)
         protected_repo_utils.delete_protected_repo(repo['relative_path'])
+
+        # remove any tasks related to this repo
+        for task in async.all_async():
+            if repo['_id'] in task.args or repo['_id'] in task.kwargs.values():
+                async.remove_async(task)
+
+        # remove task history related to this repo
+        collection = model.TaskHistory.get_collection()
+        collection.remove({'args': repo['_id']}, safe=True) # misses id in kwargs
 
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
