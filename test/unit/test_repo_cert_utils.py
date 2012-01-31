@@ -416,6 +416,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         '''
         Tests that verifying a valid PEM encoded cert string with a CA and CRL returns true.
         '''
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
         good_cert_path = os.path.join(CRL_TEST_DATA, "ok/Pulp_client.cert")
         # Setup
@@ -495,14 +497,20 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertFalse(self.utils.validate_certificate_pem(cert, ca, [crl_pem]))
 
     def test_get_certs_from_string_empty(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         certs = self.utils.get_certs_from_string("")
         self.assertEquals(len(certs), 0)
 
     def test_get_certs_from_string_misformed(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         certs = self.utils.get_certs_from_string("BAD_DATA")
         self.assertEquals(len(certs), 0)
 
     def test_get_certs_from_string_single_CA(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
         data = open(root_ca_path).read()
         certs = self.utils.get_certs_from_string(data)
@@ -510,6 +518,8 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertTrue(isinstance(certs[0], X509.X509))
 
     def test_get_certs_from_string_valid(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
         sub_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
