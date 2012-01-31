@@ -547,10 +547,10 @@ class TestCertVerify(testutil.PulpAsyncTest):
         root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
         cert_data = open(root_ca_path).read()
         many_certs = ""
-        for index in range(0, repo_cert_utils.MAX_NUM_CERTS_IN_CHAIN+200):
+        for index in range(0, self.utils.max_num_certs_in_chain+200):
             many_certs += cert_data
         parsed_certs = self.utils.get_certs_from_string(many_certs)
-        self.assertTrue(len(parsed_certs), repo_cert_utils.MAX_NUM_CERTS_IN_CHAIN)
+        self.assertTrue(len(parsed_certs), self.utils.max_num_certs_in_chain)
 
     def test_validate_certificate_pem_with_ca_chain(self):
         if not M2CRYPTO_HAS_CRL_SUPPORT:
