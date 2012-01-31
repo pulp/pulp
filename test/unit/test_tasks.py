@@ -634,7 +634,6 @@ class ScheduledTaskTester(QueueTester):
         self.queue.remove(task)
         self.assertTrue(isinstance(task.scheduler, ImmediateScheduler))
         self._wait_for_task(task)
-        self.assertTrue(task.scheduled_time is None)
 
 
 class PersistentTaskTester(testutil.PulpAsyncTest):
