@@ -16,7 +16,7 @@ import urlparse
 
 from pulp.common import dateutils
 from pulp.server.db.model.base import Model
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 
 # consumer models -------------------------------------------------------------
@@ -24,14 +24,15 @@ from pulp.server.tasking.scheduler import IntervalScheduler
 class Consumer(Model):
 
     collection_name = 'consumers'
-    unique_indicies = ('id',)
-    other_indicies = ('package_profile.name', 'repoids', 'key_value_pairs',
+    unique_indices = ('id',)
+    search_indices = ('package_profile.name', 'repoids', 'key_value_pairs',
                       'consumer_id', 'type_name', 'timestamp')
 
     def __init__(self, id, description, key_value_pairs={}):
         self._id = id
         self.id = id
         self.description = description
+        self.capabilities = {}
         self.certificate = None
         self.package_profile = []
         self.repoids = []
@@ -41,9 +42,9 @@ class Consumer(Model):
 class ConsumerGroup(Model):
 
     collection_name = 'consumergroups'
-    other_indicies = ('consumerids',)
+    search_indices = ('consumerids',)
 
-    def __init__(self, id, description, consumerids=[], key_value_pairs={}):
+    def __init__(self, id, description=None, consumerids=[], key_value_pairs={}):
         self._id = id
         self.id = id
         self.description = description
@@ -61,25 +62,35 @@ class ConsumerHistoryEvent(Model):
         self.originator = originator
         self.type_name = type_name
         self.details = details
-        now = datetime.datetime.now(dateutils.local_tz())
+        now = datetime.datetime.now(dateutils.utc_tz())
         self.timestamp = dateutils.format_iso8601_datetime(now)
 
 # distribution model ----------------------------------------------------------
 
 class Distribution(Model):
-    '''
+    """
      Distribution Model to represent kickstart trees
-    '''
-
+    """
     collection_name = 'distribution'
-    other_indicies = ('files', 'relativepath')
+    search_indices = ('files', 'family', 'variant', 'version', 'arch', 'relativepath', 'repoids')
 
-    def __init__(self, id, description, relativepath, files=[]):
+    def __init__(self, id, description, relativepath, family=None, variant=None, version=None, timestamp=None, files=[], arch=None, repoids=[]):
+        Model.__init__(self)
         self._id = id
         self.id = id
         self.description = description
         self.files = files
+        self.arch = arch
         self.relativepath = relativepath
+        self.family = family
+        self.variant = variant
+        self.version = version
+        self.repoids = repoids
+        if timestamp:
+            self.timestamp = dateutils.format_iso8601_datetime(timestamp)
+        else:
+            self.timestamp = dateutils.format_iso8601_datetime(datetime.datetime.now(dateutils.utc_tz()))
+
 
 # errata model ----------------------------------------------------------------
 
@@ -90,14 +101,14 @@ class Errata(Model):
     """
 
     collection_name = 'errata'
-    other_indicies = ('title', 'description', 'version', 'release', 'type',
+    search_indices = ('title', 'description', 'version', 'release', 'type',
                       'status', 'updated', 'issued', 'pushcount', 'from_str',
                       'reboot_suggested')
 
     def __init__(self, id, title, description, version, release, type, status=u"",
             updated=u"", issued=u"", pushcount=1, from_str=u"",
             reboot_suggested=False, references=[], pkglist=[], severity=u"",
-            rights=u"", summary=u"", solution=u"", repo_defined=False, immutable=False):
+            rights=u"", summary=u"", solution=u"", repo_defined=False, immutable=False, repoids=[]):
         self._id = id
         self.id = id
         self.title = title
@@ -108,7 +119,10 @@ class Errata(Model):
         self.status = status
         self.updated = updated
         self.issued = issued
-        self.pushcount = pushcount
+        if pushcount:
+            self.pushcount = int(pushcount)
+        else:
+            self.pushcount = 1
         self.from_str = from_str
         self.reboot_suggested = reboot_suggested
         self.references = references
@@ -119,20 +133,21 @@ class Errata(Model):
         self.summary = summary
         self.solution = solution
         self.immutable = immutable
+        self.repoids = repoids
 
 # package models --------------------------------------------------------------
 
 class Package(Model):
 
     collection_name = 'packages'
-    unique_indicies = (('name', 'epoch', 'version', 'release', 'arch',
+    unique_indices = (('name', 'epoch', 'version', 'release', 'arch',
                         'filename', 'checksum'),)
-    other_indicies = ('name', 'filename', 'checksum', 'epoch', 'version',
-                      'release', 'arch', 'description')
+    search_indices = ('name', 'filename', 'checksum', 'epoch', 'version',
+                      'release', 'arch', 'description', 'repoids')
 
     def __init__(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, vendor=None, size=None,
-            buildhost=u"", license=u"", group=u"", repo_defined=False):
+            buildhost=u"", license=u"", group=u"", repo_defined=False, repoids=[]):
         Model.__init__(self)
         # ID is initialized in Model.__init__()
         self.name = name
@@ -153,6 +168,7 @@ class Package(Model):
         self.buildhost = buildhost
         self.license = license
         self.group = group
+        self.repoids = repoids
 
 
 class PackageGroup(Model):
@@ -201,7 +217,7 @@ class File(Model):
     """
 
     collection_name = 'file'
-    unique_indicies = (('filename', 'checksum'),)
+    unique_indices = (('filename', 'checksum'),)
 
     def __init__(self, filename, checksum_type,
                  checksum, size, description=None, repo_defined=False):
@@ -221,8 +237,8 @@ class Filter(Model):
     Class represents a blacklist or whitelist filter that can be applied when syncing a local repository
     """
     collection_name = 'filters'
-    unique_indicies = ('id',)
-    other_indicies = ('type')
+    unique_indices = ('id',)
+    search_indices = ('type')
 
     def __init__(self, id, type, description=None, package_list=None):
         self._id = id
@@ -237,13 +253,15 @@ class Filter(Model):
 
 class Repo(Model):
 
-    SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64']
+    SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64', 'ia64']
     SUPPORTED_CHECKSUMS = ['sha256', 'sha', 'sha1', 'md5']
+    SUPPORTED_CONTENT_TYPES = ['yum', 'file']
 
     collection_name = 'repos'
-    other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
+    search_indices = ('packages', 'packagegroups', 'packagegroupcategories')
+    unique_indices = ('relative_path',)
 
-    def __init__(self, id, name, arch, source=None, notes=None):
+    def __init__(self, id, name, arch, relative_path, source=None, notes=None, content_types=None):
         self._id = id
         self.id = id
         if source:
@@ -261,15 +279,15 @@ class Repo(Model):
         self.group_xml_path = u""
         self.group_gz_xml_path = u""
         self.sync_schedule = None
+        self.sync_options = {}
         self.last_sync = None
-        self.use_symlinks = None
         self.feed_ca = None
         self.feed_cert = None
         self.consumer_ca = None
         self.consumer_cert = None
         self.errata = {}
         self.groupid = []
-        self.relative_path = None
+        self.relative_path = relative_path
         self.files = []
         self.publish = False
         self.clone_ids = []
@@ -277,10 +295,12 @@ class Repo(Model):
         self.checksum_type = u"sha256"
         self.filters = []
         self.sync_in_progress = False
-        if not notes:
+        if notes:
+            self.notes = notes
+        else:
             self.notes = {}
-        self.notes = notes
         self.preserve_metadata = False
+        self.content_types = content_types
 
 #        self.size = None
 
@@ -296,6 +316,10 @@ class Repo(Model):
     @classmethod
     def is_supported_checksum(cls, checksum_type):
         return checksum_type in cls.SUPPORTED_CHECKSUMS
+
+    @classmethod
+    def is_supported_content_type(cls, content_type):
+        return content_type in cls.SUPPORTED_CONTENT_TYPES
 
 class RepoSource(Model):
 
@@ -324,3 +348,20 @@ class RepoSyncSchedule(Model):
         self.interval = interval
         self.start_time = start_time
         self.runs = runs
+
+
+class RepoStatus(Model):
+    """
+    Repsitory synchronization status.  Represents the status of a current sync
+    task on a repository.
+    """
+
+    def __init__(self, repoid, state=None, progress=None, exception=None,
+                 traceback=None, next_sync_time=None):
+        self.repoid = repoid
+        self.state = state
+        self.progress = progress
+        self.exception = exception
+        self.traceback = traceback
+        self.next_sync_time = next_sync_time
+

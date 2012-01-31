@@ -17,7 +17,9 @@ Common utilities for date and time representation for Pulp.
 
 import datetime
 import re
+import sys
 import time
+from gettext import gettext as _
 
 import isodate
 
@@ -150,7 +152,11 @@ def parse_iso8601_date(date_str):
     @param date_str: iso8601 date string to parse
     @rtype: datetime.date instance
     """
-    return isodate.parse_date(date_str)
+    try:
+        return isodate.parse_date(date_str)
+    except (ValueError, isodate.ISO8601Error):
+        msg = _('Malformed ISO8601 date string: %(d)s') % {'d': date_str}
+        raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
 
 def parse_iso8601_datetime(datetime_str):
@@ -160,7 +166,11 @@ def parse_iso8601_datetime(datetime_str):
     @param datetime_str: iso8601 datetime string to parse
     @rtype: datetime.datetime instance
     """
-    return isodate.parse_datetime(datetime_str)
+    try:
+        return isodate.parse_datetime(datetime_str)
+    except (ValueError, isodate.ISO8601Error):
+        msg = _('Malformed ISO8601 date-time string: %(d)s') % {'d': datetime_str}
+        raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
 
 def parse_iso8601_duration(duration_str):
@@ -170,7 +180,11 @@ def parse_iso8601_duration(duration_str):
     @param: duration_str: iso8601 duration string to parse
     @rtype: isodate.Duration or datetime.timedelta instance
     """
-    return isodate.parse_duration(duration_str)
+    try:
+        return isodate.parse_duration(duration_str)
+    except (ValueError, isodate.ISO8601Error):
+        msg = _('Malformed ISO8601 duration string: %(d)s') % {'d': duration_str}
+        raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
 
 def parse_iso8601_interval(interval_str):

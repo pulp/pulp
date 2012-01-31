@@ -30,25 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><p>
-<div class='wiki-toc'>
-<h4>Table of Contents</h4>
-<ol><li class="active"><a href="UGCDS.html#display">Display and History</a><ol><li class="active"><a href="UGCDS.html#Display">Display</a></li><li class="active">
-<a href="UGCDS.html#History">History</a></li></ol><li class="active"><a href="UGCDS.html#reg">Registration and Unregistration</a><ol><li class="active"><ol><li class="active"><a href="UGCDS.html#Example">Example</a></li></ol><li class="active"></li></ol><li class="active"><a href="UGCDS.html#repoassociation">Repo Association</a><ol><li class="active"><a href="UGCDS.html#Association">Association</a></li><li class="active">
-<a href="UGCDS.html#Unassociation">Unassociation</a></li></ol><li class="active"><a href="UGCDS.html#sync">Synchronization</a></li><li class="active">
-<a href="UGCDS.html#clusters">Clusters</a><ol><li class="active"><ol><li class="active"><a href="UGCDS.html#Example:Clustermembershipatregistration">Example: Cluster membership at registration</a></li><li class="active">
-<a href="UGCDS.html#Example:AddinganexistingCDStoacluster">Example: Adding an existing CDS to a cluster</a></li><li class="active">
-<a href="UGCDS.html#Example:RemovingaCDSfromacluster">Example: Removing a CDS from a cluster</a></li></ol></li></ol></li></ol></li></ol></div>
-
-</p>
-<h1 id="ContentDeliveryServer">Content Delivery Server</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="ContentDeliveryServer">Content Delivery Server</h1>
 <p>
 A Content Delivery Server (CDS) is a way to offload content serving from the Pulp server to a separate machine. A CDS is configured to host one or more repositories and consumers accessing those repositories are evenly distributed across CDS instances that serve them. The Pulp server is still used to manage and synchronize content into repositories; the CDS instances synchronize repositories from the Pulp server itself and make them available to consumers.
 </p>
@@ -60,7 +42,7 @@ Furthermore, consumers will be configured with the remaining CDS instances and t
 </p>
 <p>
 Each CDS instance sends a heartbeat on a regular interval over the message bus.  This is used to determine the status of the CDS as it pertains to connectivity and availability.
-The interval is specified in the /etc/cds.conf and can be different for each CDS.  The heartbeat statistics are included in the <i>list</i> and <i>info</i> CDS commands.
+The interval is specified in the /etc/cds.conf and can be different for each CDS.  The heartbeat statistics are included in the <em>list</em> and <em>info</em> CDS commands.
 </p>
 <hr />
 <h2 id="display">Display and History</h2>
@@ -111,7 +93,7 @@ The following fields are displayed for each CDS instance:
 The details of a CDS instance that is currently registered can be viewed with the <tt>cds info</tt> command.
 </p>
 <p>
-The <i>info</i> command takes the following arguments (all arguments are optional unless otherwise specified):
+The <em>info</em> command takes the following arguments (all arguments are optional unless otherwise specified):
 </p>
 <table class="wiki">
 <tr><td> Hostname </td><td> <tt>--hostname</tt> </td><td> Required. Fully qualified domain name of the CDS. The CDS will use its hostname when determining its ID on the message bus, so this argument must be the same value the CDS will resolve. 
@@ -232,7 +214,7 @@ Once a CDS is registered, repositories can be associated with it and synchronize
 <hr />
 <h2 id="repoassociation">Repo Association</h2>
 <p>
-Pulp repositories are assigned to CDS instances through a process called <i>association</i>. Once associated, a repository's contents will be sent to the CDS on the next sync.
+Pulp repositories are assigned to CDS instances through a process called <em>association</em>. Once associated, a repository's contents will be sent to the CDS on the next sync.
 </p>
 <h3 id="Association">Association</h3>
 <p>
@@ -285,7 +267,7 @@ Finish Time         	In Progress
 </pre><hr />
 <h2 id="clusters">Clusters</h2>
 <p>
-A CDS <i>cluster</i> is a mechanism to enforce consistency across CDS instances. Repository associations for CDS instances in the same cluster are kept identical by the Pulp server, primarily falling into one of two categories:
+A CDS <em>cluster</em> is a mechanism to enforce consistency across CDS instances. Repository associations for CDS instances in the same cluster are kept identical by the Pulp server, primarily falling into one of two categories:
 </p>
 <ul><li>When a CDS is added to a cluster, its repository associations are modified to match the other members of the cluster. This may include removing previous associations that are not present in the cluster.
 </li><li>When repository associations are added/removed from a CDS in the cluster, all CDS instances in the cluster are modified.
@@ -302,17 +284,13 @@ Successfully updated CDS [cds-1.example.org]
 <pre class="wiki">$ pulp-admin cds update --hostname cds-1.example.org --remove_cluster
 Successfully updated CDS [cds-1.example.org]
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

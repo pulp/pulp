@@ -11,11 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pymongo.errors import DuplicateKeyError
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db.model import Permission
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 class PermissionAPI(BaseApi):
@@ -74,9 +75,11 @@ class PermissionAPI(BaseApi):
     # permission-specific methods
 
     def _get_or_create(self, resource):
+        try:
+            self.create(resource)
+        except (DuplicateKeyError, PulpException):
+            pass
         permission = self.permission(resource)
-        if permission is None:
-            permission = self.create(resource)
         return permission
 
     def permission(self, resource):
@@ -97,7 +100,7 @@ class PermissionAPI(BaseApi):
         @type user: L{pulp.server.db.model.User} instance
         @param user: user to grant permissions to
         @type operations: list or tuple
-        @param operations:list of allowed operations being granted 
+        @param operations:list of allowed operations being granted
         """
         permission = self._get_or_create(resource)
         current_ops = permission['users'].setdefault(user['login'], [])
@@ -116,7 +119,7 @@ class PermissionAPI(BaseApi):
         @type user: L{pulp.server.db.model.User} instance
         @param user: user to revoke permissions from
         @type operations: list or tuple
-        @param operations:list of allowed operations being revoked 
+        @param operations:list of allowed operations being revoked
         """
         permission = self.permission(resource)
         if permission is None:

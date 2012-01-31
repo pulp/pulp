@@ -12,7 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.client.api.base import PulpAPI
-from pulp.client.server import ServerRequestError
+from pulp.client.api.server import ServerRequestError
+
+
+def task_end(task):
+    if task is None:
+        return True
+    return task['state'] in ('finished', 'error', 'canceled', 'timed_out')
+
+def task_succeeded(task):
+    return task['state'] in ('finished',)
 
 
 class TaskAPI(PulpAPI):

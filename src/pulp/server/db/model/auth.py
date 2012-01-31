@@ -22,7 +22,7 @@ class Permission(Model):
     """
 
     collection_name = 'permissions'
-    unique_indicies = ('resource',)
+    unique_indices = ('resource',)
 
     def __init__(self, resource):
         super(Permission, self).__init__()
@@ -39,7 +39,7 @@ class Role(Model):
     """
 
     collection_name = 'roles'
-    unique_indicies = ('name',)
+    unique_indices = ('name',)
 
     def __init__(self, name):
         self._id = self.name = name

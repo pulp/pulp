@@ -18,6 +18,7 @@ description: RESTful interface providing an administrative and debugging api for
              pulp's tasking system.
 Task object fields:
  * id, str, unique id (usually a uuid) for the task
+ * job_id, str, associate job id
  * class_name, str, name of the class, if the task's method is an instance method
  * method_name, str, name of the pulp library method that was called
  * state, str, one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended
@@ -28,7 +29,6 @@ Task object fields:
  * traceback, str or nil, a string print out of the trace back for the exception, if any
  * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
  * scheduled_time, str or nil, time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks
- * status_path, str, complete uri path to poll for the task's progress using http GET
  * snapshot_id, str, id of task's snapshot, if it has one
 TaskSnapshot object fields:
  * id, str, unique task id
@@ -54,8 +54,12 @@ TaskSnapshot object fields:
 import web
 from gettext import gettext as _
 
+import pymongo
+
 from pulp.server import async
-from pulp.server.db.model.persistence import TaskSnapshot
+from pulp.server.api import task_history
+from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
+from pulp.server.auth.authorization import READ, UPDATE
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -65,7 +69,7 @@ from pulp.server.webservices.controllers.decorators import (
 class Tasks(JSONController):
 
     @error_handler
-    @auth_required(super_user_only=True)
+    @auth_required(READ)
     def GET(self):
         """
         [[wiki]]
@@ -73,28 +77,40 @@ class Tasks(JSONController):
         description: Get a list of all tasks currently in the tasking system
         method: GET
         path: /tasks/
-        permission: Super User Only
+        permission: READ
         success response: 200 OK
         failure response: None
         return: list of task objects
         filters:
-         * state, str, tasking system task state: waiting, running, complete, incomplete, all
+         * id, str, task id
+         * state, str, tasking system task state: waiting, running, complete, incomplete, current, archived (current is the same as waiting, running, complete, and incomplete, also the same as omitting the state filter; archived looks into the the task history, will not return archived tasks without this filter)
         """
+        def _archived(ids):
+            collection = TaskHistory.get_collection()
+            query_doc = {}
+            if ids:
+                query_doc['id'] = {'$in': ids}
+            cursor = collection.find(query_doc)
+            cursor.sort('finish_time', pymongo.DESCENDING)
+            archived_tasks = [dict(t) for t in cursor]
+            return archived_tasks
+
         def _serialize(t):
             d = self._task_to_dict(t)
             d['snapshot_id'] = t.snapshot_id
             return d
 
-        valid_filters = ('state',)
-        valid_states = ('waiting', 'running', 'complete', 'incomplete', 'all')
+        valid_filters = ('id', 'state',)
+        valid_states = ('waiting', 'running', 'complete', 'incomplete', 'current', 'archived')
         filters = self.filters(valid_filters)
+        ids = filters.pop('id', [])
         states = [s.lower() for s in filters.pop('state', [])]
         for s in states:
             if s in valid_states:
                 continue
             return self.bad_request(_('Unknown state: %s') % s)
         tasks = set()
-        if not states or 'all' in states:
+        if not states or 'current' in states:
             tasks.update(async.all_async())
         if 'waiting' in states:
             tasks.update(async.waiting_async())
@@ -104,14 +120,20 @@ class Tasks(JSONController):
             tasks.update(async.complete_async())
         if 'incomplete' in states:
             tasks.update(async.incomplete_async())
-        return self.ok([_serialize(t) for t in tasks])
+        if ids:
+            tasks = [t for t in tasks if t.id in ids]
+        serialized_tasks = [_serialize(t) for t in tasks]
+        if 'archived' in states:
+            archived_tasks = _archived(ids)
+            serialized_tasks.extend(archived_tasks)
+        return self.ok(serialized_tasks)
 
 # task controller --------------------------------------------------------------
 
 class Task(JSONController):
 
     @error_handler
-    @auth_required(super_user_only=True)
+    @auth_required(READ)
     def GET(self, id):
         """
         [[wiki]]
@@ -119,18 +141,34 @@ class Task(JSONController):
         description: Get a Task object for a specific task
         method: GET
         path: /tasks/<id>/
-        permission: Super User Only
+        permission: READ
         success response: 200 OK
         failure response: 404 Not Found if no such task
         return: Task object
         """
-        tasks = async.find_async(id=id)
+        tasks = self.active(id)
+        if not tasks:
+            tasks = self.history(id)
         if not tasks:
             return self.not_found(_('Task not found: %s') % id)
-        task = tasks[0]
-        task_dict = self._task_to_dict(task)
-        task_dict['snapshot_id'] = task.snapshot_id
-        return self.ok(task_dict)
+        return self.ok(tasks[0])
+
+    def active(self, id):
+        tasks = []
+        for task in async.find_async(id=id):
+            task_dict = self._task_to_dict(task)
+            task_dict['snapshot_id'] = task.snapshot_id
+            tasks.append(task_dict)
+        return tasks
+
+    def history(self, id):
+        tasks = []
+        for task in task_history.task(id):
+            task['scheduler'] = None
+            task['snapshot_id'] = None
+            tasks.append(task)
+        return tasks
+
 
     @error_handler
     @auth_required(super_user_only=True)
@@ -158,7 +196,7 @@ class Task(JSONController):
 class CancelTask(JSONController):
 
     @error_handler
-    @auth_required(super_user_only=True)
+    @auth_required(UPDATE)
     def POST(self, id):
         """
         [[wiki]]
@@ -166,7 +204,7 @@ class CancelTask(JSONController):
         description: Cancel a waiting or running task.
         method: POST
         path: /tasks/<id>/cancel/
-        permission: Super User Only
+        permission: UPDATE
         success response: 202 Accepted
         failure response: 404 Not Found
         return: Task object

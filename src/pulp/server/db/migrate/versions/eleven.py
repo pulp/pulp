@@ -26,7 +26,7 @@ def _migrate_packages():
     for pkg in collection.find({}):
         modified = False
         pkg_path = pulp.server.util.get_shared_package_path(pkg['name'], pkg['version'], pkg['release'], \
-                                                            pkg['arch'], pkg['filename'], pkg['checksum']['sha256'] )
+                                                            pkg['arch'], pkg['filename'], pkg['checksum'].values()[0])
         if os.path.exists(pkg_path):
             header = pulp.server.util.get_rpm_information(pkg_path)
         else:

@@ -40,9 +40,10 @@ class CancelException(TaskThreadException):
     """
     pass
 
+
 class ConflictingOperationException(TaskThreadException):
     """
-    Exception to signify a task couldn't run do to a conflict,
+    Exception to signify a task couldn't run due to a conflict,
     possibly a previous operation was still in progress
     """
     pass
@@ -57,8 +58,8 @@ class TaskThreadInterruptionError(TaskThreadException):
 
 class TaskThreadStateError(TaskThreadException):
     '''
-    Exception class used to indicate one or more child threads is in a state that cannot
-    currently be canceled.
+    Exception class used to indicate one or more child threads is in a state
+    that cannot currently be canceled.
     '''
     pass
 
@@ -84,6 +85,7 @@ class SnapshotFailure(TaskingException):
     Raised when a task snapshot fails.
     """
     pass
+
 
 class DuplicateSnapshotError(TaskingException):
     """

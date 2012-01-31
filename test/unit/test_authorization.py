@@ -19,38 +19,20 @@ import string
 import sys
 import unittest
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-testutil.load_test_config()
-
-from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.permission import PermissionAPI
-from pulp.server.api.role import RoleAPI
-from pulp.server.api.user import UserApi
-from pulp.server.auth import authorization
+from pulp.server.auth import authorization, principal
+from pulp.server.tasking.task import Task
 
 
-class TestAuthorization(unittest.TestCase):
+class TestAuthorization(testutil.PulpAsyncTest):
 
     def setUp(self):
-        mocks.install()
+        testutil.PulpAsyncTest.setUp(self)
         authorization.ensure_builtin_roles()
-        self.perm_api = PermissionAPI()
-        self.role_api = RoleAPI()
-        self.user_api = UserApi()
+        principal.clear_principal()
         self.alhpa_num = string.letters + string.digits
-
-    def tearDown(self):
-        self.perm_api.clean()
-        self.role_api.clean()
-        self.user_api.clean()
-        testutil.common_cleanup()
 
     # test data generation
 
@@ -67,6 +49,11 @@ class TestAuthorization(unittest.TestCase):
         return '/%s/' % '/'.join(''.join(random.sample(self.alhpa_num,
                                                        random.randint(6, 10)))
                                  for i in range(random.randint(2, 4)))
+
+    def _create_task(self):
+        def _noop():
+            pass
+        return Task(_noop)
 
     # test individual user permissions
 
@@ -398,6 +385,8 @@ class TestAuthorization(unittest.TestCase):
         self.assertTrue(authorization.is_authorized(s, u, authorization.DELETE))
         self.assertTrue(authorization.is_authorized(s, u, authorization.EXECUTE))
 
+    # test consumer auto-permissions
+
     def test_consumer_users(self):
         role = self.role_api.role(authorization.consumer_users_role)
         self.assertFalse(role is None)
@@ -426,6 +415,22 @@ class TestAuthorization(unittest.TestCase):
         self.assertFalse(authorization.is_authorized(s, u, authorization.UPDATE))
         self.assertFalse(authorization.is_authorized(s, u, authorization.DELETE))
         self.assertFalse(authorization.is_authorized(s, u, authorization.EXECUTE))
+
+    # test task auto-permissions
+
+    def test_task_permissions(self):
+        u = self._create_user()
+        t = self._create_task()
+        r = '/tasks/%s/' % t.id
+        principal.set_principal(u)
+        grant = authorization.GrantPermissionsForTask()
+        grant(t)
+        self.assertTrue(authorization.is_authorized(r, u, authorization.READ))
+        self.assertTrue(authorization.is_authorized(r, u, authorization.DELETE))
+        revoke = authorization.RevokePermissionsForTask()
+        revoke(t)
+        self.assertFalse(authorization.is_authorized(r, u, authorization.READ))
+        self.assertFalse(authorization.is_authorized(r, u, authorization.DELETE))
 
 
 if __name__ == '__main__':

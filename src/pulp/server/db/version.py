@@ -21,7 +21,7 @@ from pulp.server.db.model import Model
 
 # current data model version of the code base
 # increment this if you change the data model
-VERSION = 19
+VERSION = 36
 
 # this isn't anything
 _version_db = None
@@ -38,7 +38,7 @@ class DataModelVersion(Model):
     """
 
     collection_name = 'data_model'
-    unique_indicies = ('version',)
+    unique_indices = ('version',)
 
     def __init__(self, version):
         """

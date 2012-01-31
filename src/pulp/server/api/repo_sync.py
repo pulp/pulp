@@ -21,48 +21,46 @@ from gettext import gettext as _
 from StringIO import StringIO
 
 from pulp.common import dateutils
-from pulp.server import comps_util
+from pulp.server import comps_util, config, async
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.api.synchronizers import BaseSynchronizer, LocalSynchronizer, YumSynchronizer, \
-    yum_rhn_progress_callback, local_progress_callback
+from pulp.server.api.distribution import DistributionApi
+from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
+    yum_rhn_progress_callback, local_progress_callback, FileSynchronizer
 from pulp.server.api.repo_sync_task import RepoSyncTask
+from pulp.server.api.repo_clone_task import RepoCloneTask
 from pulp.server.auditing import audit
 from pulp.server.async import run_async
-from pulp.server.pexceptions import PulpException
+from pulp.server.event.handler.task import TaskDequeued
+from pulp.server.exceptions import PulpException
+from pulp.server.tasking.exception import CancelException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import top_repos_location
+from pulp.server.util import top_gpg_location
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
 package_api = PackageApi()
 errata_api = ErrataApi()
+distro_api = DistributionApi()
 
 # synchronization type map ----------------------------------------------------
 type_classes = {
-    'remote': YumSynchronizer,
-    'local': LocalSynchronizer,
+    'yum': YumSynchronizer,
+    'file' : FileSynchronizer,
 }
 
 @audit()
 def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None,
-        progress_callback=None, timeout=None, filters=[]):
+        progress_callback=None, timeout=None, filters=[], publish=None):
     """
     Run a repo clone asynchronously.
+    @rtype pulp.server.tasking.task or None
+    @return on success a task object is returned
+            on failure None is returned
+    @return
     """
-    task = run_async(_clone,
-                    [id, clone_id, clone_name, feed, groupid, relative_path, filters],
-                    {},
-                    timeout=timeout)
-    if feed in ('feedless', 'parent'):
-        task.set_progress('progress_callback', local_progress_callback)
-    else:
-        task.set_progress('progress_callback', yum_rhn_progress_callback)
-    return task
-
-def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None,
-            filters=(), progress_callback=None):
     repo = repo_api.repository(id)
     if repo is None:
         raise PulpException("A Repo with id %s does not exist" % id)
@@ -90,24 +88,56 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
         consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
                         'cert' : read_cert_file(repo['consumer_cert'])}
 
-    log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
-    if feed == 'origin':
-        origin_feed = repo['source']['url']
-        repo_api.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
-                relative_path=clone_id, feed_cert_data=feed_cert_data,
-                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
-    else:
-        repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
-                relative_path=relative_path, feed_cert_data=feed_cert_data,
-                consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
+    if relative_path is None:
+        relative_path = clone_id
+    # inherit content types from parent
+    content_types = repo['content_types']
+    log.info("Creating [%s] feed repo [%s] cloned from [%s] with relative_path [%s]" % (feed, clone_id, id, relative_path))
+    repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
+                    relative_path=relative_path, feed_cert_data=feed_cert_data,
+                    consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], 
+                    content_types=content_types, publish=publish)
 
     # Associate filters if specified
     if len(filters) > 0:
         repo_api.add_filters(clone_id, filter_ids=filters)
 
+    task = RepoCloneTask(_clone,
+                         [clone_id],
+                         {'id':id,
+                          'clone_name':clone_name,
+                          'feed':feed,
+                          'relative_path':relative_path,
+                          'groupid':groupid,
+                          'filters':filters},
+                         timeout=timeout)
+    if feed in ('feedless', 'parent'):
+        task.set_progress('progress_callback', local_progress_callback)
+    else:
+        task.set_progress('progress_callback', yum_rhn_progress_callback)
+    content_type = repo['content_types']
+    synchronizer = get_synchronizer(content_type)
+    # enable synchronizer as a clone process
+    synchronizer.set_clone(id)
+    task.set_synchronizer(synchronizer)
+    if content_type == 'yum':
+        task.weight = config.config.getint('yum', 'task_weight')
+    task = async.enqueue(task)
+    if task is None:
+        log.error("Unable to create repo._clone task for [%s]" % (id))
+    return task
+
+
+def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=None,
+            filters=(), progress_callback=None, synchronizer=None):
+    repo = repo_api.repository(id)
+
     # Sync from parent repo
     try:
-        _sync(clone_id, progress_callback=progress_callback)
+        _sync(clone_id, progress_callback=progress_callback, synchronizer=synchronizer)
+    except CancelException, e:
+        log.info(_('Content sync canceled'))
+        raise
     except Exception, e:
         log.error(e)
         log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -127,11 +157,17 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
     repo['clone_ids'] = clone_ids
     repo_api.collection.save(repo, safe=True)
 
+    # Update repoids on distributions
+    for distro_id in cloned_repo["distributionid"]:
+        distro = distro_api.distribution(distro_id)
+        distro["repoids"].append(clone_id)
+        distro_api.collection.save(distro, safe=True)
+
     # Update gpg keys from parent repo
     keylist = []
     key_paths = repo_api.listkeys(id)
     for key_path in key_paths:
-        key_path = REPOS_LOCATION + key_path
+        key_path = os.path.join(top_gpg_location(), key_path)
         f = open(key_path)
         fn = os.path.basename(key_path)
         content = f.read()
@@ -139,6 +175,8 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
         f.close()
     repo_api.addkeys(clone_id, keylist)
 
+    # Add files to cloned repo
+    repo_api.add_file(repoid=clone_id, fileids=repo["files"])
 
 
 @audit()
@@ -151,24 +189,28 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
     @return
     """
     repo = repo_api.repository(repo_id)
-    task = run_async(_sync,
+    task = RepoSyncTask(_sync,
                         [repo_id],
-                        {'skip_dict':skip,
-                        'max_speed':max_speed,
-                        'threads':threads},
-                        timeout=timeout,
-                        task_type=RepoSyncTask)
-    if not task:
-        log.error("Unable to create repo._sync task for [%s]" % (repo_id))
-        return task
+                        {'skip':skip,
+                         'max_speed':max_speed,
+                         'threads':threads},
+                        timeout=timeout)
     if repo['source'] is not None:
         source_type = repo['source']['type']
         if source_type in ('remote'):
-                task.set_progress('progress_callback', yum_rhn_progress_callback)
+            # its a remote sync, use supported content types to select synchronizer
+            task.set_progress('progress_callback', yum_rhn_progress_callback)
         elif source_type in ('local'):
             task.set_progress('progress_callback', local_progress_callback)
-        synchronizer = get_synchronizer(source_type)
+        content_type = repo['content_types']
+        synchronizer = get_synchronizer(content_type)
         task.set_synchronizer(synchronizer)
+        if content_type == 'yum':
+            task.weight = config.config.getint('yum', 'task_weight')
+    task.add_dequeue_hook(TaskDequeued())
+    task = async.enqueue(task)
+    if task is None:
+        log.error("Unable to create repo._sync task for [%s]" % (repo_id))
     return task
 
 def get_synchronizer(source_type):
@@ -187,7 +229,7 @@ def get_synchronizer(source_type):
     return synchronizer
 
 
-def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
+def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
           max_speed=None, threads=None):
     """
     Sync a repo from the URL contained in the feed
@@ -210,18 +252,23 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
 
     try:
         log.info("Sync invoked for repo <%s>" % (repo_id))
-        if not skip_dict:
-            skip_dict = {}
+        if not skip:
+            skip = {}
         repo = repo_api._get_existing_repo(repo_id)
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         if not synchronizer:
-            synchronizer = get_synchronizer(repo_source["type"])
+            if repo['content_types'] in ('yum'):
+                source = repo['content_types']
+            elif repo['content_types'] in ('file'):
+                source = repo['content_types']
+            synchronizer = get_synchronizer(source)
             synchronizer.set_callback(progress_callback)
-        log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip_dict))
+        log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip))
         start_sync_items = time.time()
-        sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip_dict,
+
+        sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()
         log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
@@ -229,7 +276,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call
         repo = repo_api._get_existing_repo(repo_id)
-        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+        if not skip.has_key('packages') or skip['packages'] != 1:
             old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
             old_pkgs = map(package_api.package, old_pkgs)
             old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
@@ -248,11 +295,11 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
             # Update repo for package additions
             repo_api.collection.save(repo, safe=True)
 
-        if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
+        if not skip.has_key('errata') or skip['errata'] != 1:
             # Determine removed errata
             synchronizer.progress_callback(step="Processing Errata")
             log.info("Examining %s errata from repo %s" % (len(repo_api.errata(repo_id)), repo_id))
-            repo_errata = repo_api.errata(repo_id)
+            repo_errata = [e['id'] for e in repo_api.errata(repo_id)]
             old_errata = list(set(repo_errata).difference(set(sync_errataids)))
             new_errata = list(set(sync_errataids).difference(set(repo_errata)))
             log.info("Removing %s old errata from repo %s" % (len(old_errata), repo_id))
@@ -271,6 +318,11 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None,
         now = datetime.now(dateutils.local_tz())
         repo_api.collection.update({"id":repo_id},
                                    {"$set":{"last_sync":dateutils.format_iso8601_datetime(now)}})
+
+        # Throw cancel exception when sync is canceled during package and errata removal
+        if synchronizer.stopped:
+            raise CancelException()
+
         synchronizer.progress_callback(step="Finished")
         return True
     finally:
@@ -305,9 +357,11 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
         synchronizer.progress['step'] = "Importing data into pulp"
         progress_callback(synchronizer.progress)
     # Process Packages
-    added_packages = synchronizer.add_packages_from_dir(repo_dir, repo_id, skip_dict)
+    added_packages = synchronizer.process_packages_from_source(repo_dir, repo_id, skip_dict, progress_callback)
     # Process Distribution
     synchronizer.add_distribution_from_dir(repo_dir, repo_id, skip_dict)
+    # Process Files
+    synchronizer.add_files_from_dir(repo_dir, repo_id, skip_dict)
     # Process Metadata
     added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
     return added_packages, added_errataids

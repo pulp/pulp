@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.client import server
+from pulp.client.api import server
 
 
 class PulpAPI(object):
@@ -25,10 +25,3 @@ class PulpAPI(object):
     def server(self):
         return server.active_server
 
-    def task_status(self, status_path):
-        """
-        Get the status of a task.
-        @param status_path: The Task.status_path
-        @return: The task status.
-        """
-        return self.server.GET(str(status_path))[1]

@@ -20,7 +20,6 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 
-
 log = logging.getLogger(__name__)
 
 user_fields = model.User(None, None, None, None).keys()
@@ -36,7 +35,6 @@ class UserApi(BaseApi):
         """
         Create a new User object and return it
         """
-        self.check_id(login)
         if id is None:
             id = str(uuid.uuid4())
         hashed_password = None

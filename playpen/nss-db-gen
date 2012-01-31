@@ -16,13 +16,19 @@
 DIR="/tmp/tmp$RANDOM"
 HOST=`hostname`
 PWDFILE="password"
-INST_DIR='/tmp/etc/pki/qpid'
+SEEDFILE="seed"
+INST_DIR='/tmp/redhat/qpid'
 DB_PASSWORD=""
+VALID="12"
+CA_PATH=""
+
+echo ""
+echo "Working in: $DIR"
+echo ""
 
 #
 # ========== SETUP ============
 #
-
 # prompt user for install directory
 echo ""
 echo "Please specify a directory into which the created NSS database
@@ -41,12 +47,32 @@ while [ "${#DB_PASSWORD}" -eq 0 ]; do
   read -sp "Enter NSS database password:" DB_PASSWORD
 done
 echo ""
+
+# prompt user for existing CA.
+# must contain both key & certificate
 echo ""
+echo "Please specify a CA.  Generated if not specified."
+echo ""
+read -p "Enter a path: " ans
+if [ "${#ans}" -gt 0 ]
+then
+  CA_PATH=$ans
+  echo "Using CA: $CA_PATH"
+fi
 
 # create temporary db directory
 rm -rf $DIR
 mkdir $DIR
 cd $DIR
+#
+# ========== KEY SEED ===========
+#
+touch $SEEDFILE
+i=0
+while [ $i -lt 20 ]; do
+  echo $RANDOM >> $SEEDFILE
+  i=`expr $i + 1`
+done
 
 #
 # ========== PASSWORD ===========
@@ -55,6 +81,7 @@ cd $DIR
 # create the password file
 echo "$DB_PASSWORD" > $PWDFILE
 
+echo ""
 echo "Password file created."
 
 #
@@ -64,17 +91,28 @@ echo "Password file created."
 # create the nss db
 certutil -N -d . -f $PWDFILE
 
+echo ""
 echo "Database created."
 
 #
 # =========== CA =================
 #
 
-# create the CA cert
-SUBJECT="CN=ca,O=pulp,ST=Alabama,C=US"
-certutil -S -d . -n "ca" -s $SUBJECT -t "CT,," -x -f $PWDFILE -z cert8.db
-# export CA cert
+# create/import the CA cert
+echo ""
+if [ "$CA_PATH" = "" ]
+then
+  echo "Creating CA certificate:"
+  SUBJECT="CN=redhat,O=pulp,ST=Alabama,C=US"
+  certutil -S -d . -n "ca" -s $SUBJECT -t "TC,," -f $PWDFILE -z $SEEDFILE -x -v $VALID
+else
+  openssl pkcs12 -export -in $CA_PATH -out ca.p12 -name "ca"
+  pk12util -d . -n "ca" -i ca.p12
+  certutil -M -d . -n "ca" -t "TCu,Cu,Tuw"
+  echo "CA certificate: $CA_PATH, imported"
+fi
 certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
+
 
 echo "CA created"
 
@@ -83,11 +121,13 @@ echo "CA created"
 #
 
 # create broker cert signing request
-SUBJECT="CN=broker,O=pulp,ST=Alabama,C=US"
-certutil -R -d . -s $SUBJECT -a -o broker.req -f $PWDFILE -z cert8.db
+echo ""
+echo "Creating BROKER certificate:"
+SUBJECT="CN=$HOST,O=pulp,ST=Alabama,C=US"
+certutil -R -d . -s $SUBJECT -a -o broker.req -f $PWDFILE -z $SEEDFILE
 
 # sign the broker cert w/ CA
-certutil -C -d . -c "ca" -uV -m1 -a -i broker.req -f $PWDFILE -o broker.crt
+certutil -C -d . -c "ca" -v $VALID -uV -m1 -a -i broker.req -f $PWDFILE -o broker.crt
 
 # import the broker cert
 certutil -A -d . -n "broker" -t ",," -a -i broker.crt
@@ -98,24 +138,30 @@ echo "Broker certificate created."
 # =========== CLIENT =============
 #
 
+# create the nss db
+mkdir client
+certutil -N -d client -f $PWDFILE
+
 # create client cert signing request
+echo ""
+echo "Creating CLIENT certificate:"
 SUBJECT="CN=client,O=pulp,ST=Alabama,C=US"
-certutil -R -d . -s $SUBJECT -a -o client.req -f $PWDFILE -z cert8.db
+certutil -R -d client -s $SUBJECT -a -o client.req -f $PWDFILE -z $SEEDFILE
 
 # sign the client cert w/ CA
-certutil -C -d . -c "ca" -uC -m2 -a -i client.req -f $PWDFILE -o client.crt
+certutil -C -d . -c "ca" -v $VALID -uC -m2 -a -i client.req -f $PWDFILE -o client.crt
 
 # import the client cert
-certutil -A -d . -n "client" -t ",," -a -i client.crt
+certutil -A -d client -n "client" -t ",," -a -i client.crt
 echo "Client certificate created."
 
 # export client p12 bundle
-pk12util -d . -n "client" -o client.p12
+pk12util -d client -n "client" -o client.p12
 
 # using openssl, generate a key & cert using the p12.
 openssl pkcs12 -in client.p12 -nodes -out client.crt
 
-echo "Client key & certficate exported"
+echo "Client key & certificate exported"
 
 #
 # =========== INSTALL =============
@@ -124,11 +170,18 @@ echo "Client key & certficate exported"
 # clean unused artifacts
 rm -f *.req
 rm -f *.p12
-rm -f broker.crt
+rm -rf client
 
-# create target directory
+# create target directory and install files
 mkdir -p $INST_DIR
-cp $DIR/* $INST_DIR
+mkdir -p $INST_DIR/nss
+cp $DIR/*.crt $INST_DIR
+cp $DIR/*.db $INST_DIR/nss
+cp $DIR/$PWDFILE $INST_DIR/nss
+
+# update perms
+chmod 644 $INST_DIR/*.crt
+chmod 644 $INST_DIR/nss/*
 
 echo ""
 echo "Artifacts copied to: $INST_DIR."
@@ -141,24 +194,25 @@ echo ""
 echo "Please update /etc/qpidd.conf as follows:"
 echo "
 ....
+auth=no
+....
 # SSL
 require-encryption=yes
 ssl-require-client-authentication=yes
-ssl-cert-db=$INST_DIR
-ssl-cert-password-file=$INST_DIR/password
+ssl-cert-db=$INST_DIR/nss
+ssl-cert-password-file=$INST_DIR/nss/password
 ssl-cert-name=broker
 ssl-port=5674
 ...
 "
 echo ""
-echo "Please configure clients as follows:"
+echo "Please configure gofer as follows:"
 echo "
 ...
 [messaging]
 url=ssl://<host>:5674
 cacert=$INST_DIR/ca.crt
 clientcert=$INST_DIR/client.crt
-...
 "
 
 #

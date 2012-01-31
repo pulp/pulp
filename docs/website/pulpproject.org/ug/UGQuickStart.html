@@ -30,21 +30,14 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="QuickStart">Quick Start</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="QuickStart">Quick Start</h1>
 <p>
 Below are a few examples of how to use Pulp to get content synchronized locally to your server and make it available to systems. The examples assume you have installed and configured Pulp according to the <a class="wiki" href="UGInstallation.html">Installation Guide</a>.
 </p>
 <hr />
 <h2 id="basic">Basic Usage</h2>
 <p>
-The starting point for a new Pulp installation is the <tt>pulp-admin</tt> command. Help information is available for both the <tt>pulp-admin</tt> and <tt>pulp-client</tt> scripts:
+The starting point for a new Pulp installation is the <tt>pulp-admin</tt> command. Help information is available for both the <tt>pulp-admin</tt> and <tt>pulp-consumer</tt> scripts:
 </p>
 <pre class="wiki">$ pulp-admin --help
 Usage: pulp-admin &lt;options&gt; &lt;command&gt;
@@ -107,7 +100,7 @@ Successfully updated [ admin ] with name [ Some Admin ]
 </pre><p>
 Instead of passing the user credentials on each call to the <tt>pulp-admin</tt> script, the credentials can be stored in your home directory by issuing the <tt>auth login</tt> command:
 </p>
-<pre class="wiki">$ pulp-admin -u admin -p ***** auth login
+<pre class="wiki">$ pulp-admin auth login -u admin -p *****
 User credentials successfully stored at [/home/someadmin/.pulp]
 </pre><p>
 Subsequent calls can omit the user credentials:
@@ -122,38 +115,26 @@ Now that we are setup to issue commands to the Pulp server, lets see if we can g
 <p>
 The first step is to pick a repository to synchronize:
 </p>
-<p>
-1. Go to the mirrors list: <tt>http://mirrors.fedoraproject.org/publiclist/</tt>
-</p>
-<p>
-2. Choose a mirror near you and find the URL to the root of the architecture you wish to synchronize (e.g. <tt>http://mirror.uoregon.edu/fedora/linux/releases/14/Fedora/x86_64/os/</tt>)
-</p>
-<p>
-3. Create a repo in the Pulp server using the <tt>pulp-admin</tt> script. Note the <tt>--feed</tt> parameter denotes the type of repository to be synchronized. The type helps Pulp figure out what synchronization strategy to use when copying the content.
-</p>
+<ol><li>Go to the mirrors list: <tt>http://mirrors.fedoraproject.org/publiclist/</tt>
+</li></ol><ol start="2"><li>Choose a mirror near you and find the URL to the root of the architecture you wish to synchronize (e.g. <tt>http://mirror.uoregon.edu/fedora/linux/releases/14/Fedora/x86_64/os/</tt>)
+</li></ol><ol start="3"><li>Create a repo in the Pulp server using the <tt>pulp-admin</tt> script. Note the <tt>--feed</tt> parameter denotes the type of repository to be synchronized. The type helps Pulp figure out what synchronization strategy to use when copying the content.
 <pre class="wiki">$ pulp-admin repo create --id f14-x86_64 --feed http://mirror.uoregon.edu/fedora/linux/releases/14/Fedora/x86_64/os/
 Successfully created repository [ f14-x86_64 ]
-</pre><p>
-4. Now we can sync the newly created repository. You can watch this progress or CTRL+C and come back later to see its progress.
-</p>
+</pre></li></ol><ol start="4"><li>Now we can sync the newly created repository. You can watch this progress or CTRL+C and come back later to see its progress.
 <pre class="wiki">$ pulp-admin repo sync --id f14-x86_64 -F
 Sync for repository f14-x86_64 started
 You can safely CTRL+C this current command and it will continue
 [                                                     ] 0%
-</pre><hr />
+</pre></li></ol><hr />
 <h2 id="consumer">Register a Consumer (System) to Pulp</h2>
 <p>
-After content is synchronized to Pulp, the next step is to connect a system so it can start installing packages from your Pulp repository. The <tt>pulp-client</tt> is used for registration with a Pulp server. See the <a class="wiki" href="UGInstallation.html#consumerclient">Consumer Client Guide</a> for installation and configuration information.
+After content is synchronized to Pulp, the next step is to connect a system so it can start installing packages from your Pulp repository. The <tt>pulp-consumer</tt> is used for registration with a Pulp server. See the <a class="wiki" href="UGInstallation.html#consumerclient">Consumer Client Guide</a> for installation and configuration information.
 </p>
-<p>
-1. Using the <tt>pulp-client</tt> script, register the client system with the Pulp server:
-</p>
-<pre class="wiki">$ sudo pulp-client -u admin -p ****** consumer create --id myclient
+<ol><li>Using the <tt>pulp-consumer</tt> script, register the client system with the Pulp server:
+<pre class="wiki">$ sudo pulp-consumer -u admin -p ****** consumer register --id myclient
 Successfully created consumer [ myclient ]
-</pre><p>
-2. Once the client is registered, we can see a list of possible repositories to use:
-</p>
-<pre class="wiki">$ sudo pulp-client repo list
+</pre></li></ol><ol start="2"><li>Once the consumer is registered, we can see a list of possible repositories to use:
+<pre class="wiki">$ sudo pulp-consumer repo list
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
@@ -169,14 +150,10 @@ Files              	0
 Distributions      	None                     
 Publish            	True                     
 Clones             	[]                       
-</pre><p>
-3. To use a repository, it is <i>bound</i> to the client system. Binding a repository makes that repository available to the client system:
-</p>
-<pre class="wiki">$ sudo pulp-client consumer bind --repoid f14-x86_64
+</pre></li></ol><ol start="3"><li>To use a repository, it is <em>bound</em> to the client system. Binding a repository makes that repository available to the client system:
+<pre class="wiki">$ sudo pulp-consumer consumer bind --repoid f14-x86_64
 Successfully subscribed consumer [myclient] to repo [f14-x86_64]
-</pre><p>
-4. The <tt>pulp-client</tt> script creates a repo config file at <tt>/etc/yum.repos.d/pulp.repo</tt> for the newly bound repository:
-</p>
+</pre></li></ol><ol start="4"><li>The <tt>pulp-consumer</tt> script creates a repo config file at <tt>/etc/yum.repos.d/pulp.repo</tt> for the newly bound repository:
 <pre class="wiki">$ cat /etc/yum.repos.d/pulp.repo 
 #
 # Pulp Repositories
@@ -188,9 +165,7 @@ name = f14-x86_64
 baseurl = https://localhost/pulp/repos/fedora/linux/releases/14/Fedora/x86_64/os
 enabled = 1
 sslverify = 0
-</pre><p>
-5. At that point, the repository is available for use with <tt>yum</tt>:
-</p>
+</pre></li></ol><ol start="5"><li>At that point, the repository is available for use with <tt>yum</tt>:
 <pre class="wiki">$ sudo yum --disablerepo=* --enablerepo=f14-x86_64 install zsh
 ...
   Installing     : zsh-4.3.10-5.fc13.x86_64
@@ -199,18 +174,14 @@ Installed:
   zsh.x86_64 0:4.3.10-5.fc13                                                                            
 
 Complete!
-</pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+</pre></li></ol></div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

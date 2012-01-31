@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki"><div id="wikipage"><h1 id="ContentDeliveryServers">Content Delivery Servers</h1>
+<hr />
+<h2 id="Register">Register</h2>
+<p>
+<em>Registers a CDS instance with the Pulp server. The CDS instance must be configured and running prior to this call. This call will attempt to initialize the CDS instance which involves making an invocation against it and negotiating the shared token. If that initialization is unsuccessful, this call will fail and the CDS will not be added to the Pulp server.</em>
+</p>
+<p>
+<em>There is no explicit step for creating a CDS cluster. If the CDS is to be part of a cluster, the desired cluster ID is specified in this call and effectively creates the cluster at that point.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /cds/
+</p>
+<p>
+<strong>permission:</strong> CREATE
+</p>
+<p>
+<strong>success response:</strong> 201 - Created
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>409 - if there is already a CDS instance with the given hostname
+</li><li>500 - if the CDS instance cannot be reached to be initialized or raises an error during initialization
+</li></ul><p>
+<strong>return:</strong> dictionary describing the created CDS instance
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance being registered</strong>
+</li><li><strong>name</strong> &lt;str&gt; <strong>user-friendly name for the CDS instance</strong>
+</li><li><strong>description</strong> &lt;str&gt; <strong>user-friendly description of the CDS instance</strong>
+</li><li><strong>sync_schedule</strong> &lt;str&gt; <strong>schedule in iso8601 format</strong>
+</li><li><strong>cluster_id</strong> &lt;str&gt; <strong>(optional) ID of the cluster the CDS should belong to</strong>
+</li></ul><p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki">{
+  "description": null, 
+  "_ns": "cds", 
+  "hostname": "pulp-cds-1", 
+  "last_sync": null, 
+  "secret": "833925b0-2732-46dd-95bc-570d532c1e31", 
+  "cluster_id": null, 
+  "sync_schedule": null, 
+  "repo_ids": [], 
+  "_id": "pulp-cds-1", 
+  "id": "pulp-cds-1", 
+  "name": "pulp-cds-1"
+}
+</pre><hr />
+<h2 id="Unregister">Unregister</h2>
+<p>
+<em>Removes a CDS instance from Pulp control. The CDS processes running on the instance are not stopped. The shared secret between the Pulp server and CDS is removed from the CDS, allowing it to be registered to a different Pulp server.</em>
+</p>
+<p>
+<em>This call will attempt to inform the CDS it is being released. If that call to the CDS fails, this call will fail. The CDS can be forcibly removed from the Pulp server's database by passing the "force" flag to the call.</em>
+</p>
+<p>
+<strong>method:</strong> DELETE
+</p>
+<p>
+<strong>path:</strong> /cds/&lt;hostname&gt;/
+</p>
+<p>
+<strong>permission:</strong> DELETE
+</p>
+<p>
+<strong>success response:</strong> 200 - OK
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>500 - if there is no CDS for the given hostname
+</li></ul><p>
+<strong>return:</strong> true if the CDS was unregistered
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance being registered</strong>
+</li><li><strong>force</strong> &lt;boolean&gt; <strong>if true, the CDS will be removed from the Pulp database even if it cannot be contacted</strong>
+</li></ul><hr />
+<h2 id="ListAllCDSInstances">List All CDS Instances</h2>
+<p>
+<em>Returns a list of all CDS instances registered to the Pulp server.</em>
+</p>
+<p>
+<strong>method:</strong> GET
+</p>
+<p>
+<strong>path:</strong> /cds/
+</p>
+<p>
+<strong>permission:</strong> READ
+</p>
+<p>
+<strong>success response:</strong> 200 - OK
+</p>
+<p>
+<strong>failure response:</strong> None
+</p>
+<p>
+<strong>return:</strong> list of dictionaries describing each CDS instance
+</p>
+<p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki"> [
+  {
+    "description": null, 
+    "_ns": "cds", 
+    "hostname": "pulp-cds-1", 
+    "last_sync": null, 
+    "secret": "56f3a490-cdff-435f-ae42-4bddc0526f3e", 
+    "cluster_id": null, 
+    "sync_schedule": null, 
+    "repo_ids": [], 
+    "heartbeat": [
+      false, 
+      "2011-11-30T21:16:00.767145+00:00", 
+      {
+        "cds": {}
+      }
+    ], 
+    "_id": "pulp-cds-1", 
+    "id": "pulp-cds-1", 
+    "name": "pulp-cds-1"
+  }
+]
+</pre><hr />
+<h2 id="GetCDSInstance">Get CDS Instance</h2>
+<p>
+<em>Retrieves metadata describing a single CDS instance.</em>
+</p>
+<p>
+<strong>method:</strong> GET
+</p>
+<p>
+<strong>path:</strong> /cds/&lt;hostname&gt;/
+</p>
+<p>
+<strong>permission:</strong> READ
+</p>
+<p>
+<strong>success response:</strong> 200 - OK
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 - if no CDS exists with the given hostname
+</li></ul><p>
+<strong>return:</strong> dictionary describing the CDS instance
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance to retrieve</strong>
+</li></ul><p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki">{
+  "description": null, 
+  "_ns": "cds", 
+  "hostname": "pulp-cds-1", 
+  "last_sync": null, 
+  "secret": "56f3a490-cdff-435f-ae42-4bddc0526f3e", 
+  "cluster_id": null, 
+  "sync_schedule": null, 
+  "repo_ids": [], 
+  "heartbeat": [
+    false, 
+    "2011-11-30T21:16:00.767145+00:00", 
+    {
+      "cds": {}
+    }
+  ], 
+  "_id": "pulp-cds-1", 
+  "id": "pulp-cds-1", 
+  "name": "pulp-cds-1"
+}
+</pre><hr />
+<h2 id="AssociateaRepository">Associate a Repository</h2>
+<p>
+<em>Configures the CDS to host the given repository. The repository is not immediately sent to the CDS but rather will be downloaded in the next CDS sync.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /cds/&lt;hostname&gt;/associate/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 201 - Accepted
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>409 - if the Pulp server is currently redistributing consumers for the given repository across the current CDS host list for that repository
+</li></ul><p>
+<strong>return:</strong> task instance describing the redistribution of consumers to take the CDS into account
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance to associate the repository to</strong>
+</li><li><strong>repo_id</strong> &lt;str&gt; <strong>identifies the repository being associated with the CDS instance</strong>
+</li></ul><p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki"> {
+  "scheduled_time": "2011-11-30T21:18:49Z", 
+  "exception": null, 
+  "args": [
+    "repo-1"
+  ], 
+  "job_id": null, 
+  "class_name": "CdsApi", 
+  "start_time": null, 
+  "traceback": null, 
+  "method_name": "redistribute", 
+  "finish_time": null, 
+  "state": "waiting", 
+  "result": null, 
+  "scheduler": "immediate", 
+  "progress": null, 
+  "id": "e5496305-1b98-11e1-9c0f-00508d977dff"
+}
+</pre><hr />
+<h2 id="UnassociateaRepository">Unassociate a Repository</h2>
+<p>
+<em>Removes a repository from being hosted by a CDS instance. As with associate, this call simply updates the Pulp database. The change is not seen on the CDS instance until the next sync occurs.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /cds/&lt;hostname&gt;/unassociate/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 201 - Accepted
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>409 - if the Pulp server is currently redistributing consumers for the given repository across the current CDS host list for that repository
+</li></ul><p>
+<strong>return:</strong> task instance describing the redistribution of consumers to take the CDS removal into account
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance to update</strong>
+</li><li><strong>repo_id</strong> &lt;str&gt; <strong>identifies the repository being removed from the CDS instance</strong>
+</li></ul><p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki"> {
+  "scheduled_time": "2011-11-30T21:19:16Z", 
+  "exception": null, 
+  "args": [
+    "repo-1"
+  ], 
+  "job_id": null, 
+  "class_name": "CdsApi", 
+  "start_time": null, 
+  "traceback": null, 
+  "method_name": "redistribute", 
+  "finish_time": null, 
+  "state": "waiting", 
+  "result": null, 
+  "scheduler": "immediate", 
+  "progress": null, 
+  "id": "f5968980-1b98-11e1-86e4-00508d977dff"
+}
+</pre><hr />
+<h2 id="RetrieveCDSHistory">Retrieve CDS History</h2>
+<p>
+<em>Retrieves history entries describing events that took place on a CDS instance.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /cds/&lt;hostname&gt;/history/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 200 - OK
+</p>
+<p>
+<strong>failure response:</strong> None
+</p>
+<p>
+<strong>return:</strong> list of CDS history items (empty list if none match) containing the following fields:
+</p>
+<ul><li><strong>cds_hostname</strong> &lt;str&gt; <strong>hostname of the CDS the entry refers to</strong>
+</li><li><strong>originator</strong> &lt;str&gt; <strong>indicates the user who triggered the action that caused the history event</strong>
+</li><li><strong>type_name</strong> &lt;str&gt; <strong>describes the type of event that occurred; possible values: registered, unregistered, sync_started, sync_finished, repo_associated, repo_unassociated</strong>
+</li><li><strong>details</strong> &lt;str&gt; <strong>arbitrary text further describing the event (will differ based on event type</strong>
+</li><li><strong>timestamp</strong> &lt;str&gt; <strong>timestamp in iso8601 format of when the event item was added</strong>
+</li></ul><p>
+<strong>parameters:</strong> <em>(any of the parameters can be combined for advanced queries)</em>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance to update</strong>
+</li><li><strong>event_type</strong> &lt;str&gt; <strong>(optional) if specified, only events of the given type are returned (see above for valid type names)</strong>
+</li><li><strong>limit</strong> &lt;int&gt; <strong>(optional) if specified, only up to the given amount of items will be returned</strong>
+</li><li><strong>sort</strong> &lt;str&gt; <strong>(optional) indicates the sort direction by timestamp; valid values: ascending, descending</strong>
+</li><li><strong>start_date</strong> &lt;str&gt; <strong>(optional) if specified, only events that took place after the given date (in iso8601 format) will be returned</strong>
+</li><li><strong>end_date</strong> &lt;str&gt; <strong>(optional) if specified, only events that took place before the given date (in iso8601 format) will be returned</strong>
+</li></ul><p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki"> [
+  {
+    "originator": "admin", 
+    "cds_hostname": "pulp-cds-1", 
+    "timestamp": "2011-11-30T21:19:16Z", 
+    "type_name": "repo_unassociated", 
+    "details": {
+      "repo_id": "repo-1"
+    }, 
+    "_ns": "cds_history", 
+    "_id": "4d813279-1fac-4f04-b9c6-28a00545e0e3", 
+    "id": "4d813279-1fac-4f04-b9c6-28a00545e0e3"
+  }, 
+  {
+    "originator": "admin", 
+    "cds_hostname": "pulp-cds-1", 
+    "timestamp": "2011-11-30T21:18:49Z", 
+    "type_name": "repo_associated", 
+    "details": {
+      "repo_id": "repo-1"
+    }, 
+    "_ns": "cds_history", 
+    "_id": "93d7d6dd-baf7-4ce5-b580-c134736ceeca", 
+    "id": "93d7d6dd-baf7-4ce5-b580-c134736ceeca"
+  }
+]
+</pre><hr />
+<h2 id="TriggeraCDSSynchronization">Trigger a CDS Synchronization</h2>
+<p>
+<em>Schedules a CDS sync to run as soon as possible (may be delayed depending on what other work the Pulp server is doing). The sync will take place asynchronously and the call will return immediately with information on how to track the sync.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /cds/&lt;hostname&gt;/sync/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 201 - Accepted
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>400 - if the timeout cannot correctly be parsed
+</li><li>404 - if no CDS exists with the given hostname
+</li></ul><p>
+<strong>return:</strong> task instance describing the sync task
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>hostname</strong> &lt;str&gt; <strong>the hostname of the CDS instance to update</strong>
+</li><li><strong>timeout</strong> &lt;str&gt; <strong>timeout value in iso8601 format that dictates how long the sync may run before the Pulp server aborts the request</strong>
+</li></ul><p>
+<strong>sample response:</strong>
+</p>
+<pre class="wiki"> {
+  "scheduled_time": "2011-11-30T21:21:04Z", 
+  "exception": null, 
+  "args": [
+    "pulp-cds-1"
+  ], 
+  "job_id": null, 
+  "class_name": "CdsApi", 
+  "start_time": null, 
+  "traceback": null, 
+  "method_name": "cds_sync", 
+  "finish_time": null, 
+  "state": "waiting", 
+  "result": null, 
+  "scheduler": "immediate", 
+  "progress": null, 
+  "id": "36203045-1b99-11e1-add9-00508d977dff"
+}
+</pre></div>
+        
+        
+      </div>
+      
+
+    </div>
+    
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

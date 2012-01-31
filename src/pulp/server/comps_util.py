@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -15,6 +14,9 @@
 # Python
 import gzip
 import logging
+import os
+import shutil
+import tempfile
 import xml.dom.minidom
 
 # 3rd Party
@@ -124,21 +126,30 @@ def form_comps_xml(ctgs, grps):
 
 
 
-def update_repomd_xml_string(repomd_xml, compsxml_checksum,
-        compsxml_timestamp, compsxml_gz_checksum=None,
+def update_repomd_xml_string(repomd_xml, compsxml_path, compsxml_checksum,
+        compsxml_timestamp, compsxml_gz_path=None, compsxml_gz_checksum=None,
         open_compsxml_gz_checksum=None, compsxml_gz_timestamp=None):
     """
     Accept input xml string of repomd data and update it with new comps info
     @param repomd_xml: string repomd_xml
+    @param compsxml_path: relative path of comps.xml
     @param compsxml_checksum: checksum of compsxml file
     @param compsxml_timestamp: timestamp of compsxml file
+    @param compsxml_gz_path: relative path of comps.xml.gz
     @param compsxml_gz_checksum: checksum of compsxml gzipped file
     @param open_compsxml_gz_checksum: checksum of compsxml gzipped file uncompressed
     @param compsxml_gz_timestamp: timestamp of compsxml gzipped file
     """
+    #ensure that compsxml_path and compsxml_gz_path are relative to the repo dir
+    compsxml_path = compsxml_path[compsxml_path.find("repodata"):]
+    compsxml_gz_path = compsxml_gz_path[compsxml_gz_path.find("repodata"):]
+
+
     dom = xml.dom.minidom.parseString(repomd_xml)
     group_elems = filter(lambda x: x.getAttribute("type") == "group", dom.getElementsByTagName("data"))
     if len(group_elems) > 0:
+        elem = group_elems[0].getElementsByTagName("location")[0]
+        elem.setAttribute("href", compsxml_path)
         elem = group_elems[0].getElementsByTagName("checksum")[0]
         elem.childNodes[0].data = compsxml_checksum
         elem = group_elems[0].getElementsByTagName("timestamp")[0]
@@ -152,7 +163,7 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
         data_elem.setAttribute("type", "group")
 
         loc_elem = dom.createElement("location")
-        loc_elem.setAttribute("href", "repodata/comps.xml")
+        loc_elem.setAttribute("href", compsxml_path)
         data_elem.appendChild(loc_elem)
 
         checksum_elem = dom.createElement("checksum")
@@ -172,6 +183,8 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
         group_gz_elems = filter(lambda x: x.getAttribute("type") == "group_gz",
                 dom.getElementsByTagName("data"))
         if len(group_gz_elems) > 0:
+            elem = group_gz_elems[0].getElementsByTagName("location")[0]
+            elem.setAttribute("href", compsxml_gz_path)
             elem = group_gz_elems[0].getElementsByTagName("checksum")[0]
             elem.childNodes[0].data = compsxml_gz_checksum
             elem = group_gz_elems[0].getElementsByTagName("open-checksum")[0]
@@ -179,40 +192,111 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
             elem = group_gz_elems[0].getElementsByTagName("timestamp")[0]
             elem.childNodes[0].data = compsxml_gz_timestamp
         else:
-            raise Exception("Not implemented, need to add support for creating group_gz metdata info in repomd.xml")
+            # If no group info is present, then we need to create it.
+            repomd_elems = dom.getElementsByTagName("repomd")
+            if len(repomd_elems) < 1:
+                raise Exception("Unable to find 'repomd' element in %s" % (repomd_xml))
+            data_elem = dom.createElement("data")
+            data_elem.setAttribute("type", "group_gz")
+
+            loc_elem = dom.createElement("location")
+            loc_elem.setAttribute("href", compsxml_gz_path)
+            data_elem.appendChild(loc_elem)
+
+            checksum_elem = dom.createElement("checksum")
+            checksum_elem.setAttribute("type", "sha256")
+            checksum_value = dom.createTextNode(compsxml_gz_checksum)
+            checksum_elem.appendChild(checksum_value)
+            data_elem.appendChild(checksum_elem)
+
+            ts_elem = dom.createElement("timestamp")
+            ts_value = dom.createTextNode("%s" % (compsxml_gz_timestamp))
+            ts_elem.appendChild(ts_value)
+            data_elem.appendChild(ts_elem)
+
+            ts_elem = dom.createElement("open-checksum")
+            ts_value = dom.createTextNode("%s" % (open_compsxml_gz_checksum))
+            ts_elem.appendChild(ts_value)
+            data_elem.appendChild(ts_elem)
+
+            repomd_elems[0].appendChild(data_elem)
     return dom.toxml()
 
 
-def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
+def update_repomd_xml_file(repomd_path, comps_path):
     """
     Update the repomd.xml with the checksum info for comps_path
     @param repomd_path: repomd.xml file path
     @param comps_path:  comps.xml file path
-    @param comps_gz_path:  optional comps.xml.gz file path
     @return: True if repomd_path has been updated, False otherwise
     """
+
+    # Copy comps_f to a new file name prepending the sha256sum to the file name
+    comps_orig = comps_path
     compsxml_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
-            filename=comps_path)
+            filename=comps_orig)
+    comps_path = os.path.join(os.path.split(comps_orig)[0],
+        "%s-%s" % (compsxml_checksum, os.path.split(comps_orig)[1]))
+    shutil.copyfile(comps_orig, comps_path)
     compsxml_timestamp = pulp.server.util.get_file_timestamp(comps_path)
-    compsxml_gz_checksum = None
-    open_compsxml_gz_checksum = None
-    compsxml_gz_timestamp = None
-    if comps_gz_path:
-        compsxml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
-                filename=comps_gz_path)
-        compsxml_gz_timestamp = pulp.server.util.get_file_timestamp(comps_gz_path)
-        uncompressed = gzip.open(comps_gz_path, 'r').read()
-        open_compsxml_gz_checksum = compsxml_checksum
+    # Create gzipped version of comps.xml
+    comps_gz_path_orig = "%s.gz" % (comps_orig)
+    f_in = open(comps_path, 'rb')
+    f_out = gzip.open(comps_gz_path_orig, 'wb')
     try:
-        repomd = open(repomd_path, "r").read()
+        f_out.writelines(f_in)
+    finally:
+        f_in.close()
+        f_out.close()
+    compsxml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
+        filename=comps_gz_path_orig)
+    comps_gz_path = os.path.join(os.path.split(comps_orig)[0],
+        "%s-%s.gz" % (compsxml_gz_checksum, os.path.split(comps_orig)[1]))
+    shutil.move(comps_gz_path_orig, comps_gz_path)
+    compsxml_gz_timestamp = pulp.server.util.get_file_timestamp(comps_gz_path)
+    # Save current group and group_gz file paths so we may cleanup after the update
+    old_mddata = pulp.server.util.get_repomd_filetype_dump(repomd_path)
+
+    try:
+        # Update repomd.xml with the new comps information
+        f = open(repomd_path, "r")
+        try:
+            repomd = f.read()
+        finally:
+            f.close()
         updated_xml = update_repomd_xml_string(repomd,
-                compsxml_checksum, compsxml_timestamp,
-                compsxml_gz_checksum, open_compsxml_gz_checksum,
-                compsxml_gz_timestamp)
-        open(repomd_path, "w").write(updated_xml.encode("UTF-8"))
+            comps_path, compsxml_checksum, compsxml_timestamp,
+            comps_gz_path, compsxml_gz_checksum, compsxml_checksum,
+            compsxml_gz_timestamp)
+        f = open(repomd_path, "w")
+        try:
+            f.write(updated_xml.encode("UTF-8"))
+        finally:
+            f.close()
         log.info("update_repomd_xml_file completed")
     except xml.dom.DOMException, e:
         log.error(e)
         log.error("Unable to update group info for %s" % (repomd_path))
         return False
+    current_mddata = pulp.server.util.get_repomd_filetype_dump(repomd_path)
+    # Remove old groups and groups_gz
+    if old_mddata.has_key("group") and old_mddata["group"].has_key("location"):
+        group_path = os.path.join(os.path.dirname(repomd_path), "../", old_mddata["group"]["location"])
+        if old_mddata["group"]["location"] != current_mddata["group"]["location"]:
+            # For the case when no change occured to metadata, don't delete the 'old', since 'old' == current
+            try:
+                if os.path.basename(group_path) != "comps.xml":
+                    log.info("Removing old group metadata: %s" % (group_path))
+                    os.unlink(group_path)
+            except:
+                log.exception("Unable to delete old group metadata: %s" % (group_path))
+    if old_mddata.has_key("group_gz") and old_mddata["group_gz"].has_key("location"):
+        group_gz_path = os.path.join(os.path.dirname(repomd_path), "../", old_mddata["group_gz"]["location"])
+        if old_mddata["group_gz"]["location"] != current_mddata["group_gz"]["location"]:
+            # For the case when no change occured to metadata, don't delete the 'old', since 'old' == current
+            try:
+                log.info("Removing old group_gz metadata: %s" % (group_gz_path))
+                os.unlink(group_gz_path)
+            except:
+                log.exception("Unable to delete old group_gz metadata: %s" % (group_gz_path))
     return True

@@ -1,0 +1,166 @@
+Index: demo/smime.howto/sign.py
+===================================================================
+--- demo/smime.howto/sign.py	(revision 739)
++++ demo/smime.howto/sign.py	(working copy)
+@@ -18,7 +18,7 @@
+ # Instantiate an SMIME object; set it up; sign the buffer.
+ s = SMIME.SMIME()
+ s.load_key('signer_key.pem', 'signer.pem')
+-p7 = s.sign(buf)
++p7 = s.sign(buf, SMIME.PKCS7_DETACHED)
+ 
+ # Recreate buf.
+ buf = makebuf('a sign of our times')
+Index: demo/smime.howto/verify.py
+===================================================================
+--- demo/smime.howto/verify.py	(revision 739)
++++ demo/smime.howto/verify.py	(working copy)
+@@ -23,7 +23,7 @@
+ 
+ # Load the data, verify it.
+ p7, data = SMIME.smime_load_pkcs7('sign.p7')
+-v = s.verify(p7)
++v = s.verify(p7, data)
+ print v
+ print data
+ print data.read()
+Index: demo/smime.howto/sendsmime.py
+===================================================================
+--- demo/smime.howto/sendsmime.py	(revision 739)
++++ demo/smime.howto/sendsmime.py	(working copy)
+@@ -16,7 +16,10 @@
+     s = SMIME.SMIME()
+     if sign:
+         s.load_key(from_key, from_cert)
+-        p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT)
++        if encrypt:
++            p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT)
++        else:
++            p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT|SMIME.PKCS7_DETACHED)
+         msg_bio = BIO.MemoryBuffer(msg) # Recreate coz sign() has consumed it.
+ 
+     if encrypt:
+Index: demo/smime/test.py
+===================================================================
+--- demo/smime/test.py	(revision 739)
++++ demo/smime/test.py	(working copy)
+@@ -28,7 +28,7 @@
+     buf = makebuf()
+     s = SMIME.SMIME()
+     s.load_key('client.pem')
+-    p7 = s.sign(buf)
++    p7 = s.sign(buf, SMIME.PKCS7_DETACHED)
+     out = BIO.openfile('clear.p7', 'w')
+     out.write('To: ngps@post1.com\n')
+     out.write('From: ngps@post1.com\n')
+@@ -58,7 +58,7 @@
+     st.load_info('ca.pem')
+     s.set_x509_store(st)
+     p7, data = SMIME.smime_load_pkcs7('clear.p7')
+-    v = s.verify(p7)
++    v = s.verify(p7, data)
+     if v:
+         print 'ok'
+     else:
+@@ -105,9 +105,10 @@
+     s.load_key('client.pem')
+ 
+     # Sign.
+-    p7 = s.sign(buf)
++    p7 = s.sign(buf, SMIME.PKCS7_DETACHED)
+ 
+     # Output the stuff.
++    buf = makebuf() # Recreate buf, because sign() has consumed it.
+     bio = BIO.MemoryBuffer()
+     s.write(bio, p7, buf)
+     
+@@ -124,7 +125,7 @@
+ 
+     # Verify.
+     p7, buf = SMIME.smime_load_pkcs7_bio(bio)
+-    v = s.verify(p7, flags=SMIME.PKCS7_DETACHED)
++    v = s.verify(p7, buf, flags=SMIME.PKCS7_DETACHED)
+     
+     if v:
+         print 'ok'
+Index: demo/smime/sendsmime.py
+===================================================================
+--- demo/smime/sendsmime.py	(revision 739)
++++ demo/smime/sendsmime.py	(working copy)
+@@ -16,7 +16,10 @@
+     s = SMIME.SMIME()
+     if sign:
+         s.load_key(from_key, from_cert)
+-        p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT)
++        if encrypt:
++            p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT)
++        else:
++            p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT|SMIME.PKCS7_DETACHED)
+         msg_bio = BIO.MemoryBuffer(msg) # Recreate coz sign() has consumed it.
+ 
+     if encrypt:
+Index: contrib/smimeplus.py
+===================================================================
+--- contrib/smimeplus.py	(revision 739)
++++ contrib/smimeplus.py	(working copy)
+@@ -64,7 +64,7 @@
+         _sender.load_key_bio(self.__pack(self.key), self.__pack(self.cert),
+                 callback=self.__passcallback)
+ 
+-        _signed = _sender.sign(self.__pack(msg))
++        _signed = _sender.sign(self.__pack(msg), M2Crypto.SMIME.PKCS7_DETACHED)
+ 
+         _out = self.__pack(None)
+         _sender.write(_out, _signed, self.__pack(msg))
+@@ -93,7 +93,7 @@
+         # Load signed message, verify it, and return result
+         _p7, _data = M2Crypto.SMIME.smime_load_pkcs7_bio(self.__pack(smsg))
+         try:
+-            return _sender.verify(_p7, flags=M2Crypto.SMIME.PKCS7_SIGNED)
++            return _sender.verify(_p7, _data, flags=M2Crypto.SMIME.PKCS7_SIGNED)
+         except M2Crypto.SMIME.SMIME_Error, _msg:
+             return None
+ 
+Index: doc/howto.smime.html
+===================================================================
+--- doc/howto.smime.html	(revision 739)
++++ doc/howto.smime.html	(working copy)
+@@ -646,7 +646,7 @@
+     # Instantiate an SMIME object; set it up; sign the buffer.
+     s = SMIME.SMIME()
+     s.load_key('signer_key.pem', 'signer.pem')
+-    p7 = s.sign(buf)
++    p7 = s.sign(buf, SMIME.PKCS7_DETACHED)
+     </PRE
+ ><P
+ ><TT
+@@ -780,7 +780,7 @@
+     
+     # Load the data, verify it.
+     p7, data = SMIME.smime_load_pkcs7('sign.p7')
+-    v = s.verify(p7)
++    v = s.verify(p7, data)
+     print v
+     print data
+     print data.read()
+@@ -991,7 +991,7 @@
+     tmp = BIO.MemoryBuffer()
+     
+     # Write the signed message into the temporary buffer.
+-    s.write(tmp, p7, buf)
++    s.write(tmp, p7)
+     
+     # Encrypt the temporary buffer.
+     p7 = s.encrypt(tmp)
+@@ -1158,7 +1158,10 @@
+         s = SMIME.SMIME()
+         if sign:
+             s.load_key(from_key, from_cert)
+-            p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT)
++            if encrypt:
++                p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT)
++            else:
++                p7 = s.sign(msg_bio, flags=SMIME.PKCS7_TEXT|SMIME.PKCS7_DETACHED)
+             msg_bio = BIO.MemoryBuffer(msg) # Recreate coz sign() has consumed it.
+     
+         if encrypt:

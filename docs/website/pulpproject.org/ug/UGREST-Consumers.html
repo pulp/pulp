@@ -30,34 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Consumers">Consumers</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Consumers.html#List">List</a></li><li class="active">
-<a href="UGREST-Consumers.html#Delete">Delete</a></li><li class="active">
-<a href="UGREST-Consumers.html#Create">Create</a></li><li class="active">
-<a href="UGREST-Consumers.html#Information">Information</a></li><li class="active">
-<a href="UGREST-Consumers.html#PackagesList">Packages List</a></li><li class="active">
-<a href="UGREST-Consumers.html#CertificateGeneration">Certificate Generation</a></li><li class="active">
-<a href="UGREST-Consumers.html#Update">Update</a></li><li class="active">
-<a href="UGREST-Consumers.html#Delete1">Delete</a></li><li class="active">
-<a href="UGREST-Consumers.html#Bind">Bind</a></li><li class="active">
-<a href="UGREST-Consumers.html#Unbind">Unbind</a></li><li class="active">
-<a href="UGREST-Consumers.html#UploadProfile">Upload Profile</a></li><li class="active">
-<a href="UGREST-Consumers.html#ViewHistory">View History</a></li><li class="active">
-<a href="UGREST-Consumers.html#AddKey-ValuePair">Add Key-Value Pair</a></li><li class="active">
-<a href="UGREST-Consumers.html#UpdateKey-ValuePair">Update Key-Value Pair</a></li><li class="active">
-<a href="UGREST-Consumers.html#DeleteKey-ValuePair">Delete Key-Value Pair</a></li><li class="active">
-<a href="UGREST-Consumers.html#RetrieveKey-ValuePairs">Retrieve Key-Value Pairs</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Consumers">Consumers</h1>
 <p>
 Base URL Path: <strong>/consumers/</strong>
 </p>
@@ -98,10 +71,10 @@ Filters:
 </li></ul><p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'me'</span></b>,
-  <B><span class="code-string">'package_profile'</span></b>: {},
-  <B><span class="code-string">'repoids'</span></b>: []}]
+<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'me'</span><span class="p">,</span>
+  <span class="s">'package_profile'</span><span class="p">:</span> <span class="p">{},</span>
+  <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[]}]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -146,7 +119,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: None
 </p>
@@ -192,10 +165,10 @@ Response: <strong>201 Created</strong>
 Headers:
 </p>
 <ul><li>location - path to consumer resource
-<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'me'</span></b>,
-  <B><span class="code-string">'package_profile'</span></b>: {<B><span class="code-string">'href'</span></b>},
-  <B><span class="code-string">'repoids'</span></b>: []}]
+<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'me'</span><span class="p">,</span>
+  <span class="s">'package_profile'</span><span class="p">:</span> <span class="p">{</span><span class="s">'href'</span><span class="p">},</span>
+  <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[]}]</span>
 </pre></div></li></ul><p>
 Error: <strong>409 Conflict</strong> if there is an existing consumer with the same id
 </p>
@@ -240,11 +213,11 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'me'</span></b>,
- <B><span class="code-string">'package_profile'</span></b>: {},
- <B><span class="code-string">'packageids'</span></b>: [],
- <B><span class="code-string">'repoids'</span></b>: []
+<div class="code"><pre><span class="p">{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'me'</span><span class="p">,</span>
+ <span class="s">'package_profile'</span><span class="p">:</span> <span class="p">{},</span>
+ <span class="s">'packageids'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[]</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -289,47 +262,47 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{
- <B><span class="code-string">&quot;GConf2&quot;</span></b>: [
-  {
-   <B><span class="code-string">&quot;OS&quot;</span></b>: <B><span class="code-string">&quot;linux&quot;</span></b>, 
-   <B><span class="code-string">&quot;Platform&quot;</span></b>: <B><span class="code-string">&quot;x86_64-redhat-linux-gnu&quot;</span></b>, 
-   <B><span class="code-string">&quot;Size&quot;</span></b>: 5986194, 
-   <B><span class="code-string">&quot;URL&quot;</span></b>: <B><span class="code-string">&quot;http://projects.gnome.org/gconf/&quot;</span></b>, 
-   <B><span class="code-string">&quot;Vendor&quot;</span></b>: <B><span class="code-string">&quot;Fedora Project&quot;</span></b>, 
-   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;x86_64&quot;</span></b>, 
-   <B><span class="code-string">&quot;description&quot;</span></b>: <B><span class="code-string">&quot;GConf is a process-transparent configuration database API used to\nstore user preferences. It has pluggable backends and features to\nsupport workgroup administration.&quot;</span></b>, 
-   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>, 
-   <B><span class="code-string">&quot;fileName&quot;</span></b>: <B><span class="code-string">&quot;GConf2-2.26.2-1.fc11.2.x86_64&quot;</span></b>, 
-   <B><span class="code-string">&quot;group&quot;</span></b>: <B><span class="code-string">&quot;System Environment/Base&quot;</span></b>, 
-   <B><span class="code-string">&quot;installtime&quot;</span></b>: 1272900387, 
-   <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;GConf2&quot;</span></b>, 
-   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;1.fc11.2&quot;</span></b>, 
-   <B><span class="code-string">&quot;summary&quot;</span></b>: <B><span class="code-string">&quot;A process-transparent configuration system&quot;</span></b>, 
-   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;2.26.2&quot;</span></b>
-  }
- ], 
- <B><span class="code-string">&quot;GConf2-devel&quot;</span></b>: [
-  {
-   <B><span class="code-string">&quot;OS&quot;</span></b>: <B><span class="code-string">&quot;linux&quot;</span></b>, 
-   <B><span class="code-string">&quot;Platform&quot;</span></b>: <B><span class="code-string">&quot;x86_64-redhat-linux-gnu&quot;</span></b>, 
-   <B><span class="code-string">&quot;Size&quot;</span></b>: 854255, 
-   <B><span class="code-string">&quot;URL&quot;</span></b>: <B><span class="code-string">&quot;http://projects.gnome.org/gconf/&quot;</span></b>, 
-   <B><span class="code-string">&quot;Vendor&quot;</span></b>: <B><span class="code-string">&quot;Fedora Project&quot;</span></b>, 
-   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;x86_64&quot;</span></b>, 
-   <B><span class="code-string">&quot;description&quot;</span></b>: <B><span class="code-string">&quot;GConf development package. Contains files needed for doing\ndevelopment using GConf.&quot;</span></b>, 
-   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>, 
-   <B><span class="code-string">&quot;fileName&quot;</span></b>: <B><span class="code-string">&quot;GConf2-devel-2.26.2-1.fc11.2.x86_64&quot;</span></b>, 
-   <B><span class="code-string">&quot;group&quot;</span></b>: <B><span class="code-string">&quot;Development/Libraries&quot;</span></b>, 
-   <B><span class="code-string">&quot;installtime&quot;</span></b>: 1272900476, 
-   <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;GConf2-devel&quot;</span></b>, 
-   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;1.fc11.2&quot;</span></b>, 
-   <B><span class="code-string">&quot;summary&quot;</span></b>: <B><span class="code-string">&quot;Headers and libraries for GConf development&quot;</span></b>, 
-   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;2.26.2&quot;</span></b>
-  }
- ], 
-...
-}
+<div class="code"><pre><span class="p">{</span>
+ <span class="s">"GConf2"</span><span class="p">:</span> <span class="p">[</span>
+  <span class="p">{</span>
+   <span class="s">"OS"</span><span class="p">:</span> <span class="s">"linux"</span><span class="p">,</span> 
+   <span class="s">"Platform"</span><span class="p">:</span> <span class="s">"x86_64-redhat-linux-gnu"</span><span class="p">,</span> 
+   <span class="s">"Size"</span><span class="p">:</span> <span class="mi">5986194</span><span class="p">,</span> 
+   <span class="s">"URL"</span><span class="p">:</span> <span class="s">"http://projects.gnome.org/gconf/"</span><span class="p">,</span> 
+   <span class="s">"Vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
+   <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
+   <span class="s">"description"</span><span class="p">:</span> <span class="s">"GConf is a process-transparent configuration database API used to</span><span class="se">\n</span><span class="s">store user preferences. It has pluggable backends and features to</span><span class="se">\n</span><span class="s">support workgroup administration."</span><span class="p">,</span> 
+   <span class="s">"epoch"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+   <span class="s">"fileName"</span><span class="p">:</span> <span class="s">"GConf2-2.26.2-1.fc11.2.x86_64"</span><span class="p">,</span> 
+   <span class="s">"group"</span><span class="p">:</span> <span class="s">"System Environment/Base"</span><span class="p">,</span> 
+   <span class="s">"installtime"</span><span class="p">:</span> <span class="mi">1272900387</span><span class="p">,</span> 
+   <span class="s">"name"</span><span class="p">:</span> <span class="s">"GConf2"</span><span class="p">,</span> 
+   <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11.2"</span><span class="p">,</span> 
+   <span class="s">"summary"</span><span class="p">:</span> <span class="s">"A process-transparent configuration system"</span><span class="p">,</span> 
+   <span class="s">"version"</span><span class="p">:</span> <span class="s">"2.26.2"</span>
+  <span class="p">}</span>
+ <span class="p">],</span> 
+ <span class="s">"GConf2-devel"</span><span class="p">:</span> <span class="p">[</span>
+  <span class="p">{</span>
+   <span class="s">"OS"</span><span class="p">:</span> <span class="s">"linux"</span><span class="p">,</span> 
+   <span class="s">"Platform"</span><span class="p">:</span> <span class="s">"x86_64-redhat-linux-gnu"</span><span class="p">,</span> 
+   <span class="s">"Size"</span><span class="p">:</span> <span class="mi">854255</span><span class="p">,</span> 
+   <span class="s">"URL"</span><span class="p">:</span> <span class="s">"http://projects.gnome.org/gconf/"</span><span class="p">,</span> 
+   <span class="s">"Vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
+   <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
+   <span class="s">"description"</span><span class="p">:</span> <span class="s">"GConf development package. Contains files needed for doing</span><span class="se">\n</span><span class="s">development using GConf."</span><span class="p">,</span> 
+   <span class="s">"epoch"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+   <span class="s">"fileName"</span><span class="p">:</span> <span class="s">"GConf2-devel-2.26.2-1.fc11.2.x86_64"</span><span class="p">,</span> 
+   <span class="s">"group"</span><span class="p">:</span> <span class="s">"Development/Libraries"</span><span class="p">,</span> 
+   <span class="s">"installtime"</span><span class="p">:</span> <span class="mi">1272900476</span><span class="p">,</span> 
+   <span class="s">"name"</span><span class="p">:</span> <span class="s">"GConf2-devel"</span><span class="p">,</span> 
+   <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11.2"</span><span class="p">,</span> 
+   <span class="s">"summary"</span><span class="p">:</span> <span class="s">"Headers and libraries for GConf development"</span><span class="p">,</span> 
+   <span class="s">"version"</span><span class="p">:</span> <span class="s">"2.26.2"</span>
+  <span class="p">}</span>
+ <span class="p">],</span> 
+<span class="o">...</span>
+<span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -374,39 +347,39 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{
- <B><span class="code-string">&quot;certificate&quot;</span></b>: 
- <B><span class="code-string">&quot;-----BEGIN CERTIFICATE-----
+<div class="code"><pre><span class="p">{</span>
+ <span class="s">"certificate"</span><span class="p">:</span> 
+ <span class="s">"-----BEGIN CERTIFICATE-----</span>
 MIICGTCCAQECAQEwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0
 MB4XDTEwMDgxMzE5MzYyMloXDTIwMDgxMDE5MzYyMlowFTETMBEGA1UEAxMKMTI4
-MTcyODE4MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArUSjsf/dJvJH79sv
-G7D9bsxR74cKmrQUKKbD+Ij5W9hKMrf5Fo1evd2phCkXf+Oup+Y+I9DAJCvKAWCe
-aEKZP5zqLmQlsB87YXp9fyK4Gitgl3v0HOEeRFPDG3pZQJ0vwcMY1S/CcCoamQ7v
-oseGTfQT8HvWjI09wp3e9MJnIJECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEATm0+
-7JzT8dChDwPFUOEhxGUtPmfTgPoZWYvspy2xtNZ1DgJ2T16TD5MotdU1DAYNdKE0
-ye7+tadKFVy/yYgt2YBgHZeNs95yeGeB+1fAhNZDgBTiLoMhNMAk0XqqvCj1R07P
-bfKQfcqKzF8s9HpYA4sigee5VYZbLqbZxWt1NZitxneL9Hb5NGFC7tG+SoYt9Su2
-y90OR83QjF+fqRTtnqAHqUmeqA8xCRyaWgGvHCXmmhIUMSnMgHC2XK6CQWbSOA3G
-Nq5GdPADF5exjxRqoX+9IV27FTAu+3LZgq9dfeuCY/BZSp+BUTsb3fAmuWMiPThe
-8pJWO1s+EUSGwkg8qw==
------END CERTIFICATE-----&quot;</span></b>, 
- <B><span class="code-string">&quot;key&quot;</span></b>: 
- <B><span class="code-string">&quot;-----BEGIN RSA PRIVATE KEY-----
-MIICXQIBAAKBgQCtRKOx/90m8kfv2y8bsP1uzFHvhwqatBQopsP4iPlb2Eoyt/kW
-jV693amEKRd/466n5j4j0MAkK8oBYJ5oQpk/nOouZCWwHzthen1/IrgaK2CXe/Qc
-4R5EU8MbellAnS/BwxjVL8JwKhqZDu+ix4ZN9BPwe9aMjT3Cnd70wmcgkQIDAQAB
-AoGBAJDugEqs7izcrmWonq/4DRU33TWRbMJY7R/P1s62rHYx5makUruVhvEkT95X
+MTcyODE4MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArUSjsf<span class="o">/</span>dJvJH79sv
+G7D9bsxR74cKmrQUKKbD<span class="o">+</span>Ij5W9hKMrf5Fo1evd2phCkXf<span class="o">+</span>Oup<span class="o">+</span>Y<span class="o">+</span>I9DAJCvKAWCe
+aEKZP5zqLmQlsB87YXp9fyK4Gitgl3v0HOEeRFPDG3pZQJ0vwcMY1S<span class="o">/</span>CcCoamQ7v
+oseGTfQT8HvWjI09wp3e9MJnIJECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEATm0<span class="o">+</span>
+<span class="mi">7</span>JzT8dChDwPFUOEhxGUtPmfTgPoZWYvspy2xtNZ1DgJ2T16TD5MotdU1DAYNdKE0
+ye7<span class="o">+</span>tadKFVy<span class="o">/</span>yYgt2YBgHZeNs95yeGeB<span class="o">+</span><span class="mi">1</span>fAhNZDgBTiLoMhNMAk0XqqvCj1R07P
+bfKQfcqKzF8s9HpYA4sigee5VYZbLqbZxWt1NZitxneL9Hb5NGFC7tG<span class="o">+</span>SoYt9Su2
+y90OR83QjF<span class="o">+</span>fqRTtnqAHqUmeqA8xCRyaWgGvHCXmmhIUMSnMgHC2XK6CQWbSOA3G
+Nq5GdPADF5exjxRqoX<span class="o">+</span><span class="mi">9</span>IV27FTAu<span class="o">+</span><span class="il">3L</span>Zgq9dfeuCY<span class="o">/</span>BZSp<span class="o">+</span>BUTsb3fAmuWMiPThe
+<span class="mi">8</span>pJWO1s<span class="o">+</span>EUSGwkg8qw<span class="o">==</span>
+<span class="o">-----</span>END CERTIFICATE<span class="o">-----</span><span class="s">", </span>
+ <span class="s">"key"</span><span class="p">:</span> 
+ <span class="s">"-----BEGIN RSA PRIVATE KEY-----</span>
+MIICXQIBAAKBgQCtRKOx<span class="o">/</span><span class="mi">90</span>m8kfv2y8bsP1uzFHvhwqatBQopsP4iPlb2Eoyt<span class="o">/</span>kW
+jV693amEKRd<span class="o">/</span><span class="mi">466</span>n5j4j0MAkK8oBYJ5oQpk<span class="o">/</span>nOouZCWwHzthen1<span class="o">/</span>IrgaK2CXe<span class="o">/</span>Qc
+<span class="mi">4</span>R5EU8MbellAnS<span class="o">/</span>BwxjVL8JwKhqZDu<span class="o">+</span>ix4ZN9BPwe9aMjT3Cnd70wmcgkQIDAQAB
+AoGBAJDugEqs7izcrmWonq<span class="o">/</span><span class="mi">4</span>DRU33TWRbMJY7R<span class="o">/</span>P1s62rHYx5makUruVhvEkT95X
 jOuR5I9W3RWSUJYw9qjOS9KEGrCl1nEIKzE01eWO15WsvW3ZRwCdse3fRN4g319J
 bReHgiYazIWN6MXpfB20y0Q9jU52VdaSptMyIW2PA9x7SE1RAkEA0zp9ngCsY575
-g7B7vH8RGkwvw0urBi1sFplcdJR+5kZojCwvoWWC6WcxKjX4djKXDLycYN0Q803s
-/b/QsU4axQJBANH+X9/OAfZ77M4/I44Ih+vvl70hFHmHEbxxo4W48lqABmrPEz2z
-5TlU4GV1/R7q2y0znj4dIQTqwBmKx7MsO10CQQCu7JRUwdgBVAjr/r4p1szSC1/O
-ip5iKkGF4ZFIViVVC9/OnVUAgrFMGxIDE9jkAXdHq/aQ3OIJq3HknfH0s2rFAkAv
-FsOZBDEcfJ2VgkMOzorsNUXpe0mEFu27PCBXFCoEcUD/IoBGDdkRCh9noRWpoTCU
-6kZJ125YE+wPzjcJzplhAkBe+SBjwZyWpkaTXI69tnarRTPj1/8Rdssv8J2frSfY
-fHtXVkM+JakzknrCIHOJEXVeA30sX/0Vscs37KlQ0V9N
------END RSA PRIVATE KEY-----&quot;</span></b>
-}
+g7B7vH8RGkwvw0urBi1sFplcdJR<span class="o">+</span><span class="mi">5</span>kZojCwvoWWC6WcxKjX4djKXDLycYN0Q803s
+<span class="o">/</span>b<span class="o">/</span>QsU4axQJBANH<span class="o">+</span>X9<span class="o">/</span>OAfZ77M4<span class="o">/</span>I44Ih<span class="o">+</span>vvl70hFHmHEbxxo4W48lqABmrPEz2z
+<span class="mi">5</span>TlU4GV1<span class="o">/</span>R7q2y0znj4dIQTqwBmKx7MsO10CQQCu7JRUwdgBVAjr<span class="o">/</span>r4p1szSC1<span class="o">/</span>O
+ip5iKkGF4ZFIViVVC9<span class="o">/</span>OnVUAgrFMGxIDE9jkAXdHq<span class="o">/</span>aQ3OIJq3HknfH0s2rFAkAv
+FsOZBDEcfJ2VgkMOzorsNUXpe0mEFu27PCBXFCoEcUD<span class="o">/</span>IoBGDdkRCh9noRWpoTCU
+<span class="mi">6</span>kZJ125YE<span class="o">+</span>wPzjcJzplhAkBe<span class="o">+</span>SBjwZyWpkaTXI69tnarRTPj1<span class="o">/</span><span class="mi">8</span>Rdssv8J2frSfY
+fHtXVkM<span class="o">+</span>JakzknrCIHOJEXVeA30sX<span class="o">/</span><span class="mi">0</span>Vscs37KlQ0V9N
+<span class="o">-----</span>END RSA PRIVATE KEY<span class="o">-----</span><span class="s">"</span>
+<span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -447,7 +420,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer<br />
 Error: <strong>400 Bad Request</strong> if there is a change to the consumer id
@@ -493,7 +466,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -539,16 +512,16 @@ The response will be a map of three items:
 <ul><li>'repo': map of data describing the repository; same as retrieved through the repository information call.
 </li><li>'host_urls': ordered list of URLs to access for the repository; the ordering describes Pulp's suggested preference for accessing the repo
 </li><li>'key_urls': similar to host_urls, this indicates the location at which keys for the repo can be found
-</li></ul><div class="code"><pre>{<B><span class="code-string">&quot;repo&quot;</span></b>:
-    {<B><span class="code-string">&quot;use_symlinks&quot;</span></b>: false, <B><span class="code-string">&quot;sync_schedule&quot;</span></b>: null, <B><span class="code-string">&quot;package_count&quot;</span></b>: 0, <B><span class="code-string">&quot;ca&quot;</span></b>: null, <B><span class="code-string">&quot;distributionid&quot;</span></b>: [], <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;simple-repo&quot;</span></b>,
-     <B><span class="code-string">&quot;repomd_xml_path&quot;</span></b>: <B><span class="code-string">&quot;/var/lib/pulp//repos/repos/pulp/pulp/fedora-14/i386/repodata/repomd.xml&quot;</span></b>,
-     <B><span class="code-string">&quot;source&quot;</span></b>: {<B><span class="code-string">&quot;url&quot;</span></b>: <B><span class="code-string">&quot;http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386&quot;</span></b>, <B><span class="code-string">&quot;type&quot;</span></b>: <B><span class="code-string">&quot;yum&quot;</span></b>, <B><span class="code-string">&quot;supported_types&quot;</span></b>: [<B><span class="code-string">&quot;yum&quot;</span></b>, <B><span class="code-string">&quot;local&quot;</span></b>, <B><span class="code-string">&quot;rhn&quot;</span></b>]}, <B><span class="code-string">&quot;group_xml_path&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>,
-     <B><span class="code-string">&quot;publish&quot;</span></b>: true, <B><span class="code-string">&quot;groupid&quot;</span></b>: [], <B><span class="code-string">&quot;packagegroups&quot;</span></b>: {}, <B><span class="code-string">&quot;files&quot;</span></b>: [], <B><span class="code-string">&quot;relative_path&quot;</span></b>: <B><span class="code-string">&quot;repos/pulp/pulp/fedora-14/i386&quot;</span></b>, <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;noarch&quot;</span></b>, <B><span class="code-string">&quot;key&quot;</span></b>: null,
-     <B><span class="code-string">&quot;packages&quot;</span></b>: [], <B><span class="code-string">&quot;group_gz_xml_path&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>, <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;simple-repo&quot;</span></b>, <B><span class="code-string">&quot;last_sync&quot;</span></b>: null, <B><span class="code-string">&quot;clone_ids&quot;</span></b>: [], <B><span class="code-string">&quot;cert&quot;</span></b>: null, <B><span class="code-string">&quot;packagegroupcategories&quot;</span></b>: {},
-     <B><span class="code-string">&quot;_ns&quot;</span></b>: <B><span class="code-string">&quot;repos&quot;</span></b>, <B><span class="code-string">&quot;release&quot;</span></b>: null, <B><span class="code-string">&quot;checksum_type&quot;</span></b>: <B><span class="code-string">&quot;sha256&quot;</span></b>, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;simple-repo&quot;</span></b>, <B><span class="code-string">&quot;errata&quot;</span></b>: {}},
- <B><span class="code-string">&quot;host_urls&quot;</span></b>: [<B><span class="code-string">&quot;https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/i386&quot;</span></b>],
- <B><span class="code-string">&quot;key_urls&quot;</span></b>: []
-}
+</li></ul><div class="code"><pre><span class="p">{</span><span class="s">"repo"</span><span class="p">:</span>
+    <span class="p">{</span><span class="s">"use_symlinks"</span><span class="p">:</span> false<span class="p">,</span> <span class="s">"sync_schedule"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"package_count"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">"ca"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"distributionid"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"simple-repo"</span><span class="p">,</span>
+     <span class="s">"repomd_xml_path"</span><span class="p">:</span> <span class="s">"/var/lib/pulp//repos/repos/pulp/pulp/fedora-14/i386/repodata/repomd.xml"</span><span class="p">,</span>
+     <span class="s">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s">"url"</span><span class="p">:</span> <span class="s">"http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386"</span><span class="p">,</span> <span class="s">"type"</span><span class="p">:</span> <span class="s">"yum"</span><span class="p">,</span> <span class="s">"supported_types"</span><span class="p">:</span> <span class="p">[</span><span class="s">"yum"</span><span class="p">,</span> <span class="s">"local"</span><span class="p">,</span> <span class="s">"rhn"</span><span class="p">]},</span> <span class="s">"group_xml_path"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span>
+     <span class="s">"publish"</span><span class="p">:</span> true<span class="p">,</span> <span class="s">"groupid"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"packagegroups"</span><span class="p">:</span> <span class="p">{},</span> <span class="s">"files"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"relative_path"</span><span class="p">:</span> <span class="s">"repos/pulp/pulp/fedora-14/i386"</span><span class="p">,</span> <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> <span class="s">"key"</span><span class="p">:</span> null<span class="p">,</span>
+     <span class="s">"packages"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"group_gz_xml_path"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> <span class="s">"name"</span><span class="p">:</span> <span class="s">"simple-repo"</span><span class="p">,</span> <span class="s">"last_sync"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"clone_ids"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"cert"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"packagegroupcategories"</span><span class="p">:</span> <span class="p">{},</span>
+     <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"repos"</span><span class="p">,</span> <span class="s">"release"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"checksum_type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"simple-repo"</span><span class="p">,</span> <span class="s">"errata"</span><span class="p">:</span> <span class="p">{}},</span>
+ <span class="s">"host_urls"</span><span class="p">:</span> <span class="p">[</span><span class="s">"https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/i386"</span><span class="p">],</span>
+ <span class="s">"key_urls"</span><span class="p">:</span> <span class="p">[]</span>
+<span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -593,7 +566,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -606,10 +579,10 @@ Upload a consumer's package profile
 Status: <strong>complete</strong>
 </p>
 <p>
-Path: <strong>/consumers/&lt;consumer id&gt;/profile/</strong>
+Path: <strong>/consumers/&lt;consumer id&gt;/package_profile/</strong>
 </p>
 <p>
-Method: <strong>POST</strong>
+Method: <strong>PUT</strong>
 </p>
 <p>
 Parameters:
@@ -634,7 +607,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -671,10 +644,10 @@ Consumer Certificate
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[
-{<B><span class="code-string">&quot;originator&quot;</span></b>: <B><span class="code-string">&quot;consumer&quot;</span></b>, <B><span class="code-string">&quot;timestamp&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1283519842366}, <B><span class="code-string">&quot;type_name&quot;</span></b>: <B><span class="code-string">&quot;consumer_created&quot;</span></b>, <B><span class="code-string">&quot;consumer_id&quot;</span></b>: <B><span class="code-string">&quot;jdob&quot;</span></b>, <B><span class="code-string">&quot;details&quot;</span></b>: null, <B><span class="code-string">&quot;_ns&quot;</span></b>: <B><span class="code-string">&quot;consumer_history&quot;</span></b>, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;9b81254d-cbb3-463d-a7ba-59106e78a5fe&quot;</span></b>, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;9b81254d-cbb3-463d-a7ba-59106e78a5fe&quot;</span></b>},
-{<B><span class="code-string">&quot;originator&quot;</span></b>: <B><span class="code-string">&quot;consumer&quot;</span></b>, <B><span class="code-string">&quot;timestamp&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1283519842366}, <B><span class="code-string">&quot;type_name&quot;</span></b>: <B><span class="code-string">&quot;repo_bound&quot;</span></b>, <B><span class="code-string">&quot;consumer_id&quot;</span></b>: <B><span class="code-string">&quot;jdob&quot;</span></b>, <B><span class="code-string">&quot;details&quot;</span></b>: {<B><span class="code-string">&quot;repo_id&quot;</span></b>: <B><span class="code-string">&quot;repo1&quot;</span></b>}, <B><span class="code-string">&quot;_ns&quot;</span></b>: <B><span class="code-string">&quot;consumer_history&quot;</span></b>, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;53dd60e5-ca4b-47b0-8f90-325aeb0da17a&quot;</span></b>, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;53dd60e5-ca4b-47b0-8f90-325aeb0da17a&quot;</span></b>}
-]
+<div class="code"><pre><span class="p">[</span>
+<span class="p">{</span><span class="s">"originator"</span><span class="p">:</span> <span class="s">"consumer"</span><span class="p">,</span> <span class="s">"timestamp"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$date"</span><span class="p">:</span> <span class="mi">1283519842366</span><span class="p">},</span> <span class="s">"type_name"</span><span class="p">:</span> <span class="s">"consumer_created"</span><span class="p">,</span> <span class="s">"consumer_id"</span><span class="p">:</span> <span class="s">"jdob"</span><span class="p">,</span> <span class="s">"details"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumer_history"</span><span class="p">,</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"9b81254d-cbb3-463d-a7ba-59106e78a5fe"</span><span class="p">,</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"9b81254d-cbb3-463d-a7ba-59106e78a5fe"</span><span class="p">},</span>
+<span class="p">{</span><span class="s">"originator"</span><span class="p">:</span> <span class="s">"consumer"</span><span class="p">,</span> <span class="s">"timestamp"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$date"</span><span class="p">:</span> <span class="mi">1283519842366</span><span class="p">},</span> <span class="s">"type_name"</span><span class="p">:</span> <span class="s">"repo_bound"</span><span class="p">,</span> <span class="s">"consumer_id"</span><span class="p">:</span> <span class="s">"jdob"</span><span class="p">,</span> <span class="s">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s">"repo_id"</span><span class="p">:</span> <span class="s">"repo1"</span><span class="p">},</span> <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumer_history"</span><span class="p">,</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"53dd60e5-ca4b-47b0-8f90-325aeb0da17a"</span><span class="p">,</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"53dd60e5-ca4b-47b0-8f90-325aeb0da17a"</span><span class="p">}</span>
+<span class="p">]</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -717,7 +690,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -760,7 +733,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -780,9 +753,9 @@ Method: <strong>POST</strong>
 </p>
 <p>
 Parameters:
-* key
 </p>
-<p>
+<ul><li>key
+</li></ul><p>
 Authentication:
 </p>
 <blockquote>
@@ -801,7 +774,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
@@ -851,18 +824,207 @@ Response: <strong>200 OK</strong>
 </pre><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>
+<hr />
+<h2 id="InstallPackage">Install Package</h2>
+<p>
+<em>Request that package(s) be installed on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such consumer
+</li></ul><p>
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
+<strong>task result</strong> &lt;dict&gt;
+</p>
+<ul><li><strong>installed</strong>  &lt;list&gt; <em>A list of packages actually installed.  Could be empty if package(s) already installed.</em>
+</li><li><strong>reboot_scheduled</strong> &lt;bool&gt; <em>Indicates a reboot was requested and scheduled.</em>
+</li></ul><p>
+Example:
+</p>
+<pre class="wiki">{ "installed" : ["zsh-4.3.10-4.1.el6.x86_64"], "reboot_scheduled" : False }
+</pre><hr />
+<h2 id="UpdatePackage">Update Package</h2>
+<p>
+<em>Request that package(s) be updated on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumers/&lt;consumer id&gt;/updatepackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such consumer
+</li></ul><p>
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>an (optional) list of package names; empty=ALL</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
+<strong>task result</strong> &lt;dict&gt;
+</p>
+<ul><li><strong>updated</strong>  &lt;list&gt;:
+<ul><li>&lt;str&gt; a list of packages actually updated<em>
+</em></li><li><strong>updates</strong> &lt;list&gt; a list of packages updated
+</li><li><strong>obsoletes</strong> &lt;list&gt; a list of pacakges obsoleted
+</li></ul></li></ul><p>
+Example:
+</p>
+<pre class="wiki">[
+  "zsh-4.3.10-4.1.el6.x86_64", { "updates" : ["zsh-4.1.10-4.1.el6.x86_64"], "obsoletes" : [] },
+  "samba-3.5.6-71.fc14.x86_64", { "updates" : ["samba-3.5.4-71.fc14.x86_64"], "obsoletes" : [] }
+]
+</pre><hr />
+<h2 id="UninstallPackage">Uninstall Package</h2>
+<p>
+<em>Request that package(s) be uninstalled on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumers/&lt;consumer id&gt;/uninstallpackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such consumer
+</li></ul><p>
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
+<strong>task result</strong> &lt;list&gt; a list of packages actually uninstalled.  Could be empty if package(s) not installed.<em>
+</em></p>
+<p>
+Example:
+</p>
+<pre class="wiki">["zsh-4.3.10-4.1.el6.x86_64"]
+</pre><hr />
+<h2 id="InstallPackageGroup">Install Package Group</h2>
+<p>
+<em>Request that package groups (s) be installed on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackagegroups/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such consumer
+</li></ul><p>
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>groupids</strong> &lt;list&gt; <em>a list of group names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
+<strong>task result</strong> &lt;dict&gt; keys are installed group name; values are the list of installed packages
+</p>
+<p>
+Example:
+</p>
+<pre class="wiki">{'Tibetan Support': ['tibetan-machine-uni-fonts-1.901-6.fc14.noarch', 'jomolhari-fonts-0.003-9.fc14.noarch', 'ibus-m17n-1.3.2-5.fc14.i686']}
+</pre><hr />
+<h2 id="UninstallPackageGroup">Uninstall Package Group</h2>
+<p>
+<em>Request that package group(s) be uninstalled on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackagegroups/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such consumer
+</li></ul><p>
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>groupids</strong> &lt;list&gt; <em>a list of group names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
+<strong>task result</strong> &lt;dict&gt; keys are removed group name; values are the list of uninstalled packages
+</p>
+<p>
+Example:
+</p>
+<pre class="wiki">{'Tibetan Support': ['tibetan-machine-uni-fonts-1.901-6.fc14.noarch', 'jomolhari-fonts-0.003-9.fc14.noarch', 'ibus-m17n-1.3.2-5.fc14.i686']}
+</pre><hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

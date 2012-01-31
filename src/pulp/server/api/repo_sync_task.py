@@ -31,7 +31,7 @@ class RepoSyncTask(Task):
     repository synchronization
     """
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
-        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
+        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout=timeout)
         self.repo_id = None
         if len(args) > 0:
             # Assuming that args first parameter is always the repo_id
@@ -83,11 +83,11 @@ class RepoSyncTask(Task):
             # it's our responsibility to ensure the synchronizer object is set, failure to do this
             # will break ability to cancel a sync.
             from pulp.server.api.repo import RepoApi # avoid circular import
-            r = RepoApi().repository(task.repo_id, fields=["source"])
-            if r and r.has_key("source") and r["source"].has_key("type"):
-                repo_source_type = r["source"]["type"]
+            r = RepoApi().repository(task.repo_id, fields=["content_types"])
+            if r and r.has_key("content_types") and r["content_types"] is not None:
+                repo_content_type = r["content_types"]
                 from pulp.server.api.repo_sync import get_synchronizer # avoid circular import
-                synchronizer_class = get_synchronizer(repo_source_type).__class__
+                synchronizer_class = get_synchronizer(repo_content_type).__class__
         if synchronizer_class is not None:
             task.set_synchronizer(synchronizer_class())
         return task

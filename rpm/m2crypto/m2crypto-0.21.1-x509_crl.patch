@@ -1,0 +1,1105 @@
+diff -Naur M2Crypto-0.21.1.orig/M2Crypto/X509.py M2Crypto-0.21.1.pulp/M2Crypto/X509.py
+--- M2Crypto-0.21.1.orig/M2Crypto/X509.py	2012-01-19 12:52:16.062243001 -0500
++++ M2Crypto-0.21.1.pulp/M2Crypto/X509.py	2012-01-19 12:57:52.204791000 -0500
+@@ -234,7 +234,7 @@
+         else:
+             self.x509_name = m2.x509_name_new ()
+             self._pyfree = 1
+-            
++
+     def __del__(self):
+         if getattr(self, '_pyfree', 0):
+             self.m2_x509_name_free(self.x509_name)
+@@ -560,7 +560,7 @@
+             return m2.x509_verify(self.x509, pkey.pkey)
+         else:
+             return m2.x509_verify(self.x509, self.get_pubkey().pkey)
+-            
++    
+     def check_ca(self):
+         """
+         Check if the certificate is a Certificate Authority (CA) certificate.
+@@ -677,17 +677,21 @@
+ 
+     m2_x509_store_ctx_free = m2.x509_store_ctx_free
+ 
+-    def __init__(self, x509_store_ctx, _pyfree=0):
+-        self.ctx = x509_store_ctx
+-        self._pyfree = _pyfree
+-        
++    def __init__(self, x509_store_ctx=None, _pyfree=0):
++        if x509_store_ctx is not None:
++            self.ctx = x509_store_ctx
++            self._pyfree = _pyfree
++        else:
++            self.ctx = m2.x509_store_ctx_new()
++            self._pyfree = 1
++
+     def __del__(self):
+-        if self._pyfree:
++        if getattr(self, '_pyfree', 0):
+             self.m2_x509_store_ctx_free(self.ctx)
+-            
++
+     def _ptr(self):
+         return self.ctx
+-            
++
+     def get_current_cert(self):
+         """
+         Get current X.509 certificate.
+@@ -718,7 +722,44 @@
+         @rtype:  X509_Stack
+         """
+         return X509_Stack(m2.x509_store_ctx_get1_chain(self.ctx), 1, 1)
+-        
++   
++    def init(self, store, cert, untrusted=None):
++        """
++        Initialization context to allow certificate verification 
++
++        @type store: X509_Store
++        @param store: X509_Store containing CA and flags set for verification
++
++        @type cert: X509
++        @param cert: X509 certificate to add to context for verification
++
++        @type untrusted: X509_Stack 
++        @param untrusted: untrusted chain, default None
++        """
++        assert isinstance(store, X509_Store)
++        assert isinstance(cert, X509)
++        untrusted_ptr = None
++        if untrusted:
++            assert isinstance(untrusted, X509_Stack)
++            untrusted_ptr = untrusted._ptr()
++        ret = m2.x509_store_ctx_init(self.ctx, store._ptr(), cert._ptr(), untrusted_ptr)
++        if ret < 1:
++            raise X509Error(Err.get_error())
++
++    def add_crls(self, crls):
++        """
++        Add CRLs to this context
++        @type crls: CRL_Stack
++        @param crls: Stack of CRLs
++        """
++        assert isinstance(crls, CRL_Stack)
++        m2.x509_store_ctx_set0_crls(self.ctx, crls._ptr())
++
++    def verify_cert(self):
++        """
++        Verify certificate
++        """
++        return m2.x509_verify_cert(self.ctx)
+ 
+ class X509_Store:
+     """
+@@ -754,6 +795,19 @@
+         assert isinstance(x509, X509)
+         return m2.x509_store_add_cert(self.store, x509._ptr())
+         
++    def add_crl(self, crl):
++        assert isinstance(crl, CRL)
++        ret = m2.x509_store_add_crl(self.store, crl._ptr())
++        if ret < 1:
++            raise X509Error(Err.get_error())
++        return ret
++
++    def set_flags(self, flags):
++        ret = m2.x509_store_set_flags(self.store, flags)
++        if ret < 1:
++            raise X509Error(Err.get_error())
++        return ret
++        
+     add_cert = add_x509
+ 
+ 
+@@ -845,6 +899,75 @@
+         raise X509Error(Err.get_error())
+     return X509_Stack(stack_ptr, 1, 1)
+ 
++class CRL_Stack:
++    """
++    A 'CRL Stack', maps to STACK_OF(X509_CRL)
++
++    @warning: Do not modify the underlying OpenSSL stack
++    except through this interface, or use any OpenSSL functions that do so
++    indirectly. Doing so will get the OpenSSL stack and the Ginternal pystack
++    of this class out of sync, leading to python memory leaks, exceptions
++    or even python crashes!
++    """
++    
++    m2_sk_x509_crl_free = m2.sk_x509_crl_free
++
++    def __init__(self, stack=None, _pyfree=0, _pyfree_x509_crl=0):
++        if stack is not None:
++            self.stack = stack
++            self._pyfree = _pyfree
++            self.pystack = [] # This must be kept in sync with self.stack
++            num = m2.sk_x509_crl_num(self.stack)
++            for i in range(num):
++                self.pystack.append(CRL(m2.sk_x509_crl_value(self.stack, i),
++                                         _pyfree=_pyfree_x509_crl))
++        else:
++            self.stack = m2.sk_x509_crl_new_null()
++            self._pyfree = 1
++            self.pystack = [] # This must be kept in sync with self.stack
++    
++    def __del__(self):
++        if getattr(self, '_pyfree', 0):
++            self.m2_sk_x509_crl_free(self.stack)
++    
++    def __len__(self):
++        assert m2.sk_x509_crl_num(self.stack) == len(self.pystack)
++        return len(self.pystack)
++
++    def __getitem__(self, idx):
++        return self.pystack[idx]
++    
++    def __iter__(self):
++        return iter(self.pystack)
++
++    def _ptr(self):
++        return self.stack
++    
++    def push(self, crl):
++        """
++        push a CRL certificate onto the stack.
++        
++        @param crl: CRL object.
++        @return: The number of CRL objects currently on the stack.
++        """
++        assert isinstance(crl, CRL)
++        self.pystack.append(crl)
++        ret = m2.sk_x509_crl_push(self.stack, crl._ptr())
++        assert ret == len(self.pystack)
++        return ret
++
++    def pop(self):
++        """
++        pop a CRL from the stack.
++        
++        @return: CRL object that was popped, or None if there is nothing
++        to pop. 
++        """
++        crl_ptr = m2.sk_x509_crl_pop(self.stack)
++        if crl_ptr is None:
++            assert len(self.pystack) == 0
++            return None
++        return self.pystack.pop()
+ 
+ class Request:
+     """
+@@ -1067,7 +1190,7 @@
+         else:
+             self.crl = m2.x509_crl_new()
+             self._pyfree = 1
+-            
++
+     def __del__(self):
+         if getattr(self, '_pyfree', 0):
+             self.m2_x509_crl_free(self.crl)
+@@ -1082,7 +1205,52 @@
+         buf=BIO.MemoryBuffer()
+         m2.x509_crl_print(buf.bio_ptr(), self.crl)
+         return buf.read_all()
++    
++    def get_issuer(self):
++        """
++        Return the Issuer Name
+ 
++        @rtype: X509_Name
++        @return: X509_Name of the issuer
++
++        Warning: X509_Name is tied to the CRL.  If the CRL goes out of scope
++        so does the underlying X509_Name of the issuer
++        """
++        crl_issuer_x509_name = m2.x509_crl_get_issuer(self.crl)
++        return X509_Name(crl_issuer_x509_name)
++    
++    def get_lastUpdate(self):
++        """
++        Return the lastUpdate
++
++        @rtype: ASN1.ASN1_UTCTIME
++        @return: Time value of the last update
++        """
++        return ASN1.ASN1_UTCTIME(m2.x509_CRL_get_lastUpdate(self.crl))
++
++    def get_nextUpdate(self):
++        """
++        Return the nextUpdate
++
++        @rtype: ASN1.ASN1_UTCTIME
++        @return: Time value of the next update
++        """
++        return ASN1.ASN1_UTCTIME(m2.x509_CRL_get_nextUpdate(self.crl))
++
++    def _ptr(self):
++        return self.crl
++
++    def verify(self, pkey):
++        """
++        Verifies signature of CRL against a key
++
++        @type pkey: EVP.PKey
++        @param pkey: Public key
++
++        @rtype: bool
++        @return: True if CRL is signed by pkey, False otherwise
++        """
++        return m2.x509_crl_verify(self.crl, pkey.pkey)
+ 
+ def load_crl(file):
+     """
+@@ -1101,4 +1269,20 @@
+         raise X509Error(Err.get_error())
+     return CRL(cptr, 1)
+ 
++def load_crl_string(crl_string):
++    """
++    Load CRL from a string.
++
++    @type string: string
++    @param string: String containing a CRL in PEM format.
++
++    @rtype: M2Crypto.X509.X509_CRL
++    @return: M2Crypto.X509.X509_CRL object.
++    """
++    bio = BIO.MemoryBuffer(crl_string)
++    cptr=m2.x509_crl_read_pem(bio._ptr())
++    if cptr is None:
++        raise X509Error(Err.get_error())
++    return CRL(cptr, 1)
++
+ 
+diff -Naur M2Crypto-0.21.1.orig/SWIG/_ssl.i M2Crypto-0.21.1.pulp/SWIG/_ssl.i
+--- M2Crypto-0.21.1.orig/SWIG/_ssl.i	2012-01-19 12:52:16.025224500 -0500
++++ M2Crypto-0.21.1.pulp/SWIG/_ssl.i	2012-01-19 12:57:52.205791500 -0500
+@@ -21,7 +21,11 @@
+ %apply Pointer NONNULL { SSL * };
+ %apply Pointer NONNULL { SSL_CIPHER * };
+ %apply Pointer NONNULL { STACK_OF(SSL_CIPHER) * };
+-%apply Pointer NONNULL { STACK_OF(X509) * };
++/* Allowing STACK_OF(X509) to be a null pointer for methods
++   such as X509_STORE_CTX_init, which uses a NULL STACK_OF(X509)
++   to signify no untrsuted chain will be used.
++*/
++/*%apply Pointer NONNULL { STACK_OF(X509) * };*/
+ %apply Pointer NONNULL { BIO * };
+ %apply Pointer NONNULL { DH * };
+ %apply Pointer NONNULL { RSA * };
+@@ -694,6 +698,13 @@
+ X509 *sk_x509_value(STACK_OF(X509) *stack, int idx) {
+     return sk_X509_value(stack, idx);
+ }
++
++int sk_x509_crl_num(STACK_OF(X509_CRL) *stack) {
++    return sk_X509_CRL_num(stack);
++}
++X509_CRL *sk_x509_crl_value(STACK_OF(X509_CRL) *stack, int idx) {
++    return sk_X509_CRL_value(stack, idx);
++}
+ %}
+ 
+ %threadallow i2d_ssl_session;
+diff -Naur M2Crypto-0.21.1.orig/SWIG/_x509.i M2Crypto-0.21.1.pulp/SWIG/_x509.i
+--- M2Crypto-0.21.1.orig/SWIG/_x509.i	2012-01-19 12:52:16.023223501 -0500
++++ M2Crypto-0.21.1.pulp/SWIG/_x509.i	2012-01-19 12:57:52.205791500 -0500
+@@ -12,6 +12,7 @@
+ %{
+ #include <openssl/x509.h>
+ #include <openssl/x509v3.h>
++#include <openssl/x509_vfy.h>
+ %}
+ 
+ %apply Pointer NONNULL { BIO * };
+@@ -20,6 +21,8 @@
+ %apply Pointer NONNULL { X509_REQ * };
+ %apply Pointer NONNULL { X509_NAME * };
+ %apply Pointer NONNULL { X509_NAME_ENTRY * };
++%apply Pointer NONNULL { X509_STORE * };
++%apply Pointer NONNULL { X509_STORE_CTX * };
+ %apply Pointer NONNULL { EVP_PKEY * };
+ 
+ #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+@@ -37,6 +40,10 @@
+ extern void X509_CRL_free(X509_CRL *);
+ %rename(x509_crl_new) X509_CRL_new;
+ extern X509_CRL * X509_CRL_new();
++%rename(x509_store_ctx_new) X509_STORE_CTX_new;
++extern X509_STORE_CTX *X509_STORE_CTX_new( void );
++%rename(x509_store_ctx_init) X509_STORE_CTX_init;
++extern int X509_STORE_CTX_init( X509_STORE_CTX *, X509_STORE *, X509 *, STACK_OF(X509) *);
+ 
+ %rename(x509_print) X509_print;
+ %threadallow X509_print;
+@@ -55,6 +62,8 @@
+ extern int X509_set_pubkey(X509 *, EVP_PKEY *);
+ %rename(x509_get_issuer_name) X509_get_issuer_name;
+ extern X509_NAME *X509_get_issuer_name(X509 *);
++%rename(x509_crl_get_issuer) X509_CRL_get_issuer;
++extern X509_NAME *X509_CRL_get_issuer(X509_CRL *);
+ %rename(x509_set_issuer_name) X509_set_issuer_name;
+ extern int X509_set_issuer_name(X509 *, X509_NAME *);
+ %rename(x509_get_subject_name) X509_get_subject_name;
+@@ -108,6 +117,8 @@
+ 
+ %rename(x509_verify) X509_verify;
+ extern int X509_verify(X509 *a, EVP_PKEY *r);
++%rename(x509_verify_cert) X509_verify_cert;
++extern int X509_verify_cert(X509_STORE_CTX *ctx);
+ %rename(x509_get_verify_error) X509_verify_cert_error_string;
+ extern const char *X509_verify_cert_error_string(long);
+ 
+@@ -152,6 +163,18 @@
+ %rename(x509_name_print_ex_fp) X509_NAME_print_ex_fp;
+ extern int X509_NAME_print_ex_fp(FILE *, X509_NAME *, int, unsigned long);
+ 
++/* Desire is for x509_name_hash to match up to openssl's version.
++   If the old version is desired, call it expliticlty.
++*/
++%rename(x509_name_hash) X509_NAME_hash;
++extern unsigned long X509_NAME_hash(X509_NAME *);
++
++#if OPENSSL_VERSION_NUMBER >= 0x10000000L
++%rename(x509_name_hash_old) X509_NAME_hash_old;
++extern unsigned long X509_NAME_hash_old(X509_NAME *);
++#endif
++
++/*
+ #if OPENSSL_VERSION_NUMBER >= 0x10000000L
+ %rename(x509_name_hash) X509_NAME_hash_old;
+ extern unsigned long X509_NAME_hash_old(X509_NAME *);
+@@ -159,6 +182,7 @@
+ %rename(x509_name_hash) X509_NAME_hash;
+ extern unsigned long X509_NAME_hash(X509_NAME *);
+ #endif
++*/
+ 
+ %rename(x509_name_get_index_by_nid) X509_NAME_get_index_by_NID;
+ extern int X509_NAME_get_index_by_NID(X509_NAME *, int, int);
+@@ -231,6 +255,14 @@
+ %rename(x509_store_add_cert) X509_STORE_add_cert;
+ extern int X509_STORE_add_cert(X509_STORE *, X509 *);
+ 
++%rename(x509_store_add_crl) X509_STORE_add_crl;
++extern int X509_STORE_add_crl(X509_STORE*, X509_CRL* );
++%rename(x509_store_set_flags) X509_STORE_set_flags;
++extern int X509_STORE_set_flags(X509_STORE*, unsigned int );
++%rename(x509_store_ctx_set0_crls) X509_STORE_CTX_set0_crls;
++extern void X509_STORE_CTX_set0_crls(X509_STORE_CTX *ctx, STACK_OF(X509_CRL) *);
++
++
+ %rename(x509_store_ctx_get_current_cert) X509_STORE_CTX_get_current_cert;
+ extern X509 *X509_STORE_CTX_get_current_cert(X509_STORE_CTX *);
+ %rename(x509_store_ctx_get_error) X509_STORE_CTX_get_error;
+@@ -315,6 +347,27 @@
+             XN_FLAG_DN_REV | \
+             XN_FLAG_DUMP_UNKNOWN_FIELDS);
+ 
++/* x509_vfy.h */
++%constant int X509_V_FLAG_CB_ISSUER_CHECK             = 0x1;
++%constant int X509_V_FLAG_USE_CHECK_TIME              = 0x2;
++%constant int X509_V_FLAG_CRL_CHECK                   = 0x4;
++%constant int X509_V_FLAG_CRL_CHECK_ALL               = 0x8;
++%constant int X509_V_FLAG_IGNORE_CRITICAL             = 0x10;
++%constant int X509_V_FLAG_X509_STRICT                 = 0x20;
++%constant int X509_V_FLAG_ALLOW_PROXY_CERTS           = 0x40;
++%constant int X509_V_FLAG_POLICY_CHECK                = 0x80;
++%constant int X509_V_FLAG_EXPLICIT_POLICY             = 0x100;
++%constant int X509_V_FLAG_INHIBIT_ANY                 = 0x200;
++%constant int X509_V_FLAG_INHIBIT_MAP                 = 0x400;
++%constant int X509_V_FLAG_NOTIFY_POLICY               = 0x800;
++
++%constant int X509_VP_FLAG_DEFAULT                    = 0x1;
++%constant int X509_VP_FLAG_OVERWRITE                  = 0x2;
++%constant int X509_VP_FLAG_RESET_FLAGS                = 0x4;
++%constant int X509_VP_FLAG_LOCKED                     = 0x8;
++%constant int X509_VP_FLAG_ONCE                       = 0x10;
++
++
+ /* Cribbed from rsa.h. */
+ %constant int RSA_3                           = 0x3L;
+ %constant int RSA_F4                          = 0x10001L;
+@@ -419,6 +472,21 @@
+     return X509_sign(x, pkey, md);
+ }
+ 
++/* x509_CRL_verify() is a macro */
++int x509_crl_verify(X509_CRL *crl, EVP_PKEY *pkey){
++    return X509_CRL_verify(crl, pkey);
++}
++
++/* X509_CRL_get_lastUpdate() is a macro. */
++ASN1_UTCTIME *x509_CRL_get_lastUpdate(X509_CRL *crl) {
++    return X509_CRL_get_lastUpdate(crl);
++}
++
++/* X509_CRL_get_nextUpdate() is a macro. */
++ASN1_UTCTIME *x509_CRL_get_nextUpdate(X509_CRL *crl) {
++    return X509_CRL_get_nextUpdate(crl);
++}
++
+ /* XXX The first parameter is really ASN1_TIME, does it matter? */
+ ASN1_TIME *x509_gmtime_adj(ASN1_UTCTIME *s, long adj) {
+     return X509_gmtime_adj(s, adj);
+@@ -464,6 +532,11 @@
+     return sk_X509_new_null();
+ }
+ 
++/* sk_X509_crl_new_null() is a macro returning "STACK_OF(X509_CRL) *". */
++STACK_OF(X509_CRL) *sk_x509_crl_new_null(void) {
++    return sk_X509_CRL_new_null();
++}
++
+ /* sk_X509_free() is a macro. */
+ void sk_x509_free(STACK_OF(X509) *stack) {
+     sk_X509_free(stack);
+@@ -479,6 +552,21 @@
+     return sk_X509_pop(stack);
+ }
+ 
++/* sk_X509_CRL_free() is a macro. */
++void sk_x509_crl_free(STACK_OF(X509_CRL) *stack) {
++    sk_X509_CRL_free(stack);
++}
++
++/* sk_X509_CRL_push() is a macro. */
++int sk_x509_crl_push(STACK_OF(X509_CRL) *stack, X509_CRL *crl) {
++    return sk_X509_CRL_push(stack, crl);
++}
++
++/* sk_X509_CRL_pop() is a macro. */
++X509_CRL *sk_x509_crl_pop(STACK_OF(X509_CRL) *stack) {
++    return sk_X509_CRL_pop(stack);
++}
++
+ int x509_store_load_locations(X509_STORE *store, const char *file) {
+     return X509_STORE_load_locations(store, file, NULL);
+ }
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/crlnumber M2Crypto-0.21.1.pulp/tests/crl_data/certs/crlnumber
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/crlnumber	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/crlnumber	2012-01-19 12:57:52.206792001 -0500
+@@ -0,0 +1 @@
++03
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/crlnumber.old M2Crypto-0.21.1.pulp/tests/crl_data/certs/crlnumber.old
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/crlnumber.old	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/crlnumber.old	2012-01-19 12:57:52.206792001 -0500
+@@ -0,0 +1 @@
++02
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/index M2Crypto-0.21.1.pulp/tests/crl_data/certs/index
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/index	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/index	2012-01-19 12:57:52.206792001 -0500
+@@ -0,0 +1,2 @@
++R	150117185831Z	120118185831Z	03	unknown	/CN=CLIENT
++R	150118165558Z	120119165558Z	05	unknown	/CN=CLIENT
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/index.attr M2Crypto-0.21.1.pulp/tests/crl_data/certs/index.attr
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/index.attr	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/index.attr	2012-01-19 12:57:52.206792001 -0500
+@@ -0,0 +1 @@
++unique_subject = yes
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/index.attr.old M2Crypto-0.21.1.pulp/tests/crl_data/certs/index.attr.old
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/index.attr.old	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/index.attr.old	2012-01-19 12:57:52.207792501 -0500
+@@ -0,0 +1 @@
++unique_subject = yes
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/index.old M2Crypto-0.21.1.pulp/tests/crl_data/certs/index.old
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/index.old	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/index.old	2012-01-19 12:57:52.207792501 -0500
+@@ -0,0 +1 @@
++R	150117185831Z	120118185831Z	03	unknown	/CN=CLIENT
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoked_cert.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoked_cert.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoked_cert.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoked_cert.pem	2012-01-19 12:57:52.208793000 -0500
+@@ -0,0 +1,16 @@
++-----BEGIN CERTIFICATE-----
++MIICmTCCAYECAQUwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAwwJQ0FfU0lHTkVS
++MB4XDTEyMDExOTE2NTU1OFoXDTE1MDExODE2NTU1OFowETEPMA0GA1UEAwwGQ0xJ
++RU5UMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6g34ma5s0fg/Orlq
++sew0ixAPtMvNOHZLTESlr7/PcPa+UXvuxhwL5BqGNwp7vJ2lG1K85nMIANdwQFgf
++mtkcKRfjegFwiIKufTbpyxybw6rzP9Su0UGBLYeilVvpyvxNg6TLWAudyXGvZNVf
++dJrTSpO3aeaXuErARkcWN7KvCfZgyrcNqTl+avluC+KzKbj36euXVXkEEQR5CghQ
++zPvf6aJtlJUezsxewgGbCUOkzna+F/C8WqzGxIjkQj6MoepEly7/QmTLZ4Ct+n4q
++8TS1QaloCCvPagPyH4EOGeZjZ81rLLhB64LK6ciAmQra0KupvjjlRWlmSGIHRwaX
++TLXo4wIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQCPRJ4BLXqWgDKgZdPcIxTxUrW0
++R22dWpZZK86vHYNDWUJtx6o9jrltsZDuuVBVkf1h8a3XBm0nLWqjD5B+/kM1azc2
++k03GIcHJGH2Qoe+joqhOxM8gYcjaLDsApym8o3SiYL4oowIwdULgIVGSMueF/RzB
++IizXDKq4o4HMRBzfqz8Cmdqu6kXJMD2Qq137VNfW49R+VEy81Ss73icuLTFgG4gy
++hlkzWXdh733FZP9oUu62ybErgtwCCpktuZAjxhGX7H3Rjet8CaLorfnrV5plSjzn
++OnIG9YsZ/F/dIrx3vLZw+PbnajPoGA0iElFv0qwT1J0oUp9qXPpuA//wWTk9
++-----END CERTIFICATE-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoked_csr M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoked_csr
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoked_csr	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoked_csr	2012-01-19 12:57:52.208793000 -0500
+@@ -0,0 +1,15 @@
++-----BEGIN CERTIFICATE REQUEST-----
++MIICVjCCAT4CAQAwETEPMA0GA1UEAwwGQ0xJRU5UMIIBIjANBgkqhkiG9w0BAQEF
++AAOCAQ8AMIIBCgKCAQEA6g34ma5s0fg/Orlqsew0ixAPtMvNOHZLTESlr7/PcPa+
++UXvuxhwL5BqGNwp7vJ2lG1K85nMIANdwQFgfmtkcKRfjegFwiIKufTbpyxybw6rz
++P9Su0UGBLYeilVvpyvxNg6TLWAudyXGvZNVfdJrTSpO3aeaXuErARkcWN7KvCfZg
++yrcNqTl+avluC+KzKbj36euXVXkEEQR5CghQzPvf6aJtlJUezsxewgGbCUOkzna+
++F/C8WqzGxIjkQj6MoepEly7/QmTLZ4Ct+n4q8TS1QaloCCvPagPyH4EOGeZjZ81r
++LLhB64LK6ciAmQra0KupvjjlRWlmSGIHRwaXTLXo4wIDAQABoAAwDQYJKoZIhvcN
++AQEFBQADggEBAG42lwQ5XWXh715W3ME3BSitofhZhPMJZsm5/9IwiqpqVdkpFwnG
++BEVG55HvaRDSUUU/6mg5VfBnX2/QxecyQjjCLZ7XMq0DXYWHkgYpgW4D9DvP9IIQ
++epEOA8VYmiWKjNPvGjJVxrpcSzygnYH6AdImfwk9XYto3RXsLP079JJv9aW0LyCw
++2atby8uSzMukBHzNjz/FVo/u6WQ8LA7CkDANaLO9LpVwBZ89VZDmBNja/Lb/BkhG
++oszpPwf7GJFRUikx72nT/bEaZ0TaifvJooUeFbYC+SVkELccXztymWAptLFUY6+H
++t9kHFnh1lRI7TLvJRvAW8E1IyN+SUBo6CJw=
++-----END CERTIFICATE REQUEST-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoked_key.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoked_key.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoked_key.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoked_key.pem	2012-01-19 12:57:52.208793000 -0500
+@@ -0,0 +1,27 @@
++-----BEGIN RSA PRIVATE KEY-----
++MIIEpQIBAAKCAQEA6g34ma5s0fg/Orlqsew0ixAPtMvNOHZLTESlr7/PcPa+UXvu
++xhwL5BqGNwp7vJ2lG1K85nMIANdwQFgfmtkcKRfjegFwiIKufTbpyxybw6rzP9Su
++0UGBLYeilVvpyvxNg6TLWAudyXGvZNVfdJrTSpO3aeaXuErARkcWN7KvCfZgyrcN
++qTl+avluC+KzKbj36euXVXkEEQR5CghQzPvf6aJtlJUezsxewgGbCUOkzna+F/C8
++WqzGxIjkQj6MoepEly7/QmTLZ4Ct+n4q8TS1QaloCCvPagPyH4EOGeZjZ81rLLhB
++64LK6ciAmQra0KupvjjlRWlmSGIHRwaXTLXo4wIDAQABAoIBABo/0t+5di7ePokh
++flvR99qYxIosSSnJ6ov1LvfU9TjgE1wkIBVL0/GTH/ZQUKxIqdm0n8bgo8ckYkx1
++FaZSLxxUt4hZXPuSXGtimznSTY3WQE2qVqjVRd2LVqqVklTXkwHum3eWZe3PuDIA
++1CHJs2SryGgyGlXq3EGFe3JnscXWCvTdxhTZ9ibO9JU+6t1GtMie39BZktSqPKQ4
++AxWAygQwOR9jMUCNBHo0XLiEOAZHo4O9NH10MGFhDm0fWgeDZlzA991lQj+BRY6s
++9Rdjs3UzSW+Z+E0G5TNGhrZV9NeE2vseRQ4Tq5NbiYm5TFWFtmfTAGOz1MXGzMWw
++F5p27tECgYEA/zkRv16bUs79IeX4KLEaaYVA7sQ2EWx6ZnA2ekzEsyuBg7nj8smj
++lhx+Yz88U+3e2AVSfO71J8/lurklM2Gud8V8teD7ABiQ4plfz7jQiSUENYriCW3A
++2lYcq0VK79n2gbH5EZRcCjW+Y6fZwnXXeAtCQwI9asoVMAUJZB2baZcCgYEA6sRm
++/zSsamprN5do1JUgDURtEGM82Ka7NP84v/KrzVgjYCZ4lftT7+Ri3Q+5siy+Sdjq
++K0Qgdvxjo6SfVYdgTmGRPw7ll5gYpdWkQC4fqsqzCZFwyUtaoUoQPMQk6z97kg6p
++K5dsE5AOZpkup6+sSBN2hZuP/1ab4rwSnDYwrJUCgYEA0JmXfN9ZekQ9tsAcpT2j
++hc1o9f4e5vzPyfw7OpiWSI7ti3ma6uyNrPpa/slHiJ2p/svS0NQKQeD1NjlvQ2C6
++VaBvPsTEwh5SBTMwkTnQD9fWaeC6wNQYxRuO0RmQlxuCFB0fopOs6pdkplUhcYQZ
++eT9SiCxDgI3s5VOoilB8nr8CgYEAi4FqMvz598KFM+OlR63V/gxLQxG1doiddkCz
++WFy7+qoFW32A6p8Ood71YKeXkWlFKlzbyhoRsKMKEpQgmpJ3iBwyU2ZmyE55VxI9
++KGZAKx2IhocGnpdIo89/Fpz301NF+uT7Ygv5DSbtZ8pfDwY1Oh9Wrs5iIzk0KOfZ
++pzoMcoECgYEAij1vlYVatT2z+oKkOyOo2ZxrgvF8MCT6pPzjDT3VDiqBHMH0Bf7V
++YEP2TWLMy2SxjUGuQbcpuvYT3pxq5dttkGgHAXWgi1efkrcPtFcjUs7uc8XJG22J
++k0GP+BbgERGy6mfNGNwksMDix6p0X4J8hDkJ5B4pzPwMF3kJh13M0fo=
++-----END RSA PRIVATE KEY-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_ca_key.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_ca_key.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_ca_key.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_ca_key.pem	2012-01-19 12:57:52.208793000 -0500
+@@ -0,0 +1,27 @@
++-----BEGIN RSA PRIVATE KEY-----
++MIIEowIBAAKCAQEA5wnXxRbFSXsr4zHCUz6WHpTJuaXHpzOaJcjlSOxu+5A+UFkz
++T+9hB2FM+0ahx45c4dzKA2luOGITOyifEHZK29hnib4SDvGfDwyUAFsUMii+aC4c
++OBT5bHv3tyaBH5/7UfqpcKdoSweYbYUVBDYsDZHkJI88nTKzVsW7G1bKXBU8bcOf
++nGZKXfrdCGWpyPlr3MzFVSj2t1pBjx9m1PpuZxh93nAb8f61uQCOURt9wSSUSIqG
++lb/jRCoWz0hjvXUY/6st8MUUTWPlvfRufGP7wtP2Hb3MBvszHGejWoiOiKmXnot7
++fsf/8+Bh7KfhG/82eZwuub9E3JsklE1dgIn9PwIDAQABAoIBAA8T6F33Z3atMCcK
++l0kBe6CRSzzvYcE6r+OpYbVJoNCQEFEEEUI1OBrYMcLwUByK4OroktJ4LfZGCEVD
++GGZloesJC3DE077f6+Z6hqojR4UifZKk97h9Pe3jhT4RqDmdIjSubCJq+nZzD3KO
++TdnRgzx7ee0c3/LOXT/bdaOKHXi21lU4JF9OM1p4qb0Sk0Il6dgiUlgWP8m4H5bN
++8afj2pxJgZD4xAkz3VibWd/Pus3VkUwKTnDga+JP+QmHNsT7J4cIiPMKaaiFDhrl
++33LfA+rf6FAO5L0ZOgsByDBkhBrFCMuygZe99h8mrD02+PhBVjtkCxR9wVXBfLZs
++7KEzMekCgYEA9SMrFzi2eVk4VrZW/BhfRr2ZaVBgNlu0dq+UyqCA6d5ZPXkik6JN
++xaDsOLAPLp5ckhRGdjF6fi69SsWn0katbYE3f2UIy77Tu+OQovHeEaKWw4T8P9Z9
++8AXXhURTsPAsrzsJvLQx0t6+IXCH3CyNRno2R4fUi9hCAp3qT0FoYbMCgYEA8Ua8
++lwbv4bzfe2IFFPTTmzaIvnStdwmXd/pxvicYs8BYbeqzKnXidwn4xbpUoxQnh4ZZ
++0ozrvw/Oo5sABOmldlTZURPiTzRwSIBt1HmObTcN5qSI/yvh7gUn1pwACzAm+2D5
++jsXTLTIOW06Au+YHi8G7G8aL+4uSRCUYeRSVuEUCgYEAwpmqiYKyCN81BFE3+GR4
++rjWxZZMy7bQbLOTx33FPJVknys8xDbYYuzymidHqG34HysdhsE5TCXydNJB4S0tk
++PbwIjI9uTiAtAckDdvc+7Qz/VjNp9FuYGkTo9JhrP9lJ/8mET1NVAitlEDK/B6Au
++frZiBKLlriZ9MIqgCU7JSFUCgYBvHLla/+nW1mlA4+odNYaBs0KUGx2LdVJZAXAC
++NvUMSqcur2glRLavRVtYi6/QjkaKBhg1e4pRqdDqzUXb/VGixf5ydSrCeQ7AhMyP
++jg9GQpVXQyyH/siEGcG39o2amWlKWOV0l6vh42xzJhro7U1KUkR9zRjIFgWc9kxn
++7k/o1QKBgA0FAIoZpUMjm+OlCyA3TXbnqXwilszY2KDCZXh0Y1TE7mi6hX/O1BTx
++YXW9/BctmLJENrs2ZxSukTGERibbbTbz0oJoSKI/RPZBR82IAvvt3wEmtVi6S+1Q
++yHYIiNbVkuUh5dKdFArhazjsIMVTQ2zmTEDAq/Q4tupSrPjezRnt
++-----END RSA PRIVATE KEY-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_ca.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_ca.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_ca.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_ca.pem	2012-01-19 12:57:52.208793000 -0500
+@@ -0,0 +1,18 @@
++-----BEGIN CERTIFICATE-----
++MIIC+zCCAeOgAwIBAgIJANup7K2j5fXuMA0GCSqGSIb3DQEBBQUAMBQxEjAQBgNV
++BAMMCUNBX1NJR05FUjAeFw0xMjAxMTkxNjU1NThaFw0xNTAxMTgxNjU1NThaMBQx
++EjAQBgNVBAMMCUNBX1NJR05FUjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
++ggEBAOcJ18UWxUl7K+MxwlM+lh6Uybmlx6czmiXI5UjsbvuQPlBZM0/vYQdhTPtG
++oceOXOHcygNpbjhiEzsonxB2StvYZ4m+Eg7xnw8MlABbFDIovmguHDgU+Wx797cm
++gR+f+1H6qXCnaEsHmG2FFQQ2LA2R5CSPPJ0ys1bFuxtWylwVPG3Dn5xmSl363Qhl
++qcj5a9zMxVUo9rdaQY8fZtT6bmcYfd5wG/H+tbkAjlEbfcEklEiKhpW/40QqFs9I
++Y711GP+rLfDFFE1j5b30bnxj+8LT9h29zAb7Mxxno1qIjoipl56Le37H//PgYeyn
++4Rv/NnmcLrm/RNybJJRNXYCJ/T8CAwEAAaNQME4wHQYDVR0OBBYEFCrCTdvn7PaZ
++BuTLrI6EIzrXf2ewMB8GA1UdIwQYMBaAFCrCTdvn7PaZBuTLrI6EIzrXf2ewMAwG
++A1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADggEBAMc/Bwvj6wixy93IagOjGyIA
++mhronHNIYYv2MQhp8gEotvMjvNOfLjI90N/tPKt+it+A4/fEei0/E/YSlgHc6IWy
++qCF6n/ro8bDVbAX1h8GASaQfOci6403ZVQnuOHbzTjRWyhsTuW4k5KJ8AD5+EPeW
++ippXVTvwOPg0Zem0oig2KTtmzQD82HuGxIoIzUJNJrDc4kU0iruJ7oPLnsC0yGSW
++YsAlrGCtS2XDDLWDqKCvAqAU3WTBTmxzY9yS4LDtbT5qsUiC+JZbw/owbYsymx6y
++lttDfemOyydlN+haoGSN2vY6Qz49o4uLuFunlzNMplQTKqbrBiovId7Edb4ADIc=
++-----END CERTIFICATE-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_ca_serial M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_ca_serial
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_ca_serial	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_ca_serial	2012-01-19 12:57:52.209793500 -0500
+@@ -0,0 +1 @@
++05
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_crl.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_crl.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/revoking_crl.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/revoking_crl.pem	2012-01-19 12:57:52.209793500 -0500
+@@ -0,0 +1,13 @@
++-----BEGIN X509 CRL-----
++MIIB3TCBxgIBATANBgkqhkiG9w0BAQUFADAUMRIwEAYDVQQDDAlDQV9TSUdORVIX
++DTEyMDExOTE2NTU1OFoXDTE1MDExODE2NTU1OFowKDASAgEDFw0xMjAxMTgxODU4
++MzFaMBICAQUXDTEyMDExOTE2NTU1OFqgVDBSMEQGA1UdIwQ9MDuAFCrCTdvn7PaZ
++BuTLrI6EIzrXf2ewoRikFjAUMRIwEAYDVQQDDAlDQV9TSUdORVKCCQDbqeyto+X1
++7jAKBgNVHRQEAwIBAjANBgkqhkiG9w0BAQUFAAOCAQEAOMFMEy2KY+1v4LZ0Uo4u
++kKQdkXeof/RrMPolKX9LJsY3Dobr/+A710aGCaJhYAGsO4X1P2b1BQP5d9sIG6Ju
++SrLLd/ZBLRqCIu65KvtIbgkIctNlIhjyx2K/CqwCajWt5pc69gjXWT39NyZ1vZ37
++Tihnt3zvcF0vzNwQnZEFCpmLe5y2/CvkU95/6r8OtmdSS6SZhYasKxdhXJyXnB9b
++DG6zgCMjGyg2BNFPDXRlgUqAOATZOF/Pcr3A9gqvZbHHdCxtjsdba4f5i8gqhX5J
++vaoGugnXIwbaXcxzFayOnd8V9a5e3ghDGLPWPaCVen+D0V7bbf3V2xJwvpB98Dh5
++5w==
++-----END X509 CRL-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/valid_cert.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/valid_cert.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/valid_cert.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/valid_cert.pem	2012-01-19 12:57:52.209793500 -0500
+@@ -0,0 +1,16 @@
++-----BEGIN CERTIFICATE-----
++MIICmTCCAYECAQQwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAwwJQ0FfU0lHTkVS
++MB4XDTEyMDExOTE2NTU1OFoXDTE1MDExODE2NTU1OFowETEPMA0GA1UEAwwGQ0xJ
++RU5UMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp6bQGlg+wZ1gqLNc
++uRRyXBp+wckVbTT2nMQNmoQgODFyKy6JiF1z3Y2q3CxTFAKLxjUWS5l+18IIwRCt
++Grd3IyJSfeWUjTC1c05pNmNeDZEUPV8U0tYEvgbku2I8GJTeEzLcLPHD5LvI3Nv2
++SW93RdcV7RrCmcVIdM31W4nfUkKgqf+uhhVL1tEjTjdDnpj2enYNIzAek+gPo8Wb
++K3jeSlAYPb3JyPMGcQNKe+reKUMwVZWPw2Tii27HqMOfDMUBxfP7JuID4OJ4nNX/
++M8Eg2yrEJkiAt5mAC7r2ZZhIqzwU/jvTCzkQyM8zrKOoVcj0ee0E9P4BvER0ejeQ
++pHlM9wIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQArF/pL67e1+7o9Sk+fRhF8IOkK
++UvOfmK9J9NrKKnQKueJSG1Hs4x6JiLndAA6QIn5K7Cv1/4EJKHFXgYlYXjKvFjCR
++qy6xY27KCjfntEEZ2Co51iPWyEE/Xxv+6BIKVBZtq0SMg0U8Wipm6RRCYjrtFKlr
++XQDA6CyBWLiAvqELz9ienjim4gLBRnb17YAQmkGM5iiXBU/0gPescAVPQmlMUvyt
++NxT0v/m6PcDkujSE7gTJtAqkqypO4Udp94RvY82fxqXwKFmWmu9nEbBICW4UEyJl
++tEZgJQujva09StZn54AZPRQvjiImYKRhWoui1vntOFWAc1gq/GuIjsm7BsOl
++-----END CERTIFICATE-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/valid_csr M2Crypto-0.21.1.pulp/tests/crl_data/certs/valid_csr
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/valid_csr	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/valid_csr	2012-01-19 12:57:52.209793500 -0500
+@@ -0,0 +1,15 @@
++-----BEGIN CERTIFICATE REQUEST-----
++MIICVjCCAT4CAQAwETEPMA0GA1UEAwwGQ0xJRU5UMIIBIjANBgkqhkiG9w0BAQEF
++AAOCAQ8AMIIBCgKCAQEAp6bQGlg+wZ1gqLNcuRRyXBp+wckVbTT2nMQNmoQgODFy
++Ky6JiF1z3Y2q3CxTFAKLxjUWS5l+18IIwRCtGrd3IyJSfeWUjTC1c05pNmNeDZEU
++PV8U0tYEvgbku2I8GJTeEzLcLPHD5LvI3Nv2SW93RdcV7RrCmcVIdM31W4nfUkKg
++qf+uhhVL1tEjTjdDnpj2enYNIzAek+gPo8WbK3jeSlAYPb3JyPMGcQNKe+reKUMw
++VZWPw2Tii27HqMOfDMUBxfP7JuID4OJ4nNX/M8Eg2yrEJkiAt5mAC7r2ZZhIqzwU
++/jvTCzkQyM8zrKOoVcj0ee0E9P4BvER0ejeQpHlM9wIDAQABoAAwDQYJKoZIhvcN
++AQEFBQADggEBABAwgTATmQm/GmtN8Dal7alSKf4HyqUy19w7j9dFDFT1bSkIkBr6
+++FdfUzoEQsq6aKWVh0Pkor7XcKXa5Pda4+1z4sLd675pmkxSUUu8WnTIcynN3u9G
++RxPpIG1B8gEdHv8AKjp7R0WW/MlvgboXmARAwsNDndQQwBotWl6yWajvcGLfBcXq
++1ylWrynnQzBslHBGFcDE2ChRT9sMvv0Y56bUC7BJL0CZYZmkOlqJ7zOWz+im0jnV
++i1N5BWC4uS/OqQRiOTG6I683/r2AOXFgSrYaJ98v16Sxxp8yoxC+vqs8N7C9iCxC
++q6AUQwiDMJusMXHlqCM0V6nataeNN6TQjIc=
++-----END CERTIFICATE REQUEST-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/certs/valid_key.pem M2Crypto-0.21.1.pulp/tests/crl_data/certs/valid_key.pem
+--- M2Crypto-0.21.1.orig/tests/crl_data/certs/valid_key.pem	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/certs/valid_key.pem	2012-01-19 12:57:52.209793500 -0500
+@@ -0,0 +1,27 @@
++-----BEGIN RSA PRIVATE KEY-----
++MIIEogIBAAKCAQEAp6bQGlg+wZ1gqLNcuRRyXBp+wckVbTT2nMQNmoQgODFyKy6J
++iF1z3Y2q3CxTFAKLxjUWS5l+18IIwRCtGrd3IyJSfeWUjTC1c05pNmNeDZEUPV8U
++0tYEvgbku2I8GJTeEzLcLPHD5LvI3Nv2SW93RdcV7RrCmcVIdM31W4nfUkKgqf+u
++hhVL1tEjTjdDnpj2enYNIzAek+gPo8WbK3jeSlAYPb3JyPMGcQNKe+reKUMwVZWP
++w2Tii27HqMOfDMUBxfP7JuID4OJ4nNX/M8Eg2yrEJkiAt5mAC7r2ZZhIqzwU/jvT
++CzkQyM8zrKOoVcj0ee0E9P4BvER0ejeQpHlM9wIDAQABAoIBADN1jGLJu1mKiOS/
++STK2B/QlXcr1gdInc5riwpou/ATDiJugiS6GIM5ccZlrMYTu0yBfoxxJXRm0wSMh
++j0CoF7V9D3z9Pv+nd8qQwtKi5XeclG3SBX5BmusJCqRJntCcwR17ewGAo/RNf3Xr
++PkmEIUQapOxGTn0MhRT1Mt6KDzYcJhgv7CZPoWh/2UH8PtmdHZHsqvCissvh6Hck
++FiSCSDXGlM/VwEcVcPSkdQcrJaT/lgb9i7GpGRjS7J9SaBHHRFP18UNbJ6sagoL+
++jrWO9Ope/mWBUtBLrHUmPtsijkXXgug9//y6qQ+ms/MnSNTtczYoU0g2PVSg+V5j
++Q1O4qCECgYEA1wRP1NrIMlV5Ob1yEz/qAEHhnfYs/xluAzbi4UA7aig5DuITk48R
++ZSnJB2RU1zkZjePgabtzDFlU/gGvKFR4U63hKrw7xvuERWXAk/FMspxYaldIqjI9
++yadPqXl/SpyJIMzj7J9oPn0DQKl7ozqR6CPB8PyOp1HUB+qjIxIp4uUCgYEAx5tT
++3HDDdO20ISFSFSm+MVVqEg3wf8HjHIx9j+o3cA9fVtrx72guzRSpQ5sfJ3bkUI55
++ZzMAAQh12yKjXHNiCIK9r5EGtvzbtetf6/8JJJG/JmNw8bv/kLZXZYrnCXR8X9wD
++9Im2yU6zhSLhNi0Arh3spoS1h/1sOXXqb2rB5qsCgYBYzlMamvIst9jF3FUNVkyT
++pqJE17Rl+F7TvQuf9SOVCN/oIb/sJh8NJWD+SJYx/kdrrz607NLrusm7z35Erf60
++sRBa0jvuR1uuPgR4FiWTb7ek1EAS64VRkGT6nk/QxS5t+bH5vS0VAhUh095Y4Iv6
++0Sn9GpLg0I8+Zc7TYWEjcQKBgGAg9BAz1k3XtGpIK8m5YrlLk1vCjtJYQ9IZ7taC
++S9SR8q5XnzBXEkL98k52xFgzL92D3//NVfEpa+jvE5GQl+PVYxjMVVmHCSDhjD6R
++gou0DUSlm10v1vKQfiKO9JlfGg7oXJdGQ1tLpbU2iROYNL2l97RyMSKe76H0ocSq
++u1slAoGAblOCa8vM8f4SH3X8TOSpk4r66PJICZdYUDMGbLK6LQHEZCEzhrFG+261
++VdDbhae1Q2tzUwof6WAOBbWlIpVsNnFJIxx+FcIg7qSwDj7GoryK6XHueRVZ1k+n
+++UTeeyv04xrnuFHHubR5dOiFz5/2m4ZPnKCOilQFNBLv5+U3kkw=
++-----END RSA PRIVATE KEY-----
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/create_certs_to_revoke.sh M2Crypto-0.21.1.pulp/tests/crl_data/create_certs_to_revoke.sh
+--- M2Crypto-0.21.1.orig/tests/crl_data/create_certs_to_revoke.sh	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/create_certs_to_revoke.sh	2012-01-19 12:57:52.210794001 -0500
+@@ -0,0 +1,67 @@
++#!/bin/sh
++
++export CERT_DIR=./certs
++export VALID_KEY=${CERT_DIR}/valid_key.pem
++export VALID_CERT=${CERT_DIR}/valid_cert.pem
++export VALID_CSR=${CERT_DIR}/valid_csr
++export REVOKED_KEY=${CERT_DIR}/revoked_key.pem
++export REVOKED_CERT=${CERT_DIR}/revoked_cert.pem
++export REVOKED_CSR=${CERT_DIR}/revoked_csr
++export CA_CERT=${CERT_DIR}/revoking_ca.pem
++export CA_KEY=${CERT_DIR}/revoking_ca_key.pem
++export CA_SERIAL=${CERT_DIR}/revoking_ca_serial
++export CRL_FILE=${CERT_DIR}/revoking_crl.pem
++export CA_COMMON_NAME="CA_SIGNER"
++export CLIENT_COMMON_NAME="CLIENT"
++# INDEX AND CRLNUMBER need to match the setting in the
++# openssl conf
++INDEX=${CERT_DIR}/index
++CRLNUMBER=${CERT_DIR}/crlnumber
++CONF_FILE=./revoking_ssl.conf
++if [ ! -e ${CERT_DIR} ]; then
++    echo "${CERT_DIR} missing, will attempt to create directory"
++    mkdir ${CERT_DIR}
++fi
++#
++# Create the CA
++#
++echo "Creating a test CA"
++openssl genrsa -out ${CA_KEY} 2048
++openssl req -new -x509 -days 1095 -key ${CA_KEY} -out ${CA_CERT} -subj "/CN=${CA_COMMON_NAME}"
++if [ ! -e ${CA_SERIAL} ]; then
++    echo "Initializing ${CA_SERIAL}"
++    echo "01" > ${CA_SERIAL}
++fi
++# 
++# Create a valid cert that will _not_ be revoked
++#
++echo "Creating a test cert that will remain valid: ${VALID_CERT}"
++openssl genrsa -out ${VALID_KEY} 2048
++openssl req -new -key ${VALID_KEY} -out ${VALID_CSR} -subj "/CN=${CLIENT_COMMON_NAME}"
++openssl x509 -req -days 1095 -CA ${CA_CERT} -CAkey ${CA_KEY} -in ${VALID_CSR} -out ${VALID_CERT} -CAserial ${CA_SERIAL}
++
++
++#
++# Create a test cert so we can revoke it later
++#
++echo "Creating a test cert to revoke in later step: ${REVOKED_CERT}"
++openssl genrsa -out ${REVOKED_KEY} 2048
++openssl req -new -key ${REVOKED_KEY} -out ${REVOKED_CSR} -subj "/CN=${CLIENT_COMMON_NAME}"
++openssl x509 -req -days 1095 -CA ${CA_CERT} -CAkey ${CA_KEY} -in ${REVOKED_CSR} -out ${REVOKED_CERT} -CAserial ${CA_SERIAL}
++#
++# Setup CRL database info for CRL revoking
++#
++if [ ! -e ${INDEX} ]; then
++    echo "Creating the index"
++    touch ${INDEX}
++fi
++if [ ! -e ${CRLNUMBER} ]; then
++    echo "Initializing ${CRLNUMBER}"
++    echo "01" > ${CRLNUMBER}
++fi
++#
++# Revoke the cert, then generate a CRL with the newly revoked info
++#
++echo "Revoking the cert: ${REVOKED_CERT}"
++openssl ca -revoke ${REVOKED_CERT} -keyfile ${CA_KEY} -cert ${CA_CERT} -config ${CONF_FILE} -md sha1
++openssl ca -gencrl -keyfile ${CA_KEY} -cert ${CA_CERT} -out ${CRL_FILE} -config ${CONF_FILE} -crlexts crl_ext -md sha1
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/display_crl.sh M2Crypto-0.21.1.pulp/tests/crl_data/display_crl.sh
+--- M2Crypto-0.21.1.orig/tests/crl_data/display_crl.sh	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/display_crl.sh	2012-01-19 12:57:52.210794001 -0500
+@@ -0,0 +1,9 @@
++export CERT_DIR=./certs
++if [ $# -lt 1 ]; then
++    export CRL_FILE=${CERT_DIR}/revoking_crl.pem
++    echo "Defaulting to look at CRL: ${CRL_FILE}"
++else
++    export CRL_FILE=$1
++fi
++
++openssl crl -text -in ${CRL_FILE} -noout
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/README M2Crypto-0.21.1.pulp/tests/crl_data/README
+--- M2Crypto-0.21.1.orig/tests/crl_data/README	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/README	2012-01-19 12:57:52.210794001 -0500
+@@ -0,0 +1,8 @@
++1) Run `./create_certs_to_revoke.sh` to generate test data of:
++ CA:            ./certs/revoking_ca.pem
++ CRL:           ./certs/revoking_crl.pem
++ Revoked Cert:  ./certs/revoked_cert.pem
++
++Use the example verify_* scripts to test out openssl commands for verifying a cert has been revoked with a CRL.
++
++
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/revoking_ssl.conf M2Crypto-0.21.1.pulp/tests/crl_data/revoking_ssl.conf
+--- M2Crypto-0.21.1.orig/tests/crl_data/revoking_ssl.conf	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/revoking_ssl.conf	2012-01-19 12:57:52.210794001 -0500
+@@ -0,0 +1,24 @@
++# OpenSSL configuration for CRL generation
++#
++####################################################################
++[ ca ]
++default_ca	= CA_default		# The default ca section
++
++####################################################################
++[ CA_default ]
++database = ./certs/index
++crlnumber = ./certs/crlnumber
++
++
++default_days	= 1095			# how long to certify for
++default_crl_days= 1095			# how long before next CRL
++default_md	= default		# use public key default MD
++preserve	= no			# keep passed DN ordering
++
++####################################################################
++[ crl_ext ]
++# CRL extensions.
++# Only issuerAltName and authorityKeyIdentifier make any sense in a CRL.
++# issuerAltName=issuer:copy
++authorityKeyIdentifier=keyid:always,issuer:always
++
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/verify_cert_revoked_by_crl.sh M2Crypto-0.21.1.pulp/tests/crl_data/verify_cert_revoked_by_crl.sh
+--- M2Crypto-0.21.1.orig/tests/crl_data/verify_cert_revoked_by_crl.sh	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/verify_cert_revoked_by_crl.sh	2012-01-19 12:57:52.210794001 -0500
+@@ -0,0 +1,15 @@
++export CERT_DIR=./certs
++export REVOKED_CERT=${CERT_DIR}/revoked_cert.pem
++export CA_CERT=${CERT_DIR}/revoking_ca.pem
++export CRL_FILE=${CERT_DIR}/revoking_crl.pem
++export TEMP_CA_CRL_FILE=${CERT_DIR}/temp_CA_CRL.pem
++if [ $# -lt 3 ]; then
++    echo "Usage: $0 ${CA_CERT} ${CRL_FILE} ${REVOKED_CERT}"
++else
++    export CA_CERT=$1
++    export CRL_FILE=$2
++    export REVOKED_CERT=$3
++fi
++
++cat ${CA_CERT} ${CRL_FILE} > ${TEMP_CA_CRL_FILE}
++openssl verify -extended_crl -verbose -CAfile ${TEMP_CA_CRL_FILE} -crl_check ${REVOKED_CERT}
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/verify_crl_signed_by_ca.sh M2Crypto-0.21.1.pulp/tests/crl_data/verify_crl_signed_by_ca.sh
+--- M2Crypto-0.21.1.orig/tests/crl_data/verify_crl_signed_by_ca.sh	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/verify_crl_signed_by_ca.sh	2012-01-19 12:57:52.210794001 -0500
+@@ -0,0 +1,11 @@
++export CERT_DIR=./certs
++export CA_CERT=${CERT_DIR}/revoking_ca.pem
++export CRL_FILE=${CERT_DIR}/revoking_crl.pem
++
++if [ $# -lt 2 ]; then
++    echo "Usage: $0 ${CRL_FILE} ${CA_CERT}"
++else
++    CRL_FILE=$1
++    CA_CERT=$2
++fi
++openssl crl -in ${CRL_FILE} -CAfile ${CA_CERT} -noout
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/verify_revoked_cert_signed_by_ca.sh M2Crypto-0.21.1.pulp/tests/crl_data/verify_revoked_cert_signed_by_ca.sh
+--- M2Crypto-0.21.1.orig/tests/crl_data/verify_revoked_cert_signed_by_ca.sh	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/verify_revoked_cert_signed_by_ca.sh	2012-01-19 12:57:52.211794501 -0500
+@@ -0,0 +1,11 @@
++export CERT_DIR=./certs
++export CA_CERT=${CERT_DIR}/revoking_ca.pem
++export REVOKED_CERT=${CERT_DIR}/revoked_cert.pem
++if [ $# -lt 2 ]; then
++    echo "Usage: $0 ${CA_CERT} ${REVOKED_CERT}"
++else
++    export CA_CERT=$1
++    export REVOKED_CERT=$2
++fi
++openssl verify -CAfile ${CA_CERT} ${REVOKED_CERT}
++
+diff -Naur M2Crypto-0.21.1.orig/tests/crl_data/verify_valid_cert_signed_by_ca.sh M2Crypto-0.21.1.pulp/tests/crl_data/verify_valid_cert_signed_by_ca.sh
+--- M2Crypto-0.21.1.orig/tests/crl_data/verify_valid_cert_signed_by_ca.sh	1969-12-31 19:00:00.000000000 -0500
++++ M2Crypto-0.21.1.pulp/tests/crl_data/verify_valid_cert_signed_by_ca.sh	2012-01-19 12:57:52.211794501 -0500
+@@ -0,0 +1,11 @@
++export CERT_DIR=./certs
++export CA_CERT=${CERT_DIR}/revoking_ca.pem
++export VALID_CERT=${CERT_DIR}/valid_cert.pem
++if [ $# -lt 2 ]; then
++    echo "Usage: $0 ${CA_CERT} ${VALID_CERT}"
++else
++    export CA_CERT=$1
++    export VALID_CERT=$2
++fi
++openssl verify -CAfile ${CA_CERT} ${VALID_CERT}
++
+diff -Naur M2Crypto-0.21.1.orig/tests/README M2Crypto-0.21.1.pulp/tests/README
+--- M2Crypto-0.21.1.orig/tests/README	2012-01-19 12:52:16.022223001 -0500
++++ M2Crypto-0.21.1.pulp/tests/README	2012-01-19 12:57:52.211794501 -0500
+@@ -58,5 +58,8 @@
+ cp newcert.pem ../recipient.pem
+ openssl rsa <newkey.pem >../recipient_key.pem
+ 
++To generate test data for the CRL tests
++cd crl_data
++run: "./create_certs_to_revoke.sh"
+ 
+ Finally run the tests and edit for new values.
+diff -Naur M2Crypto-0.21.1.orig/tests/test_x509.py M2Crypto-0.21.1.pulp/tests/test_x509.py
+--- M2Crypto-0.21.1.orig/tests/test_x509.py	2012-01-19 12:52:16.020222000 -0500
++++ M2Crypto-0.21.1.pulp/tests/test_x509.py	2012-01-19 12:57:52.212795000 -0500
+@@ -142,7 +142,7 @@
+         cn.set_data("Hello There!")
+         assert cn.get_data().as_text() == "Hello There!", cn.get_data().as_text()
+ 
+-        assert n.as_hash() == 1697185131
++        assert n.as_hash() == 333998119
+         
+         self.assertRaises(IndexError, lambda: n[100])
+         self.assert_(n[10])
+@@ -536,20 +536,165 @@
+         x509_ext_ptr = m2.x509v3_ext_conf(lhash, ctx, name, value)
+         x509_ext = X509.X509_Extension(x509_ext_ptr, 1)
+ 
++class X509_StoreContextTestCase(unittest.TestCase):
++
++    def test_verify_cert(self):
++        # Test with the CA that signed tests/x509.pem
++        ca = X509.load_cert('tests/ca.pem')
++        cert = X509.load_cert('tests/x509.pem')
++        store = X509.X509_Store()
++        store.add_x509(ca)
++        store_ctx = X509.X509_Store_Context()
++        store_ctx.init(store, cert)
++        self.assertTrue(store_ctx.verify_cert())
++
++        # Test with the wrong CA, this CA did not sign tests/x509.pem
++        wrong_ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
++        cert = X509.load_cert('tests/x509.pem')
++        store = X509.X509_Store()
++        store.add_x509(wrong_ca)
++        store_ctx = X509.X509_Store_Context()
++        store_ctx.init(store, cert)
++        self.assertFalse(store_ctx.verify_cert())
++
++    def test_verify_with_add_crl(self):
++        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
++        valid_cert = X509.load_cert('tests/crl_data/certs/valid_cert.pem')
++        revoked_cert = X509.load_cert('tests/crl_data/certs/revoked_cert.pem')
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++
++        # Verify that a good cert is verified OK
++        store = X509.X509_Store()
++        store.add_x509(ca)
++        store.add_crl(crl)
++        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
++                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
++        store_ctx = X509.X509_Store_Context()
++        store_ctx.init(store, valid_cert)
++        self.assertTrue(store_ctx.verify_cert())
++
++        # Verify that a revoked cert is not verified
++        store = X509.X509_Store()
++        store.add_x509(ca)
++        store.add_crl(crl)
++        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
++                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
++        store_ctx = X509.X509_Store_Context()
++        store_ctx.init(store, revoked_cert)
++        self.assertFalse(store_ctx.verify_cert())
++
++    def test_verify_with_add_crls(self):
++        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
++        valid_cert = X509.load_cert('tests/crl_data/certs/valid_cert.pem')
++        revoked_cert = X509.load_cert('tests/crl_data/certs/revoked_cert.pem')
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++
++        # Verify that a good cert is verified OK
++        store = X509.X509_Store()
++        store.add_x509(ca)
++        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
++                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
++        crl_stack = X509.CRL_Stack()
++        crl_stack.push(crl)
++        store_ctx = X509.X509_Store_Context()
++        store_ctx.init(store, valid_cert)
++        store_ctx.add_crls(crl_stack)
++        self.assertTrue(store_ctx.verify_cert())
++
++        # Verify that a revoked cert is not verified
++        store = X509.X509_Store()
++        store.add_x509(ca)
++        store.set_flags(X509.m2.X509_V_FLAG_CRL_CHECK |
++                       X509.m2.X509_V_FLAG_CRL_CHECK_ALL)
++        crl_stack = X509.CRL_Stack()
++        crl_stack.push(crl)
++        store_ctx = X509.X509_Store_Context()
++        store_ctx.init(store, revoked_cert)
++        store_ctx.add_crls(crl_stack)
++        self.assertFalse(store_ctx.verify_cert())
++
++class CRL_StackTestCase(unittest.TestCase):
++    def test_new(self):
++        crl_stack = X509.CRL_Stack()
++        self.assertIsNotNone(crl_stack)
++        self.assertEqual(len(crl_stack), 0)
++
++    def test_push_and_pop(self):
++        crl_stack = X509.CRL_Stack()
++        crl_a = X509.CRL()
++        crl_b = X509.CRL()
++        self.assertNotEqual(crl_a, crl_b)
++        crl_stack.push(crl_a)
++        crl_stack.push(crl_b)
++        self.assertEquals(len(crl_stack), 2)
++        popped_b = crl_stack.pop()
++        self.assertEquals(crl_b, popped_b)
++        self.assertEquals(len(crl_stack), 1)
++        popped_a = crl_stack.pop()
++        self.assertEqual(crl_a, popped_a)
++        self.assertEqual(len(crl_stack), 0)
+ 
+ class CRLTestCase(unittest.TestCase):
+     def test_new(self):
+         crl = X509.CRL()
+         self.assertEqual(crl.as_text()[:34],
+                          'Certificate Revocation List (CRL):')
+-    
++
++    def test_verify(self):
++        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++        self.assertTrue(crl.verify(ca.get_pubkey()))
++
++        wrong_ca = X509.load_cert('tests/ca.pem')
++        self.assertFalse(crl.verify(wrong_ca.get_pubkey()))
++
++    def test_get_issuer(self):
++        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++        ca_issuer = ca.get_issuer()
++        crl_issuer = crl.get_issuer()
++        self.assertEqual(ca_issuer.as_hash(), crl_issuer.as_hash())
++
++        wrong_ca = X509.load_cert('tests/ca.pem')
++        wrong_ca_issuer = wrong_ca.get_issuer()
++        self.assertNotEqual(wrong_ca_issuer.as_hash(), crl_issuer.as_hash())
++
++    def test_load_crl(self):
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++        self.assertIsNotNone(crl)
++        self.assertIsInstance(crl, X509.CRL)
++
++    def test_load_crl_string(self):
++        f = open('tests/crl_data/certs/revoking_crl.pem')
++        data = f.read()
++        f.close()
++        crl = X509.load_crl_string(data)
++        self.assertIsInstance(crl, X509.CRL)
++
++        ca = X509.load_cert("tests/crl_data/certs/revoking_ca.pem")
++        ca_issuer = ca.get_issuer()
++        crl_issuer = crl.get_issuer()
++        self.assertEqual(ca_issuer.as_hash(), crl_issuer.as_hash())
++
++    def test_get_last_updated(self):
++        expected_lastUpdate = "Jan 19 16:55:58 2012 GMT"
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++        self.assertEquals(str(crl.get_lastUpdate()), expected_lastUpdate)
++
++    def test_get_next_update(self):
++        expected_nextUpdate = "Jan 18 16:55:58 2015 GMT"
++        crl = X509.load_crl('tests/crl_data/certs/revoking_crl.pem')
++        self.assertEquals(str(crl.get_nextUpdate()), expected_nextUpdate)
++
+ 
+ def suite():
+     suite = unittest.TestSuite()
+     suite.addTest(unittest.makeSuite(X509TestCase))
+     suite.addTest(unittest.makeSuite(X509_StackTestCase))
+     suite.addTest(unittest.makeSuite(X509_ExtTestCase))
++    suite.addTest(unittest.makeSuite(X509_StoreContextTestCase))
+     suite.addTest(unittest.makeSuite(CRLTestCase))
++    suite.addTest(unittest.makeSuite(CRL_StackTestCase))
+     return suite
+ 
+ 

@@ -15,7 +15,6 @@
 
 import sys
 import os
-import unittest
 import logging
 import yum
 import shutil
@@ -23,23 +22,17 @@ import xml.dom.minidom
 import time
 import random
 from tempfile import gettempdir
+from pulp.server import comps_util
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.append(srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
 import pulp.server.comps_util
 import pulp.server.util
 from pulp.server.api import repo_sync
 from pulp.server.db import model
-from pulp.server.api.repo import RepoApi
 from pulp.server.api.synchronizers import BaseSynchronizer
-from pulp.server.pexceptions import PulpException
-
-import testutil
+from pulp.server.exceptions import PulpException
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
@@ -56,25 +49,14 @@ def tmpfile():
     return open(path, 'w')
 
 
-class TestComps(unittest.TestCase):
-
-    def clean(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
+class TestComps(testutil.PulpAsyncTest):
 
     def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.rapi = RepoApi()
-        self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        testutil.PulpAsyncTest.setUp(self)
         logging.root.setLevel(logging.ERROR)
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
 
     def test_sync_groups_data(self):
-        repo = self.rapi.create('test_sync_groups_data_id',
+        repo = self.repo_api.create('test_sync_groups_data_id',
                 'test_sync_groups_data_id', 'i386',
                 'http://example.com/')
         # Parse existing comps.xml
@@ -86,7 +68,7 @@ class TestComps(unittest.TestCase):
         # we need to save it to the db so we can query from it
         model.Repo.get_collection().save(repo, safe=True)
         # Testing for expected values
-        found = self.rapi.packagegroup(repo['id'], "web-server")
+        found = self.repo_api.packagegroup(repo['id'], "web-server")
         self.assertTrue(found is not None)
         self.assertTrue("httpd" in found['mandatory_package_names'])
         self.assertTrue("mod_auth_kerb" in found['optional_package_names'])
@@ -94,27 +76,27 @@ class TestComps(unittest.TestCase):
         self.assertTrue("crypto-utils" in found['default_package_names'])
         self.assertTrue("distcache" in found['default_package_names'])
         # PackageGroupCategory, look up expected values,
-        found = self.rapi.packagegroupcategory(repo['id'], "BAD_VALUE_NOT_IN_CATEGORY")
+        found = self.repo_api.packagegroupcategory(repo['id'], "BAD_VALUE_NOT_IN_CATEGORY")
         self.assertTrue(found is None)
-        found = self.rapi.packagegroupcategory(repo['id'], "development")
+        found = self.repo_api.packagegroupcategory(repo['id'], "development")
         self.assertTrue(found is not None)
 
     def test_create_groups_metadata(self):
         repo_path = os.path.join(self.data_path, "no_groups_repo")
-        repo = self.rapi.create("test_create_groups_metadata_id",
+        repo = self.repo_api.create("test_create_groups_metadata_id",
                 'test_import_groups_data_id', 'i386',
                 'file://%s' % (repo_path))
         repo_sync._sync(repo["id"])
-        found = self.rapi.packagegroups(repo['id'])
+        found = self.repo_api.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
         self.assertTrue(repo["group_xml_path"] == "")
         self.assertTrue(repo["group_gz_xml_path"] == "")
-        pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
+        pkg_group = self.repo_api.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
 
-        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["pulp-test-package"])
+        self.repo_api.add_packages_to_group(repo["id"], pkg_group["id"], ["pulp-test-package"])
         # Update repo object so we can test that group_xml_path was set
-        repo = self.rapi.repository(repo["id"])
+        repo = self.repo_api.repository(repo["id"])
         self.assertTrue(repo["group_xml_path"] != "")
         comps = yum.comps.Comps()
         comps.add(repo["group_xml_path"])
@@ -126,7 +108,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue("pulp-test-package" not in groups[0].mandatory_packages)
 
     def test_basic_comps(self):
-        repo = self.rapi.create('test_comps_id', 'test_comps_name',
+        repo = self.repo_api.create('test_comps_id', 'test_comps_name',
             'i386', 'http://example.com/')
         grp = pulp.server.db.model.PackageGroup("groupid1", "groupname1",
             "description", "user_visible", "display_order", "default"
@@ -137,8 +119,8 @@ class TestComps(unittest.TestCase):
         grp['conditional_package_names'] = {"requires_pkg":["package_name1", "package_name2"]}
         grp['translated_name'] = {"a":"value"}
         grp['translated_description'] = {"b":"value"}
-        self.rapi.update_packagegroup(repo['id'], grp)
-        found = self.rapi.packagegroup(repo['id'], grp['id'])
+        self.repo_api.update_packagegroup(repo['id'], grp)
+        found = self.repo_api.packagegroup(repo['id'], grp['id'])
         self.assertTrue(found is not None)
         self.assertTrue(found['name'] == 'groupname1')
         self.assertTrue("mandatory_package_name1" in found['mandatory_package_names'])
@@ -152,30 +134,30 @@ class TestComps(unittest.TestCase):
         ctg['packagegroupids'] = ["groupid1"]
         ctg['translated_name'] = {"a":"name"}
         ctg['translated_description'] = {"b":"description"}
-        self.rapi.update_packagegroupcategory(repo["id"], ctg)
-        found = self.rapi.packagegroupcategory(repo["id"], ctg["id"])
+        self.repo_api.update_packagegroupcategory(repo["id"], ctg)
+        found = self.repo_api.packagegroupcategory(repo["id"], ctg["id"])
         self.assertTrue(found is not None)
         self.assertTrue(found["name"] == "categoryname")
         self.assertTrue("groupid1" in found["packagegroupids"])
 
 
     def test_delete_group_category(self):
-        repo = self.rapi.create('test_delete_group_category',
+        repo = self.repo_api.create('test_delete_group_category',
                 'test_delete_group_category', 'i386',
                 'http://example.com/')
-        cat = self.rapi.create_packagegroupcategory(repo["id"],
+        cat = self.repo_api.create_packagegroupcategory(repo["id"],
                 "test_cat", "test_cat_name", "test description")
-        grp = self.rapi.create_packagegroup(repo["id"],
+        grp = self.repo_api.create_packagegroup(repo["id"],
                 "test_group", "test_group_name", "test description")
-        found = self.rapi.packagegroupcategory(repo['id'], cat["id"])
+        found = self.repo_api.packagegroupcategory(repo['id'], cat["id"])
         self.assertTrue(found is not None)
-        found = self.rapi.packagegroup(repo['id'], grp["id"])
+        found = self.repo_api.packagegroup(repo['id'], grp["id"])
         self.assertTrue(found is not None)
-        self.rapi.delete_packagegroup(repo['id'], grp["id"])
-        found = self.rapi.packagegroup(repo['id'], grp["id"])
+        self.repo_api.delete_packagegroup(repo['id'], grp["id"])
+        found = self.repo_api.packagegroup(repo['id'], grp["id"])
         self.assertTrue(found is None)
-        self.rapi.delete_packagegroupcategory(repo['id'], cat["id"])
-        found = self.rapi.packagegroupcategory(repo['id'], cat["id"])
+        self.repo_api.delete_packagegroupcategory(repo['id'], cat["id"])
+        found = self.repo_api.packagegroupcategory(repo['id'], cat["id"])
         self.assertTrue(found is None)
 
     def test_model_group_to_yum_group(self):
@@ -234,11 +216,11 @@ class TestComps(unittest.TestCase):
         self.assertTrue(len(comps.get_categories()) != 0)
 
         # Create empty repo, we will populate it with our groups/categories
-        repo = self.rapi.create('test_comps_id', 'test_comps_name',
+        repo = self.repo_api.create('test_comps_id', 'test_comps_name',
                 'i386', 'http://example.com/')
-        found = self.rapi.packagegroups(repo['id'])
+        found = self.repo_api.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
-        found = self.rapi.packagegroupcategories(repo['id'])
+        found = self.repo_api.packagegroupcategories(repo['id'])
         self.assertTrue(len(found) == 0)
 
         # Create Groups/Categories from parsed data
@@ -247,46 +229,46 @@ class TestComps(unittest.TestCase):
             grp = pulp.server.comps_util.yum_group_to_model_group(g)
             self.assertTrue(grp is not None)
             grp_list.append(grp)
-        self.rapi.update_packagegroups(repo['id'], grp_list)
+        self.repo_api.update_packagegroups(repo['id'], grp_list)
         ctg_list = []
         for c in comps.get_categories():
             ctg = pulp.server.comps_util.yum_category_to_model_category(c)
             self.assertTrue(ctg is not None)
             ctg_list.append(ctg)
-        self.rapi.update_packagegroupcategories(repo['id'], ctg_list)
+        self.repo_api.update_packagegroupcategories(repo['id'], ctg_list)
 
         # Lookup data from API calls
-        found = self.rapi.packagegroups(repo['id'])
+        found = self.repo_api.packagegroups(repo['id'])
         self.assertTrue(len(found) == len(comps.get_groups()))
-        found = self.rapi.packagegroupcategories(repo['id'])
+        found = self.repo_api.packagegroupcategories(repo['id'])
         self.assertTrue(len(found) == len(comps.get_categories()))
 
         # PackageGroup, look up expected values,
         # good values come from known data in rhel-5 comps.xml
-        found = self.rapi.packagegroup(repo['id'], "BAD_VALUE_NOT_IN_GROUP")
+        found = self.repo_api.packagegroup(repo['id'], "BAD_VALUE_NOT_IN_GROUP")
         self.assertTrue(found is None)
-        found = self.rapi.packagegroup(repo['id'], "web-server")
+        found = self.repo_api.packagegroup(repo['id'], "web-server")
         self.assertTrue(found is not None)
         self.assertTrue("httpd" in found['mandatory_package_names'])
         self.assertTrue("mod_auth_kerb" in found['optional_package_names'])
         self.assertTrue("mod_auth_mysql" in found['optional_package_names'])
         self.assertTrue("crypto-utils" in found['default_package_names'])
         self.assertTrue("distcache" in found['default_package_names'])
-        found = self.rapi.packagegroup(repo['id'], "afrikaans-support")
+        found = self.repo_api.packagegroup(repo['id'], "afrikaans-support")
         self.assertTrue(found is not None)
         self.assertTrue("aspell-af" in found['conditional_package_names'])
         self.assertEquals("aspell", found['conditional_package_names']['aspell-af'])
 
         # PackageGroupCategory, look up expected values,
-        found = self.rapi.packagegroupcategory(repo['id'], "BAD_VALUE_NOT_IN_CATEGORY")
+        found = self.repo_api.packagegroupcategory(repo['id'], "BAD_VALUE_NOT_IN_CATEGORY")
         self.assertTrue(found is None)
-        found = self.rapi.packagegroupcategory(repo['id'], "development")
+        found = self.repo_api.packagegroupcategory(repo['id'], "development")
         self.assertTrue(found is not None)
 
 
         # Look up groups/categories from repo api
-        ctgs = self.rapi.packagegroupcategories(repo["id"])
-        grps = self.rapi.packagegroups(repo["id"])
+        ctgs = self.repo_api.packagegroupcategories(repo["id"])
+        grps = self.repo_api.packagegroups(repo["id"])
 
         xml = pulp.server.comps_util.form_comps_xml(ctgs, grps)
         #log.debug("Generated XML = %s" % (xml.encode('utf-8')))
@@ -373,31 +355,30 @@ class TestComps(unittest.TestCase):
         os.unlink(tmp_repomd_path)
         os.unlink(tmp_comps_path)
 
-    def immutable_groups(self):
-        #TODO  until we fix group import, this tests needs to be commented out
+    def test_immutable_groups(self):
 
         repo_path = os.path.join(self.data_path, "repo_with_groups")
         # Create repo with 1 group
-        repo = self.rapi.create('test_immutable_groups_id',
+        repo = self.repo_api.create('test_immutable_groups_id',
                 'test_import_groups_data_id', 'i386',
                 'file://%s' % (repo_path))
         repo_sync._sync(repo["id"])
         # Ensure groups/categories were found and they are all immutable
-        found = self.rapi.packagegroups(repo['id'])
+        found = self.repo_api.packagegroups(repo['id'])
         self.assertTrue(len(found) > 0)
         for key in found:
             self.assertTrue(found[key]["immutable"] == True)
-        found = self.rapi.packagegroupcategories(repo['id'])
+        found = self.repo_api.packagegroupcategories(repo['id'])
         self.assertTrue(len(found) > 0)
         for key in found:
             self.assertTrue(found[key]["immutable"] == True)
-        found = self.rapi.packagegroup(repo['id'], "admin-tools")
+        found = self.repo_api.packagegroup(repo['id'], "admin-tools")
         self.assertTrue(found is not None)
         self.assertTrue("system-config-boot" in found['default_package_names'])
         # Verify we cannot delete a package from an immutable group
         caught = False
         try:
-            self.rapi.delete_package_from_group(repo["id"], found["id"],
+            self.repo_api.delete_package_from_group(repo["id"], found["id"],
                 "pulp-test-package", gtype="default")
         except PulpException, e:
             caught = True
@@ -405,7 +386,7 @@ class TestComps(unittest.TestCase):
         # Verify we cannot add a package
         caught = False
         try:
-            self.rapi.add_packages_to_group(repo["id"], "admin-tools",
+            self.repo_api.add_packages_to_group(repo["id"], "admin-tools",
                 ["pulp-test-package"], gtype="default")
         except PulpException, e:
             caught = True
@@ -413,77 +394,217 @@ class TestComps(unittest.TestCase):
         # Verify we cannot update package group with same name
         caught = False
         try:
-            found = self.rapi.packagegroup(repo["id"], "admin-tools")
+            found = self.repo_api.packagegroup(repo["id"], "admin-tools")
             self.assertTrue(found is not None)
             found["default_package_names"].append("newPackage1")
-            self.rapi.update_packagegroup(repo["id"], found)
+            self.repo_api.update_packagegroup(repo["id"], found)
         except PulpException, e:
             caught = True
         self.assertTrue(caught)
 
         # Verify if we create a new package group, we can add/delete packages
-        pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
+        pkg_group = self.repo_api.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
-        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"],
+        self.repo_api.add_packages_to_group(repo["id"], pkg_group["id"],
                 ["pulp-test-package"], gtype="default")
-        found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
+        found = self.repo_api.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
         self.assertTrue("pulp-test-package" in found["default_package_names"])
-        self.rapi.delete_package_from_group(repo["id"], pkg_group["id"],
+        self.repo_api.delete_package_from_group(repo["id"], pkg_group["id"],
                 "pulp-test-package", gtype="default")
-        found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
+        found = self.repo_api.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
         self.assertTrue("pulp-test-package" not in found["default_package_names"])
         # Verify we can remove package group
-        self.rapi.delete_packagegroup(repo["id"], pkg_group["id"])
-        found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
+        self.repo_api.delete_packagegroup(repo["id"], pkg_group["id"])
+        found = self.repo_api.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is None)
 
 
-    def comps_resync_with_group_changes(self):
-        #TODO: until we fix group import this needs to be commented out
+    def test_comps_resync_with_group_changes(self):
 
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        repo = self.rapi.create('test_comps_resync_with_group_changes',
+        repo = self.repo_api.create('test_comps_resync_with_group_changes',
                 'test_comps_resync_with_group_changes_name', 'i386',
                 'file://%s' % (repo_path))
         repo_sync._sync(repo["id"])
-        found = self.rapi.packagegroups(repo['id'])
+        found = self.repo_api.packagegroups(repo['id'])
         # Verify expected groups/categories
         self.assertTrue(len(found) == 3)
-        self.assertTrue(self.rapi.packagegroup(repo["id"], "admin-tools") is not None)
-        self.assertTrue(self.rapi.packagegroup(repo["id"], "dns-server") is not None)
-        self.assertTrue(self.rapi.packagegroup(repo["id"], "haskell") is not None)
-        found = self.rapi.packagegroup(repo["id"], "dns-server")
+        self.assertTrue(self.repo_api.packagegroup(repo["id"], "admin-tools") is not None)
+        self.assertTrue(self.repo_api.packagegroup(repo["id"], "dns-server") is not None)
+        self.assertTrue(self.repo_api.packagegroup(repo["id"], "haskell") is not None)
+        found = self.repo_api.packagegroup(repo["id"], "dns-server")
         self.assertTrue(found is not None)
         self.assertTrue("bind" in found["optional_package_names"])
         self.assertTrue("dnssec-conf" not in found["mandatory_package_names"])
-        found = self.rapi.packagegroupcategories(repo['id'])
+        found = self.repo_api.packagegroupcategories(repo['id'])
         self.assertTrue(len(found) == 2)
-        self.assertTrue(self.rapi.packagegroupcategory(repo["id"], "desktops") is not None)
-        self.assertTrue(self.rapi.packagegroupcategory(repo["id"], "apps") is not None)
+        self.assertTrue(self.repo_api.packagegroupcategory(repo["id"], "desktops") is not None)
+        self.assertTrue(self.repo_api.packagegroupcategory(repo["id"], "apps") is not None)
         # Simulate a change to comps.xml from repo source
         # Changes:  removed the haskell group
         #           added a package to the dns-server group
         #           added a new category, 'development'
         repo_path = os.path.join(self.data_path, "repo_resync_b")
-        repo = self.rapi.repository(repo["id"])
+        repo = self.repo_api.repository(repo["id"])
         repo["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(repo, safe=True)
         repo_sync._sync(repo["id"])
-        found = self.rapi.packagegroups(repo['id'])
+        found = self.repo_api.packagegroups(repo['id'])
         self.assertTrue(len(found) == 2)
-        self.assertTrue(self.rapi.packagegroup(repo["id"], "admin-tools") is not None)
-        self.assertTrue(self.rapi.packagegroup(repo["id"], "dns-server") is not None)
-        found = self.rapi.packagegroup(repo["id"], "dns-server")
+        self.assertTrue(self.repo_api.packagegroup(repo["id"], "admin-tools") is not None)
+        self.assertTrue(self.repo_api.packagegroup(repo["id"], "dns-server") is not None)
+        found = self.repo_api.packagegroup(repo["id"], "dns-server")
         self.assertTrue("bind" in found["optional_package_names"])
         self.assertTrue("dnssec-conf" in found["mandatory_package_names"])
-        found = self.rapi.packagegroupcategories(repo['id'])
+        found = self.repo_api.packagegroupcategories(repo['id'])
         self.assertTrue(len(found) == 3)
-        self.assertTrue(self.rapi.packagegroupcategory(
+        self.assertTrue(self.repo_api.packagegroupcategory(
             repo["id"], "desktops") is not None)
-        self.assertTrue(self.rapi.packagegroupcategory(
+        self.assertTrue(self.repo_api.packagegroupcategory(
             repo["id"], "apps") is not None)
-        self.assertTrue(self.rapi.packagegroupcategory(
+        self.assertTrue(self.repo_api.packagegroupcategory(
             repo["id"], "development") is not None)
 
+    def test_metadata_regen_with_group_changes(self):
+        log.info("Start test_metadata_regen_with_group_changes")
+        # Create a feedless repo
+        repo = self.repo_api.create("test_metadata_regen_with_group_changes", "test_name", "i386")
+        # Create a package group and add to repo
+        group_id = "test_group_id"
+        group_name = "test_group_name"
+        description = "test_description"
+        pkggrp = self.repo_api.create_packagegroup(repo["id"], group_id, group_name, description)
+        repo = self.repo_api.repository(repo["id"])
+
+        # Verify it's present with pulp
+        grps = self.repo_api.packagegroups(repo["id"])
+        self.assertEqual(len(grps), 1)
+        log.info("Added a PackageGroup id=<%s> to Repo <%s>" % (pkggrp["id"], repo["id"]))
+
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        self.assertTrue(mddata.has_key("group"))
+        self.assertTrue(mddata["group"].has_key("location"))
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        # Verify yum can parse the info from repomd.xml
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+        self.assertTrue(group_id in yum_group_ids)
+        ###
+        # Trigger metadata regen
+        ###
+        self.repo_api._generate_metadata(repo["id"])
+        log.info("Ran metadata regenerate")
+
+        # Verify packagegroup is still shown in metadata
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        # Verify yum can parse the info from repomd.xml
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+        self.assertTrue(group_id in yum_group_ids)
+
+        # Add a second group
+        group_id_B = "test_group_id_B"
+        group_name_B = "test_group_name_B"
+        description_B = "test_description_B"
+        pkggrp_B = self.repo_api.create_packagegroup(repo["id"], group_id_B, group_name_B, description_B)
+        repo = self.repo_api.repository(repo["id"])
+
+        # Verify it's present with Pulp
+        grps = self.repo_api.packagegroups(repo["id"])
+        self.assertEqual(len(grps), 2)
+        log.info("Added a second PackageGroup id=<%s> to Repo <%s>" % (pkggrp_B["id"], repo["id"]))
+
+        # Verify group info is present from the 'group' metadata referenced by repomd.xml
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        #for key in ("group", "group_gz"):
+        #    if mddata.has_key(key):
+        #        log.info("The location for '%s' is '%s'" % (key, mddata[key]["location"]))
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        log.info("Will parse <%s> for group data" % (group_path))
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+        # Verify both package groups are in the group file repomd.xml references
+        self.assertTrue(group_id in yum_group_ids)
+        self.assertTrue(group_id_B in yum_group_ids)
+        #cmd = "ls %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata"))
+        #os.system(cmd)
+
+        #####
+        # Trigger second metadata regen
+        #####
+        self.repo_api._generate_metadata(repo["id"])
+        log.info("Ran second metadata regenerate")
+
+        # Verify new metadata still has group information
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        log.info("Will parse <%s> for group data" % (group_path))
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        log.info("Groups from %s = <%s>" % (group_path, yum_group_ids))
+
+    def test_multiple_package_group_additions(self):
+        log.info("Start test_multiple_package_group_additions")
+        repo = self.repo_api.create("test_multiple_package_group_additions", "test_name", "i386")
+        group_count = 50
+        for i in range(0,group_count):
+            pkggrp = self.repo_api.create_packagegroup(repo["id"], "groupid_%s" % (i), "group_name_%s" % (i), "description_%s" % (i))
+        repo = self.repo_api.repository(repo["id"])
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        self.assertEqual(len(yum_group_ids), group_count) 
+        
+        #cmd = "cat %s" % (os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata", "repomd.xml"))
+        #os.system(cmd)
+    
+        # Be sure we are cleaning up the old group data on each addition
+        repodata_dir_listing = os.listdir(os.path.join(pulp.server.util.top_repos_location(), repo["id"], "repodata"))
+        self.assertTrue(len(repodata_dir_listing) < 15) # typically there are about 10 repodata files
+
+        # Regenerate metadata and ensure we still see all the groups we've added
+        self.repo_api._generate_metadata(repo["id"])
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["id"], mddata["group"]["location"])
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        self.assertEqual(len(yum_group_ids), group_count) 
+
+    def test_update_repomd_xml_file_called_with_no_change_to_comps_data(self):
+        repo = self.repo_api.create("test_update_repomd_xml_file", "test_name", "i386")
+        pkggrp1 = self.repo_api.create_packagegroup(repo["id"], "groupid_1", "group_name_1", "description_1")
+        mddata_A = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        repo = self.repo_api.repository(repo["id"])
+        comps_util.update_repomd_xml_file(repo["repomd_xml_path"], repo["group_xml_path"])
+        mddata_B = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        self.assertEquals(mddata_A["group"]["location"], mddata_B["group"]["location"])
+        self.assertEquals(mddata_A["group_gz"]["location"], mddata_B["group_gz"]["location"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(), repo["id"], mddata_B["group"]["location"])
+        group_gz_path = os.path.join(pulp.server.util.top_repos_location(), repo["id"], mddata_B["group_gz"]["location"])
+        self.assertTrue(os.path.isfile(group_path))
+        self.assertTrue(os.path.isfile(group_gz_path))

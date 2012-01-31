@@ -16,7 +16,7 @@ import logging
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 log = logging.getLogger(__name__)
 
@@ -38,14 +38,15 @@ class ErrataApi(BaseApi):
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
             reboot_suggested="", references=(), pkglist=(), severity="",
-            rights="", summary="", solution="", repo_defined=False, immutable=False):
+            rights="", summary="", solution="", repo_defined=False, 
+            immutable=False, repoids=[]):
         """
         Create a new Errata object and return it
         """
         e = model.Errata(id, title, description, version, release, type,
                 status, updated, issued, pushcount, from_str,
                 reboot_suggested, references, pkglist, severity, rights,
-                summary, solution, repo_defined, immutable)
+                summary, solution, repo_defined, immutable, repoids)
         self.collection.insert(e, safe=True)
         return e
 
@@ -91,7 +92,11 @@ class ErrataApi(BaseApi):
         @return: True if referenced
         @rtype: bool
         """
-        type = self.erratum(id)["type"]
+        erratum = self.erratum(id, fields=['id', 'type'])
+        if erratum is None:
+            return False
+
+        type = erratum["type"]
         collection = model.Repo.get_collection()
         query = "errata.%s" % type
         repo = collection.find_one({query:id}, fields=["id"])
@@ -111,7 +116,8 @@ class ErrataApi(BaseApi):
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,
-            pushcount=None, from_str=None, reboot_suggested=None, severity=None, repo_defined=None):
+            pushcount=None, from_str=None, reboot_suggested=None, severity=None,
+            repo_defined=None, bzid=None, cve=None):
         """
         Return a list of all errata objects matching search terms
         """
@@ -144,6 +150,12 @@ class ErrataApi(BaseApi):
             searchDict['severity'] = severity
         if repo_defined is not None:
             searchDict['repo_defined'] = False
+        if bzid:
+            searchDict['references.id'] = bzid
+            searchDict['references.type'] = "bugzilla"
+        if cve:
+            searchDict['references.id'] = cve
+            searchDict['references.type'] = "cve"
         
         if (len(searchDict.keys()) == 0):
             return list(self.collection.find())
@@ -158,28 +170,4 @@ class ErrataApi(BaseApi):
 
     def search_by_issued_date_range(self):
         pass
-
-    def query_by_bz(self, bzid):
-        return self.query_by_reference('bugzilla', bzid)
-
-    def query_by_cve(self, cveid):
-        return self.query_by_reference('cve', cveid)
-
-    def query_by_reference(self, type, refid):
-        """
-        Search Errata for all matches of this reference with id 'refid'
-        @param type: reference type to search, example 'bugzilla', 'cve'
-        @param refid: id to match on
-        """
-        # Will prob want to chunk the query to mongo and limit the data returned
-        # to be only 'references' and 'id'.
-        # OR...look into a better way to search inside errata through mongo
-        all_errata = self.errata()
-        matches = []
-        for e in all_errata:
-            for ref in e["references"]:
-                if ref["type"] == type and ref["id"] == refid:
-                    matches.append(e["id"])
-                    continue
-        return matches
 

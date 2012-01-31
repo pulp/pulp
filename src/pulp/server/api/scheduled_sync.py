@@ -26,11 +26,11 @@ except ImportError:
 from isodate import ISO8601Error
 
 from pulp.common import dateutils
-from pulp.server import async
+from pulp.server import async, config
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException, PulpValidationError
 from pulp.server.tasking.exception import UnscheduledTaskException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
@@ -51,7 +51,7 @@ def validate_schedule(schedule):
     try:
         interval, start, runs = dateutils.parse_iso8601_interval(schedule)
     except ISO8601Error:
-        raise PulpException(_('Imporperly formatted schedule: %s') % schedule), None, sys.exc_info()[2]
+        raise PulpException(_('Improperly formatted schedule: %s') % schedule), None, sys.exc_info()[2]
     if not isinstance(interval, datetime.timedelta):
         raise PulpException(_('Invalid type for interval: %s') % str(type(interval)))
     # convert the start time to the local timezone
@@ -59,6 +59,64 @@ def validate_schedule(schedule):
         start = dateutils.to_local_datetime(start)
     # re-format the schedule into pulp's standard format
     return dateutils.format_iso8601_interval(interval, start, runs)
+
+
+def parse_and_validate_repo_sync_options(options):
+    """
+    Parse, validate, and return a normalized version of the options, ready to
+    use by the scheduled sync.
+    @param options: repo sync options
+    @type options: dict
+    @return: normalized, valid options to be used a kwargs to the sync task
+    @rtype: dict
+    """
+    def _parse_int(k, i):
+        try:
+            return int(i)
+        except TypeError:
+            raise PulpValidationError(_('Invalid value for option %(o)s: %(v)s') %
+                                      {'o': k, 'v': i}), None, sys.exc_info()[2]
+
+    def _parse_timeout(t):
+        if not t:
+            return None
+        try:
+            timeout = dateutils.parse_iso8601_duration(t)
+            if not isinstance(timeout, datetime.timedelta):
+                raise PulpValidationError()
+            return timeout
+        except (ISO8601Error, PulpValidationError):
+            raise PulpValidationError(_('Invalid value for option timeout: %(v)s') %
+                                      {'v': t}), None, sys.exc_info()[2]
+
+    def _parse_skip(s):
+        valid_skips = ('packages', 'errata', 'distribution')
+        skip_dict = {}
+        for skip, value in s.items():
+            if skip not in valid_skips:
+                raise PulpValidationError(_('Invalid skip specification: %(s)s') % {'s': skip})
+            try:
+                skip_dict[skip] = int(bool(value))
+            except TypeError:
+                raise PulpValidationError(_('Invalid skip value for %(s)s: %(v)s') %
+                                          {'s': skip, 'v': value}), None, sys.exc_info()[2]
+        return skip_dict
+
+
+    if not options:
+        return {}
+    new_options = {}
+    valid_keys = ('max_speed', 'threads', 'timeout', 'skip')
+    for key, value in options.items():
+        if key not in valid_keys:
+            raise PulpValidationError(_('Unknown sync option: %(o)s') % {'o': key})
+        if key in valid_keys[:2]:
+            new_options[key] = _parse_int(key, value)
+        elif key == valid_keys[2]:
+            new_options[key] = _parse_timeout(value)
+        elif key == valid_keys[3]:
+            new_options[key] = _parse_skip(value)
+    return new_options
 
 # sync task management ---------------------------------------------------------
 
@@ -103,12 +161,18 @@ def _add_repo_scheduled_sync_task(repo):
     # hack to avoid circular imports
     from repo_sync import (_sync, get_synchronizer,
                            local_progress_callback, yum_rhn_progress_callback)
-    task = RepoSyncTask(_sync, [repo['id']])
+    task = RepoSyncTask(_sync, [repo['id']], kwargs=repo['sync_options'])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    source_type = repo['source']['type']
-    synchronizer = get_synchronizer(source_type)
+    # if no start time is provided, fallback to the last successful sync
+    # otherwise start immediately
+    if task.scheduler.start_time is None and repo.get('last_sync') is not None:
+        task.scheduler.start_time = dateutils.parse_iso8601_datetime(repo['last_sync'])
+    content_type = repo['content_types']
+    synchronizer = get_synchronizer(content_type)
     task.set_synchronizer(synchronizer)
     source_type = repo['source']['type']
+    if content_type == 'yum':
+        task.weight = config.config.getint('yum', 'task_weight')
     if source_type == 'remote':
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     elif source_type == 'local':
@@ -133,6 +197,7 @@ def _update_repo_scheduled_sync_task(repo, task):
     @param task: task to update
     """
     new_scheduler = schedule_to_scheduler(repo['sync_schedule'])
+    task.kwargs = repo['sync_options']
     return async.reschedule_async(task, new_scheduler)
 
 
@@ -161,20 +226,28 @@ def _remove_cds_scheduled_sync_task(cds):
 
 # existing api -----------------------------------------------------------------
 
-def update_repo_schedule(repo, new_schedule):
+def update_repo_schedule(repo, new_schedule, new_options):
     """
     Change a repo's sync schedule.
     @type repo: L{pulp.server.db.model.resource.Repo}
     @param repo: repo to change
-    @type new_schedule: dict
-    @param new_schedule: dictionary representing new schedule
+    @type new_schedule: str
+    @param new_schedule: new schedule in iso8601 format
+    @type new_options: dict
+    @param new_options: new sync options
     """
     if repo['source'] is None:
         raise PulpException(_('Cannot add schedule to repository without sync source'))
-    repo['sync_schedule'] = validate_schedule(new_schedule)
+    sync_schedule = validate_schedule(new_schedule)
+    sync_options = parse_and_validate_repo_sync_options(new_options)
     collection = Repo.get_collection()
-    collection.save(repo, safe=True)
+    collection.update({'_id': repo['_id']},
+                      {'$set': {'sync_schedule': sync_schedule,
+                                'sync_options': sync_options}},
+                      safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
+    repo['sync_schedule'] = new_schedule
+    repo['sync_options'] = new_options
     if task is None:
         _add_repo_scheduled_sync_task(repo)
     else:
@@ -189,9 +262,12 @@ def delete_repo_schedule(repo):
     """
     if repo['sync_schedule'] is None:
         return
-    repo['sync_schedule'] = None
     collection = Repo.get_collection()
-    collection.save(repo, safe=True)
+    collection.update({'_id': repo['_id']},
+                      {'$set': {'sync_schedule': None,
+                                'sync_options': {}}},
+                      safe=True)
+    repo['sync_schedule'] = None
     _remove_repo_scheduled_sync_task(repo)
 
 

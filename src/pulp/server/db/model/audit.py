@@ -23,11 +23,11 @@ class Event(Model):
     """
 
     collection_name = 'events'
-    other_indicies = ('timestamp', 'principal', 'api')
+    search_indices = ('timestamp', 'principal', 'api')
 
     def __init__(self, principal, action, api=None, method=None, params=[]):
         super(Event, self).__init__()
-        timestamp = datetime.datetime.now(dateutils.local_tz())
+        timestamp = datetime.datetime.now(dateutils.utc_tz())
         self.timestamp = unicode(dateutils.format_iso8601_datetime(timestamp))
         self.principal_type = unicode(str(type(principal)))
         self.principal = unicode(principal)

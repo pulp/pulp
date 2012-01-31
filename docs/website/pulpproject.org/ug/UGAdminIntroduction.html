@@ -30,14 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PulpAdmin">Pulp Admin</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PulpAdmin">Pulp Admin</h1>
 <h2 id="overview">Overview</h2>
 <p>
 The <tt>pulp-admin</tt> script is the entry point to all administrative functions on a Pulp server. In addition to Pulp content manipulation (repository management, synchronization, etc.) the <tt>pulp-admin</tt> script can also be used to manipulate consumers of a Pulp server, such as repository binding and package installation.
@@ -61,18 +54,27 @@ Configuration for the <tt>pulp-admin</tt> script is done through the <tt>/etc/pu
 </td></tr><tr><td> <tt>port</tt> </td><td> Port on which the Pulp server API is hosted. The default is 443 (HTTPS) and will likely not need to be changed. 
 </td></tr><tr><td> <tt>scheme</tt> </td><td> Currently, only <tt>https</tt> is supported. 
 </td></tr></table>
-</div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+<hr />
+<h2 id="options">Script Options</h2>
+<p>
+pulp-admin supports the common options, always specified right after 
+<tt>pulp-admin</tt>:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Username </td><td> <tt>-u</tt> or <tt>--username</tt> </td><td> Use the given username to identify the authentication credentials to use 
+</td></tr><tr><td> Password </td><td> <tt>-p</tt> or <tt>--password</tt> </td><td> Use the given password for authentication 
+</td></tr><tr><td> Hostname </td><td> <tt>--host</tt> </td><td> Override the configured host 
+</td></tr></table>
+<pre class="wiki">$ pulp-admin -u admin -p admin --host=localhost
+</pre></div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

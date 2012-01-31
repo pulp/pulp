@@ -32,22 +32,28 @@ from pulp.common.dateutils import (parse_iso8601_interval,
     parse_iso8601_duration, format_iso8601_duration,
     format_iso8601_datetime)
 
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
 from pulp.server import auditing
 from pulp.server.agent import HeartbeatListener
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync
-from pulp.server.api import cds, repo
-from pulp.server.async import ReplyHandler
+from pulp.server.api import repo
+from pulp.server.async import ReplyHandler, WatchDog
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
+from pulp.server.content import loader as plugin_loader
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.event.dispatcher import EventDispatcher
+from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
-    filters, orphaned, packages, permissions, repositories, roles, services,
-    tasks, users)
+    filters, histories, jobs, orphaned, packages, permissions, statuses,
+    repositories, roles, services, tasks, users)
+from pulp.server.webservices.controllers import (
+    api_v2, gc_contents, gc_plugins, gc_repositories)
+from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
 
 from gofer.messaging.broker import Broker
 
@@ -60,27 +66,58 @@ URLS = (
     '/consumergroups', consumergroups.application,
     '/consumers', consumers.application,
     '/content', content.application,
-    '/distribution', distribution.application,
+    '/distributions', distribution.application,
     '/errata', errata.application,
     '/events', audit.application,
     '/filters', filters.application,
+    '/histories', histories.application,
+    '/jobs', jobs.application,
     '/orphaned', orphaned.application,
     '/packages', packages.application,
     '/permissions', permissions.application,
     '/repositories', repositories.application,
+    '/statuses', statuses.application,
     '/roles', roles.application,
     '/services', services.application,
     '/tasks', tasks.application,
     '/users', users.application,
+    # version 1 api
+    '/v1/cds', cds.application,
+    '/v1/consumergroups', consumergroups.application,
+    '/v1/consumers', consumers.application,
+    '/v1/content', content.application,
+    '/v1/distributions', distribution.application,
+    '/v1/errata', errata.application,
+    '/v1/events', audit.application,
+    '/v1/filters', filters.application,
+    '/v1/histories', histories.application,
+    '/v1/jobs', jobs.application,
+    '/v1/orphaned', orphaned.application,
+    '/v1/packages', packages.application,
+    '/v1/permissions', permissions.application,
+    '/v1/repositories', repositories.application,
+    '/v1/repo_sync_status', statuses.application,
+    '/v1/roles', roles.application,
+    '/v1/services', services.application,
+    '/v1/statuses', statuses.application,
+    '/v1/tasks', tasks.application,
+    '/v1/users', users.application,
+    # version 2 api
+    #'/v2', api_v2.application,
+    '/v2/content', gc_contents.application,
+    '/v2/plugins', gc_plugins.application,
+    '/v2/repositories', gc_repositories.application,
 )
 
+_LOG = logging.getLogger(__name__)
 _IS_INITIALIZED = False
 
 BROKER = None
 DISPATCHER = None
-REPLY_HANDLER = None
 HEARTBEAT_LISTENER = None
+REPLY_HANDLER = None
 STACK_TRACER = None
+WATCHDOG = None
 
 # initialization ---------------------------------------------------------------
 
@@ -143,26 +180,29 @@ def _update_sync_schedules():
         else:
             continue
 
+# initialization ---------------------------------------------------------------
+
 def _initialize_pulp():
     # XXX ORDERING COUNTS
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
     # over itself on start up. If you do not know where to add something, ASK!
-    global _IS_INITIALIZED, BROKER, DISPATCHER, REPLY_HANDLER, \
+    global _IS_INITIALIZED, BROKER, DISPATCHER, WATCHDOG, REPLY_HANDLER, \
            HEARTBEAT_LISTENER, STACK_TRACER
     if _IS_INITIALIZED:
         return
     _IS_INITIALIZED = True
     # check our db version and other support
     check_version()
+    if not M2CRYPTO_HAS_CRL_SUPPORT:
+        _LOG.warning("M2Crypto lacks needed CRL functionality, therefore CRL checking will be disabled.")
     # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
     # clean up previous runs, if needed
     repo.clear_sync_in_progress_flags()
-    # messaging
-    url = config.config.get('messaging', 'url')
     # amqp broker
+    url = config.config.get('messaging', 'url')
     BROKER = Broker(url)
     BROKER.cacert = config.config.get('messaging', 'cacert')
     BROKER.clientcert = config.config.get('messaging', 'clientcert')
@@ -170,8 +210,12 @@ def _initialize_pulp():
     if config.config.getboolean('events', 'recv_enabled'):
         DISPATCHER = EventDispatcher()
         DISPATCHER.start()
+    # async message timeout watchdog
+    WATCHDOG = WatchDog(url=url)
+    WATCHDOG.start()
     # async task reply handler
     REPLY_HANDLER = ReplyHandler(url)
+    REPLY_HANDLER.start(WATCHDOG)
     # agent heartbeat listener
     HEARTBEAT_LISTENER = HeartbeatListener(url)
     HEARTBEAT_LISTENER.start()
@@ -188,7 +232,9 @@ def _initialize_pulp():
     consumer_history.init_culling_task()
     _update_sync_schedules()
     scheduled_sync.init_scheduled_syncs()
-
+    # pulp generic content initialization
+    manager_factory.initialize()
+    plugin_loader.initialize()
 
 
 def wsgi_application():
@@ -198,5 +244,7 @@ def wsgi_application():
     @return: wsgi application callable
     """
     application = web.subdir_application(URLS)
+    # TODO make debug configurable
+    stack = ErrorHandlerMiddleware(application.wsgifunc(), debug=True)
     _initialize_pulp()
-    return application.wsgifunc()
+    return stack

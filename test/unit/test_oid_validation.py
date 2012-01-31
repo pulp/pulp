@@ -15,21 +15,15 @@
 import shutil
 import sys
 import os
-import unittest
 import urlparse
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 import pulp.repo_auth.oid_validation as oid_validation
 from pulp.repo_auth.oid_validation import OidValidator
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.auth import AuthApi
-import testutil
 
 # -- constants ------------------------------------------------------------------
 
@@ -53,9 +47,10 @@ def mock_environ(client_cert_pem, uri):
 
 # -- test cases -----------------------------------------------------------------
 
-class TestOidValidation(unittest.TestCase):
+class TestOidValidation(testutil.PulpAsyncTest):
 
     def clean(self):
+        testutil.PulpAsyncTest.clean(self)
         if os.path.exists(CERT_TEST_DIR):
             shutil.rmtree(CERT_TEST_DIR)
 
@@ -63,21 +58,9 @@ class TestOidValidation(unittest.TestCase):
         if os.path.exists(protected_repo_listings_file):
             os.remove(protected_repo_listings_file)
 
-
-        self.repo_api.clean()
-
     def setUp(self):
-        self.config = testutil.load_test_config()
-
+        testutil.PulpAsyncTest.setUp(self)
         self.validator = OidValidator(self.config)
-
-        self.repo_api = RepoApi()
-        self.auth_api = AuthApi()
-
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
 
     # See https://fedorahosted.org/pulp/wiki/RepoAuth for more information on scenarios
 

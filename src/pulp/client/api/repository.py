@@ -12,7 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.client.api.base import PulpAPI
-from pulp.client.server import ServerRequestError
+from pulp.client.api.server import ServerRequestError
+from pulp.common import dateutils
 
 
 repository_deferred_fields = ('packages',
@@ -24,25 +25,24 @@ class RepositoryAPI(PulpAPI):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, name, arch, feed=None, symlinks=False,
-               sync_schedule=None, feed_cert_data=None, consumer_cert_data=None,
-               relative_path=None, groupid=None, gpgkeys=None, checksum_type="sha256", notes={},
-               preserve_metadata=False):
+    def create(self, id, name, arch, feed=None,
+               feed_cert_data=None, consumer_cert_data=None,
+               relative_path=None, groupid=None, gpgkeys=None, checksum_type="sha256",
+               preserve_metadata=False, content_types="yum", publish=True):
         path = "/repositories/"
         repodata = {"id": id,
                     "name": name,
                     "arch": arch,
                     "feed": feed,
-                    "use_symlinks": symlinks,
-                    "sync_schedule": sync_schedule,
                     "feed_cert_data": feed_cert_data,
                     "consumer_cert_data": consumer_cert_data,
                     "relative_path": relative_path,
                     "groupid": groupid,
                     "gpgkeys": gpgkeys,
                     "checksum_type" : checksum_type,
-                    "notes" : notes,
-                    "preserve_metadata" : preserve_metadata,}
+                    "preserve_metadata" : preserve_metadata,
+                    "content_types" : content_types,
+                    "publish" : publish,}
         return self.server.PUT(path, repodata)[1]
 
     def repository(self, id, fields=()):
@@ -55,7 +55,7 @@ class RepositoryAPI(PulpAPI):
         return repo
 
     def clone(self, repoid, clone_id, clone_name, feed='parent',
-              relative_path=None, groupid=None, timeout=None, filters=()):
+              relative_path=None, groupid=None, timeout=None, filters=(), publish=True):
         path = "/repositories/%s/clone/" % repoid
         data = {"clone_id": clone_id,
                 "clone_name": clone_name,
@@ -63,21 +63,34 @@ class RepositoryAPI(PulpAPI):
                 "relative_path": relative_path,
                 "groupid": groupid,
                 "timeout": timeout,
-                "filters": filters}
+                "filters": filters,
+                "publish": publish,}
         return self.server.POST(path, data)[1]
 
-    def repositories(self):
+    def repositories(self, queries):
         path = "/repositories/"
-        return self.server.GET(path)[1]
+        return self.server.GET(path, queries)[1]
 
-    def repositories_by_groupid(self, groups=()):
+    def repositories_by_groupid(self, group):
         path = "/repositories/"
-        queries = [('groupid', g) for g in groups]
+        queries = [('groupid', group)]
         return self.server.GET(path, queries)[1]
 
     def update(self, id, delta):
         path = "/repositories/%s/" % id
         return self.server.PUT(path, delta)[1]
+
+    def get_sync_schedule(self, id):
+        path = '/repositories/%s/schedules/sync/' % id
+        return self.server.GET(path)[1]
+
+    def change_sync_schedule(self, id, new_schedule):
+        path = '/repositories/%s/schedules/sync/' % id
+        return self.server.PUT(path, new_schedule)[1]
+
+    def delete_sync_schedule(self, id):
+        path = '/repositories/%s/schedules/sync/' % id
+        return self.server.DELETE(path)[1]
 
     def delete(self, id):
         path = "/repositories/%s/" % id
@@ -98,21 +111,41 @@ class RepositoryAPI(PulpAPI):
         except ServerRequestError:
             return []
 
-    def running_sync(self, sync_list):
+    def clone_list(self, repoid):
+        path = '/repositories/%s/clone/' % repoid
+        try:
+            return self.server.GET(path)[1]
+        except ServerRequestError:
+            return []
+
+    def latest_task(self,task_list):
         """
-        Iterate over a list of syncs and return one that is currently running or
-        about to be run. If no such sync is found, return None.
+        Iterate of a list of tasks and return the most recently finished task.
+        @param task_list: list of tasks
+        @return: most recent finished task, None if no task meets the criteria
         """
-        for sync in sync_list:
-            if sync['state'] == 'running':
-                return sync
-            if sync['state'] == 'waiting' and sync['scheduler'] == 'immediate':
-                return sync
+        def ft(t):
+            return dateutils.parse_iso8601_datetime(t['finish_time'])
+        def lt(a, b):
+            if ft(a) > ft(b):
+                return a
+            return b
+        finished_tasks = [t for t in task_list if t['finish_time'] is not None]
+        if finished_tasks:
+            return reduce(lt, finished_tasks)
         return None
 
-    def cancel_sync(self, repoid, taskid):
-        path = "/repositories/%s/sync/%s/" % (repoid, taskid)
-        return self.server.DELETE(path)[1]
+    def running_task(self, task_list):
+        """
+        Iterate over a list of tasks and return one that is currently running or
+        about to be run. If no such task is found, return None.
+        """
+        for task in task_list:
+            if task['state'] == 'running':
+                return task
+            if task['state'] == 'waiting' and task['scheduler'] == 'immediate':
+                return task
+        return None
 
     def add_package(self, repoid, packageid):
         addinfo = {'repoid': repoid, 'packageid': packageid}
@@ -296,14 +329,105 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/remove_group/" % repoid
         return self.server.POST(path, rminfo)[1]
 
-    def metadata(self, repoid):
-        path = "/repositories/%s/metadata/" % repoid
+    def generate_metadata(self, repoid):
+        path = "/repositories/%s/generate_metadata/" % repoid
         return self.server.POST(path)[1]
 
-    def metadata_status(self, repoid):
-        path = '/repositories/%s/metadata/' % repoid
+    def generate_metadata_status(self, repoid):
+        path = '/repositories/%s/generate_metadata/' % repoid
         return self.server.GET(path)[1]
 
     def sync_history(self, repoid):
         path = "/repositories/%s/history/sync/" % repoid
         return self.server.GET(path)[1]
+
+    def add_metadata(self, repoid, filetype, filedata):
+        """
+        add a custom metadata filetype to existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @param filetype: file type info to identify metadata with eg: primary
+        @type filetype: str
+        @param filedata: filetype data stream read eg: open(<file-path>, 'r').read()
+        @type filedata: str
+        @return: True
+        """
+        path = "/repositories/%s/add_metadata/" % repoid
+        fileinfo = {'filetype' : filetype,
+                    'filedata' : filedata}
+        return self.server.POST(path, fileinfo)[1]
+
+    def download_metadata(self, repoid, filetype):
+        """
+        download metadata filetype xml from existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @param filetype: file type info to identify metadata with eg: primary
+        @type filetype: str
+        @return: xml stream if metadata found or None
+        """
+        path = "/repositories/%s/download_metadata/" % repoid
+        fileinfo = {'filetype' : filetype}
+        return self.server.POST(path, fileinfo)[1]
+
+    def list_metadata(self, repoid):
+        """
+        download metadata filetype xml from existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @return: filetype information
+        @rtype: dict
+        """
+        path = "/repositories/%s/list_metadata/" % repoid
+        return self.server.POST(path)[1]
+
+    def remove_metadata(self, repoid, filetype):
+        """
+        remove metadata filetype xml from existing repository yum metadata
+        @param repoid: Repository id.
+        @type repoid: str
+        @param filetype: file type info to identify metadata with eg: primary
+        @type filetype: str
+        @return: True
+        """
+        path = "/repositories/%s/remove_metadata/" % repoid
+        fileinfo = {'filetype' : filetype}
+        return self.server.POST(path, fileinfo)[1]
+
+    def export(self, repoid, target_location, generate_isos=False, overwrite=False):
+        path = "/repositories/%s/export/" % repoid
+        params = {"target_location" : target_location,
+                  "generate_isos" : generate_isos,
+                  "overwrite" : overwrite, }
+        return self.server.POST(path, params)[1]
+
+    def export_list(self, repoid):
+        path = '/repositories/%s/export/' % repoid
+        try:
+            return self.server.GET(path)[1]
+        except ServerRequestError:
+            return []
+
+    def add_distribution(self, repoid, distributionid):
+        addinfo = {'repoid': repoid, 'distributionid': distributionid}
+        path = "/repositories/%s/add_distribution/" % repoid
+        return self.server.POST(path, addinfo)[1]
+
+    def remove_distribution(self, repoid, distributionid):
+        delinfo = {'repoid': repoid, 'distributionid': distributionid}
+        path = "/repositories/%s/remove_distribution/" % repoid
+        return self.server.POST(path, delinfo)[1]
+
+    def add_note(self, id, key, value):
+        key_value_dict = {'key' : key, 'value' : value}
+        path = "/repositories/%s/notes/" % id
+        return self.server.POST(path, key_value_dict)[1]
+
+    def delete_note(self, id, key):
+        path = "/repositories/%s/notes/%s/" % (id, key)
+        return self.server.DELETE(path)[1]
+
+    def update_note(self, id, key, value):
+        path = "/repositories/%s/notes/%s/" % (id, key)
+        return self.server.PUT(path, value)[1]
+

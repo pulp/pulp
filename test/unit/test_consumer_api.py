@@ -15,53 +15,64 @@
 # Python
 import sys
 import os
-import unittest
+import time
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
-from pulp.server.agent import Agent
-from pulp.server.api.cds import CdsApi
-from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.repo import RepoApi
-from pulp.server.db.model.cds import CDSRepoRoundRobin
-from pulp.server.pexceptions import PulpException
 
+from pulp.server.agent import Agent
+from pulp.common.bundle import Bundle
+from pulp.server.exceptions import PulpException
+from pulp.server.auth.certificate import Certificate
+
+# default capabilities
+CAPABILITIES = dict(heartbeat=True, bind=True)
 
 # -- test cases ---------------------------------------------------------------------------
 
-class TestConsumerApi(unittest.TestCase):
-
-    def clean(self):
+class TestConsumerApi(testutil.PulpAsyncTest):
+    
+    # -- create test cases ---------------------------------------------------------------
+    
+    def test_registrations(self):
         '''
-        Removes any entities written to the database in all used APIs.
+        Tests the happy path of registration.
         '''
-        self.cds_api.clean()
-        self.repo_api.clean()
-        self.consumer_api.clean()
+        
+        # Setup
+        id = 'test-consumer'
+        description = 'my excellent description'
+        created = self.consumer_api.create(id, description, CAPABILITIES)
+        
+        # Test
+        all = self.consumer_api.consumers()
+        fetched = self.consumer_api.consumer(id)
+        
+        # Verify
+        self.assertEqual(len(all), 1)
+        self.assertEqual(all[0]['id'], fetched['id'])
+        self.assertEqual(description, fetched['description'])
+        self.assertTrue(Bundle.hasboth(created['certificate']))
+        self.assertEqual(CAPABILITIES, fetched['capabilities'])
+        self.assertTrue(Bundle.hascrt(fetched['certificate']))
+        self.assertFalse(Bundle.haskey(fetched['certificate']))
+        crt = Certificate()
+        crt.update(str(fetched['certificate']))
+        subject = crt.subject()
+        self.assertEqual(id, subject.get('CN', None))
+        
+    def test_consumer_delete(self):
+        # Setup
+        id = 'delete-me'
+        self.consumer_api.create(id, '')
+        self.assertTrue(self.consumer_api.consumer(id) is not None)
 
-        # Flush the assignment algorithm cache
-        CDSRepoRoundRobin.get_collection().remove(safe=True)
+        # Test
+        self.consumer_api.delete(id)
 
-        testutil.common_cleanup()
-        mocks.reset()
+        # Verify
+        self.assertTrue(self.consumer_api.consumer(id) is None)
 
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.repo_api = RepoApi()
-        self.consumer_api = ConsumerApi()
-        self.cds_api = CdsApi()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
 
     # -- bind test cases -----------------------------------------------------------------
 
@@ -72,7 +83,7 @@ class TestConsumerApi(unittest.TestCase):
 
         # Setup
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
 
         # Test
         returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
@@ -111,7 +122,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Messaging bind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         lastbind = calls[-1]
         bindargs = lastbind[0]
@@ -155,7 +166,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Messaging bind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         lastbind = calls[-1]
         bindargs = lastbind[0]
@@ -175,7 +186,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         self.assertEqual(0, len(calls))
 
@@ -193,7 +204,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.bind.history()
         self.assertEqual(0, len(calls))
 
@@ -230,7 +241,7 @@ class TestConsumerApi(unittest.TestCase):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
         self.repo_api.create('test-repo', 'Test Repo', 'noarch')
 
         self.consumer_api.bind('test-consumer', 'test-repo')
@@ -248,7 +259,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Messaging unbind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         lastunbind = calls[-1]
         unbindargs = lastunbind[0]
@@ -261,7 +272,7 @@ class TestConsumerApi(unittest.TestCase):
         '''
 
         # Setup
-        self.consumer_api.create('test-consumer', None)
+        self.consumer_api.create('test-consumer', None, CAPABILITIES)
         self.repo_api.create('test-repo-1', 'Test Repo', 'noarch')
         self.repo_api.create('test-repo-2', 'Test Repo', 'noarch')
 
@@ -283,7 +294,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Messaging unbind data
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         lastunbind = calls[-1]
         unbindargs = lastunbind[0]
@@ -304,7 +315,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('test-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         self.assertEqual(0, len(calls))
 
@@ -323,6 +334,111 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Make sure no messages were sent over the bus
         agent = Agent('fake-consumer')
-        repoproxy = agent.Repo()
+        repoproxy = agent.Consumer()
         calls = repoproxy.unbind.history()
         self.assertEqual(0, len(calls))
+        
+    def test_package_install(self):
+        '''
+        Test package install
+        '''
+        # Setup
+        id = 'test-consumer'
+        packages = ['zsh',]
+        self.consumer_api.create(id, None)
+        
+        # Test
+        task = self.consumer_api.installpackages(id, packages)
+        self.assertTrue(task is not None)
+        task.run()
+            
+        # Verify
+        agent = Agent(id)
+        pkgproxy = agent.Packages()
+        calls = pkgproxy.install.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], packages)
+        
+    def test_package_update(self):
+        '''
+        Test package update
+        '''
+        # Setup
+        id = 'test-consumer'
+        packages = ['zsh',]
+        self.consumer_api.create(id, None)
+
+        # Test
+        task = self.consumer_api.updatepackages(id, packages)
+        self.assertTrue(task is not None)
+        task.run()
+
+        # Verify
+        agent = Agent(id)
+        pkgproxy = agent.Packages()
+        calls = pkgproxy.update.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], packages)
+
+    def test_package_uninstall(self):
+        '''
+        Test package uninstall
+        '''
+        # Setup
+        id = 'test-consumer'
+        packages = ['zsh',]
+        self.consumer_api.create(id, None)
+
+        # Test
+        task = self.consumer_api.uninstallpackages(id, packages)
+        self.assertTrue(task is not None)
+        task.run()
+
+        # Verify
+        agent = Agent(id)
+        pkgproxy = agent.Packages()
+        calls = pkgproxy.uninstall.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], packages)
+
+    def test_pkgrp_install(self):
+        '''
+        Test package group install
+        '''
+        # Setup
+        id = 'test-consumer'
+        grpid = 'test-group'
+        self.consumer_api.create(id, None)
+        
+        # Test
+        task = self.consumer_api.installpackagegroups(id, [grpid])
+        self.assertTrue(task is not None)
+        task.run()
+        
+        # Verify
+        agent = Agent(id)
+        grpproxy = agent.PackageGroups()
+        calls = grpproxy.install.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], [grpid])
+
+    def test_pkgrp_uninstall(self):
+        '''
+        Test package group uninstall
+        '''
+        # Setup
+        id = 'test-consumer'
+        grpid = 'test-group'
+        self.consumer_api.create(id, None)
+
+        # Test
+        task = self.consumer_api.uninstallpackagegroups(id, [grpid])
+        self.assertTrue(task is not None)
+        task.run()
+
+        # Verify
+        agent = Agent(id)
+        grpproxy = agent.PackageGroups()
+        calls = grpproxy.uninstall.history()
+        last = calls[-1]
+        self.assertEqual(last.args[0], [grpid])

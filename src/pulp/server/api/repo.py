@@ -16,6 +16,7 @@
 import gzip
 import logging
 import os
+import re
 import shutil
 import sys
 import time
@@ -28,8 +29,8 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
-from pulp.common import dateutils
 from pulp.common.bundle import Bundle
+from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
@@ -39,27 +40,26 @@ from pulp.server import updateinfo
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
-from pulp.server.api.distribution import DistributionApi
+from pulp.server.api.distribution import DistributionApi, DistributionHasReferences
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
-
-from pulp.server.api.scheduled_sync import update_repo_schedule, delete_repo_schedule
+from pulp.server.api.scheduled_sync import delete_repo_schedule
 from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
 from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
-from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.tasking.task import task_running, task_waiting
+from pulp.server.exceptions import PulpException
+from pulp.server.tasking.task import task_running, task_error
 from pulp.server.agent import PulpAgent
+from pymongo.errors import DuplicateKeyError
 
 log = logging.getLogger(__name__)
 
-repo_fields = model.Repo(None, None, None).keys()
+repo_fields = model.Repo(None, None, None, None).keys()
 
 def clear_sync_in_progress_flags():
     """
@@ -131,7 +131,7 @@ class RepoApi(BaseApi):
             return len(os.listdir(path))
         except:
             return 0
-        
+
     def _consolidate_bundle(self, data):
         """
         Consolidate key & certificate.
@@ -160,6 +160,50 @@ class RepoApi(BaseApi):
         if KEY in data:
             del data[KEY]
 
+
+    def find_combined_whitelist_packages(self, repo_filters):
+        combined_whitelist_packages = []
+        for filter_id in repo_filters:
+            filter = self.filterapi.filter(filter_id)
+            if filter['type'] == "whitelist":
+                combined_whitelist_packages.extend(filter['package_list'])
+        return combined_whitelist_packages
+
+    def find_combined_blacklist_packages(self, repo_filters):
+        combined_blacklist_packages = []
+        for filter_id in repo_filters:
+            filter = self.filterapi.filter(filter_id)
+            if filter['type'] == "blacklist":
+                combined_blacklist_packages.extend(filter['package_list'])
+        return combined_blacklist_packages
+
+    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+        pkglist = {}
+
+        if whitelist_packages:
+            for key, pkg in unfiltered_pkglist.items():
+                for whitelist_package in whitelist_packages:
+                    w = re.compile(whitelist_package)
+                    if w.match(pkg["filename"]):
+                        pkglist[key] = pkg
+                        break
+        else:
+            pkglist = unfiltered_pkglist
+
+        if blacklist_packages:
+            to_remove = []
+            for key, pkg in pkglist.items():
+                for blacklist_package in blacklist_packages:
+                    b = re.compile(blacklist_package)
+                    if b.match(pkg["filename"]):
+                        to_remove.append(key)
+                        break
+            for key in to_remove:
+                del pkglist[key]
+
+        return pkglist
+
+
     @audit()
     def clean(self):
         """
@@ -170,16 +214,15 @@ class RepoApi(BaseApi):
         for r in found:
             self.delete(r["id"])
 
-    @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
+    def create(self, id, name, arch=None, feed=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
-               preserve_metadata=False):
+               preserve_metadata=False, content_types="yum", publish=None):
         """
         Create a new Repository object and return it
         """
-        self.check_id(id)
+        id = pulp.server.util.encode_unicode(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -190,23 +233,39 @@ class RepoApi(BaseApi):
         if not model.Repo.is_supported_checksum(checksum_type):
             raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
 
-
-        r = model.Repo(id, name, arch, feed, notes)
-        r['use_symlinks'] = symlinks
-
+        if not model.Repo.is_supported_content_type(content_types):
+            raise PulpException('Content Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CONTENT_TYPES))
+        source = None
+        if feed:
+            source = model.RepoSource(feed)
         # Relative path calculation
         if relative_path is None or relative_path == "":
-            if r['source'] is not None :
-                if r['source']['type'] == "local":
-                    r['relative_path'] = r['id']
+            if source is not None :
+                if source['type'] == "local":
+                    relative_path = id
                 else:
                     # For none product repos, default to repoid
-                    url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse[2] or r['id']
+                    url_parse = urlparse(str(source["url"]))
+                    relative_path = url_parse[2] or id
             else:
-                r['relative_path'] = r['id']
+                relative_path = id
         else:
-            r['relative_path'] = relative_path
+            relative_path = relative_path
+
+        # Remove leading "/", they will interfere with symlink
+        # operations for publishing a repository
+        relative_path = relative_path.strip('/')
+
+        # Verify that the new relative path will not cause problems with existing repositories
+        all_repos = self.collection.find()
+        for existing in all_repos:
+            existing['relative_path'] = pulp.server.util.encode_unicode(existing['relative_path'])
+            if not validate_relative_path(relative_path, existing['relative_path']):
+                msg  = 'New relative path [%s] conflicts with existing relative path [%s]; ' % (relative_path, existing['relative_path'])
+                msg += 'paths may not be a parent or child directory of another relative path'
+                raise PulpException(msg)
+
+        r = model.Repo(id, name, arch, relative_path, feed, notes)
 
         # Store any certificates and add the full paths to their files in the repo object
         repo_cert_utils = RepoCertUtils(config.config)
@@ -233,12 +292,9 @@ class RepoApi(BaseApi):
             for gid in groupid:
                 r['groupid'].append(gid)
 
-        # Remove leading "/", they will interfere with symlink
-        # operations for publishing a repository
-        r['relative_path'] = r['relative_path'].strip('/')
         r['repomd_xml_path'] = \
-                os.path.join(pulp.server.util.top_repos_location(),
-                        r['relative_path'], 'repodata/repomd.xml')
+            os.path.join(pulp.server.util.top_repos_location(),
+                         r['relative_path'], 'repodata/repomd.xml')
         r['checksum_type'] = checksum_type
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
@@ -250,23 +306,31 @@ class RepoApi(BaseApi):
         if feed:
             # only preserve metadata if its a feed repo
             r['preserve_metadata'] = preserve_metadata
-        self.collection.insert(r, safe=True)
-        if sync_schedule:
-            update_repo_schedule(r, sync_schedule)
+        if content_types:
+            r['content_types'] = content_types
+        try:
+            self.collection.insert(r, safe=True)
+        except DuplicateKeyError, dke:
+            raise PulpException("A Repo with relative path `%s` already exists; failed to create repo `%s`" % (r['relative_path'], id))
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
+        repo_path = pulp.server.util.encode_unicode(repo_path)
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
-        pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
-        default_to_publish = \
-            config.config.getboolean('repos', 'default_to_published')
+            pulp.server.util.makedirs(repo_path)
+        if content_types in ("yum") and not r['preserve_metadata']:
+            # if its yum or if metadata is not preserved, trigger an empty repodata
+            pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
+        if publish is None:
+            default_to_publish = config.config.getboolean('repos', 'default_to_published')
+        else:
+            default_to_publish = publish
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
         created = self.repository(r["id"])
         self.__created(r)
         return created
-    
+
     @event(subject='repo.created')
     def __created(self, repo):
         """
@@ -301,20 +365,24 @@ class RepoApi(BaseApi):
         except Exception, e:
             log.error(e)
             return False
+
         return True
 
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):
-            os.makedirs(self.published_path)
+            pulp.server.util.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
-                repo["relative_path"])
+                                   repo["relative_path"])
+        source_path = pulp.server.util.encode_unicode(source_path)
         if not os.path.isdir(source_path):
-            os.makedirs(source_path)
+            pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
+        link_path = pulp.server.util.encode_unicode(link_path)
         pulp.server.util.create_rel_symlink(source_path, link_path)
 
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
+            repo["relative_path"] = pulp.server.util.encode_unicode(repo["relative_path"])
             link_path = os.path.join(self.published_path, repo["relative_path"])
             if os.path.lexists(link_path):
                 # need to use lexists so we will return True even for broken links
@@ -344,7 +412,7 @@ class RepoApi(BaseApi):
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
-                                     cert=cert_files['cert'], key=cert_files['key'])
+                             cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
         gkeys = self._get_gpg_keys(serv, gpg_keys)
@@ -385,7 +453,7 @@ class RepoApi(BaseApi):
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
-                                     cert=cert_files['cert'], key=cert_files['key'])
+                             cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
         gkeys = self._get_gpg_keys(serv, gpg_keys)
@@ -471,17 +539,20 @@ class RepoApi(BaseApi):
 
         # find if sync in progress
         if self.find_if_running_sync(id):
-            raise PulpException("Repo cannot be deleted because of sync in progress.")
+            raise PulpException("Repo [%s] cannot be deleted because of sync in progress." % id)
 
         # unassociate from CDS(s)
         self.cdsapi.unassociate_all_from_repo(id, True)
 
         #update feed of clones of this repo to None unless they point to origin feed
         for clone_id in repo['clone_ids']:
-            cloned_repo = self._get_existing_repo(clone_id)
-            if cloned_repo['source'] != repo['source']:
-                cloned_repo['source'] = None
-                self.collection.save(cloned_repo, safe=True)
+            try:
+                cloned_repo = self._get_existing_repo(clone_id)
+                if cloned_repo['source'] != repo['source']:
+                    cloned_repo['source'] = None
+                    self.collection.save(cloned_repo, safe=True)
+            except PulpException:
+                log.debug('Clone with id [%s] does not exist anymore. Safe to delete repo', clone_id)
 
         #update clone_ids of its parent repo
         parent_repos = self.repositories({'clone_ids' : id})
@@ -531,7 +602,10 @@ class RepoApi(BaseApi):
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
-
+            try:
+                self.distroapi.delete(distroid, keep_files)
+            except DistributionHasReferences:
+                log.info("Distribution Id [%s] has other references; leaving it in the db" % distroid)
         #remove files:
         for fileid in repo['files']:
             repos = self.find_repos_by_files(fileid)
@@ -598,7 +672,9 @@ class RepoApi(BaseApi):
         """
         delta.pop('id', None)
         repo = self._get_existing_repo(id)
-        prevpath = repo.get('relative_path')
+        prevpath = ''
+        if repo['source']:
+            prevpath = urlparse(repo['source']['url'])[2].strip('/')
         hascontent = self._hascontent(repo)
         repo_cert_utils = RepoCertUtils(config.config)
         protected_repo_utils = ProtectedRepoUtils(config.config)
@@ -607,8 +683,27 @@ class RepoApi(BaseApi):
         # Also need to know later on if a consumer cert was updated.
         update_consumers = False
         consumer_cert_updated = False
+        update_metadata = False
         for key, value in delta.items():
             # simple changes
+            if key == "addgrp":
+                groupids = repo['groupid']
+                if value not in groupids:
+                    groupids.append(value)
+                repo["groupid"] = groupids
+                continue
+            if key == "rmgrp":
+                groupids = repo['groupid']
+                if value in groupids:
+                    groupids.remove(value)
+                repo["groupid"] = groupids
+                continue
+            if key == 'addkeys':
+                self.addkeys(id, value)
+                continue
+            if key == 'rmkeys':
+                self.rmkeys(id, value)
+                continue
             if key in ('name', 'arch',):
                 repo[key] = value
                 if key == 'name':
@@ -645,21 +740,17 @@ class RepoApi(BaseApi):
                     ds = model.RepoSource(value)
                     repo['source'] = ds
                 continue
-            # sync_schedule changed
-            if key == 'sync_schedule':
-                if value:
-                    update_repo_schedule(repo, value)
+            if key == 'checksum_type':
+                if not model.Repo.is_supported_checksum(value):
+                    raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
+                if repo[key] != value:
+                    repo[key] = value
+                    update_metadata = True
                 else:
-                    delete_repo_schedule(repo)
-                continue
-            if key == 'use_symlinks':
-                if hascontent and (value != repo[key]):
-                    raise PulpException(
-                        "Repository has content, symlinks cannot be changed")
-                repo[key] = value
+                    log.info('the repo checksum type is already %s' % value)
                 continue
             raise Exception, \
-                'update keyword "%s", not-supported' % key
+                  'update keyword "%s", not-supported' % key
 
         # If the consumer certs were updated, update the protected repo listings.
         # This has to be done down here in case the relative path has changed as well.
@@ -672,9 +763,13 @@ class RepoApi(BaseApi):
 
         # store changed object
         self.collection.save(repo, safe=True)
+            
         # Update subscribed consumers after the object has been saved
         if update_consumers:
             self.update_repo_on_consumers(repo)
+        if update_metadata:
+            # update the existing metadata with new checksum type
+            self.generate_metadata(id)
         return repo
 
     def repositories(self, spec=None, fields=None):
@@ -783,36 +878,36 @@ class RepoApi(BaseApi):
             return list(cursor)
         return []
 
-    @event(subject='repo.updated.content')
     @audit()
     def add_package(self, repoid, packageids=[]):
         """
         Adds the passed in package to this repo
-        @return:    [] on success
-                    [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error,
+        @return:    [], filtered_count on success
+                    [(package_id,(name,epoch,version,release,arch),filename,checksum)], filtered_count on error,
                     where each id represents a package id that couldn't be added
         """
+        filtered_count = 0
         if not packageids:
             log.debug("add_package(%s, %s) called with no packageids to add" % (repoid, packageids))
-            return []
+            return [], filtered_count
         def get_pkg_tup(package):
             return (package['name'], package['epoch'], package['version'], package['release'], package['arch'])
         def get_pkg_nevra(package):
             return dict(zip(("name", "epoch", "version", "release", "arch"), get_pkg_tup(package)))
         def form_error_tup(pkg, error_message=None):
             pkg_tup = get_pkg_tup(pkg)
-            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"], error_message)
+            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"].values()[0], error_message)
 
         start_add_packages = time.time()
         errors = []
         repo = self._get_existing_repo(repoid)
         if not repo:
             log.error("Couldn't find repository [%s]" % (repoid))
-            return [(pkg_id, (None, None, None, None, None), None, None) for pkg_id in packageids]
+            return [(pkg_id, (None, None, None, None, None), None, None) for pkg_id in packageids], filtered_count
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         packages = {}
         nevras = {}
         filenames = {}
@@ -823,23 +918,51 @@ class RepoApi(BaseApi):
         for p in result:
             pkg_objects[p["id"]] = p
         log.info("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
-        # Desire to keep the order dictated by calling arg of 'packageids'
+
         for pkg_id in packageids:
             if not pkg_objects.has_key(pkg_id):
                 # Detect if any packageids passed in could not be located
                 log.warn("No Package with id: %s found" % pkg_id)
                 errors.append((pkg_id, (None, None, None, None, None), None, None))
-                continue
+                packageids.remove(pkg_id)
+
+        # Process repo filters if any
+        if repo['filters']:
+            log.info("Repo filters : %s" % repo['filters'])
+            whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
+            blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
+            log.info("combined whitelist packages = %s" % whitelist_packages)
+            log.info("combined blacklist packages = %s" % blacklist_packages)
+        else:
+            whitelist_packages = []
+            blacklist_packages = []
+
+        original_pkg_objects_count = len(pkg_objects)
+        pkg_objects = self._find_filtered_package_list(pkg_objects, whitelist_packages, blacklist_packages)
+        if original_pkg_objects_count > len(pkg_objects):
+            filtered_count = original_pkg_objects_count - len(pkg_objects)
+            for pkg_id in packageids:
+                if not pkg_objects.has_key(pkg_id):
+                    # Detect filtered package ids
+                    packageids.remove(pkg_id)
+
+        if not pkg_objects:
+            log.info("No packages left to be added after removing filtered packages")
+            return [], filtered_count
+
+        # Desire to keep the order dictated by calling arg of 'packageids'
+        for pkg_id in packageids:
             pkg = pkg_objects[pkg_id]
             pkg_tup = get_pkg_tup(pkg)
+
             if nevras.has_key(pkg_tup):
                 log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
-                        % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
+                         % (pkg_tup, pkg["id"], pkg["checksum"].values()[0]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
-                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
+                    % (pkg["filename"], pkg["id"], pkg["checksum"].values()[0])
                 log.warn(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
@@ -878,31 +1001,37 @@ class RepoApi(BaseApi):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate filename in repo [%s]" % (pkg["filename"], repo["id"]))
                 continue
             error_message = "Package with same filename [%s] already exists in repo [%s]" \
-                    % (pkg["filename"], repo['id'])
+                % (pkg["filename"], repo['id'])
             log.warn(error_message)
             errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
         log.info("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
+        pkg_collection = model.Package.get_collection()
+
         for index, pid in enumerate(packages):
             pkg = packages[pid]
             self._add_package(repo, pkg)
             log.debug("Added: %s to repo: %s, progress %s/%s" % (pkg['filename'], repo['id'], index, len(packages)))
             shared_pkg = pulp.server.util.get_shared_package_path(
-                    pkg['name'], pkg['version'], pkg['release'],
-                    pkg['arch'], pkg["filename"], pkg['checksum'])
+                pkg['name'], pkg['version'], pkg['release'],
+                pkg['arch'], pkg["filename"], pkg['checksum'])
             pkg_repo_path = pulp.server.util.get_repo_package_path(
-                    repo['relative_path'], pkg["filename"])
+                repo['relative_path'], pkg["filename"])
             if not os.path.exists(pkg_repo_path):
                 try:
                     pulp.server.util.create_rel_symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
+            if repo['id'] not in pkg['repoids']:
+                # Add the repoid to the list on the package
+                pkg['repoids'].append(repo['id'])
+                pkg_collection.save(pkg, safe=True)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
-        log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
-        return errors
+        log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
+        return errors, filtered_count
 
     def _add_package(self, repo, p):
         """
@@ -925,7 +1054,6 @@ class RepoApi(BaseApi):
         """
         return self.remove_packages(repoid, [p])
 
-    @event(subject='repo.updated.content')
     def remove_packages(self, repoid, pkgobjs=[]):
         """
          Remove one or more packages from a repository
@@ -938,6 +1066,7 @@ class RepoApi(BaseApi):
             # Nothing to perform, return
             return errors
         repo = self._get_existing_repo(repoid)
+        pkg_collection = model.Package.get_collection()
         for pkg in pkgobjs:
             if pkg['id'] not in repo['packages']:
                 log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"], repoid))
@@ -945,6 +1074,9 @@ class RepoApi(BaseApi):
                 continue
             repo['packages'].remove(pkg['id'])
             repo['package_count'] = repo['package_count'] - 1
+            if repoid in pkg['repoids']:
+                del pkg['repoids'][pkg['repoids'].index(repoid)]
+                pkg_collection.save(pkg, safe=True)
             # Remove package from repo location on file system
             pkg_repo_path = pulp.server.util.get_repo_package_path(
                 repo['relative_path'], pkg["filename"])
@@ -953,9 +1085,9 @@ class RepoApi(BaseApi):
                 os.remove(pkg_repo_path)
         self.collection.save(repo, safe=True)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         return errors
 
     def find_repos_by_package(self, pkgid):
@@ -966,7 +1098,7 @@ class RepoApi(BaseApi):
         found = self.collection.find({"packages":pkgid}, fields=["id"])
         return [r["id"] for r in found]
 
-    def errata(self, id, types=()):
+    def errata(self, id, types=(), severity=None):
         """
          Look up all applicable errata for a given repo id
         """
@@ -974,18 +1106,24 @@ class RepoApi(BaseApi):
         errata = repo['errata']
         if not errata:
             return []
-
         if types:
             for type in types:
                 if type not in errata:
                     types.remove(type)
 
             errataids = [item for type in types for item in errata[type]]
-
         else:
             errataids = list(chain.from_iterable(errata.values()))
-
-        return errataids
+        # For each erratum find id, title and type
+        repo_errata = []
+        for errataid in errataids:
+            errata_obj = self.errataapi.erratum(errataid, fields=['id', 'title', 'type', 'severity', 'repoids'])
+            if severity:
+                if errata_obj['severity'] in severity:
+                    repo_errata.append(errata_obj)
+            else:
+                repo_errata.append(errata_obj)
+        return repo_errata
 
     @audit()
     def add_erratum(self, repoid, erratumid):
@@ -998,16 +1136,64 @@ class RepoApi(BaseApi):
         self._update_errata_packages(repoid, [erratumid], action='add')
         updateinfo.generate_updateinfo(repo)
 
+    def _find_filtered_erratum_packages(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+        pkglist = []
+
+        if whitelist_packages:
+            for pkg in unfiltered_pkglist:
+                for whitelist_package in whitelist_packages:
+                    w = re.compile(whitelist_package)
+                    if w.match(pkg["filename"]):
+                        pkglist.append(pkg)
+                        break
+        else:
+            pkglist = unfiltered_pkglist
+
+        if blacklist_packages:
+            for pkg in pkglist:
+                for blacklist_package in blacklist_packages:
+                    b = re.compile(blacklist_package)
+                    if b.match(pkg["filename"]):
+                        pkglist.remove(pkg)
+                        break
+
+        return pkglist
+
+
     def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
+         Returns a list of errataids which are skipped because of repository filters
         """
         repo = self._get_existing_repo(repoid)
-        for erratumid in errataids:
-            self._add_erratum(repo, erratumid)
+        filtered_errata = []
+        # Process repo filters if any
+        if repo['filters']:
+            log.info("Repo filters : %s" % repo['filters'])
+            whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
+            blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
+            log.info("combined whitelist packages = %s" % whitelist_packages)
+            log.info("combined blacklist packages = %s" % blacklist_packages)
+
+            for erratumid in errataids:
+                erratum = self.errataapi.erratum(erratumid)
+                original_pkg_objects = [p for pkg in erratum['pkglist'] for p in pkg['packages']]
+                original_pkg_count = len(original_pkg_objects)
+                pkg_objects = self._find_filtered_erratum_packages(original_pkg_objects, whitelist_packages, blacklist_packages)
+                if len(pkg_objects) != original_pkg_count:
+                    errataids.remove(erratumid)
+                    filtered_errata.append(erratumid)
+                    log.info("Filtered errata : %s" % erratumid)
+                else:
+                    self._add_erratum(repo, erratumid)
+        else:
+            for erratumid in errataids:
+                self._add_erratum(repo, erratumid)
+
         self.collection.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
+        return filtered_errata
 
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
@@ -1055,7 +1241,10 @@ class RepoApi(BaseApi):
             errata[erratum['type']] = []
 
         errata[erratum['type']].append(erratum['id'])
-
+        if repo['id'] not in erratum['repoids']:
+            erratum['repoids'].append(repo['id'])
+            err_collection = model.Errata.get_collection()
+            err_collection.save(erratum, safe=True)
 
     @audit()
     def delete_erratum(self, repoid, erratumid):
@@ -1092,6 +1281,10 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
+            if repo['id'] in erratum['repoids']:
+                del erratum['repoids'][erratum['repoids'].index(repo['id'])]
+                err_collection = model.Errata.get_collection()
+                err_collection.save(erratum, safe=True)
         except Exception, e:
             raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
 
@@ -1232,7 +1425,7 @@ class RepoApi(BaseApi):
 
     @audit()
     def add_packages_to_group(self, repoid, groupid, pkg_names=(),
-            gtype="default", requires=None):
+                              gtype="default", requires=None):
         """
         @param repoid: repository id
         @param groupid: group id
@@ -1356,12 +1549,12 @@ class RepoApi(BaseApi):
         if categoryid in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][categoryid]["immutable"]:
                 raise PulpException(
-                        "Changes to immutable categories are not supported: %s" \
-                                % (categoryid))
+                    "Changes to immutable categories are not supported: %s" \
+                    % (categoryid))
             if groupid not in repo['packagegroupcategories'][categoryid]['packagegroupids']:
                 raise PulpException(
-                        "Group id [%s] is not in category [%s]" % \
-                                (groupid, categoryid))
+                    "Group id [%s] is not in category [%s]" % \
+                    (groupid, categoryid))
             repo['packagegroupcategories'][categoryid]['packagegroupids'].remove(groupid)
         self.collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
@@ -1372,8 +1565,8 @@ class RepoApi(BaseApi):
         if categoryid in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][categoryid]["immutable"]:
                 raise PulpException(
-                        "Changes to immutable categories are not supported: %s" \
-                                % (categoryid))
+                    "Changes to immutable categories are not supported: %s" \
+                    % (categoryid))
         if groupid not in repo['packagegroupcategories'][categoryid]["packagegroupids"]:
             repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
             self.collection.save(repo, safe=True)
@@ -1432,10 +1625,10 @@ class RepoApi(BaseApi):
             # a group metadata file, no point in continuing.
             if not os.path.exists(repo["repomd_xml_path"]):
                 log.warn("Skipping update of groups metadata since missing repomd file: '%s'" %
-                          (repo["repomd_xml_path"]))
+                         (repo["repomd_xml_path"]))
                 return False
             xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
-                repo['packagegroups'])
+                                            repo['packagegroups'])
             if repo["group_xml_path"] == "":
                 repo["group_xml_path"] = os.path.dirname(repo["repomd_xml_path"])
                 repo["group_xml_path"] = os.path.join(os.path.dirname(repo["repomd_xml_path"]),
@@ -1444,12 +1637,11 @@ class RepoApi(BaseApi):
             f = open(repo["group_xml_path"], "w")
             f.write(xml.encode("utf-8"))
             f.close()
-            if repo["group_gz_xml_path"]:
-                gz = gzip.open(repo["group_gz_xml_path"], "wb")
-                gz.write(xml.encode("utf-8"))
-                gz.close()
-            return comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
-                repo["group_xml_path"], repo["group_gz_xml_path"])
+            #if repo["group_gz_xml_path"]:
+            #    gz = gzip.open(repo["group_gz_xml_path"], "wb")
+            #    gz.write(xml.encode("utf-8"))
+            #    gz.close()
+            return comps_util.update_repomd_xml_file(repo["repomd_xml_path"], repo["group_xml_path"])
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
             log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -1462,6 +1654,92 @@ class RepoApi(BaseApi):
         return [task
                 for task in find_async(method='_sync')
                 if id in task.args]
+
+    def get_sync_status_by_tasks(self, tasks):
+        """
+        Given a list of tasks, return a list of the repo sync statuses
+        associated with those tasks.
+        @param tasks: List of tasks
+        @type tasks: list
+        @return: List of of repo sync statuses
+        @rtype: list of L{model.RepoStatus}
+        """
+        statuses = [self.get_sync_status_by_task(t) for t in tasks]
+        # Not all tasks will have repo syncs associated with them yet, if
+        # they're waiting for instance, so remove None values.
+        statuses = [s for s in statuses if s is not None]
+        return statuses
+
+    def get_sync_status_by_task(self, task):
+        """
+        Given a task, return the repo sync statuses
+        associated with that task.
+        @param task: repo sync task
+        @type tasks: L{pulp.server.api.repo_sync_task.RepoSyncTask}
+        @return: repo sync status assocated with the task
+        @rtype: L{model.RepoStatus}
+        """
+        # If there's no task.args, then we can't even look up the repo
+        # associated with this task.
+        if not task.args:
+            return None
+
+        # The repo id should always be the first argument of the task
+        repo_id = task.args[0]
+        repo_sync_status = model.RepoStatus(repo_id)
+
+        repo_sync_status["state"] = task.state
+        repo_sync_status["progress"] = task.progress
+        repo_sync_status["state"] = task.state
+        repo_sync_status["state"] = task_error
+        repo_sync_status["exception"] = task.exception
+        repo_sync_status["traceback"] = task.traceback
+
+        return repo_sync_status
+
+    def get_sync_status_for_repos(self, repos):
+        """
+        Get the sync status for a list of repos.
+        @param repos: List of repos.
+        @type repos: list of L{Repo}
+        @return: List of repo sync statuses
+        @rtype: list of L{model.RepoStatus}
+        """
+        statuses = [self.get_sync_status(r["id"]) for r in repos]
+        return statuses
+
+    def get_sync_status(self, id):
+        """
+        Get the sync status for a repo id.
+        @param id: Repo id.
+        @type id: int
+        @return: repo sync status
+        @rtype: L{model.RepoStatus}
+        """
+        # Look up the tasks for this repo id
+        tasks = [t for t in find_async(method_name="_sync")
+                 if (t.args and id in t.args) or
+                 (t.kwargs and id in t.kwargs.values())]
+
+        # Assume we only founds 1 task.
+        if tasks:
+            task = tasks[0]
+        else:
+            task = None
+
+        repo_sync_status = model.RepoStatus(id)
+
+        if task:
+            repo_sync_status["state"] = task.state
+            repo_sync_status["progress"] = task.progress
+            repo_sync_status["exception"] = task.exception
+            repo_sync_status["traceback"] = task.traceback
+
+            if task.scheduled_time:
+                repo_sync_status["next_sync_time"] = format_iso8601_datetime(
+                    task.scheduled_time)
+
+        return repo_sync_status
 
     @audit(params=['id', 'keylist'])
     def addkeys(self, id, keylist):
@@ -1558,43 +1836,87 @@ class RepoApi(BaseApi):
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
 
     def add_distribution(self, repoid, distroid):
-        '''
+        """
          Associate a distribution to a given repo
          @param repoid: The repo ID.
+         @type repoid: str
          @param distroid: The distribution ID.
-        '''
+         @type distroid: str
+        """
         repo = self._get_existing_repo(repoid)
-        if self.distroapi.distribution(distroid) is None:
+        distro_obj = self.distroapi.distribution(distroid)
+        if distro_obj is None:
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.collection.save(repo, safe=True)
+
+        # Add the repoid to the list on the distribution as well.
+        distro_obj = self.distroapi.distribution(distroid)
+        distro_obj['repoids'].append(repoid)
+        distro_collection = model.Distribution.get_collection()
+        distro_collection.save(distro_obj, safe=True)
+        
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
+        repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
+        for imfile in distro_obj['files']:
+            if not os.path.exists(imfile):
+                log.error("distribution file [%s] missing from the filesystem; skipping")
+                continue
+            if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
+                repo_treefile_path = os.path.join(repo_path, os.path.basename(imfile))
+                if not os.path.islink(repo_treefile_path):
+                    pulp.server.util.create_rel_symlink(imfile, repo_treefile_path)
+            else:
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
+                if not os.path.islink(repo_dist_path):
+                    pulp.server.util.create_rel_symlink(imfile, repo_dist_path)
         if repo['publish']:
             self._create_ks_link(repo)
         log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
 
     def remove_distribution(self, repoid, distroid):
-        '''
+        """
          Delete a distribution from a given repo
          @param repoid: The repo ID.
          @param distroid: The distribution ID.
-        '''
+        """
         repo = self._get_existing_repo(repoid)
-        if distroid in repo['distributionid']:
-            del repo['distributionid'][repo['distributionid'].index(distroid)]
-            self.collection.save(repo, safe=True)
-            self.distroapi.delete(distroid)
-            self._delete_ks_link(repo)
-            log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
-        else:
+        if not distroid in repo['distributionid']:
             log.error("No Distribution with ID %s associated to this repo" % distroid)
+        distro_obj = self.distroapi.distribution(distroid)
+        if distro_obj is None:
+            log.error("Distribution ID [%s] does not exist" % distroid)
+            return
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), distroid)
+        repo_path = os.path.join(pulp.server.util.top_repos_location(), repo['relative_path'])
+        for imfile in distro_obj['files']:
+            if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
+                repo_treefile_path = os.path.join(repo_path, os.path.basename(imfile))
+                if os.path.islink(repo_treefile_path):
+                    os.unlink(repo_treefile_path)
+            else:
+                repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
+                if os.path.islink(repo_dist_path):
+                    os.unlink(repo_dist_path)
+        del repo['distributionid'][repo['distributionid'].index(distroid)]
+        self.collection.save(repo, safe=True)
+
+        if repoid in distro_obj['repoids']:
+            # Delete the repoid from the list on the distribution as well.
+            del distro_obj['repoids'][distro_obj['repoids'].index(repoid)]
+            distro_collection = model.Distribution.get_collection()
+            distro_collection.save(distro_obj, safe=True)
+
+        log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
+        self._delete_ks_link(repo)
 
     def _create_ks_link(self, repo):
         if not os.path.isdir(self.distro_path):
-            os.makedirs(self.distro_path)
+            pulp.server.util.makedirs(self.distro_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
-                repo["relative_path"])
+                                   repo["relative_path"])
         if not os.path.isdir(source_path):
-            os.makedirs(source_path)
+            pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Linking %s" % link_path)
         pulp.server.util.create_rel_symlink(source_path, link_path)
@@ -1602,6 +1924,7 @@ class RepoApi(BaseApi):
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Unlinking %s" % link_path)
+        link_path = pulp.server.util.encode_unicode(link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
@@ -1656,7 +1979,7 @@ class RepoApi(BaseApi):
                 repo['files'].append(fid)
                 changed = True
                 shared_file = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
-                                            fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
+                                                  fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
                                                repo['relative_path'], fileobj["filename"])
                 if not os.path.exists(file_repo_path):
@@ -1689,7 +2012,7 @@ class RepoApi(BaseApi):
                 changed = True
                 # Remove package from repo location on file system
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
-                                            repo['relative_path'], fileobj["filename"])
+                                               repo['relative_path'], fileobj["filename"])
                 if os.path.exists(file_repo_path):
                     log.debug("Delete file %s at %s" % (fileobj["filename"], file_repo_path))
                     os.remove(file_repo_path)
@@ -1704,11 +2027,8 @@ class RepoApi(BaseApi):
          @param repo: The repo object.
         """
         fileids = repo['files']
-        if not len(fileids):
-            # No file info to add to manifest, exit
-            return
         try:
-            manifest_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "MANIFEST")
+            manifest_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "PULP_MANIFEST")
             f = open(manifest_path, "w")
             for fileid in fileids:
                 fileobj = self.fileapi.file(fileid)
@@ -1716,7 +2036,7 @@ class RepoApi(BaseApi):
                     log.error("File ID [%s] does not exist" % fileid)
                     continue
                 write_str = "%s,%s,%s\n" % (fileobj['filename'], fileobj['checksum']['sha256'], \
-                                            fileobj['size'])
+                                            fileobj['size'] or 0)
                 f.write(write_str)
             f.close()
         except:
@@ -1745,7 +2065,7 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'filter_ids'])
     def add_filters(self, id, filter_ids):
         repo = self._get_existing_repo(id)
-        if repo['source']['type'] != 'local':
+        if repo['source'] and repo['source']['type'] != 'local':
             raise PulpException("Filters can be added to repos with 'local' feed only")
         for filter_id in filter_ids:
             filter = self.filterapi.filter(filter_id)
@@ -1781,7 +2101,6 @@ class RepoApi(BaseApi):
         groupids = repo['groupid']
         if addgrp not in groupids:
             groupids.append(addgrp)
-
         repo["groupid"] = groupids
         self.collection.save(repo, safe=True)
         log.info('repository (%s), added group: %s', id, addgrp)
@@ -1848,7 +2167,7 @@ class RepoApi(BaseApi):
         repo_pkgs, errors = self._translate_filename_checksum_pairs(pkg_infos)
         for repo_id in repo_pkgs:
             start_time = time.time()
-            add_pkg_errors = self.add_package(repo_id, repo_pkgs[repo_id])
+            add_pkg_errors, filtered_count = self.add_package(repo_id, repo_pkgs[repo_id])
             for e in add_pkg_errors:
                 filename = e[2]
                 checksum = e[3]
@@ -1879,7 +2198,7 @@ class RepoApi(BaseApi):
             rm_pkg_errors = self.remove_packages(repo_id, to_remove_pkgs)
             for p in rm_pkg_errors:
                 filename = p["filename"]
-                checksum = p["checksum"]["sha256"]
+                checksum = p["checksum"].values()[0]
                 if not errors.has_key(filename):
                     errors[filename] = {}
                 if not errors[filename].has_key(checksum):
@@ -1890,7 +2209,7 @@ class RepoApi(BaseApi):
             log.info("repo.disassociate_packages(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
 
-    def metadata(self, id):
+    def generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
@@ -1899,28 +2218,38 @@ class RepoApi(BaseApi):
         if self.list_metadata_task(id):
             # repo generation task already pending; task not created
             return None
-        task = run_async(self._metadata, [id], {})
+        task = run_async(self._generate_metadata, [id], {})
         return task
 
-    def _metadata(self, id):
+    @event(subject='repo.updated.content')
+    def _generate_metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
         """
         repo = self._get_existing_repo(id)
+        if repo['preserve_metadata']:
+            msg = "Metadata for repo [%s] is set to be preserved. Cannot re-generate metadata" % id
+            log.info(msg)
+            raise PulpException(msg)
         repo_path = os.path.join(
-                pulp.server.util.top_repos_location(), repo['relative_path'])
+            pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-            os.makedirs(repo_path)
+            pulp.server.util.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
-        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+        if repo['content_types'] in ('yum'):
+            pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+        elif repo['content_types'] in ('file'):
+            self._generate_file_manifest(repo)
+        else:
+            raise PulpException("Cannot spawn metadata generation for repo with content type %s" % repo['content_types'])
 
     def list_metadata_task(self, id):
         """
         List all the metadata tasks for a given repository.
         """
         return [task
-                for task in find_async(method='_metadata')
+                for task in find_async(method='_generate_metadata')
                 if id in task.args]
 
     def set_sync_in_progress(self, id, state):
@@ -2001,3 +2330,242 @@ class RepoApi(BaseApi):
             sync_history_list = [task.__dict__ for task in tasks]
         return sync_history_list
 
+    def add_metadata(self, id, metadata):
+        '''
+        Add custom metadata to a repo
+        @param id: repo id
+        @type  id: string
+        @param metadata: custom metadata dict; eg: {'filetype' : 'productid', 'filedata' : data_stream}
+        @type metadata: dictionary
+        @raise PulpException: if any of the input values are invalid
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+            pulp.server.util.top_repos_location(), repo['relative_path'])
+        repo_metdata_dir = "%s/%s" % (repo_path, "repodata")
+        # if there is no repodata dir, then its probably not a yum repo; exit now
+        if not os.path.exists(repo_metdata_dir):
+            msg = "No repodata found for repo [%s]; Cannot perform add metadata on a non yum repo" % id
+            log.info(msg)
+            raise PulpException(msg)
+
+        if repo['preserve_metadata']:
+            msg = "Metadata for repo [%s] is set to be preserved. Cannot add custom metadata" % id
+            log.info(msg)
+            raise PulpException(msg)
+        # write the metadata to a file
+        custom_path = "%s/%s" % (repo_path, metadata['filetype'])
+        if os.path.exists(custom_path):
+            # if there is an older file, nuke it and start fresh
+            os.remove(custom_path)
+        try:
+            custom_obj = open(custom_path, 'wb')
+            custom_obj.write(metadata['filedata'])
+            custom_obj.close()
+        except:
+            msg = "Unable to write custom metadata for repo [%s]" % id
+            log.info(msg)
+            raise PulpException(msg)
+        # now run modify repo and add the metadata to yum
+        pulp.server.util.modify_repo(repo_metdata_dir, custom_path)
+
+    def list_metadata(self, id):
+        '''
+        list metadata filetype information from a repo
+        @param id: repo id
+        @type  id: string
+        @raise PulpException: if any of the input values are invalid
+        @return: dump of all the filetypes in repo metadata
+        @rtype: dict
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+            pulp.server.util.top_repos_location(), repo['relative_path'])
+        repodata_file = "%s/%s" % (repo_path, "repodata/repomd.xml")
+        dump = pulp.server.util.get_repomd_filetype_dump(repodata_file)
+        return dump
+
+    def get_metadata(self, id, filetype):
+        '''
+        get an xml dump of the matched filetype from a repo
+        @param id: repo id
+        @type  id: string
+        @param filetype: file type to look up in metadata
+        @type  filetype: string
+        @return: metadata stream if found or None if no match
+        @rtype: string
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+            pulp.server.util.top_repos_location(), repo['relative_path'])
+        repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
+        #return pulp.server.util.get_repomd_filetype_xml(repo_repomd_path, filetype)
+        file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
+        if not file_path:
+            return None
+        metadata_file = os.path.join(repo_path, file_path)
+        try:
+            f = metadata_file.endswith('.gz') and gzip.open(metadata_file) \
+                or open(metadata_file, 'rt')
+            return f.read().decode("utf-8", "replace")
+        except Exception, e:
+            msg = "Error [%s] reading the metadata file for type [%s] at location [%s]" % (str(e), filetype, file_path)
+            log.info(msg)
+            raise PulpException(msg)
+
+    def remove_metadata(self, id, filetype):
+        '''
+        remove a metadata file from a repo
+        @param id: repo id
+        @type  id: string
+        @param filetype: file type to look up in metadata
+        @type  filetype: string
+        @raise PulpException: if any of the input values are invalid
+        '''
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+            pulp.server.util.top_repos_location(), repo['relative_path'])
+        repo_repomd_path = "%s/%s" % (repo_path, "repodata/repomd.xml")
+        file_path = pulp.server.util.get_repomd_filetype_path(repo_repomd_path, filetype)
+        if not file_path:
+            msg = "metadata file of type [%s] cannot be found in repository [%s]" % (filetype, id)
+            log.info(msg)
+            raise PulpException(msg)
+        try:
+            pulp.server.util.modify_repo(os.path.dirname(repo_repomd_path), filetype, remove=True)
+        except Exception, e:
+            msg = "Error [%s] removing the metadata file for type [%s]" % (str(e), filetype)
+            log.info(msg)
+            raise PulpException(msg)
+
+    
+    @audit()
+    def add_note(self, id, key, value):
+        """
+        Add note to a repo in the form of key-value pairs.
+        @param id: repo id.
+        @type id: str
+        @param key: key
+        @type key: str
+        @param value: value
+        @type value: str
+        @raise PulpException: When repo is not found or given key exists.
+        """
+        repo = self.repository(id)
+        if not repo:
+            raise PulpException('Repository [%s] does not exist', id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            key_value_pairs[key] = value
+        else:
+            raise PulpException('Given key [%s] already exists', key)
+        repo['notes'] = key_value_pairs
+        self.collection.save(repo, safe=True)
+
+    @audit()
+    def delete_note(self, id, key):
+        """
+        Delete key-value note from a repo.
+        @param id: repo id.
+        @type id: str
+        @param key: key
+        @type key: str
+        @raise PulpException: When repo does not exist or key is not found.
+        """
+        repo = self.repository(id)
+        if not repo:
+            raise PulpException('Repository [%s] does not exist', id)
+        key_value_pairs = repo['notes']
+        if key in key_value_pairs.keys():
+            del key_value_pairs[key]
+        else:
+            raise PulpException('Given key [%s] does not exist', key)
+        repo['notes'] = key_value_pairs
+        self.collection.save(repo, safe=True)
+
+    @audit()
+    def update_note(self, id, key, value):
+        """
+        Update key-value note of a repo.
+        @param id: repo id.
+        @type id: str
+        @param key: key
+        @type key: str
+        @param value: value
+        @type value: str
+        @raise PulpException: When repo is not found or given key exists.
+        """
+        repo = self.repository(id)
+        if not repo:
+            raise PulpException('Repository [%s] does not exist', id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            raise PulpException('Given key [%s] does not exist', key)
+        else:
+            key_value_pairs[key] = value
+        repo['notes'] = key_value_pairs
+        self.collection.save(repo, safe=True)
+
+    def has_parent(self, id):
+        """
+        Check if a repo has a parent
+        @param id: repository Id
+        @return: True if success; else False
+        """
+        parent_repos = self.repositories({'clone_ids' : id})
+        if len(parent_repos):
+            return True
+        return False
+ 
+def validate_relative_path(new_path, existing_path):
+    """
+    Checks that the proposed new relative path will not conflict with an
+    existing path.
+
+    The primary source of contention is if the new repository
+    would cause the two repositories to be nested. In other words, given
+    an existing repository with relative path foo/bar, a repository should not
+    be created inside of that directory, for example foo/bar/baz. The opposite
+    holds true as well; if foo/bar/baz exists, a new repository at foo/bar
+    should not be allowed.
+
+    This call will apply both directions of logic and return true or false to
+    indicate whether or not the new path is valid given the existing repository.
+
+    @param new_path: propsed relative path for a newly created repository
+    @type  new_path: str
+
+    @param existing_path: relative path of a existing repository in Pulp
+    @type  existing_path: str
+
+    @return: True if the new path does not conflict with the existing path; False otherwise
+    @rtype:  bool
+    """
+
+    # Easy out clause: if they are the same, they are invalid
+    if new_path == existing_path:
+        return False
+
+    # If both paths are in the same parent directory but have different
+    # names, we're safe
+    new_path_dirname = os.path.dirname(new_path)
+    existing_path_dirname = os.path.dirname(existing_path)
+
+    if new_path_dirname == existing_path_dirname:
+        return True
+
+    # See if either path is a parent of the other. This is safe from the case of
+    # /foo/bar and /foo/bar2 since the above check will have punched out early
+    # if this was the case. If the above check wasn't there, this example would
+    # reflect as invalid when in reality it is safe.
+    
+    if existing_path.startswith(new_path):
+        log.warn('New relative path [%s] is a parent directory of existing path [%s]' % (new_path, existing_path))
+        return False
+
+    if new_path.startswith(existing_path):
+        log.warn('New relative path [%s] is nested in existing path [%s]' % (existing_path, new_path))
+        return False
+
+    # If we survived the parent/child tests, the new path is safe
+    return True

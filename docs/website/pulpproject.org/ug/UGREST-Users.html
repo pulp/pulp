@@ -30,22 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Users">Users</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Users.html#ListAllUsers">List All Users</a></li><li class="active">
-<a href="UGREST-Users.html#Create">Create</a></li><li class="active">
-<a href="UGREST-Users.html#Information">Information</a></li><li class="active">
-<a href="UGREST-Users.html#Delete">Delete</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Users">Users</h1>
 <p>
 Pulp includes a user model to allow access control to specific API methods and the objects stored within Pulp.  The goal is to allow you to specify specific users the right or denial to do things such as:
 </p>
@@ -100,24 +85,24 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span></b>,
-  <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'tito'</span></b>,
-  <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Tito Jones'</span></b>,
-  <B><span class="code-string">'cert'</span></b>: <B><span class="code-string">'..x509 certificate..'</span></b>},
-{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'10df8a48-e4ec-474d-85c5-a7f657870cb3'</span></b>,
-  <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'admin'</span></b>,
-  <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Admin User'</span></b>,
-  <B><span class="code-string">'cert'</span></b>: <B><span class="code-string">'..x509 certificate..'</span></b>}
-]
+<div class="code"><pre><span class="p">[{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span><span class="p">,</span>
+  <span class="s">'login'</span><span class="p">:</span> <span class="s">'tito'</span><span class="p">,</span>
+  <span class="s">'password'</span><span class="p">:</span> <span class="s">'*****'</span><span class="p">,</span>
+  <span class="s">'name'</span><span class="p">:</span> <span class="s">'Tito Jones'</span><span class="p">,</span>
+  <span class="s">'roles'</span><span class="p">:</span> <span class="p">[</span><span class="s">u'consumer-users'</span><span class="p">]},</span>
+<span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'10df8a48-e4ec-474d-85c5-a7f657870cb3'</span><span class="p">,</span>
+  <span class="s">'login'</span><span class="p">:</span> <span class="s">'admin'</span><span class="p">,</span>
+  <span class="s">'password'</span><span class="p">:</span> <span class="s">'*****'</span><span class="p">,</span>
+  <span class="s">'name'</span><span class="p">:</span> <span class="s">'Admin User'</span><span class="p">,</span>
+  <span class="s">'roles'</span><span class="p">:</span> <span class="p">[</span><span class="s">u'consumer-users'</span><span class="p">]}</span>
+<span class="p">]</span>
 </pre></div><p>
 Error: None
 </p>
 <hr />
 <h2 id="Create">Create</h2>
 <p>
-Create a consumer group
+Creates a new user in the Pulp server.
 </p>
 <p>
 Status: <strong>DRAFT</strong>
@@ -126,16 +111,14 @@ Status: <strong>DRAFT</strong>
 Path: <strong>/users/</strong>
 </p>
 <p>
-Method: <strong>PUT</strong>
+Method: <strong>POST</strong>
 </p>
 <p>
 Parameters:
 </p>
-<ul><li>id: <i>optional</i> user id
-</li><li>login: <i>required</i> unique login used to identify this user in human readable cases (CLI, webui)
-</li><li>password: <i>optional</i> Optional password to specificy.  If none is specified user must authenticate with an x509 certificate.
-</li><li>name: <i>optional</i> A human readable name to use for display purposes.
-</li><li>cert: <i>optional</i> Optional x509 certificate identifying this user.  <strong>QUESTION:</strong> Do we really need to store this?
+<ul><li>login: <em>required</em> unique login used to identify this user in human readable cases (CLI, webui)
+</li><li>password: <em>required</em> password to specify
+</li><li>name: <em>required</em> A human readable name to use for display purposes.
 </li></ul><p>
 Authentication:
 </p>
@@ -158,11 +141,11 @@ Response: <strong>201 Created</strong>
 <p>
 Headers:
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer group'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
-  <B><span class="code-string">'consumerids'</span></b>: []}]
+<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer group'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
+  <span class="s">'consumerids'</span><span class="p">:</span> <span class="p">[]}]</span>
 </pre></div><p>
-Error: <strong>409 Conflict</strong> if there is an existing user with the same id
+Error: <strong>409 Conflict</strong> if there is an existing user with the same login
 </p>
 <hr />
 <h2 id="Information">Information</h2>
@@ -205,11 +188,11 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span></b>,
-  <B><span class="code-string">'login'</span></b>: <B><span class="code-string">'tito'</span></b>,
-  <B><span class="code-string">'password'</span></b>: <B><span class="code-string">'*****'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'Tito Jones'</span></b>,
-  <B><span class="code-string">'cert'</span></b>: <B><span class="code-string">'..x509 certificate..'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span><span class="p">,</span>
+ <span class="s">'login'</span><span class="p">:</span> <span class="s">'tito'</span><span class="p">,</span>
+ <span class="s">'password'</span><span class="p">:</span> <span class="s">'*****'</span><span class="p">,</span>
+ <span class="s">'name'</span><span class="p">:</span> <span class="s">'Tito Jones'</span><span class="p">,</span>
+ <span class="s">'roles'</span> <span class="p">:</span> <span class="p">[</span><span class="s">u'super-users'</span><span class="p">]}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such user
 </p>
@@ -254,22 +237,21 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: None
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

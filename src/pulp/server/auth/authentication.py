@@ -30,7 +30,7 @@ from pulp.server.auth.password_util import check_password
 from pulp.server.config import config
 from pulp.server.db.model import User
 from pulp.server.LDAPConnection import LDAPConnection
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 _consumer_api = ConsumerApi()
@@ -72,16 +72,23 @@ def _check_username_password_ldap(username, password=None):
         ldap_base = config.get('ldap', 'base')
     else:
         _log.info("No valid base found, default to localhost")
-    ldap_server = LDAPConnection(ldap_uri)
+    ldap_filter = None
+    if config.has_option('ldap', 'filter'):
+        ldap_filter = config.get('ldap', 'filter')
+    ldap_tls = False
+    if config.has_option('ldap', 'tls'):
+        ldap_tls = config.getboolean('ldap', 'tls')
+    ldap_server = LDAPConnection(server=ldap_uri, tls=ldap_tls)
     ldap_server.connect()
-    status = None
+    user = None
     if password is not None:
-        status = ldap_server.authenticate_user(ldap_base, username, password)
+        user = ldap_server.authenticate_user(ldap_base, username, password,
+                                             filter=ldap_filter)
     else:
-        status = ldap_server.lookup_user(ldap_base, username)
-    if status is None:
+        user = _user_api.user(username)
+    if user is None:
         return None
-    return User(username, username, password, username)
+    return user
 
 
 def _check_username_password_local(username, password=None):
@@ -99,6 +106,9 @@ def _check_username_password_local(username, password=None):
     if user is None:
         _log.error('User [%s] specified in certificate was not found in the system' %
                    username)
+        return None
+    if user['password'] is None and password is not None:
+        _log.error('This is an ldap user %s' % user)
         return None
     if password is not None:
         if not check_password(user['password'], password):
@@ -118,9 +128,10 @@ def check_username_password(username, password=None):
     @rtype: L{pulp.server.db.model.User} instance or None
     @return: user corresponding to the credentials
     """
-    if _using_ldap():
-        return _check_username_password_ldap(username, password)
-    return _check_username_password_local(username, password)
+    user = _check_username_password_local(username, password)
+    if user is None and _using_ldap():
+        user = _check_username_password_ldap(username, password)
+    return user
 
 # ssl cert authentication -----------------------------------------------------
 

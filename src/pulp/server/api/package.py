@@ -16,13 +16,13 @@ import os
 import re
 
 # Pulp
-import pulp.server.util
+from pulp.server import util
 from pulp.server.api.base import BaseApi
 from pulp.server.api.depsolver import DepSolver
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -45,12 +45,12 @@ class PackageApi(BaseApi):
 
     @audit()
     def create(self, name, epoch, version, release, arch, description,
-            checksum_type, checksum, filename, repo_defined=False):
+            checksum_type, checksum, filename, repo_defined=False, repoids=[]):
         """
         Create a new Package object and return it
         """
         p = model.Package(name, epoch, version, release, arch, description,
-                checksum_type, checksum, filename, repo_defined=repo_defined)
+                checksum_type, checksum, filename, repo_defined=repo_defined, repoids=repoids)
         self.collection.insert(p, safe=True)
         return p
 
@@ -79,7 +79,8 @@ class PackageApi(BaseApi):
                        'size',
                        'group',
                        'license',
-                       'vendor',):
+                       'vendor',
+                       'repoids',):
                 pkg[key] = value
                 continue
             raise Exception, \
@@ -95,14 +96,14 @@ class PackageApi(BaseApi):
             raise PackageHasReferences(id)
         if not keep_files:
             pkg = self.package(id)
-            pkg_packages_path = pulp.server.util.get_shared_package_path(
+            pkg_packages_path = util.get_shared_package_path(
                                            pkg["name"], pkg["version"], pkg["release"], pkg["arch"],
                                            pkg["filename"], pkg["checksum"])
             if os.path.exists(pkg_packages_path):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
                 os.remove(pkg_packages_path)
                 self.__pkgdeleted(id, pkg_packages_path)
-                pulp.server.util.delete_empty_directories(os.path.dirname(pkg_packages_path))
+                util.delete_empty_directories(os.path.dirname(pkg_packages_path))
         self.collection.remove({'_id':id})
 
     def package(self, id):
@@ -113,45 +114,51 @@ class PackageApi(BaseApi):
 
     def packages(self, name=None, epoch=None, version=None, release=None, arch=None,
             filename=None, checksum_type=None, checksum=None, regex=False,
-            fields=["id", "name", "epoch", "version", "release", "arch", "filename", "checksum"]):
+            fields=["id", "name", "epoch", "version", "release", "arch", "filename", "checksum", "repoids"]):
         """
         Return a list of all package version objects matching search terms
         """
         searchDict = {}
         if name:
             if regex:
-                searchDict['name'] = {"$regex":re.compile(name)}
+                searchDict['name'] = {
+                    "$regex":util.compile_regular_expression(name)}
             else:
                 searchDict['name'] = name
         if epoch:
             if regex:
-                searchDict['epoch'] = {"$regex":re.compile(epoch)}
+                searchDict['epoch'] = {
+                    "$regex":util.compile_regular_expression(epoch)}
             else:
                 searchDict['epoch'] = epoch
         if version:
             if regex:
-                searchDict['version'] = {"$regex":re.compile(version)}
+                searchDict['version'] = {
+                    "$regex":util.compile_regular_expression(version)}
             else:
                 searchDict['version'] = version
         if release:
             if regex:
-                searchDict['release'] = {"$regex":re.compile(release)}
+                searchDict['release'] = {
+                    "$regex":util.compile_regular_expression(release)}
             else:
                 searchDict['release'] = release
         if arch:
             if regex:
-                searchDict['arch'] = {"$regex":re.compile(arch)}
+                searchDict['arch'] = {
+                    "$regex":util.compile_regular_expression(arch)}
             else:
                 searchDict['arch'] = arch
         if filename:
             if regex:
-                searchDict['filename'] = {"$regex":re.compile(filename)}
+                searchDict['filename'] = {
+                    "$regex":util.compile_regular_expression(filename)}
             else:
                 searchDict['filename'] = filename
         if checksum_type and checksum:
             if regex:
                 searchDict['checksum.%s' % checksum_type] = \
-                    {"$regex":re.compile(checksum)}
+                    {"$regex":util.compile_regular_expression(checksum)}
             else:
                 searchDict['checksum.%s' % checksum_type] = checksum
         if (len(searchDict.keys()) == 0):
@@ -214,7 +221,7 @@ class PackageApi(BaseApi):
         #return list(self.collection.find({}, {'name' : True, 'description' : True,}))
         return list(self.collection.find(spec, ['id', 'name', 'description']))
 
-    def package_dependency(self, pkgnames=[], repoids=[], recursive=0):
+    def package_dependency(self, pkgnames=[], repoids=[], recursive=0, make_tree=0):
         '''
          Get list of available dependencies for a given package in
          a specific repo
@@ -222,7 +229,7 @@ class PackageApi(BaseApi):
          @type repoid: str
          @param pkgnames: list of package names
          @type pkgnames: list
-         @return list: nvera of dependencies
+         @return dict: dictionary of dependency info of the format {'printable_dependency_result' : '', 'resolved' : [], 'unresolved' : [], 'dependency_tree' : {}}
         '''
         from pulp.server.api.repo import RepoApi
         rapi = RepoApi()
@@ -237,19 +244,29 @@ class PackageApi(BaseApi):
             results = dsolve.getRecursiveDepList()
         else:
             results = dsolve.getDependencylist()
-        deps = dsolve.processResults(results)
-        pkgs = []
+        solved, unsolved = dsolve.processResults(results)
+        dep_pkgs_map = {}
         log.info(" results from depsolver %s" % results)
-        for dep in deps:
-            name, version, epoch, release, arch = dep
-            epkg = self.package_by_ivera(name, version, epoch, release, arch)
-            if not epkg:
-                continue
-            pkgs.append(epkg)
+        for dep, pkgs in solved.items():
+            dep_pkgs_map[dep] = []
+            for pkg in pkgs:
+                name, version, epoch, release, arch = pkg
+                epkg = self.package_by_ivera(name, version, epoch, release, arch)
+                if not epkg:
+                    continue
+                dep_pkgs_map[dep].append(epkg)
+        log.debug("deps packages suggested %s" % solved)
+
+        dep_result = {'printable_dependency_result' : dsolve.printable_result(results),
+                      'resolved' :dep_pkgs_map,
+                      'unresolved' : unsolved}
+        if make_tree:
+            dep_tree = {}
+            dsolve.make_tree(pkgnames, results, dep_tree)
+            dep_result['dependency_tree'] = dep_tree
         dsolve.cleanup()
-        log.info("deps packages suggested %s" % deps)
-        return {'dependency_list' : dsolve.printable_result(results),
-                'available_packages' :pkgs}
+        return dep_result
+
 
     def package_checksum(self, filename):
         """
@@ -295,6 +312,9 @@ class PackageApi(BaseApi):
         @param restrict_ids: optional, restrict the search to this list of possible package ids, used to restrict result to packages in a particular repo
         @return fields:  what fields to return
         """
+        if not pkg_info:
+            # cannot pass empty list to $or query
+            return []
         q = {}
         q["$or"] = pkg_info
         if restrict_ids != None:

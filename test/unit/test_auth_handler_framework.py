@@ -15,8 +15,8 @@ import os
 import sys
 import unittest
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + '/../src/'
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 import pulp.repo_auth.auth_handler_framework as auth_framework
 
@@ -28,8 +28,7 @@ def fail(request):
 def win(request):
     return True
 
-
-class MockFunctionsTests(unittest.TestCase):
+class MockFunctionsTests(testutil.PulpAsyncTest):
 
     def test_handle_fail_required_pass_optional(self):
         # Setup

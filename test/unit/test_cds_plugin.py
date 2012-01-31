@@ -15,19 +15,13 @@
 import os
 import sys
 import shutil
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 import mocks
 from pulp.cds.cdslib import loginit, CdsLib, SecretFile
 from pulp.cds.lb import storage
-import testutil
 
 # test root dir
 ROOTDIR = '/tmp/pulp-cds'
@@ -38,21 +32,19 @@ TEST_LOCK_FILE = '/tmp/cds-plugin-storage-lock'
 # setup logging
 loginit(os.path.join(ROOTDIR, 'cds.log'))
 
-
-class TestCdsPlugin(unittest.TestCase):
+class TestCdsPlugin(testutil.PulpAsyncTest):
 
     def clean(self):
-        shutil.rmtree(ROOTDIR, True)
+        testutil.PulpAsyncTest.clean(self)
 
     def setUp(self):
-        mocks.install()
-        config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
 
-        if not config.has_section('cds'):
-            config.add_section('cds')
-        config.set('cds', 'packages_dir', os.path.join(ROOTDIR, 'packages'))
-        config.set('cds', 'sync_threads', '3')
-        self.cds = CdsLib(config)
+        if not self.config.has_section('cds'):
+            self.config.add_section('cds')
+        self.config.set('cds', 'packages_dir', os.path.join(ROOTDIR, 'packages'))
+        self.config.set('cds', 'sync_threads', '3')
+        self.cds = CdsLib(self.config)
 
         if os.path.exists(TEST_STORAGE_FILE):
             os.remove(TEST_STORAGE_FILE)
@@ -67,6 +59,8 @@ class TestCdsPlugin(unittest.TestCase):
         storage.DEFAULT_FILE_LOCK = TEST_LOCK_FILE
         
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        shutil.rmtree(ROOTDIR, True)
         storage.DEFAULT_FILE_STORE = self.storage_default_file
         storage.DEFAULT_FILE_LOCK = self.storage_default_lock
 

@@ -1,14 +1,11 @@
 Name:           mod_wsgi
-Version:        3.2
-Release:        3.sslpatch%{?dist}
-Summary:        A WSGI interface for Python web applications in Apache
-
-Group:          System Environment/Libraries
+Version:        3.3
+Release:        2.pulp%{?dist}
 License:        ASL 2.0
 URL:            http://modwsgi.org
 Source0:        http://modwsgi.googlecode.com/files/%{name}-%{version}.tar.gz
 Source1:        wsgi.conf
-Patch0:         mod_wsgi-3.2-mod_ssl.patch
+Patch0:         mod_wsgi-3.3-mod_ssl.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  httpd-devel
@@ -52,6 +49,15 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jan 23 2012 James Slagle <jslagle@redhat.com> 3.3-2.pulp
+- 772660 Remove KeyError patch from mod_wsgi build, it is already included in
+  version 3.3 (jslagle@redhat.com)
+- 772660 Bump mod_wsgi version to 3.3 (jslagle@redhat.com)
+
+* Tue Oct 18 2011 James Slagle <jslagle@redhat.com> 3.2-4.pulp
+- Add patch for mod_wsgi to stop KeyError exception on python interpreter
+  shutdown in apache (jslagle@redhat.com)
+
 * Mon Jul 11 2011 James Slagle <jslagle@redhat.com> 3.2-3.sslpatch
 - Don't use epoch after all, use a custom release (jslagle@redhat.com)
 - Reset release to 3 and use epoch to distinguish our mod_wsgi package

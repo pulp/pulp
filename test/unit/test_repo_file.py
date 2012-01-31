@@ -14,16 +14,11 @@ from ConfigParser import DuplicateSectionError
 import os
 import shutil
 import sys
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-from pulp.client.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp.client.lib.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 TEST_REPO_FILENAME = '/tmp/TestRepoFile.repo'
 TEST_MIRROR_LIST_FILENAME = '/tmp/TestRepoFile.mirrorlist'
@@ -32,14 +27,16 @@ TEST_CERT_ROOT_DIR = '/tmp/TestRepoFile-Certificates'
 
 # -- repo file tests ------------------------------------------------------------------
 
-class TestRepoFile(unittest.TestCase):
+class TestRepoFile(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_REPO_FILENAME):
             os.remove(TEST_REPO_FILENAME)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_REPO_FILENAME):
             os.remove(TEST_REPO_FILENAME)
@@ -383,14 +380,16 @@ class TestRepoFile(unittest.TestCase):
 
 # -- mirror list tests ----------------------------------------------------------------
 
-class TestMirrorListFile(unittest.TestCase):
+class TestMirrorListFile(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_MIRROR_LIST_FILENAME):
             os.remove(TEST_MIRROR_LIST_FILENAME)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_MIRROR_LIST_FILENAME):
             os.remove(TEST_MIRROR_LIST_FILENAME)
@@ -488,14 +487,16 @@ class TestMirrorListFile(unittest.TestCase):
 
 # -- repo key files tests ----------------------------------------------------------------
 
-class TestRepoKeyFiles(unittest.TestCase):
+class TestRepoKeyFiles(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_KEYS_ROOT_DIR):
             shutil.rmtree(TEST_KEYS_ROOT_DIR)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_KEYS_ROOT_DIR):
             shutil.rmtree(TEST_KEYS_ROOT_DIR)
@@ -615,14 +616,16 @@ class TestRepoKeyFiles(unittest.TestCase):
         
 # -- repo cert files tests ----------------------------------------------------------------
 
-class TestRepoCertFiles(unittest.TestCase):
+class TestRepoCertFiles(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_CERT_ROOT_DIR):
             shutil.rmtree(TEST_CERT_ROOT_DIR)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_CERT_ROOT_DIR):
             shutil.rmtree(TEST_CERT_ROOT_DIR)

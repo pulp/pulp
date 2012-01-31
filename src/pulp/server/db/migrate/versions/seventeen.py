@@ -22,17 +22,7 @@ _log = logging.getLogger('pulp')
 
 version = 17
 
-def _migrate_errata_model():
-    collection = Errata.get_collection()
-    for erratum in collection.find():
-        modified = False
-        if 'pushcount' in erratum and erratum['pushcount'] == u"":
-            erratum['pushcount'] = 1
-            modified = True
-        if modified:
-            collection.save(erratum, safe=True)
-
+# NOTE: This db change has moved to version 22 to account for pushcount fix
 def migrate():
     _log.info('migration to data model version 17 started')
-    _migrate_errata_model()
     _log.info('migration to data model version 17 complete')

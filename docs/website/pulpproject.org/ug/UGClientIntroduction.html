@@ -30,33 +30,27 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PulpClient">Pulp Client</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PulpConsumerClient">Pulp Consumer Client</h1>
 <h2 id="intro">Introduction</h2>
 <p>
-The <tt>pulp-client</tt> script is used by a system to become a Pulp <i>consumer</i>. A consumer is essentially a system that uses Pulp for repository binding and package profile tracking.
+The <tt>pulp-consumer</tt> script is used by a system to become a Pulp <em>consumer</em>. A consumer is essentially a system that uses Pulp for repository binding and package profile tracking.
 </p>
 <p>
-All commands are issued by passing the command string to the <tt>pulp-client</tt> script. For example, to display the consumer's history, the <tt>consumer history</tt> command is run:
+All commands are issued by passing the command string to the <tt>pulp-consumer</tt> script. For example, to display the consumer's history, the <tt>consumer history</tt> command is run:
 </p>
-<pre class="wiki">$ pulp-client consumer history
+<pre class="wiki">$ pulp-consumer consumer history
 </pre><p>
 Arguments to a command are specified after the command and begin with <tt>--</tt>. All commands support the <tt>--help</tt> argument to display more information on the possible arguments supported:
 </p>
-<pre class="wiki">$ pulp-client consumer create --help
+<pre class="wiki">$ pulp-consumer consumer register --help
 </pre><p>
-The <tt>pulp-client</tt> script must be run as <tt>root</tt> due to the fact that it creates and manages yum repository files.
+The <tt>pulp-consumer</tt> script must be run as <tt>root</tt> due to the fact that it creates and manages yum repository files.
 </p>
 <hr />
 <h2 id="configuration">Configuration</h2>
 <p>
-Configuration for the <tt>pulp-client</tt> script is done through the <tt>/etc/pulp/client.conf</tt> file. The configuration options are divided into the following sections:
+Configuration for the <tt>pulp-consumer</tt> script is done through the
+<tt>/etc/pulp/consumer/consumer.conf</tt> file. The configuration options are divided into the following sections:
 </p>
 <h3 id="Server">Server</h3>
 <p>
@@ -92,9 +86,11 @@ The following control the locations of content served by the Pulp server. In mos
 <h2 id="registration">Registration</h2>
 <h3 id="Registration">Registration</h3>
 <p>
-In order to use a system as a consumer of a Pulp server, it must be <i>registered</i> against the server. Registration is done through the <tt>consumer create</tt> command. When a consumer is registered, it provides a unique (to the Pulp server) ID to identify itself. For example, to register a consumer with the ID "example", the following command would be used:
+In order to use a system as a consumer of a Pulp server, it must be
+<em>registered</em> against the server. Registration is done through the `consumer
+register` command. When a consumer is registered, it provides a unique (to the Pulp server) ID to identify itself. For example, to register a consumer with the ID "example", the following command would be used:
 </p>
-<pre class="wiki">$ pulp-client consumer create --id example
+<pre class="wiki">$ pulp-consumer consumer register --id example
 </pre><p>
 The following attributes can be specified at consumer registration (all attributes are optional unless otherwise specified).
 </p>
@@ -105,13 +101,14 @@ The following attributes can be specified at consumer registration (all attribut
 </td></tr></table>
 <h3 id="Unregistration">Unregistration</h3>
 <p>
-A consumer can opt to remove its relationship with a Pulp server using the <tt>consumer delete</tt> command. There are no arguments to the command, it is simply called on a previously-registered consumer:
+A consumer can opt to remove its relationship with a Pulp server using the
+<tt>consumer unregister</tt> command. There are no arguments to the command, it is simply called on a previously-registered consumer:
 </p>
-<pre class="wiki">$ pulp-client consumer delete
+<pre class="wiki">$ pulp-consumer consumer unregister
 </pre><hr />
 <h2 id="history">History</h2>
 <p>
-Pulp keeps track of operations performed on its consumers in the consumer's <i>history</i>. The following operations are tracked:
+Pulp keeps track of operations performed on its consumers in the consumer's <em>history</em>. The following operations are tracked:
 </p>
 <ul><li>Consumer Registered
 </li><li>Consumer Unregistered
@@ -121,13 +118,11 @@ Pulp keeps track of operations performed on its consumers in the consumer's <i>h
 </li><li>Package Removed*
 </li><li>Errata Installed*
 </li><li>Profile Changed
+</li></ul><ul><li>Only package/errata operations that are triggered through Pulp are logged. If the consumer installs a package through another means (rpm or yum) an event will not be logged. The package profile, however, will eventually be sent to the server and will reflect any changes that have been made.
 </li></ul><p>
-* Only package/errata operations that are triggered through Pulp are logged. If the consumer installs a package through another means (rpm or yum) an event will not be logged. The package profile, however, will eventually be sent to the server and will reflect any changes that have been made.
-</p>
-<p>
 A consumer can view its own history using the <tt>consumer history</tt> command:
 </p>
-<pre class="wiki">$ pulp-client consumer history
+<pre class="wiki">$ pulp-consumer consumer history
 </pre><p>
 A number of query arguments may be passed in to the <tt>consumer history</tt> command in order to refine the results. The following query parameters are provided.
 </p>
@@ -142,7 +137,7 @@ A number of query arguments may be passed in to the <tt>consumer history</tt> co
 <p>
 These parameters may be combined to form advanced queries.
 </p>
-<pre class="wiki">$ pulp-client consumer history --limit 3 --event_type repo_bound --start_date 2011-01-01 --end_date 2011-01-31
+<pre class="wiki">$ pulp-consumer consumer history --limit 3 --event_type repo_bound --start_date 2011-01-01 --end_date 2011-01-31
 +------------------------------------------+
               Consumer History
 +------------------------------------------+
@@ -160,17 +155,17 @@ A consumer's package profile is an inventory of installed packages on the client
 <h2 id="binding">Repository Binding</h2>
 <h3 id="Bind">Bind</h3>
 <p>
-A consumer can use repositories in Pulp through a process called <i>binding.</i> Once configured, bound repositories are added to the consumer's yum repository list and are available for package installation either by the <tt>pulp-admin</tt> script or through yum. All bound repositories are found in the <tt>/etc/yum.repos.d/pulp.repo</tt> file.
+A consumer can use repositories in Pulp through a process called <em>binding.</em> Once configured, bound repositories are added to the consumer's yum repository list and are available for package installation either by the <tt>pulp-admin</tt> script or through yum. All bound repositories are found in the <tt>/etc/yum.repos.d/pulp.repo</tt> file.
 </p>
 <p>
 Repositories are bound through the <tt>consumer bind</tt> command:
 </p>
-<pre class="wiki">$ pulp-client consumer bind --repoid example
+<pre class="wiki">$ pulp-consumer consumer bind --repoid example
 Successfully subscribed consumer [test-consumer] to repo [example]
 </pre><p>
 The list of repositories a consumer has access to can be found through the <tt>repo list</tt> command:
 </p>
-<pre class="wiki">$ pulp-client repo list
+<pre class="wiki">$ pulp-consumer repo list
 +------------------------------------------+
        List of Available Repositories
 +------------------------------------------+
@@ -188,26 +183,22 @@ Publish            	True
 Clones             	[]                       
 Groups             	None
 </pre><p>
-<i>Note: The "Label" field in the above output is the value used for <tt>--repoid</tt> in the bind command.</i>
+<em>Note: The "Label" field in the above output is the value used for <tt>--repoid</tt> in the bind command.</em>
 </p>
 <h3 id="Unbind">Unbind</h3>
 <p>
 A consumer can remove its association from a repository through the <tt>consumer unbind</tt> command. Like <tt>consumer bind</tt>, this command takes a single argument <tt>--repoid</tt> which identifies the repository to unbind:
 </p>
-<pre class="wiki">$ pulp-client consumer unbind --repoid example
+<pre class="wiki">$ pulp-consumer consumer unbind --repoid example
 Successfully unsubscribed consumer [test-consumer] from repo [example]
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

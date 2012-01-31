@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -13,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-HTTP utilities to help pulp web services with HTTP using the web.py framework
+HTTP utilities to help Pulp web services with HTTP using the web.py framework
 """
 
 import base64
@@ -23,6 +22,11 @@ import re
 import urllib
 
 import web
+
+# constants --------------------------------------------------------------------
+
+API_HREF = '/pulp/api'
+API_V2_HREF = API_HREF + '/v2'
 
 # python 2.4 compat instead of: httplib.responses
 http_responses = {
@@ -236,11 +240,27 @@ def extend_uri_path(suffix):
     # all urls are paths, so need a trailing '/'
     # make sure the path is properly encoded
     prefix = uri_path()
-    suffix = urllib.pathname2url(suffix)
+    try:
+        suffix = urllib.pathname2url(suffix)
+    except KeyError:
+        suffix = urllib.pathname2url(suffix.encode('utf-8'))
     path = os.path.normpath(os.path.join(prefix, suffix))
-    if not path.endswith('/'):
-        path += '/'
-    return path
+    return ensure_ending_slash(path)
+
+def sub_uri_path(*args):
+    """
+    Rerturn the current uri path with the last segments substitued by the
+    arguments passed in.
+    @param args: list of strings
+    @type args: list [str, ...]
+    @return: uri with args as suffix
+    @rtype: str
+    """
+    original = uri_path()
+    prefix = original.rsplit('/', len(args))[0]
+    suffix = ensure_ending_slash('/'.join(args))
+    url_suffix = urllib.pathname2url(suffix)
+    return '/'.join((prefix, url_suffix))
 
 
 def resource_path(path=None):
@@ -260,11 +280,25 @@ def resource_path(path=None):
     if path is None:
         path = uri_path()
     parts = [p for p in path.split('/') if p]
-    while parts and parts[0] in ('pulp', 'api'):
+    href_parts = API_HREF.split('/')[1:]
+    while parts and parts[0] in href_parts:
         parts = parts[1:]
     if not parts:
         return '/'
     return '/%s/' % '/'.join(parts)
+
+
+def ensure_ending_slash(uri_or_path):
+    """
+    Utility function to ensure the required ending '/' for paths in the Pulp API
+    @param uri_or_path: uri or path portion of an uri
+    @type uri_or_path: str
+    @return: uri or path that ends with a '/'
+    @rtype: str
+    """
+    if not uri_or_path.endswith('/'):
+        uri_or_path += '/'
+    return uri_or_path
 
 # response functions ----------------------------------------------------------
 
@@ -372,14 +406,22 @@ def status_conflict():
     """
     _status(httplib.CONFLICT)
 
+
 def status_internal_server_error():
     """
     Set the resonse code to internal server error
     """
     _status(httplib.INTERNAL_SERVER_ERROR)
 
+
+def status_not_implemented():
+    """
+    Set the status reponse code to not implemented
+    """
+    _status(httplib.NOT_IMPLEMENTED)
+
 def status_partial():
-    '''
+    """
     Set the response code to partial content
-    '''
+    """
     _status(httplib.PARTIAL_CONTENT)

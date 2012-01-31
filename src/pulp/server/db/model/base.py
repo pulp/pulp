@@ -44,21 +44,21 @@ class Model(dict):
     # associated with your model, all you need to do is define the name of the
     # document collection with the 'collection_name' class field.
     # Once you have defined the collection_name, you may use the
-    # 'unique_indices' and 'other_indicies' to define which fields are indexed
+    # 'unique_indices' and 'search_indices' to define which fields are indexed
     # in the document collection.
-    # The unique_indicies field is a tuple whose elements can be either:
+    # The unique_indices field is a tuple whose elements can be either:
     # * A string name of a model field whose value is to be indexed and must be
     #   unique among all stored instances of the model.
     # * A tuple of string names of model fields that will each be indexed and,
     #   together, must be a unique set of fields among all stored instances of
     #   the model.
-    # The other_indices field is only a tuple listing other model fields to be
+    # The search_indices field is only a tuple listing other model fields to be
     # indexed in the collection, but that do not need to be individually unique
     # or form unique sets of values.
 
     collection_name = None
-    unique_indicies = ('id',) # note, '_id' is automatically unique and indexed
-    other_indicies = ()
+    unique_indices = ('id',) # note, '_id' is automatically unique and indexed
+    search_indices = ()
     __uuid_lock = threading.RLock()
     # -------------------------------------------------------------------------
 
@@ -85,11 +85,11 @@ class Model(dict):
 
     @classmethod
     def _get_collection_from_db(cls):
-        # ensure the indicies in the document collection
-        def _ensure_indicies(collection, indicies, unique):
-            # indicies are either tuples or strings,
+        # ensure the indices in the document collection
+        def _ensure_indices(collection, indices, unique):
+            # indices are either tuples or strings,
             # tuples are 'unique together' if unique is True
-            for index in indicies:
+            for index in indices:
                 if isinstance(index, basestring):
                     index = (index,)
                 # we're using descending ordering for the arbitrary case,
@@ -97,10 +97,10 @@ class Model(dict):
                 # _get_collection_from_db method
                 collection.ensure_index([(i, DESCENDING) for i in index],
                                         unique=unique, background=True)
-        # create the collection and ensure the unique and other indicies
+        # create the collection and ensure the unique and other indices
         collection = get_collection(cls.collection_name)
-        _ensure_indicies(collection, cls.unique_indicies, True)
-        _ensure_indicies(collection, cls.other_indicies, False)
+        _ensure_indices(collection, cls.unique_indices, True)
+        _ensure_indices(collection, cls.search_indices, False)
         return collection
 
     @classmethod

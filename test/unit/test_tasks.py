@@ -22,26 +22,19 @@ import types
 import unittest
 from datetime import datetime, timedelta
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-testutil.load_test_config()
-
 from pulp.common import dateutils
-from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import NonUniqueTaskException
 from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
-    Task, task_waiting, task_running, task_finished, task_error, task_timed_out,
-    task_canceled, task_complete_states)
+    Task, task_enqueue, task_dequeue, task_exit, task_waiting, task_running,
+    task_finished, task_error, task_timed_out, task_canceled,
+    task_complete_states)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import (
     VolatileStorage, _pickle_method, _unpickle_method)
@@ -74,16 +67,17 @@ class Class(object):
     def method(self):
         pass
 
+class Hook(object):
+    def __init__(self):
+        self.called = False
+        self.task = None
+    def __call__(self, task):
+        self.called = True
+        self.task = task
+
 # unittest classes ------------------------------------------------------------
 
-class TaskTester(unittest.TestCase):
-
-    def setUp(self):
-        self.rapi = RepoApi()
-
-    def tearDown(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
+class TaskTester(testutil.PulpAsyncTest):
 
     def test_task_create(self):
         task = Task(noop)
@@ -133,11 +127,11 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(restored_task.traceback is not None)
 
     def __test_sync_task(self):
-        repo = self.rapi.create('some-id', 'some name', 'i386',
+        repo = self.repo_api.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
 
-        task = self.rapi.sync(repo['id'])
+        task = self.repo_api.sync(repo['id'])
         snapshot = task.snapshot()
         restored_task = Task.from_snapshot(snapshot)
         print "restored sync task: %s" % restored_task.__dict__
@@ -145,8 +139,19 @@ class TaskTester(unittest.TestCase):
         task.cancel()
         restored_task.cancel()
 
+    def test_add_remove_hook(self):
+        task = Task(noop)
+        hook = Hook()
+        try:
+            task.add_enqueue_hook(hook)
+            task.add_dequeue_hook(hook)
+            task.remove_enqueue_hook(hook)
+            task.remove_dequeue_hook(hook)
+        except:
+            self.fail()
 
-class QueueTester(unittest.TestCase):
+
+class QueueTester(testutil.PulpAsyncTest):
 
     def _wait_for_task(self, task, timeout=timedelta(seconds=20)):
         start = datetime.now()
@@ -162,9 +167,12 @@ class QueueTester(unittest.TestCase):
 class TaskQueueTester(QueueTester):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        self.queue._cancel_dispatcher()
         del self.queue
 
     def test_task_enqueue(self):
@@ -306,7 +314,6 @@ class TaskQueueTester(QueueTester):
         self.assertTrue(task.state == task_finished)
         self.assertTrue(end_time - start_time > delay_seconds)
 
-
     def test_task_find(self):
         task1 = Task(noop)
         self.queue.enqueue(task1)
@@ -355,6 +362,18 @@ class TaskQueueTester(QueueTester):
 
         # Verify
         self.assertTrue(task2 in found)
+
+    def test_find_job(self):
+        # Setup
+        ntasks = 3
+        job_id = 99
+        for i in range(0,ntasks):
+            t = Task(noop)
+            t.job_id = job_id
+            self.queue.enqueue(t)
+        # Test & Verify
+        found = self.queue.find(job_id=job_id)
+        self.assertEqual(len(found), ntasks)
 
     def test_task_status(self):
         task = Task(noop)
@@ -413,13 +432,48 @@ class TaskQueueTester(QueueTester):
         # Test & Verify
         self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
 
+    def test_weighted_tasks(self):
+        task_1 = Task(wait, [3], weight=2)
+        task_2 = Task(wait, [3], weight=3)
+        self.queue.enqueue(task_1)
+        self.queue.enqueue(task_2)
+        time.sleep(1.0)
+        self.assertTrue(task_1.state is task_running, task_1.state)
+        self.assertTrue(task_2.state is task_waiting, task_2.state)
+        self._wait_for_task(task_1)
+        time.sleep(1.0)
+        self.assertTrue(task_2.state is task_running, task_2.state)
+        self._wait_for_task(task_2)
+
+    def test_equeue_hook(self):
+        task = Task(wait, [2])
+        hook = Hook()
+        task.add_enqueue_hook(hook)
+        self.queue.enqueue(task)
+        self.assertTrue(hook.called)
+        self.assertTrue(hook.task is task)
+        self._wait_for_task(task)
+
+    def test_dequeue_hook(self):
+        task = Task(wait, [2])
+        hook = Hook()
+        task.add_dequeue_hook(hook)
+        self.queue.enqueue(task)
+        self.assertFalse(hook.called)
+        while hook.task is None:
+            time.sleep(1)
+        self.assertTrue(hook.called)
+        self.assertTrue(hook.task is task)
 
 class InterruptQueueTester(QueueTester):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        self.queue._cancel_dispatcher()
         del self.queue
 
     def disable_task_timeout(self):
@@ -449,12 +503,14 @@ class InterruptQueueTester(QueueTester):
         self.assertTrue(task2.state == task_canceled, 'state is %s' % task.state)
 
 
-class PriorityQueueTester(unittest.TestCase):
+class PriorityQueueTester(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.storage = VolatileStorage()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         del self.storage
 
     def _enqueue_three_tasks(self):
@@ -492,9 +548,12 @@ class PriorityQueueTester(unittest.TestCase):
 class ScheduledTaskTester(QueueTester):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        self.queue._cancel_dispatcher()
         del self.queue
 
     def test_immediate(self):
@@ -578,14 +637,16 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.scheduled_time is None)
 
 
-class PersistentTaskTester(unittest.TestCase):
+class PersistentTaskTester(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         TaskSnapshot.get_collection().remove()
         self.same_type_fields = ('scheduler',)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         TaskSnapshot.get_collection().remove()
 
     def test_task_serialization(self):
@@ -689,6 +750,18 @@ class PersistentTaskTester(unittest.TestCase):
         snapshot2 = TaskSnapshot(collection.find_one({'_id': snapshot1['_id']}))
         task2 = snapshot2.to_task()
         self.assertTrue(isinstance(task2, RepoSyncTask))
+
+    def test_snapshot_with_hooks(self):
+        task_1 = Task(noop)
+        hook_1 = Hook()
+        task_1.add_enqueue_hook(hook_1)
+        snapshot_1 = task_1.snapshot()
+        collection = TaskSnapshot.get_collection()
+        collection.insert(snapshot_1, safe=True)
+        snapshot_2 = TaskSnapshot(collection.find_one({'_id': snapshot_1['_id']}))
+        task_2 = snapshot_2.to_task()
+        hook_2 = task_2.hooks[task_enqueue][0]
+        self.assertTrue(isinstance(hook_2, Hook))
 
 # run the unit tests ----------------------------------------------------------
 

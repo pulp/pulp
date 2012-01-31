@@ -25,7 +25,9 @@ from pulp.server.tasking.scheduler import (
     AtScheduler, ImmediateScheduler, IntervalScheduler)
 from pulp.server.tasking.taskqueue.taskthread import TaskThread
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
-from pulp.server.tasking.task import task_complete_states, task_running
+from pulp.server.tasking.task import (
+    task_enqueue, task_dequeue, task_exit, task_running, task_finished,
+    task_error, task_timed_out, task_canceled, task_complete_states)
 
 # log file --------------------------------------------------------------------
 
@@ -40,18 +42,18 @@ class TaskQueue(object):
     amount of time.
     """
     def __init__(self,
-                 max_running=4,
+                 max_concurrency=4,
                  finished_lifetime=timedelta(seconds=3600),
                  failure_threshold=None,
                  schedule_threshold=None,
                  storage=None,
                  dispatch_interval=0.5):
         """
-        @type max_running: int
-        @param max_running: maximum number of tasks to run simultaneously
-                        None means indefinitely
+        @type max_concurrency: int
+        @param max_concurrency: maximum sum of task weights to run simultaneously
         @type finished_lifetime: datetime.timedelta instance
         @param finished_lifetime: length of time to keep finished tasks
+                                  None means indefinitely
         @type failures_threhold: int
         @param failure_threshold: number of consecutive failures a task can
                                   have before it will no longer be scheduled
@@ -69,7 +71,7 @@ class TaskQueue(object):
                                   the task dispatcher
         @return: TaskQueue instance
         """
-        self.max_running = max_running
+        self.max_concurrency = max_concurrency
         self.finished_lifetime = finished_lifetime
         self.failure_threshold = failure_threshold
         self.schedule_threshold = schedule_threshold
@@ -77,7 +79,7 @@ class TaskQueue(object):
         self.__lock = threading.RLock()
         self.__condition = threading.Condition(self.__lock)
 
-        self.__running_count = 0
+        self.__running_weight = 0
         self.__storage = storage or VolatileStorage()
         self.__canceled_tasks = []
         self.__exit = False
@@ -89,7 +91,14 @@ class TaskQueue(object):
 
     def __del__(self):
         """
-        Cleanly shutdown the dispatcher thread
+        Destroy the TaskQueue.
+        All that is needed is to cleanly shutdown the dispatcher thread
+        """
+        self._cancel_dispatcher()
+
+    def _cancel_dispatcher(self):
+        """
+        Shutdown the dispatcher thread.
         """
         self.__lock.acquire()
         self.__exit = True
@@ -104,8 +113,8 @@ class TaskQueue(object):
         Scheduling method that that executes the scheduling hooks.
         """
         self.__lock.acquire()
-        try:
-            while True:
+        while True:
+            try:
                 self.__condition.wait(self.__dispatcher_timeout)
                 if self.__exit: # exit immediately after waking up
                     if self.__lock is not None:
@@ -116,23 +125,27 @@ class TaskQueue(object):
                 self._cancel_tasks()
                 self._timeout_tasks()
                 self._cull_tasks()
-        except Exception:
-            _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
-                          ''.join(traceback.format_exception(*sys.exc_info())))
+            except Exception:
+                _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
+                              ''.join(traceback.format_exception(*sys.exc_info())))
 
     def _get_tasks(self):
         """
         Get the next 'n' tasks to run, where n is max - currently running tasks
         """
         ready_tasks = []
-        num_tasks = self.max_running - self.__running_count
+        ready_weight = 0
+        available_weight = self.max_concurrency - self.__running_weight
         now = datetime.now(dateutils.local_tz())
-        while len(ready_tasks) < num_tasks:
+        while ready_weight < available_weight:
             if self.__storage.num_waiting() == 0:
                 break
             task = self.__storage.peek_waiting()
             if task.scheduled_time is not None and task.scheduled_time > now:
                 break
+            if task.weight + ready_weight > available_weight:
+                break
+            ready_weight += task.weight
             ready_tasks.append(self.__storage.dequeue_waiting())
         return ready_tasks
 
@@ -171,9 +184,9 @@ class TaskQueue(object):
         for task in running_tasks:
             # the task.start_time can be None if the task has been 'run' by the
             # queue, but the task thread has not had a chance to execute yet
-            if None in (task.timeout, task.start_time):
+            if None in (task.timeout_delta, task.start_time):
                 continue
-            if now - task.start_time < task.timeout:
+            if now - task.start_time < task.timeout_delta:
                 continue
             task.timeout()
 
@@ -188,6 +201,18 @@ class TaskQueue(object):
         for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
                 self.__storage.remove_complete(task)
+
+    # task hook execution ------------------------------------------------------
+
+    def _execute_hooks(self, task, key):
+        hook_list = task.hooks.get(key, [])
+        for hook in hook_list:
+            try:
+                hook(task)
+            except Exception, e:
+                msg = _('Task %(t)s\nException in task %(k)s hook\n%(tb)s')
+                _log.critical(msg % {'k': key, 't': str(task),
+                                     'tb': ''.join(traceback.format_exception(*sys.exc_info()))})
 
     # queue operations ---------------------------------------------------------
 
@@ -234,7 +259,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             self._test_uniqueness(task, unique) # NonUniqueTaskException
-            task.schedule() # UncheduledTaskException
+            task.schedule() # UnscheduledTaskException
             task.reset()
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
@@ -243,6 +268,7 @@ class TaskQueue(object):
             if task.schedule_threshold is None:
                 task.schedule_threshold = self.schedule_threshold
             self.__storage.enqueue_waiting(task)
+            self._execute_hooks(task, task_enqueue)
             self.__condition.notify()
         finally:
             self.__lock.release()
@@ -259,6 +285,7 @@ class TaskQueue(object):
                 return
             if task.state not in task_complete_states:
                 self.__storage.remove_waiting(task)
+                self._execute_hooks(task, task_dequeue)
         finally:
             self.__lock.release()
 
@@ -270,10 +297,11 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            self.__running_count += 1
+            self.__running_weight += task.weight
             self.__storage.store_running(task)
             task.thread = TaskThread(target=task.run)
             task.thread.start()
+            self._execute_hooks(task, task_running)
         finally:
             self.__lock.release()
 
@@ -285,10 +313,21 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            self.__running_count -= 1
+            self.__running_weight -= task.weight
             self.__storage.remove_running(task)
             task.thread = None
             task.complete_callback = None
+            # execute the task hooks
+            self._execute_hooks(task, task_exit)
+            if task.state is task_canceled:
+                self._execute_hooks(task, task_canceled)
+            elif task.state is task_error:
+                self._execute_hooks(task, task_error)
+            elif task.state is task_finished:
+                self._execute_hooks(task, task_finished)
+            elif task.state is task_timed_out:
+                self._execute_hooks(task, task_timed_out)
+            self._execute_hooks(task, task_dequeue)
             # it is important for completed tasks to be in the completed task
             # storage, however briefly
             self.__storage.store_complete(task)

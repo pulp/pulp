@@ -1,0 +1,11 @@
+diff -urN M2Crypto/SWIG/_m2crypto.i M2Crypto-0.21.1/SWIG/_m2crypto.i
+--- M2Crypto/SWIG/_m2crypto.i	2011-01-15 20:10:06.000000000 +0100
++++ M2Crypto-0.21.1/SWIG/_m2crypto.i	2011-01-18 15:37:33.948994579 +0100
+@@ -7,6 +7,7 @@
+  * Copyright (c) 2009-2010 Heikki Toivonen. All rights reserved.
+  *
+  */
++%import "gcc_macros.h"
+ 
+ %module(threads=1) _m2crypto
+ /* We really don't need threadblock (PyGILState_Ensure() etc.) anywhere.

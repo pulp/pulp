@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -73,12 +72,9 @@ class JSONController(object):
         @param task: task to convert
         @return dict representing task
         """
-        fields = ('id', 'class_name', 'method_name', 'args', 'state', 'result',
+        fields = ('id', 'job_id', 'class_name', 'method_name', 'args', 'state', 'result',
                   'exception', 'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
-        # convert the exception into a string as it cannot be json encoded
-        if isinstance(task.exception, Exception):
-            d['exception'] = str(task.exception)
         # time fields must be in iso8601 format
         fields = ('start_time', 'finish_time', 'scheduled_time')
         for f in fields:
@@ -95,31 +91,13 @@ class JSONController(object):
             d['scheduler'] = 'interval'
         return d
 
-    def _status_path(self, id):
-        """
-        Construct a URL path that can be used to poll a task's status
-        A status path is constructed as follows:
-        /<collection>/<object id>/<action>/<action id>/
-        A GET request sent to this path will get a JSON encoded status object
-        """
-        parts = web.ctx.path.split('/')
-        if parts[-2] == id:
-            return http.uri_path()
-        return http.extend_uri_path(id)
+    def _job_to_dict(self, job):
+        tasks = []
+        d = dict(id=job.id, tasks=tasks)
+        for t in job.tasks:
+            tasks.append(self._task_to_dict(t))
+        return d
 
-    def task_status(self, id):
-        """
-        Get the current status of an asynchronous task.
-        @param id: task id
-        @return: TaskModel instance
-        """
-        tasks = async.find_async(id=id)
-        if not tasks:
-            return None
-        task = tasks[0]
-        status = self._task_to_dict(task)
-        status.update({'status_path': self._status_path(id)})
-        return status
 
     def filter_results(self, results, filters):
         """
@@ -194,7 +172,6 @@ class JSONController(object):
         @return: JSON encoded response
         """
         http.status_accepted()
-        status.update({'status_path': self._status_path(status['id'])})
         return self._output(status)
 
     def no_content(self):
@@ -219,7 +196,6 @@ class JSONController(object):
     def bad_request(self, msg=None):
         """
         Return a not found error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -229,7 +205,6 @@ class JSONController(object):
     def unauthorized(self, msg=None):
         """
         Return an unauthorized error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -239,7 +214,6 @@ class JSONController(object):
     def not_found(self, msg=None):
         """
         Return a not found error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -249,7 +223,6 @@ class JSONController(object):
     def method_not_allowed(self, msg=None):
         """
         Return a method not allowed error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -259,7 +232,6 @@ class JSONController(object):
     def not_acceptable(self, msg=None):
         """
         Return a not acceptable error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -269,7 +241,6 @@ class JSONController(object):
     def conflict(self, msg=None):
         """
         Return a conflict error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
@@ -279,9 +250,18 @@ class JSONController(object):
     def internal_server_error(self, msg=None):
         """
         Return an internal server error.
-        @type msg: str
         @param msg: optional error message
         @return: JSON encoded response
         """
         http.status_internal_server_error()
+        return self._output(msg)
+
+    def not_implemented(self, msg=None):
+        """
+        Return a not implemented error.
+        @param msg: optional error message
+        @return: JSON encoded response
+        @rtype: str
+        """
+        http.status_not_implemented()
         return self._output(msg)

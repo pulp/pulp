@@ -1,0 +1,486 @@
+[[TOC]]
+= Coordinator =
+
+== Introduction ==
+Pulp manages a number of resources such as repositories, consumers, contents, 
+etc. It can perform operations on these resources in parallel. Create, read,
+update, and delete operations may occur simultaneously on the same resource.
+
+The '''coordinator''' is a package in Pulp that will track resources and the 
+operations they are currently undergoing. The module will identify conflicting 
+operations and take the appropriate actions.
+
+The coordinator is built on top of Pulp's tasking sub-system and will require 
+enhancements to it in order to full-fill it's purpose. The tasking sub-system is 
+split into 2:
+ 1. an asynchronous '''task queue''' that handles tasks that are scheduled to run as soon as they are able
+ 1. a '''scheduler''' that handles scheduled tasks by periodically generating tasks for the task queue when they are scheduled to run
+
+The coordinator will utilize the task queue to track and handle execution 
+ordering to avoid conflicting operations and the scheduler will utilize the 
+coordinator to detect conflicts.
+
+----
+----
+
+== Design ==
+The coordinator is a scheduling system. It is given three pieces of 
+information when something request an operation on a resource:
+ 1. the resource's unique id
+ 1. the type of the resource
+ 1. the type of the operation
+
+Using this information, the coordinator discerns if any conflicting operations 
+are currently executing against a given resource. If conflicting operations are 
+found, the coordinator determines if the conflicts deny the requested 
+operation or postpones the operation.
+
+If there are no conflicting operations, the coordinator executes the operation
+and returns the results.
+
+If the requested operation is postponed, the coordinator will hand it over to 
+the tasking sub-system and return the task information.
+
+If the requested operation is denied, the coordinator returns an error 
+detailing why the operation wasn't allowed to execute. 
+
+The coordinator will also honor executing operations asynchronously in the 
+tasking sub-system on request, regardless of no conflicts. It will still 
+error if an denying operation is in progress.
+
+----
+[[Image(coordinator_architecture.jpg)]]
+----
+ 
+=== Resource Ids and Types ==
+Pulp manages a number or resource types that can be considered ''primitives'' 
+for the purposes of resource tracking. Each resource's id is unique with the 
+set of its type. Rource types refer to the model representing individual 
+resources and each resource's id is already unique via database constraints.
+
+Resource types are:
+ * CDS
+ * CONSUMER
+ * CONTENT_UNIT
+ * REPOSITORY
+ * ROLE
+ * USER
+
+Pulp also manages collections or ''aggregates'' of these individual resources. 
+The coordinator knows how to convert this aggregate resources into their 
+individual component resources.
+
+Aggregate types are:
+ * CONSUMER_GROUP
+ * CONTENT_UNIT_GROUP
+ * REPOSITORY_GROUP
+
+=== Operations ===
+All manager API calls in Pulp can be mapped to a set of CRUD operations on the 
+resources they're called on. For an arbitrary individual resource, the 
+following table shows how CRUD operations conflict:
+
+||'''Operation'''||'''No Conflict'''||'''Postpones'''||'''Denies'''||
+||Create||||Read, Update, Delete||Create||
+||Read||Read||Create, Update, Delete||||
+||Update||||Create, Read, Update, Delete||||
+||Delete||||Create||Read, Update, Delete||
+
+Mapping the API calls to resources and operations is the providence of the 
+programmer and consideration must be given. Not all mappings are straight 
+forward. For example: the repo sync call will be an `Update` operation simply 
+because it changes some fields of the Repo resource as a side-effect.
+
+=== Control Flow ===
+When a call is given over the coordinator, its resources and operations are 
+looked up in a special db collection that contains the id of any tasks 
+currently scheduled to execute.
+
+If no tasks are found to be working on the resources or the operations they are 
+performing on those resource do not conflict with operations requested, the 
+coordinator create a task for the call and its arguments. It then records the 
+task, along with the resources and the operations, in the db collection. It 
+then passes the task and its arguments on to the tasking sub-system.
+
+If a task or tasks are found to be operating on the resources and their 
+operations cause a postponement of the call, the coordinator again creates the 
+task and records it in the db collection. It then passes the task, along with 
+its list of "blocking" tasks to the task sub-system.
+
+If a task or tasks are found operating on the resources and their operations 
+deny the call, the coordinator simply reports the error.
+
+Any tasks given to the tasking sub-system are supplied with a `post_exec_hook` 
+callback that will remove the task's record from the db collection when the 
+task completes.
+
+----
+----
+
+== Implementation ==
+The Coordinator will provide a public API that will execute manager API calls 
+under the above constraints.
+
+=== Coordinator API ===
+
+----
+
+==== Execution Functions: Individual Resources ====
+
+The `run_task` method is the primary method of the coordinator's API and exhibits 
+the behavior detailed above. It operates on individual resources.
+
+{{{
+#!python
+def run_task(call, args, kwargs, resources_map)
+}}}
+
+Arguments:
+ * `call` - manager API method instance
+ * `args` - (optional) list of positional arguments to pass to `call`
+ * `kwargs` - (optional) dict of keyword arguments to pass to `call`
+ * `resources_map` - dict of resource_type: dict of resource_id: list of operations
+
+The `run` call does no introspection on any of the first 3 arguments to 
+determine the resources or operations. Instead it relies on the `resource_map` 
+to be explicity told what they are. 
+
+For example a `resources_map` for a repo clone call may look like:
+{{{
+#!python
+{Repo: {'repo_parent': ['READ'],
+       {'repo_dolly': ['CREATE'],}
+}}}
+
+----
+
+The `run_task_async` function will run the call asynchronously in the tasking 
+sub-system regardless of there being no postponing operations in progress.
+
+{{{
+#!python
+def run_task_async(call, args, kwargs, resources_map, pre_exec_hook, post_exec_hook, cancel_hook, timeout_hook)
+}}}
+
+Otherwise it behaves exactly like `run_task` when conflicts are encountered.
+
+Arguments:
+ * `call`, `args`, `kwargs`, `resources_map` - all the same as in `run`
+ * `pre_exec_hook` - (optional) callback that is called __before__ the task is run
+ * `post_exec_hook` - (optional) callback that is called __after__ the task is run
+ * `cancel_hook` - (optional) callback that is called if the task needs to be cancelled
+ * `timeout_hook` - (optional) callback that is called if the task times out
+
+All the callback methods take only 1 argument: the asynchronous `Task` instance
+
+----
+
+The `run_task_sync` function will run the call synchronously. Even if a conflicting 
+operation causes the call to be postponed, the coordinator will wait for the 
+call to execute before returning.
+
+{{{
+#!python
+def run_task_sync(call, args, kwargs, resources_map, timeout)
+}}}
+
+It behaves the same as `run_task` or `run_task_async` if an operation denies the call.
+
+Arguments:
+ * `call`, `args`, `kwargs`, `resources_map` - all the same as `run`
+ * `timeout` - (optional) a timedelta timeout that will  cause a return if the 
+   call is executed asynchronously and the timeout is reached.
+
+----
+
+==== Execution Functions: Aggregate Resources ====
+
+The `run_job` is the equivalent of `run_task` for an aggregate type. It will 
+launch the call against every member of the aggregate using the the other 
+arguments and resources passed in.
+
+{{{
+#!python
+def run_job(call, args, kwargs, aggregate_tuple, resources_map)
+}}}
+
+Arguments:
+ * `call`, `args`, `kwargs`, `resources_map` - same as `run_task`
+ * `aggregate_map` - tuple of `aggregate_type`, `aggregate_id`, list of operations
+
+----
+
+'''XXX''' `run_job_async` and `run_job_sync`
+
+==== Execution Function Return Type ====
+
+All the execution functions return an `execution_report` as a dict with the 
+following keys:
+ * `state` - one of `executed`, `postponed`, or `denied`
+ * `reason` - list of resource and operation tuples that caused `postponed` or `denied`
+ * `task_id` - id of asynchronous `Task` instance, if any
+ * `job_id` - id of `Job`, if multi-task call
+ * `return` - the return value of the call, if any
+ * `exception` - exception raised during the call, if any
+ * `traceback` - traceback associated with exception, if any
+
+----
+
+==== Query Functions ====
+
+{{{
+#!python
+def get_task(task_id)
+}}}
+
+----
+
+{{{
+#!python
+def find_task(criteria)
+}}}
+
+----
+
+{{{
+#!python
+def get_job(job_id)
+}}}
+
+----
+
+{{{
+#!python
+def find_job(criteria)
+}}}
+
+----
+----
+
+== Scheduler ==
+The scheduler has the responsibility of tracking scheduled tasks and 
+dispatching them when they are due to run.
+
+It is implemented as a thread that runs in the background, waking periodically, 
+and dispatching any scheduled tasks that are due to run. This thread wakes and 
+sleeps on the course schedule of once every 30 seconds.
+
+The scheduler will have pre-made resources maps for all calls that can be 
+scheduled and will utilize the coordinator's `run_async` api function to run 
+the tasks.
+
+=== Scheduler API ===
+
+----
+
+Initialize the scheduler. To be called on startup to look for scheduled tasks.
+
+{{{
+#!python
+def initialize()
+}}}
+
+----
+
+Add a task to the scheduler.
+
+{{{
+#!python
+def add_scheduled_task(schedule, call, args, kwargs)
+}}}
+
+Arguments:
+ * `schedule` - Schedule instance representing the schedule to execute the task on
+ * `call` - Manager call to execute
+ * `args` - (optional) positional arguments to `call`
+ * `kwargs` - (optional) keyword arguments to `call`
+
+Return:
+ * `schedule_id` - unique identifier representing the scheduler's handle on the task
+
+----
+
+Remove a task from the scheduler.
+
+{{{
+#!python
+def remove_scheduled_task(schedule_id)
+}}}
+
+Arguments:
+ * `schedule_id` - return value from `add_scheduled_task`
+
+Return:
+ * `schedule_id` - upon successful removal
+ * None - if the task wasn't found
+
+----
+----
+
+== Task Queue ==
+The task queue is a simple priority queue that tracks 2 things:
+ 1. the order in which tasks were enqueued
+ 1. task dependencies, in the form of a list of ''blockers''
+
+The task queue will execute unblocked tasks in the order in which they were 
+enqueued, controlling the number of tasks that can execute concurrently.
+
+----
+
+=== Task Management Functions ===
+
+Add a task to the queue.
+
+{{{
+#!python
+def enqueue(task, blockers)
+}}}
+
+Arguments:
+ * `task` - Task instance
+ * `blockers` - list of task ids that block the task's execution
+
+----
+
+Remove a task from the queue.
+
+{{{
+#!python
+def dequeue(task_id)
+}}}
+
+Arguments:
+ * `task_id` - unique identifier of the task
+
+Return:
+ * Task instance if found
+ * None if the task is no longer in the queue (either dequeue or completed)
+
+----
+
+=== Task Control Functions ===
+There's no guarantee that these functions will work. The task must have had the 
+appropriate hooks added to it.
+
+----
+
+Cancel a running task.
+
+{{{
+#!python
+def cancel_task(task_id)
+}}}
+
+Arguments:
+ * `task_id` - unique identifier of the task to cancel
+
+Return:
+ * False - if the task has completed or is not in the queue
+ * True - if the task has a `cancel_hook` and it was called
+ * None - if the task does not have a `cancel_hook`
+
+----
+
+"Timeout" a task.
+
+{{{
+#!python
+def timeout_task(task_id)
+}}}
+
+Arguments:
+ * `task_id` - unique identifier of the task to timeout
+
+Return:
+ * False - if the task has completed or is not in the queue
+ * True - if the task has a `timeout_hook` and it was called
+ * None - if the task does not have a `timeout_hook`
+
+----
+
+=== Task Query Functions ===
+
+Get the Task instance corresponding to the task_id.
+
+{{{
+#!python
+def get_task(task_id)
+}}}
+
+Arguments:
+ * `task_id` - unique identifier of the task
+
+Return:
+ * Task instance, if found
+ * None otherwise
+
+----
+
+Get the Task instance corresponding to the given search criteria.
+
+{{{
+#!python
+def find_task(criteria)
+}}}
+
+Arguments:
+ * `criteria` - dict of Task fields and the values to match
+
+Return:
+ * (possibly empty) list of Task instances
+
+----
+----
+
+=== Priority Queue ===
+The priority queue is at the heart of this system. It is a binary tree using 
+2 ordering keys:
+ 1. the time in which a task was enqueued
+ 1. the number of blocking tasks a task has
+
+The tree maintains 2 invariants during all operations:
+ 1. the in-order traversal of the tree lists the tasks in the order in which they were enqueued
+ 1. the heap-order (that is, the order down any path from root to leaf) is an ascending ordering of the tasks by the number of blockers
+
+The task at the root of the tree will have the least number of blockers and 
+will have been inserted after any tasks in its left sub-tree but before any 
+tasks in its right sub-tree.
+
+When a task and its list of blockers is enqueued, the blockers list is groomed, 
+removing any tasks that are not in the tree. This has guarantees that the only 
+blockers are tasks that were enqueued before the task. And has the added 
+benefit of removing tasks that may have already completed executing in the 
+interim.
+
+The task is then inserted into the tree as the right-most child. It is then 
+rotated up the tree so that it is in the proper heap-order, making sure to 
+displace a parent only when its number of blockers is strictly less than the 
+parent's. Rotations to not change the in-order traversal of a tree.
+
+A task is dequeue for execution from the root of the tree only when its number 
+of blockers falls to 0. The leftmost (and oldest) task in the tree is brought 
+up to replace it (displacing itself with its right child if it has one) and 
+then rotated to the left and down the tree until it is again the left-most node 
+in the tree and it is in heap-order.
+
+When a task finishes executing, an in order traversal is performed, removing it 
+from the blockers list of any tasks it blocks. Each time it is removed from 
+a blockers list, that task is rotated up the tree until it is in heap-order. 
+The rotating task will replace a parent with the same number of blocker only if 
+it is a left child.
+
+This algorithm makes the following guarantees:
+
+Since tasks can only be blocked by tasks that were in the queue before it, the 
+oldest task in the queue can only be blocked by tasks that are currently 
+executing. This guarantees that a task will always be available for execution 
+once all currently running tasks have completed.
+
+Because the rotations utilize the in-order traversal for deciding if a child 
+can displace its parent in the event of a tie in their number of blockers, 
+older tasks will always be higher in the tree than younger tasks that tie them. 
+This guarantees that no task will starve, and given two tasks with no blockers, 
+the older one will be executed first.
+
+[[Image(tree_rotation.jpg)]]
+

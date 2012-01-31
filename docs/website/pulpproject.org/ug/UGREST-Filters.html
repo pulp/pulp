@@ -30,22 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Filters">Filters</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Filters.html#ListAllFilters">List All Filters</a></li><li class="active">
-<a href="UGREST-Filters.html#Create">Create</a></li><li class="active">
-<a href="UGREST-Filters.html#Information">Information</a></li><li class="active">
-<a href="UGREST-Filters.html#Delete">Delete</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Filters">Filters</h1>
 <p>
 Repo filters are ways of filtering available source content for repositories. 
 </p>
@@ -93,15 +78,15 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'filter1'</span></b>,
-  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'filter1'</span></b>,
-  <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'blacklist'</span></b>,
-  <B><span class="code-string">'package_list'</span></b>: <B><span class="code-string">'grinder'</span></b>},
- {<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'filter2'</span></b>,
-  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'filter2'</span></b>,
-  <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'whitelist'</span></b>,
-  <B><span class="code-string">'package_list'</span></b>: [<B><span class="code-string">&quot;pulp*&quot;</span></b>, <B><span class="code-string">&quot;^python&quot;</span></b>]}
-]
+<div class="code"><pre><span class="p">[{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
+  <span class="s">'type'</span><span class="p">:</span> <span class="s">'blacklist'</span><span class="p">,</span>
+  <span class="s">'package_list'</span><span class="p">:</span> <span class="s">'grinder'</span><span class="p">},</span>
+ <span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter2'</span><span class="p">,</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter2'</span><span class="p">,</span>
+  <span class="s">'type'</span><span class="p">:</span> <span class="s">'whitelist'</span><span class="p">,</span>
+  <span class="s">'package_list'</span><span class="p">:</span> <span class="p">[</span><span class="s">"pulp*"</span><span class="p">,</span> <span class="s">"^python"</span><span class="p">]}</span>
+<span class="p">]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -117,15 +102,15 @@ Status: <strong>COMPLETE</strong>
 Path: <strong>/filters/</strong>
 </p>
 <p>
-Method: <strong>PUT</strong>
+Method: <strong>POST</strong>
 </p>
 <p>
 Parameters:
 </p>
-<ul><li>id: <i>required</i> filter id
-</li><li>type: <i>required</i> filter type - blacklist/whitelist
-</li><li>description: <i>optional</i> description for the filter
-</li><li>package_list: <i>optional</i> packages to be filtered - name or full NEVRA or python re syntax compatible regexes.
+<ul><li>id: <em>required</em> filter id
+</li><li>type: <em>required</em> filter type - blacklist/whitelist
+</li><li>description: <em>optional</em> description for the filter
+</li><li>package_list: <em>optional</em> packages to be filtered - name or full NEVRA or python re syntax compatible regexes.
 </li></ul><p>
 Authentication:
 </p>
@@ -140,10 +125,10 @@ Response: <strong>201 Created</strong>
 <p>
 Headers:
 </p>
-<div class="code"><pre>{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'filter1'</span></b>,
-  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'filter1'</span></b>,
-  <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'blacklist'</span></b>,
-  <B><span class="code-string">'package_list'</span></b>: <B><span class="code-string">'grinder'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
+  <span class="s">'type'</span><span class="p">:</span> <span class="s">'blacklist'</span><span class="p">,</span>
+  <span class="s">'package_list'</span><span class="p">:</span> <span class="s">'grinder'</span><span class="p">}</span>
 </pre></div><p>
 Error: <strong>409 Conflict</strong> if there is an existing filter with the same id
 </p>
@@ -180,10 +165,10 @@ username/pass
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'id'</span></b>: <B><span class="code-string">'filter1'</span></b>,
-  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'filter1'</span></b>,
-  <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'blacklist'</span></b>,
-  <B><span class="code-string">'package_list'</span></b>: <B><span class="code-string">'grinder'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
+  <span class="s">'type'</span><span class="p">:</span> <span class="s">'blacklist'</span><span class="p">,</span>
+  <span class="s">'package_list'</span><span class="p">:</span> <span class="s">'grinder'</span><span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such filter
 </p>
@@ -202,10 +187,6 @@ Path: <strong>/filters/&lt;filter id&gt;/</strong>
 Method: <strong>DELETE</strong>
 </p>
 <p>
-Parameters:
-</p>
-<ul><li>force - force flag to unassociate filters with repos 
-</li></ul><p>
 Authentication:
 </p>
 <blockquote>
@@ -216,22 +197,21 @@ username/pass
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such filter
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

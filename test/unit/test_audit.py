@@ -18,14 +18,7 @@ import os
 import sys
 import unittest
 
-
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 import pulp.server.util
@@ -35,19 +28,7 @@ logging.root.setLevel(logging.DEBUG)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-class TestAudit(unittest.TestCase):
-
-    def clean(self):
-        testutil.common_cleanup()
-
-    def setUp(self):
-        self.data_path = \
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.config = testutil.load_test_config()
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+class TestAudit(testutil.PulpAsyncTest):
 
     @audit()
     def dummyFunc(self, descrp):

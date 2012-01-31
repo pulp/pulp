@@ -17,24 +17,18 @@ import sys
 import os
 import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
-from pulp.repo_auth import auth_enabled_validation
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+
+from pulp.repo_auth import auth_enabled_validation
 
 
 # -- test cases ----------------------------------------------------------------------
 
-class TestValidateCertBundle(unittest.TestCase):
+class TestValidateCertBundle(testutil.PulpAsyncTest):
 
     def setUp(self):
-        mocks.install()
+        testutil.PulpAsyncTest.setUp(self)
         override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-repoauth.conf'
         auth_enabled_validation.CONFIG_FILENAME = override_file
 

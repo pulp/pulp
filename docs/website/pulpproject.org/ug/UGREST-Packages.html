@@ -30,23 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Packages">Packages</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Packages.html#ListAllAvailablePackages">List All Available Packages</a></li><li class="active">
-<a href="UGREST-Packages.html#Create">Create</a></li><li class="active">
-<a href="UGREST-Packages.html#InformationbyPackageID">Information by Package ID</a></li><li class="active">
-<a href="UGREST-Packages.html#InformationbyPackageNVREA">Information by Package NVREA</a></li><li class="active">
-<a href="UGREST-Packages.html#DeleteaPackage">Delete a Package</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Packages">Packages</h1>
 <p>
 Once you get a repository created you can start managing packages. Packages can be created on their own or created as members of a repository
 </p>
@@ -94,14 +78,14 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
-  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'Test package.  Nothing to see here.'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'pulp-test-package'</span></b>},
- {<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span></b>,
-  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>}]
+<div class="code"><pre><span class="p">[{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span><span class="p">,</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="s">'Test package.  Nothing to see here.'</span><span class="p">,</span>
+  <span class="s">'name'</span><span class="p">:</span> <span class="s">'pulp-test-package'</span><span class="p">},</span>
+ <span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span><span class="p">,</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
+  <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">}]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -154,17 +138,17 @@ Response: <strong>201 Created</strong>
 Headers:
 </p>
 <ul><li>location - path to package resource
-<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'noarch'</span></b>,
- <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'md5'</span></b>: <B><span class="code-string">'41be1e70179ddf079ceda621df818341'</span></b>},
- <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
- <B><span class="code-string">'epoch'</span></b>: <B><span class="code-string">'0'</span></b>,
- <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'my_package.pkg'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span></b>,
- <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>,
- <B><span class="code-string">'provides'</span></b>: [],
- <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'2'</span></b>,
- <B><span class="code-string">'requires'</span></b>: [],
- <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'arch'</span><span class="p">:</span> <span class="s">'noarch'</span><span class="p">,</span>
+ <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'md5'</span><span class="p">:</span> <span class="s">'41be1e70179ddf079ceda621df818341'</span><span class="p">},</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
+ <span class="s">'epoch'</span><span class="p">:</span> <span class="s">'0'</span><span class="p">,</span>
+ <span class="s">'filename'</span><span class="p">:</span> <span class="s">'my_package.pkg'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span><span class="p">,</span>
+ <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">,</span>
+ <span class="s">'provides'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">'2'</span><span class="p">,</span>
+ <span class="s">'requires'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">'1'</span><span class="p">}</span>
 </pre></div></li></ul><p>
 Error: <strong>409 Conflict</strong> if there is a package with the same: name, version, revision, epoch, arch, and checksum
 </p>
@@ -209,17 +193,17 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'noarch'</span></b>,
- <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'md5'</span></b>: <B><span class="code-string">'41be1e70179ddf079ceda621df818341'</span></b>},
- <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
- <B><span class="code-string">'epoch'</span></b>: <B><span class="code-string">'0'</span></b>,
- <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'my_package.pkg'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span></b>,
- <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>,
- <B><span class="code-string">'provides'</span></b>: [],
- <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'2'</span></b>,
- <B><span class="code-string">'requires'</span></b>: [],
- <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'arch'</span><span class="p">:</span> <span class="s">'noarch'</span><span class="p">,</span>
+ <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'md5'</span><span class="p">:</span> <span class="s">'41be1e70179ddf079ceda621df818341'</span><span class="p">},</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
+ <span class="s">'epoch'</span><span class="p">:</span> <span class="s">'0'</span><span class="p">,</span>
+ <span class="s">'filename'</span><span class="p">:</span> <span class="s">'my_package.pkg'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span><span class="p">,</span>
+ <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">,</span>
+ <span class="s">'provides'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">'2'</span><span class="p">,</span>
+ <span class="s">'requires'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">'1'</span><span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
@@ -264,17 +248,17 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'noarch'</span></b>,
- <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'md5'</span></b>: <B><span class="code-string">'41be1e70179ddf079ceda621df818341'</span></b>},
- <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
- <B><span class="code-string">'epoch'</span></b>: <B><span class="code-string">'0'</span></b>,
- <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'my_package.pkg'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span></b>,
- <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>,
- <B><span class="code-string">'provides'</span></b>: [],
- <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'2'</span></b>,
- <B><span class="code-string">'requires'</span></b>: [],
- <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1'</span></b>}
+<div class="code"><pre><span class="p">{</span><span class="s">'arch'</span><span class="p">:</span> <span class="s">'noarch'</span><span class="p">,</span>
+ <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'md5'</span><span class="p">:</span> <span class="s">'41be1e70179ddf079ceda621df818341'</span><span class="p">},</span>
+ <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
+ <span class="s">'epoch'</span><span class="p">:</span> <span class="s">'0'</span><span class="p">,</span>
+ <span class="s">'filename'</span><span class="p">:</span> <span class="s">'my_package.pkg'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span><span class="p">,</span>
+ <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">,</span>
+ <span class="s">'provides'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'release'</span><span class="p">:</span> <span class="s">'2'</span><span class="p">,</span>
+ <span class="s">'requires'</span><span class="p">:</span> <span class="p">[],</span>
+ <span class="s">'version'</span><span class="p">:</span> <span class="s">'1'</span><span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
@@ -319,22 +303,21 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

@@ -15,11 +15,9 @@
 import fcntl
 import os
 import sys
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.cds.lb import storage
 
@@ -28,9 +26,11 @@ TEST_STORAGE_FILE = '/tmp/cds-lb-storage-test'
 TEST_LOCK_FILE = '/tmp/cds-lb-storage-lock'
 
 
-class FilePermutationStoreTest(unittest.TestCase):
+class FilePermutationStoreTest(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
+
         if os.path.exists(TEST_STORAGE_FILE):
             os.remove(TEST_STORAGE_FILE)
 

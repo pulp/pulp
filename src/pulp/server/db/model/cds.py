@@ -23,7 +23,7 @@ class CDS(Model):
     '''
 
     collection_name = 'cds'
-    unique_indicies = ('hostname',)
+    unique_indices = ('hostname',)
 
     def __init__(self, hostname, name=None, description=None):
         Model.__init__(self)
@@ -84,7 +84,7 @@ class CDSRepoRoundRobin(Model):
     generated in the past.
     '''
     collection_name = 'cds_repo_round_robin'
-    unique_indicies = ('id',)
+    unique_indices = ('id',)
 
     def __init__(self, repo_id, next_permutation):
         Model.__init__(self)

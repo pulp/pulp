@@ -30,416 +30,73 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Services">Services</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Services RESTful API</h1>
 <p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Services.html#DependencyResolution">Dependency Resolution</a></li><li class="active">
-<a href="UGREST-Services.html#PackageSearch">Package Search</a></li><li class="active">
-<a href="UGREST-Services.html#StartFileUpload">Start File Upload</a></li><li class="active">
-<a href="UGREST-Services.html#AppendFileContent">Append File Content</a></li><li class="active">
-<a href="UGREST-Services.html#ImportFile">Import File</a></li><li class="active">
-<a href="UGREST-Services.html#LookupPackageChecksums">Lookup Package Checksums</a></li><li class="active">
-<a href="UGREST-Services.html#LookupFileChecksums">Lookup File Checksums</a></li><li class="active">
-<a href="UGREST-Services.html#AssociatePackages">Associate Packages</a></li><li class="active">
-<a href="UGREST-Services.html#RepositoryDiscovery">Repository Discovery</a></li><li class="active">
-<a href="UGREST-Services.html#DiscoveryTaskstatus">Discovery Task status</a></li></ol></li></ol></div>
-
-</p>
-<p>
-Pulp exposes a services API to perform one-off operations such as dependency resolution, search etc.
-</p>
-<ul><li>dependency resolution on multiple packages
-</li></ul><p>
- 
-Eventually all API methods with have a specification on which level of access is required to call them.
-</p>
-<p>
-Base URL Path: <strong>/services/</strong>
+<em>No description.</em> <br />
+<br />
 </p>
 <hr />
-<h2 id="DependencyResolution">Dependency Resolution</h2>
+<h2 id="DisableGlobalRepositoryAuthentication">Disable Global Repository Authentication</h2>
 <p>
-resolve dependencies for a given set of packages and provide suggested packages from specified repos.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/dependencies/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-{'pkgnames' : ['pkgname1', 'pkgname2'], 'repoids' : ['repoid1', 'repoid2']}
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">'dependency_list'</span></b>: <B><span class="code-string">'\n dependency: libstdc++.so.6()(64bit) \n   provider: libstdc++.x86_64 4.4.5-2.fc13\n
-                      \n dependency: libc.so.6()(64bit) \n   provider: glibc.x86_64 2.12.1-4\n
-                      \n dependency: rtld(GNU_HASH) \n   provider: glibc.x86_64 2.12.1-4\n   provider: glibc.i686 2.12.1-4\n'</span></b> ,
-<B><span class="code-string">'available_packages'</span></b>: [<B><span class="code-string">'libstdc++-4.4.5-2.fc13.x86_64.rpm'</span></b>,<B><span class="code-string">'glibc-2.12.1-4.x86_64.rpm'</span></b>,<B><span class="code-string">'libgcc-4.4.5-2.fc13.x86_64.rpm]'</span></b>
-}
-
-</pre></div><hr />
-<h2 id="PackageSearch">Package Search</h2>
-<p>
-Search all packages under all repositories.  Return a list of packages matching search criteria, along with the repositories each package belongs to.
-The list is empty if no matches were found.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/search/packages/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-name
-epoch
-version
-release
-arch 
-filename
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>[{<B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;Virtualization-as-IN&quot;</span></b>, 
-   <B><span class="code-string">&quot;filename&quot;</span></b>: <B><span class="code-string">&quot;Virtualization-as-IN-5.0.0-7.noarch.rpm&quot;</span></b>, 
-   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;0&quot;</span></b>, 
-   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;5.0.0&quot;</span></b>, 
-   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;7&quot;</span></b>, 
-   <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
-   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;noarch&quot;</span></b>, 
-   <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
-   <B><span class="code-string">&quot;repos&quot;</span></b>: [<B><span class="code-string">&quot;vt_i386&quot;</span></b>, <B><span class="code-string">&quot;vt_i386_dup&quot;</span></b>, <B><span class="code-string">&quot;vt_x86_64_dup&quot;</span></b>, <B><span class="code-string">&quot;vt_x86_64&quot;</span></b>]}]
-</pre></div><p>
-Error: None
+<em>Configures the Pulp server to not authenticate access to repositories on a global level (individual repo access can still be controlled using the repo APIs).</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /disable_global_repo_credentials <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+<br />
+<strong>return</strong>: list of CDS hostnames that were successfully updated and a list of the ones that failed to update <br />
+<br />
 </p>
 <hr />
-<h2 id="StartFileUpload">Start File Upload</h2>
+<h2 id="Disassociateacollectionoffilenamechecksumtuplesfrommultiplerepositories">Disassociate a collection of filename,checksum tuples from multiple repositories</h2>
 <p>
-Begin (initialize) a file upload.  Returns the unique upload ID and file offset for the next <i>chunk</i> to be uploaded.
-The file content (bits) are sent using <a href="UGREST-Services.html#AppendFileContent">Append File Content</a>
+<em>Disassociate a collection of packages from a series of repositories</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /services/disassociate/packages/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+<strong>return</strong>: a list of errors in the format of [{'filename':{'checksum_value':[repoid]}}] <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/upload/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>name: file name
-</li><li>size: file size (bytes)
-</li><li>checksum: file checksum (crc32|sha256|md5)
-</li><li>id: <i>(optional)</i> upload ID of a previously started upload used to resume the upload
+<ul><li><strong>package_info: list of tuples in the format [((filename</strong> &lt;checksum)&gt; <em>[repoids]]</em>
 </li></ul><p>
-Returns:
-</p>
-<ul><li>uuid: file upload ID
-</li><li>offset: file offset of next expected chunk (-1 indicates upload complete)
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{ <B><span class="code-string">&quot;id&quot;</span></b> : <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, <B><span class="code-string">&quot;offset&quot;</span></b> : <B><span class="code-string">&quot;0&quot;</span></b> }
-</pre></div><hr />
-<h2 id="AppendFileContent">Append File Content</h2>
-<p>
-Upload file content (bits) in <i>chunks</i> using the ID of a previously <a href="UGREST-Services.html#BeginFileUpload">started</a> upload.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/upload/{id}/append</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>binary data
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>True
-</pre></div><hr />
-<h2 id="ImportFile">Import File</h2>
-<p>
-Import a previously uploaded file.  The metadata used as a param to this call should have the type of content to be imported. Currently we support 'file' or 'rpm'.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/upload/import</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>metadata: uploaded file metadata
-<ul><li>nvrea   : tuple(name, version, release, epoch, arch) NVREA info for the uploaded rpm,
-</li><li>pkgname : file name of the file or rpm uploaded
-</li><li>description : file description
-</li><li>hashtype    : for pulp this is always 'sha256'
-</li><li>checksum    : checksum value 
-</li><li>type        : 'file' or 'rpm'
-</li><li>size        : size of the payload in bytes
-</li><li>buildhost  : buildhost of the rpm if available or <i> (optional)
-</li><li>license     : package license or </i> (optional)
-</li><li>group      : package group info (optional)
-</li><li>vendor     : vendor info (optional)
-</li></ul></li></ul><ul><li>uploadid: the ID of an uploaded file
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Request:
-</p>
-<div class="code"><pre>{<B><span class="code-string">'uploadid'</span></b>: u<B><span class="code-string">'3b90a8f6-66dc-4be4-82f1-6b39a2e3d288'</span></b>, 
-<B><span class="code-string">'metadata'</span></b>: {<B><span class="code-string">'nvrea'</span></b>: (<B><span class="code-string">'ruby-gofer'</span></b>, <B><span class="code-string">'0.23'</span></b>, <B><span class="code-string">'1.fc14'</span></b>, <B><span class="code-string">'0'</span></b>, <B><span class="code-string">'noarch'</span></b>), 
-             <B><span class="code-string">'pkgname'</span></b>: <B><span class="code-string">'ruby-gofer-0.23-1.fc14.noarch.rpm'</span></b>, 
-             <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'Contains gofer ruby lib modules.'</span></b>, 
-             <B><span class="code-string">'hashtype'</span></b>: <B><span class="code-string">'sha256'</span></b>, 
-             <B><span class="code-string">'checksum'</span></b>: <B><span class="code-string">'271a3764e6ed7b1f0be3c8804a4958df2abbafe00f3d2d8ed9078ece34a10817'</span></b>, 
-             <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'rpm'</span></b>, 
-             <B><span class="code-string">'size'</span></b>: 14585}
-}
-</pre></div><p>
-Response: <strong>200 OK</strong>
+<br />
 </p>
 <hr />
-<h2 id="LookupPackageChecksums">Lookup Package Checksums</h2>
+<h2 id="EnableGlobalRepositoryAuthentication">Enable Global Repository Authentication</h2>
 <p>
-Lookup checksums for a batch of packages.
+<em>Configures the Pulp server to apply the given credentials to requests against all of its repositories.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /enable_global_repo_credentials <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+<br />
+<strong>return</strong>: list of CDS hostnames that were successfully updated and a list of the ones that failed to update <br />
+<br />
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/packages/checksum/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>pkglist: list of package file names
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">&quot;rpmname1&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
- <B><span class="code-string">&quot;rpmname2&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
- ...}
-</pre></div><hr />
-<h2 id="LookupFileChecksums">Lookup File Checksums</h2>
-<p>
-Lookup checksums for a batch of files.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/files/checksum/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>filelist: list of file names
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">&quot;filename1&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
- <B><span class="code-string">&quot;filename2&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
- ...}
-</pre></div><hr />
-<h2 id="AssociatePackages">Associate Packages</h2>
-<p>
-Associate a list of packages to a number of repositories
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/services/associate/packages/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>package_info : list
-<div class="code"><pre>[((filename,checksum),[repoid_1, repoid_2, repoid_3])]
-</pre></div></li></ul><p>
- 
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or client certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>[] - on successful association of all package ids
-{<B><span class="code-string">&quot;filename&quot;</span></b>:{<B><span class="code-string">&quot;checksum&quot;</span></b>:[error_repoids]}} - on error <B><span class="code-lang">for</span></b> each (filename,checksum) which failed to associate to a repo
-</pre></div><hr />
+<hr />
 <h2 id="RepositoryDiscovery">Repository Discovery</h2>
 <p>
-<i>Discover repository urls with metadata and create candidate repos.</i> <br />
+<em>Discover repository urls with metadata and create candidate repos. Supports http, https and file based urls. The file based url paths should be accessible by apache to perform discovery</em> <br />
 <br />
 <strong>method</strong>: POST <br />
 <br />
@@ -447,53 +104,90 @@ Response: <strong>200 OK</strong>
 <br />
 <strong>permission</strong>: EXECUTE <br />
 <br />
-<strong>Parameters</strong>: 
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+<br />
+<strong>return</strong>: list of matching repourls. <br />
+<br />
+<strong>parameters:</strong>
 </p>
-<ul><li>url: url to discovery
-</li><li>type: type of content eg:yum
-</li><li>cert_data : certificate pem and ca eg:{'ca' : &lt;ca&gt;, 'cert' : &lt;cert&gt;}     
+<ul><li><strong>url</strong> &lt;str&gt; <em>remote url to perform discovery</em>
+</li><li><strong>type</strong> &lt;str&gt; <em>type of content to discover (supported types : 'yum')</em>
+</li><li><strong>cert_data</strong> <em>(optional)</em> &lt;dict&gt; <em>a hash of ca and cert info to access if url is secure; {'ca' : &lt;ca&gt;,'cert': &lt;cert&gt;}</em>
 </li></ul><p>
+<br />
+</p>
+<hr />
+<h2 id="Repositorygroupexport">Repository group export</h2>
+<p>
+<em>schedule an export on a group of repositories</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /services/export/repository_group/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
 <br />
 <strong>success response</strong>: 200 OK <br />
 <br />
 <strong>failure response</strong>: 206 PARTIAL CONTENT <br />
 <br />
-<strong>return</strong>: Task object. <br />
+<strong>return</strong>: Job object <br />
+<br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>groupid</strong> &lt;str&gt; <em>repository group to export</em>
+</li><li><strong>target_location</strong> &lt;str&gt; <em>target location on the server filesystem where the content needs to be exported</em>
+</li><li><strong>generate_isos</strong> <em>(optional)</em> &lt;boolean&gt; <em>wrap the exported content into iso image files.</em>
+</li><li><strong>overwrite</strong> <em>(optional)</em> &lt;boolean&gt; <em>overwrite the content in target location if not empty</em>
+</li></ul><p>
 <br />
 </p>
 <hr />
-<h2 id="DiscoveryTaskstatus">Discovery Task status</h2>
+<h2 id="RepositoryContentExport">Repository Content Export</h2>
 <p>
-<i>Get status of a discovery async task.</i> <br />
-<i>This method only works for actions that returned a 202 Accepted response.</i> <br />
-<i>e.g. /services/discovery/repo/&lt;id&gt;</i> <br />
+<em>Export the repository's content into target directory from its source.</em> <br />
 <br />
-<strong>method</strong>: GET <br />
+<strong>method</strong>: POST <br />
 <br />
-<strong>path</strong>: /services/discovery/repo/&lt;id&gt; <br />
+<strong>path</strong>: /services/export/repository/ <br />
 <br />
-<strong>permission</strong>: READ <br />
+<strong>permission</strong>: EXECUTE <br />
 <br />
-<strong>success response</strong>: 200 OK <br />
+<strong>success response</strong>: 202 Accepted <br />
 <br />
-<strong>failure response</strong>: 404 Not Found <br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository <br />
+406 Not Acceptable if the repository does not have a source <br />
+409 Conflict if a export is already in progress for the repository <br />
+</p>
+</blockquote>
+<p>
 <br />
-<strong>return</strong>: Task object with urls in the result <br />
+<strong>return</strong>: a Task object <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>repoid</strong> &lt;str&gt; <em>repository to export</em>
+</li><li><strong>target_location</strong> &lt;str&gt; <em>target location on the server filesystem where the content needs to be exported</em>
+</li><li><strong>generate_isos</strong> <em>(optional)</em> &lt;boolean&gt; <em>wrap the exported content into iso image files.</em>
+</li><li><strong>overwrite</strong> <em>(optional)</em> &lt;boolean&gt; <em>overwrite the content in target location if not empty</em>
+</li></ul><p>
 <br />
 </p>
-<hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

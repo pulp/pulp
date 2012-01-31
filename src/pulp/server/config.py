@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -65,16 +64,18 @@ _default_values = {
         'server_name': 'localhost',
         'relative_url': '/pulp/repos',
         'key_url': '/pulp/gpg',
+        'ks_url' : '/pulp/ks',
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'false',
     },
     'tasking': {
-        'max_concurrent': '4',
+        'concurrency_threshold': '4',
         'schedule_threshold': '5 minutes',
         'failure_threshold': '-1',
     },
     'yum': {
+        'task_weight': '1',
         'threads': '5',
         'limit_in_KB': '0',
         'verify_size': 'true',

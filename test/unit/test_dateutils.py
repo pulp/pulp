@@ -17,17 +17,9 @@ import os
 import sys
 import time
 import types
-import unittest
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
-
-testutil.load_test_config()
 
 from pulp.common import dateutils
 
@@ -73,13 +65,7 @@ class _DayZone(datetime.tzinfo):
         return datetime.timedelta(minutes=(self.utc_offset * 60)) - self.dst(dt)
 
 
-class TimezoneTester(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
+class TimezoneTester(testutil.PulpAsyncTest):
 
     def test_utc_conversion(self):
         s = datetime.datetime.now(_StdZone())
@@ -103,13 +89,11 @@ class TimezoneTester(unittest.TestCase):
 
 # test iso8601 support ---------------------------------------------------------
 
-class ISO8601Tester(unittest.TestCase):
+class ISO8601Tester(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         self.dt_fields = ('year', 'month', 'day', 'hour', 'minute', 'second')
-
-    def tearDown(self):
-        pass
 
     def test_datetime_sans_tz(self):
         n = datetime.datetime.now()

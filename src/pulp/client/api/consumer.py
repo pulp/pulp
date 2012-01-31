@@ -21,12 +21,14 @@ class ConsumerAPI(PulpAPI):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, description, key_value_pairs={}):
-        consumerdata = {"id": id,
-                        "description": description,
-                        "key_value_pairs": key_value_pairs}
+    def create(self, id, description, capabilities={}, key_value_pairs={}):
+        consumerdata = {
+            "id": id,
+            "description": description,
+            "capabilities" : capabilities,
+            "key_value_pairs": key_value_pairs,}
         path = "/consumers/"
-        return self.server.PUT(path, consumerdata)[1]
+        return self.server.POST(path, consumerdata)[1]
 
     def update(self, id, delta):
         path = "/consumers/%s/" % id
@@ -54,11 +56,6 @@ class ConsumerAPI(PulpAPI):
     def packages(self, id):
         path = "/consumers/%s/packages/" % str(id)
         return self.server.GET(path)[1]
-
-    def certificate(self, id):
-        path = "/consumers/%s/certificate/" % str(id)
-        cert_dict = self.server.GET(path)[1]
-        return cert_dict
 
     def consumers(self):
         path = "/consumers/"
@@ -98,18 +95,34 @@ class ConsumerAPI(PulpAPI):
         path = "/consumers/%s/keyvalues/" % str(id)
         return self.server.GET(path)[1]
 
-    def profile(self, id, profile):
-        path = "/consumers/%s/profile/" % id
-        return self.server.POST(path, profile)[1]
+    def package_profile(self, id, profile):
+        path = "/consumers/%s/package_profile/" % id
+        delta = {'package_profile' : profile}
+        return self.server.PUT(path, delta)[1]
 
     def installpackages(self, id, packagenames, when=None):
         path = "/consumers/%s/installpackages/" % id
         body = dict(packagenames=packagenames, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
-    def installpackagegroups(self, id, packageids, when=None):
+    def updatepackages(self, id, packagenames, when=None):
+        path = "/consumers/%s/updatepackages/" % id
+        body = dict(packagenames=packagenames, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def uninstallpackages(self, id, packagenames, when=None):
+        path = "/consumers/%s/uninstallpackages/" % id
+        body = dict(packagenames=packagenames, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def installpackagegroups(self, id, groupids, when=None):
         path = "/consumers/%s/installpackagegroups/" % id
-        body = dict(packageids=packageids, scheduled_time=when)
+        body = dict(groupids=groupids, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def uninstallpackagegroups(self, id, groupids, when=None):
+        path = "/consumers/%s/uninstallpackagegroups/" % id
+        body = dict(groupids=groupids, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
     def installpackagegroupcategories(self, id, repoid, categoryids, when=None):
@@ -118,9 +131,11 @@ class ConsumerAPI(PulpAPI):
         return self.server.POST(path, body)[1]
 
     def errata(self, id, types=None):
-        path = "/consumers/%s/listerrata/" % id
-        body = dict(types=types)
-        return self.server.POST(path, body)[1]
+        path = "/consumers/%s/errata/" % id
+        queries = []
+        if types:
+            queries = [('types', types)]
+        return self.server.GET(path, queries)[1]
 
     def package_updates(self, id):
         path = "/consumers/%s/package_updates/" % id
@@ -130,11 +145,11 @@ class ConsumerAPI(PulpAPI):
         path = "/consumers/%s/errata_package_updates/" % id
         return self.server.GET(path)[1]
 
-    def installerrata(self, id, errataids, assumeyes=False, types=(), when=None):
+    def installerrata(self, id, errataids, importkeys=False, types=(), when=None):
         erratainfo = {'consumerid': id,
                       'errataids': errataids,
                       'types':   types,
-                      'assumeyes': assumeyes,
+                      'importkeys': importkeys,
                       'scheduled_time': when}
         path = "/consumers/%s/installerrata/" % id
         return self.server.POST(path, erratainfo)[1]

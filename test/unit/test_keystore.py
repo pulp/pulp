@@ -13,20 +13,14 @@
 import os
 import shutil
 import sys
-import unittest
 from logging import basicConfig
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.server.api.keystore import KeyStore
 from pulp.server.util import top_gpg_location as lnkdir
 from pulp.server.util import top_repos_location as keydir
-import testutil
 
 KEYS = (
     ('key1', '----BEGIN PGP PUBLIC KEY BLOCK-----\ncontent1'),
@@ -41,17 +35,12 @@ PUBDIR = os.path.join(lnkdir(), REPO)
 basicConfig()
 testutil.load_test_config()
 
-class TestKeyStore(unittest.TestCase):
+class TestKeyStore(testutil.PulpAsyncTest):
 
     def clean(self):
+        testutil.PulpAsyncTest.clean(self)
         shutil.rmtree(keydir(), True)
         shutil.rmtree(lnkdir(), True)
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
     def verify(self):
         # validate files & links

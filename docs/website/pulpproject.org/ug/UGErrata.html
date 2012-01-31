@@ -30,14 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Errata">Errata</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Errata">Errata</h1>
 <p>
 By default, repositories synchronize any errata in the feed. You can choose to skip errata sync by providing "--no-errata" option when syncing a repository. Errata information is available for review and installation on consumers.
 </p>
@@ -88,7 +81,7 @@ Id                  	Type           	Title
 custom3             	bugfix         	customerrata3
 
 </pre><p>
-In addition you can pass "--type" option to all above list commands to restrict results to a particular errata type. 
+You can pass "--type" option to all above list commands to restrict results to a particular errata type. 
 </p>
 <pre class="wiki">$ pulp-admin errata list --repoid=foo --type=enhancement
 +------------------------------------------+
@@ -102,7 +95,7 @@ custom4             	enhancement    	customerrata4
 
 </pre><h3 id="Search">Search</h3>
 <p>
-In addition, you can search errata using one or more of following search options. Errata satisfying all given parameters will be returned. 
+In addition, you can search errata using one or more of search options such as bugzilla id, CVE, title etc. Errata satisfying all given parameters will be returned. 
 </p>
 <pre class="wiki">$ pulp-admin errata search --help
 Usage: pulp-admin &lt;options&gt; errata search &lt;options&gt;
@@ -111,7 +104,9 @@ Options:
   -h, --help     show this help message and exit
   --id=ID        errata id
   --title=TITLE  errata title
-  --type=TYPE    type of errata to search
+  --type=TYPE    type of errata to search; eg. security, bugfix etc.
+  --bzid=BZID    reference bugzilla id
+  --cve=CVE      reference CVE
   --orphaned     search only orphaned packages
 </pre><pre class="wiki">$ pulp-admin errata search --type=bugfix --orphaned 
 
@@ -120,11 +115,25 @@ Id                  	Type           	Title
 custom1             	bugfix         	customerrata1
 custom3             	bugfix         	customerrata3
 
+$ sudo pulp-admin errata search --bzid=433560
+
+Id                  	Type           	Title
+
+RHSA-2008:0194      	security       	Important: xen security and bug fix update
+
+$ sudo pulp-admin errata search --cve=CVE-2007-3919
+
+Id                  	Type           	Title
+
+RHSA-2008:0194      	security       	Important: xen security and bug fix update
+
 $ pulp-admin errata search --title=httpd-2.2.16-1.fc13 --type=security
 
 Id                  	Type           	Title
 
 FEDORA-2010-12478   	security       	httpd-2.2.16-1.fc13
+
+
 </pre><h3 id="Info">Info</h3>
 <p>
 An individual erratum's details are displayed using the <tt>errata info</tt> command:
@@ -153,14 +162,16 @@ The <tt>errata install</tt> command takes following arguments:
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> Name </td><td> <tt>-e</tt> or <tt>--erratum</tt> </td><td> Name of an erratum to install. Multiple errata can be specified with multiple uses of this flag. 
-</td></tr><tr><td> Automated </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Answers yes to any suggested actions on a successful install, such as rebooting the consumer. If this is not specified, the value will be taken from the consumer's <tt>/etc/pulp/client.conf</tt> file. 
+</td></tr><tr><td> Import GPG Keys </td><td> <tt>-i</tt> or <tt>--importkeys</tt> </td><td> Permits YUM to install GPG keys as needed.  Uses consumer.conf gpg.permit_import when not specified. 
+</td></tr><tr><td> Future Install Time </td><td> <tt>--when</tt> </td><td> If specified, the installation will take place at a point in the future. Format: yyyy-mm-dd hh:mm 
+</td></tr><tr><td> No Wait </td><td> --nowait </td><td> Do not wait (block) until operation has completed. 
 </td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to install the errata. 
 </td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the errata will be installed. 
 </td></tr></table>
 <p>
 For example:
 </p>
-<pre class="wiki">$ pulp-admin errata install --consumerid test-consumer RHBA-2010:0826 -y
+<pre class="wiki">$ pulp-admin errata install --consumerid test-consumer RHBA-2010:0826 -i
 </pre><hr />
 <h2 id="add">Add Errata</h2>
 <p>
@@ -201,17 +212,13 @@ The <tt>repo delete_errata</tt> command takes following arguments:
 </pre><h4 id="Example:Deleteanerratafromrepositoryrecursive">Example: Delete an errata from repository (recursive)</h4>
 <pre class="wiki">$ pulp-admin repo delete_errata --id test17 -e FEDORA-2010-5816 -r
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

@@ -16,17 +16,11 @@
 import shutil
 import sys
 import os
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoListingFile, ProtectedRepoUtils
-import testutil
 
 # -- constants -----------------------------------------------------------------------
 
@@ -34,16 +28,16 @@ TEST_FILE = '/tmp/test-protected-repo-listing'
 
 # -- test cases ----------------------------------------------------------------------
 
-class TestProtectedRepoUtils(unittest.TestCase):
+class TestProtectedRepoUtils(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
-
-        self.config = testutil.load_test_config()
         self.utils = ProtectedRepoUtils(self.config)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 
@@ -84,13 +78,15 @@ class TestProtectedRepoUtils(unittest.TestCase):
 
         self.assertEqual(0, len(listings))
         
-class TestProtectedRepoListingFile(unittest.TestCase):
+class TestProtectedRepoListingFile(testutil.PulpAsyncTest):
 
     def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 
     def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 

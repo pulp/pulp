@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -95,7 +94,7 @@ class OidValidator:
                 return False
 
             # Make sure the client cert is signed by the correct CA
-            is_valid = self.repo_cert_utils.validate_certificate_pem(cert_pem, repo_bundle['ca'])
+            is_valid = self.repo_cert_utils.validate_certificate_pem(cert_pem, repo_bundle['ca'], log_func=log_func)
             if not is_valid:
                 log_func('Client certificate did not match the repo consumer CA certificate')
                 return False
@@ -114,7 +113,7 @@ class OidValidator:
                 return False
 
             # Make sure the client cert is signed by the correct CA
-            is_valid = self.repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
+            is_valid = self.repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'], log_func=log_func)
             if not is_valid:
                 log_func('Client certificate did not match the global repo auth CA certificate')
                 return False

@@ -34,7 +34,6 @@ Repo object fields:
  * group_gz_xml_path, str, path to the repository's compressed group xml file
  * sync_schedule, iso8601 formated recurring interval
  * last_sync, str or nil, date and time of last successful sync in iso8601 format, nil if has not been synched
- * use_symlinks, bool, whether or not the repository uses symlinks for its content
  * feed_ca, str, full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed
  * feed_cert, str, full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content
  * feed_key, str, full path on the Pulp server to the private key for the feed certificate
@@ -50,6 +49,8 @@ Repo object fields:
  * distributionid, list of str, list of distribution ids this repository belongs to [deferred fields]
  * checksum_type, str, name of the algorithm used for checksums of the repository's content
  * filters, list of str, list of filter ids associated with the repository
+ * content_types, str, content type allowed in this repository; default:yum; supported: [yum, file]
+ * notes, dict, custom key-value attributes for this repository
 !RepoSource object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
@@ -65,7 +66,6 @@ Task object fields:
  * traceback, str or nil, a string print out of the trace back for the exception, if any
  * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
  * scheduled_time, str or nil, time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks
- * status_path, str, complete uri path to poll for the task's progress using http GET
 Progress object fields:
  * step, str, name of the step the pulp library call is on
  * items_total, int, the total number of items to be processed by the call
@@ -94,12 +94,13 @@ Details object fields:
 import itertools
 import logging
 from gettext import gettext as _
+import os
 
 import web
 
-from pulp.common.dateutils import format_iso8601_datetime, parse_iso8601_duration
+from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import async
-from pulp.server.api import repo_sync
+from pulp.server.api import repo_sync, exporter
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
 from pulp.server.api.errata import ErrataApi
@@ -107,12 +108,15 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auth.authorization import grant_automatic_permissions_for_created_resource
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
-from pulp.server.pexceptions import PulpException
+from pulp.server.exporter.base import ExportException, TargetExistsException
+from pulp.server.exceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
+from pulp.server.webservices import serialization
+from pulp.server.webservices import validation
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
-    auth_required, error_handler)
+    auth_required, error_handler, collection_query)
 
 # globals ---------------------------------------------------------------------
 
@@ -127,9 +131,9 @@ default_fields = [
     'source',
     'name',
     'arch',
-    'sync_schedule',
     'last_sync',
-    'use_symlinks',
+    'sync_schedule',
+    'sync_options',
     'groupid',
     'relative_path',
     'files',
@@ -146,6 +150,8 @@ default_fields = [
     'consumer_ca',
     'consumer_key',
     'notes',
+    'content_types',
+    'preserve_metadata',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -154,7 +160,8 @@ class Repositories(JSONController):
 
     @error_handler
     @auth_required(READ)
-    def GET(self):
+    @collection_query('id', 'name', 'arch', 'groupid', 'relative_path', 'note')
+    def GET(self, spec=None):
         """
         [[wiki]]
         title: List Available Repositories
@@ -165,22 +172,73 @@ class Repositories(JSONController):
         success response: 200 OK
         failure response: None
         return: list of Repo objects, possibly empty
+        example:
+        {{{
+        #!js
+        [
+         {'arch': 'noarch',
+          'checksum_type': 'sha256',
+          'clone_ids': ['0ad-clone', '0ad-clone-again'],
+          'comps': '/pulp/api/repositories/0ad/comps/',
+          'consumer_ca': None,
+          'consumer_cert': None,
+          'content_types': 'yum',
+          'distribution': '/pulp/api/repositories/0ad/distribution/',
+          'distributionid': [],
+          'errata': '/pulp/api/repositories/0ad/errata/',
+          'feed_ca': None,
+          'feed_cert': None,
+          'files': '/pulp/api/repositories/0ad/files/',
+          'files_count': 0,
+          'filters': [],
+          'groupid': [],
+          'id': '0ad',
+          'keys': '/pulp/api/repositories/0ad/keys/',
+          'last_sync': '2012-01-04T13:55:11-07:00',
+          'name': '0ad',
+          'notes': {},
+          'package_count': 2,
+          'packagegroupcategories': '/pulp/api/repositories/0ad/packagegroupcategories/',
+          'packagegroups': '/pulp/api/repositories/0ad/packagegroups/',
+          'packages': '/pulp/api/repositories/0ad/packages/',
+          'preserve_metadata': False,
+          'publish': True,
+          'relative_path': 'repos/bioinfornatics/0ad/fedora-16/x86_64',
+          'source': {'type': 'remote',
+          'url': 'http://repos.fedorapeople.org/repos/bioinfornatics/0ad/fedora-16/x86_64/'},
+          'sync_options': {'skip': {}},
+          'sync_schedule': '2011-12-13T13:45:00-07:00/PT5M',
+          'uri': 'https://localhost/pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/',
+          'uri_ref': '/pulp/api/repositories/0ad/'},
+        ...
+        ]
+        }}}
         filters:
          * id, str, repository id
          * name, str, repository name
          * arch, str, repository contect architecture
          * groupid, str, repository group id
          * relative_path, str, repository's on disk path
+         * note, str, repository note in the format key:value
         """
-        valid_filters = ['id', 'name', 'arch', 'groupid', 'relative_path']
+        # Query by notes
+        if "note" in spec.keys() :
+            try:
+                note = spec["note"].rsplit(':')
+            except:
+                return self.bad_request("Invalid note %s; correct format is key:value", note)
 
-        filters = self.filters(valid_filters)
-        spec = mongo.filters_to_re_spec(filters)
+            if len(note) != 2:
+                return self.bad_request("Invalid note %s; correct format is key:value" % note)
+
+            spec["notes." + note[0]] = note[1]
+            del spec["note"]
 
         repositories = api.repositories(spec, default_fields)
 
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
+            repo['uri'] = serialization.repo.v1_uri(repo)
             #repo['package_count'] = api.package_count(repo['id'])
             repo['files_count'] = len(repo['files'])
             for field in RepositoryDeferredFields.exposed_fields:
@@ -201,21 +259,57 @@ class Repositories(JSONController):
         success response: 201 Created
         failure response: 409 Conflict if the parameters matches an existing repository
         return: new Repo object
+        example:
+        {{{
+        #!js
+        {'arch': 'noarch',
+         'checksum_type': 'sha256',
+         'clone_ids': [],
+         'consumer_ca': None,
+         'consumer_cert': None,
+         'content_types': 'yum',
+         'distributionid': [],
+         'errata': {},
+         'feed_ca': None,
+         'feed_cert': None,
+         'files': [],
+         'filters': [],
+         'group_gz_xml_path': '',
+         'group_xml_path': '',
+         'groupid': [],
+         'id': 'my-repo',
+         'last_sync': None,
+         'name': 'my-repo',
+         'notes': {},
+         'package_count': 0,
+         'packagegroupcategories': {},
+         'packagegroups': {},
+         'packages': [],
+         'preserve_metadata': False,
+         'publish': True,
+         'relative_path': 'yum/repo',
+         'release': None,
+         'repomd_xml_path': '/var/lib/pulp//repos/yum/repo/repodata/repomd.xml',
+         'source': {'type': 'remote', 'url': 'http://example.org/yum/repo/'},
+         'sync_in_progress': False,
+         'sync_options': {},
+         'sync_schedule': None,
+         'uri_ref': '/pulp/api/repositories/my-repo/'}
+        }}}
         parameters:
          * id, str, the repository's unique id
          * name, str, a human-friendly name for the repsitory
          * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
-         * use_symlinks?, bool, defaults to false
-         * sync_schedule?, str, iso8601 recurring interval specifying sync schedule
          * feed_cert_data?, dict, certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * consumer_cert_data?, str, certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * relative_path?, str, repository on disk path
          * groupid?, list of str, list of repository group ids this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
-         * notes?, dict, additional information in the form of key-value pairs
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
+         * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
+         * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
         """
         repo_data = self.params()
 
@@ -227,8 +321,6 @@ class Repositories(JSONController):
                           repo_data['name'],
                           repo_data['arch'],
                           feed=repo_data.get('feed', None),
-                          symlinks=repo_data.get('use_symlinks', False),
-                          sync_schedule=repo_data.get('sync_schedule', None),
                           feed_cert_data=repo_data.get('feed_cert_data', None),
                           consumer_cert_data=repo_data.get('consumer_cert_data', None),
                           relative_path=repo_data.get('relative_path', None),
@@ -236,7 +328,9 @@ class Repositories(JSONController):
                           gpgkeys=repo_data.get('gpgkeys', None),
                           checksum_type=repo_data.get('checksum_type', 'sha256'),
                           notes=repo_data.get('notes', None),
-                          preserve_metadata=repo_data.get('preserve_metadata', False))
+                          preserve_metadata=repo_data.get('preserve_metadata', False),
+                          content_types=repo_data.get('content_types', 'yum'),
+                          publish=repo_data.get('publish', None),)
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
@@ -280,6 +374,44 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: a Repo object
+        example:
+        {{{
+        #!js
+        {'arch': 'noarch',
+         'checksum_type': 'sha256',
+         'clone_ids': ['0ad-clone', '0ad-clone-again'],
+         'comps': '/pulp/api/repositories/0ad/comps/',
+         'consumer_ca': None,
+         'consumer_cert': None,
+         'content_types': 'yum',
+         'distribution': '/pulp/api/repositories/0ad/distribution/',
+         'distributionid': [],
+         'errata': '/pulp/api/repositories/0ad/errata/',
+         'feed_ca': None,
+         'feed_cert': None,
+         'files': '/pulp/api/repositories/0ad/files/',
+         'files_count': 0,
+         'filters': [],
+         'groupid': [],
+         'id': '0ad',
+         'keys': '/pulp/api/repositories/0ad/keys/',
+         'last_sync': '2012-01-04T13:55:11-07:00',
+         'name': '0ad',
+         'notes': {},
+         'package_count': 2,
+         'packagegroupcategories': '/pulp/api/repositories/0ad/packagegroupcategories/',
+         'packagegroups': '/pulp/api/repositories/0ad/packagegroups/',
+         'packages': '/pulp/api/repositories/0ad/packages/',
+         'preserve_metadata': False,
+         'publish': True,
+         'relative_path': 'repos/bioinfornatics/0ad/fedora-16/x86_64',
+         'source': {'type': 'remote',
+         'url': 'http://repos.fedorapeople.org/repos/bioinfornatics/0ad/fedora-16/x86_64/'},
+         'sync_options': {'skip': {}},
+         'sync_schedule': '2011-12-13T13:45:00-07:00/PT5M',
+         'uri': 'https://localhost/pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/',
+         'uri_ref': '/pulp/api/repositories/0ad/'}
+        }}}
         """
         repo = api.repository(id, default_fields)
         if repo is None:
@@ -287,6 +419,7 @@ class Repository(JSONController):
         for field in RepositoryDeferredFields.exposed_fields:
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
+        repo['uri'] = serialization.repo.v1_uri(repo)
         #repo['package_count'] = api.package_count(id)
         # XXX this was a serious problem with packages
         # why would files be any different
@@ -311,7 +444,54 @@ class Repository(JSONController):
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
         return: a Repo object
-        parameters: any field of a Repo object except id
+        example:
+        {{{
+        #!js
+        {'arch': 'noarch',
+         'checksum_type': 'sha256',
+         'clone_ids': [],
+         'consumer_ca': None,
+         'consumer_cert': None,
+         'content_types': 'yum',
+         'distributionid': [],
+         'errata': {},
+         'feed_ca': None,
+         'feed_cert': None,
+         'files': [],
+         'filters': [],
+         'group_gz_xml_path': '',
+         'group_xml_path': '',
+         'groupid': [],
+         'id': 'my-repo',
+         'last_sync': None,
+         'name': 'my-repo',
+         'notes': {},
+         'package_count': 0,
+         'packagegroupcategories': {},
+         'packagegroups': {},
+         'packages': [],
+         'preserve_metadata': False,
+         'publish': True,
+         'relative_path': 'yum/repo',
+         'release': None,
+         'repomd_xml_path': '/var/lib/pulp//repos/yum/repo/repodata/repomd.xml',
+         'source': {'type': 'remote', 'url': 'http://example.org/yum/repo/'},
+         'sync_in_progress': False,
+         'sync_options': {},
+         'sync_schedule': None,
+         'uri_ref': '/pulp/api/repositories/my-repo/'}
+        }}}
+        parameters:
+         * name, str, name of the repository
+         * arch, str, architecture of the repository
+         * feed_cert_data, object, feed key and certificate
+         * consumer_cert_data, object, consumers key and certificate
+         * feed, str, url of feed
+         * checksum_type, str, name of checksum algorithm (sha256, sha1, md5)
+         * addgrp?, list of str, list of group ids to add the repository to
+         * rmgrp?, list of str, list of group ids to remove the repository from
+         * addkeys?, list of str, list of keys to add to the repository
+         * rmkeys?, list of str, list of keys to remove from the repository
         """
         delta = self.params()
         if delta.pop('id', id) != id:
@@ -335,11 +515,252 @@ class Repository(JSONController):
         method: DELETE
         path: /repositories/<id>/
         permission: DELETE
-        success response: 200 OK
-        failure response: None
+        success response: 202 Accepted
+        failure response: 404 Not Found if repository does not exist
+                          409 Conflict if repository cannot be deleted
+        return: a Task object
+        example:
+        {{{
+        #!js
+        {'args': [],
+         'class_name': 'RepoApi',
+         'exception': None,
+         'finish_time': None,
+         'id': '1a58cd4f-372f-11e1-bdbc-52540005f34c',
+         'job_id': None,
+         'method_name': 'delete',
+         'progress': None,
+         'result': None,
+         'scheduled_time': '2012-01-04T23:52:04Z',
+         'scheduler': 'immediate',
+         'start_time': None,
+         'state': 'waiting',
+         'traceback': None}
+        }}}
         """
-        api.delete(id=id)
-        return self.ok({})
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        task = async.run_async(api.delete, args=[id])
+        if task is None:
+            return self.conflict('The repository, %s, cannot be deleted' % id)
+        status = self._task_to_dict(task)
+        return self.accepted(status)
+
+class RepositoryNotes(JSONController):
+
+    @auth_required(DELETE)
+    def DELETE(self, id, key):
+        """
+        [[wiki]]
+        title: Delete a Note from a Repository
+        description: Delete a Note from a Repository
+        method: DELETE
+        path: /repositories/<id>/notes/<key>/
+        permission: DELETE
+        success response: 200 OK
+        failure response: 404 Not Found if given repository does not exist
+                          404 Not Found if given key does not exist
+        return: true
+        """
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            return self.not_found('Given key [%s] does not exist' % key)
+        api.delete_note(id, key)
+        return self.ok(True)
+
+    @auth_required(UPDATE)
+    def PUT(self, id, key):
+        """
+        [[wiki]]
+        title: Update a key-value note of a Repository
+        description: Change the value of an existing key in Repository Notes.
+        method: PUT
+        path: /repositories/<id>/notes/<key>/
+        permission: UPDATE
+        success response: 200 OK
+        failure response: 404 Not Found if given repository does not exist
+                          404 Not Found if given key does not exist
+        return: true
+        parameters: new value of the key
+        """
+        data = self.params()
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        key_value_pairs = repo['notes']
+        if key not in key_value_pairs.keys():
+            return self.not_found('Given key [%s] does not exist' % key)
+        api.update_note(id, key, data)
+        return self.ok(True)
+
+class RepositoryNotesCollection(JSONController):
+    @auth_required(EXECUTE)
+    def POST(self, id):
+        """
+        [[wiki]]
+        title: Add a Note to the Repository
+        description: Add a Note to the Repository
+        method: POST
+        path: /repositories/<id>/notes/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not found if given repository does not exist
+                          409 Conflict if given key already exists
+        return: true
+        parameters:
+         * key, str, key to be added
+         * value, str, value of key
+        """
+        data = self.params()
+        repo = api.repository(id)
+        if repo is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        key_value_pairs = repo['notes']
+        if data['key'] in key_value_pairs.keys():
+            return self.conflict('Given key [%s] already exist' % data['key'])
+        api.add_note(id, data['key'], data['value'])
+        return self.ok(True)
+
+
+class SchedulesSubCollection(JSONController):
+    # placeholder for: /repositories/<id>/schedules/
+    pass
+
+
+class SchedulesResource(JSONController):
+
+    schedule_types = ('sync',)
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id, schedule_type):
+        """
+        [[wiki]]
+        title: Schedule
+        description: Get the repository schedule for the given type
+        method: GET
+        path: /repositories/<id>/schedules/<type>/
+        permission: READ
+        success response: 200 OK
+        failure response: 404 Not Found
+        return: Schedule object
+        example:
+        {{{
+        #!js
+        {'href': '/pulp/api/repositories/0ad/',
+         'id': '0ad',
+         'options': {'skip': {}},
+         'schedule': '2011-12-13T13:45:00-07:00/PT5M',
+         'type': 'sync'}
+        }}}
+        """
+        if schedule_type not in self.schedule_types:
+            return self.not_found('No schedule type: %s' % schedule_type)
+        repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
+        if repo is None:
+            return self.not_found('No repository %s' % repo_id)
+        next_sync_time = None
+        if repo['sync_schedule']:
+            scheduled_task_list = async.find_async(method_name="_sync",
+                repo_id=repo_id)
+            if scheduled_task_list:
+                scheduled_task = scheduled_task_list[0]
+                next_sync_time = format_iso8601_datetime(
+                    scheduled_task.scheduled_time)
+        data = {
+            'id': repo_id,
+            'href': serialization.repo.v1_href(repo),
+            'type': schedule_type,
+            'schedule': repo['sync_schedule'],
+            'options': repo['sync_options'],
+            'next_sync_time': next_sync_time,
+        }
+        return self.ok(data)
+
+    @error_handler
+    @auth_required(DELETE)
+    def DELETE(self, repo_id, schedule_type):
+        """
+        [[wiki]]
+        title: Schedule Delete
+        description: Remove a repository's schedule for the given type
+        method: DELETE
+        path: /repositories/<id>/schedules/<type>/
+        permission: DELETE
+        success response: 200 OK
+        failure response: 404 Not Found
+        return: (empty) Schedule object
+        example:
+        {{{
+        #!js
+        {'href': '/pulp/api/repositories/0ad/',
+         'id': '0ad',
+         'options': null,
+         'schedule': null}
+        }}}
+        """
+        if schedule_type not in self.schedule_types:
+            return self.not_found('No schedule type: %s' % schedule_type)
+        repo = api.repository(repo_id, ['id', 'sync_schedule'])
+        if repo is None:
+            return self.not_found('No repository %s' % repo_id)
+        scheduled_sync.delete_repo_schedule(repo)
+        data = {
+            'id': repo_id,
+            'href': serialization.repo.v1_href(repo),
+            'schedule': None,
+            'options': None,
+        }
+        return self.ok(data)
+
+    @error_handler
+    @auth_required(CREATE)
+    def PUT(self, repo_id, schedule_type):
+        """
+        [[wiki]]
+        title: Schedule Create or Replace
+        description: Create or replace a schedule for a repository of the given type
+        method: PUT
+        path: /repositories/<id>/schedules/<type>/
+        permission: CREATE
+        success response: 200 OK
+        parameters:
+         * schedule, str, schedule for given type in iso8601 format
+         * options, obj, options for the scheduled action
+        return: Schedule object
+        example:
+        {{{
+        #!js
+        {'href': '/pulp/api/repositories/0ad/',
+         'id': '0ad',
+         'options': {'skip': {}},
+         'schedule': '2011-12-13T13:45:00-07:00/PT5M',
+         'type': 'sync'}
+        }}}
+        """
+        if schedule_type not in self.schedule_types:
+            return self.not_found('No schedule type: %s' % schedule_type)
+        repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options', 'content_types', 'source'])
+        if repo is None:
+            return self.not_found('No repository %s' % repo_id)
+        data = self.params()
+        new_schedule = data.get('schedule')
+        new_options = data.get('options')
+        scheduled_sync.update_repo_schedule(repo, new_schedule, new_options)
+        updated_repo = api.repository(repo_id, ['id', 'sync_schedule', 'sync_options'])
+        data = {
+            'id': repo_id,
+            'href': serialization.repo.v1_href(repo),
+            'schedule': updated_repo['sync_schedule'],
+            'options': updated_repo['sync_options'],
+        }
+        return self.ok(data)
+
+    POST = PUT
 
 
 class RepositoryDeferredFields(JSONController):
@@ -367,6 +788,58 @@ class RepositoryDeferredFields(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: list of Package objects
+        example:
+        {{{
+        #!js
+        [{'arch': 'x86_64',
+          'buildhost': 'x86-05.phx2.fedoraproject.org',
+          'checksum': {'sha256': '46d0ca0bc9f943d38bd0819b849072c5a48c4107fd6e17bb7a1f9782fa1dccfe'},
+          'description': '0 A.D. (pronounced "zero ey-dee") is a free, open-source, cross-platform real-time\nstrategy (RTS) game of ancient warfare. In short, it is a historically-based\nwar/economy game that allows players to relive or rewrite the history of Western\ncivilizations, focusing on the years between 500 B.C. and 500 A.D. The project is\nhighly ambitious, involving state-of-the-art 3D graphics, detailed artwork, sound,\nand a flexible and powerful custom-built game engine.\nThe game has been in development by Wildfire Games (WFG), a group of volunteer,\nhobbyist game developers, since 2001.',
+          'download_url': 'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+          'epoch': '0',
+          'filename': '0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+          'group': 'Amusements/Games',
+          'id': 'e8c7520d-00ee-44b9-863e-b50db7ac9252',
+          'license': 'GPLv2+ and MIT',
+          'name': '0ad',
+          'provides': ['0ad(x86-64)',
+                        '0ad',
+                        'libnvtt.so()(64bit)',
+                        'libnvmath.so()(64bit)',
+                        'libnvimage.so()(64bit)',
+                        ...],
+          'release': '15.20111230svn10836.fc16',
+          'repo_defined': True,
+          'requires': ['libstdc++.so.6(GLIBCXX_3.4)(64bit)',
+                        'librt.so.1()(64bit)',
+                        'libpthread.so.0()(64bit)',
+                        'libstdc++.so.6(CXXABI_1.3.1)(64bit)',
+                        'libcurl.so.4()(64bit)',
+                        ...],
+          'size': 3592509,
+          'vendor': 'Fedora Project',
+          'version': '0.10836'},
+        {'_id': 'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
+         '_ns': 'packages',
+         'arch': 'x86_64',
+         'buildhost': 'x86-05.phx2.fedoraproject.org',
+         'checksum': {'sha256': 'bde5b50d462142a9cd8aee02b8fbc6665eda3ddfb324c0d9c072817a2babb4f8'},
+         'description': 'This package provides debug information for package 0ad.\nDebug information is useful when developing applications that use this\npackage or when debugging this package.',
+         'download_url': 'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+         'epoch': '0',
+         'filename': '0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm',
+         'group': 'Development/Debug',
+         'id': 'e078a03a-979f-4bfe-b47e-8e86a7e9e224',
+         'license': 'GPLv2+ and MIT',
+         'name': '0ad-debuginfo',
+         'provides': ['0ad-debuginfo(x86-64)', '0ad-debuginfo'],
+         'release': '15.20111230svn10836.fc16',
+         'repo_defined': True,
+         'requires': [],
+         'size': 41946553,
+         'vendor': 'Fedora Project',
+         'version': '0.10836'}]
+        }}}
         filters:
          * name, str, package name
          * version, str, package version
@@ -398,7 +871,30 @@ class RepositoryDeferredFields(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return: list of package group names
+        return: Package Groups object
+        example:
+        {{{
+        #!js
+        {"pkg_group_id_1": {
+            "mandatory_package_names": [],
+            "description": "pkg_grp_description_1",
+            "repo_defined": false,
+            "default": true,
+            "name": "pkg_group_name_1",
+            "display_order": 1024,
+            "user_visible": true,
+            "translated_name": {},
+            "translated_description": {},
+            "conditional_package_names": {},
+            "default_package_names": [],
+            "id": "pkg_group_id_1",
+            "langonly": null,
+            "_id": "pkg_group_id_1",
+            "immutable": false,
+            "optional_package_names": []
+          }
+        }
+        }}}
         filters:
          * filter_missing_packages, bool, True means to filter results to remove missing package names
          * filter_incomplete_groups, bool, True means to filter results to remove groups with missing packages
@@ -414,7 +910,7 @@ class RepositoryDeferredFields(JSONController):
         filter_incomplete_groups = False
         if filters.has_key("filter_incomplete_groups") and filters["filter_incomplete_groups"]:
             filter_incomplete_groups = True
-        return self.ok(api.packagegroups(id, filter_missing_packages,filter_incomplete_groups))
+        return self.ok(api.packagegroups(id, filter_missing_packages, filter_incomplete_groups))
 
     def packagegroupcategories(self, id):
         """
@@ -426,7 +922,25 @@ class RepositoryDeferredFields(JSONController):
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return: list of package group catagory names
+        return: list of package group category names
+        example:
+        {{{
+        #!js
+         {
+          "cat_id_1": {
+            "description": "cat_descrp_1",
+            "repo_defined": false,
+            "display_order": 99,
+            "immutable": false,
+            "translated_name": {},
+            "packagegroupids": [],
+            "translated_description": {},
+            "_id": "cat_id_1",
+            "id": "cat_id_1",
+            "name": "cat_name_1"
+          }
+        }
+        }}}
         filters:
          * id, str, package group category id
          * packagegroupcategories, str, package group category name
@@ -447,20 +961,34 @@ class RepositoryDeferredFields(JSONController):
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: list of Errata objects
+        example:
+        {{{
+        #!js
+        [{'id': '',
+          'title': '',
+          'type': '',
+          'severity': null},
+         {'id': '',
+          'title': '',
+          'type': '',
+          'severity': ''},
+         ...]
+        }}}
         filters:
          * type, str, type of errata
         """
-        valid_filters = ('type')
+        valid_filters = ('type', 'severity')
         types = self.filters(valid_filters).get('type', [])
-        if types == []:
-            errataids = api.errata(id)
+        severity = self.filters(valid_filters).get('severity', [])
+
+        if types:
+            errata = api.errata(id, types=types)
+        elif severity:
+            errata = api.errata(id, severity=severity)
         else:
-            errataids = api.errata(id, [types])
-        # For each erratum find id, title and type
-        repo_errata = []
-        for errataid in errataids:
-            repo_errata.append(errataapi.erratum(errataid, fields=['id', 'title', 'type']))
-        return self.ok(repo_errata)
+            errata = api.errata(id)
+
+        return self.ok(errata)
 
     def distribution(self, id):
         """
@@ -524,6 +1052,46 @@ class RepositoryDeferredFields(JSONController):
         return field(id)
 
 
+class RepositoryStatusesCollection(JSONController):
+    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id):
+        sync_status_controller = RepositorySyncStatus()
+        status_methods = [getattr(sync_status_controller, st)
+            for st in sync_status_controller.status_types.values()]
+
+        statuses = []
+        for status_method in status_methods:
+            status = status_method(repo_id)
+            if status:
+                statuses.append(status)
+
+        return self.ok(statuses)
+
+class RepositorySyncStatus(JSONController):
+
+    status_types = {"sync" : "_sync",
+                    "clone" : "_clone"}
+
+    def _sync(self, repo_id):
+        return api.get_sync_status(repo_id)
+
+    def _clone(self, repo_id):
+        pass
+
+    @error_handler
+    @auth_required(READ)
+    def GET(self, repo_id, status_type):
+        status_method = getattr(self, self.status_types[status_type], None)
+
+        if status_method:
+            response = self.ok(status_method(repo_id))
+        else:
+            response = self.not_found(_("Invalid status type %s.") %
+                status_type)
+
+        return response
+
 class RepositoryActions(JSONController):
 
     # All actions have been gathered here into one controller class for both
@@ -569,8 +1137,15 @@ class RepositoryActions(JSONController):
         'remove_filters',
         'add_group',
         'remove_group',
-        'metadata',
+        'generate_metadata',
         'sync_history',
+        'add_metadata',
+        'download_metadata',
+        'list_metadata',
+        'remove_metadata',
+        'export',
+        'add_distribution',
+        'remove_distribution',
     )
 
     def sync(self, id):
@@ -601,7 +1176,10 @@ class RepositoryActions(JSONController):
 
         # Check for valid timeout values
         if timeout:
-            timeout = parse_iso8601_duration(timeout)
+            try:
+                timeout = validation.timeout.iso8601_duration_to_timeout(timeout)
+            except validation.timeout.UnsupportedTimeoutInterval, e:
+                return self.bad_request(msg=e.args[0])
             if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
         limit = repo_params.get('limit', None)
@@ -625,19 +1203,18 @@ class RepositoryActions(JSONController):
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     # XXX hack to make the web services unit tests work
     _sync = sync
 
-    def metadata(self, id):
+    def generate_metadata(self, id):
         """
         [[wiki]]
         title: Repository Metadata generation
         description: spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create
         method: POST
-        path: /repositories/<id>/metadata/
+        path: /repositories/<id>/generate_metadata/
         permission: EXECUTE
         success response: 202 Accepted
         failure response: 404 Not Found if the id does not match a repository
@@ -648,12 +1225,97 @@ class RepositoryActions(JSONController):
         repo = api.repository(id)
         repo_params = self.params()
 
-        task = api.metadata(id)
+        task = api.generate_metadata(id)
         if not task:
             return self.conflict('Metadata generation already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
+
+    def add_metadata(self, id):
+        """
+        [[wiki]]
+        title: add a custom metadata filetype to Repository Metadata
+        description: adds a metadata filetype to existing repository metadata(this runs modifyrepo underneath).
+        method: POST
+        path: /repositories/<id>/add_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: True
+	parameters:
+         * filetype, str, filetype name to lookup in the metadata
+         * filedata, str, file data to be stored
+
+        """
+        if api.repository(id, default_fields) is None:
+           return self.not_found('A repository with the id, %s, does not exist' % id)
+        metadata_params = self.params()
+        if "filetype" not in metadata_params:
+            return self.bad_request('No file type specified')
+        if "filedata" not in metadata_params:
+            return self.bad_request('No file data specified')
+        return self.ok(api.add_metadata(id, metadata=metadata_params))
+
+    def remove_metadata(self, id):
+        """
+        [[wiki]]
+        title: remove metadata filetype from Repository Metadata
+        description: remove the specified metadata filetype
+                     if exists from a repository metadata; else None.
+        method: POST
+        path: /repositories/<id>/remove_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: True
+	    parameters:
+         * filetype, str, filetype name to lookup in the metadata
+        """
+        if api.repository(id, default_fields) is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        params = self.params()
+        if "filetype" not in params:
+            return self.bad_request('No filetype specified')
+        return self.ok(api.remove_metadata(id, filetype=params['filetype']))
+
+    def download_metadata(self, id):
+        """
+        [[wiki]]
+        title: download custom metadata filetype from Repository Metadata
+        description: download an xml file for the filetype specified
+                     if exists in a repository metadata; else None.
+        method: POST
+        path: /repositories/<id>/download_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: True
+	    parameters:
+         * filetype, str, filetype name to lookup in the metadata
+        """
+        if api.repository(id, default_fields) is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        params = self.params()
+        if "filetype" not in params:
+            return self.bad_request('No filetype specified')
+        return self.ok(api.get_metadata(id, filetype=params['filetype']))
+
+    def list_metadata(self, id):
+        """
+        [[wiki]]
+        title: list metadata filetype information from a Repository
+        description: lists information about all the filetypes present in metadata
+                    and their info such as size, checksum, path etc.
+        method: POST
+        path: /repositories/<id>/list_metadata/
+        permission: EXECUTE
+        success response: 200 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+        return: dict or None
+        """
+        if api.repository(id, default_fields) is None:
+            return self.not_found('A repository with the id, %s, does not exist' % id)
+        return self.ok(api.list_metadata(id))
 
     def sync_history(self, id):
         """
@@ -682,32 +1344,40 @@ class RepositoryActions(JSONController):
         success response: 202 Accepted
         failure response: 404 Not Found if the id does not match a repository
                           409 Conflict if the parameters match an existing repository
+                          409 Conflict if the parent repository is currently syncing
         return: a Task object
         parameters:
          * clone_id, str, the id of the clone repository
          * clone_name, str, the namd of clone repository
-         * feed, str, feed of the clone repository in <type>:<url> format
+         * feed, str, feed of the clone repository - parent/origin/none
          * relative_path?, str, clone repository on disk path
          * groupid?, str, repository groups that clone belongs to
          * filters?, list of objects, synchronization filters to apply to the clone
+         * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
         """
         repo_data = self.params()
-        if api.repository(id, default_fields) is None:
+        parent_repo = api.repository(id)
+        if parent_repo is None:
             return self.not_found('A repository with the id, %s, does not exist' % id)
+        if parent_repo['sync_in_progress']:
+            return self.conflict('The repository %s is currently syncing, cannot create clone until it is finished' % id)
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
-
+        if repo_data['feed'] not in ['parent', 'origin', 'none']:
+            return self.bad_request('Invalid feed, %s, see --help' % repo_data['feed'])
+        if repo_data['feed'] == 'origin' and repo_data.get('filters'):
+            return self.bad_request('Filters cannot be applied to clones with origin feed')
         task = repo_sync.clone(id,
                          repo_data['clone_id'],
                          repo_data['clone_name'],
                          repo_data['feed'],
                          relative_path=repo_data.get('relative_path', None),
                          groupid=repo_data.get('groupid', None),
-                         filters=repo_data.get('filters', []))
+                         filters=repo_data.get('filters', []),
+                         publish=repo_data.get('publish', None))
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
 
@@ -742,13 +1412,13 @@ class RepositoryActions(JSONController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return: list of errors
+        return: list of errors, count of filtered packages
         parameters:
          * packageid, list of str, id of package to add
         """
         data = self.params()
-        errors = api.add_package(id, data['packageid'])
-        return self.ok(errors)
+        errors, filtered_count = api.add_package(id, data['packageid'])
+        return self.ok((errors, filtered_count))
 
     def delete_package(self, id):
         """
@@ -790,6 +1460,11 @@ class RepositoryActions(JSONController):
         parameters:
          * groupid, str, package group id
          * packagenames, list of str, list of packages to add to the package group
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         p = self.params()
         if "groupid" not in p:
@@ -822,6 +1497,11 @@ class RepositoryActions(JSONController):
         parameters:
          * groupid, str, package group id
          * name, str, package name to remove
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         p = self.params()
         if "groupid" not in p:
@@ -851,6 +1531,28 @@ class RepositoryActions(JSONController):
          * groupid, str, id of the package group
          * groupname, str, name of the package group
          * description, str, package group description
+        example response:
+        {{{
+        #!js
+         {
+          "mandatory_package_names": [],
+          "description": "pkg_grp_description_1",
+          "repo_defined": false,
+          "default": true,
+          "name": "pkg_grp_name_1",
+          "display_order": 1024,
+          "user_visible": true,
+          "translated_name": {},
+          "translated_description": {},
+          "conditional_package_names": {},
+          "default_package_names": [],
+          "id": "pkg_grp_id_1",
+          "langonly": null,
+          "_id": "pkg_grp_id_1",
+          "immutable": false,
+          "optional_package_names": []
+        }
+        }}}
         """
         p = self.params()
         if "groupid" not in p:
@@ -873,11 +1575,52 @@ class RepositoryActions(JSONController):
         method: POST
         path: /repositories/<id>/import_comps/
         permission: EXECUTE
-        success response: 200 OK
+        success response: 201 Created
         failure response: 404 Not Found if the id does not match a repository
         return: True on success, False on failure
         parameters:
          * xml comps file body
+        example response:
+        {{{
+        #!js
+         {
+          "package_count": 0,
+          "distributionid": [],
+          "consumer_cert": null,
+          "consumer_ca": null,
+          "filters": [],
+          "last_sync": null,
+          "id": "test_comps_import",
+          "repomd_xml_path": "/var/lib/pulp//repos/test_comps_import/repodata/repomd.xml",
+          "preserve_metadata": false,
+          "group_xml_path": "",
+          "publish": true,
+          "source": null,
+          "sync_in_progress": false,
+          "packagegroups": {},
+          "files": [],
+          "relative_path": "test_comps_import",
+          "arch": "noarch",
+          "sync_schedule": null,
+          "packages": [],
+          "group_gz_xml_path": "",
+          "feed_cert": null,
+          "name": "test_comps_import",
+          "uri_ref": "/pulp/api/repositories/test_comps_import/",
+          "feed_ca": null,
+          "notes": {},
+          "groupid": [],
+          "content_types": "yum",
+          "clone_ids": [],
+          "packagegroupcategories": {},
+          "_ns": "repos",
+          "release": null,
+          "checksum_type": "sha256",
+          "sync_options": {},
+          "_id": "test_comps_import",
+          "errata": {}
+        }
+        }}}
         """
         comps_data = self.params()
         return self.ok(repo_sync.import_comps(id, comps_data))
@@ -896,12 +1639,12 @@ class RepositoryActions(JSONController):
         return: nil
         parameters:
          * groupid, str, id of the package group
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
-#        """
-#        Removes a packagegroup from a repository
-#        @param id: repository id
-#        @return:
-#        """
         p = self.params()
         if "groupid" not in p:
             return self.bad_request('No groupid specified')
@@ -924,6 +1667,22 @@ class RepositoryActions(JSONController):
          * categoryid, str, package group category id
          * categoryname, str, package group category name
          * description, str, description of the package group category
+        example response:
+        {{{
+        #!js
+          {
+          "description": "cat_descrp_1",
+          "repo_defined": false,
+          "display_order": 99,
+          "translated_name": {},
+          "packagegroupids": [],
+          "translated_description": {},
+          "id": "cat_id_1",
+          "_id": "cat_id_1",
+          "immutable": false,
+          "name": "cat_name_1"
+        }
+        }}}
         """
         _log.info("create_packagegroupcategory invoked")
         p = self.params()
@@ -953,6 +1712,11 @@ class RepositoryActions(JSONController):
         return: nil
         parameters:
          * categoryid, str, package group category id
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         _log.info("delete_packagegroupcategory invoked")
         p = self.params()
@@ -976,6 +1740,11 @@ class RepositoryActions(JSONController):
         parameters:
          * categoryid, str, package group category id
          * groupid, str, package group id
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         _log.info("add_packagegroup_to_category invoked")
         p = self.params()
@@ -1002,6 +1771,11 @@ class RepositoryActions(JSONController):
         parameters:
          * categoryid, str, package group category id
          * groupid, str, package group id
+        example response:
+        {{{
+        #!js
+        null
+        }}}
         """
         _log.info("delete_packagegroup_from_category")
         p = self.params()
@@ -1028,8 +1802,12 @@ class RepositoryActions(JSONController):
          * errataid, str, errata id
         """
         data = self.params()
-        api.add_errata(id, data['errataid'])
-        return self.ok(True)
+        for erratumid in data['errataid']:
+            erratum = errataapi.erratum(erratumid)
+            if erratum is None:
+                return self.not_found("No Erratum with id: %s found" % erratumid)
+        filtered_errata = api.add_errata(id, data['errataid'])
+        return self.ok(filtered_errata)
 
     def delete_errata(self, id):
         """
@@ -1246,6 +2024,80 @@ class RepositoryActions(JSONController):
         data = self.params()
         return self.ok(api.publish(id, bool(data['state'])))
 
+
+    def export(self, id):
+        """
+        [[wiki]]
+        title: Repository Content Export
+        description: Export the repository's content into target directory from its source.
+        method: POST
+        path: /repositories/<id>/export/
+        permission: EXECUTE
+        success response: 202 Accepted
+        failure response: 404 Not Found if the id does not match a repository
+                          406 Not Acceptable if the repository does not have a source
+                          409 Conflict if a export is already in progress for the repository
+        return: a Task object
+        parameters:
+         * target_location, str, target location on the server filesystem where the content needs to be exported
+         * generate_isos?, boolean, wrap the exported content into iso image files.
+         * overwrite?, boolean, overwrite the content in target location if not empty
+        """
+        if api.repository(id, default_fields) is None:
+           return self.not_found('A repository with the id, %s, does not exist' % id)
+        export_params = self.params()
+        target_location = export_params.get('target_location', None)
+        generate_isos = export_params.get('generate_isos', False)
+        overwrite = export_params.get('overwrite', False)
+        # Check for valid target_location values
+        try:
+            exporter.validate_target_path(target_dir=target_location, overwrite=overwrite)
+        except TargetExistsException:
+            return self.bad_request("Target location [%s] already has content; must use overwrite to perform export." % target_location)
+        except ExportException, ee:
+            raise PulpException(str(ee))
+        task = exporter.export(id, target_directory=target_location, generate_isos=generate_isos, overwrite=overwrite)
+        if not task:
+            return self.conflict('Export already in process for repo [%s]' % id)
+        task_info = self._task_to_dict(task)
+        return self.accepted(task_info)
+
+    def add_distribution(self, id):
+        """
+        [[wiki]]
+        title: Add distributions to Repository
+        description: Add distributions to repositories
+        method: POST
+        path: /repositories/<id>/add_distribution/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
+        return: True on successful add, False otherwise
+        parameters:
+         * distributionid, str, distribution id
+        """
+        data = self.params()
+        api.add_distribution(id, data['distributionid'])
+        return self.ok(True)
+
+    def remove_distribution(self, id):
+        """
+        [[wiki]]
+        title: remove distributions to Repository
+        description: Remove distributions to repositories
+        method: POST
+        path: /repositories/<id>/remove_distribution/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
+        return: True on successful remove, False otherwise
+        parameters:
+         * distributionid, str, distribution id
+        """
+        data = self.params()
+        api.remove_distribution(id, data['distributionid'])
+        return self.ok(True)
+
     @error_handler
     @auth_required(EXECUTE)
     def POST(self, id, action_name):
@@ -1286,7 +2138,10 @@ class RepositoryActions(JSONController):
         action_methods = {
             'sync': '_sync',
             '_sync': '_sync',
-            'metadata' : '_metadata',
+            'clone': '_clone',
+            '_clone': '_clone',
+            'generate_metadata' : '_generate_metadata',
+            'export': '_export',
         }
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %
@@ -1300,54 +2155,8 @@ class RepositoryActions(JSONController):
         task_infos = []
         for task in tasks:
             info = self._task_to_dict(task)
-            info['status_path'] = self._status_path(task.id)
             task_infos.append(info)
         return self.ok(task_infos)
-
-
-class RepositoryActionStatus(JSONController):
-
-    @error_handler
-    @auth_required(EXECUTE) # this is checking an execute, not reading a resource
-    def GET(self, id, action_name, action_id):
-        """
-        [[wiki]]
-        title: Action Status
-        description: Check the status of a previously returned task.
-        This url path should match the status_uri of a Task object.
-        method: GET
-        path: /repositories/<id>/<action name>/<task id>/
-        permission: EXECUTE
-        success response: 200 OK
-        failure response: 404 Not Found if the task id does not match a task for the repository
-        return: Task object
-        """
-        task_info = self.task_status(action_id)
-        if task_info is None:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        return self.ok(task_info)
-
-    @error_handler
-    @auth_required(EXECUTE) # this is stopping an execute, not deleting a resource
-    def DELETE(self, id, action_name, action_id):
-        """
-        [[wiki]]
-        title: Cancel A Task
-        description:
-        method: DELETE
-        path: /repositories/<id>/<action name>/<task id>/
-        permission: READ
-        success response: 202 Accepted
-         204 No Content if the task has already finished
-        failure response: 404 Not Found if the task id does nat match a task for the repository
-        return: Task object on 202
-        """
-        tasks = async.find_async(id=action_id)
-        if not tasks:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        task = tasks[0]
-        async.cancel_async(task)
-        return self.accepted(self._task_to_dict(task))
 
 
 class Schedules(JSONController):
@@ -1385,7 +2194,7 @@ class RepositoryTaskHistory(JSONController):
     @auth_required(READ)
     def GET(self, id, action):
         """
-        [wiki]
+        [[wiki]]
         title: Repository Action History
         description: List completed actions and their results for a repository.
         method: GET
@@ -1411,17 +2220,23 @@ urls = (
     '/schedules/', 'Schedules',
     '/([^/]+)/$', 'Repository',
 
+    '/([^/]+)/schedules/(%s)/' % '|'.join(SchedulesResource.schedule_types),
+    SchedulesResource,
+
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),
     'RepositoryDeferredFields',
 
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions),
     'RepositoryActions',
 
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions),
-    'RepositoryActionStatus',
-
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
     'RepositoryTaskHistory',
+
+    '/([^/]+)/notes/([^/]+)/$', 'RepositoryNotes',
+    '/([^/]+)/notes/$', 'RepositoryNotesCollection',
+
+    '/([^/]+)/statuses/$', 'RepositoryStatusesCollection',
+    '/([^/]+)/statuses/([^/]+)/$', 'RepositorySyncStatus',
 )
 
 application = web.application(urls, globals())

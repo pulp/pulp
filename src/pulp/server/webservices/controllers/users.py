@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+from gettext import gettext as _
 
 import web
 
@@ -43,7 +44,10 @@ class Users(JSONController):
         @return: a list of all users
         """
         # implement filters
-        return self.ok(api.users())
+        users = api.users()
+        for u in users:
+            u.pop('password', None)
+        return self.ok(users)
 
     @error_handler
     @auth_required(CREATE)
@@ -88,7 +92,12 @@ class User(JSONController):
         @param login: user login
         @return: user metadata
         """
-        return self.ok(api.user(login))
+        user = api.user(login)
+        if user is None:
+            msg = _('No such user: %(u)s') % {'u': login}
+            return self.not_found(msg)
+        user.pop('password', None)
+        return self.ok(user)
 
     @error_handler
     @auth_required(UPDATE)
@@ -99,7 +108,8 @@ class User(JSONController):
         """
         delta = self.params()
         user = api.update(login, delta)
-        return self.ok(True)
+        user.pop('password', None)
+        return self.ok(user)
 
     @error_handler
     @auth_required(DELETE)
@@ -116,7 +126,7 @@ class User(JSONController):
         # and logic is mashed together, it causes cyclic dependencies
         if is_last_super_user(user):
             return self.bad_request(
-                'Cannot delete %s, they are the last super user' % login)
+                "The last super user '%s' cannot be deleted." % login)
         revoke_all_permissions_from_user(login)
         api.delete(login=login)
         return self.ok(True)

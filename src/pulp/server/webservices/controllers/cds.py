@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -31,6 +30,7 @@ from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDATE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
+from pulp.server.webservices import validation
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -160,7 +160,6 @@ class CdsActions(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     def unassociate(self, id):
@@ -178,7 +177,6 @@ class CdsActions(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     def history(self, id):
@@ -243,11 +241,18 @@ class CdsSyncActions(JSONController):
         Triggers a sync against the CDS identified by id.
         '''
 
+        cds = cds_api.cds(id)
+        if cds is None:
+            return self.not_found('Could not find CDS with hostname [%s]' % id)
+
         # Check to see if a timeout was specified
         params = self.params()
         timeout = None
-        if 'timeout' in params:
-            timeout = dateutils.parse_iso8601_duration(params['timeout'])
+        try:
+            if 'timeout' in params:
+                timeout = validation.timeout.iso8601_duration_to_timeout(params['timeout'])
+        except validation.timeout.UnsupportedTimeoutInterval, e:
+            return self.bad_request(msg=e.args[0])
 
         # Kick off the async task
         task = async.run_async(cds_api.cds_sync, [id], timeout=timeout, unique=True)
@@ -259,7 +264,6 @@ class CdsSyncActions(JSONController):
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
     @error_handler
@@ -279,24 +283,9 @@ class CdsSyncActions(JSONController):
         all_task_infos = []
         for task in tasks:
             info = self._task_to_dict(task)
-            info['status_path'] = self._status_path(task.id)
             all_task_infos.append(info)
 
         return self.ok(all_task_infos)
-
-
-class CdsSyncTaskStatus(JSONController):
-
-    @error_handler
-    @auth_required(READ)
-    def GET(self, id, task_id):
-        '''
-        Returns the state of an individual CDS sync task.
-        '''
-        task_info = self.task_status(task_id)
-        if task_info is None:
-            return self.not_found('No sync with id [%s] found' % task_id)
-        return self.ok(task_info)
 
 
 class CDSTaskHistory(JSONController):
@@ -335,7 +324,6 @@ urls = (
     '/$', 'CdsInstances',
     '/([^/]+)/(%s)/$' % '|'.join(CdsActions.exposed_actions), 'CdsActions',
     '/([^/]+)/sync/$', 'CdsSyncActions',
-    '/([^/]+)/sync/([^/]+)/$', 'CdsSyncTaskStatus',
     '/([^/]+)/$', 'CdsInstance',
 
     '/([^/]+)/history/(%s)/$' % '|'.join(CDSTaskHistory.available_histories),

@@ -30,30 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="ConsumerGroups">Consumer Groups</h1>
-<p>
-<div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-ConsumerGroups.html#List">List</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#Delete">Delete</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#Create">Create</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#Information">Information</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#Remove">Remove</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#AddaConsumer">Add a Consumer</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#RemoveaConsumer">Remove a Consumer</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#BindConsumers">Bind Consumers</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#Unbind">Unbind</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#AddKey-ValuePair">Add Key-Value Pair</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#UpdateKey-ValuePair">Update Key-Value Pair</a></li><li class="active">
-<a href="UGREST-ConsumerGroups.html#DeleteKey-ValuePair">Delete Key-Value Pair</a></li></ol></li></ol></div>
-
-</p>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="ConsumerGroups">Consumer Groups</h1>
 <p>
 Base URL Path: <strong>/consumergroups/</strong>
 </p>
@@ -98,9 +75,9 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumergroup'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
-  <B><span class="code-string">'consumerids'</span></b>: [<B><span class="code-string">'consumer1'</span></b>,<B><span class="code-string">'consumer2'</span></b>]}]
+<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumergroup'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
+  <span class="s">'consumerids'</span><span class="p">:</span> <span class="p">[</span><span class="s">'consumer1'</span><span class="p">,</span><span class="s">'consumer2'</span><span class="p">]}]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -145,7 +122,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: None
 </p>
@@ -191,9 +168,9 @@ Response: <strong>201 Created</strong>
 <p>
 Headers:
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer group'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
-  <B><span class="code-string">'consumerids'</span></b>: []}]
+<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer group'</span><span class="p">,</span>
+  <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
+  <span class="s">'consumerids'</span><span class="p">:</span> <span class="p">[]}]</span>
 </pre></div><p>
 Error: <strong>409 Conflict</strong> if there is an existing consumer group with the same id
 </p>
@@ -238,9 +215,9 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer group'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
- <B><span class="code-string">'repoids'</span></b>: [<B><span class="code-string">'consumer1'</span></b>, <B><span class="code-string">'consumer2'</span></b>]}
+<div class="code"><pre><span class="p">{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer group'</span><span class="p">,</span>
+ <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
+ <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[</span><span class="s">'consumer1'</span><span class="p">,</span> <span class="s">'consumer2'</span><span class="p">]}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -285,7 +262,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -326,7 +303,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -371,7 +348,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -412,7 +389,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -457,7 +434,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -500,7 +477,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -543,7 +520,7 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
@@ -563,9 +540,9 @@ Method: <strong>POST</strong>
 </p>
 <p>
 Parameters:
-* key
 </p>
-<p>
+<ul><li>key
+</li></ul><p>
 Authentication:
 </p>
 <blockquote>
@@ -584,22 +561,138 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre><span class="bp">True</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer group
 </p>
+<hr />
+<h2 id="InstallPackage">Install Package</h2>
+<p>
+<em>Request that package(s) be installed on a consumer group.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <em>job ID</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><hr />
+<h2 id="UninstallPackage">Uninstall Package</h2>
+<p>
+<em>Request that package(s) be uninstalled on a consumer group.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/uninstallpackages/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <em>job ID</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><hr />
+<h2 id="InstallPackageGroup">Install Package Group</h2>
+<p>
+<em>Request that package groups (s) be installed on a consumer group.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackagegroups/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <em>job ID</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>grpids</strong> &lt;list&gt; <em>a list of group names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><hr />
+<h2 id="UninstallPackageGroup">Uninstall Package Group</h2>
+<p>
+<em>Request that package group(s) be uninstalled on a consumer group.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackagegroups/
+</p>
+<p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such group
+</li></ul><p>
+<strong>return:</strong> <em>job ID</em>
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>grpids</strong> &lt;list&gt; <em>a list of group names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

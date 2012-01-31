@@ -15,34 +15,15 @@
 # Python
 import os
 import sys
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
-import pulp.server.api.repo
-import pulp.server.crontab
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
+import pulp.server.api.repo
+import pulp.server.crontab
 from pulp.server.api import repo_sync
 
-class TestRepoPublish(unittest.TestCase):
-
-    def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.repo_api = pulp.server.api.repo.RepoApi()
-        self.data_path = \
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-
-    def tearDown(self):
-        self.repo_api.clean()
-        testutil.common_cleanup()
+class TestRepoPublish(testutil.PulpAsyncTest):
 
     def test_repo_publish(self):
         # Setup

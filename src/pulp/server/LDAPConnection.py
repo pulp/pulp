@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -17,13 +16,22 @@ import logging
 
 import ldap.modlist
 
-log = logging.getLogger("LDAPConnection")
+from pulp.server.config import config
+from pulp.server.db.model import User
+from pulp.server.api.user import UserApi
+from pulp.server.auth import authorization
+
+_user_api = UserApi()
+log = logging.getLogger(__name__)
 
 class LDAPConnection:
-    def __init__(self, admin=None, password=None, server='ldap://localhost:389'):
+    def __init__(self, admin=None, password=None,
+                 server='ldap://localhost:389',
+                 tls=False):
         self.ldapserver =  server
         self.ldapadmin  =  admin
         self.ldappassword = password
+        self.ldaptls = tls
         self.lconn = None
 
     def connect(self):
@@ -32,13 +40,29 @@ class LDAPConnection:
         """
         try:
             self.lconn = ldap.initialize(self.ldapserver)
+        except ldap.LDAPError, err:
+            log.error("Unable to establish a connection to LDAP server: %s" %
+                      err)
+            return False
+
+        if self.ldaptls:
+            try:
+                self.lconn.start_tls_s()
+            except ldap.LDAPError, err:
+                if err[0]['info'] != 'TLS already started':
+                    log.error("Could not start TLS: %s" % err)
+                    return False
+
+        try:
             if not self.ldapadmin or not self.ldappassword:
-                #do an anonymous bind
+                # do an anonymous bind
                 self.lconn.simple_bind_s()
             else:
                 self.lconn.simple_bind_s(self.ldapadmin, self.ldappassword)
-        except ldap.LDAPError, e:
-            log.error("Unable to establish a connection to ldap server")
+        except ldap.LDAPError, err:
+            log.error("Unable to bind to LDAP server: %s" % err)
+            return False
+                
 
     def disconnect(self):
         """
@@ -76,40 +100,82 @@ class LDAPConnection:
         except ldap.LDAPError, e:
             log.error("Failed to delete user with dn %s to the ldap server" % dn)
             
-    def authenticate_user(self, base, user, password):
+    def authenticate_user(self, base, username, password, filter=None):
         """
-        @param user:  Userid to be validated in ldap server
+        @param base: The base DN of the ldap server
+                     Ex: dc=example,dc=com
+        @param username:  Userid to be validated in ldap server
         @param password: password credentials for userid
+        @param filter: Optional additional LDAP filter to use when
+                       searching for the user. Ex: (gidNumber=200)
         
-        return a boolean, If the bind succeeds else Invalid auth
+        Returns the user info list with data in ldap server if the
+        bind succeeds; else returns None
         """
-        user = "uid=%s,%s" % (user, base)
-        try:
-            self.lconn.simple_bind_s(user, password)
-            log.info("Found user with id %s with matching credentials" % user)
-        except:
-            log.info("Invalid Credentials for %s." % user)
-            return False
-        return True
+        user = self.lookup_user(base, username, filter=filter)
+        if user:
+            userdn = user[0]
+            try:
+                self.lconn.simple_bind_s(userdn, password)
+                log.info("Found user with id %s with matching credentials" %
+                         username)
+                return self._add_from_ldap(username, user)
+            except:
+                log.info("Invalid credentials for %s" % username)
+                return None
+        else:
+            return None
 
-    def lookup_user(self, baseDN, user):
+    def _add_from_ldap(self, username, userdata):
+        """
+        @param username:  Username to be added
+        @param user: tuple of user data as returned by lookup_user
+
+        Adds a user to the pulp user database with no password and
+        returns a pulp.server.db.model.User object
+        """
+        user = _user_api.user(username)
+        if user is None:
+            attrs = userdata[1]
+            try:
+                name = attrs['gecos']
+            except KeyError:
+                name = username
+            user = _user_api.create(username, name=name)
+            if config.has_option('ldap', 'default_role'):
+                role = config.get('ldap', 'default_role')
+                rv = authorization.add_user_to_role(role, username)
+                if not rv:
+                    log.error("Could not add user [%s] to role [%s]" %
+                              (username, role))
+                              
+        return user
+
+    def lookup_user(self, baseDN, user, filter=None):
         """
         @param baseDN: The base DN of the ldap server
                        ex: dc=example,dc=com
-        @param user:  Userid to be validated in ldap server
+        @param user:   Userid to be validated in ldap server
+        @param filter: Optional additional LDAP filter to use when
+                       searching for the user. Ex: (gidNumber=200)
 
-        Returns the user info list with data in ldap server
+        If there is exactly one match, returns the user info list with
+        data in ldap server.  Otherwise returns None
         """
-        scope = ldap.SCOPE_SUBTREE
-        filter = "(uid=%s)" % user
-        log.info("filter to lookup redhat ldap %s" % filter)
-        result = self.lconn.search_s(baseDN, scope, filter)
-        if result:
-            log.info("Found user with id %s with matching credentials" % user)
+        if filter:
+            ldapfilter = "(&(uid=%s)%s)" % (user, filter)
+        else:
+            ldapfilter = "(uid=%s)" % user
+        result = self.lconn.search_s(baseDN, ldap.SCOPE_SUBTREE, ldapfilter)
+        if len(result) == 1:
+            # exactly one result
+            log.info("Found user with id %s" % user)
+            return result[0]
+        elif len(result) > 1:
+            log.info("Found more than one match for id %s" % user)
         else:
             log.info("User %s Not Found." % user)
-        return result
-
+        return None
 
 if __name__ == '__main__':
     ldapserv = LDAPConnection('cn=Directory Manager', \

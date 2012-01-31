@@ -13,6 +13,39 @@ import os
 import re
 
 
+EXMSG = \
+"""
+A bundle must contain both the private key and
+certificate PEM text.  The [%s] PEM text was not found.
+"""
+EXMSG_AT_PATH = \
+"""
+The bundle at: %s
+must contain both the private key and certificate
+PEM text.  The [%s] PEM text was not found.
+"""
+
+
+class KeyNotFound(Exception):
+
+    def __init__(self, bundle, path=None):
+        if path:
+            msg = EXMSG_AT_PATH % (path, 'key')
+        else:
+            msg = EXMSG % 'key'
+        Exception.__init__(self, msg)
+
+
+class CertNotFound(Exception):
+
+    def __init__(self, bundle, path=None):
+        if path:
+            msg = EXMSG_AT_PATH % (path, 'certificate')
+        else:
+            msg = EXMSG % 'certificate'
+        Exception.__init__(self, msg)
+
+
 class Bundle:
     """
     Represents x509, pem encoded key & certificate bundles.
@@ -60,6 +93,20 @@ class Bundle:
         return ( cls.haskey(bundle) and cls.hascrt(bundle) )
     
     @classmethod
+    def assertvalid(cls, bundle, path=None):
+        """
+        Validate that the bundle is valid.
+        @param bundle: A bundle to validate.
+        @type bundle: str
+        @raise KeyMissing: When key PEM is missing.
+        @raise CertMissing: When cert PEM is missing.
+        """
+        if not cls.haskey(bundle):
+            raise KeyNotFound(bundle, path)
+        if not cls.hascrt(bundle):
+            raise CertNotFound(bundle, path)
+
+    @classmethod
     def split(cls, bundle):
         """
         Split the bundle into key and certificate components.
@@ -84,7 +131,7 @@ class Bundle:
         begin = begin.start(0)
         end = end.end(0)
         crt= bundle[begin:end]
-        return (key, crt)
+        return (key.strip(), crt.strip())
 
     @classmethod
     def join(cls, key, crt):
@@ -134,10 +181,11 @@ class Bundle:
         @return: A string containing the PEM encoded key & cert.
         @rtype: str
         """
-        f = open(self.crtpath())
+        path = self.crtpath()
+        f = open(path)
         bundle = f.read()
         f.close()
-        assert(self.hasboth(bundle))
+        self.assertvalid(bundle, path)
         return bundle
 
     def write(self, bundle):
@@ -147,7 +195,7 @@ class Bundle:
         @type bundle: str
         """
         self.mkdir()
-        assert(self.hasboth(bundle))
+        self.assertvalid(bundle)
         f = open(self.crtpath(), 'w')
         f.write(bundle)
         f.close()

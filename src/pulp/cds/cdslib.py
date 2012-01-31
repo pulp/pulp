@@ -11,6 +11,7 @@
 
 # Python
 import os
+import sys
 import logging
 import shutil
 
@@ -24,6 +25,25 @@ from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 
 LOGPATH = '/var/log/pulp-cds/gofer.log'
 REPO_LIST_FILENAME = '.cds_repo_list'
+TIME = '%(asctime)s'
+LEVEL = ' [%(levelname)s]'
+THREAD = '[%(threadName)s]'
+FUNCTION = ' %(funcName)s()'
+FILE = ' @ %(filename)s'
+LINE = ':%(lineno)d'
+MSG = ' - %(message)s'
+
+if sys.version_info < (2,5):
+    FUNCTION = ''
+
+FMT = \
+    ''.join((TIME,
+            LEVEL,
+            THREAD,
+            FUNCTION,
+            FILE,
+            LINE,
+            MSG,))
 
 log = None
 
@@ -43,7 +63,9 @@ def loginit(path=LOGPATH):
         if not os.path.exists(logdir):
             os.makedirs(logdir)
         log = logging.getLogger(__name__)
-        log.addHandler(logging.FileHandler(path))
+        handler = logging.FileHandler(path)
+        handler.setFormatter(logging.Formatter(FMT))
+        log.addHandler(handler)
         log.setLevel(logging.DEBUG)
     return log
 

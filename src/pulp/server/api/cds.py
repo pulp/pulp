@@ -33,7 +33,7 @@ from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
     CdsAuthException, CdsMethodException,)
 from pulp.server.db.model import CDS, Repo
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 # -- constants ----------------------------------------------------------------
 
@@ -177,6 +177,11 @@ class CdsApi(BaseApi):
 
         if not doomed:
             raise PulpException('Could not find CDS with hostname [%s]' % hostname)
+
+        # Explicitly unassociate each repo from the CDS first so the cluster
+        # and redistribution changes can take place
+        for repo_id in doomed['repo_ids']:
+            self.unassociate_repo(hostname, repo_id, deleted=False, apply_to_cluster=True)
 
         try:
             self.dispatcher.release_cds(doomed)
@@ -533,7 +538,7 @@ class CdsApi(BaseApi):
         repo_base_url = '%s/%s' % (server_url, repo_relative_url)
 
         # Global cert bundle, if any (repo cert bundles are handled above)
-        global_cert_bundle = repo_cert_utils.global_cert_bundle_filenames()
+        global_cert_bundle = repo_cert_utils.read_global_cert_bundle()
 
         # Assemble the list of CDS hostnames in the same cluster
         if cds['cluster_id'] is not None:
@@ -645,7 +650,7 @@ class CdsApi(BaseApi):
 
             # Retrieve the repo proxy for the consumer being handled
             agent = PulpAgent(consumer, async=True)
-            agent_repolib = agent.Repo()
+            agent_repolib = agent.Consumer()
 
             # Send the update message to the consumer
             agent_repolib.update(repo_id, bind_data)

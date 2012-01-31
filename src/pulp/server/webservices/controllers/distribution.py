@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -20,7 +19,7 @@ from pulp.server.api.distribution import DistributionApi
 from pulp.server.auth.authorization import CREATE, READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
-    auth_required, error_handler)
+    auth_required, error_handler, collection_query)
 from pulp.server.webservices.http import extend_uri_path
 
 # globals ---------------------------------------------------------------------
@@ -34,28 +33,41 @@ class Distributions(JSONController):
 
     @error_handler
     @auth_required(READ)
-    def GET(self):
+    @collection_query("id", "repoids")
+    def GET(self, spec={}):
         """
-        List all available distributions.
-        @return: a list of all available distributions
+        [[wiki]]
+        title: List all available distributions.
+        description: Get a list of all distributions managed by Pulp.
+        method: GET
+        path: /distributions/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of distribution objects, possibly empty
+        example:
+        {{{
+        #!js
+        [{'_id': 'ks-Fedora-Fedora-14-x86_64',
+          '_ns': 'distribution',
+          'description': None,
+          'id': 'ks-Fedora-Fedora-14-x86_64',
+          'family' : 'Fedora',
+          'variant' : 'Fedora',
+          'version' : '14',
+          'arch' : 'x86_64',
+          'timestamp' : '2011-05-13T15:44:30',
+          'files': ['/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/install.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/efiboot.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/boot.iso',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/efidisk.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/pxeboot/initrd.img',
+                   '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/pxeboot/vmlinuz'],
+          'relativepath' : '/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64'},]
+        }}}
         """
-        distributions = api.distributions()
+        distributions = api.distributions(spec)
         return self.ok(distributions)
-
-#    @error_handler
-#    @auth_required(CREATE)
-#    def POST(self):
-#        """
-#        Create a new errata
-#        @return: errata that was created
-#        """
-#        distribution_data = self.params()
-#        distribution = api.create(distribution_data['id'],
-#                                  distribution_data['description'],
-#                                  distribution_data['relative_path'],
-#                                  distribution_data.get('files', []))
-#        path = extend_uri_path(distribution['id'])
-#        return self.created(path, distribution)
 
 
 class Distribution(JSONController):
@@ -64,20 +76,43 @@ class Distribution(JSONController):
     @auth_required(READ)
     def GET(self, id):
         """
-        Look up distribution by id.
-        @param id: distribution id
-        @return: distribution info
-        """
+        [[wiki]]
+        title: Look up distribution by id.
+        description: Get a distribution object
+        method: GET
+        path: /distributions/<id>/
+        permission: READ
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a distribution
+        return: a Distribution object
+        example:
+        {{{
+        #!js
+        { "id": "ks-Fedora-None-16-x86_64",
+          "_id": "ks-Fedora-None-16-x86_64",
+          "_ns": "distribution",
+          "description": "ks-Fedora-Fedora-16-x86_64",
+         "family": "Fedora",
+         "relativepath": "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64",
+         "variant": Fedora,
+         "version": "16",
+         "timestamp": "2011-11-03T07:39:38",
+         "arch": "x86_64",
+         "url": ["http://localhost/pulp/ks/released/F-16/GOLD/Everything/x86_64/os/"]}
+         "files": ["/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/initrd.img",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/repomd.xml",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/vmlinuz",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/.treeinfo",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efiboot.img",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/boot.iso",
+           "/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efidisk.img"]}
+        }}}
+        """  
+        distro = api.distribution(id)
+        if distro is None:
+            return self.not_found('No distribution %s' % id)
         # implement filters
-        return self.ok(api.distribution(id))
-
-#    @error_handler
-#    @auth_required(DELETE)
-#    def DELETE(self, id):
-#        """
-#        @return: True on successful deletion of distribution
-#        """
-#        return self.ok(api.delete(id))
+        return self.ok(distro)
 
 # web.py application ----------------------------------------------------------
 

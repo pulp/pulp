@@ -29,7 +29,7 @@ from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal
 from pulp.server.db.model import Consumer, ConsumerHistoryEvent
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import Task
 
@@ -39,8 +39,8 @@ from pulp.server.tasking.task import Task
 LOG = logging.getLogger(__name__)
 
 # Event Types
-TYPE_CONSUMER_CREATED = 'consumer_created'
-TYPE_CONSUMER_DELETED = 'consumer_deleted'
+TYPE_CONSUMER_REGISTERED = 'consumer_registered'
+TYPE_CONSUMER_UNREGISTERED = 'consumer_unregistered'
 TYPE_REPO_BOUND = 'repo_bound'
 TYPE_REPO_UNBOUND = 'repo_unbound'
 TYPE_PACKAGE_INSTALLED = 'package_installed'
@@ -48,7 +48,7 @@ TYPE_PACKAGE_UNINSTALLED = 'package_uninstalled'
 TYPE_ERRATA_INSTALLED = 'errata_installed'
 TYPE_PROFILE_CHANGED = 'profile_changed'
 
-TYPES = (TYPE_CONSUMER_CREATED, TYPE_CONSUMER_DELETED, TYPE_REPO_BOUND,
+TYPES = (TYPE_CONSUMER_REGISTERED, TYPE_CONSUMER_UNREGISTERED, TYPE_REPO_BOUND,
          TYPE_REPO_UNBOUND, TYPE_PACKAGE_INSTALLED, TYPE_PACKAGE_UNINSTALLED,
          TYPE_ERRATA_INSTALLED, TYPE_PROFILE_CHANGED)
 
@@ -184,24 +184,26 @@ class ConsumerHistoryApi(BaseApi):
         '''
         return get_principal()['login']
 
-    def consumer_created(self, consumer_id):
+    def consumer_registered(self, consumer_id):
         '''
         Creates a new event to represent a consumer being created.
 
         @param consumer_id: identifies the newly created consumer
         @type  consumer_id: string or number
         '''
-        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_CONSUMER_CREATED, None)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(),
+            TYPE_CONSUMER_REGISTERED, None)
         self.collection.insert(event, safe=True)
 
-    def consumer_deleted(self, consumer_id):
+    def consumer_unregistered(self, consumer_id):
         '''
         Creates a new event to represent a consumer being deleted.
 
         @param consumer_id: identifies the deleted consumer
         @type  consumer_id: string or number
         '''
-        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_CONSUMER_DELETED, None)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(),
+            TYPE_CONSUMER_UNREGISTERED, None)
         self.collection.insert(event, safe=True)
 
     def repo_bound(self, consumer_id, repo_id):
@@ -333,6 +335,8 @@ def init_culling_task():
     interval = datetime.timedelta(days=1)
     tz = dateutils.local_tz()
     now = datetime.datetime.now(tz)
+    if now.hour > 1:
+        now += interval
     start_time = datetime.datetime(now.year, now.month, now.day, 1, tzinfo=tz)
     scheduler = IntervalScheduler(interval, start_time)
     task = Task(cull_history, scheduler=scheduler)

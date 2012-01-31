@@ -17,6 +17,7 @@ import pickle
 import sys
 import time
 import traceback
+import threading
 import uuid
 from gettext import gettext as _
 
@@ -26,11 +27,19 @@ from pulp.server.tasking.exception import (
     TimeoutException, CancelException, UnscheduledTaskException,
     SnapshotFailure)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-
+from pulp.server.util import encode_unicode
 
 _log = logging.getLogger(__name__)
 
-# task states -----------------------------------------------------------------
+# task events ------------------------------------------------------------------
+
+task_enqueue = 'enqueue'
+task_dequeue = 'dequeue'
+task_exit = 'exit' # task completed in any state
+
+task_events = (task_enqueue, task_dequeue, task_exit)
+
+# task states ------------------------------------------------------------------
 
 task_waiting = 'waiting'
 task_running = 'running'
@@ -70,7 +79,8 @@ class Task(object):
                  args=None,
                  kwargs=None,
                  scheduler=None,
-                 timeout=None):
+                 timeout=None,
+                 weight=1):
         """
         Create a Task for the passed in callable and arguments.
         @type callable: python callable
@@ -85,7 +95,16 @@ class Task(object):
         @type timeout: datetime.timedelta instance or None
         @param timeout: maximum length of time to allow task to run,
                         None means indefinitely
+        @type weight: int
+        @param weight: the weight this task lends toward the task queue's
+                       concurrency threshold
         """
+        # validation
+        if weight < 0:
+            msg = _('Task for %(n)s created with a weight less than 0, reseting to default of 1')
+            _log.error(msg % {'n': callable.__name__})
+            weight = 1
+
         # identification
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
         self.class_name = None
@@ -97,12 +116,14 @@ class Task(object):
         # task resources
         self.callable = callable
         self.args = args or []
-        self.kwargs = kwargs or {}
+        self.kwargs = dict(kwargs or {})
         self.scheduler = scheduler or ImmediateScheduler()
-        self.timeout = timeout
+        self.timeout_delta = timeout
+        self.weight = weight
         self._progress_callback = None
 
         # resources managed by the task queue to deliver events
+        self.hooks = {}
         self.complete_callback = None
         self.failure_threshold = None
         self.schedule_threshold = None
@@ -121,6 +142,7 @@ class Task(object):
         self.traceback = None
         self.consecutive_failures = 0
         self.cancel_attempts = 0
+        self.job_id = None
 
     def __cmp__(self, other):
         """
@@ -167,14 +189,30 @@ class Task(object):
             return '.'.join((self.class_name, self.method_name))
         # task arguments
         def _args():
-            return ', '.join([str(a) for a in self.args])
+            try:
+                return ', '.join([str(a) for a in self.args])
+            except UnicodeEncodeError:
+                return ', '.join([a.encode('utf-8') for a in self.args])
         # task keyword arguments
         def _kwargs():
-            return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])
+            try:
+                return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])
+            except UnicodeEncodeError:
+                for k, v in self.kwargs.items():
+                    if not v:
+                        del self.kwargs[k]
+                    else:
+                        try:
+                            v.encode('utf-8')
+                        except:
+                            del self.kwargs[k]
+
+            return ', '.join(['='.join((str(k), v.encode('utf-8'))) for k, v in self.kwargs.items()])
+
         # put it all together
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
-    # attribute setters ------------------------------------------------------
+    # attribute setters --------------------------------------------------------
 
     def set_progress(self, arg, callback):
         """
@@ -201,15 +239,60 @@ class Task(object):
                        (repr(e), self.id, self._progress_callback.__name__))
             raise
 
+    # hook management ----------------------------------------------------------
+
+    def add_enqueue_hook(self, hook):
+        """
+        Provide a hook to be called when the task is enqueued.
+        The hook's only argument is the task.
+        @type hook: callable
+        """
+        assert callable(hook)
+        hook_list = self.hooks.setdefault(task_enqueue, [])
+        hook_list.append(hook)
+
+    def remove_enqueue_hook(self, hook):
+        """
+        Remove a hook to be called when the task is enqueued.
+        @type hook: callable
+        """
+        hook_list = self.hooks.get(task_enqueue, [])
+        try:
+            hook_list.remove(hook)
+        except ValueError:
+            pass
+
+    def add_dequeue_hook(self, hook):
+        """
+        Provide a hook to be called when the task is dequeued.
+        The hook's only argument is the task.
+        @type hook: callable
+        """
+        assert callable(hook)
+        hook_list = self.hooks.setdefault(task_dequeue, [])
+        hook_list.append(hook)
+
+    def remove_dequeue_hook(self, hook):
+        """
+        Remove a hook to be called when the task is dequeued.
+        @type hook: callable
+        """
+        hook_list = self.hooks.get(task_dequeue, [])
+        try:
+            hook_list.remove(hook)
+        except ValueError:
+            pass
+
     # snapshot methods ---------------------------------------------------------
 
     _copy_fields = ('id', 'class_name', 'method_name', 'failure_threshold',
                     'state', 'progress', 'consecutive_failures',
-                    'cancel_attempts')
+                    'cancel_attempts', 'job_id', 'weight')
 
-    _pickle_fields = ('callable', 'args', 'kwargs', 'timeout',
+    _pickle_fields = ('callable', 'args', 'kwargs', 'timeout_delta',
                       'schedule_threshold', '_progress_callback', 'start_time',
-                      'finish_time', 'result', 'exception', 'traceback')
+                      'finish_time', 'result', 'exception', 'traceback',
+                      'hooks',)
 
     def snapshot(self):
         """
@@ -382,7 +465,10 @@ class Task(object):
         @type tb: str
         """
         self.state = task_error
-        self.exception = repr(exception)
+        if exception is unicode:
+            self.exception = encode_unicode(exception)
+        else:
+            self.exception = str(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
         self.consecutive_failures += 1
         _log.error(_('Task failed: %s\n%s') % (str(self), ''.join(self.traceback)))
@@ -443,7 +529,41 @@ class AsyncTask(Task):
     execution is the first part of running the task and does not result in
     transition to a finished state.  Rather, the Task state is advanced
     by external processing.
+    @cvar __current: The current task running in the thread.
+    @type __current: L{AsyncTask}
     """
+
+    __current = threading.local()
+
+    def __init__(self,
+                 callable,
+                 args=None,
+                 kwargs=None,
+                 scheduler=None,
+                 timeout=None,
+                 weight=0):
+        # overriden only to provided a different default weight of 0
+        super(AsyncTask, self).__init__(callable, args, kwargs, scheduler,
+                                        timeout, weight)
+
+    @classmethod
+    def current(cls):
+        """
+        The current running task.
+        @return: The current running task.
+        @rtype: L{AsyncTask}
+        """
+        return cls.__current.task
+
+    def run(self):
+        """
+        Set current running task and call super.
+        """
+        try:
+            AsyncTask.__current.task = self
+            return Task.run(self)
+        finally:
+            AsyncTask.__current.task = None
 
     def invoked(self, result):
         """

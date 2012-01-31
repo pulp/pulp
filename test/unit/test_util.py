@@ -18,13 +18,11 @@ import sys
 import time
 import traceback
 import unittest
+import shutil
 from threading import Thread
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.server import async
 from pulp.server.api import repo_sync
@@ -36,30 +34,25 @@ from pulp.server.util import get_rpm_information
 from pulp.server.util import get_repo_packages
 from pulp.server.util import get_repo_package
 from pulp.server.util import get_relative_path
-import testutil
+from pulp.server.util import makedirs
 
 logging.root.setLevel(logging.INFO)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
 CERTS_DIR = '/tmp/test_repo_api/repos'
-class TestUtil(unittest.TestCase):
+
+
+class TestUtil(testutil.PulpAsyncTest):
 
     def setUp(self):
-        self.config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
         self.config.set('repos', 'cert_location', CERTS_DIR)
 
-        self.data_path = \
-            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.rapi = RepoApi()
-        self.clean()
-        async.initialize()
-
     def clean(self):
+        testutil.PulpAsyncTest.clean(self)
         persistence.TaskSnapshot.get_collection().remove(safe=True)
         persistence.TaskHistory.get_collection().remove()
-        self.rapi.clean()
-        testutil.common_cleanup()
 
     def test_getrpminfo(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
@@ -160,13 +153,13 @@ class TestUtil(unittest.TestCase):
                         tb_info = traceback.format_exc()
                         print "Traceback: %s" % (tb_info)
 
-        repo_a = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_A',
+        repo_a = self.repo_api.create('test_get_repo_packages_multi_repo_pulp_f14_A',
                                 'pulp_f14_background_sync', 'x86_64',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo_a is not None)
         #background_sync_task_a = repo_sync.sync(repo_a['id'])
 
-        repo_b = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_B',
+        repo_b = self.repo_api.create('test_get_repo_packages_multi_repo_pulp_f14_B',
                                 'pulp_f14_background_sync', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386/')
         self.assertTrue(repo_b is not None)
@@ -206,6 +199,29 @@ class TestUtil(unittest.TestCase):
                     waiting_tasks.remove(t_id)
         self.assertTrue(count < wait_count)
 
+    def test_makdirs(self):
+        root = '/tmp/test_makedirs'
+        shutil.rmtree(root, True)
+        path = os.path.join(root, 'A/B/C')
+        makedirs(path)
+        self.assertTrue(os.path.exists(path) and os.path.isdir(path))
+        for d in ('A','B','C'):
+            path = os.path.join(root, d)
+            makedirs(path)
+            self.assertTrue(os.path.exists(path) and os.path.isdir(path))
+        for d in ('C','//B','A'):
+            path = '/'.join((root, d))
+            makedirs(path)
+            self.assertTrue(os.path.exists(path) and os.path.isdir(path))
+        # test non-dir in the path
+        shutil.rmtree(root, True)
+        makedirs(root)
+        path = os.path.join(root, 'A')
+        f = open(path, 'w')
+        f.close()
+        path = os.path.join(path, 'B', 'C')
+        self.assertRaises(OSError, makedirs, path)
+        shutil.rmtree(root, True)
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,6 +24,7 @@ import types
 import BeautifulSoup
 import logging
 import unicodedata
+import pulp.server.util as util
 
 log = logging.getLogger(__name__)
 
@@ -61,11 +62,9 @@ class BaseDiscovery(object):
             self.progress[key] = kwargs[key]
         self.callback(self.progress)
 
-    def setup(self, url, ca=None, cert=None, key=None, sslverify=False):
-        '''
-        setup for discovery
-        @param url: url link to be discovered
-        @type url: string
+    def setup_certificate(self, ca=None, cert=None, key=None, sslverify=False):
+        """
+        setup certificate discovery
         @param ca: optional ca certificate to access the url
         @type ca: string
         @param cert: optional certificate to access the url(this could include both crt and key)
@@ -74,26 +73,30 @@ class BaseDiscovery(object):
         @type key: string
         @param sslverify: use this to enforce ssl verification of the server cert
         @type sslverify: boolean
-        '''
-        proto = urlparse.urlparse(url)[0]
-        if proto not in ['http', 'https', 'ftp']:
-             raise InvalidDiscoveryInput("Invalid input url %s" % url)
-        self.url = url
+        """
         self.sslcacert = write_temp_file(ca)
         self.sslclientcert = write_temp_file(cert)
         self.sslclientkey = write_temp_file(key)
         self.sslverify = sslverify
 
+    def validate_url(self, url):
+        """
+         check if the url to be discoered is supported
+        """
+        proto = urlparse.urlparse(url)[0]
+        if proto not in ['http', 'https', 'ftp', 'file']:
+             raise InvalidDiscoveryInput("Invalid input url %s" % url)
+
     def _get_header(self, buf):
-        '''
+        """
         callback function for pycurl.HEADERFUNCTION to get
         the header info and parse the location.
-        '''
+        """
         if buf.lower().startswith('location:'):
             self._redirected = buf[9:].strip()
 
     def _request(self, url=None, handle_redirect=False):
-        '''
+        """
          Initialize the curl object; loads the url and fetches the page.
          in case of redirects[301,302], the redirection is followed and
          new url is set.
@@ -101,7 +104,7 @@ class BaseDiscovery(object):
          @type url: string
          @return: html page source
          @rtype: string
-        '''
+        """
         if not url:
             url = self.url
         page_info = StringIO.StringIO()
@@ -142,8 +145,8 @@ class BaseDiscovery(object):
         finds matching sub urls.
         @param url: url link to be parse.
         @type url: string
-        @param regex: regular expression to match ythe url.
-        @type regex: string
+        @param handle_redirect: handle 302 redirects
+        @type handle_redirect: boolean
         @return: list of matching urls
         @rtype: list
         """
@@ -188,42 +191,94 @@ class BaseDiscovery(object):
                 except:
                     log.error("Unable to remove temporary cert file [%s]" % crt)
 
-    def discover(self):
+    def discover(self, url, ca=None, cert=None, key=None, sslverify=False,progress_callback=None):
         raise NotImplementedError('base discovery class method called')
 
 class YumDiscovery(BaseDiscovery):
-    '''
-    Yum discovery class to perform 
-    '''
-    def discover(self, progress_callback=None):
-        '''
+    """
+    Yum discovery class to perform
+    """
+    def discover(self, url, ca=None, cert=None, key=None, sslverify=False, progress_callback=None):
+        """
         Takes a root url and traverses the tree to find all the sub urls
         that has repodata in them.
-        @param url: url link to be parse.
-        @type url: string
         @return: list of matching urls
         @rtype: list
-        '''
+        """
+        self.url = url
+        if ca or cert or key:
+            self.setup_certificate(ca=ca, cert=cert, key=key, sslverify=sslverify)
+        proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
+        if proto in ['http', 'https', 'ftp']:
+            repourls = self._remote(progress_callback=progress_callback)
+        elif proto in ['file']:
+            repourls = self._local(progress_callback=progress_callback)
+        else:
+            raise InvalidDiscoveryInput("Invalid input url %s" % self.url)
+        return repourls
+
+    def _remote(self, progress_callback=None):
+        """
+        Takes a root url and traverses the tree to find all the sub urls
+        that has repodata in them.
+        @return: list of matching urls
+        @rtype: list
+        """
         repourls = []
         urls = self.parse_url(self.url, handle_redirect=True)
         while urls:
-            uri = urls.pop()
-            results = self.parse_url(uri)
-            for result in results:
-                if not "href=" in result:
-                    urls.append(result)
-                if result.endswith('/repodata/'):
-                    try:
-                        self._request(url="%s/%s" % (result, 'repomd.xml'))
-                        repourls.append(result[:result.rfind('/repodata/')])
-                    except:
-                        # repomd.xml could not be found, skip
-                        continue
+            results = []
             self.set_callback(progress_callback)
             self.progress_callback(num_of_urls=len(repourls))
+            uri = urls.pop()
+            if uri.endswith('/repodata/'):
+                self.__check_repomd_exists(repourls, uri)
+                continue
+            else:
+                results += self.parse_url(uri)
+                for result in results:
+                    if not "href=" in result:
+                        urls.append(result)
+                    if result.endswith('/repodata/'):
+                        self.__check_repomd_exists(repourls, result)
         # clean up the temp files
         self.clean()
         return repourls
+
+    def _local(self, progress_callback=None):
+        """
+        Takes a root file path and traverses the tree to find all the repos
+        that has repodata in them.
+        @return: list of matching filepath urls
+        @rtype: list
+        """
+        proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
+        repourls = []
+        for root, dirs, files in os.walk(path):
+            for dir in dirs:
+                fpath = "%s/%s" % (root, dir)
+                self.set_callback(progress_callback)
+                self.progress_callback(num_of_urls=len(repourls))
+                if fpath.endswith("repodata"):
+                    if os.path.exists(os.path.join(fpath, "repomd.xml")):
+                        if fpath.rfind('/repodata') > 0:
+                            result = fpath[:fpath.rfind('/repodata')]
+                            repourls.append("file://" + result)
+                        self.progress_callback(num_of_urls=len(repourls))
+                    else:
+                        continue
+        self.clean()
+        return repourls
+
+    def __check_repomd_exists(self, repourls, result):
+        try:
+            self._request(url="%s/%s" % (result, 'repomd.xml'))
+            new_url = result[:result.rfind('/repodata/')]
+            if new_url not in repourls:
+                repourls.append(new_url)
+        except:
+            log.debug("repomd.xml couldnt be found @ %s" % result)
+
 
 def discovery_progress_callback(progress):
     """
@@ -232,12 +287,12 @@ def discovery_progress_callback(progress):
     return progress
 
 def get_discovery(type):
-    '''
+    """
     Returns an instance of a Discovery object
     @param type: discovery type
     @type type: string
     Returns an instance of a Discovery object
-    '''
+    """
     if type not in DISCOVERY_MAP:
         raise InvalidDiscoveryInput('Could not find Discovery for type [%s]', type)
     discovery = DISCOVERY_MAP[type]()
@@ -262,21 +317,16 @@ def write_temp_file(buf):
     return tempfilename
 
 def main():
-    if len(sys.argv) < 2:
-        print "USAGE:python discovery.py <url>"
+    if len(sys.argv) < 3:
+        print "USAGE:python discovery.py <type> <url>"
         sys.exit(0)
     print("Discovering urls with yum metadata, This could take sometime..")
-    type = "yum"
-    url = sys.argv[1]
-    ca =  None #open(sys.argv[2], 'r').read() #None
-    cert = None # open(sys.argv[3], 'r').read() #None
-    key = None #sys.argv[4]
+    type = sys.argv[1]
+    url = sys.argv[2]
     d = get_discovery(type)
-    print "CA ",ca
-    print "CERT", cert
-    d.setup(url, ca, cert, key)
+    #d.setup(url)
     try:
-        repourls = d.discover()
+        repourls = d.discover(url)
         print('========================')
         print('Urls with repodata:\n')
         print( '=======================')

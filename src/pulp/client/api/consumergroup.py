@@ -23,7 +23,7 @@ class ConsumerGroupAPI(PulpAPI):
                               "description": description,
                               "consumerids": consumerids}
         path = "/consumergroups/"
-        return self.server.PUT(path, consumergroup_data)[1]
+        return self.server.POST(path, consumergroup_data)[1]
 
     def update(self, id, delta):
         path = "/consumergroups/%s/" % id
@@ -80,11 +80,30 @@ class ConsumerGroupAPI(PulpAPI):
         body = dict(packagenames=packagenames, scheduled_time=when)
         return self.server.POST(path, body)[1]
 
-    def installerrata(self, id, errataids, types=[], assumeyes=False, when=None):
-        erratainfo = {'consumerid': id,
-                      'errataids': errataids,
+    def updatepackages(self, id, packagenames, when=None):
+        path = "/consumergroups/%s/updatepackages/" % id
+        body = dict(packagenames=packagenames, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def uninstallpackages(self, id, packagenames, when=None):
+        path = "/consumergroups/%s/uninstallpackages/" % id
+        body = dict(packagenames=packagenames, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def installpackagegroups(self, id, grpids, when=None):
+        path = "/consumergroups/%s/installpackagegroups/" % id
+        body = dict(grpids=grpids, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def uninstallpackagegroups(self, id, grpids, when=None):
+        path = "/consumergroups/%s/uninstallpackagegroups/" % id
+        body = dict(grpids=grpids, scheduled_time=when)
+        return self.server.POST(path, body)[1]
+
+    def installerrata(self, id, errataids, types=[], importkeys=False, when=None):
+        erratainfo = {'errataids': errataids,
                       'types':   types,
-                      'assumeyes': assumeyes,
+                      'importkeys': importkeys,
                       'scheduled_time': when}
         path = "/consumergroups/%s/installerrata/" % id
         return self.server.POST(path, erratainfo)[1]

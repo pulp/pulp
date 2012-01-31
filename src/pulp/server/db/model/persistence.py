@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import pickle
 from gettext import gettext as _
 
@@ -26,7 +27,7 @@ class TaskSnapshot(Model):
     """
 
     collection_name = "task_snapshots"
-    unique_indicies = ('id',) # forces only 1 snapshot per task
+    unique_indices = ('id',) # forces only 1 snapshot per task
 
     def __init__(self, serialized_task=None):
         """
@@ -71,15 +72,15 @@ class TaskHistory(Model):
     """
 
     collection_name = 'task_history'
-    unique_indicies = ()
+    unique_indices = ()
 
     def __init__(self, task):
         super(TaskHistory, self).__init__()
         self.task_type = task.__class__.__name__
         for attr in ('id', 'class_name', 'method_name', 'args', 'kwargs',
                      'state', 'progress', 'result', 'exception', 'traceback',
-                     'consecutive_failures'):
-            setattr(self, attr, getattr(task, attr))
+                     'consecutive_failures', 'job_id'):
+            setattr(self, attr, copy.copy(getattr(task, attr)))
         # remove the kwargs that can't be stored in the database
         for arg in ('synchronizer', 'progress_callback'):
             self.kwargs.pop(arg, None)

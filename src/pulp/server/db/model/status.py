@@ -23,7 +23,7 @@ class Status(Model):
     """
 
     collection_name = 'status'
-    other_indicies = ('timestamp')
+    search_indices = ('timestamp')
 
     def __init__(self):
         super(Status, self).__init__()

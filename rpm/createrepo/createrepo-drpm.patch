@@ -1,0 +1,78 @@
+From 0924c6540eeff8ac086c7b3ce9e0ca355a9bd258 Mon Sep 17 00:00:00 2001
+From: Bill Nottingham <notting@redhat.com>
+Date: Fri, 21 Aug 2009 14:45:07 -0400
+Subject: [PATCH] Use deltarpm bindings rather than parsing them ourselves.
+
+---
+ createrepo/deltarpms.py |   32 ++++++++------------------------
+ 1 files changed, 8 insertions(+), 24 deletions(-)
+
+diff --git a/createrepo/deltarpms.py b/createrepo/deltarpms.py
+index 26a6715..d14d3fa 100644
+--- a/createrepo/deltarpms.py
++++ b/createrepo/deltarpms.py
+@@ -18,7 +18,7 @@
+ import os.path
+ import commands
+ from yum import misc
+-import gzip
++import deltarpm
+ from utils import MDError
+ 
+ class DeltaRPMPackage:
+@@ -44,17 +44,16 @@ class DeltaRPMPackage:
+         os.lseek(fd, 0, 0)
+         fo = os.fdopen(fd, 'rb')
+         self.csum = misc.checksum(self.csum_type, fo)
+-        fo.seek(int(self.po.hdrend))
+-        self._getOldInfo(fo)
+         del fo
+         del fd
++        self._getDRPMInfo(os.path.join(basedir, filename))
+                     
+     def _stringToNEVR(self, string):
+         i = string.rfind("-", 0, string.rfind("-")-1)
+         name = string[:i]
+         (epoch, ver, rel) = self._stringToVersion(string[i+1:])
+         return (name, epoch, ver, rel)
+-        
++
+     def _getLength(self, in_data):
+         length = 0
+         for val in in_data:
+@@ -62,27 +61,12 @@ class DeltaRPMPackage:
+             length += ord(val)
+         return length
+         
+-    def _getOldInfo(self, fo):
+-        try:
+-            compobj = gzip.GzipFile("", "rb", 9, fo)
+-        except:
+-            raise zlibError("Data not stored in gzip format")
+-            
+-        if compobj.read(4)[:3] != "DLT":
+-            raise Exception("Not a deltarpm")
++    def _getDRPMInfo(self, filename):
++        d = deltarpm.readDeltaRPM(filename)
++        self.oldnevrstring = d['old_nevr']
++        self.oldnevr = self._stringToNEVR(d['old_nevr'])
++        self.sequence = d['seq']
+         
+-        nevr_length = self._getLength(compobj.read(4))
+-        nevr = compobj.read(nevr_length).strip("\x00")
+-        seq_length = self._getLength(compobj.read(4))
+-        seq = compobj.read(seq_length)
+-        hex_seq = ""
+-        for char in seq:
+-            hex_seq += str("%02x" % ord(char))
+-        self.oldnevrstring = nevr
+-        self.oldnevr = self._stringToNEVR(nevr)
+-        self.sequence = hex_seq
+-        compobj.close()
+-            
+     def _stringToVersion(self, strng):
+         i = strng.find(':')
+         if i != -1:
+-- 
+1.6.4
+

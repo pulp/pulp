@@ -12,6 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from logging import getLogger
+import datetime
+from pulp.common import dateutils
 
 from pulp.server.db.model.audit import Event
 from pulp.server.db.model.auth import User, Role, Permission
@@ -109,7 +111,7 @@ def _validate_consumer_group():
     @return: number of errors found during validation
     """
     objectdb = ConsumerGroup.get_collection()
-    reference = model.ConsumerGroup(u'', u'')
+    reference = model.ConsumerGroup(u'')
     return _validate_model(model.ConsumerGroup.__name__, objectdb, reference)
 
 
@@ -250,7 +252,7 @@ def _validate_repo():
     @return: number of errors found during validation
     """
     objectdb = Repo.get_collection()
-    reference = model.Repo(u'', u'', u'')
+    reference = model.Repo(u'', u'', u'', u'')
     return _validate_model(model.Repo.__name__, objectdb, reference)
 
 
@@ -322,7 +324,8 @@ def _validate_distribution():
     @return: number of errors found during validation
     """
     objectdb = Distribution.get_collection()
-    reference = model.Distribution(u'', u'', u'', [])
+    reference = model.Distribution(u'', u'', u'', None, None, None, None, [], None)
+    _base_id(reference)
     return _validate_model(model.Distribution.__name__, objectdb, reference)
 
 

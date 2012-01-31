@@ -82,7 +82,7 @@ class AtScheduler(Scheduler):
         """
         assert isinstance(scheduled_time, datetime.datetime)
         if scheduled_time < datetime.datetime.now(dateutils.local_tz()):
-            raise ValueError('AtScheduler: scheduled time in the past: %s' %
+            raise ValueError('AtScheduler: scheduled time is in the past: %s' %
                              str(scheduled_time))
         self.scheduled_time = dateutils.to_utc_datetime(scheduled_time)
 

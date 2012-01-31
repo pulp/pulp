@@ -12,24 +12,18 @@
 # Python
 import os
 import sys
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-
-class TestImporter(unittest.TestCase):
+class TestImporter(testutil.PulpAsyncTest):
 
     def test_load_all_modules(self):
         '''
         Loads all modules in pulp to make sure they are captured during coverage tracking.
         '''
 
-        for root, sub_folders, files in os.walk(srcdir):
+        for root, sub_folders, files in os.walk(testutil.srcdir):
             for file in files:
 
                 # Quick sanity checks for the stability of the coverage plugin

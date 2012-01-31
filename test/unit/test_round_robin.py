@@ -15,31 +15,19 @@
 # Python
 import sys
 import os
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 
-import testutil
-
 # -- test cases ------------------------------------------------------------------------------
 
-class TestRoundRobin(unittest.TestCase):
-
-    def setUp(self):
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+class TestRoundRobin(testutil.PulpAsyncTest):
 
     def clean(self):
+        testutil.PulpAsyncTest.clean(self)
         for doomed in CDSRepoRoundRobin.get_collection().find():
             CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
 
@@ -246,8 +234,7 @@ class TestRoundRobin(unittest.TestCase):
         self.assertTrue(removed)
 
         association = round_robin._find_association('repo1')
-        self.assertTrue(association is not None)
-        self.assertEqual(0, len(association['next_permutation']))
+        self.assertTrue(association is None)
 
     def test_remove_unassociated_cds(self):
         '''

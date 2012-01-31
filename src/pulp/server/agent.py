@@ -1,6 +1,6 @@
-#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2011 Red Hat, Inc.
+# Copyright © 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -10,7 +10,6 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
 
 """
 Contains (proxy) classes that represent the pulp agent.
@@ -80,7 +79,7 @@ class PulpAgent(Agent):
         certificate = consumer.get('certificate')
         if certificate:
             hash = hashlib.sha256()
-            hash.update(certificate)
+            hash.update(certificate.strip())
             secret = hash.hexdigest()
         return secret
 

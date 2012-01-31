@@ -30,19 +30,12 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="RepositoryAuthentication">Repository Authentication</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="RepositoryAuthentication">Repository Authentication</h1>
 <p>
-Repository authentication allows the creation of <i>protected</i> repositories in the Pulp server. Consumer attempting to use protected repositories require some sort of authentication in order to be granted access.
+Repository authentication allows the creation of <em>protected</em> repositories in the Pulp server. Consumer attempting to use protected repositories require some sort of authentication in order to be granted access.
 </p>
 <p>
-<i>Note: The intent is that this authentication information is that is communicated to consumers during repository bind. However, this feature is not provided in the first phase of repository authentication.</i>
+<em>Note: The intent is that this authentication information is that is communicated to consumers during repository bind. However, this feature is not provided in the first phase of repository authentication.</em>
 </p>
 <h2 id="Globalv.Individual">Global v. Individual</h2>
 <p>
@@ -58,7 +51,7 @@ Ultimately, multiple mechanisms of authenticating a user accessing a repository 
 </p>
 <h2 id="OIDValidation">OID Validation</h2>
 <p>
-The default (and currently only) form of authentication uses the Red Hat OID entitlement schema introduced in RHEL 6. This form of authentication uses client-side x.509 certificates to convey entitlement information. For more information on using the OID schema, please contact the Pulp team through <a class="ext-link" href="https://www.redhat.com/mailman/listinfo/pulp-list"><span class="icon">the Pulp Users mailing list</span></a>.
+The default (and currently only) form of authentication uses the Red Hat OID entitlement schema introduced in RHEL 6. This form of authentication uses client-side x.509 certificates to convey entitlement information. For more information on using the OID schema, please contact the Pulp team through <a class="ext-link" href="https://www.redhat.com/mailman/listinfo/pulp-list"><span class="icon"> </span>the Pulp Users mailing list</a>.
 </p>
 <p>
 Enabling OID validation, either globally or on individual repositories, requires one argument to the appropriate commands as described above:
@@ -68,20 +61,34 @@ Enabling OID validation, either globally or on individual repositories, requires
 </td></tr><tr><td> CA Certificate </td><td> <tt>--ca</tt> or <tt>--consumer_ca</tt> </td><td> Used to verify the client-provided entitlement certificate should be trusted. This prevents malicious users from self-signing their own entitlement certificates with the correct OID entitlement information. 
 </td></tr></table>
 <p>
-Additionally, a valid entitlement certificate (and its private key) may be specified when enabling repository authentication. This certificate will be sent to consumers on repository bind, automatically configuring them with credentials that will pass the authentication checks. <i>See note above about this feature not yet being implemented.</i>
+Additionally, a valid entitlement certificate (and its private key) may be specified when enabling repository authentication. This certificate will be sent to consumers on repository bind, automatically configuring them with credentials that will pass the authentication checks. <em>See note above about this feature not yet being implemented.</em>
 </p>
-</div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+<h1 id="CertificateRevocationLists">Certificate Revocation Lists</h1>
+<p>
+Pulp supports the ability to honor Certificate Revocation Lists (CRLs).
+</p>
+<p>
+A directory to specify the location of CRLs is controlled in the configuration file: /etc/pulp/repo_auth.conf
+</p>
+<table class="wiki">
+<tr><td> <strong>Section Name</strong> </td><td> <strong>Attribute Name</strong> </td><td> <strong>Description </strong> 
+</td></tr><tr><td> crl </td><td> location </td><td> Directory on the Pulp server to search for CRL files 
+</td></tr></table>
+<p>
+CRLs must be named in a specific format, it's name must be the CRL issuer's hash ending with the suffix of .<a class="missing changeset" title="No changeset 0 in the repository">r0</a>, <a class="missing changeset" title="No changeset 1 in the repository">r1</a>, etc.
+The recommended configuration is:
+</p>
+<ol><li>Copy the CRL to the specified CRL directory on the Pulp server, default is /etc/pki/content
+</li><li>Create a symbolic link as:
+<pre class="wiki">ln -s Example_CRL.pem `openssl crl -hash -noout -in Example_CRL.pem`.r0
+</pre></li></ol></div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

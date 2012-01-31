@@ -17,8 +17,10 @@
 AVAILABLE_REPOS_LIST = """
 Id                 \t%-25s
 Name               \t%-25s
+Repo URL           \t%-25s
 Feed URL           \t%-25s
 Feed Type          \t%-25s
+Content Type       \t%-25s
 Feed Certs         \tCA:%s   Cert:%s
 Consumer Certs     \tCA:%s   Cert:%s
 Architecture       \t%-25s
@@ -31,6 +33,8 @@ Clones             \t%-25s
 Groups             \t%-25s
 Filters            \t%-25s
 Notes              \t%-25s
+Preserve Metadata  \t%-25s
+Checksum Type      \t%-25s
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """
@@ -44,6 +48,7 @@ Additional info    \t%-25s
 AVAILABLE_CONSUMER_INFO = """
 Id                 \t%-25s
 Description        \t%-25s
+Capabilities       \t%-25s
 Subscribed Repos   \t%-25s
 Agent:
    Responding      \t%-25s
@@ -78,7 +83,7 @@ Groups              \t%-25s
 
 
 AVAILABLE_USERS_LIST = """
-Login :               \t%-25s    
+Login :               \t%-25s
 Name  :               \t%-25s
 Roles :               \t%-25s
 """
@@ -93,7 +98,7 @@ Package List :               \t%-25s
 ERRATA_INFO = """
 Id                    \t%-25s
 Title                 \t%-25s
-Description           \t%-25s 
+Description           \t%-25s
 Type                  \t%-25s
 Issued                \t%-25s
 Updated               \t%-25s
@@ -107,16 +112,25 @@ References            \t%-25s
 
 DISTRO_LIST = """
 Id                    \t%-25s
-Description           \t%-25s 
+Description           \t%-25s
+Family                \t%-25s
+Variant               \t%-25s
+Version               \t%-25s
+Arch                  \t%-25s
 URL                   \t%-25s
+Timestamp             \t%-25s
 """
 
 DISTRO_INFO = """
 Id                    \t%-25s
-Description           \t%-25s 
+Description           \t%-25s
 URL                   \t%-25s
+Family                \t%-25s
+Variant               \t%-25s
+Version               \t%-25s
+Arch                  \t%-25s
 Files                 \t%-25s
-relativepath          \t%-25s
+Timestamp             \t%-25s
 """
 
 PACKAGE_INFO = """
@@ -154,8 +168,8 @@ CONSUMER_HISTORY_REPO = """Repo ID               \t%-25s"""
 CONSUMER_HISTORY_PACKAGES = """Packages"""
 
 CONSUMER_HISTORY_EVENT_TYPES = {
-    'consumer_created' : 'Consumer Created',
-    'consumer_deleted' : 'Consumer Deleted',
+    'consumer_registered' : 'Consumer Registered',
+    'consumer_unregistered' : 'Consumer Unregistered',
     'repo_bound' : 'Repo Bound',
     'repo_unbound' : 'Repo Unbound',
     'package_installed' : 'Package Installed',
@@ -177,6 +191,20 @@ Description         \t%-25s
 Cluster             \t%-25s
 Sync Schedule       \t%-25s
 Repos               \t%-25s
+Last Sync           \t%-25s
+Status:
+   Responding       \t%-25s
+   Last Heartbeat   \t%-25s
+'''
+
+CDS_DETAILED_INFO = '''
+Name                \t%-25s
+Hostname            \t%-25s
+Description         \t%-25s
+Cluster             \t%-25s
+Sync Schedule       \t%-25s
+Repos               \t%-25s
+Next Sync           \t%-25s
 Last Sync           \t%-25s
 Status:
    Responding       \t%-25s
@@ -208,7 +236,8 @@ Finish Time         \t%-25s'''
 UNAVAILABLE = '''
 The following consumers appear to be unavailable.
 You may continue with the understanding that your request
-will not complete until all consumers have processed the request.
+will not complete until all consumers have processed the request
+or the request has timed out.
 
 Unavailable Consumers
 ------------------------------
@@ -217,9 +246,11 @@ Unavailable Consumers
 METADATA_STATUS = """
 Task Id          \t%-25s
 Status           \t%-25s
+Message          \t%-25s
 Start Time       \t%-25s
 Finish Time      \t%-25s
 """
+
 
 SELECTION_QUERY="""
   'a'   \t : select all
@@ -229,3 +260,15 @@ SELECTION_QUERY="""
   'c'   \t : clear selections
   'q'   \t : abort the repo creation
 """
+
+
+REPO_SYNC_SCHEDULE='''
+Sync Schedule    \t%-25s
+    Interval     \t%-25s
+    Start        \t%-25s
+    Runs         \t%-25s
+Sync Options
+    Exclude      \t%-25s
+    Limit        \t%-25s
+    Threads      \t%-25s
+'''

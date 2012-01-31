@@ -25,10 +25,9 @@ class FilterAPI(PulpAPI):
         path = "/filters/"
         return self.server.POST(path, data)[1]
 
-    def delete(self, id, force):
-        info = {'force': force}
-        path = "/filters/%s/delete_filter/" % id
-        return self.server.POST(path, info)[1]
+    def delete(self, id):
+        path = "/filters/%s/" % id
+        return self.server.DELETE(path)[1]
 
     def clean(self):
         path = "/filters/"

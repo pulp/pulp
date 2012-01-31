@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -18,6 +17,9 @@ used outside of consumer API itself.
 
 import pulp.server.config
 from pulp.server.db.model.resource import Consumer
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 def consumers_bound_to_repo(repo_id):
@@ -92,7 +94,7 @@ def build_bind_data(repo, hostnames, key_list):
         f.close()
 
     bind_data = {
-        'repo' : repo,
+        'repo' : prune(repo),
         'host_urls' : repo_urls,
         'gpg_keys' : key_list,
         'cacert' : cacert,
@@ -100,3 +102,35 @@ def build_bind_data(repo, hostnames, key_list):
     }
 
     return bind_data
+
+
+def prune(repo):
+    '''
+    Remove superfluous attributes.
+    @param repo: A repo model object.
+    @type repo: Repo
+    @return: The pruned object
+    @rtype: Repo 
+    '''
+    prune = (
+        'packages',
+        'package_count',
+        'packagegroups',
+        'packagegroupcategories',
+        'distributionid',
+        'sync_schedule',
+        'last_sync',
+        'sync_in_progress',
+        'source',
+        'clone_ids',
+        'groupid',
+        'errata',
+        'files',
+        'filters',
+        'notes',)
+    for attr in prune:
+        try:
+            del repo[attr]
+        except ValueError:
+            log.error(attr, exc_info=1)
+    return repo

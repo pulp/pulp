@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2011 Red Hat, Inc.
@@ -161,9 +160,12 @@ class EventDispatcher(EventConsumer):
     @cvar handlers: Registered event handler classes.
         Key: entity.
     @type handlers: dict
+    @cvar loaded: Flag indicating the handlers have been loaded.
+    @type loaded: bool
     """
 
     handlers = {}
+    loaded = False
 
     def __init__(self):
         EventConsumer.__init__(self, None)
@@ -183,18 +185,22 @@ class EventDispatcher(EventConsumer):
         @param hclass: The handler class.
         @param hclass: class
         """
-        inbound = {}
-        outbound = {}
-        for name, method in inspect.getmembers(hclass, inspect.ismethod):
-            fn = method.im_func
-            if hasattr(fn, 'inbound'):
-                inbound[fn.inbound] = method
-                continue
-            if hasattr(fn, 'outbound'):
-                outbound[fn.outbound] = method
-                continue
-        cls.handlers[entity] = \
-            Handler(hclass, inbound, outbound)
+        mutex.acquire()
+        try:
+            inbound = {}
+            outbound = {}
+            for name, method in inspect.getmembers(hclass, inspect.ismethod):
+                fn = method.im_func
+                if hasattr(fn, 'inbound'):
+                    inbound[fn.inbound] = method
+                    continue
+                if hasattr(fn, 'outbound'):
+                    outbound[fn.outbound] = method
+                    continue
+            cls.handlers[entity] = \
+                Handler(hclass, inbound, outbound)
+        finally:
+            mutex.release()
 
     @classmethod
     def load(cls):
@@ -203,10 +209,11 @@ class EventDispatcher(EventConsumer):
         """
         mutex.acquire()
         try:
-            if cls.handlers:
+            if cls.loaded:
                 return
             loader = DynLoader(hpx)
             loader.load()
+            cls.loaded = True
         finally:
             mutex.release()
 

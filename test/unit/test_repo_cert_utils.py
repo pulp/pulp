@@ -16,17 +16,13 @@
 import shutil
 import sys
 import os
-import unittest
+from M2Crypto import X509
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
-
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.repo_auth import repo_cert_utils
-import testutil
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 # -- constants -----------------------------------------------------------------------
 
@@ -39,12 +35,16 @@ INVALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_
 # Test certificate
 CERT = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/cert.crt'
 
+CA_CHAIN_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/chain'
+CRL_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl'
+CRL_EXPIRED_TEST_DATA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/crl_expired'
+
 # -- test cases ----------------------------------------------------------------------
 
-class TestValidateCertBundle(unittest.TestCase):
+class TestValidateCertBundle(testutil.PulpAsyncTest):
 
     def setUp(self):
-        self.config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
         self.utils = repo_cert_utils.RepoCertUtils(self.config)
 
     def test_validate_cert_bundle_valid(self):
@@ -97,9 +97,10 @@ class TestValidateCertBundle(unittest.TestCase):
         self.assertRaises(ValueError, self.utils.validate_cert_bundle, bundle)
 
 
-class TestCertStorage(unittest.TestCase):
+class TestCertStorage(testutil.PulpAsyncTest):
 
     def clean(self):
+        testutil.PulpAsyncTest.clean(self)
         if os.path.exists(self.config.get('repos', 'cert_location')):
             shutil.rmtree(self.config.get('repos', 'cert_location'))
 
@@ -109,11 +110,7 @@ class TestCertStorage(unittest.TestCase):
     def setUp(self):
         self.config = testutil.load_test_config()
         self.utils = repo_cert_utils.RepoCertUtils(self.config)
-
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+        testutil.PulpAsyncTest.setUp(self)
 
     def test_write_feed_certs(self):
         '''
@@ -351,10 +348,10 @@ class TestCertStorage(unittest.TestCase):
 
         self.assertEqual(read_contents, contents)
 
-class TestCertVerify(unittest.TestCase):
+class TestCertVerify(testutil.PulpAsyncTest):
 
     def setUp(self):
-        self.config = testutil.load_test_config()
+        testutil.PulpAsyncTest.setUp(self)
         self.utils = repo_cert_utils.RepoCertUtils(self.config)
         
     def test_valid(self):
@@ -402,3 +399,206 @@ class TestCertVerify(unittest.TestCase):
 
         # Test
         self.assertTrue(not self.utils.validate_certificate_pem(cert, ca))
+
+    def test_get_crl_stack(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        ca = X509.load_cert(ca_path)
+        ca_hash = ca.get_issuer().as_hash()
+        crls = self.utils.get_crl_stack(ca_hash, crl_dir=CRL_TEST_DATA)
+        self.assertEquals(len(crls), 1)
+        crl = crls.pop()
+        crl_hash = crl.get_issuer().as_hash()
+        self.assertEquals(crl_hash, ca_hash)
+
+    def test_cert_with_crl(self):
+        '''
+        Tests that verifying a valid PEM encoded cert string with a CA and CRL returns true.
+        '''
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        good_cert_path = os.path.join(CRL_TEST_DATA, "ok/Pulp_client.cert")
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(good_cert_path)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertTrue(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_TEST_DATA))
+    
+    def test_cert_with_expired_crl(self):
+        '''
+        Tests that verifying a valid PEM encoded cert string with a CA and expired CRL returns false.
+        '''
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        good_cert_path = os.path.join(CRL_TEST_DATA, "ok/Pulp_client.cert")
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(good_cert_path)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertFalse(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_EXPIRED_TEST_DATA))
+
+    def test_revoked_cert_with_crl(self):
+        '''
+        Tests that verifying a revoked PEM encoded cert string with a CA and CRL returns false.
+        '''
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        revoked_cert_path = os.path.join(CRL_TEST_DATA, "revoked/Pulp_client.cert")
+        
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(revoked_cert_path)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertFalse(self.utils.validate_certificate_pem(cert, ca, crl_dir=CRL_TEST_DATA))
+
+    def test_revoked_cert_with_crl_with_single_CRL(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CA.cert")
+        revoked_cert_path = os.path.join(CRL_TEST_DATA, "revoked/Pulp_client.cert")
+        crl_path = os.path.join(CRL_TEST_DATA, "certs/Pulp_CRL.pem")
+
+        # Setup
+        f = open(ca_path)
+        ca = f.read()
+        f.close()
+
+        f = open(revoked_cert_path)
+        cert = f.read()
+        f.close()
+
+        f = open(crl_path)
+        crl_pem = f.read()
+        f.close()
+
+        # Test
+        self.assertFalse(self.utils.validate_certificate_pem(cert, ca, [crl_pem]))
+
+    def test_get_certs_from_string_empty(self):
+        certs = self.utils.get_certs_from_string("")
+        self.assertEquals(len(certs), 0)
+
+    def test_get_certs_from_string_misformed(self):
+        certs = self.utils.get_certs_from_string("BAD_DATA")
+        self.assertEquals(len(certs), 0)
+
+    def test_get_certs_from_string_single_CA(self):
+        root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        data = open(root_ca_path).read()
+        certs = self.utils.get_certs_from_string(data)
+        self.assertEquals(len(certs), 1)
+        self.assertTrue(isinstance(certs[0], X509.X509))
+
+    def test_get_certs_from_string_valid(self):
+        root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        sub_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+
+        expected_root_ca_cert = X509.load_cert(root_ca_path)
+        self.assertTrue(expected_root_ca_cert.check_ca())
+
+        expected_sub_ca_cert = X509.load_cert(sub_ca_path)
+        self.assertTrue(expected_sub_ca_cert.check_ca())
+
+        data = open(ca_chain_path).read()
+        certs = self.utils.get_certs_from_string(data)
+        self.assertEquals(len(certs), 3)
+        self.assertTrue(certs[0].check_ca())
+        self.assertTrue(expected_root_ca_cert.get_subject().as_hash(), certs[0].get_subject().as_hash())
+        self.assertTrue(expected_root_ca_cert.get_issuer().as_hash(), certs[0].get_issuer().as_hash())
+
+        self.assertTrue(certs[1].check_ca())
+        self.assertTrue(expected_sub_ca_cert.get_subject().as_hash(), certs[1].get_subject().as_hash())
+        self.assertTrue(expected_sub_ca_cert.get_issuer().as_hash(), certs[1].get_issuer().as_hash())
+
+    def test_validate_certificate_pem_with_ca_chain(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        test_cert_pem = open(test_cert_path).read()
+
+        self.assertTrue(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
+
+    def test_validate_certificate_pem_with_incomplete_ca_chain(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        test_cert_pem = open(test_cert_path).read()
+        self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
+
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca.pem")
+        ca_chain_pems = open(ca_chain_path).read()
+        self.assertFalse(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems))
+
+    def test_validate_certificate_pem_with_ca_chain_and_crl_and_valid_cert(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        test_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/test_cert.pem")
+        root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
+        sub_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca_CRL.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        test_cert_pem = open(test_cert_path).read()
+        root_ca_crl_pem = open(root_ca_crl_path).read()
+        sub_ca_crl_pem = open(sub_ca_crl_path).read()
+        self.assertTrue(self.utils.validate_certificate_pem(test_cert_pem, ca_chain_pems, [root_ca_crl_pem, sub_ca_crl_pem]))
+
+    def test_validate_certificate_pem_with_ca_chain_and_crl_and_revoked_cert(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        revoked_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/revoked_cert.pem")
+        root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
+        sub_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca_CRL.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        revoked_cert_pem = open(revoked_cert_path).read()
+        root_ca_crl_pem = open(root_ca_crl_path).read()
+        sub_ca_crl_pem = open(sub_ca_crl_path).read()
+        self.assertFalse(self.utils.validate_certificate_pem(revoked_cert_pem, ca_chain_pems, [root_ca_crl_pem, sub_ca_crl_pem]))
+
+
+    def test_validate_certificate_pem_with_ca_chain_and_crl_with_revoked_CA(self):
+        """
+        Test that when a CA itself is revoked, a certificate it issued is failed for verification
+        """
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
+        revoked_cert_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/from_revoked_ca_cert.pem")
+        root_ca_crl_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca_CRL.pem")
+
+        ca_chain_pems = open(ca_chain_path).read()
+        revoked_cert_pem = open(revoked_cert_path).read()
+        root_ca_crl_pem = open(root_ca_crl_path).read()
+        # Verify the cert is valid and looks legit
+        self.assertTrue(self.utils.validate_certificate_pem(revoked_cert_pem, ca_chain_pems))
+        # Now we include the CRL info stating that this cert's issuing CA was revoked
+        self.assertFalse(self.utils.validate_certificate_pem(revoked_cert_pem, ca_chain_pems, [root_ca_crl_pem]))

@@ -27,6 +27,18 @@ def _finish_time_cmp(one, two):
                dateutils.parse_iso8601_datetime(two['finish_time']))
 
 
+def all_repo_sync():
+    """
+    Return a list of all the finished repo syncs.
+    Note: this does not include any waiting or currently running syncs.
+    @rtype: list of R{TaskHistory} instances.
+    @return: a list of the finished repo syncs.
+    """
+    history = []
+    collection = TaskHistory.get_collection()
+    history = collection.find({'task_type': RepoSyncTask.__name__})
+    return sorted(history, cmp=_finish_time_cmp, reverse=True)
+
 def repo_sync(id):
     """
     Return a list of all the finished repo syncs for the given repo id.
@@ -63,3 +75,30 @@ def cds_sync(hostname):
             continue
         history.append(task)
     return sorted(history, cmp=_finish_time_cmp, reverse=True)
+
+
+def task(id):
+    """
+    Find a task by id.
+    @type id: str
+    @param id: job id
+    @rtype: dict
+    @return: task
+    """
+    collection = TaskHistory.get_collection()
+    return collection.find({'id':id})
+
+
+def job(id):
+    """
+    Find tasks by job id.
+    @type id: str
+    @param id: job id
+    @rtype: List of R{TaskHistory}
+    @return: A list of tasks.
+    """
+    history = []
+    collection = TaskHistory.get_collection()
+    for task in collection.find({'job_id':id}):
+        history.append(task)
+    return history

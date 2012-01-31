@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -20,8 +19,8 @@ import logging
 import sys
 
 # 3rd Party
-from gofer.messaging.dispatcher import DispatchError
-from gofer.messaging.policy import RequestTimeout, NotAuthorized
+from gofer.rmi.dispatcher import DispatchError
+from gofer.rmi.policy import RequestTimeout, NotAuthorized
 
 # Pulp
 from pulp.server import config

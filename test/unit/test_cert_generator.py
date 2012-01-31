@@ -18,8 +18,8 @@ import os
 import sys
 import unittest
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.server.auth.certificate import Certificate
 from pulp.server.auth.cert_generator import SerialNumber
@@ -94,7 +94,7 @@ XGuaPqfHaos=
 '''
 
 
-class TestCertGeneration(unittest.TestCase):
+class TestCertGeneration(testutil.PulpAsyncTest):
 
     def test_priv_key(self):
         # Test

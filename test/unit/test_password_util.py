@@ -18,12 +18,12 @@ import os
 import sys
 import unittest
 
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
 from pulp.server.auth.password_util import hash_password, check_password
 
-class TestUtil(unittest.TestCase):
+class TestUtil(testutil.PulpAsyncTest):
 
     def test_unicode_password(self):
         password = u"some password"

@@ -30,32 +30,41 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h2 id="distributions">Distributions</h2>
+<div id="content" class="wiki"><div id="wikipage"><h2 id="distributions">Distributions</h2>
 <p>
-As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <i>distribution</i>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
+As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <em>distribution</em>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
 </p>
 <p>
 Distributions in a Pulp server are retrieved using the <tt>distribution list</tt> command:
 </p>
-<pre class="wiki">$ pulp-admin distribution list
+<pre class="wiki">$ sudo pulp-admin distribution list
 +------------------------------------------+
        List of Available Distributions
 +------------------------------------------+
 
-Id                    	ks-f14-x86_64        
-Description           	Kickstart Trees for f14-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+Id                    	ks-Fedora-Fedora-15-x86_64
+Description           	ks-Fedora-Fedora-15-x86_64
+Family                	Fedora                   
+Variant               	Fedora                   
+Version               	15         
+Arch                    x86_64              
+URL                   	https://localhost/pulp/ks/fedora15/
+ 			https://localhost/pulp/ks/fedora15-clone/
+ 			https://localhost/pulp/ks/fedora15-test/
+ 			https://localhost/pulp/ks/pub/fedora/linux/releases/15/Fedora/x86_64/os/
+Timestamp             	2011-05-13T15:44:30      
 
-Id                    	ks-f13-x86_64        
-Description           	Kickstart Trees for f13-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-13/GOLD/Fedora/x86_64/os
+Id                    	ks-Fedora-Fedora-14-x86_64
+Description           	ks-Fedora-Fedora-14-x86_64
+Family                	Fedora                   
+Variant               	Fedora                   
+Version               	14        
+Arch                    x86_64                            
+URL                   	https://localhost/pulp/ks/fedora14/
+ 			https://localhost/pulp/ks/fedora14-clone/
+ 			https://localhost/pulp/ks/fedora14-test/
+ 			https://localhost/pulp/ks/pub/fedora/linux/releases/14/Fedora/x86_64/os/
+Timestamp             	2011-05-13T15:44:30      
 </pre><p>
 The list of distributions can be scoped to a particular repository using the <tt>--repoid</tt> argument:
 </p>
@@ -64,44 +73,56 @@ The list of distributions can be scoped to a particular repository using the <tt
        List of Available Distributions
 +------------------------------------------+
 
-Id                    	ks-f14-x86_64        
-Description           	Kickstart Trees for f14-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+
+Id                    	ks-Fedora-Fedora-14-x86_64
+Description           	ks-Fedora-Fedora-14-x86_64
+Family                	Fedora                   
+Variant               	Fedora                   
+Version               	14    
+Arch                    x86_64                                
+URL                   	https://localhost/pulp/ks/fedora14/
+ 			https://localhost/pulp/ks/fedora14-clone/
+ 			https://localhost/pulp/ks/fedora14-test/
+ 			https://localhost/pulp/ks/pub/fedora/linux/releases/14/Fedora/x86_64/os/
+Timestamp             	2011-05-13T15:44:30  
 </pre><p>
 More information on a specific distribution is retrieved using the <tt>distribution info</tt> command and specifying the distribution in question with <tt>--id</tt>:
 </p>
-<pre class="wiki">$ pulp-admin distribution info --id=ks-f14-x86_64
-+------------------------------------------+
-   Distribution Info for ks-f14-x64-noarch
-+------------------------------------------+
+<pre class="wiki">$ sudo pulp-admin distribution info --id=ks-Fedora-Fedora-15-x86_64
+Id                    	ks-Fedora-Fedora-15-x86_64
+Description           	ks-Fedora-Fedora-15-x86_64
+URL                   	https://localhost/pulp/ks/fedora15/
+ 			https://localhost/pulp/ks/fedora15-clone/
+ 			https://localhost/pulp/ks/fedora15-test/
+ 			https://localhost/pulp/ks/pub/fedora/linux/releases/15/Fedora/x86_64/os/
+Family                	Fedora                   
+Variant               	Fedora                   
+Version               	15     
+Arch                    x86_64                                
+Files                 	/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/.treeinfo
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/repomd.xml.lock
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/repomd.xml
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/initrd.img
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/efiboot.img
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/vmlinuz
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/boot.iso
+ 			/var/lib/pulp/distributions/ks-Fedora-Fedora-15-x86_64/efidisk.img
+Timestamp             	2011-05-13T15:44:30      
 
-Id                    	ks-f14-x86_64        
-Description           	Kickstart Trees for f14-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
-Files                 	/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz
-relativepath          	released/F-14/GOLD/Fedora/x86_64/os
+
 
 # NOTE: The url that you see above can be used directly for baremetal kickstarts.
 </pre><p>
 Distribution membership in a repository is also displayed in repository information commands. For more information, see the <a class="wiki" href="UGRepo.html#crud">Repository Display</a> documentation.
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -18,6 +17,7 @@ from gettext import gettext as _
 
 import web
 
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
@@ -56,6 +56,8 @@ class ConsumerGroups(JSONController):
         @return: consumer group metadata on successful creation
         """
         consumergroup_data = self.params()
+        if api.consumergroup(consumergroup_data['id']) is not None:
+            return self.conflict('A consumer group with the id, %s, already exists' % consumergroup_data['id'])
         consumergroup = api.create(consumergroup_data['id'], consumergroup_data['description'],
                                    consumergroup_data['consumerids'])
         resource = resource_path(extend_uri_path(consumergroup['id']))
@@ -107,6 +109,8 @@ class ConsumerGroup(JSONController):
         @param id: consumer group id
         @return: True on successful deletion of consumer
         """
+        if api.consumergroup(id) is None:
+            return self.not_found("A consumer group with id, %s, does not exist" % id)
         api.delete(id=id)
         return self.ok(True)
 
@@ -123,6 +127,10 @@ class ConsumerGroupActions(JSONController):
         'add_consumer',
         'delete_consumer',
         'installpackages',
+        'updatepackages',
+        'uninstallpackages',
+        'installpackagegroups',
+        'uninstallpackagegroups',
         'installerrata',
     )
 
@@ -148,7 +156,7 @@ class ConsumerGroupActions(JSONController):
         """
         data = self.params()
         api.unbind(id, data)
-        return self.ok(None)
+        return self.ok(True)
 
     def add_key_value_pair(self, id):
         """
@@ -185,7 +193,7 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
-            return self.conflict('Consumer [%s] does not exist' % data)
+            return self.not_found('Consumer [%s] does not exist' % data)
         api.add_consumer(id, data)
         return self.ok(True)
 
@@ -197,10 +205,9 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
-            return self.conflict('Consumer [%s] does not exist' % data)
+            return self.not_found('Consumer [%s] does not exist' % data)
         api.delete_consumer(id, data)
         return self.ok(None)
-
 
     def installpackages(self, id):
         """
@@ -209,16 +216,88 @@ class ConsumerGroupActions(JSONController):
         """
         data = self.params()
         names = data.get('packagenames', [])
-        task = api.installpackages(id, names)
+        job = api.installpackages(id, names)
         scheduled_time = data.get('scheduled_time', None)
-        if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-            task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Package install already scheduled'))
-        taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
-        return self.accepted(taskdict)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
+
+    def updatepackages(self, id):
+        """
+        Install packages.
+        Body contains a list of package names.
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        job = api.updatepackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
+
+    def uninstallpackages(self, id):
+        """
+        Uninstall packages.
+        Body contains a list of package names.
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        job = api.uninstallpackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
+
+    def installpackagegroups(self, id):
+        """
+        Install package groups.
+        Body contains a list of package group names.
+        """
+        data = self.params()
+        grpids = data.get('grpids', [])
+        job = api.installpackagegroups(id, grpids)
+        scheduled_time = data.get('scheduled_time', None)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
+
+    def uninstallpackagegroups(self, id):
+        """
+        Uninstall package groups.
+        Body contains a list of package group names.
+        """
+        data = self.params()
+        grpids = data.get('grpids', [])
+        job = api.uninstallpackagegroups(id, grpids)
+        scheduled_time = data.get('scheduled_time', None)
+        for task in job.tasks:
+            if scheduled_time is not None:
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
 
     def installerrata(self, id):
         """
@@ -228,19 +307,19 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         errataids = data.get('errataids', [])
         types = data.get('types', [])
-        assumeyes = data.get('assumeyes', False)
-        task = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
-        if not task:
-            return self.not_found('Errata %s you requested is not applicable for your system' % id)
-        scheduled_time = data.get('scheduled_time', None)
-        if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
-            task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Errata install already scheduled'))
-        taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
-        return self.accepted(taskdict)
+        importkeys = data.get('importkeys', False)
+        job = api.installerrata(id, errataids, types=types, importkeys=importkeys)
+        if not job:
+            return self.not_found('Errata %s you requested are not applicable for this consumergroup' % errataids)
+        for task in job.tasks:
+            scheduled_time = data.get('scheduled_time', None)
+            if scheduled_time is not None:
+                dt = dateutils.parse_iso8601_datetime(scheduled_time)
+                dt = dateutils.to_utc_datetime(dt)
+                task.scheduler = AtScheduler(dt)
+            async.enqueue(task, unique=False)
+        jobdict = self._job_to_dict(job)
+        return self.ok(jobdict)
 
     @error_handler
     @auth_required(EXECUTE)
@@ -256,26 +335,8 @@ class ConsumerGroupActions(JSONController):
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         if not self.validate_consumergroup(id):
-            return self.conflict('Consumer Group [%s] does not exist' % id)
+            return self.not_found('Consumer Group [%s] does not exist' % id)
         return action(id)
-
-
-class ConsumerGroupActionStatus(JSONController):
-
-    @error_handler
-    @auth_required(EXECUTE) # this is checking an execute, not reading a resource
-    def GET(self, id, action_name, action_id):
-        """
-        Check the status of a package group install operation.
-        @param id: repository id
-        @param action_name: name of the action
-        @param action_id: action id
-        @return: action status information
-        """
-        task_info = self.task_status(action_id)
-        if task_info is None:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        return self.ok(task_info)
 
 
 # web.py application ----------------------------------------------------------
@@ -285,9 +346,6 @@ URLS = (
     '/([^/]+)/$', 'ConsumerGroup',
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
     'ConsumerGroupActions',
-
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
-    'ConsumerGroupActionStatus',
 )
 
 application = web.application(URLS, globals())

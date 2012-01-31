@@ -1,0 +1,13 @@
+{"types": [
+    {"id" : "harness_type_one",
+     "display_name" : "Test Harness Type 1",
+     "description" : "Parent to child types: [harness_type_two]",
+     "unit_key" : ["name"],
+     "search_indexes" : ["search_1", "search_2"],
+     "referenced_types" : ["harness_type_two"]},
+    {"id" : "harness_type_two",
+     "display_name" : "Test Harness Type 2",
+     "description" : "Potentially a child to harness_type_one",
+     "unit_key" : ["name", "version"],
+     "search_indexes" : ["field_1"]}
+   ]}

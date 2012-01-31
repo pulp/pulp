@@ -15,42 +15,18 @@
 # Python
 import sys
 import os
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-sys.path.insert(0, srcdir)
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-sys.path.insert(0, commondir)
-
-import mocks
 import pulp.server.consumer_utils as utils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.resource import Consumer
 
-import testutil
-
 # -- test cases -------------------------------------------------------------------------
 
-class TestConsumerUtils(unittest.TestCase):
-
-    def clean(self):
-        self.consumer_api.clean()
-        self.repo_api.clean()
-
-    def setUp(self):
-        mocks.install()
-        testutil.load_test_config()
-
-        self.repo_api = RepoApi()
-        self.consumer_api = ConsumerApi()
-
-        self.clean()
-
-    def tearDown(self):
-        self.clean()
+class TestConsumerUtils(testutil.PulpAsyncTest):
 
     def test_consumers_bound_to_repo(self):
         '''

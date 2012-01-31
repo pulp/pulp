@@ -19,16 +19,26 @@ import sys
 
 DIRS = (
     '/etc',
+    '/etc/bash_completion.d',
     '/etc/httpd',
     '/etc/httpd/conf.d',
     '/etc/pulp',
+    '/etc/pulp/admin',
+    '/etc/pulp/consumer',
+    '/etc/pulp/distributor',
+    '/etc/pulp/importer',
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
-    '/etc/pki/content',
+    '/etc/pki/pulp/content',
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',
+    '/var/lib/pulp/plugins',
+    '/var/lib/pulp/plugins/distributors',
+    '/var/lib/pulp/plugins/importers',
+    '/var/lib/pulp/plugins/profilers',
+    '/var/lib/pulp/plugins/types',
     '/var/lib/pulp/published',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
@@ -42,18 +52,25 @@ DIRS = (
 # Tuple entry is explicit (src, dst)
 #
 LINKS = (
+    'etc/bash_completion.d/pulp-admin',
     'etc/pulp/pulp.conf',
     'etc/pulp/repo_auth.conf',
-    'etc/pulp/client.conf',
+    'etc/pulp/admin/admin.conf',
+    'etc/pulp/admin/task.conf',
+    'etc/pulp/admin/job.conf',
+    'etc/pulp/consumer/consumer.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
     'etc/gofer/plugins/pulpplugin.conf',
+    'etc/gofer/plugins/consumer.conf',
     'etc/yum/pluginconf.d/pulp-profile-update.conf',
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
-    ('src/pulp/client/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
-    ('src/pulp/client/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
+    'srv/pulp/repo_auth.wsgi',
+    ('src/pulp/client/consumer/goferplugins/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
+    ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
+    ('src/pulp/client/consumer/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('etc/pulp/logging', '/etc/pulp/logging'),
 )
 
@@ -75,7 +92,7 @@ def parse_cmdline():
 
     parser.set_defaults(install=False,
                         uninstall=False,
-                        debug=False)
+                        debug=True)
 
     opts, args = parser.parse_args()
 
@@ -133,15 +150,17 @@ def install(opts):
     if not os.path.exists('/var/www/pub'):
         os.symlink('/var/lib/pulp/published', '/var/www/pub')
 
-    # Grant apache write access to the pulp tools log file and pulp 
+    # Grant apache write access to the pulp tools log file and pulp
     # packages dir
-    os.system('setfacl -m user:apache:rwx /var/log/pulp')
-    os.system('setfacl -m user:apache:rwx /var/lib/pulp')
-    os.system('setfacl -m user:apache:rwx /var/lib/pulp/published')
+    os.system('chown -R apache:apache /var/log/pulp')
+    os.system('chown -R apache:apache /var/lib/pulp')
+    os.system('chown -R apache:apache /var/lib/pulp/published')
     # guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
+    # Update for certs
+    os.system('chown -R apache:apache /etc/pki/pulp')
 
     # Disable existing SSL configuration
     #if os.path.exists('/etc/httpd/conf.d/ssl.conf'):

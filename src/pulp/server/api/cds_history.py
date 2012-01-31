@@ -19,7 +19,7 @@ from pulp.common import dateutils
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 # -- globals ---------------------------------------------------------------------
 

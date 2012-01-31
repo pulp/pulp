@@ -30,14 +30,7 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="Development">Development</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="Development">Development</h1>
 <p>
 The following page describes the steps necessary to configure your local environment for Pulp development.
 </p>
@@ -53,21 +46,17 @@ The Pulp repositories are accessed through git at the following URLs based on th
 </pre><p>
 If you have been approved for git commit access to the Pulp git repository, the following steps are necessary:
 </p>
-<ul><li>Upload your SSH RSA key into the Fedora accounts system (note: use your login name): <a class="ext-link" href="https://admin.fedoraproject.org/accounts/user/edit/USERNAME"><span class="icon">https://admin.fedoraproject.org/accounts/user/edit/USERNAME</span></a>
-</li><li>Request membership to the Pulp group: <a class="ext-link" href="https://admin.fedoraproject.org/accounts/group/view/gitpulp"><span class="icon">https://admin.fedoraproject.org/accounts/group/view/gitpulp</span></a>  
+<ul><li>Upload your SSH RSA key into the Fedora accounts system (note: use your login name): <a class="ext-link" href="https://admin.fedoraproject.org/accounts/user/edit/USERNAME"><span class="icon"> </span>https://admin.fedoraproject.org/accounts/user/edit/USERNAME</a>
+</li><li>Request membership to the Pulp group: <a class="ext-link" href="https://admin.fedoraproject.org/accounts/group/view/gitpulp"><span class="icon"> </span>https://admin.fedoraproject.org/accounts/group/view/gitpulp</a>  
 </li></ul><hr />
 <h2 id="dependencies">Dependencies</h2>
 <p>
 The easiest way to download the dependencies is to install Pulp through yum, which will pull in the latest dependencies according to the spec file. 
 </p>
-<p>
-1. Follow the instructions for your platform on the <a class="wiki" href="UGInstallation.html">UGInstallation</a> page, using the testing repositories for the most recent updates. Make sure to enable the <strong>Testing Build</strong> repository as described in those instructions; it is possible that the current code base uses newer versions of dependencies than the previous community release did.
-</p>
-<p>
-2. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked out code.
-</p>
-<pre class="wiki">$ rpm -e pulp pulp-client pulp-common
-</pre><p>
+<ol><li>Follow the instructions for your platform on the <a class="wiki" href="UGInstallation.html">UGInstallation</a> page, using the testing repositories for the most recent updates. Make sure to enable the <strong>Testing Build</strong> repository as described in those instructions; it is possible that the current code base uses newer versions of dependencies than the previous community release did.
+</li></ol><ol start="2"><li>Remove the installed Pulp RPMs; these will be replaced with running directly from the checked out code.
+<pre class="wiki">$ rpm -e pulp pulp-admin pulp-client-lib pulp-consumer pulp-common
+</pre></li></ol><p>
 The only caveat to this approach is that these dependencies will need to be maintained after this initial setup. Leaving the testing builds repository enabled will cause them to be automatically updated on subsequent <tt>yum update</tt> calls. Messages are sent to the Pulp mailing list when these dependencies are updated as well to serve as a reminder to update before the next code update.
 </p>
 <hr />
@@ -115,6 +104,9 @@ $ setfacl -m user:apache:rwx .
 $ cd pulp
 $ setfacl -m user:apache:rwx .
 </pre><hr />
+<h2 id="SELinux">SELinux</h2>
+<ul><li>If you are running with SELinux enabled you will need to follow the steps here: <a class="wiki" href="https://fedorahosted.org/pulp/wiki/SELinux/DevSetup">SELinux/DevSetup</a> 
+</li></ul><hr />
 <h2 id="init">Initialize and Start</h2>
 <p>
 At this point, the <a class="wiki" href="UGInstallation.html#fserver">Server Installation</a> guide can be followed to initialize and start Pulp.
@@ -124,15 +116,11 @@ Keep in mind that code changes will often require Apache to be restarted to load
 </p>
 <hr />
 <h2 id="UnitTestCoverage">Unit Test Coverage</h2>
-<p>
-1. Install the coverage plugin for nosetests:
-</p>
+<ol><li>Install the coverage plugin for nosetests:
 <pre class="wiki">easy_install coverage
-</pre><p>
-2. When you run the test suite with nosetests, pass in the following flags:
-</p>
+</pre></li></ol><ol start="2"><li>When you run the test suite with nosetests, pass in the following flags:
 <pre class="wiki">nosetests --with-coverage --cover-html --cover-package pulp --cover-erase
-</pre><p>
+</pre></li></ol><p>
 A quick explanation:
 </p>
 <ul><li>--with-coverage - actually does the coverage checking
@@ -143,17 +131,13 @@ A quick explanation:
 That'll put them in a directory called "cover" which I think is in "unit" (it may be your cwd if you run with -w).
 </p>
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

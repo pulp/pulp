@@ -30,16 +30,9 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PackageGroups">PackageGroups</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroups">PackageGroups</h1>
 <p>
-A <i>packagegroup</i> corresponds to a collection of package names in the Pulp server.  
+A <em>packagegroup</em> corresponds to a collection of package names in the Pulp server.  
 Yum uses packagegroups to install multiple related packages as a single collection. 
 An example of using a packagegroup is: "yum groupinstall fonts". 
 Additionally the concept of a collection of groups is present, which is called a "Category", 
@@ -51,6 +44,11 @@ in pulp this is a "packagegroupcategory".
 Remote packagegroup installation on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install">Consumers</a> section of the User Guide.
 </p>
 <hr />
+<h2 id="uninstall">Removal</h2>
+<p>
+Remote packagegroup removal on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install">Consumers</a> section of the User Guide.
+</p>
+<hr />
 <h2 id="list">List</h2>
 <p>
 The <tt>packagroup list</tt> command displays packagegroups defined by this repository, it requires at a minimum a 'repository id'.
@@ -59,7 +57,7 @@ The <tt>packagroup list</tt> command displays packagegroups defined by this repo
 Parameters:
 </p>
 <table class="wiki">
-<tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> </td><td> <strong>Optional/Required</strong> 
+<tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> </td><td> <strong><a class="missing wiki">Optional/Required?</a></strong> 
 </td></tr><tr><td> -r/--repoid </td><td> Repository id </td><td> Required 
 </td></tr><tr><td> -f/--filter </td><td> Removes groups that contain a package name outside of it's own repository. </td><td> Optional 
 </td></tr></table>
@@ -106,7 +104,7 @@ The <tt></tt><tt>packagegroup info</tt><tt></tt> command displays information ab
 Parameters:
 </p>
 <table class="wiki">
-<tr><td> <strong>Parameter</strong> </td><td>| <strong>Description</strong> 
+<tr><td> <strong>Parameter</strong> </td><td style="text-align: left">| <strong>Description</strong> 
 </td></tr><tr><td> --id  </td><td> Packagegroup id 
 </td></tr><tr><td> -r/--repoid </td><td> Repository id 
 </td></tr><tr><td> -f/--filter </td><td> For each group, only return package names which are part of the repository 
@@ -198,8 +196,8 @@ The <tt>packagegroup create</tt> command allows a packagegroup to be created in 
 Parameters:
 </p>
 <table class="wiki">
-<tr><td> <strong>Parameter</strong> </td><td>| <strong>Description</strong> 
-</td></tr><tr><td> --id </td><td> ID of packagegroup (required)
+<tr><td> <strong>Parameter</strong> </td><td style="text-align: left">| <strong>Description</strong> 
+</td></tr><tr><td> --id </td><td style="text-align: right"> ID of packagegroup (required)
 </td></tr><tr><td> -r/--repoid </td><td> ID of repository (required) 
 </td></tr><tr><td> -n/--name </td><td> Name of packagegroup (required) 
 </td></tr><tr><td> -d/--description </td><td> Description of packagegroup (optional) 
@@ -268,17 +266,13 @@ Parameters
 Package [grinder-docs] deleted from group [test_group] in repository [f14]
 </pre><hr />
 </div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

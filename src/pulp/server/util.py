@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -12,22 +11,30 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
+import gzip
 
 import hashlib # 3rd party on RHEL 5
 import logging
 import os
 import random
+import re
+import signal
+import shlex
 import shutil
+import sre_constants
 import string
+import subprocess
 import tempfile
 import threading
 import time
 import commands
 import rpm
 import yum
+import errno
 
 from pulp.server import config, constants
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
+from pulp.server.tasking.exception import CancelException
 from grinder import GrinderUtils
 from grinder import RepoFetch
 
@@ -42,6 +49,11 @@ log = logging.getLogger(__name__)
 #  this means we are only concerned with Pulp's usage of yum for synchronizing.
 __yum_lock = threading.Lock()
 
+# In memory lookup table for createrepo processes
+# Responsible for 2 tasks.  1) Restrict only one createrepo per repo_dir, 2) Allow an async cancel of running createrepo
+CREATE_REPO_PROCESS_LOOKUP = {}
+CREATE_REPO_PROCESS_LOOKUP_LOCK = threading.Lock()
+
 class CreateRepoError(PulpException):
     def __init__(self, output):
         self.output = output
@@ -49,8 +61,46 @@ class CreateRepoError(PulpException):
     def __str__(self):
         return self.output
 
+class CreateRepoAlreadyRunningError(PulpException):
+    def __init__(self, repo_dir):
+        self.repo_dir = repo_dir
+    def __str__(self):
+        return "Already running on %s" % (self.repo_dir)
+
 class ModifyRepoError(CreateRepoError):
     pass
+
+class RegularExpressionError(PulpException):
+    pass
+
+class Package:
+    """
+    Package data object used so the YumRepository and associated
+    package sack(s) can be closed.
+    """
+
+    __slots__ = \
+        ('relativepath',
+         'checksum',
+         'checksum_type',
+         'name',
+         'epoch',
+         'version',
+         'release',
+         'arch',
+         'description',
+         'buildhost',
+         'size',
+         'group',
+         'license',
+         'vendor',
+         'requires',
+         'provides',)
+
+    def __init__(self, p):
+        for k in self.__slots__:
+            v = getattr(p, k)
+            setattr(self, k, v)
 
 
 class Package:
@@ -93,6 +143,36 @@ def top_package_location():
 
 def top_file_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "files")
+
+def top_distribution_location():
+    return os.path.join(constants.LOCAL_STORAGE, "distributions")
+
+def encode_unicode(path):
+    """
+    Check if given path is a unicode and if yes, return utf-8 encoded path
+    """
+    if type(path) is unicode:
+        path = path.encode('utf-8')
+    return path
+
+def decode_unicode(path):
+    """
+    Check if given path is of type str and if yes, convert it to unicode
+    """
+    if type(path) is str:
+        path = path.decode('utf-8')
+    return path
+
+def tmp_cache_location():
+    cache_dir = os.path.join(constants.LOCAL_STORAGE, "cache")
+    if not os.path.exists(cache_dir):
+        try:
+            os.makedirs(cache_dir)
+        except OSError, e:
+            if e.errno != 17:
+                log.critical(e)
+                raise e
+    return cache_dir
 
 def relative_repo_path(path):
     """
@@ -204,6 +284,28 @@ def get_repomd_filetypes(repomd_path):
     if rmd:
         return rmd.fileTypes()
 
+def get_repomd_filetype_dump(repomd_path):
+    """
+    @param repomd_path: path to repomd.xml
+    @return: dump of metadata information
+    """
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
+    ft_data = {}
+    if rmd:
+        for ft in rmd.fileTypes():
+            ft_obj = rmd.repoData[ft]
+            try:
+                size = ft_obj.size
+            except:
+                # RHEL5 doesnt have this field
+                size = None
+            ft_data[ft_obj.type] = {'location'  : ft_obj.location[1],
+                                    'timestamp' : ft_obj.timestamp,
+                                    'size'      : size,
+                                    'checksum'  : ft_obj.checksum,
+                                    'dbversion' : ft_obj.dbversion}
+    return ft_data
+
 
 def _get_yum_repomd(path, temp_path=None):
     """
@@ -256,7 +358,8 @@ def get_repo_packages(path):
     try:
         packages = []
         r = _get_yum_repomd(path, temp_path=temp_path)
-        if not r:
+        if not os.path.exists(os.path.join(path, r.repoMDFile)):
+            # check if repomd.xml exists before loading package sack
             return []
         sack = r.getPackageSack()
         sack.populate(r, 'metadata', None, 0)
@@ -281,8 +384,11 @@ def get_repomd_filetype_path(path, filetype):
     """
     rmd = yum.repoMDObject.RepoMD("temp_pulp", path)
     if rmd:
-        data = rmd.getData(filetype)
-        return data.location[1]
+        try:
+            data = rmd.getData(filetype)
+            return data.location[1]
+        except:
+            return None
     return None
 
 def listdir(directory):
@@ -358,7 +464,7 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
             hash = checksum["sha256"]
         else:
             #unknown checksum type, grab first checksum type
-            hash = checksum[hash.keys()[0]]
+            hash = checksum.values()[0]
 
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
         name, version, release, arch, hash[:3], filename)
@@ -384,71 +490,166 @@ def create_symlinks(source_path, link_path):
         os.symlink(source_path, link_path)
         
 def _create_repo(dir, groups=None, checksum_type="sha256"):
-    cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
+    try:
+        cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
+    except UnicodeDecodeError:
+        checksum_type = decode_unicode(checksum_type)
+        if groups:
+            groups = decode_unicode(groups)
+        dir = decode_unicode(dir)
+        cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     if not groups:
         cmd = "createrepo --database --checksum %s --update %s " % (checksum_type, dir)
         repodata_file = os.path.join(dir, "repodata", "repomd.xml")
+        repodata_file = encode_unicode(repodata_file)
         if os.path.isfile(repodata_file):
             log.info("Checking what metadata types are available: %s" % \
                     (get_repomd_filetypes(repodata_file)))
             if "group" in get_repomd_filetypes(repodata_file):
-                comps_file = get_repomd_filetype_path(
+                comps_ftype = get_repomd_filetype_path(
                     repodata_file, "group")
-                comps_file = os.path.join(dir, comps_file)
-                if comps_file and os.path.isfile(comps_file):
-                    cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, comps_file, dir)
-    log.info("started repo metadata update")
-    status, out = commands.getstatusoutput(cmd)
+                filetype_path = os.path.join(dir,comps_ftype)
+                # createrepo uses filename as mdtype, rename to type.<ext>
+                # to avoid filename too long errors
+                renamed_filetype_path = os.path.join(os.path.dirname(comps_ftype),
+                                         "comps" + '.' + '.'.join(os.path.basename(comps_ftype).split('.')[1:]))
+                renamed_comps_file = os.path.join(dir, renamed_filetype_path)
+                os.rename(filetype_path, renamed_comps_file)
+                if renamed_comps_file and os.path.isfile(renamed_comps_file):
+                    cmd = "createrepo --database --checksum %s -g %s --update %s " % \
+                        (checksum_type, renamed_comps_file, dir)
 
-    if status != 0:
-        log.error("createrepo on %s failed" % dir)
-        raise CreateRepoError(out)
-    log.info("[%s] on %s finished" % (cmd, dir))
-    return status, out
+    # shlex now can handle unicode strings as well
+    cmd = encode_unicode(cmd)
+    try:
+        cmd = shlex.split(cmd.encode('ascii', 'ignore'))
+    except:
+        cmd = shlex.split(cmd)
+
+    log.info("started repo metadata update: %s" % (cmd))
+    handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return handle
 
 def create_repo(dir, groups=None, checksum_type="sha256"):
-    current_repo_dir = os.path.join(dir, "repodata")
-    backup_repo_dir = None
-    if os.path.exists(current_repo_dir):
-        log.info("metadata found; taking backup.")
-        #take a snapshot of existing metadata
-        backup_repo_dir = os.path.join(dir, "repodata.old")
-        if os.path.exists(backup_repo_dir):
-            log.debug("clean up any stale dirs")
+    handle = None
+    # Lock the lookup and launch of a new createrepo process
+    # Lock is released once createrepo is launched
+    CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+    try:
+        if CREATE_REPO_PROCESS_LOOKUP.has_key(dir):
+            raise CreateRepoAlreadyRunningError(dir)
+        current_repo_dir = os.path.join(dir, "repodata")
+        # Note: backup_repo_dir is used to store presto metadata and possibly other custom metadata types
+        # they will be copied back into new 'repodata' if needed.
+        backup_repo_dir = None
+        current_repo_dir = encode_unicode(current_repo_dir)
+        if os.path.exists(current_repo_dir):
+            log.info("metadata found; taking backup.")
+            backup_repo_dir = os.path.join(dir, "repodata.old")
+            if os.path.exists(backup_repo_dir):
+                log.debug("clean up any stale dirs")
+                shutil.rmtree(backup_repo_dir)
+            shutil.copytree(current_repo_dir, backup_repo_dir)
+        handle = _create_repo(dir, groups=groups, checksum_type=checksum_type)
+        if not handle:
+            raise CreateRepoError("Unable to execute createrepo on %s" % (dir))
+        CREATE_REPO_PROCESS_LOOKUP[dir] = handle
+    finally:
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+    # Ensure we clean up CREATE_REPO_PROCESS_LOOKUP, surround all ops with try/finally
+    try:
+        # Block on process till complete (Note it may be async terminated)
+        out_msg, err_msg = handle.communicate(None)
+        if handle.returncode != 0:
+            try:
+                # Cleanup createrepo's temporary working directory
+                cleanup_dir = os.path.join(dir, ".repodata")
+                if os.path.exists(cleanup_dir):
+                    shutil.rmtree(cleanup_dir)
+            except Exception, e:
+                log.warn(e)
+                log.warn("Unable to remove temporary createrepo dir: %s" % (cleanup_dir))
+            if handle.returncode == -9:
+                log.warn("createrepo on %s was killed" % (dir))
+                raise CancelException()
+            else:
+                log.error("createrepo on %s failed with returncode <%s>" % (dir, handle.returncode))
+                log.error("createrepo stdout:\n%s" % (out_msg))
+                log.error("createrepo stderr:\n%s" % (err_msg))
+                raise CreateRepoError(err_msg)
+        log.info("createrepo on %s finished" % (dir))
+        if not backup_repo_dir:
+            log.info("Nothing further to check; we got our fresh metadata")
+            return
+        #check if presto metadata exist in the backup
+        repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
+        ftypes = get_repomd_filetypes(repodata_file)
+        base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db', 'group', 'group_gz']
+        for ftype in ftypes:
+            if ftype in base_ftypes:
+                # no need to process these again
+                continue
+            filetype_path = os.path.join(backup_repo_dir, os.path.basename(get_repomd_filetype_path(repodata_file, ftype)))
+            # modifyrepo uses filename as mdtype, rename to type.<ext>
+            renamed_filetype_path = os.path.join(os.path.dirname(filetype_path), \
+                                         ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
+            os.rename(filetype_path,  renamed_filetype_path)
+            if renamed_filetype_path.endswith('.gz'):
+                # if file is gzipped, decompress before passing to modifyrepo
+                data = gzip.open(renamed_filetype_path).read().decode("utf-8", "replace")
+                renamed_filetype_path = '.'.join(renamed_filetype_path.split('.')[:-1])
+                open(renamed_filetype_path, 'w').write(data.encode("UTF-8"))
+            if os.path.isfile(renamed_filetype_path):
+                log.info("Modifying repo for %s metadata" % ftype)
+                modify_repo(current_repo_dir, renamed_filetype_path)
+    finally:
+        if backup_repo_dir:
             shutil.rmtree(backup_repo_dir)
-        shutil.copytree(current_repo_dir, backup_repo_dir)
-    #generate new metadata
-    _create_repo(dir, groups=groups, checksum_type=checksum_type)
-    if not backup_repo_dir:
-        log.info("Noting further to check; we got our fresh metadata")
-        return
-    #check if presto metadata exist in the backup
-    repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
-    ftypes = get_repomd_filetypes(repodata_file)
-    prestodelta_path = ""
-    if "prestodelta" in ftypes:
-        prestodelta_file = get_repomd_filetype_path(repodata_file, "prestodelta")
-        prestodelta_path = os.path.join(backup_repo_dir, os.path.basename(prestodelta_file))
-    if os.path.isfile(prestodelta_path):
-        log.info("Modifying repo for prestodelta metadata")
-        modify_repo(current_repo_dir, prestodelta_path)
-    #check if updateinfo metadata exist in the backup
-    updateinfo_path = ""
-    if "updateinfo" in ftypes:
-        updateinfo_file = get_repomd_filetype_path(repodata_file, "updateinfo")
-        updateinfo_path = os.path.join(backup_repo_dir, os.path.basename(updateinfo_file))
-    if os.path.exists(updateinfo_path):
-        log.info("Modifying repo for updateinfo metadata")
-        modify_repo(current_repo_dir, updateinfo_path)
-    shutil.rmtree(backup_repo_dir)
-        
-def modify_repo(dir, new_file):
-    cmd = "modifyrepo %s %s" % (new_file, dir)
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+        try:
+            del CREATE_REPO_PROCESS_LOOKUP[dir]
+        finally:
+            CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+
+def cancel_createrepo(repo_dir):
+    """
+    Method will lookup a createrepo process associated to 'repo_dir'
+    If a createrepo process is running we will send a SIGKILL to it and return True
+    Else we return False to denote no process was found
+    """
+    CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+    try:
+        if CREATE_REPO_PROCESS_LOOKUP.has_key(repo_dir):
+            handle = CREATE_REPO_PROCESS_LOOKUP[repo_dir]
+            try:
+                os.kill(handle.pid, signal.SIGKILL)
+            except Exception, e:
+                log.info(e)
+                return False
+            return True
+        else:
+            return False
+    finally:
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+
+def modify_repo(repodata_dir, new_file, remove=False):
+    """
+     run modifyrepo to add a new file to repodata directory
+     @param repodata_dir: repodata directory path
+     @type repodata_dir: string
+     @param new_file: new file type to add or remove
+     @type new_file: string
+    """
+    if remove:
+        cmd = "modifyrepo --remove %s %s" % (new_file, repodata_dir)
+    else:
+        cmd = "modifyrepo %s %s" % (new_file, repodata_dir)
+    cmd = encode_unicode(cmd)
     status, out = commands.getstatusoutput(cmd)
     if status != 0:
-        log.error("modifyrepo on %s failed" % dir)
+        log.error("modifyrepo on %s failed" % repodata_dir)
         raise ModifyRepoError(out)
-    log.info("modifyrepo with %s on %s finished" % (new_file, dir))
+    log.info("modifyrepo with %s on %s finished" % (new_file, repodata_dir))
     return status, out
 
 def delete_empty_directories(dirname):
@@ -492,6 +693,49 @@ def translate_to_utf8(data, encoding=None):
             translated_value = unicode(data[key], encoding)
             data[key] = translated_value
     return data
+
+def compile_regular_expression(reg_exp):
+    """
+    This method will handle a sre_constants.error resulting from an invalid
+    value for reg_exp.
+    @param reg_exp: regular expression to validate
+    @type reg_exp: str
+    @return: the compiled regular expression
+    @rtype: regular expression object
+    @raise: L{RegularExpressionError} if reg_exp fails to validate.
+    """
+    try:
+        return re.compile(reg_exp)
+    except sre_constants.error, e:
+        raise RegularExpressionError(
+            "The regular expression '%s' is not valid: %s"
+            % (reg_exp, str(e)))
+
+def makedirs(path, mode=0777):
+    """
+    Make directory.
+    Creates leaf directory and intermediate directories as needed.
+    Mitigates: http://bugs.python.org/issue1675
+    @param path: A directory path.
+    @type path: str
+    """
+    leaf = 1
+    if path.startswith('/'):
+        root = path[0]
+        path = path[1:]
+    else:
+        root = ''
+    part = [p for p in path.split('/') if p]
+    while leaf <= len(part):
+        subpath = root+os.path.join(*part[0:leaf])
+        leaf += 1
+        try:
+            os.mkdir(subpath, mode)
+        except OSError, e:
+            if e.errno == errno.EEXIST and os.path.isdir(subpath):
+                pass # already exists
+            else:
+                raise
 
 class Singleton(type):
     """

@@ -14,7 +14,7 @@
 
 # base api class --------------------------------------------------------------
 import re
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 class BaseApi(object):

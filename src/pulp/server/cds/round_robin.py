@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
@@ -197,7 +196,14 @@ def remove_cds_repo_association(cds_hostname, repo_id):
     # The new CDS should be the first returned at the next assignment
     if cds_hostname in association['next_permutation']:
         association['next_permutation'].remove(cds_hostname)
-        objectdb.save(association, safe=True)
+
+        # If there are no more CDS instances in the association document,
+        # remove the document entirely
+        if len(association['next_permutation']) is 0:
+            objectdb.remove({'repo_id' : repo_id}, safe=True)
+        else:
+            objectdb.save(association, safe=True)
+        
         return True
     else:
         return False

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -47,7 +46,7 @@ user_api = UserApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
-default_fields = ['id', 'description', 'key_value_pairs']
+default_fields = ['id', 'description', 'capabilities', 'key_value_pairs',]
 
 # controllers -----------------------------------------------------------------
 
@@ -97,8 +96,12 @@ class Consumers(JSONController):
         if user is not None:
             return self.conflict(
                 'Cannot create corresponding auth credentials: user with id %s alreay exists' % id)
-        consumer = consumer_api.create(id, consumer_data['description'],
-                                       consumer_data['key_value_pairs'])
+        consumer = \
+            consumer_api.create(
+                id,
+                consumer_data['description'],
+                capabilities=consumer_data.get('capabilities', {}),
+                key_value_pairs=consumer_data.get('key_value_pairs', {}))
         # create corresponding user for auth credentials
         user = user_api.create(id)
         add_user_to_role(consumer_users_role, user['login'])
@@ -183,11 +186,14 @@ class Consumer(JSONController):
         """
         consumer = consumer_api.consumer(id)
         if consumer is None:
-            return self.conflict('Consumer [%s] does not exist' % id)
+            return self.not_found('Consumer [%s] does not exist' % id)
         user = user_api.user(id)
         if user is not None:
             revoke_all_permissions_from_user(user['login'])
             user_api.delete(login=id)
+        # Unbind the consumer from all repos
+        for repo_id in consumer["repoids"]:
+            consumer_api.unbind(id, repo_id)
         consumer_api.delete(id=id)
         return self.ok(True)
 
@@ -198,10 +204,10 @@ class ConsumerDeferredFields(JSONController):
     exposed_fields = (
         'package_profile',
         'repoids',
-        'certificate',
         'keyvalues',
         'package_updates',
         'errata_package_updates',
+        'errata',
     )
 
     def package_profile(self, id):
@@ -230,19 +236,6 @@ class ConsumerDeferredFields(JSONController):
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
 
-    def certificate(self, id):
-        """
-        Get a X509 Certificate for this Consumer.  Useful for uniquely and securely
-        identifying this Consumer later.
-        @type id: str ID of the Consumer
-        @param id: consumer id
-        @return: X509 PEM Certificate
-        """
-        valid_filters = ('id')
-        filters = self.filters(valid_filters)
-        bundle = consumer_api.certificate(id)
-        return self.ok(bundle)
-
     def keyvalues(self, id):
         """
         Get key-value pairs for this consumer. This also includes attributes
@@ -270,6 +263,24 @@ class ConsumerDeferredFields(JSONController):
         """
         return self.ok(consumer_api.list_errata_package(id))
 
+    def errata(self, id):
+        """
+        list applicable errata for a given consumer.
+        filter by errata type if any
+        @type id: str
+        @param id: consumer id
+        """
+        if not consumer_api.consumer(id):
+            return self.conflict('Consumer [%s] does not exist' % id)
+        valid_filters = ('types')
+        types = self.filters(valid_filters).get('type', [])
+           
+        if types == []:
+            errataids = consumer_api.listerrata(id)
+        else:
+            errataids = consumer_api.listerrata(id, [types])
+        return self.ok(errataids)
+
     @error_handler
     @auth_required(READ)
     def GET(self, id, field_name):
@@ -293,11 +304,12 @@ class ConsumerActions(JSONController):
         'add_key_value_pair',
         'delete_key_value_pair',
         'update_key_value_pair',
-        'profile',
         'installpackages',
+        'updatepackages',
+        'uninstallpackages',
         'installpackagegroups',
+        'uninstallpackagegroups',
         'installpackagegroupcategories',
-        'listerrata',
         'installerrata',
         'history',
     )
@@ -317,7 +329,7 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         if not repo_api.repository(data):
-            return self.conflict('Repo [%s] does not exist' % data)
+            return self.not_found('Repo [%s] does not exist' % data)
         bind_data = consumer_api.bind(id, data)
         return self.ok(bind_data)
 
@@ -329,9 +341,9 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         if not repo_api.repository(data):
-            return self.conflict('Repo [%s] does not exist' % data)
+            return self.not_found('Repo [%s] does not exist' % data)
         consumer_api.unbind(id, data)
-        return self.ok(None)
+        return self.ok(True)
 
     def add_key_value_pair(self, id):
         """
@@ -359,7 +371,7 @@ class ConsumerActions(JSONController):
         consumer = consumer_api.consumer(id)
         key_value_pairs = consumer['key_value_pairs']
         if data not in key_value_pairs.keys():
-            return self.conflict('Given key [%s] does not exist' % data)
+            return self.not_found('Given key [%s] does not exist' % data)
         consumer_api.delete_key_value_pair(id, data)
         return self.ok(True)
 
@@ -374,18 +386,8 @@ class ConsumerActions(JSONController):
         consumer = consumer_api.consumer(id)
         key_value_pairs = consumer['key_value_pairs']
         if data['key'] not in key_value_pairs.keys():
-            return self.conflict('Given key [%s] does not exist' % data['key'])
+            return self.not_found('Given key [%s] does not exist' % data['key'])
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
-        return self.ok(True)
-
-    def profile(self, id):
-        """
-        update/add Consumer profile information. eg:package, hardware etc
-        @type id: str
-        @param id: consumer id
-        """
-        log.debug("consumers.py profile() with id: %s" % id)
-        consumer_api.profile_update(id, self.params())
         return self.ok(True)
 
     def installpackages(self, id):
@@ -403,10 +405,46 @@ class ConsumerActions(JSONController):
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Install packages already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
+
+    def updatepackages(self, id):
+        """
+        Update packages.
+        Body contains a list of package names.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        task = consumer_api.updatepackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        if scheduled_time is not None:
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
+            task.scheduler = AtScheduler(scheduled_time)
+        async.enqueue(task, unique=False)
+        taskdict = self._task_to_dict(task)
+        return self.accepted(taskdict)
+
+    def uninstallpackages(self, id):
+        """
+        Uninstall packages.
+        Body contains a list of package names.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        task = consumer_api.uninstallpackages(id, names)
+        scheduled_time = data.get('scheduled_time', None)
+        if scheduled_time is not None:
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
+            task.scheduler = AtScheduler(scheduled_time)
+        async.enqueue(task, unique=False)
+        taskdict = self._task_to_dict(task)
         return self.accepted(taskdict)
 
     def installpackagegroups(self, id):
@@ -417,17 +455,34 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        ids = data.get('packageids', [])
+        ids = data.get('groupids', [])
         task = consumer_api.installpackagegroups(id, ids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Package group installation already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
+
+    def uninstallpackagegroups(self, id):
+        """
+        Unnstall package groups.
+        Body contains a list of package ids.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        ids = data.get('groupids', [])
+        task = consumer_api.uninstallpackagegroups(id, ids)
+        scheduled_time = data.get('scheduled_time', None)
+        if scheduled_time is not None:
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
+            task.scheduler = AtScheduler(scheduled_time)
+        async.enqueue(task, unique=False)
+        taskdict = self._task_to_dict(task)
         return self.accepted(taskdict)
 
     def installpackagegroupcategories(self, id):
@@ -456,10 +511,8 @@ class ConsumerActions(JSONController):
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Package group installation already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
     def installerrata(self, id):
@@ -472,30 +525,18 @@ class ConsumerActions(JSONController):
         data = self.params()
         eids = data.get('errataids', [])
         types = data.get('types', [])
-        assumeyes = data.get('assumeyes', False)
-        task = consumer_api.installerrata(id, eids, types, assumeyes)
+        importkeys = data.get('importkeys', False)
+        task = consumer_api.installerrata(id, eids, types, importkeys)
         if not task:
-            return self.not_found('Errata %s you requested is not applicable for your system' % id)
+            return self.not_found('Errata %s you requested are not applicable for your system' % eids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
             scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
             scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
-        if async.enqueue(task) is None:
-            return self.conflict(_('Errata installation already scheduled'))
+        async.enqueue(task, unique=False)
         taskdict = self._task_to_dict(task)
-        taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
-
-    def listerrata(self, id):
-        """
-        list applicable errata for a given consumer.
-        filter by errata type if any
-        @type id: str
-        @param id: consumer id
-        """
-        data = self.params()
-        return self.ok(consumer_api.listerrata(id, data['types']))
 
     def history(self, id):
         """
@@ -548,43 +589,90 @@ class ConsumerActions(JSONController):
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         if not self.validate_consumer(id):
-            return self.conflict('Consumer [%s] does not exist' % id)
+            return self.not_found('Consumer [%s] does not exist' % id)
         return action(id)
 
 
-class ConsumerActionStatus(JSONController):
+class ConsumerProfileUpdate(JSONController):
+
+    @error_handler
+    @auth_required(UPDATE)
+    def PUT(self, id):
+        """
+        Update consumer's profile information
+        @param id: The consumer id
+        @type id: str
+        """
+        log.debug("PUT called on consumer profile update")
+        delta = self.params()
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.bad_request('Consumer [%s] does not exist' % id)
+        if id != delta.pop('id', id):
+            return self.bad_request('Cannot change the consumer id')
+        if not delta.has_key('package_profile') or not len(delta['package_profile']):
+            self.bad_request('No package profile information found for consumer [%s].' % id)
+        log.debug("Updating consumer Profile %s" % delta['package_profile'])
+        consumer_api.profile_update(id, delta['package_profile'])
+        return self.ok(True)
+
+    def GET(self, id):
+        """
+        Get a consumer's set of packages
+        @param id: consumer id
+        @return: consumer's installed packages
+        """
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.bad_request('Consumer [%s] does not exist' % id)
+        valid_filters = ('name', 'arch')
+        filters = self.filters(valid_filters)
+        packages = consumer_api.packages(id)
+        packages = self.filter_results(packages, filters)
+        return self.ok(packages)
+
+
+class ApplicableErrataInRepos(JSONController):
 
     @error_handler
     @auth_required(READ)
-    def GET(self, id, action_name, action_id):
+    def GET(self):
         """
-        Check the status of a package install operation.
-        @param id: repository id
-        @param action_name: name of the action
-        @param action_id: action id
-        @return: action status information
+        [[wiki]]
+        title: Applicable Errata In Repos 
+        description: List all errata associated with a group of repositories along with consumers that it is applicable to
+        method: GET
+        path: /consumers/applicable_errata_in_repos/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of object that are mappings of errata id in given repoids to applicable consumers
         """
-        task_info = self.task_status(action_id)
-        if task_info is None:
-            return self.not_found('No %s with id %s found' % (action_name, action_id))
-        return self.ok(task_info)
+        valid_filters = ('repoids','send_only_applicable_errata',)
+        filters = self.filters(valid_filters)
+        repoids = filters.pop('repoids', [])
+        send_only_applicable_errata = filters.pop('send_only_applicable_errata', ['true'])
+        if send_only_applicable_errata[0] not in ['true','false']:
+            return self.bad_request("Invalid input for send_only_applicable_errata. Accepted inputs are 'true' or 'false'")
+        errata = consumer_api.get_consumers_applicable_errata(repoids, send_only_applicable_errata[0])
+        return self.ok(errata)
+
 
 
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/$', 'Consumers',
+    '/applicable_errata_in_repos/$', 'ApplicableErrataInRepos',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
+    '/([^/]+)/package_profile/$', 'ConsumerProfileUpdate',
 
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields),
     'ConsumerDeferredFields',
 
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions),
     'ConsumerActions',
-
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerActions.exposed_actions),
-    'ConsumerActionStatus',
 )
 
 application = web.application(URLS, globals())

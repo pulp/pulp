@@ -9,4 +9,8 @@ dist
 *.egg-info
 .settings
 *.wpr
+*.wpu
 .idea
+.coverage
+cover
+

@@ -14,7 +14,7 @@
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db.model import Role
-from pulp.server.pexceptions import PulpException
+from pulp.server.exceptions import PulpException
 
 
 class RoleAPI(BaseApi):

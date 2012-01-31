@@ -17,38 +17,22 @@ import datetime
 import os
 import sys
 import time
-import unittest
 
-# Pulp
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
 
-sys.path.insert(0, srcdir)
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
-
-sys.path.insert(0, commondir)
-
-import mocks
 from pulp.common import dateutils
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auth import principal
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent, User
-from pulp.server.pexceptions import PulpException
-import testutil
+from pulp.server.exceptions import PulpException
 
-class TestCDSHistoryApi(unittest.TestCase):
+class TestCDSHistoryApi(testutil.PulpAsyncTest):
 
     def setUp(self):
-        mocks.install()
-        self.config = testutil.load_test_config()
-        self.cds_history_api = CdsHistoryApi()
-        self.cds_history_api.clean()
-
+        testutil.PulpAsyncTest.setUp(self)
         self.user = User('cds_admin', '12345', 'password', 'CDS User')
         principal.set_principal(self.user)
-
-    def tearDown(self):
-        self.cds_history_api.clean()
-        testutil.common_cleanup()
 
     def test_cds_registered(self):
         '''

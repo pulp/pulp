@@ -30,19 +30,12 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki">
-
- 
-  
-  
-   
-   <div class="wikipage">
-    <div id="searchable"><h1 id="PulpUsers">Pulp Users</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PulpUsers">Pulp Users</h1>
 <p>
-It is important to not confuse users with <i>consumers</i>. A consumer represents a client system connecting to and retrieving content from a Pulp server. Users, on the other hand, are used for two purposes:
+It is important to not confuse users with <em>consumers</em>. A consumer represents a client system connecting to and retrieving content from a Pulp server. Users, on the other hand, are used for two purposes:
 </p>
 <ul><li>Running administrative commands using <tt>pulp-admin</tt>
-</li><li>Registering new consumers using <tt>pulp-client</tt>
+</li><li>Registering new consumers using <tt>pulp-consumer</tt>
 </li></ul><p>
 All <tt>pulp-admin</tt> commands accept two parameters to capture authentication credentials:
 </p>
@@ -60,7 +53,7 @@ $ pulp-admin repo list -u admin -p admin
 <h2 id="login">Logging In</h2>
 <h3 id="LogIn">Log In</h3>
 <p>
-Rather than specifying the credentials on each call to <tt>pulp-admin</tt>, a user can <i>log in</i> to the Pulp server. Logging in stores a user credentials certificate at <tt>~/.pulp/user-cert.pem</tt>. Logging in is done through the <tt>auth login</tt> command:
+Rather than specifying the credentials on each call to <tt>pulp-admin</tt>, a user can <em>log in</em> to the Pulp server. Logging in stores a user credentials certificate at <tt>~/.pulp/user-cert.pem</tt>. Logging in is done through the <tt>auth login</tt> command:
 </p>
 <pre class="wiki">$ pulp-admin auth login -u admin -p admin
 User credentials successfully stored at [/home/pulp-user/.pulp]
@@ -258,17 +251,13 @@ Operations ['CREATE'] granted to role [ new-role ] on resource [ /repositories/ 
 $ pulp-admin permission revoke --resource /repositories/ --role new-role -o update
 Operations ['UPDATE'] revoked from role [ new-role ] on resource [ /repositories/ ]
 </pre></div>
-   </div>
-   
-  
-  <script type="text/javascript">
-   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
-  </script>
- 
- 
-</div>
+        
+        
+      </div>
+      
 
-
+    </div>
+    
 <!-- BEGIN FOOTER -->
 </body>
 </html>

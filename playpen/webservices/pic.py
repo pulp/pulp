@@ -28,6 +28,7 @@ import types
 _host = 'localhost'
 _port = 443
 _path_prefix = '/pulp/api'
+_auth_scheme = 'basic' # can also be 'oauth'
 _user = 'admin'
 _password = 'admin'
 
@@ -39,6 +40,21 @@ def connect():
     global _connection
     _connection = httplib.HTTPSConnection(_host, _port)
 
+# auth credentials ------------------------------------------------------------
+
+def set_basic_auth_credentials(user, password):
+    global _auth_scheme, _user, _password
+    _auth_scheme = 'basic'
+    _user = user
+    _password = password
+
+
+def set_oauth_credendtials(user):
+    global _auth_scheme, _user, _password
+    _auth_scheme = 'oauth'
+    _user = user
+    _password = ''
+
 # requests --------------------------------------------------------------------
 
 class RequestError(Exception):
@@ -46,9 +62,17 @@ class RequestError(Exception):
 
 
 def _auth_header():
-    raw = ':'.join((_user, _password))
-    encoded = base64.encodestring(raw)[:-1]
-    return {'Authorization': 'Basic %s' % encoded}
+    def _basic_auth_header():
+        raw = ':'.join((_user, _password))
+        encoded = base64.encodestring(raw)[:-1]
+        return {'Authorization': 'Basic %s' % encoded}
+    def _oauth_header():
+        return {}
+    if _auth_scheme == 'basic':
+        return _basic_auth_header()
+    if _auth_scheme == 'oauth':
+        return _oauth_header()
+    return {}
 
 
 def _request(method, path, body=None):
@@ -72,8 +96,20 @@ def _request(method, path, body=None):
     return (response.status, response_body)
 
 
-def GET(path):
+def _query_params(params):
+    for k, v in params.items():
+        if isinstance(v, basestring):
+            params[k] = [v]
+    return '&'.join('%s=%s' % (k, v) for k in params for v in params[k])
+
+
+def GET(path, **params):
+    path = '?'.join((path, _query_params(params)))
     return _request('GET', path)
+
+
+def OPTIONS(path):
+    return _request('OPTIONS', path)
 
 
 def PUT(path, body):

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from pulp.server.auth.principal import get_principal, is_system_principal
 
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -21,7 +20,9 @@ from gettext import gettext as _
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
-from pulp.server.pexceptions import PulpException
+from pulp.server.auth.principal import (
+    get_principal, is_system_principal, SystemPrincipal)
+from pulp.server.exceptions import PulpException
 from pulp.server.db.model import Delta
 
 
@@ -338,6 +339,39 @@ def show_permissions(resource):
     @return: permissions for the given resource
     """
     return _permission_api.permission(resource)
+
+
+class GrantPermissionsForTask(object):
+    """
+    Grant appropriate permissions to a task resource for the user that started
+    the task.
+    """
+
+    def __init__(self):
+        self.user_name = get_principal()['login']
+
+    def __call__(self, task):
+        if self.user_name == SystemPrincipal.LOGIN:
+            return
+        resource = '/tasks/%s/' % task.id
+        operations = ['READ', 'DELETE']
+        grant_permission_to_user(resource, self.user_name, operations)
+
+
+class RevokePermissionsForTask(object):
+    """
+    Revoke the permissions for a task from the user that started the task.
+    """
+
+    def __init__(self):
+        self.user_name = get_principal()['login']
+
+    def __call__(self, task):
+        if self.user_name == SystemPrincipal.LOGIN:
+            return
+        resource = '/tasks/%s/' % task.id
+        operations = ['READ', 'DELETE']
+        revoke_permission_from_user(resource, self.user_name, operations)
 
 # role api --------------------------------------------------------------------
 
