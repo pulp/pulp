@@ -18,6 +18,7 @@ support for custom v3 extensions.  It is not intended to be a
 replacement of full wrapper but instead and extension.
 """
 
+import logging
 import os
 import re
 from datetime import datetime as dt
@@ -26,7 +27,9 @@ from datetime import tzinfo, timedelta
 from M2Crypto import X509
 
 from pulp.common import dateutils
+from pulp.server.util import encode_unicode
 
+log = logging.getLogger(__name__)
 
 class Certificate(object):
     """
@@ -74,7 +77,10 @@ class Certificate(object):
             entry = subject.get_entries_by_nid(nid)
             if len(entry):
                 asn1 = entry[0].get_data()
-                d[key] = str(asn1)
+                try:
+                    d[key] = str(asn1)
+                except UnicodeEncodeError:
+                    d[key] = encode_unicode(asn1)
                 continue
         return d
 

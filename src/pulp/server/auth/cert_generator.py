@@ -19,7 +19,7 @@ import subprocess
 
 from pulp.server.exceptions import PulpException
 from pulp.server import config
-from pulp.server.util import Singleton
+from pulp.server.util import Singleton, encode_unicode
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +92,11 @@ def make_cert(uid, expiration):
     @rtype:  string
     """
     # Ensure we are dealing with a string and not unicode
-    uid = str(uid)
+    try:
+        uid = str(uid)
+    except UnicodeEncodeError:
+        uid = encode_unicode(uid)
+
     log.debug("make_cert: [%s]" % uid)
     
     #Make a private key

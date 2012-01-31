@@ -45,8 +45,9 @@ class BaseImporterConduitTests(testutil.PulpTest):
         self.repo_manager = RepoManager()
         self.importer_manager = RepoImporterManager()
 
-        self.repo_manager.create_repo('repo-1')
-        self.conduit = BaseImporterConduit('repo-1', 'test-importer')
+        self.repo_id = u'\u0938\u093e\u092f\u0932\u0940'
+        self.repo_manager.create_repo(self.repo_id)
+        self.conduit = BaseImporterConduit(self.repo_id, 'test-importer')
 
     def tearDown(self):
         super(BaseImporterConduitTests, self).tearDown()
@@ -58,7 +59,7 @@ class BaseImporterConduitTests(testutil.PulpTest):
         """
 
         # Setup
-        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
+        self.importer_manager.set_importer(self.repo_id, 'mock-importer', {})
 
         # Test - get no scratchpad
         self.assertTrue(self.conduit.get_scratchpad() is None)

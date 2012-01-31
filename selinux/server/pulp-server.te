@@ -3,6 +3,7 @@
 policy_module(pulp-server,0.0.0)
 require {
     type httpd_t;
+    type rpm_var_lib_t;
 }
 
 type pulp_cert_t;
@@ -10,3 +11,7 @@ miscfiles_cert_type(pulp_cert_t)
 manage_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
 manage_dirs_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
 read_lnk_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
+
+#https://bugzilla.redhat.com/show_bug.cgi?id=784280#c2
+dontaudit httpd_t rpm_var_lib_t:dir { getattr search open };
+

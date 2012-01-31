@@ -45,10 +45,12 @@ class BaseDistributorConduitTests(testutil.PulpTest):
         self.repo_manager = RepoManager()
         self.distributor_manager = RepoDistributorManager()
 
-        self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {}, True, distributor_id='test-distributor')
+        #repo_id = 'repo-1'
+        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
+        self.repo_manager.create_repo(repo_id)
+        self.distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True, distributor_id='test-distributor')
 
-        self.conduit = BaseDistributorConduit('repo-1', 'test-distributor')
+        self.conduit = BaseDistributorConduit(repo_id, 'test-distributor')
 
     def tearDown(self):
         super(BaseDistributorConduitTests, self).tearDown()

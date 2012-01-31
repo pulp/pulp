@@ -2545,6 +2545,11 @@ def validate_relative_path(new_path, existing_path):
     @return: True if the new path does not conflict with the existing path; False otherwise
     @rtype:  bool
     """
+    if new_path is unicode:
+        existing_path = pulp.server.util.decode_unicode(existing_path)
+    else:
+        if existing_path is unicode:
+            new_path = pulp.server.util.decode_unicode(new_path)
 
     # Easy out clause: if they are the same, they are invalid
     if new_path == existing_path:

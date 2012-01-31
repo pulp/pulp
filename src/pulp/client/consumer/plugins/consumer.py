@@ -31,6 +31,7 @@ from pulp.client.lib.utils import system_exit
 from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Bind, Unbind, Unregister, History)
 from pulp.common import dateutils
+from pulp.common.capabilities import AgentCapabilities
 from rhsm.profile import get_profile
 
 # base consumer action --------------------------------------------------------
@@ -90,9 +91,7 @@ class Register(ConsumerAction, ConsumerClientActionMixIn):
             system_exit(os.EX_DATAERR, _("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid))
         self.check_bundle_path()
         bundle = ConsumerBundle()
-        capabilities = dict(
-            heartbeat=True,
-            bind=True)
+        capabilities = AgentCapabilities.DEFAULT
         consumer = self.consumer_api.create(id, description, capabilities=capabilities)
         bundle.write(consumer['certificate'])
         pkginfo = get_profile("rpm").collect()

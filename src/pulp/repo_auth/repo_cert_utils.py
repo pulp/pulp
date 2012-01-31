@@ -78,6 +78,7 @@ class RepoCertUtils:
         self.config = config
         self.log_failed_cert = True
         self.log_failed_cert_verbose = False
+        self.max_num_certs_in_chain = 100
         try:
             self.log_failed_cert = self.config.get('main', 'log_failed_cert')
         except:
@@ -86,6 +87,11 @@ class RepoCertUtils:
             self.log_failed_cert_verbose = self.config.get('main', 'log_failed_cert_verbose')
         except:
             pass
+        try:
+            self.max_num_certs_in_chain = self.config.getint('main', 'max_num_certs_in_chain')
+        except:
+            pass
+
 
     # -- delete calls ----------------------------------------------------------------
 
@@ -310,7 +316,7 @@ class RepoCertUtils:
             # Will only be able to use first CA from the ca_pem if it was a chain
             ca_cert = X509.load_cert_string(ca_pem)
             return cert.verify(ca_cert.get_pubkey())
-        ca_chain = self.get_certs_from_string(ca_pem)
+        ca_chain = self.get_certs_from_string(ca_pem, log_func)
         crl_stack = X509.CRL_Stack()
         if check_crls:
             for ca in ca_chain:
@@ -411,10 +417,13 @@ class RepoCertUtils:
                     LOG.exception("Unable to load CRL file: %s" % (c))
         return crl_stack
 
-    def get_certs_from_string(self, data):
+    def get_certs_from_string(self, data, log_func=None):
         """
         @param data: A single string of concatenated X509 Certificates in PEM format
         @type data: str
+
+        @param log_func: logging function
+        @type log_func: function accepting a single string
 
         @return list of X509 Certificates
         @rtype: [M2Crypto.X509.X509]
@@ -425,7 +434,10 @@ class RepoCertUtils:
         bio = BIO.MemoryBuffer(data)
         certs = []
         try:
-            while True:
+            if not M2CRYPTO_HAS_CRL_SUPPORT:
+                # Old versions of M2Crypto behave differently and would loop indefinitely over load_cert_bio
+                return X509.load_cert_string(data)
+            for index in range(0, self.max_num_certs_in_chain):
                 # Read one cert at a time, 'bio' stores the last location read
                 # Exception is raised when no more cert data is available
                 cert = X509.load_cert_bio(bio)
@@ -433,6 +445,9 @@ class RepoCertUtils:
                     # This is likely to never occur, a X509Error should always be raised
                     break
                 certs.append(cert)
+                if index == (self.max_num_certs_in_chain - 1) and log_func:
+                    log_func("**WARNING** Pulp reached maximum number of <%s> certs supported in a chain." % (self.max_num_certs_in_chain))
+
         except X509.X509Error:
             # This is the normal return path.
             return certs

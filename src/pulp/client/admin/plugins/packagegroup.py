@@ -30,6 +30,7 @@ import pulp.client.constants as constants
 from pulp.client.lib.utils import (
     print_header, system_exit, askwait, parse_at_schedule,
     askcontinue, startwait, printwait)
+from pulp.common.capabilities import AgentCapabilities
 from pulp.client.lib.logutil import getLogger
 from pulp.client.pluginlib.command import Action, Command
 
@@ -312,7 +313,10 @@ class Install(PackageGroupAction):
         stats = self.service_api.agentstatus(ids)
         for id in ids:
             stat = stats[id]
-            if stat[0]:
+            if stat['online']:
+                continue
+            capabilities = AgentCapabilities(stat['capabilities'])
+            if not capabilities.heartbeat():
                 continue
             lst.append(id)
         return lst

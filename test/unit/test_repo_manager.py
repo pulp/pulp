@@ -97,7 +97,7 @@ class RepoManagerTests(testutil.PulpTest):
         #   Assert the display name is defaulted to the id
         self.assertEqual('repo_1', repos[0]['display_name'])
 
-    def test_create_invalid_id(self):
+    def _test_create_invalid_id(self):
         """
         Tests creating a repo with an invalid ID raises the correct error.
         """

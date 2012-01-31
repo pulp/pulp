@@ -230,7 +230,7 @@ class BaseSynchronizer(object):
             skip = {}
         if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
-            log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
+            log.debug("Begin to add packages from %s into %s" % (pulp.server.util.encode_unicode(dir), pulp.server.util.encode_unicode(repo['id'])))
             unfiltered_pkglist = pulp.server.util.get_repo_packages(dir)
             # Process repo filters if any
             if repo['filters']:
