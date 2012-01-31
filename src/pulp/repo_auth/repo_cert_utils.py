@@ -425,6 +425,9 @@ class RepoCertUtils:
         bio = BIO.MemoryBuffer(data)
         certs = []
         try:
+            if not M2CRYPTO_HAS_CRL_SUPPORT:
+                # Old versions of M2Crypto behave differently and would loop indefinitely over load_cert_bio
+                return X509.load_cert_string(data)
             while True:
                 # Read one cert at a time, 'bio' stores the last location read
                 # Exception is raised when no more cert data is available
