@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,6 +489,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Jan 31 2012 James Slagle <jslagle@redhat.com> 0.0.263-2
+- Add releasers.conf (jslagle@redhat.com)
+- Merge with pulp-0.0.263-1 (jslagle@redhat.com)
+- no need to generate updateinfo.xml if metadata is preserved
+  (pkilambi@redhat.com)
+
 * Fri Jan 27 2012 Jeff Ortel <jortel@redhat.com> 0.0.263-1
 - fix depsolver to include file based deps (pkilambi@redhat.com)
 - 783251 - Implements support for i18n ids for entities like repo, user,
