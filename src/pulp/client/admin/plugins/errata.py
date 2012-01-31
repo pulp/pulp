@@ -20,6 +20,7 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 from pulp.common import dateutils
+from pulp.common.capabilities import AgentCapabilities
 from pulp.client.admin.plugin import AdminPlugin
 from pulp.client import constants
 from pulp.client.api.job import JobAPI, job_end
@@ -250,7 +251,8 @@ class Install(ErrataAction):
             stat = stats[id]
             if stat['online']:
                 continue
-            if not stat['capabilities'].get('heartbeat'):
+            capabilities = AgentCapabilities(stat['capabilities'])
+            if not capabilities.heartbeat():
                 continue
             lst.append(id)
         return lst

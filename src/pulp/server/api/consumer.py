@@ -36,6 +36,7 @@ from pulp.server.tasking.task import Task
 from pulp.server.util import chunks, compare_packages
 from pulp.server.agent import PulpAgent
 from pulp.common.bundle import Bundle
+from pulp.common.capabilities import AgentCapabilities
 
 
 log = logging.getLogger(__name__)
@@ -348,9 +349,10 @@ class ConsumerApi(BaseApi):
         gpg_keys = ks.keys_and_contents()
         bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
-        # Send the bind request over to the consumer
-        # only if bind() supported in capabilities
-        if consumer['capabilities'].get('bind'):
+        # Send the bind request over to the consumer only if bind()
+        # is supported in capabilities
+        capabilities = AgentCapabilities(consumer['capabilities'])
+        if capabilities.bind():
             agent = PulpAgent(consumer, async=True)
             agent_consumer = agent.Consumer()
             agent_consumer.bind(repoid, bind_data)
@@ -386,9 +388,10 @@ class ConsumerApi(BaseApi):
         repoids.remove(repo_id)
         self.collection.save(consumer, safe=True)
 
-        # Send the bind request over to the consumer
-        # only if bind() supported in capabilities
-        if consumer['capabilities'].get('bind'):
+        # Send the bind request over to the consumer only if bind()
+        # is supported in capabilities
+        capabilities = AgentCapabilities(consumer['capabilities'])
+        if capabilities.bind():
             agent = PulpAgent(consumer, async=True)
             agent_consumer = agent.Consumer()
             agent_consumer.unbind(repo_id)
