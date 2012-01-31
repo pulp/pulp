@@ -521,7 +521,7 @@ class TestCertVerify(testutil.PulpAsyncTest):
         if not M2CRYPTO_HAS_CRL_SUPPORT:
             return
         root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
-        sub_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        sub_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/SUB_CA/sub_ca.pem")
         ca_chain_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ca_chain")
 
         expected_root_ca_cert = X509.load_cert(root_ca_path)
@@ -540,6 +540,17 @@ class TestCertVerify(testutil.PulpAsyncTest):
         self.assertTrue(certs[1].check_ca())
         self.assertTrue(expected_sub_ca_cert.get_subject().as_hash(), certs[1].get_subject().as_hash())
         self.assertTrue(expected_sub_ca_cert.get_issuer().as_hash(), certs[1].get_issuer().as_hash())
+
+    def test_get_certs_from_string_more_than_maximum_allowed(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        root_ca_path = os.path.join(CA_CHAIN_TEST_DATA, "certs/ROOT_CA/root_ca.pem")
+        cert_data = open(root_ca_path).read()
+        many_certs = ""
+        for index in range(0, repo_cert_utils.MAX_NUM_CERTS_IN_CHAIN+200):
+            many_certs += cert_data
+        parsed_certs = self.utils.get_certs_from_string(many_certs)
+        self.assertTrue(len(parsed_certs), repo_cert_utils.MAX_NUM_CERTS_IN_CHAIN)
 
     def test_validate_certificate_pem_with_ca_chain(self):
         if not M2CRYPTO_HAS_CRL_SUPPORT:
