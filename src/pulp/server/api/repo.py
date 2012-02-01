@@ -321,6 +321,7 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
+            repo_path = pulp.server.util.encode_unicode(repo_path)
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
         if publish is None:
             default_to_publish = config.config.getboolean('repos', 'default_to_published')
@@ -1655,7 +1656,7 @@ class RepoApi(BaseApi):
             #    gz = gzip.open(repo["group_gz_xml_path"], "wb")
             #    gz.write(xml.encode("utf-8"))
             #    gz.close()
-            return comps_util.update_repomd_xml_file(repo["repomd_xml_path"], repo["group_xml_path"])
+            return comps_util.update_repomd_xml_file(pulp.server.util.encode_unicode(repo["repomd_xml_path"]), repo["group_xml_path"])
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
             log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -2555,15 +2556,13 @@ def validate_relative_path(new_path, existing_path):
     @return: True if the new path does not conflict with the existing path; False otherwise
     @rtype:  bool
     """
-    if new_path is unicode:
-        existing_path = pulp.server.util.decode_unicode(existing_path)
-    else:
-        if existing_path is unicode:
-            new_path = pulp.server.util.decode_unicode(new_path)
-
     # Easy out clause: if they are the same, they are invalid
+    existing_path = pulp.server.util.decode_unicode(existing_path)
+    new_path = pulp.server.util.decode_unicode(new_path)
+
     if new_path == existing_path:
         return False
+
 
     # If both paths are in the same parent directory but have different
     # names, we're safe
