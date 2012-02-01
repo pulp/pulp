@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
+import random
 import logging
 import stat
 import sys
@@ -1555,68 +1556,72 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEquals(repo['publish'], True)
 
     def test_repo_create_with_i18n_id(self):
-        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
-        self.test_repo_create(repo_id)
+        def get_random_unicode():
+            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
+        self.test_repo_create(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_create_bad_arch(repo_id)
+        self.test_repo_create_bad_arch(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_create_conflicting_relative_path(repo_id)
+        self.test_repo_create_conflicting_relative_path(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_create_feedless(repo_id)
+        self.test_repo_create_feedless(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_create_with_checksum_type(id)
+        self.test_repo_create_with_checksum_type(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_create_with_feed_certs(repo_id)
+        self.test_repo_create_with_feed_certs(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_create_with_notes(repo_id)
+        self.test_repo_create_with_notes(get_random_unicode())
         self.deleteRepos()
 
     def test_repo_delete_with_i18n_id(self):
-        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
-        self.test_delete(id)
+        def get_random_unicode():
+            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
+        self.test_delete(get_random_unicode())
         self.deleteRepos()
-        self.test_delete_feedless(id)
+        self.test_delete_feedless(get_random_unicode())
         self.deleteRepos()
-        self.test_delete_non_existing_clone_id(id)
+        self.test_delete_non_existing_clone_id(get_random_unicode())
         self.deleteRepos()
-        self.test_delete_note(id)
+        self.test_delete_note(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_delete_with_consumer_certs(repo_id)
+        self.test_repo_delete_with_consumer_certs(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_delete_with_feed_certs(repo_id)
+        self.test_repo_delete_with_feed_certs(get_random_unicode())
         self.deleteRepos()
 
     def test_repo_update_with_i18n_id(self):
-        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
-        self.test_update_repo_notes(id)
+        def get_random_unicode():
+            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
+        self.test_update_repo_notes(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_update(id)
+        self.test_repo_update(get_random_unicode())
         self.deleteRepos()
-        self.test_repo_update_checksum_type(repo_id)
+        self.test_repo_update_checksum_type(get_random_unicode())
         self.deleteRepos()
-        #self.test_repo_update_with_feed_certs(repo_id)
-        #self.deleteRepos()
+        self.test_repo_update_with_feed_certs(get_random_unicode())
+        self.deleteRepos()
 
     def test_repo_with_i18n_id(self):
-        repo_id = id =  u'\u0938\u093e\u092f\u0932\u0940'
+        def get_random_unicode():
+            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
         #self.cancel_task(id)
         #self.deleteRepos()
         #self.resync_removes_deleted_package(id)
         #self.deleteRepos()
-        self.test_add_2_pkg_same_nevra_same_repo(id)
+        self.test_add_2_pkg_same_nevra_same_repo(get_random_unicode())
         self.deleteRepos()
-        self.test_add_note(id)
+        self.test_add_note(get_random_unicode())
         self.deleteRepos()
-        self.test_associate_packages(id)
+        self.test_associate_packages(get_random_unicode())
         self.deleteRepos()
-        self.test_clean(repo_id)
+        self.test_clean(get_random_unicode())
         self.deleteRepos()
-        self.test_consumer_errata(repo_id)
+        self.test_consumer_errata(get_random_unicode())
         self.deleteRepos()
-        self.test_consumerwithpackage(id)
+        self.test_consumerwithpackage(get_random_unicode())
         self.deleteRepos()
-        self.test_duplicate_syncs(id)
+        self.test_duplicate_syncs(get_random_unicode())
         self.deleteRepos()
-        self.test_empty_repo()
+        self.test_empty_repo(get_random_unicode())
         self.deleteRepos()
 

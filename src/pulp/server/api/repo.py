@@ -2253,6 +2253,7 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
         if repo['content_types'] in ('yum'):
+            repo_path = pulp.server.util.encode_unicode(repo_path)
             pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         elif repo['content_types'] in ('file'):
             self._generate_file_manifest(repo)

@@ -51,6 +51,7 @@ import os
 
 from glob import glob
 from M2Crypto import X509, BIO
+from pulp.server.util import encode_unicode
 
 LOG = logging.getLogger(__name__)
 try:
@@ -563,6 +564,8 @@ class RepoCertUtils:
         @return: mapping of cert bundle item (see module docs) to the absolute path
                  to where it is stored on disk
         '''
+        file_prefix = encode_unicode(file_prefix)
+        cert_dir = encode_unicode(cert_dir)
 
         WRITE_LOCK.acquire()
 
