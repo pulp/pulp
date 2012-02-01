@@ -805,8 +805,10 @@ class YumSynchronizer(BaseSynchronizer):
         log.info("Synchronizer stop has completed")
 
     def update_metadata(self, repo_dir, repo_id, progress_callback=None):
-    	repo = self.repo_api._get_existing_repo(repo_id)
-    	if repo['preserve_metadata']:
+        repo = self.repo_api._get_existing_repo(repo_id)
+        # compute the repo checksum type before processing packages and metadata
+        self.set_repo_checksum_type(repo)
+        if repo['preserve_metadata']:
             log.info("preserve metadata flag is set; skipping metadata update")
             # no-op
             return
@@ -829,6 +831,19 @@ class YumSynchronizer(BaseSynchronizer):
         pulp.server.util.create_repo(repo_dir, groups=groups_xml_path, checksum_type=repo['checksum_type'])
         end = time.time()
         log.info("Createrepo finished in %s seconds" % (end - start))
+
+    def set_repo_checksum_type(self, repo):
+        # At this point we have either downloaded the source metadata from a remote or local feed
+        # lets lookup the checksum type for primary xml in repomd.xml and use that for createrepo
+        log.debug('Determining checksum type for repo id %s' % repo)
+        repo_metadata = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "repodata/repomd.xml")
+        if os.path.exists(repo_metadata):
+            repo['checksum_type'] = pulp.server.util.get_repomd_filetype_dump(repo_metadata)['primary']['checksum'][0]
+        elif not repo['checksum_type']:
+            repo['checksum_type'] = "sha256"
+            # else: just reuse whats in the db
+        log.info('checksum type for repo id %s is %s' % (repo['id'], repo['checksum_type']) )
+        self.repo_api.collection.save(repo, safe=True)
         
     def list_rpms(self, src_repo_dir):
         pkglist = pulp.server.util.listdir(src_repo_dir)

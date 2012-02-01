@@ -431,11 +431,7 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
     if isinstance(checksum, basestring):
         hash = checksum
     else:
-        if checksum.has_key("sha256"):
-            hash = checksum["sha256"]
-        else:
-            #unknown checksum type, grab first checksum type
-            hash = checksum.values()[0]
+        hash = checksum.values()[0]
 
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
         name, version, release, arch, hash[:3], filename)

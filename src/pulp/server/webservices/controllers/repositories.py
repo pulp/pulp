@@ -306,7 +306,8 @@ class Repositories(JSONController):
          * relative_path?, str, repository on disk path
          * groupid?, list of str, list of repository group ids this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
-         * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
+         * checksum_type?, str, name of the algorithm to use for content checksums for feedless repos, defaults to sha256.
+                                For feed repos, this gets overwritten by source checksum type from repomd.xml.
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
          * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
