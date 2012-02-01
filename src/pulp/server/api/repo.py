@@ -321,7 +321,6 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
-            repo_path = pulp.server.util.encode_unicode(repo_path)
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
         if publish is None:
             default_to_publish = config.config.getboolean('repos', 'default_to_published')
