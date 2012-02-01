@@ -114,6 +114,10 @@ def remove_async(task):
     return _queue.remove(task)
 
 
+def drop_complete_async(task):
+    return _queue.drop_complete(task)
+
+
 def waiting_async():
     return _queue.waiting_tasks()
 

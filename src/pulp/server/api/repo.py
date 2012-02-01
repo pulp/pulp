@@ -660,10 +660,10 @@ class RepoApi(BaseApi):
         protected_repo_utils = ProtectedRepoUtils(config.config)
         protected_repo_utils.delete_protected_repo(repo['relative_path'])
 
-        # remove any tasks related to this repo
-        for task in async.all_async():
+        # remove any completed tasks related to this repo
+        for task in async.complete_async():
             if repo['_id'] in task.args or repo['_id'] in task.kwargs.values():
-                async.remove_async(task)
+                async.drop_complete_async(task)
 
         # remove task history related to this repo
         collection = model.TaskHistory.get_collection()
