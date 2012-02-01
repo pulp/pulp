@@ -207,7 +207,7 @@ class List(ContentAction):
                 utils.system_exit(os.EX_OK, _("No orphaned content on server"))
             for pkg in orphaned:
                 try:
-                    print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
+                    print "%s,%s" % (pkg['filename'], pkg['checksum']['sha'])
                 except:
                     pass
         if self.opts.repoid:
@@ -218,7 +218,7 @@ class List(ContentAction):
                 utils.system_exit(os.EX_OK, _("No content in the repo [%s]" % self.opts.repoid))
             for pkg in repo_data:
                 try:
-                    print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
+                    print "%s,%s" % (pkg['filename'], pkg['checksum']['sha'])
                 except:
                     pass
                 
