@@ -289,6 +289,19 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
+    def drop_complete(self, task):
+        """
+        Stop tracking a completed task.
+        Used to remove task history for deleted resources.
+        """
+        self.__lock.acquire()
+        try:
+            if task not in self.__storage.complete_tasks():
+                return
+            self.__storage.remove_complete(task)
+        finally:
+            self.__lock.release()
+
     def run(self, task):
         """
         Run a task from this task queue

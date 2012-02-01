@@ -22,7 +22,7 @@ OPTIONAL_PLUGINS = (auth_enabled_validation.authenticate,
                     oid_validation.authenticate)
 
 
-def check_password(environ, user, password):
+def allow_access(environ, host):
     '''
     Hook into mod_wsgi to be invoked when a request is determining authentication.
     If the authentication is successful, this method populates the user inside of
@@ -33,8 +33,8 @@ def check_password(environ, user, password):
     '''
     authorized = _handle(environ)
     return authorized
-    
-    
+
+
 # -- private -----------------------------------------------------------------------
 
 def _handle(environ):

@@ -603,7 +603,7 @@ class TestComps(testutil.PulpAsyncTest):
         pkggrp1 = self.repo_api.create_packagegroup(repo["id"], "groupid_1", "group_name_1", "description_1")
         mddata_A = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
         repo = self.repo_api.repository(repo["id"])
-        comps_util.update_repomd_xml_file(repo["repomd_xml_path"], repo["group_xml_path"])
+        comps_util.update_repomd_xml_file(pulp.server.util.encode_unicode(repo["repomd_xml_path"]), pulp.server.util.encode_unicode(repo["group_xml_path"]))
         mddata_B = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
         self.assertEquals(mddata_A["group"]["location"], mddata_B["group"]["location"])
         self.assertEquals(mddata_A["group_gz"]["location"], mddata_B["group_gz"]["location"])
