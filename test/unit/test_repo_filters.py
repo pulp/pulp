@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
+import random
 import logging
 import sys
 import os
@@ -26,10 +27,6 @@ import testutil
 from pulp.server.api import repo_sync
 
 class TestRepoFilters(testutil.PulpAsyncTest):
-
-    def clean(self):
-        self.filter_api.clean()
-        self.repo_api.clean()
 
     def test_create(self, id = 'filter-test'):
         filter = self.filter_api.create(id, type="blacklist", description="test filter",
@@ -186,31 +183,33 @@ class TestRepoFilters(testutil.PulpAsyncTest):
         self.assertTrue(len(filters) == 0)
         
     def test_filters_with_i18n_id(self):
-        id = u'\u0938\u093e\u092f\u0932\u0940'
-        self.test_clean(id)
+        def get_random_unicode():
+            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
+        self.test_clean(get_random_unicode())
         self.clean()
-        self.test_create(id)
+        self.test_create(get_random_unicode())
         self.clean()
-        self.test_delete(id)
-        self.test_duplicate(id)
+        self.test_delete(get_random_unicode())
         self.clean()
-        self.test_filter_list(id)
+        self.test_duplicate(get_random_unicode())
         self.clean()
-        self.test_add_filters_to_repo(id)
+        self.test_filter_list(get_random_unicode())
         self.clean()
-        self.test_add_packages_to_filter(id)
+        self.test_add_filters_to_repo(get_random_unicode())
         self.clean()
-        self.test_add_remove_filters(id)
+        self.test_add_packages_to_filter(get_random_unicode())
         self.clean()
-        self.test_list_repo_filters(id)
+        self.test_add_remove_filters(get_random_unicode())
         self.clean()
-        self.test_nonexistent_filter_delete(id)
+        self.test_list_repo_filters(get_random_unicode())
         self.clean()
-        self.test_remove_filters_from_repo(id)
+        self.test_nonexistent_filter_delete(get_random_unicode())
         self.clean()
-        self.test_remove_packages_from_filter(id)
+        self.test_remove_filters_from_repo(get_random_unicode())
         self.clean()
-        self.test_repo_associated_filter_delete(id)
+        self.test_remove_packages_from_filter(get_random_unicode())
+        self.clean()
+        self.test_repo_associated_filter_delete(get_random_unicode())
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
