@@ -137,7 +137,7 @@ class Task(object):
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
-        self.call_execution_hooks(dispatch_constants.CALL_FINISH_EXECUTION_HOOK)
+        self.call_execution_hooks(dispatch_constants.CALL_SUCCESS_EXECUTION_HOOK)
         self._complete(dispatch_constants.CALL_FINISHED_STATE)
 
     def _failed(self, exception=None, traceback=None):

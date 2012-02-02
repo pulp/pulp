@@ -139,7 +139,7 @@ class TaskTests(testutil.PulpTest):
     def test_finish_execution_hook(self):
         hooks = [mock.Mock(), mock.Mock()]
         for h in hooks:
-            self.call_request.add_execution_hook(dispatch_constants.CALL_FINISH_EXECUTION_HOOK, h)
+            self.call_request.add_execution_hook(dispatch_constants.CALL_SUCCESS_EXECUTION_HOOK, h)
         self.task.run()
         for h in hooks:
             self.assertTrue(h.call_count == 1)
