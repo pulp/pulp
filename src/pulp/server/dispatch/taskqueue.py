@@ -144,6 +144,18 @@ class TaskQueue(object):
         self.__dispatcher.join()
         self.__dispatcher = None
 
+    def lock(self):
+        """
+        Existentially lock the task queue
+        """
+        self.__lock.acquire()
+
+    def unlock(self):
+        """
+        Existentially unlock the task queue
+        """
+        self.__lock.release()
+
     # task management methods --------------------------------------------------
 
     def enqueue(self, task):
