@@ -6,6 +6,7 @@ require {
     type qpidd_t;
 }
 
-allow qpidd_t cert_t:dir search;
+allow qpidd_t cert_t:dir { read getattr search };
+allow qpidd_t cert_t:file { read getattr };
 
 
