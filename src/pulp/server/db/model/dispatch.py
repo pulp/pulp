@@ -76,15 +76,17 @@ class ArchivedCall(Model):
         self.serialized_call_report = call_report.serialize()
 
 
-class CoordinatorTask(Model):
+class TaskResource(Model):
     """
-    Task record including resources and operations.
+    Information for an individual resource used by a task.
     """
 
-    collection_name = 'coordinator_tasks'
-    unique_indices = ('task_id')
-    search_indices = ('resources')
+    collection_name = 'task_resources'
+    search_indices = ('task_id', 'resource_type', 'resource_id')
 
-    def __init__(self, task_id, resources):
+    def init(self, task_id, resource_type, resource_id, operations):
         self.task_id = task_id
-        self.resources = resources
+        self.resource_type = resource_type
+        self.resource_id  = resource_id
+        self.operations = operations
+
