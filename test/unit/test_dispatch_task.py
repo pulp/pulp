@@ -178,7 +178,7 @@ class FailTests(testutil.PulpTest):
 
     def test_error_execution_hook(self):
         hook = mock.Mock()
-        self.call_request.add_execution_hook(dispatch_constants.CALL_ERROR_EXECUTION_HOOK, hook)
+        self.call_request.add_execution_hook(dispatch_constants.CALL_FAILURE_EXECUTION_HOOK, hook)
         self.task.run()
         self.assertTrue(hook.call_count == 1)
         self.assertTrue(hook.call_args[0][0] is self.call_request)

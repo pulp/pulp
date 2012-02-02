@@ -152,7 +152,7 @@ class Task(object):
         self.call_report.exception = exception
         self.call_report.traceback = traceback
         _LOG.info(_('%s FAILED') % str(self))
-        self.call_execution_hooks(dispatch_constants.CALL_ERROR_EXECUTION_HOOK)
+        self.call_execution_hooks(dispatch_constants.CALL_FAILURE_EXECUTION_HOOK)
         self._complete(dispatch_constants.CALL_ERROR_STATE)
 
     def _complete(self, state=dispatch_constants.CALL_FINISHED_STATE):
