@@ -456,8 +456,9 @@ class Create(AdminRepoAction):
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--gpgkeys", dest="keys",
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
-        self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
-                               help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
+        self.parser.add_option("--checksum_type", dest="checksum_type",
+                               help=_("checksum type to use when yum metadata is generated for feedless repos; default:sha256; \
+                                       for feed repos, this is determined from source metadata"))
         self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
                                help=_("Preserves the original metadata; only works with feed repos"))
         self.parser.add_option('--content_type', dest='content_type', default="yum",
@@ -470,6 +471,8 @@ class Create(AdminRepoAction):
         feed = self.opts.feed
         if self.opts.preserve_metadata and not feed:
             utils.system_exit(os.EX_USAGE, _('Cannot use `preserve_metadata` option for feedless repos'))
+        if feed and self.opts.checksum_type:
+            utils.system_exit(os.EX_USAGE, _('Cannot use `checksum_type` option for feed repos; type is determined from source metadata'))
         preserve_metadata = False
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
@@ -519,13 +522,17 @@ class Create(AdminRepoAction):
             reader = KeyReader()
             keylist = reader.expand(keylist)
 
+        if self.opts.checksum_type:
+            checksum_type = self.opts.checksum_type
+        else:
+            checksum_type = "sha256"
         repo = self.repository_api.create(id, name, arch, feed,
                                           feed_cert_data=feed_cert_data,
                                           consumer_cert_data=consumer_cert_data,
                                           relative_path=relative_path,
                                           groupid=groupid,
                                           gpgkeys=keylist,
-                                          checksum_type=self.opts.checksum_type,
+                                          checksum_type=checksum_type,
                                           preserve_metadata=preserve_metadata,
                                           content_types=self.opts.content_type)
         print _("Successfully created repository [ %s ]") % repo['id']

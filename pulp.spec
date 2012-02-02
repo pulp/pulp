@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.263
+Version:        0.0.264
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,31 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.264-1
+- 784638 Update pulp apache config and repo auth to use WSGIAccessScript
+  (jslagle@redhat.com)
+- 784638 Add patch to mod_wsgi so that mod_ssl hook runs before
+  WSGIAccessScript (jslagle@redhat.com)
+- 784876 - fixing wrong checksum key in content list cli (skarmark@redhat.com)
+- 772350 - had to write new plumping to actually remove completed tasks from
+  the task queue (jconnor@redhat.com)
+- 772350 - hopefully last fix pertaining to this bug added task and task
+  history removal for tasks related to the repo being deleted god help us all
+  (jconnor@redhat.com)
+- Encapsulate agent capabilities in a common class and refit client/server.
+  (jortel@redhat.com)
+- Made max num of certs supported in a chain a config option
+  (jmatthews@redhat.com)
+- Changed logic in repo_cert_utils to avoid potential for inifite loop and
+  support a max num of certs in a chain (jmatthews@redhat.com)
+- repo_cert_utils if our patch is missing limit the tests we will run
+  (jmatthews@redhat.com)
+- 784280 - SELinux denials during system cli test (jmatthews@redhat.com)
+- Add capabilities to agent status; leverage in CLI. (jortel@redhat.com)
+- fix to improve dep solver performance (pkilambi@redhat.com)
+- 784346 - fixing unpublish logic to remove empty directories after a repo is
+  unlinked from published dir (pkilambi@redhat.com)
+
 * Fri Jan 27 2012 Jeff Ortel <jortel@redhat.com> 0.0.263-1
 - fix depsolver to include file based deps (pkilambi@redhat.com)
 - 783251 - Implements support for i18n ids for entities like repo, user,
