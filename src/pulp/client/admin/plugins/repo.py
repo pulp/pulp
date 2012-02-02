@@ -458,7 +458,7 @@ class Create(AdminRepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--checksum_type", dest="checksum_type",
                                help=_("checksum type to use when yum metadata is generated for feedless repos; default:sha256; \
-                                       for feed repos, this is determined from source metadata"))
+                                       for feed repos, this gets overwritten by source checksum type from repomd.xml"))
         self.parser.add_option("--preserve_metadata", action="store_true", dest="preserve_metadata",
                                help=_("Preserves the original metadata; only works with feed repos"))
         self.parser.add_option('--content_type', dest='content_type', default="yum",
