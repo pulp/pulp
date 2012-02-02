@@ -34,8 +34,8 @@ _CALL_EXECUTION_HOOK_STRINGS = (
     'enqueue',
     'dequeue',
     'run',
-    'finish',
-    'error',
+    'success',
+    'failure',
     'cancel',
     'complete'
 )
