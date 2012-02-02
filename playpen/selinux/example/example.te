@@ -9,6 +9,6 @@ require {
 
 allow qpidd_t tmp_t:dir { read getattr search };
 allow qpidd_t cert_t:dir { read getattr search };
-allow qpidd_t cert_t:file { read getattr };
+allow qpidd_t cert_t:file { read getattr open };
 
 
