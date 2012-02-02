@@ -27,7 +27,7 @@ from pulp.server.db import connection as db_connection
 logs.start_logging()
 db_connection.initialize()
 
-from pulp.client.core.utils import parse_interval_schedule
+from pulp.client.lib.utils import parse_interval_schedule
 from pulp.common.dateutils import (parse_iso8601_interval,
     parse_iso8601_duration, format_iso8601_duration,
     format_iso8601_datetime)
