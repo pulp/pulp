@@ -2,10 +2,12 @@
 # replaced with the version in the spec file
 policy_module(example,1.0.0)
 require {
+    type tmp_t;
     type cert_t;
     type qpidd_t;
 }
 
+allow qpidd_t tmp_t:dir { read getattr search };
 allow qpidd_t cert_t:dir { read getattr search };
 allow qpidd_t cert_t:file { read getattr };
 
