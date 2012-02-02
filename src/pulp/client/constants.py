@@ -48,12 +48,23 @@ Additional info    \t%-25s
 AVAILABLE_CONSUMER_INFO = """
 Id                 \t%-25s
 Description        \t%-25s
-Capabilities       \t%-25s
+Capabilities
+%s
 Subscribed Repos   \t%-25s
-Agent:
+Agent Status
    Responding      \t%-25s
    Last Heartbeat  \t%-25s
-Additional info    \t%-25s
+Additional Info    \t%-25s
+"""
+
+CONSUMER_INFO_NO_HEARTBEAT = """
+Id                 \t%-25s
+Description        \t%-25s
+Capabilities
+%s
+Subscribed Repos   \t%-25s
+Agent Status       \tN/A (unknown, heartbeat not supported)
+Additional Info    \t%-25s
 """
 
 CONSUMER_KEY_VALUE_INFO = """
