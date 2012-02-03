@@ -38,10 +38,10 @@ class Coordinator(object):
     def run_task(self, call_request):
         pass
 
-    def run_task_sync(self, call_request, timeout=None):
+    def run_task_synchronously(self, call_request, timeout=None):
         pass
 
-    def run_task_async(self, call_request):
+    def run_task_asynchronously(self, call_request):
         pass
 
     def run_job(self, call_request_list):
@@ -98,6 +98,16 @@ class Coordinator(object):
 # utility functions ------------------------------------------------------------
 
 def filter_dicts(dicts, fields):
+    """
+    Filter an iterable a dicts, returning dicts that only have the keys and
+    corresponding values for the passed in fields.
+    @param dicts: iterable of dicts to filter
+    @type  dicts: iterable of dicts
+    @param fields: iterable of keys to retain
+    @type  fields: iterable
+    @return: list of dicts with keys only found in the passed in fields
+    @rtype:  list of dicts
+    """
     filtered_dicts = []
     for d in dicts:
         n = {}
@@ -108,6 +118,13 @@ def filter_dicts(dicts, fields):
 
 
 def get_postponing_operations(operation):
+    """
+    Get a list of operations that will postpone the passed in operation
+    @param operation: proposed operation
+    @type  operation: str
+    @return: (possibly empty) list of operations
+    @rtype:  list
+    """
     postponing = []
     for op, operation_responses in dispatch_constants.RESOURCE_OPERATIONS_MATRIX.items():
         response = operation_responses[operation]
@@ -117,6 +134,13 @@ def get_postponing_operations(operation):
 
 
 def get_rejecting_operations(operation):
+    """
+    Get a list of operations that will reject the passed in operation
+    @param operation: proposed operation
+    @type  operation: str
+    @return: (possibly empty) list of operations
+    @rtype:  list
+    """
     rejecting = []
     for op, operation_responses in dispatch_constants.RESOURCE_OPERATIONS_MATRIX.items():
         response = operation_responses[operation]
@@ -126,6 +150,13 @@ def get_rejecting_operations(operation):
 
 
 def resource_dict_to_task_resources(resource_dict):
+    """
+    Convert a resources dictionary to a list of task resource instances
+    @param resource_dict: dict in the form of {resource_type: {resource_id: [operations list]}}
+    @type  resource_dict: dict
+    @return: list of task resource objects pertaining to the values of the resource_dict
+    @rtype:  list of L{TaskResource} instances
+    """
     task_resources = []
     for resource_type, resource_operations in resource_dict.items():
         for resource_id, operations in resource_operations.items():
@@ -135,6 +166,12 @@ def resource_dict_to_task_resources(resource_dict):
 
 
 def set_task_id_on_task_resources(task_id, task_resources):
+    """
+    Set the task_id field on an iterable of task resources.
+    @param task_id: task_id field value
+    @param task_resources: iterable of task resources to set task_id on
+    @type  task_resources: iterable of L{TaskResource} instances
+    """
     for task_resource in task_resources:
         task_resource['task_id'] = task_id
 
@@ -170,6 +207,14 @@ def wait_for_task(task, states, sleep_interval=0.5, timeout=None):
 # coordinator callbacks --------------------------------------------------------
 
 def coordinator_complete_callback(call_request, call_report):
+    """
+    Callback to be executed upon call completion that will clean up the
+    coordinator's accounting data pertaining to the call.
+    @param call_request: call request for the call
+    @type  call_request: L{call.CallRequest} instance
+    @param call_report: call report for the call
+    @type  call_report: L{call.CallReport} instance
+    """
     # yes, I know that the call_request is not being used
     task_id = call_report.task_id
     collection = TaskResource.get_collection()
