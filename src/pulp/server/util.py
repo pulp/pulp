@@ -102,36 +102,6 @@ class Package:
             v = getattr(p, k)
             setattr(self, k, v)
 
-
-class Package:
-    """
-    Package data object used so the YumRepository and associated
-    package sack(s) can be closed.
-    """
-
-    __slots__ = \
-    ('relativepath',
-     'checksum',
-     'name',
-     'epoch',
-     'version',
-     'release',
-     'arch',
-     'description',
-     'buildhost',
-     'size',
-     'group',
-     'license',
-     'vendor',
-     'requires',
-     'provides',)
-
-    def __init__(self, p):
-        for k in self.__slots__:
-            v = getattr(p, k)
-            setattr(self, k, v)
-
-
 def top_repos_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "repos")
 
