@@ -109,7 +109,8 @@ def filter_dicts(dicts, fields):
 
 def get_postponing_operations(operation):
     postponing = []
-    for op, response in dispatch_constants.RESOURCE_OPERATIONS_MATRIX[operation].items():
+    for op, operation_responses in dispatch_constants.RESOURCE_OPERATIONS_MATRIX.items():
+        response = operation_responses[operation]
         if response is dispatch_constants.CALL_POSTPONED_RESPONSE:
             postponing.append(op)
     return postponing
@@ -117,7 +118,8 @@ def get_postponing_operations(operation):
 
 def get_rejecting_operations(operation):
     rejecting = []
-    for op, response in dispatch_constants.RESOURCE_OPERATIONS_MATRIX[operation].items():
+    for op, operation_responses in dispatch_constants.RESOURCE_OPERATIONS_MATRIX.items():
+        response = operation_responses[operation]
         if response is dispatch_constants.CALL_REJECTED_RESPONSE:
             rejecting.append(op)
     return rejecting
