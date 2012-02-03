@@ -27,6 +27,7 @@ from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Unregister, Bind, Unbind, History)
 from pulp.client.lib.repo_file import RepoFile
 from pulp.common import dateutils
+from pulp.common.capabilities import AgentCapabilities
 from rhsm.profile import get_profile
 import pulp.client.lib.repolib as repolib
 
@@ -53,72 +54,35 @@ class List(ConsumerAdminAction):
     def run(self):
         key = self.opts.key
         value = self.opts.value
-        cons = self.consumer_api.consumers()
-        baseurl = "%s://%s:%s" % (self.cfg.server.scheme, self.cfg.server.host,
-                                  self.cfg.server.port)
-        for con in cons:
-            con['package_profile'] = urlparse.urljoin(baseurl,
-                                                      con['package_profile'])
+        all = self.consumer_api.consumers()
+        # ALL
         if key is None:
-            print_header(_("Consumer Information"))
-            for con in cons:
-                kvpair = []
-                key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
-                for k, v in key_value_pairs.items():
-                    kvpair.append("%s  :  %s" % (str(k), str(v)))
-                stat = con['heartbeat']
-                if stat[0]:
-                    responding = _('Yes')
-                else:
-                    responding = _('No')
-                if stat[1]:
-                    last_heartbeat = dateutils.parse_iso8601_datetime(stat[1])
-                else:
-                    last_heartbeat = stat[1]
-                print constants.AVAILABLE_CONSUMER_INFO % \
-                        (con["id"],
-                         con["description"],
-                         con["capabilities"],
-                         con["repoids"].keys(),
-                         responding,
-                         last_heartbeat,
-                         '\n \t\t\t'.join(kvpair[:]))
+            for cons in all:
+                Info.print_consumer(self.consumer_api, cons)
             system_exit(os.EX_OK)
-
+        # BY KEY ONLY
         if value is None:
             print _("Consumers with key : %s") % key
             for con in cons:
                 key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
-                if key not in key_value_pairs.keys():
-                    continue
-                print "%s  -  %s : %s" % (con["id"], key, key_value_pairs[key])
+                if key in key_value_pairs.keys():
+                    Info.print_consumer(self.consumer_api, cons)
             system_exit(os.EX_OK)
-
+        # BY KEY & VALUE
         print _("Consumers with %s : %s") % (key, value)
         for con in cons:
             key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
-            if (key in key_value_pairs.keys()) and \
-                    (key_value_pairs[key] == value):
-                print con["id"]
-
+            if (key in key_value_pairs.keys()) and (key_value_pairs[key] == value):
+                Info.print_consumer(self.consumer_api, cons)
+            system_exit(os.EX_OK)
 
 class Info(ConsumerAdminAction):
 
     name = "info"
     description = _('list of accessible consumer info')
 
-    def setup_parser(self):
-        super(Info, self).setup_parser()
-        self.parser.add_option('--show-profile', action="store_true",
-                               help=_("show package profile information associated with this consumer"))
-
-    def run(self):
-        id = self.get_required_option('id')
-        cons = self.consumer_api.consumer(id)
-        kvpair = []
-        key_value_pairs = self.consumer_api.get_keyvalues(cons["id"])
-        for k, v in key_value_pairs.items():
-            kvpair.append("%s  :  %s" % (str(k), str(v)))
+    @classmethod
+    def agent_status(cls, cons):
         stat = cons['heartbeat']
         if stat[0]:
             responding = _('Yes')
@@ -128,24 +92,61 @@ class Info(ConsumerAdminAction):
             last_heartbeat = dateutils.parse_iso8601_datetime(stat[1])
         else:
             last_heartbeat = stat[1]
-        print_header(_("Consumer Information"))
-        print constants.AVAILABLE_CONSUMER_INFO % \
-                (cons["id"],
-                 cons["description"],
-                 cons["capabilities"],
-                 cons["repoids"].keys(),
-                 responding,
-                 last_heartbeat,
-                 '\n \t\t\t'.join(kvpair[:]))
-        if not self.opts.show_profile:
-            system_exit(os.EX_OK)
-        # Construct package profile list
-        print_header(_("Package Profile associated with consumer [%s]" % id))
-        pkgs = ""
-        for pkg in cons['package_profile']:
-            pkgs += " \n" + utils.getRpmName(pkg)
+        return (responding, last_heartbeat)
 
-        system_exit(os.EX_OK, pkgs)
+    @classmethod
+    def capflags(cls, capabilities):
+        flags = []
+        for k in capabilities.names():
+            if capabilities[k]:
+                x = 'x'
+            else:
+                x = ' '
+            flags.append('  [%s] %s' % (x, k))
+        return '\n'.join(flags)
+
+    @classmethod
+    def print_consumer(cls, api, cons, show_profile=False):
+        kvpair = []
+        capabilities = AgentCapabilities(cons['capabilities'])
+        key_value_pairs = api.get_keyvalues(cons["id"])
+        for k, v in key_value_pairs.items():
+            kvpair.append("%s  :  %s" % (str(k), str(v)))
+        print_header(_("Consumer Information"))
+        if capabilities.heartbeat():
+            responding, last_heartbeat = cls.agent_status(cons)
+            print constants.AVAILABLE_CONSUMER_INFO % \
+                    (cons["id"],
+                     cons["description"],
+                     cls.capflags(capabilities),
+                     sorted(cons["repoids"].keys()),
+                     responding,
+                     last_heartbeat,
+                     '\n \t\t\t'.join(kvpair[:]))
+        else:
+            print constants.CONSUMER_INFO_NO_HEARTBEAT % \
+                    (cons["id"],
+                     cons["description"],
+                     cls.capflags(capabilities),
+                     cons["repoids"].keys(),
+                     '\n \t\t\t'.join(kvpair[:]))
+        if show_profile:
+            print _("Package Profile")
+            pkgs = []
+            for pkg in sorted(cons['package_profile']):
+                pkgs.append('  %s' % utils.getRpmName(pkg))
+            print '\n'.join(pkgs)
+
+    def setup_parser(self):
+        super(Info, self).setup_parser()
+        self.parser.add_option('--show-profile', action="store_true",
+                               help=_("show package profile information associated with this consumer"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        cons = self.consumer_api.consumer(id)
+        self.print_consumer(self.consumer_api, cons, self.opts.show_profile)
+        return
 
 
 class AddKeyValue(ConsumerAdminAction):

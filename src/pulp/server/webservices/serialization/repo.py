@@ -58,9 +58,21 @@ def v1_uri(repo):
     # This is incorrect; this circumvents the round robining and funnels
     # all URLs to a single CDS. This is why the method was flagged as
     # a private method in the first place, it's not meant to be used like this.
-    cds = round_robin._find_association(repo['id'])
-    if cds is not None:
-        return cds['next_permutation'][0]
+
+    # After looking further, this is bad in a lot of ways:
+    # - Performance-wise, it doesn't scale for a lot of repos, we need
+    #   a batch call to not pound the database.
+    # - It's inconsistent; calling GET on the same repository may result
+    #   in different URIs if the next permutation changes.
+    # - I'm not sure what the intention of this method is, but the CDS instances
+    #   are typically used for consumer load balancing and firewall considerations.
+    #   I'm not sure if this method is trying to return a URL fit for consumer
+    #   usage, but if it is it should return information on all CDSes, not simply
+    #   a random one (random since next_permutation will change).
+
+    # cds = round_robin._find_association(repo['id'])
+    # if cds is not None:
+    #    return cds['next_permutation'][0]
 
     # no cds association: build local uri
     request_uri = http.request_url()

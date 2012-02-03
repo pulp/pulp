@@ -50,6 +50,10 @@ class TestOauth(testutil.PulpAsyncTest):
         testutil.PulpAsyncTest.tearDown(self)
 
     def test_oauth_header(self):
+        # skip the test on python 2.4
+        if sys.version_info[0] == 2 and sys.version_info[1] <= 4:
+            return
+
         CONSUMER_KEY = 'some-key'
         CONSUMER_SECRET = 'some-secret'
         URL = "http://localhost/repositories/"

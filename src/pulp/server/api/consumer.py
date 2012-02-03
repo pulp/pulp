@@ -353,7 +353,7 @@ class ConsumerApi(BaseApi):
         # is supported in capabilities
         capabilities = AgentCapabilities(consumer['capabilities'])
         if capabilities.bind():
-            agent = PulpAgent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True, timeout=None)
             agent_consumer = agent.Consumer()
             agent_consumer.bind(repoid, bind_data)
 
@@ -392,7 +392,7 @@ class ConsumerApi(BaseApi):
         # is supported in capabilities
         capabilities = AgentCapabilities(consumer['capabilities'])
         if capabilities.bind():
-            agent = PulpAgent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True, timeout=None)
             agent_consumer = agent.Consumer()
             agent_consumer.unbind(repo_id)
 

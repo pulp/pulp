@@ -10,66 +10,96 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-class AgentCapabilities:
+class Capabilities:
     """
-    Represents agent capabilities.
-    @cvar BIND: Supports bind/unbind API.
-    @type BIND: bool
-    @cvar HEARTBEAT: Supports sending heartbeats.
-    @type HEARTBEAT: bool
-    @ivar capabilities: The capabilities dictionary.
-    @type capabilities: dict
+    Represents general capabilities.
     """
 
-    # properties
-    BIND = 'bind'
-    HEARTBEAT = 'heartbeat'
-
-    # default (pulp)
-    DEFAULT = {
-        BIND : True,
-        HEARTBEAT : True,
-    }
-
-    def __init__(self, capabilities={}):
+    def __init__(self, definitions, capabilities={}):
         """
+        @param definitions: The capabilities definitions:
+            {<name>:(<type>,<default>)}
+        @type definitions: dict
         @param capabilities: A capabilities dictonary.
         @type capabilities: dict
         """
-        self.capabilities = dict(capabilities)
+        self.definitions = definitions
+        self.capabilities = {}
+        self.update(**capabilities)
 
-    def bind(self, flag=None):
+    def update(self, **capabilities):
         """
-        Get/Set (bind) capability.
-        Indicates that the agent implements the bind/unbind API.
-        @param flag: (optional) New value when specified.
-        @type flag: bool
-        @return: True if (bind) capability is SET.
-        @rtype: bool
+        Update (set) capabilities
+        @keyword capabilities: Capabilities to be updated.
+        @return: self
         """
-        if flag is None:
-            return self.capabilities.get(self.BIND, False)
-        else:
-            self.capabilities[self.BIND] = bool(flag)
-            return flag
+        for k,v in capabilities.items():
+            capibility = self.definitions[k]
+            if isinstance(v, capibility[0]):
+                self.capabilities[k] = v
+            else:
+                raise ValueError('k must be: %s' % capibility[0])
+        return self
 
-    def heartbeat(self, flag=None):
+    def names(self):
         """
-        Get/Set (heartbeat) capability.
-        Indicates that the agent sends heartbeats.
-        @param flag: (optional) New value when specified.
-        @type flag: bool
-        @return: True if (heartbeat) capability is SET.
-        @rtype: bool
+        Sorted list of capability names.
+        @return:  A list of names.
+        @rtype: list
         """
-        if flag is None:
-            return self.capabilities.get(self.BIND, False)
-        else:
-            self.capabilities[self.HEARTBEAT] = bool(flag)
-            return flag
+        return sorted(self.definitions.keys())
+
+    def __getattr__(self, name):
+        def fn(v=None):
+            if v is None:
+                return self[name]
+            else:
+                self.update(**{name:v})
+        return fn
+
+    def __getitem__(self, name):
+        capibility = self.definitions.get(name)
+        if capibility is None:
+            raise AttributeError()
+        return self.capabilities.get(name, capibility[1])
+
+    def __iter__(self):
+        return iter(self.capabilities.items())
 
     def __str__(self):
         return str(self.capabilities)
 
     def __repr__(self):
         return repr(self.capabilities)
+
+
+class AgentCapabilities(Capabilities):
+    """
+    Represents agent capabilities.
+      bind - agent supports bind/unbind API.
+      heartbeat - agent supports sending heartbeat.
+    """
+
+    def __init__(self, capabilities={}):
+        """
+        @param capabilities: A capabilities dictonary.
+        @type capabilities: dict
+        """
+        DEFINITIONS = {
+            'bind' : (bool, False),
+            'heartbeat' : (bool, False),
+        }
+        Capabilities.__init__(self, DEFINITIONS, capabilities)
+
+    @classmethod
+    def default(cls):
+        """
+        The default agent capabilities.
+        @return: The default capabilities
+        @rtype: L{AgentCapabilities}
+        """
+        d = {
+             'bind' : True,
+             'heartbeat' : True,
+        }
+        return AgentCapabilities(d)

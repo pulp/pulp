@@ -1,0 +1,11 @@
+1) Edit rules in example.te and bump the version number if desired
+2) If desired, add file contexts to example.fc
+3) Run "sudo ./setup.sh" 
+  Allow several minutes
+4) Confirm rules have been installed with:
+ sudo semodule -l | grep example
+
+To uninstall:
+ sudo ./uninstall.sh
+
+

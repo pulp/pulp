@@ -91,8 +91,8 @@ class Register(ConsumerAction, ConsumerClientActionMixIn):
             system_exit(os.EX_DATAERR, _("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid))
         self.check_bundle_path()
         bundle = ConsumerBundle()
-        capabilities = AgentCapabilities.DEFAULT
-        consumer = self.consumer_api.create(id, description, capabilities=capabilities)
+        capabilities = AgentCapabilities.default()
+        consumer = self.consumer_api.create(id, description, capabilities=dict(capabilities))
         bundle.write(consumer['certificate'])
         pkginfo = get_profile("rpm").collect()
         self.consumer_api.package_profile(id, pkginfo)
