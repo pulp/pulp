@@ -84,7 +84,8 @@ class TaskResource(Model):
     collection_name = 'task_resources'
     search_indices = ('task_id', 'resource_type', 'resource_id')
 
-    def init(self, task_id, resource_type, resource_id, operations):
+    def __init__(self, task_id, resource_type, resource_id, operations):
+        super(TaskResource, self).__init__()
         self.task_id = task_id
         self.resource_type = resource_type
         self.resource_id  = resource_id
