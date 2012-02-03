@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,6 +489,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Feb 03 2012 James Slagle <jslagle@redhat.com> 0.0.263-5
+- Fix bad merge that resulted in 2 class Package definitions
+  (jslagle@redhat.com)
+
 * Thu Feb 02 2012 James Slagle <jslagle@redhat.com> 0.0.263-4
 - Fix import for pulp client refactoring (jslagle@redhat.com)
 
