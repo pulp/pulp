@@ -39,3 +39,6 @@ class MissingSuccessCallbackKeywordArgument(InvalidCallKeywordArgument):
 class MissingFailureCallbackKeywordArgument(InvalidCallKeywordArgument):
     pass
 
+class SynchronousCallTimeoutError(CallRuntimeError):
+    pass
+

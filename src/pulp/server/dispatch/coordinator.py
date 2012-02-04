@@ -14,12 +14,13 @@
 import datetime
 import time
 import types
+import uuid
 
 from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
-from pulp.server.dispatch.task import Task
+from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
 # coordinator class ------------------------------------------------------------
@@ -36,20 +37,109 @@ class Coordinator(object):
     # execution methods --------------------------------------------------------
 
     def run_task(self, call_request):
-        pass
+        call_report = self._run_task(call_request, Task)
+        return call_report
 
     def run_task_synchronously(self, call_request, timeout=None):
-        pass
+        call_report = self._run_task(call_request, Task, True, timeout)
+        return call_report
 
     def run_task_asynchronously(self, call_request):
-        pass
+        call_report = self._run_task(call_request, Task, False)
+        return call_report
+
+    def run_asynchronous_task(self, call_request):
+        call_report = self._run_task(call_request, AsyncTask, False)
+        return call_report
 
     def run_job(self, call_request_list):
-        pass
+        job_id = self._generate_job_id()
+        call_report_list = []
+        for call_request in call_request_list:
+            call_request.tags.append(job_id)
+            call_report = self._run_task(call_request, Task, False)
+            call_report.job_id = job_id
+            call_report_list.append(call_report)
+        return call_report_list
+
+    def run_asynchronous_job(self, call_request_list):
+        job_id = self._generate_job_id()
+        call_report_list = []
+        for call_request in call_request_list:
+            call_request.tags.append(job_id)
+            call_report = self._run_task(call_request, AsyncTask, False)
+            call_report.job_id = job_id
+            call_report_list.append(call_report)
+        return call_report_list
+
+    # execution utilities ------------------------------------------------------
+
+    def _run_task(self, call_request, task_class, synchronous=None, timeout=None):
+        """
+        Run a task.
+        @param call_request: call request to run in the task queue
+        @type  call_request: L{call.CallRequest}
+        @param task_class: task class to run task in
+        @type  task_class: L{Task}
+        @param synchronous: whether or not to run the task synchronously,
+                            None means dependent on what the conflict response is
+        @type  synchronous: None or bool
+        @param timeout: how much time to wait for a synchronous task to start
+                        None means indefinitely
+        @type  timeout: None or datetime.timedelta
+        @return: a call report for the call request
+        @rtype:  L{call.CallReport}
+        """
+        self.task_queue.lock()
+        try:
+            call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
+            call_report = call.CallReport()
+            response, blocking, reasons, task_resources = self._find_conflicts(call_request.resources)
+            call_report.response = response
+            call_report.reason = reasons
+            if response is dispatch_constants.CALL_REJECTED_RESPONSE:
+                return call_report
+            task = task_class(call_request, call_report)
+            call_report.task_id = task.id
+            task.blocking_tasks = blocking
+            set_task_id_on_task_resources(task.id, task_resources)
+            self.task_resource_collection.insert(task_resources, safe=True)
+            self.task_queue.enqueue(task)
+        finally:
+            self.task_queue.unlock()
+
+        if synchronous or (synchronous is None and response is dispatch_constants.CALL_ACCEPTED_RESPONSE):
+            try:
+                wait_for_task(task, [dispatch_constants.CALL_RUNNING_STATE], timeout=timeout)
+            except dispatch_exceptions.SynchronousCallTimeoutError:
+                self.task_queue.dequeue(task)
+                raise
+            else:
+                wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES)
+        return call_report
+
+    def _generate_job_id(self):
+        self.task_queue.lock()
+        try:
+            job_id = uuid.uuid4()
+            return job_id
+        finally:
+            self.task_queue.unlock()
 
     # conflict resolution algorithm --------------------------------------------
 
     def _find_conflicts(self, resources):
+        """
+        Find conflicting tasks, if any, and provide the following:
+        * a task response, (accepted, postponed, rejected)
+        * a (possibly empty) set of blocking task ids
+        * a list of blocking "reasons" in the form of TaskResource instances
+        * a list of task resources corresponding to the given resources
+        @param resources: dictionary of resources and their proposed operations
+        @type  resources: dict
+        @return: tuple of objects described above
+        @rtype:  tuple
+        """
         postponing_tasks = set()
         postponing_reasons = []
         rejecting_tasks = set()
@@ -95,7 +185,7 @@ class Coordinator(object):
     def cancel_job(self, job_id):
         pass
 
-# utility functions ------------------------------------------------------------
+# conflict detection utility functions -----------------------------------------
 
 def filter_dicts(dicts, fields):
     """
@@ -164,6 +254,7 @@ def resource_dict_to_task_resources(resource_dict):
             task_resources.append(task_resource)
     return task_resources
 
+# call run utility functions ---------------------------------------------------
 
 def set_task_id_on_task_resources(task_id, task_resources):
     """
@@ -201,8 +292,7 @@ def wait_for_task(task, states, sleep_interval=0.5, timeout=None):
         now = datetime.datetime.now()
         if now - start < timeout:
             continue
-        # TODO raise error instead of break
-        break
+        raise dispatch_exceptions.SynchronousCallTimeoutError(str(task))
 
 # coordinator callbacks --------------------------------------------------------
 
