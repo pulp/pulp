@@ -25,43 +25,45 @@ class Capabilities:
         """
         self.definitions = definitions
         self.capabilities = {}
-        self.update(**capabilities)
-
-    def update(self, **capabilities):
-        """
-        Update (set) capabilities
-        @keyword capabilities: Capabilities to be updated.
-        @return: self
-        """
         for k,v in capabilities.items():
-            capibility = self.definitions[k]
-            if isinstance(v, capibility[0]):
-                self.capabilities[k] = v
-            else:
-                raise ValueError('k must be: %s' % capibility[0])
+            self._set(k, v)
+
+    def _set(self, name, value):
+        """
+        Set a capability by name.
+        @param name: A capability (name).
+        @type name: str
+        @param value: The new value
+        @type value: per definition
+        @return: self
+        @rtype: L{Capabilities}
+        """
+        capibility = self.definitions[name]
+        types = capibility[0]
+        if isinstance(value, types):
+            self.capabilities[name] = value
+        else:
+            raise ValueError('%s must be: %s' % (name, types))
         return self
 
-    def names(self):
-        """
-        Sorted list of capability names.
-        @return:  A list of names.
-        @rtype: list
-        """
-        return sorted(self.definitions.keys())
-
     def __getattr__(self, name):
+        if name not in self.definitions:
+            raise AttributeError(name)
         def fn(v=None):
             if v is None:
                 return self[name]
             else:
-                self.update(**{name:v})
+                self._set(name, v)
         return fn
 
     def __getitem__(self, name):
         capibility = self.definitions.get(name)
         if capibility is None:
-            raise AttributeError()
+            raise KeyError()
         return self.capabilities.get(name, capibility[1])
+
+    def __setitem__(self, name, value):
+        self._set(name, value)
 
     def __iter__(self):
         return iter(self.capabilities.items())
@@ -85,11 +87,11 @@ class AgentCapabilities(Capabilities):
         @param capabilities: A capabilities dictonary.
         @type capabilities: dict
         """
-        DEFINITIONS = {
+        definitions = {
             'bind' : (bool, False),
             'heartbeat' : (bool, False),
         }
-        Capabilities.__init__(self, DEFINITIONS, capabilities)
+        Capabilities.__init__(self, definitions, capabilities)
 
     @classmethod
     def default(cls):
@@ -103,3 +105,22 @@ class AgentCapabilities(Capabilities):
              'heartbeat' : True,
         }
         return AgentCapabilities(d)
+
+    def names(self):
+        """
+        Get sorted list of capability names.
+        @return: List of capability names.
+        @rtype: list
+        """
+        return sorted(self.definitions.keys())
+
+    def update(self, **capabilities):
+        """
+        Update (set) capabilities
+        @keyword capabilities: Capabilities to be updated.
+        @return: self
+        @rtype: L{Capabilities}
+        """
+        for k,v in capabilities.items():
+            self._set(k, v)
+        return self

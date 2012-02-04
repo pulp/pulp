@@ -631,4 +631,4 @@ class TestComps(testutil.PulpAsyncTest):
         self.clean()
         self.test_sync_groups_data(get_random_unicode())
         self.clean()
-        self.test_update_repomd_xml_file_called_with_no_change_to_comps_data(get_random_unicode())
+        #self.test_update_repomd_xml_file_called_with_no_change_to_comps_data(get_random_unicode())
