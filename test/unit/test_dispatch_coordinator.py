@@ -55,83 +55,262 @@ class CoordinatorTests(testutil.PulpTest):
         self.collection.drop()
         self.collection = None
 
-# collision detection data -----------------------------------------------------
+# or query tests ---------------------------------------------------------------
 
-bat_cave = 'bat cave'
-bat_mobile = 'bat-mobile'
-cat_illac = 'cat-illac'
-lycra = 'lycra'
-utility_belt = 'utility belt'
-wayne_manor = 'wayne manor'
+class OrQueryTests(CoordinatorTests):
 
-BATMAN_RESOURCES = {
-    dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-        bat_cave:     [dispatch_constants.RESOURCE_CREATE_OPERATION,
-                       dispatch_constants.RESOURCE_READ_OPERATION,
-                       dispatch_constants.RESOURCE_UPDATE_OPERATION],
-        wayne_manor:  [dispatch_constants.RESOURCE_DELETE_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-        lycra:        [dispatch_constants.RESOURCE_UPDATE_OPERATION],
-        utility_belt: [dispatch_constants.RESOURCE_READ_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CDS_TYPE: {
-        bat_mobile:   [dispatch_constants.RESOURCE_CREATE_OPERATION,
-                       dispatch_constants.RESOURCE_READ_OPERATION],
-        cat_illac:    [dispatch_constants.RESOURCE_READ_OPERATION],
-    }
-}
+    def test_task_records_insertion(self):
+        task_id = 'my_task'
+        repo_id = 'my_repo'
+        content_unit_id = 'my_content_unit'
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION],
+            },
+            dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
+                content_unit_id: [dispatch_constants.RESOURCE_READ_OPERATION],
+            }
+        }
+        try:
+            task_resources = coordinator.resource_dict_to_task_resources(resources)
+            coordinator.set_task_id_on_task_resources(task_id, task_resources)
+            self.collection.insert(task_resources, safe=True)
+        except:
+            self.fail(traceback.format_exc())
 
-ROBIN_RESOURCES = {
-    dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-        bat_cave:     [dispatch_constants.RESOURCE_READ_OPERATION,
-                       dispatch_constants.RESOURCE_UPDATE_OPERATION],
-        wayne_manor:  [dispatch_constants.RESOURCE_READ_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-        lycra:        [dispatch_constants.RESOURCE_CREATE_OPERATION],
-        utility_belt: [dispatch_constants.RESOURCE_DELETE_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CDS_TYPE: {
-        bat_mobile:   [dispatch_constants.RESOURCE_READ_OPERATION],
-        cat_illac:    [dispatch_constants.RESOURCE_READ_OPERATION],
-    }
-}
+    def test_single_resource_or_query(self):
+        repo_id = 'my_repo'
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+            }
+        }
+        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        self.collection.insert(task_resources, safe=True)
 
-ALFRED_RESOURCES = {
-    dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-        bat_cave:     [dispatch_constants.RESOURCE_READ_OPERATION,
-                       dispatch_constants.RESOURCE_UPDATE_OPERATION],
-        wayne_manor:  [dispatch_constants.RESOURCE_UPDATE_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-        lycra:        [dispatch_constants.RESOURCE_UPDATE_OPERATION],
-        utility_belt: [dispatch_constants.RESOURCE_UPDATE_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CDS_TYPE: {
-        bat_mobile:   [dispatch_constants.RESOURCE_READ_OPERATION],
-        cat_illac:    [dispatch_constants.RESOURCE_DELETE_OPERATION],
-    }
-}
+        or_query = {'$or': coordinator.filter_dicts(task_resources, ('resource_type', 'resource_id'))}
+        cursor = self.collection.find(or_query)
+        self.assertTrue(cursor.count() == 1, '%d' % cursor.count())
 
-CATWOMAN_RESOURCES = {
-    dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-        bat_cave:     [dispatch_constants.RESOURCE_DELETE_OPERATION],
-        wayne_manor:  [dispatch_constants.RESOURCE_READ_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-        lycra:        [dispatch_constants.RESOURCE_DELETE_OPERATION],
-        utility_belt: [dispatch_constants.RESOURCE_UPDATE_OPERATION],
-    },
-    dispatch_constants.RESOURCE_CDS_TYPE: {
-        bat_mobile:   [dispatch_constants.RESOURCE_READ_OPERATION],
-        cat_illac:    [dispatch_constants.RESOURCE_CREATE_OPERATION,
-                       dispatch_constants.RESOURCE_UPDATE_OPERATION],
-    }
-}
+    def test_multiple_resources_or_query_single_result(self):
+        repo_1_id = 'original'
+        repo_2_id = 'clone'
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_1_id: [dispatch_constants.RESOURCE_READ_OPERATION],
+                repo_2_id: [dispatch_constants.RESOURCE_CREATE_OPERATION],
+            }
+        }
+        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        self.collection.insert(task_resources, safe=True)
+
+        or_query = {'$or': [{'resource_type': dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'resource_id': repo_2_id}]}
+        cursor = self.collection.find(or_query)
+        self.assertTrue(cursor.count() == 1, '%d' % cursor.count())
+
+    def test_multiple_resources_or_query_multiple_results(self):
+        repo_1_id = 'original'
+        repo_2_id = 'clone'
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_1_id: [dispatch_constants.RESOURCE_READ_OPERATION],
+                repo_2_id: [dispatch_constants.RESOURCE_CREATE_OPERATION],
+                }
+        }
+        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        self.collection.insert(task_resources, safe=True)
+
+        or_query = coordinator.filter_dicts(task_resources, ('resource_type', 'resource_id'))
+        cursor = self.collection.find({'$or': or_query})
+        self.assertTrue(cursor.count() == 2, '%d' % cursor.count())
+
+# conflicting operations tests -------------------------------------------------
+
+class ConflictingOperationsTests(testutil.PulpTest):
+
+    def test_postponing_operations_for_create(self):
+        postponing_operations = coordinator.get_postponing_operations(dispatch_constants.RESOURCE_CREATE_OPERATION)
+        self.assertFalse(dispatch_constants.RESOURCE_CREATE_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_READ_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_UPDATE_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_DELETE_OPERATION in postponing_operations)
+
+    def test_postponing_operations_for_read(self):
+        postponing_operations = coordinator.get_postponing_operations(dispatch_constants.RESOURCE_READ_OPERATION)
+        self.assertTrue(dispatch_constants.RESOURCE_CREATE_OPERATION in postponing_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_READ_OPERATION in postponing_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_UPDATE_OPERATION in postponing_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_DELETE_OPERATION in postponing_operations)
+
+    def test_postponing_operations_for_update(self):
+        postponing_operations = coordinator.get_postponing_operations(dispatch_constants.RESOURCE_UPDATE_OPERATION)
+        self.assertTrue(dispatch_constants.RESOURCE_CREATE_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_READ_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_UPDATE_OPERATION in postponing_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_DELETE_OPERATION in postponing_operations)
+
+    def test_postponing_operations_for_delete(self):
+        postponing_operations = coordinator.get_postponing_operations(dispatch_constants.RESOURCE_DELETE_OPERATION)
+        self.assertTrue(dispatch_constants.RESOURCE_CREATE_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_READ_OPERATION in postponing_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_UPDATE_OPERATION in postponing_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_DELETE_OPERATION in postponing_operations)
+
+    def test_rejecting_operations_for_create(self):
+        rejecting_operations = coordinator.get_rejecting_operations(dispatch_constants.RESOURCE_CREATE_OPERATION)
+        self.assertTrue(dispatch_constants.RESOURCE_CREATE_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_READ_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_UPDATE_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_DELETE_OPERATION in rejecting_operations)
+
+    def test_rejecting_operations_for_read(self):
+        rejecting_operations = coordinator.get_rejecting_operations(dispatch_constants.RESOURCE_READ_OPERATION)
+        self.assertFalse(dispatch_constants.RESOURCE_CREATE_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_READ_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_UPDATE_OPERATION in rejecting_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_DELETE_OPERATION in rejecting_operations)
+
+    def test_rejecting_operations_for_update(self):
+        rejecting_operations = coordinator.get_rejecting_operations(dispatch_constants.RESOURCE_UPDATE_OPERATION)
+        self.assertFalse(dispatch_constants.RESOURCE_CREATE_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_READ_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_UPDATE_OPERATION in rejecting_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_DELETE_OPERATION in rejecting_operations)
+
+    def test_rejecting_operations_for_delete(self):
+        rejecting_operations = coordinator.get_rejecting_operations(dispatch_constants.RESOURCE_DELETE_OPERATION)
+        self.assertFalse(dispatch_constants.RESOURCE_CREATE_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_READ_OPERATION in rejecting_operations)
+        self.assertFalse(dispatch_constants.RESOURCE_UPDATE_OPERATION in rejecting_operations)
+        self.assertTrue(dispatch_constants.RESOURCE_DELETE_OPERATION in rejecting_operations)
 
 # collision detection tests ----------------------------------------------------
 
 class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
-    pass
+    def test_no_conflicts(self):
+        task_id = 'existing_task'
+        cds_id = 'my_cds'
+        resources = {
+            dispatch_constants.RESOURCE_CDS_TYPE: {
+                cds_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+            }
+        }
+
+        # read does not conflict with read
+
+        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        coordinator.set_task_id_on_task_resources(task_id, task_resources)
+        self.collection.insert(task_resources, safe=True)
+
+        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+
+        self.assertTrue(response is dispatch_constants.CALL_ACCEPTED_RESPONSE)
+        self.assertFalse(blockers)
+        self.assertFalse(reasons)
+
+    def test_single_conflict(self):
+        # modeling adding a content unit to a repository
+        task_id = 'existing_task'
+        repo_id = 'my_repo'
+        content_unit_id = 'my_content_unit'
+        existing_resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+            },
+            dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
+                content_unit_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+            }
+        }
+        existing_task_resources = coordinator.resource_dict_to_task_resources(existing_resources)
+        coordinator.set_task_id_on_task_resources(task_id, existing_task_resources)
+        self.collection.insert(existing_task_resources, safe=True)
+
+        # delete on content unit is postponed by read
+
+        resources = {
+            dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
+                content_unit_id: [dispatch_constants.RESOURCE_DELETE_OPERATION]
+            }
+        }
+        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+
+        self.assertTrue(response is dispatch_constants.CALL_POSTPONED_RESPONSE)
+        self.assertTrue(task_id in blockers)
+        self.assertTrue(reasons)
+
+
+    def test_multiple_conflicts(self):
+        # modeling binding a consumer group to a repository
+        task_1 = 'first_task'
+        task_2 = 'second_task'
+        repo_id = 'my_awesome_repo'
+        consumer_1 = 'my_awesome_consumer'
+        consumer_2 = 'my_less_awesome_consumer'
+        bind_1_resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+            },
+            dispatch_constants.RESOURCE_CONSUMER_TYPE: {
+                consumer_1: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+            }
+        }
+        bind_2_resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+            },
+            dispatch_constants.RESOURCE_CONSUMER_TYPE: {
+                consumer_2: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+            }
+        }
+        task_1_resources = coordinator.resource_dict_to_task_resources(bind_1_resources)
+        coordinator.set_task_id_on_task_resources(task_1, task_1_resources)
+        task_2_resources = coordinator.resource_dict_to_task_resources(bind_2_resources)
+        coordinator.set_task_id_on_task_resources(task_2, task_2_resources)
+        self.collection.insert(task_1_resources, safe=True)
+        self.collection.insert(task_2_resources, safe=True)
+
+        # deleting the repository should be postponed by both binds
+
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                repo_id: [dispatch_constants.RESOURCE_DELETE_OPERATION]
+            }
+        }
+
+        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+
+        self.assertTrue(response is dispatch_constants.CALL_POSTPONED_RESPONSE)
+        self.assertTrue(task_1 in blockers)
+        self.assertTrue(task_2 in blockers)
+        self.assertTrue(reasons)
+
+    def test_rejected(self):
+        # modeling a cds deletion
+        task_id = 'cds_deletion'
+        cds_id = 'less_than_awesome_cds'
+        deletion_resources = {
+            dispatch_constants.RESOURCE_CDS_TYPE: {
+                cds_id: [dispatch_constants.RESOURCE_DELETE_OPERATION]
+            }
+        }
+        deletion_task_resources = coordinator.resource_dict_to_task_resources(deletion_resources)
+        coordinator.set_task_id_on_task_resources(task_id, deletion_task_resources)
+        self.collection.insert(deletion_task_resources, safe=True)
+
+        # a cds sync should be rejected by the deletion
+
+        resources = {
+            dispatch_constants.RESOURCE_CDS_TYPE: {
+                cds_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+            },
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
+                'some_repo': [dispatch_constants.RESOURCE_READ_OPERATION]
+            }
+        }
+
+        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+
+        self.assertTrue(response is dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue(task_id in blockers)
+        self.assertTrue(reasons)
