@@ -414,7 +414,6 @@ class TypesDatabaseTests(testutil.PulpTest):
 
         #   Verify individual index
         index = index_dict['individual_1_1']
-        self.assertTrue(not index['unique'])
 
         keys = index['key']
         self.assertEqual(1, len(keys))
@@ -423,7 +422,6 @@ class TypesDatabaseTests(testutil.PulpTest):
 
         #   Verify compound index
         index = index_dict['compound_1_1_compound_2_1']
-        self.assertTrue(not index['unique'])
 
         keys = index['key']
         self.assertEqual(2, len(keys))
