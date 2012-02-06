@@ -337,9 +337,12 @@ def get_repo_packages(path):
         for p in sack.returnPackages():
             packages.append(Package(p))
         return packages
+    except Exception, e:
+        log.error("%s" % e)
+    else:
+        r.close()
     finally:
         __yum_lock.release()
-        r.close()
         try:
             shutil.rmtree(temp_path)
         except Exception, e:
