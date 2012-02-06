@@ -36,71 +36,113 @@ class Coordinator(object):
 
     # execution methods --------------------------------------------------------
 
-    def run_task(self, call_request):
-        call_report = self._run_task(call_request, Task)
-        return call_report
+    def run_task(self,
+                 call_request,
+                 progress_callback_kwarg_name=None,
+                 progress_callback=None):
+        task = Task(call_request)
+        task.call_report.task_id = task.id
+        if None not in (progress_callback_kwarg_name, progress_callback):
+            task.set_progress_callback(progress_callback_kwarg_name, progress_callback)
+        self._run_task(task)
+        return task.call_report
 
-    def run_task_synchronously(self, call_request, timeout=None):
-        call_report = self._run_task(call_request, Task, True, timeout)
-        return call_report
+    def run_task_synchronously(self,
+                               call_request,
+                               timeout=None,
+                               progress_callback_kwarg_name=None,
+                               progress_callback=None):
+        task = Task(call_request)
+        task.call_report.task_id = task.id
+        if None not in (progress_callback_kwarg_name, progress_callback):
+            task.set_progress_callback(progress_callback_kwarg_name, progress_callback)
+        self._run_task(task, True, timeout)
+        return task.call_report
 
-    def run_task_asynchronously(self, call_request):
-        call_report = self._run_task(call_request, Task, False)
-        return call_report
+    def run_task_asynchronously(self,
+                                call_request,
+                                progress_callback_kwarg_name=None,
+                                progress_callback=None):
+        task = Task(call_request)
+        task.call_report.task_id = task.id
+        if None not in (progress_callback_kwarg_name, progress_callback):
+            task.set_progress_callback(progress_callback_kwarg_name, progress_callback)
+        self._run_task(task, False)
+        return task.call_report
 
-    def run_asynchronous_task(self, call_request):
-        call_report = self._run_task(call_request, AsyncTask, False)
-        return call_report
+    def run_asynchronous_task(self,
+                              call_request,
+                              success_kwarg_name,
+                              failure_kwarg_name,
+                              progress_callback_kwarg_name=None,
+                              progress_callback=None):
+        task = AsyncTask(call_request)
+        task.call_report.task_id = task.id
+        task.set_success_failure_callback_kwargs(success_kwarg_name, failure_kwarg_name)
+        if None not in (progress_callback_kwarg_name, progress_callback):
+            task.set_progress_callback(progress_callback_kwarg_name, progress_callback)
+        self._run_task(task, False)
+        return task.call_report
 
-    def run_job(self, call_request_list):
+    def run_job(self,
+                call_request_list,
+                progress_callback_kwarg_name=None,
+                progress_callback=None):
         job_id = self._generate_job_id()
         call_report_list = []
         for call_request in call_request_list:
             call_request.tags.append(job_id)
-            call_report = self._run_task(call_request, Task, False)
-            call_report.job_id = job_id
-            call_report_list.append(call_report)
+            task = Task(call_request)
+            task.call_report.job_id = job_id
+            task.call_report.task_id = task.id
+            if None not in (progress_callback_kwarg_name, progress_callback):
+                task.set_progress_callback(progress_callback_kwarg_name, progress_callback)
+            self._run_task(task, False)
+            call_report_list.append(task.call_report)
         return call_report_list
 
-    def run_asynchronous_job(self, call_request_list):
+    def run_asynchronous_job(self,
+                             call_request_list,
+                             success_callback_kwarg_name,
+                             failure_callback_kwarg_name,
+                             progress_callback_kwarg_name=None,
+                             progress_callback=None):
         job_id = self._generate_job_id()
         call_report_list = []
         for call_request in call_request_list:
             call_request.tags.append(job_id)
-            call_report = self._run_task(call_request, AsyncTask, False)
-            call_report.job_id = job_id
-            call_report_list.append(call_report)
+            task = AsyncTask(call_request)
+            task.call_report.job_id = job_id
+            task.call_report.task_id = task.id
+            task.set_success_failure_callback_kwargs(success_callback_kwarg_name, failure_callback_kwarg_name)
+            if None not in (progress_callback_kwarg_name, progress_callback):
+                task.set_progress_callback(progress_callback_kwarg_name, progress_callback)
+            self._run_task(task, False)
+            call_report_list.append(task.call_report)
         return call_report_list
 
     # execution utilities ------------------------------------------------------
 
-    def _run_task(self, call_request, task_class, synchronous=None, timeout=None):
+    def _run_task(self, task, synchronous=None, timeout=None):
         """
         Run a task.
-        @param call_request: call request to run in the task queue
-        @type  call_request: L{call.CallRequest}
-        @param task_class: task class to run task in
-        @type  task_class: L{Task}
+        @param task: task to run
+        @type  task: L{Task} instance
         @param synchronous: whether or not to run the task synchronously,
                             None means dependent on what the conflict response is
         @type  synchronous: None or bool
         @param timeout: how much time to wait for a synchronous task to start
                         None means indefinitely
         @type  timeout: None or datetime.timedelta
-        @return: a call report for the call request
-        @rtype:  L{call.CallReport}
         """
         self.task_queue.lock()
         try:
-            call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
-            call_report = call.CallReport()
-            response, blocking, reasons, task_resources = self._find_conflicts(call_request.resources)
-            call_report.response = response
-            call_report.reason = reasons
+            task.call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
+            response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
+            task.call_report.response = response
+            task.call_report.reason = reasons
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
-                return call_report
-            task = task_class(call_request, call_report)
-            call_report.task_id = task.id
+                return
             task.blocking_tasks = blocking
             set_task_id_on_task_resources(task.id, task_resources)
             self.task_resource_collection.insert(task_resources, safe=True)
@@ -116,9 +158,11 @@ class Coordinator(object):
                 raise
             else:
                 wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES)
-        return call_report
 
     def _generate_job_id(self):
+        # NOTE this needs to utilize a central locking mechanism because on
+        # Python < 2.5 the uuid package can generate non-unique ids if more than
+        # one thread accesses it at a time
         self.task_queue.lock()
         try:
             job_id = uuid.uuid4()
