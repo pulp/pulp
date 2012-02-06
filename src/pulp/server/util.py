@@ -287,8 +287,14 @@ def _get_yum_repomd(path, temp_path=None):
     if not temp_path:
         temp_path = "/tmp/temp_repo-%s" % (time.time())
     r = yum.yumRepo.YumRepository(temp_path)
-    r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
-    r.basecachedir = path.encode("ascii", "ignore")
+    try:
+        r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
+    except UnicodeDecodeError:
+        r.baseurl = "file://%s" % (path)
+    try:
+        r.basecachedir = path.encode("ascii", "ignore")
+    except UnicodeDecodeError:
+        r.basecachedir = path
     r.baseurlSetup()
     return r
 
@@ -336,11 +342,8 @@ def get_repo_packages(path):
         sack.populate(r, 'metadata', None, 0)
         for p in sack.returnPackages():
             packages.append(Package(p))
-        return packages
-    except Exception, e:
-        log.error("%s" % e)
-    else:
         r.close()
+        return packages
     finally:
         __yum_lock.release()
         try:
