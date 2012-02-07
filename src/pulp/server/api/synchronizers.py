@@ -903,6 +903,8 @@ class YumSynchronizer(BaseSynchronizer):
 
     def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
         pkglist = []
+        if not unfiltered_pkglist:
+            return pkglist
 
         if whitelist_packages:
             for pkg in unfiltered_pkglist:

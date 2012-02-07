@@ -1604,8 +1604,8 @@ class TestRepoApi(testutil.PulpAsyncTest):
     def test_repo_with_i18n_id(self):
         def get_random_unicode():
             return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
-        #self.cancel_task(get_random_unicode())
-        #self.deleteRepos()
+        self.cancel_task(get_random_unicode())
+        self.deleteRepos()
         #self.resync_removes_deleted_package(get_random_unicode())
         #self.deleteRepos()
         self.test_add_2_pkg_same_nevra_same_repo(get_random_unicode())

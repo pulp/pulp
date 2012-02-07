@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.264
+Version:        0.0.265
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,31 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Feb 06 2012 Jeff Ortel <jortel@redhat.com> 0.0.265-1
+- 787310 - fixing error during repo sync when trying to access a variable
+  before assignment when failed to load repo-md data (skarmark@redhat.com)
+- Not sure what changed, but unique is no longer in the returned data
+  (jason.dobies@redhat.com)
+- 761039 - fixed in gofer 0.65; python 2.4 compat. (jortel@redhat.com)
+- 784876 - added handling for multiple checksums for same nvrea during 'content
+  list' (skarmark@redhat.com)
+- 784638 Bump required version of mod_wsgi to 3.3-3.pulp (jslagle@redhat.com)
+- The inclusion of CDS instances into the URI creation is crippling for
+  performance and I suspect incorrect in the first place. Commented it out and
+  we can discuss again in the future. (jason.dobies@redhat.com)
+- 787003 - silencing the test (jconnor@redhat.com)
+- Refactored capabilities; improved consumer info|list CLI output.
+  (jortel@redhat.com)
+- Allow qpidd_t context to open files with the cert_t context
+  (jslagle@redhat.com)
+- Update qpidd_t debugging (jmatthews@redhat.com)
+- Update example selinux rules, for qpid debugging (jmatthews@redhat.com)
+- Playpen SELinux module to help debug SELinux problems (jmatthews@redhat.com)
+- updating api doc strings (pkilambi@redhat.com)
+- 785922 - lookup the checksum type of a feed repo from its metadata instead of
+  defaulting to sha256; this should keep the metadata in sync with filesystem
+  and db (pkilambi@redhat.com)
+
 * Wed Feb 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.264-1
 - 784638 Update pulp apache config and repo auth to use WSGIAccessScript
   (jslagle@redhat.com)
