@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
+import inspect
 import itertools
 import logging
 import pickle
@@ -20,6 +20,7 @@ from types import NoneType, TracebackType
 
 from pulp.common import dateutils
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import exceptions as dispatch_exceptions
 
 
 _LOG = logging.getLogger(__name__)
@@ -36,6 +37,10 @@ class CallRequest(object):
     @type args: list
     @ivar kwargs: dictionary of keyword arguments for the callable
     @type kwargs: dict
+    @ivar progress_callback_kwarg: name of keyword argument for progress callback
+    @type progress_callback_kwarg: None or str
+    @ivar success_failure_callback_kwargs: name of keyword arguments for success and failure callbacks
+    @type success_failure_callback_kwargs: None or str
     @ivar resources: dictionary of resources and operations used by the request
     @type resources: dict
     @ivar weight: weight of callable in relation concurrency resources
@@ -52,6 +57,8 @@ class CallRequest(object):
                  call,
                  args=None,
                  kwargs=None,
+                 progress_callback_kwarg=None,
+                 success_failure_callback_kwargs=None,
                  resources=None,
                  weight=1,
                  tags=None):
@@ -59,6 +66,8 @@ class CallRequest(object):
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
         assert isinstance(kwargs, (NoneType, dict))
+        assert isinstance(progress_callback_kwarg, (NoneType, basestring))
+        assert isinstance(success_failure_callback_kwargs, (NoneType, tuple, list))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
         assert isinstance(tags, (NoneType, list))
@@ -66,11 +75,25 @@ class CallRequest(object):
         self.call = call
         self.args = args or []
         self.kwargs = kwargs or {}
+        self.progress_callback_kwarg = progress_callback_kwarg
+        self.success_failure_callback_kwargs = success_failure_callback_kwargs
         self.resources = resources or {}
         self.weight = weight
         self.tags = tags or []
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_EXECUTION_HOOKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
+        self._validate_callbacks()
+
+    def _validate_callbacks(self):
+        spec = inspect.getargspec(self.call)
+        if spec.keywords: # **kwargs magic, can't be verified any further
+            return
+        if self.progress_callback_kwarg is not None and self.progress_callback_kwarg not in spec.args:
+            raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(self.call.__name__, self.progress_callback_kwarg)
+        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[0] not in spec.args:
+            raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(self.call.__name__, self.success_failure_callback_kwargs[0])
+        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[1] not in spec.args:
+            raise dispatch_exceptions.MissingFailureCallbackKeywordArgument(self.call.__name__, self.success_failure_callback_kwargs[1])
 
     def callable_name(self):
         name = self.call.__name__
