@@ -71,7 +71,6 @@ class Task(object):
         self.archive = archive
 
         self.complete_callback = None
-        self.progress_callback = None
         self.blocking_tasks = set()
 
     def __str__(self):
@@ -84,29 +83,22 @@ class Task(object):
 
     # progress information -----------------------------------------------------
 
-    def set_progress_callback(self, kwarg_name, callback):
+    def set_progress_callback(self, kwarg_name):
         """
         Set the call request progress callback as the given key word argument.
         @param kwarg_name: name of the key word argument
         @type  kwarg_name: str
-        @param callback: progress callback function, method, or functor
-        @type  callback: callable
         """
         spec = inspect.getargspec(self.call_request.call)
         if kwarg_name not in spec.args:
             raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(kwarg_name)
-        self.call_request.kwargs[kwarg_name] = self._progress_pass_through
-        self.progress_callback = callback
+        self.call_request.kwargs[kwarg_name] = self._report_progress
 
-    def _progress_pass_through(self, *args, **kwargs):
+    def _report_progress(self, progress):
         """
-        Progress callback pass through used as a surrogate for the progress back.
+        Progress report callback
         """
-        try:
-            self.call_report.progress = self.progress_callback(*args, **kwargs)
-        except Exception, e:
-            _LOG.exception(e)
-            raise
+        self.call_report.progress = progress
 
     # task lifecycle -----------------------------------------------------------
 
