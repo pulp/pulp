@@ -321,7 +321,7 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
 # call execution tests ---------------------------------------------------------
 
-def dummy_call(progress):
+def dummy_call(progress, success, failure):
     pass
 
 
@@ -346,6 +346,18 @@ class CoordinatorRunTaskTests(CoordinatorTests):
         task = Task(call.CallRequest(dummy_call))
         self.coordinator._run_task(task, True)
         self.assertTrue(coordinator.wait_for_task.call_count == 2, coordinator.wait_for_task.call_count)
+
+
+class CoordinatorWaitForTaskTests(CoordinatorTests):
+
+    def test_run_task_sync_timeout(self):
+        task = Task(call.CallRequest(dummy_call))
+        timeout = datetime.timedelta(seconds=0.001)
+        self.assertRaises(SynchronousCallTimeoutError,
+                          self.coordinator._run_task,
+                          task, True, timeout)
+        self.assertTrue(self.coordinator.task_queue.dequeue.call_count == 1)
+        self.assertTrue(task in self.coordinator.task_queue.dequeue.call_args[0])
 
 
 class CoordinatorCallExecutionTests(CoordinatorTests):
@@ -373,16 +385,30 @@ class CoordinatorCallExecutionTests(CoordinatorTests):
         self.assertTrue(call_request.kwargs[progress_kwarg] == task._report_progress)
 
     def test_execute_call_synchronously(self):
-        pass
+        call_request = call.CallRequest(dummy_call)
+        self.coordinator.execute_call_synchronously(call_request)
+        self.assertTrue(self.coordinator._run_task.call_count == 1)
 
     def test_execute_call_asynchronously(self):
-        pass
+        call_request = call.CallRequest(dummy_call)
+        self.coordinator.execute_call_asynchronously(call_request)
+        self.assertTrue(self.coordinator._run_task.call_count == 1)
 
     def test_execute_asynchronous_call(self):
-        pass
+        call_request = call.CallRequest(dummy_call)
+        self.coordinator.execute_asynchronous_call(call_request, 'success', 'failure')
+        task = self.coordinator._run_task.call_args[0][0]
+        self.assertTrue(isinstance(task, AsyncTask))
 
     def test_execute_multiple_calls(self):
-        pass
+        call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
+        call_reports = self.coordinator.execute_multiple_calls(call_requests)
+        self.assertTrue(len(call_requests) == len(call_reports))
+        self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
 
     def test_execute_multiple_asynchronous_call(self):
-        pass
+        call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
+        call_reports = self.coordinator.execute_multiple_asynchronous_calls(call_requests, 'success', 'failure')
+        self.assertTrue(len(call_requests) == len(call_reports))
+        self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
+
