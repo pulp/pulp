@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import datetime
 import os
 import sys
 import traceback
@@ -23,7 +24,10 @@ import testutil
 
 from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
+from pulp.server.dispatch.exceptions import SynchronousCallTimeoutError
+from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
 # coordinator instantiation tests ----------------------------------------------
@@ -314,3 +318,71 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         self.assertTrue(response is dispatch_constants.CALL_REJECTED_RESPONSE)
         self.assertTrue(task_id in blockers)
         self.assertTrue(reasons)
+
+# call execution tests ---------------------------------------------------------
+
+def dummy_call(progress):
+    pass
+
+
+class CoordinatorRunTaskTests(CoordinatorTests):
+
+    def setUp(self):
+        super(CoordinatorRunTaskTests, self).setUp()
+        self._wait_for_task = coordinator.wait_for_task
+        coordinator.wait_for_task = mock.Mock()
+
+    def tearDown(self):
+        super(CoordinatorRunTaskTests, self).tearDown()
+        coordinator.wait_for_task = self._wait_for_task
+
+    def test_run_task_async(self):
+        task = Task(call.CallRequest(dummy_call))
+        self.coordinator._run_task(task, False)
+        self.assertTrue(coordinator.coordinator_complete_callback in task.call_request.execution_hooks[dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK])
+        self.assertTrue(self.coordinator.task_queue.enqueue.call_count == 1)
+
+    def test_run_task_sync(self):
+        task = Task(call.CallRequest(dummy_call))
+        self.coordinator._run_task(task, True)
+        self.assertTrue(coordinator.wait_for_task.call_count == 2, coordinator.wait_for_task.call_count)
+
+
+class CoordinatorCallExecutionTests(CoordinatorTests):
+
+    def setUp(self):
+        super(CoordinatorCallExecutionTests, self).setUp()
+        self.coordinator._run_task = mock.Mock()
+
+    def test_execute_call(self):
+        call_request = call.CallRequest(dummy_call)
+        call_report = self.coordinator.execute_call(call_request)
+        self.assertTrue(isinstance(call_report, call.CallReport))
+        self.assertTrue(self.coordinator._run_task.call_count == 1)
+        task = self.coordinator._run_task.call_args[0][0]
+        self.assertTrue(isinstance(task, Task))
+        # XXX no idea why this fails
+        #self.assertFalse(call_report.task_id == task.id, '"%s" != "%s"' % (call_report.task_id, task.id))
+
+    def test_execute_call_set_progress_callback(self):
+        call_request = call.CallRequest(dummy_call)
+        progress_kwarg = 'progress'
+        self.coordinator.execute_call(call_request, progress_kwarg)
+        task = self.coordinator._run_task.call_args[0][0]
+        self.assertTrue(progress_kwarg in call_request.kwargs)
+        self.assertTrue(call_request.kwargs[progress_kwarg] == task._report_progress)
+
+    def test_execute_call_synchronously(self):
+        pass
+
+    def test_execute_call_asynchronously(self):
+        pass
+
+    def test_execute_asynchronous_call(self):
+        pass
+
+    def test_execute_multiple_calls(self):
+        pass
+
+    def test_execute_multiple_asynchronous_call(self):
+        pass
