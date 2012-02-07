@@ -230,8 +230,9 @@ class Coordinator(object):
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
                 return
             task.blocking_tasks = blocking
-            set_task_id_on_task_resources(task.id, task_resources)
-            self.task_resource_collection.insert(task_resources, safe=True)
+            if task_resources:
+                set_task_id_on_task_resources(task.id, task_resources)
+                self.task_resource_collection.insert(task_resources, safe=True)
             self.task_queue.enqueue(task)
         finally:
             self.task_queue.unlock()
@@ -275,6 +276,9 @@ class Coordinator(object):
         @return: tuple of objects described above
         @rtype:  tuple
         """
+        if not resources:
+            return dispatch_constants.CALL_ACCEPTED_RESPONSE, set(), [], []
+
         postponing_tasks = set()
         postponing_reasons = []
         rejecting_tasks = set()
