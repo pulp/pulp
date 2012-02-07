@@ -18,7 +18,6 @@ import types
 import uuid
 
 from pulp.server.db.model.dispatch import TaskResource
-from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch.task import AsyncTask, Task
@@ -47,167 +46,94 @@ class Coordinator(object):
 
     # execution methods --------------------------------------------------------
 
-    def execute_call(self,
-                     call_request,
-                     progress_callback_kwarg_name=None):
+    def execute_call(self, call_request):
         """
         Execute a call request in the tasking sub-system.
         This will run the task synchronously if no conflicts are detected,
         asynchronously if there are tasks that will postpone this one.
         @param call_request: call request to run
         @type  call_request: L{call.CallRequest} instance
-        @param progress_callback_kwarg_name: keyword argument name for a progress callback if the call accepts one
-        @type  progress_callback_kwarg_name: str
         @return: call report pertaining to the running of the request call
         @rtype:  L{call.CallReport} instance
         """
-        task = Task(call_request)
-        task.call_report.task_id = task.id
-        if progress_callback_kwarg_name is not None:
-            task.set_progress_callback(progress_callback_kwarg_name)
-        self._run_task(task)
+        task = self._create_task(call_request)
+        synchronous = None
+        if isinstance(task, AsyncTask):
+            synchronous = False
+        self._run_task(task, synchronous)
         return copy.copy(task.call_report)
 
-    def execute_call_synchronously(self,
-                                   call_request,
-                                   timeout=None,
-                                   progress_callback_kwarg_name=None):
+    def execute_call_synchronously(self, call_request, timeout=None):
         """
         Execute a call request in the tasking sub-system.
         This will run the task synchronously regardless of postponing conflicts.
+        NOTE: this method cannot be used to execute asynchronous tasks.
         @param call_request: call request to run
         @type  call_request: L{call.CallRequest} instance
         @param timeout: maximum amount of time to wait for the task to start
         @type  timeout: None or datetime.timedelta
-        @param progress_callback_kwarg_name: keyword argument name for a progress callback if the call accepts one
-        @type  progress_callback_kwarg_name: str
         @return: call report pertaining to the running of the request call
         @rtype:  L{call.CallReport} instance
         """
-        assert isinstance(call_request, call.CallRequest)
         assert isinstance(timeout, (datetime.timedelta, types.NoneType))
-        task = Task(call_request)
-        task.call_report.task_id = task.id
-        if progress_callback_kwarg_name is not None:
-            task.set_progress_callback(progress_callback_kwarg_name)
+        task = self._create_task(call_request)
+        if isinstance(task, AsyncTask):
+            raise dispatch_exceptions.AsynchronousExecutionError(call_request)
         self._run_task(task, True, timeout)
         return copy.copy(task.call_report)
 
-    def execute_call_asynchronously(self,
-                                    call_request,
-                                    progress_callback_kwarg_name=None):
+    def execute_call_asynchronously(self, call_request):
         """
         Execute a call request in the tasking sub-system.
         This will run the task asynchronously regardless of no postponing conflicts.
         @param call_request: call request to run
         @type  call_request: L{call.CallRequest} instance
-        @param progress_callback_kwarg_name: keyword argument name for a progress callback if the call accepts one
-        @type  progress_callback_kwarg_name: str
         @return: call report pertaining to the running of the request call
         @rtype:  L{call.CallReport} instance
         """
-        assert isinstance(call_request, call.CallRequest)
-        task = Task(call_request)
-        task.call_report.task_id = task.id
-        if progress_callback_kwarg_name is not None:
-            task.set_progress_callback(progress_callback_kwarg_name)
+        task = self._create_task(call_request)
         self._run_task(task, False)
         return copy.copy(task.call_report)
 
-    def execute_asynchronous_call(self,
-                                  call_request,
-                                  success_kwarg_name,
-                                  failure_kwarg_name,
-                                  progress_callback_kwarg_name=None):
-        """
-        Execute an asynchronous call request in the tasking sub-system.
-        NOTE an asynchronous call is one in which the control flow of the call
-        is not completely encapsulated in a single python method. It *must*
-        accept two callbacks, one to call if the call succeeds, accepting an
-        optional "result" argument; and one to call if the call fails, accepting
-        optional "exception" and "traceback" arguments.
-        This will run the task asynchronously regardless of postponing conflicts.
-        @param call_request: call request to run
-        @type  call_request: L{call.CallRequest} instance
-        @param success_kwarg_name: name of the keyword argument for the success callback
-        @type  success_kwarg_name: str
-        @param failure_kwarg_name: name of the keyword argument for the failure callback
-        @type  failure_kwarg_name: str
-        @param progress_callback_kwarg_name: keyword argument name for a progress callback if the call accepts one
-        @type  progress_callback_kwarg_name: str
-        @return: call report pertaining to the running of the request call
-        @rtype:  L{call.CallReport} instance
-        """
-        assert isinstance(call_request, call.CallRequest)
-        task = AsyncTask(call_request)
-        task.call_report.task_id = task.id
-        task.set_success_failure_callback_kwargs(success_kwarg_name, failure_kwarg_name)
-        if progress_callback_kwarg_name is not None:
-            task.set_progress_callback(progress_callback_kwarg_name)
-        self._run_task(task, False)
-        return copy.copy(task.call_report)
-
-    def execute_multiple_calls(self,
-                               call_request_list,
-                               progress_callback_kwarg_name=None):
+    def execute_multiple_calls(self, call_request_list):
         """
         Execute a list of call requests in the tasking sub-system.
         This will run the tasks asynchronously regardless of postponing conflicts.
         @param call_request_list: call requests to run
         @type  call_request_list: list of L{call.CallRequest} instances
-        @param progress_callback_kwarg_name: keyword argument name for a progress callback if the call accepts one
-        @type  progress_callback_kwarg_name: str
         @return: list of call reports pertaining to the running of the request calls
         @rtype:  list of L{call.CallReport} instances
         """
         job_id = self._generate_job_id()
         call_report_list = []
         for call_request in call_request_list:
-            call_request.tags.append(job_id)
-            task = Task(call_request)
-            task.call_report.job_id = job_id
-            task.call_report.task_id = task.id
-            if progress_callback_kwarg_name is not None:
-                task.set_progress_callback(progress_callback_kwarg_name)
-            self._run_task(task, False)
-            call_report_list.append(copy.copy(task.call_report))
-        return call_report_list
-
-    def execute_multiple_asynchronous_calls(self,
-                                            call_request_list,
-                                            success_callback_kwarg_name,
-                                            failure_callback_kwarg_name,
-                                            progress_callback_kwarg_name=None):
-        """
-        Execute a list of call requests in the tasking sub-system.
-        NOTE an asynchronous call is one in which the control flow of the call
-        is not completely encapsulated in a single python method. It *must*
-        accept two callbacks, one to call if the call succeeds, accepting an
-        optional "result" argument; and one to call if the call fails, accepting
-        optional "exception" and "traceback" arguments.
-        This will run the tasks asynchronously regardless of postponing conflicts.
-        @param call_request_list: call requests to run
-        @type  call_request_list: list of L{call.CallRequest} instances
-        @param progress_callback_kwarg_name: keyword argument name for a progress callback if the call accepts one
-        @type  progress_callback_kwarg_name: str
-        @return: list of call reports pertaining to the running of the request calls
-        @rtype:  list of L{call.CallReport} instances
-        """
-        job_id = self._generate_job_id()
-        call_report_list = []
-        for call_request in call_request_list:
-            call_request.tags.append(job_id)
-            task = AsyncTask(call_request)
-            task.call_report.job_id = job_id
-            task.call_report.task_id = task.id
-            task.set_success_failure_callback_kwargs(success_callback_kwarg_name, failure_callback_kwarg_name)
-            if progress_callback_kwarg_name is not None:
-                task.set_progress_callback(progress_callback_kwarg_name)
+            task = self._create_task(call_request, job_id)
             self._run_task(task, False)
             call_report_list.append(copy.copy(task.call_report))
         return call_report_list
 
     # execution utilities ------------------------------------------------------
+
+    def _create_task(self, call_request, job_id=None):
+        """
+        Create the task for the given call request.
+        @param call_request: call request to encapsulate in a task
+        @type  call_request: L{call.CallRequest} instance
+        @param job_id: optional job id
+        @type  job_id: None or str
+        @return: task that encapsulates the call request
+        @rtype:  L{Task} instance
+        """
+        if call_request.success_failure_callback_kwargs is None:
+            task = Task(call_request)
+        else:
+            task = AsyncTask(call_request)
+            task.set_success_failure_callback_kwargs(*call_request.success_failure_callback_kwargs)
+        task.call_report.task_id = task.id
+        task.call_report.job_id = job_id
+        if call_request.progress_callback_kwarg is not None:
+            task.set_progress_callback(call_request.progress_callback_kwarg)
+        return task
 
     def _run_task(self, task, synchronous=None, timeout=None):
         """

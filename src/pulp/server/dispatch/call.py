@@ -82,7 +82,8 @@ class CallRequest(object):
         self.tags = tags or []
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_EXECUTION_HOOKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
-        self._validate_callbacks()
+        # XXX doesn't work for callable instances and mock objects
+        #self._validate_callbacks()
 
     def _validate_callbacks(self):
         spec = inspect.getargspec(self.call)
@@ -201,8 +202,8 @@ class CallReport(object):
     Represents a call request's progress
     @ivar response: state of request in concurrency system
     @type response: str
-    @ivar reason: dictionary of resources and operations related to the response
-    @type reason: dict
+    @ivar reasons: list of resources and operations related to the response
+    @type reasons: list
     @ivar state: state of callable in its lifecycle
     @type state: str
     @ivar task_id: identity of task executing call
@@ -221,7 +222,7 @@ class CallReport(object):
 
     def __init__(self,
                  response=None,
-                 reason=None,
+                 reasons=None,
                  state=None,
                  task_id=None,
                  job_id=None,
@@ -231,7 +232,7 @@ class CallReport(object):
                  traceback=None):
 
         assert isinstance(response, (NoneType, basestring))
-        assert isinstance(reason, (NoneType, dict))
+        assert isinstance(reasons, (NoneType, list))
         assert isinstance(state, (NoneType, basestring))
         assert isinstance(task_id, (NoneType, basestring))
         assert isinstance(job_id, (NoneType, basestring))
@@ -240,7 +241,7 @@ class CallReport(object):
         assert isinstance(traceback, (NoneType, TracebackType))
 
         self.response = response
-        self.reason = reason or {}
+        self.reasons = reasons or []
         self.state = state
         self.task_id = task_id
         self.job_id = job_id
@@ -253,7 +254,7 @@ class CallReport(object):
 
     def serialize(self):
         data = {}
-        for field in ('response', 'reason', 'state', 'task_id', 'job_id',
+        for field in ('response', 'reasons', 'state', 'task_id', 'job_id',
                       'progress', 'result',):
             data[field] = getattr(self, field)
         ex = getattr(self, 'exception')

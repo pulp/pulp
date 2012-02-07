@@ -376,14 +376,6 @@ class CoordinatorCallExecutionTests(CoordinatorTests):
         # XXX no idea why this fails
         #self.assertFalse(call_report.task_id == task.id, '"%s" != "%s"' % (call_report.task_id, task.id))
 
-    def test_execute_call_set_progress_callback(self):
-        call_request = call.CallRequest(dummy_call)
-        progress_kwarg = 'progress'
-        self.coordinator.execute_call(call_request, progress_kwarg)
-        task = self.coordinator._run_task.call_args[0][0]
-        self.assertTrue(progress_kwarg in call_request.kwargs)
-        self.assertTrue(call_request.kwargs[progress_kwarg] == task._report_progress)
-
     def test_execute_call_synchronously(self):
         call_request = call.CallRequest(dummy_call)
         self.coordinator.execute_call_synchronously(call_request)
@@ -394,21 +386,10 @@ class CoordinatorCallExecutionTests(CoordinatorTests):
         self.coordinator.execute_call_asynchronously(call_request)
         self.assertTrue(self.coordinator._run_task.call_count == 1)
 
-    def test_execute_asynchronous_call(self):
-        call_request = call.CallRequest(dummy_call)
-        self.coordinator.execute_asynchronous_call(call_request, 'success', 'failure')
-        task = self.coordinator._run_task.call_args[0][0]
-        self.assertTrue(isinstance(task, AsyncTask))
-
     def test_execute_multiple_calls(self):
         call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
         call_reports = self.coordinator.execute_multiple_calls(call_requests)
         self.assertTrue(len(call_requests) == len(call_reports))
         self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
 
-    def test_execute_multiple_asynchronous_call(self):
-        call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
-        call_reports = self.coordinator.execute_multiple_asynchronous_calls(call_requests, 'success', 'failure')
-        self.assertTrue(len(call_requests) == len(call_reports))
-        self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
 
