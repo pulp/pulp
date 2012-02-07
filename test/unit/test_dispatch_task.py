@@ -222,17 +222,16 @@ class TaskCallbackTests(testutil.PulpTest):
         task = Task(CallRequest(call_with_progress_callback))
         callback = mock.Mock()
         try:
-            task.set_progress_callback('progress_callback', callback)
+            task.set_progress_callback('progress_callback')
         except:
             self.fail(traceback.format_exc())
         self.assertTrue('progress_callback' in task.call_request.kwargs)
-        self.assertTrue(task.progress_callback is callback)
-        self.assertTrue(task.call_request.kwargs['progress_callback'] == task._progress_pass_through)
+        self.assertTrue(task.call_request.kwargs['progress_callback'] == task._report_progress)
 
     def test_progress_callback_failure(self):
         task = Task(CallRequest(call_without_callbacks))
         self.assertRaises(dispatch_exceptions.MissingProgressCallbackKeywordArgument,
-                          task.set_progress_callback, 'progress_callback', mock.Mock())
+                          task.set_progress_callback, 'progress_callback')
 
     def test_success_callback_failure(self):
         task = AsyncTask(CallRequest(call_with_success_callback))
