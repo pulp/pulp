@@ -931,12 +931,12 @@ class RepoApi(BaseApi):
         pkg_objects = {}
         for p in result:
             pkg_objects[p["id"]] = p
-        log.info("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
+        log.debug("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
 
         for pkg_id in packageids:
             if not pkg_objects.has_key(pkg_id):
                 # Detect if any packageids passed in could not be located
-                log.warn("No Package with id: %s found" % pkg_id)
+                log.debug("No Package with id: %s found" % pkg_id)
                 errors.append((pkg_id, (None, None, None, None, None), None, None))
                 packageids.remove(pkg_id)
 
@@ -945,8 +945,8 @@ class RepoApi(BaseApi):
             log.info("Repo filters : %s" % repo['filters'])
             whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
             blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
-            log.info("combined whitelist packages = %s" % whitelist_packages)
-            log.info("combined blacklist packages = %s" % blacklist_packages)
+            log.debug("combined whitelist packages = %s" % whitelist_packages)
+            log.debug("combined blacklist packages = %s" % blacklist_packages)
         else:
             whitelist_packages = []
             blacklist_packages = []
@@ -961,7 +961,7 @@ class RepoApi(BaseApi):
                     packageids.remove(pkg_id)
 
         if not pkg_objects:
-            log.info("No packages left to be added after removing filtered packages")
+            log.debug("No packages left to be added after removing filtered packages")
             return [], filtered_count
 
         # Desire to keep the order dictated by calling arg of 'packageids'
@@ -970,21 +970,21 @@ class RepoApi(BaseApi):
             pkg_tup = get_pkg_tup(pkg)
 
             if nevras.has_key(pkg_tup):
-                log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
+                log.debug("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
                          % (pkg_tup, pkg["id"], pkg["checksum"].values()[0]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
                     % (pkg["filename"], pkg["id"], pkg["checksum"].values()[0])
-                log.warn(error_msg)
+                log.debug(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
             nevras[pkg_tup] = pkg["id"]
             filenames[pkg["filename"]] = pkg
             packages[pkg["id"]] = pkg
         # Check for duplicate NEVRA already in repo
-        log.info("Finished check of NEVRA/filename in argument data by %s seconds" % (time.time() - start_add_packages))
+        log.debug("Finished check of NEVRA/filename in argument data by %s seconds" % (time.time() - start_add_packages))
         # This took 528 seconds with rhel-i386-vt-5 being added and roughly 14Gig of RAM in mongo
         # found = self.get_packages_by_nvrea(repo['id'], nevras.values())
         # Exploring alternate of operating on each nevra one at a time for now
@@ -1002,7 +1002,7 @@ class RepoApi(BaseApi):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
                 continue
             error_message = "Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id'])
-            log.warn(error_message)
+            log.debug(error_message)
             errors.append(form_error_tup(pkg, error_message))
             if packages.has_key(nevras[pkg_tup]):
                 del packages[nevras[pkg_tup]]
@@ -1016,12 +1016,12 @@ class RepoApi(BaseApi):
                 continue
             error_message = "Package with same filename [%s] already exists in repo [%s]" \
                 % (pkg["filename"], repo['id'])
-            log.warn(error_message)
+            log.debug(error_message)
             errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
-        log.info("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
+        log.debug("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
         pkg_collection = model.Package.get_collection()
 
         for index, pid in enumerate(packages):
@@ -1044,7 +1044,7 @@ class RepoApi(BaseApi):
                 pkg_collection.save(pkg, safe=True)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
-        log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
+        log.debug("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
         return errors, filtered_count
 
     def _add_package(self, repo, p):

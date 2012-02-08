@@ -336,7 +336,7 @@ class ImportUploadContent:
 
         pkg_path = util.get_shared_package_path(name, version, release, arch, pkgname, checksum)
         if util.check_package_exists(pkg_path, checksum, hashtype):
-            log.error("Package %s Already Exists on the server skipping upload." % pkgname)
+            log.debug("Package %s Already Exists on the server skipping upload." % pkgname)
         # copy the content over to the package location
         if not self.__finalize_content(pkg_path):
             return None
@@ -366,7 +366,7 @@ class ImportUploadContent:
                                         self.metadata['checksum'], \
                                         self.metadata['pkgname'])
         if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
-            log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
+            log.debug("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
         if not self.__finalize_content(file_path):
             return None
         f = FileApi()
@@ -411,7 +411,7 @@ class ImportUploadContent:
             if not os.path.exists(pkg_dirname):
                 os.makedirs(pkg_dirname)
             shutil.copy(temp_file_path, path)
-            log.info("File copied from %s to %s" % (temp_file_path, path))
+            log.debug("File copied from %s to %s" % (temp_file_path, path))
             f.delete()
         except Exception, e:
             log.error("Error occurred while copying the file to final location %s" % str(e))
