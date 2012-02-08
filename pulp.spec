@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,6 +489,18 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 08 2012 James Slagle <jslagle@redhat.com> 0.0.263-6
+- Made max num of certs supported in a chain a config option
+  (jmatthews@redhat.com)
+- Changed logic in repo_cert_utils to avoid potential for inifite loop and
+  support a max num of certs in a chain (jmatthews@redhat.com)
+- repo_cert_utils if our patch is missing limit the tests we will run
+  (jmatthews@redhat.com)
+- Fix bad merge resulting from when we switched to using openssl to do CA
+  verification in RHUI (jslagle@redhat.com)
+- 712065 - limit the logging when we upload/associate packages
+  (pkilambi@redhat.com)
+
 * Fri Feb 03 2012 James Slagle <jslagle@redhat.com> 0.0.263-5
 - Fix bad merge that resulted in 2 class Package definitions
   (jslagle@redhat.com)
