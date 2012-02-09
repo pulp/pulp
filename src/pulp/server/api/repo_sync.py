@@ -271,7 +271,7 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
         sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()
-        log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
+        log.info("Sync on %s returned %s packages, %s errata in %s seconds" % (repo_id, len(sync_packages),
             len(sync_errataids), (end_sync_items - start_sync_items)))
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call

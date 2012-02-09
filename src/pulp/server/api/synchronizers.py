@@ -835,7 +835,7 @@ class YumSynchronizer(BaseSynchronizer):
     def set_repo_checksum_type(self, repo):
         # At this point we have either downloaded the source metadata from a remote or local feed
         # lets lookup the checksum type for primary xml in repomd.xml and use that for createrepo
-        log.debug('Determining checksum type for repo id %s' % repo)
+        log.debug('Determining checksum type for repo id %s' % (repo["id"]))
         repo_metadata = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "repodata/repomd.xml")
         if os.path.exists(repo_metadata):
             repo['checksum_type'] = pulp.server.util.get_repomd_filetype_dump(repo_metadata)['primary']['checksum'][0]
