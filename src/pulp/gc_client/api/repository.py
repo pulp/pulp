@@ -16,11 +16,6 @@ from pulp.client.api.server import ServerRequestError
 from pulp.common import dateutils
 
 
-repository_deferred_fields = ('packages',
-                              'packagegroups',
-                              'packagegroupcategories')
-
-
 class RepositoryAPI(PulpAPI):
     """
     Connection class to access repo specific calls
@@ -71,15 +66,15 @@ class RepositoryImporterAPI(PulpAPI):
         return self.server.POST(path, data)[1]
 
     def importer(self, repo_id, importer_id):
-        path = self.base_path + ("%s/" % importer_id)
+        path = self.base_path % repo_id + ("/%s/" % importer_id)
         return self.server.GET(path)[1]
 
     def delete(self, repo_id, importer_id):
-        path = self.base_path + "%s/" % importer_id
+        path = self.base_path % repo_id + "/%s/" % importer_id
         return self.server.DELETE(path)[1]
 
     def update(self, repo_id, importer_id, importer_config):
-        path = self.base_path + "%s/" % importer_id
+        path = self.base_path % repo_id + "/%s/" % importer_id
         return self.server.PUT(path, importer_config)[1]
     
 
@@ -103,22 +98,64 @@ class RepositoryDistributorAPI(PulpAPI):
         return self.server.POST(path, data)[1]
 
     def distributor(self, repo_id, distributor_id):
-        path = self.base_path + ("%s/" % distributor_id)
+        path = self.base_path % repo_id + ("/%s/" % distributor_id)
         return self.server.GET(path)[1]
 
     def delete(self, repo_id, distributor_id):
-        path = self.base_path + "%s/" % distributor_id
+        path = self.base_path % repo_id + "/%s/" % distributor_id
         return self.server.DELETE(path)[1]
 
     def update(self, repo_id, distributor_id, distributor_config):
-        path = self.base_path + "%s/" % distributor_id
+        path = self.base_path % repo_id + "/%s/" % distributor_id
         return self.server.PUT(path, distributor_config)[1]
 
     
 class RepositoryHistoryAPI(PulpAPI):
     """
-    Connection class to access repo distributor specific calls
+    Connection class to access repo history specific calls
     """
     def __init__(self):
         self.base_path = "/v2/repositories/%s/"
+        
+    def sync_history(self, repo_id):
+        path = self.base_path % repo_id + "/sync_history/"
+        return self.server.GET(path)[1]
+    
+    def publish_history(self, repo_id, distributor_id):
+        path = self.base_path % repo_id + "/publish_history/" + "%s/" % distributor_id
+        return self.server.GET(path)[1]
+    
+class RepositoryActionsAPI(PulpAPI):
+    """
+    Connection class to access repo actions specific calls
+    """
+    def __init__(self):
+        self.base_path = "/v2/repositories/%s/actions/"
+        
+    def sync(self, repo_id, override_config):
+        path = self.base_path % repo_id + "/sync/"
+        data = {'override_config' : override_config,}
+        return self.server.POST(path, data)[1]
+    
+    def publish(self, repo_id, distributor_id, override_config):
+        path = self.base_path % repo_id + "/publish/"
+        data = {'id' : distributor_id,
+                'override_config' : override_config,}
+        return self.server.POST(path, data)[1]
 
+    def associate(self, repo_id, source_repo_id):
+        path = self.base_path % repo_id + "/associate/"
+        data = {'source_repo_id' : source_repo_id,}
+        return self.server.POST(path, data)[1]
+     
+class RepositoryUnitSearchAPI(PulpAPI):
+    """
+    Connection class to access repo search specific calls
+    """
+    def __init__(self):
+        self.base_path = "/v2/repositories/%s/search/units/"
+        
+    def search(self, repo_id):
+        path = self.base_path % repo_id
+        data = {'query': query,}
+        return self.server.POST(path, data)[1]
