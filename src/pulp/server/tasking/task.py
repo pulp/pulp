@@ -27,7 +27,7 @@ from pulp.server.tasking.exception import (
     TimeoutException, CancelException, UnscheduledTaskException,
     SnapshotFailure)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.util import encode_unicode
+from pulp.common.util import encode_unicode
 
 _log = logging.getLogger(__name__)
 

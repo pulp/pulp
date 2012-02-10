@@ -35,6 +35,7 @@ import errno
 from pulp.server import config, constants
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
+from pulp.common.util import encode_unicode, decode_unicode
 from grinder import GrinderUtils
 from grinder import RepoFetch
 
@@ -117,22 +118,6 @@ def top_file_location():
 
 def top_distribution_location():
     return os.path.join(constants.LOCAL_STORAGE, "distributions")
-
-def encode_unicode(path):
-    """
-    Check if given path is a unicode and if yes, return utf-8 encoded path
-    """
-    if type(path) is unicode:
-        path = path.encode('utf-8')
-    return path
-
-def decode_unicode(path):
-    """
-    Check if given path is of type str and if yes, convert it to unicode
-    """
-    if type(path) is str:
-        path = path.decode('utf-8')
-    return path
 
 def tmp_cache_location():
     cache_dir = os.path.join(constants.LOCAL_STORAGE, "cache")

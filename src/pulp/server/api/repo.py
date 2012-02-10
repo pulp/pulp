@@ -29,6 +29,7 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
+from pulp.common.util import encode_unicode, decode_unicode
 from pulp.common.bundle import Bundle
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import async
@@ -223,7 +224,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
-        id = pulp.server.util.encode_unicode(id)
+        id = encode_unicode(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -260,7 +261,7 @@ class RepoApi(BaseApi):
         # Verify that the new relative path will not cause problems with existing repositories
         all_repos = self.collection.find()
         for existing in all_repos:
-            existing['relative_path'] = pulp.server.util.encode_unicode(existing['relative_path'])
+            existing['relative_path'] = encode_unicode(existing['relative_path'])
             if not validate_relative_path(relative_path, existing['relative_path']):
                 msg  = 'New relative path [%s] conflicts with existing relative path [%s]; ' % (relative_path, existing['relative_path'])
                 msg += 'paths may not be a parent or child directory of another relative path'
@@ -316,7 +317,7 @@ class RepoApi(BaseApi):
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
-        repo_path = pulp.server.util.encode_unicode(repo_path)
+        repo_path = encode_unicode(repo_path)
         if not os.path.exists(repo_path):
             pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
@@ -374,16 +375,16 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                                    repo["relative_path"])
-        source_path = pulp.server.util.encode_unicode(source_path)
+        source_path = encode_unicode(source_path)
         if not os.path.isdir(source_path):
             pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
-        link_path = pulp.server.util.encode_unicode(link_path)
+        link_path = encode_unicode(link_path)
         pulp.server.util.create_rel_symlink(source_path, link_path)
 
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
-            repo["relative_path"] = pulp.server.util.encode_unicode(repo["relative_path"])
+            repo["relative_path"] = encode_unicode(repo["relative_path"])
             link_path = os.path.join(self.published_path, repo["relative_path"])
             if os.path.lexists(link_path):
                 # need to use lexists so we will return True even for broken links
@@ -1655,7 +1656,7 @@ class RepoApi(BaseApi):
             #    gz = gzip.open(repo["group_gz_xml_path"], "wb")
             #    gz.write(xml.encode("utf-8"))
             #    gz.close()
-            return comps_util.update_repomd_xml_file(pulp.server.util.encode_unicode(repo["repomd_xml_path"]), pulp.server.util.encode_unicode(repo["group_xml_path"]))
+            return comps_util.update_repomd_xml_file(encode_unicode(repo["repomd_xml_path"]), encode_unicode(repo["group_xml_path"]))
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
             log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -1938,7 +1939,7 @@ class RepoApi(BaseApi):
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Unlinking %s" % link_path)
-        link_path = pulp.server.util.encode_unicode(link_path)
+        link_path = encode_unicode(link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
@@ -2252,7 +2253,7 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
         if repo['content_types'] in ('yum'):
-            repo_path = pulp.server.util.encode_unicode(repo_path)
+            repo_path = encode_unicode(repo_path)
             pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         elif repo['content_types'] in ('file'):
             self._generate_file_manifest(repo)
@@ -2557,8 +2558,8 @@ def validate_relative_path(new_path, existing_path):
     @rtype:  bool
     """
     # Easy out clause: if they are the same, they are invalid
-    existing_path = pulp.server.util.decode_unicode(existing_path)
-    new_path = pulp.server.util.decode_unicode(new_path)
+    existing_path = decode_unicode(existing_path)
+    new_path = decode_unicode(new_path)
 
     if new_path == existing_path:
         return False

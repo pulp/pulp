@@ -27,7 +27,7 @@ from datetime import tzinfo, timedelta
 from M2Crypto import X509
 
 from pulp.common import dateutils
-from pulp.server.util import encode_unicode
+from pulp.common.util import encode_unicode
 
 log = logging.getLogger(__name__)
 

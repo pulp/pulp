@@ -19,7 +19,7 @@ from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.exceptions import PulpException
-from pulp.server.util import encode_unicode
+from pulp.common.util import encode_unicode
 
 
 log = logging.getLogger(__name__)

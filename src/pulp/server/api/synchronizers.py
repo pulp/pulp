@@ -40,6 +40,7 @@ from pulp.server.api.file import FileApi
 
 import pulp.server.comps_util
 import pulp.server.util
+from pulp.common.util import encode_unicode, decode_unicode
 from pulp.server import config, constants, updateinfo
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
@@ -230,7 +231,7 @@ class BaseSynchronizer(object):
             skip = {}
         if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
-            log.debug("Begin to add packages from %s into %s" % (pulp.server.util.encode_unicode(dir), pulp.server.util.encode_unicode(repo['id'])))
+            log.debug("Begin to add packages from %s into %s" % (encode_unicode(dir), encode_unicode(repo['id'])))
             unfiltered_pkglist = pulp.server.util.get_repo_packages(dir)
             # Process repo filters if any
             if repo['filters']:
@@ -364,11 +365,11 @@ class BaseSynchronizer(object):
         try:
             repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         except UnicodeDecodeError:
-            dir = pulp.server.util.decode_unicode(dir)
+            dir = decode_unicode(dir)
             repomd_xml_path = os.path.join(dir, 'repodata/repomd.xml')
-        if os.path.isfile(pulp.server.util.encode_unicode(repomd_xml_path)):
+        if os.path.isfile(encode_unicode(repomd_xml_path)):
             repo["repomd_xml_path"] = repomd_xml_path
-            ftypes = pulp.server.util.get_repomd_filetypes(pulp.server.util.encode_unicode(repomd_xml_path))
+            ftypes = pulp.server.util.get_repomd_filetypes(encode_unicode(repomd_xml_path))
             log.debug("repodata has filetypes of %s" % (ftypes))
             if "group" in ftypes:
                 group_xml_path = pulp.server.util.get_repomd_filetype_path(repomd_xml_path.encode('utf-8'), "group")
@@ -376,7 +377,7 @@ class BaseSynchronizer(object):
                     group_xml_path = os.path.join(dir, group_xml_path)
                 else:
                     group_xml_path = os.path.join(dir.encode("ascii", "ignore"), group_xml_path)
-                group_xml_path = pulp.server.util.encode_unicode(group_xml_path)
+                group_xml_path = encode_unicode(group_xml_path)
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
@@ -386,7 +387,7 @@ class BaseSynchronizer(object):
                     log.info("Group info not found at file: %s" % (group_xml_path))
             if "group_gz" in ftypes:
                 group_gz_xml_path = pulp.server.util.get_repomd_filetype_path(
-                        pulp.server.util.encode_unicode(repomd_xml_path), "group_gz")
+                        encode_unicode(repomd_xml_path), "group_gz")
                 if type(dir) is unicode:
                     group_gz_xml_path = os.path.join(dir, group_gz_xml_path)
                 else:
@@ -395,7 +396,7 @@ class BaseSynchronizer(object):
                 repo['group_gz_xml_path'] = group_gz_xml_path
             if "updateinfo" in ftypes and (not skip.has_key('errata') or skip['errata'] != 1):
                 updateinfo_xml_path = pulp.server.util.get_repomd_filetype_path(
-                        pulp.server.util.encode_unicode(repomd_xml_path), "updateinfo")
+                        encode_unicode(repomd_xml_path), "updateinfo")
                 if type(dir) is unicode:
                     updateinfo_xml_path = os.path.join(dir, updateinfo_xml_path)
                 else:
@@ -1221,11 +1222,11 @@ class YumSynchronizer(BaseSynchronizer):
                 whitelist_packages = []
                 blacklist_packages = []
 
-            src_repo_dir = pulp.server.util.encode_unicode(src_repo_dir)
+            src_repo_dir = encode_unicode(src_repo_dir)
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
 
-            dst_repo_dir = pulp.server.util.encode_unicode(dst_repo_dir)
+            dst_repo_dir = encode_unicode(dst_repo_dir)
             if not os.path.exists(dst_repo_dir):
                 os.makedirs(dst_repo_dir)
 
