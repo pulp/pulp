@@ -39,9 +39,9 @@ class ErrorHandlerMiddleware(object):
         self.app = app
         self.debug = debug
 
-    def __call__(self, enviorn, start_response):
+    def __call__(self, environ, start_response):
         try:
-            return self.app(enviorn, start_response)
+            return self.app(environ, start_response)
         except Exception, e:
             _LOG.exception(_('Unhandled exception'))
             tb = None
