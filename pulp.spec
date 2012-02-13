@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.265
+Version:        0.0.266
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -489,6 +489,18 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Feb 13 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.266-1
+- 789505 - move encode_unicode() and decode_unicode() to common/utils.py
+  functions referenced in repo_cert_utils.py which is used by the CDS.
+  (jortel@redhat.com)
+- Fixing conversion of task args and kwargs so as to handle unicode as well as
+  other exception correctly (skarmark@redhat.com)
+- Reduce concurrent sync tasks and number of threads (jmatthews@redhat.com)
+- Added unit test runner script from RHEL test debugging
+  (jason.dobies@redhat.com)
+- 712065 - limit the logging when we upload/associate packages
+  (pkilambi@redhat.com)
+
 * Mon Feb 06 2012 Jeff Ortel <jortel@redhat.com> 0.0.265-1
 - 787310 - fixing error during repo sync when trying to access a variable
   before assignment when failed to load repo-md data (skarmark@redhat.com)
