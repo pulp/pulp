@@ -400,7 +400,7 @@ class Search(PackageAction):
 class DependencyList(PackageAction):
 
     name = "deplist"
-    description = _('List available dependencies')
+    description = _('list available dependencies')
 
     def setup_parser(self):
         self.parser.add_option("-n", "--name", action="append", dest="pnames", default=[],
