@@ -3,6 +3,7 @@ Quick Mongo DB Interactive Client for playing with mongo in python.
 """
 
 import pymongo
+from pymongo.collection import Collection
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 
@@ -23,12 +24,16 @@ def connect():
 
 def clean():
     for name in _db.collection_names():
+        if name.startswith(u'system.'):
+            continue
         _db.drop_collection(name)
 
 
-def collection(name, unique_indices=(), search_indicies=()):
-    c = pymongo.Collection(_db, name, create=True)
-    c.ensure_index(unique_indices, unique=True, background=True)
-    c.ensure_index(search_indicies, unique=False, background=True)
+def collection(name, unique_indices=None, search_indicies=None):
+    c = Collection(_db, name)
+    if unique_indices:
+        c.ensure_index(unique_indices, unique=True, background=True)
+    if search_indicies:
+        c.ensure_index(search_indicies, unique=False, background=True)
     return c
 
