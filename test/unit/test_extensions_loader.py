@@ -78,3 +78,6 @@ class ExtensionLoaderTests(testutil.PulpTest):
 
         # Test
         loader.load_extensions(PARTIAL_FAIL_SET, context)
+
+        # Verify
+        self.assertTrue(cli.root_section.find_subsection('section-z') is not None)

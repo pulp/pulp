@@ -120,7 +120,13 @@ def _load_pack(extensions_dir, pack_name, context):
 
     # Invoke the module's initialization, passing a copy of the context so
     # one extension doesn't accidentally muck with it and affect another.
-    context_copy = copy.deepcopy(context)
+    # We can't do a deepcopy here since it will cause the UI to be copied and
+    # we want each extension contributing to a single one. We do however copy
+    # the config just to be safe; it feels like something an extension might
+    # want to muck with at runtime if it treats the config like a working area.
+    context_copy = copy.copy(context)
+    context_copy.config = copy.deepcopy(context.config)
+
     try:
         init_func(context_copy)
     except Exception:
