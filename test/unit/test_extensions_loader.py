@@ -40,6 +40,17 @@ INDIVIDUAL_FAIL_DIR = TEST_DIRS_ROOT + 'individual_fail_extensions'
 
 class ExtensionLoaderTests(testutil.PulpTest):
 
+
+
+
+
+    def setUp(self):
+        super(ExtensionLoaderTests, self).setUp()
+
+        self.prompt = PulpPrompt()
+        self.cli = PulpCli(self.prompt)
+        self.context = ClientContext(None, None, None, cli=self.cli)
+
     def test_load_valid_set_cli(self):
         """
         Tests loading the set of CLI extensions in the valid_set directory. These
@@ -50,17 +61,12 @@ class ExtensionLoaderTests(testutil.PulpTest):
           where X is the number in the directory name
         """
 
-        # Setup
-        prompt = PulpPrompt()
-        cli = PulpCli(prompt)
-        context = ClientContext(None, None, None, cli=cli)
-
         # Test
-        loader.load_extensions(VALID_SET, context)
+        loader.load_extensions(VALID_SET, self.context)
 
         # Verify
-        self.assertTrue(cli.root_section.find_subsection('section-1') is not None)
-        self.assertTrue(cli.root_section.find_subsection('section-2') is not None)
+        self.assertTrue(self.cli.root_section.find_subsection('section-1') is not None)
+        self.assertTrue(self.cli.root_section.find_subsection('section-2') is not None)
 
     def test_load_partial_fail_set_cli(self):
         """
@@ -71,13 +77,14 @@ class ExtensionLoaderTests(testutil.PulpTest):
         loaded.
         """
 
-        # Setup
-        prompt = PulpPrompt()
-        cli = PulpCli(prompt)
-        context = ClientContext(None, None, None, cli=cli)
-
         # Test
-        loader.load_extensions(PARTIAL_FAIL_SET, context)
+        loader.load_extensions(PARTIAL_FAIL_SET, self.context)
 
         # Verify
-        self.assertTrue(cli.root_section.find_subsection('section-z') is not None)
+        self.assertTrue(self.cli.root_section.find_subsection('section-z') is not None)
+
+    def test_load_failed_import(self):
+        """
+        Tests an extension pack where the import is unsuccessful.
+        """
+        self.assertRaises(loader.ImportFailed, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'failed_import', self.context)
