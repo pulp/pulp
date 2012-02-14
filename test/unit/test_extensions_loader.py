@@ -1,0 +1,80 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2012 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+# Python
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
+import testutil
+
+from pulp.gc_client.framework import loader
+from pulp.gc_client.framework.extensions import ClientContext
+from pulp.gc_client.framework.core import PulpCli, PulpPrompt
+
+# -- test data ----------------------------------------------------------------
+
+TEST_DIRS_ROOT = os.path.abspath(os.path.dirname(__file__)) + "/data/extensions_loader_tests/"
+
+# Contains 3 properly structured plugins, 2 of which contain the CLI init module
+VALID_SET = TEST_DIRS_ROOT + 'valid_set'
+
+# Contains 2 plugins, 1 of which loads correct and another that fails
+PARTIAL_FAIL_SET = TEST_DIRS_ROOT + 'partial_fail_set'
+
+# Not meant to be loaded as a base directory, each should be loaded individually
+# through _load_pack to verify the proper exception case is raised
+INDIVIDUAL_FAIL_DIR = TEST_DIRS_ROOT + 'individual_fail_extensions'
+
+# -- test cases ---------------------------------------------------------------
+
+class ExtensionLoaderTests(testutil.PulpTest):
+
+    def test_load_valid_set_cli(self):
+        """
+        Tests loading the set of CLI extensions in the valid_set directory. These
+        extensions have the following properties:
+        * Three extensions, all of which are set up correctly to be loaded
+        * Only two of them (ext1 and ext2) contain a CLI loading module
+        * Each of those will add a single section to the CLI named section-X,
+          where X is the number in the directory name
+        """
+
+        # Setup
+        prompt = PulpPrompt()
+        cli = PulpCli(prompt)
+        context = ClientContext(None, None, None, cli=cli)
+
+        # Test
+        loader.load_extensions(VALID_SET, context)
+
+        # Verify
+        self.assertTrue(cli.root_section.find_subsection('section-1') is not None)
+        self.assertTrue(cli.root_section.find_subsection('section-2') is not None)
+
+    def test_load_partial_fail_set_cli(self):
+        """
+        Tests loading the set of CLI extensions in the partial_fail_set directory.
+        The extensions within will load errors for various reasons. The final
+        extension pack in there (in the sense that it's loaded last) is valid
+        and this test is to ensure that despite all of the errors it is still
+        loaded.
+        """
+
+        # Setup
+        prompt = PulpPrompt()
+        cli = PulpCli(prompt)
+        context = ClientContext(None, None, None, cli=cli)
+
+        # Test
+        loader.load_extensions(PARTIAL_FAIL_SET, context)
