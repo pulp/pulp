@@ -20,7 +20,9 @@ from pulp.server.api.user import UserApi
 from pulp.server.api.auth import AuthApi
 from pulp.server.auth.authorization import (
     is_last_super_user, revoke_all_permissions_from_user,
-    grant_automatic_permissions_for_created_resource, CREATE, READ, UPDATE, DELETE)
+    grant_automatic_permissions_for_created_resource,
+    grant_automatic_permissions_for_new_user,
+    CREATE, READ, UPDATE)
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
@@ -66,6 +68,7 @@ class Users(JSONController):
                                    user_data['name'])
         resource = resource_path(extend_uri_path(user['login']))
         grant_automatic_permissions_for_created_resource(resource)
+        grant_automatic_permissions_for_new_user(user['login'])
         return self.created(user['id'], user)
 
     def PUT(self):
@@ -137,10 +140,10 @@ class AdminAuthCertificates(JSONController):
     @error_handler
     @auth_required(READ)
     def GET(self):
-        '''
+        """
         Creates and returns an authentication certificate for the currently
         logged in user.
-        '''
+        """
         bundle = auth_api.admin_certificate()
         return self.ok(bundle)
 
