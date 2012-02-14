@@ -129,9 +129,54 @@ class Erratum(JSONController):
     @auth_required(READ)
     def GET(self, id):
         """
-        Get a erratum information
-        @param id: erratum id
-        @return: erratum metadata
+        [[wiki]]
+        title: Get Erratum info
+        description: lookup erratum for a given id
+        method: PUT
+        path: /errata/<id>/
+        permission: UPDATE
+        success response: 200 OK
+        failure response: 400 Bad Request when trying to change the id
+        return: a Erratum object
+        example:
+        {{{
+        #!js
+         'id' : 'test_errata_1',
+         '_id' : 'test_errata_1',
+         'title' : 'test_errata_1',
+         '_ns' : 'errata',
+         'version' : '1.2',
+         'description' : 'test_errata_1',
+         'summary' : 'test1',
+         'release' : '2',
+         'issued' : '2012-02-08',
+         'updated' : '2012-02-14',
+         'fromstr' : 'updates@pulpproject.org',
+         'references' : [],
+         'pkglist' : [{'packages': [{'src': 'http://example.com/testrpm-0.1-1.el6.noarch.rpm',
+                                    'name': 'testrpm',
+                                    'arch': 'noarch',
+                                    'sums': 'da82f15d20e026048e88c4203d5bcdf28b5359432920c251dccadf1b6189e327',
+                                    'filename': 'testrpm-0.1-1.el6.noarch.rpm',
+                                    'epoch': '0',
+                                    'version': '0.1.1',
+                                    'release': '1',
+                                    'type': 'sha256'}],
+                                    'name': '2',
+                                    'short': 'redhat1'},],
+         'severity' : 'Low',
+         'reboot_suggested' : True,
+         'type' : 'security',
+         'immutable' : False,
+         'status' : 'stable',
+         'repo_defined' : False,
+         'pushcount' : 2,
+         'from_str' : 'updates@redhat.com',
+         'short' : 'redhat',
+         'repoids' : [],
+         'rights' : 'redhat,inc',
+         'solution' : 'see readme',
+        }}}
         """
         return self.ok(api.erratum(id))
 
@@ -139,12 +184,60 @@ class Erratum(JSONController):
     @auth_required(UPDATE)
     def PUT(self, id):
         """
-        Update errata
-        @param delta obj: The erratum delta object
+        [[wiki]]
+        title: Update an Erratum
+        description: Change an exisiting erratum.
+        method: PUT
+        path: /errata/<id>/
+        permission: UPDATE
+        success response: 200 OK
+        failure response: 400 Bad Request when trying to change the id
+        return: a Erratum object
+        example:
+        {{{
+        #!js
+         'id' : 'test_errata_1',
+         '_id' : 'test_errata_1',
+         'title' : 'test_errata_1',
+         '_ns' : 'errata',
+         'version' : '1.2',
+         'description' : 'test_errata_1',
+         'summary' : 'test1',
+         'release' : '2',
+         'issued' : '2012-02-08',
+         'updated' : '2012-02-14',
+         'fromstr' : 'updates@pulpproject.org',
+         'references' : [],
+         'pkglist' : [{'packages': [{'src': 'http://example.com/testrpm-0.1-1.el6.noarch.rpm',
+                                    'name': 'testrpm',
+                                    'arch': 'noarch',
+                                    'sums': 'da82f15d20e026048e88c4203d5bcdf28b5359432920c251dccadf1b6189e327',
+                                    'filename': 'testrpm-0.1-1.el6.noarch.rpm',
+                                    'epoch': '0',
+                                    'version': '0.1.1',
+                                    'release': '1',
+                                    'type': 'sha256'}],
+                                    'name': '2',
+                                    'short': 'redhat1'},],
+         'severity' : 'Low',
+         'reboot_suggested' : True,
+         'type' : 'security',
+         'immutable' : False,
+         'status' : 'stable',
+         'repo_defined' : False,
+         'pushcount' : 2,
+         'from_str' : 'updates@redhat.com',
+         'short' : 'redhat',
+         'repoids' : [],
+         'rights' : 'redhat,inc',
+         'solution' : 'see readme',
+        }}}
         """
         delta = self.params()
+        if delta.pop('id', id) != id:
+            return self.bad_request('You cannot change a errata id')
         erratum = api.update(id, delta)
-        return self.ok(True)
+        return erratum
 
     @error_handler
     @auth_required(DELETE)

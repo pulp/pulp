@@ -387,7 +387,105 @@ class Create(ErrataAction):
                                solution=self.opts.solution or "")
         if erratum_new:
             print _("Successfully created an Erratum with id [%s]" % erratum_new['id'])
-        
+
+class Update(ErrataAction):
+
+    name = "update"
+    description = _('update a custom errata')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+            help=_("advisory id of the erratum"))
+        self.parser.add_option("--title", dest="title",
+            help=_("title of the erratum"))
+        self.parser.add_option("--description", dest="description", default="",
+            help=_("description of the erratum"))
+        self.parser.add_option("--version", dest="version",
+            help=_("version of the erratum"))
+        self.parser.add_option("--release", dest="release",
+            help=_("release of the erratum"))
+        self.parser.add_option("--type", dest="type",
+            help=_("type of the erratum.Supported:security, enhancement, bugfix"))
+        self.parser.add_option("--issued", dest="issued",default="",
+            help=_("erratum issued date; format:YYYY-MM-DD HH:MM:SS"))
+        self.parser.add_option("--status", dest="status",
+            help=_("status of this update. eg:stable"))
+        self.parser.add_option("--updated", dest="updated",default="",
+            help=_("erratum updated date; format:YYYY-MM-DD HH:MM:SS"))
+        self.parser.add_option("--fromstr", dest="fromstr",default="",
+            help=_("from contact string who released the Erratum, eg:updates@fedoraproject.org"))
+        self.parser.add_option("--effected-packages", dest="pkgcsv",
+            help=_("a csv file with effected packages; format:name,version,release,epoch,arch,filename,checksum,checksum_type,sourceurl"))
+        self.parser.add_option("--pushcount", dest="pushcount", default=1,
+            help=_("pushcount on the erratum"))
+        self.parser.add_option("--references", dest="refcsv",
+            help=_("A reference csv file; format:href,type,id,title"))
+        self.parser.add_option("--reboot-suggested", action="store_true", dest="reboot_sugg",
+            help=_("reboot suggested on errata"))
+        self.parser.add_option("--short", dest="short",
+            help=_("short release name; eg: F14"))
+        self.parser.add_option("--severity", dest="severity",
+            help=_("optional severity information; eg: Low,Moderate,Critical"))
+        self.parser.add_option("--rights", dest="rights",
+            help=_("optional copyright information"))
+        self.parser.add_option("--summary", dest="summary",
+            help=_("optional summary information"))
+        self.parser.add_option("--solution", dest="solution",
+            help=_("optional solution information"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        found = self.errata_api.erratum(self.opts.id)
+        if not found:
+            utils.system_exit(os.EX_DATAERR, _("Erratum with id [%s] not found." % self.opts.id))
+        delta = {}
+        optdict = vars(self.opts)
+        for k, v in optdict.items():
+            if not v:
+                continue
+            if k == 'id':
+                # cannot update id, skip
+                continue
+            if k == 'pkgcsv':
+                plist = utils.parseCSV(self.opts.pkgcsv)
+                pkgs = []
+                for p in plist:
+                    if not len(p) == 9:
+                        log.error(_("Bad format [%s] in csv, skipping" % p))
+                        continue
+                    name,version,release,epoch,arch,filename,sums,type,sourceurl = p
+                    pdict = dict(name=name, version=version, release=release,
+                                 epoch=epoch, arch=arch, filename=filename, sums=sums, type=type, src=sourceurl)
+                    pkgs.append(pdict)
+                plistdict = {'packages' : pkgs,
+                             'name'     : self.opts.release,
+                             'short'    : self.opts.short or ""}
+                pkglist = [plistdict]
+                delta['pkglist'] = pkglist
+                continue
+            if k == 'refcsv':
+                reflist = utils.parseCSV(self.opts.refcsv)
+                references = []
+                for ref in reflist:
+                    if not len(ref) == 4:
+                        log.error(_("Bad format [%s] in csv, skipping" % ref))
+                        continue
+                    href,type,id,title = ref
+                    refdict = dict(href=href,type=type,id=id,title=title)
+                    references.append(refdict)
+                delta['references'] = references
+                continue
+
+            if k == 'pushcount':
+                delta['pushcount'] = int(self.opts.pushcount)
+                continue
+            delta[k] = v
+            continue
+        erratum_updated = self.errata_api.update(found['id'], delta)
+        if erratum_updated:
+            print _("Successfully updated Erratum with id [%s]" % found['id'])
+        else:
+            utils.system_exit(os.EX_DATAERR, _("Unable to update Erratum with id [%s]; see pulp.log for more info." % found['id']))
 
 class Delete(ErrataAction):
     
@@ -439,6 +537,7 @@ class AdminErrata(Errata):
                 Info,
                 Install,
                 Create,
+                Update,
                 Delete ]
 
 # errata plugin --------------------------------------------------------------
