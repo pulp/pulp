@@ -64,7 +64,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
     def test_add_filters_to_repo(self, id = "filter-test1"):
         repoid = 'clone-some-id'
         parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
         repo_sync.clone('some-id', repoid, repoid)
@@ -87,7 +87,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
     def test_remove_filters_from_repo(self, id = "filter-test1"):
         repoid = 'clone-some-id'
         parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
         repo_sync.clone('some-id', repoid, repoid)
@@ -107,7 +107,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
     def test_list_repo_filters(self, id = "filter-test1"):
         repoid = 'clone-some-id'
         parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
         self.assertTrue(parent_repo is not None)
         repo_sync._sync(repo_id='some-id')
         repo_sync.clone('some-id', repoid, repoid)
@@ -165,7 +165,7 @@ class TestRepoFilters(testutil.PulpAsyncTest):
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = [id, "filter-test2"]
         yum_repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
         try:
             self.repo_api.add_filters('some-id', filter_ids)
             self.assertTrue(False)
