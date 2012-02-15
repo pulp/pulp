@@ -134,7 +134,7 @@ class Erratum(JSONController):
         description: lookup erratum for a given id
         method: PUT
         path: /errata/<id>/
-        permission: UPDATE
+        permission: READ
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
         return: a Erratum object

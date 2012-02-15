@@ -23,7 +23,7 @@ import testutil
 
 import pulp
 from pulp.server import updateinfo
-from pulp.server.api.file import FileApi
+from pulp.server.api.file import FileApi, FileHasReferences
 from pulp.server.api.repo import RepoApi
 
 class TestFiles(testutil.PulpAsyncTest):
@@ -87,6 +87,30 @@ class TestFiles(testutil.PulpAsyncTest):
         self.repo_api.delete(id=repo['id'])
         repo = self.repo_api.repository(repo['id'])
         assert(repo is None)
+
+    def test_file_delete_with_references(self):
+        filename = "pulp-test.iso"
+        id = 'test_create_errata_id'
+        description = 'pulp test iso image'
+        checksum_type = "sha256"
+        checksum = "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c"
+        size = "4096"
+        sample_file = self.file_api.create(filename, checksum_type, checksum, size, description)
+        self.assertTrue(sample_file is not None)
+        fileid = sample_file['id']
+        id = 'file-repo'
+        repo = self.repo_api.create(id, 'file repo', 'noarch')
+        repo = self.repo_api.repository(id)
+        assert(repo is not None)
+        self.repo_api.add_file(repo['id'], [fileid])
+        repo = self.repo_api.repository(repo['id'])
+        assert(fileid in repo['files'])
+        success = False
+        try:
+            self.file_api.delete(fileid)
+        except FileHasReferences:
+            success = True
+        assert(success)
         
     def test_list_repo_files(self):
         filename = "pulp-test.iso"

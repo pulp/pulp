@@ -44,7 +44,7 @@ from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi, DistributionHasReferences
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
-from pulp.server.api.file import FileApi
+from pulp.server.api.file import FileApi, FileHasReferences
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
@@ -614,11 +614,11 @@ class RepoApi(BaseApi):
                 log.info("Distribution Id [%s] has other references; leaving it in the db" % distroid)
         #remove files:
         for fileid in repo['files']:
-            repos = self.find_repos_by_files(fileid)
-            if repo["id"] in repos and len(repos) == 1:
+            self.remove_file(repo['id'], [fileid])
+            try:
                 self.fileapi.delete(fileid, keep_files)
-            else:
-                log.debug("Not deleting %s since it is referenced by these repos: %s" % (fileid, repos))
+            except FileHasReferences:
+                log.info("file Id [%s] has other references; leaving it in the db" % fileid)
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi
@@ -2066,7 +2066,10 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         files = []
         for fileid in repo['files']:
-            files.append(self.fileapi.file(fileid))
+            fileobj = self.fileapi.file(fileid)
+            if not fileobj:
+                continue
+            files.append(fileobj)
         return files
 
     def find_repos_by_files(self, fileid):
