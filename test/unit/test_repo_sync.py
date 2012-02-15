@@ -32,6 +32,10 @@ class TestRepoSync(testutil.PulpAsyncTest):
         testutil.PulpAsyncTest.setUp(self)
         self.mock(repo_sync, "run_async")
         self.mock(async, 'enqueue')
+        self.test_data_dir = os.path.join(
+                os.path.abspath(os.path.dirname(__file__)),
+                "data")
+
 
     def tearDown(self):
         testutil.PulpAsyncTest.tearDown(self)
@@ -134,3 +138,15 @@ class TestRepoSync(testutil.PulpAsyncTest):
         self.test_sync_local(id)
         self.clean()
         self.test_sync_remote(id)
+
+    def test_repo_sync_local_read_only_source(self):
+        read_only_dir = os.path.join(self.test_data_dir, "repo_no_write_perms")
+        r_id = "test_repo_sync_local_read_only_source"
+        print "read_only_dir = %s" % (read_only_dir)
+        r = self.repo_api.create(r_id, r_id, "x86_64", "file://%s" % read_only_dir)
+        repo_sync._sync(r_id)
+        found = self.repo_api.repository(r_id)
+        self.assertEquals(len(found["packages"]), 1)
+
+if __name__ == "__main__":
+    unittest.main()

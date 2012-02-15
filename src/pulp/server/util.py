@@ -22,6 +22,7 @@ import signal
 import shlex
 import shutil
 import sre_constants
+import stat
 import string
 import subprocess
 import tempfile
@@ -508,9 +509,11 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
                 log.debug("clean up any stale dirs")
                 shutil.rmtree(backup_repo_dir)
             shutil.copytree(current_repo_dir, backup_repo_dir)
+            os.system("chmod -R u+wX %s" % (backup_repo_dir))
         handle = _create_repo(dir, groups=groups, checksum_type=checksum_type)
         if not handle:
             raise CreateRepoError("Unable to execute createrepo on %s" % (dir))
+        os.system("chmod -R ug+wX %s" % (dir))
         CREATE_REPO_PROCESS_LOOKUP[dir] = handle
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
