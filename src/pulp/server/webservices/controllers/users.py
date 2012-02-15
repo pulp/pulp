@@ -22,7 +22,7 @@ from pulp.server.auth.authorization import (
     is_last_super_user, revoke_all_permissions_from_user,
     grant_automatic_permissions_for_created_resource,
     grant_automatic_permissions_for_new_user,
-    CREATE, READ, UPDATE)
+    CREATE, READ, UPDATE, DELETE)
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
