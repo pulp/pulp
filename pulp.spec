@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,6 +489,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 15 2012 James Slagle <jslagle@redhat.com> 0.0.263-7
+- 788565 - fix selinux relabel of files from CDS rpm install
+  (jmatthews@redhat.com)
+
 * Wed Feb 08 2012 James Slagle <jslagle@redhat.com> 0.0.263-6
 - Made max num of certs supported in a chain a config option
   (jmatthews@redhat.com)
