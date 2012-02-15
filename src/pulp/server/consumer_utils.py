@@ -82,7 +82,7 @@ def build_bind_data(repo, hostnames, key_list):
     # add certificates
     cacert = None
     clientcert = None
-    path = repo.get('consumer_ca')
+    path = pulp.server.config.config.get('security', 'ssl_ca_certificate')
     if path:
         f = open(path)
         cacert = f.read()
