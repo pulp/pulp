@@ -384,6 +384,8 @@ def import_comps(repoid, comps_data=None):
     bs = BaseSynchronizer()
     status = bs.sync_groups_data(compsobj, repo)
     repo_api.collection.save(repo, safe=True)
+    # write the xml to repodata location
+    repo_api._update_groups_metadata(repoid)
     return status
 
 def export_comps(repoid):
