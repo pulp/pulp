@@ -26,14 +26,6 @@ from StringIO import StringIO
 
 class Line(object):
 
-    @classmethod
-    def split(cls, ln):
-        n = 0
-        for c in ln:
-            if c != ' ': break
-            n += 1
-        return (n, ln[n:].strip())
-
     def __init__(self, ln, num=0):
         self.indent, self.ln = self.split(ln)
         self.num = num
@@ -49,10 +41,25 @@ class Line(object):
         return self.ln.startswith('@')
 
     def isfunction(self):
-        return self.ln.startswith('def') and self.ln.endswith(':')
+        if not self.ln.startswith('def'):
+            return False
+        for c in '():':
+            if c not in self.ln:
+                return False
+        return True
 
     def ismlquote(self):
         return self.ln.strip() == '"""'
+
+    def isblank(self):
+        return self.ln.strip() == ''
+
+    def split(cls, ln):
+        n = 0
+        for c in ln:
+            if c != ' ': break
+            n += 1
+        return (n, ln[n:].strip())
 
     def __str__(self):
         return str((self.indent, self.ln, str(self.decorators)))
@@ -183,6 +190,9 @@ class Parser:
             if not s:
                 break
             ln = Line(s, lnum)
+            if ln.isblank():
+                ofp.write(s)
+                continue
             if ln.iscomment():
                 ofp.write(s)
                 continue
@@ -206,9 +216,15 @@ class Parser:
             chg = self.end(ln, ofp)
             if chg:
                 ofp.write(str(chg.md))
-                ofp.write('\n')
+                ofp.write('\n\n')
                 chgset.append(chg)
             ofp.write(s)
+        if self.stack:
+            chg = self.end(ln, ofp)
+            if chg:
+                ofp.write(str(chg.md))
+                ofp.write('\n\n')
+                chgset.append(chg)
         return chgset
 
 
