@@ -24,7 +24,6 @@ import types
 import BeautifulSoup
 import logging
 import unicodedata
-import pulp.server.util as util
 
 log = logging.getLogger(__name__)
 
@@ -202,10 +201,20 @@ class YumDiscovery(BaseDiscovery):
         """
         Takes a root url and traverses the tree to find all the sub urls
         that has repodata in them.
+        @param url: url path to perform discovery on
+        @type ca: string
+        @param ca: optional ca certificate to access the url
+        @type ca: string
+        @param cert: optional certificate to access the url(this could include both crt and key)
+        @type cert: string
+        @param key: optional certificate key to access the url
+        @type key: string
+        @param sslverify: use this to enforce ssl verification of the server cert
+        @type sslverify: boolean
         @return: list of matching urls
         @rtype: list
         """
-        self.url = url
+        self.url = check_url_trailing_slash(url)
         if ca or cert or key:
             self.setup_certificate(ca=ca, cert=cert, key=key, sslverify=sslverify)
         proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
@@ -291,7 +300,7 @@ def get_discovery(type):
     Returns an instance of a Discovery object
     @param type: discovery type
     @type type: string
-    Returns an instance of a Discovery object
+    @return: Returns an instance of a Discovery object
     """
     if type not in DISCOVERY_MAP:
         raise InvalidDiscoveryInput('Could not find Discovery for type [%s]', type)
@@ -315,6 +324,18 @@ def write_temp_file(buf):
     finally:
         tmpfile.close()
     return tempfilename
+
+def check_url_trailing_slash(url):
+    """
+    make sure urls end in a trailing slash
+    @param url: url to validate
+    @type url: str
+    @return: url with trailing slash
+    @rtype: str
+    """
+    if not url.endswith('/'):
+        url += '/'
+    return url
 
 def main():
     if len(sys.argv) < 3:
