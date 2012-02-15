@@ -81,6 +81,14 @@ Requires: nss >= 3.12.9
 Requires: curl => 7.19.7
 %endif
 
+%if 0%{?rhel} == 5
+# RHEL-5
+Requires: mkisofs
+%else
+# RHEL-6 & Fedora
+Requires: genisoimage
+%endif
+
 # Both attempt to serve content at the same apache alias, so don't
 # allow them to be installed at the same time.
 Conflicts:      pulp-cds
