@@ -40,10 +40,6 @@ INDIVIDUAL_FAIL_DIR = TEST_DIRS_ROOT + 'individual_fail_extensions'
 
 class ExtensionLoaderTests(testutil.PulpTest):
 
-
-
-
-
     def setUp(self):
         super(ExtensionLoaderTests, self).setUp()
 
@@ -68,6 +64,16 @@ class ExtensionLoaderTests(testutil.PulpTest):
         self.assertTrue(self.cli.root_section.find_subsection('section-1') is not None)
         self.assertTrue(self.cli.root_section.find_subsection('section-2') is not None)
 
+    def test_load_extensions_bad_dir(self):
+        """
+        Tests loading extensions on a directory that doesn't exist.
+        """
+        try:
+            loader.load_extensions('fake_dir', self.context)
+        except loader.InvalidExtensionsDirectory, e:
+            self.assertEqual(e.dir, 'fake_dir')
+            print(e) # for coverage
+
     def test_load_partial_fail_set_cli(self):
         """
         Tests loading the set of CLI extensions in the partial_fail_set directory.
@@ -88,3 +94,27 @@ class ExtensionLoaderTests(testutil.PulpTest):
         Tests an extension pack where the import is unsuccessful.
         """
         self.assertRaises(loader.ImportFailed, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'failed_import', self.context)
+
+    def test_load_not_python_module(self):
+        """
+        Tests loading an extension that forgot to identify itself as a python module.
+        """
+        self.assertRaises(loader.ImportFailed, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'not_python_module', self.context)
+
+    def test_load_no_init_module(self):
+        """
+        Tests loading an extension pack that doesn't contain the cli init module.
+        """
+        self.assertRaises(loader.NoUiHookModule, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'no_ui_hook', self.context)
+
+    def test_load_initialize_error(self):
+        """
+        Tests loading an extension that raises an error during the initialize call.
+        """
+        self.assertRaises(loader.InitError, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'init_error', self.context)
+
+    def test_load_no_init_function(self):
+        """
+        Tests loading an extension that doesn't have a properly defined UI hook.
+        """
+        self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'no_init_function', self.context)

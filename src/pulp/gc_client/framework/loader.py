@@ -46,7 +46,7 @@ class InvalidExtensionsDirectory(ExtensionLoaderException):
         return _('Inaccessible or missing extensions directory [%(d)s]' % {'d' : self.dir})
 
 # Unit test marker exceptions
-class NoInitModule(ExtensionLoaderException): pass
+class NoUiHookModule(ExtensionLoaderException): pass
 class ImportFailed(ExtensionLoaderException): pass
 class NoInitFunction(ExtensionLoaderException): pass
 class InitError(ExtensionLoaderException): pass
@@ -67,11 +67,6 @@ def load_extensions(extensions_dir, context):
     if not os.access(extensions_dir, os.F_OK | os.R_OK):
         raise InvalidExtensionsDirectory(extensions_dir)
 
-    # Add the extensions directory to the path so each extension can be
-    # loaded as a python module
-    if extensions_dir not in sys.path:
-        sys.path.append(extensions_dir)
-
     # Handle each extension pack in the directory in alphabetical order so
     # we can guarantee the loading order
     pack_names = sorted(os.listdir(extensions_dir))
@@ -86,6 +81,11 @@ def load_extensions(extensions_dir, context):
 
 def _load_pack(extensions_dir, pack_name, context):
 
+    # Add the extensions directory to the path so each extension can be
+    # loaded as a python module
+    if extensions_dir not in sys.path:
+        sys.path.append(extensions_dir)
+
     # Figure out which initialization module we're loading
     init_mod_name = None
     if context.cli is not None:
@@ -99,24 +99,24 @@ def _load_pack(extensions_dir, pack_name, context):
     init_mod_filename = os.path.join(extensions_dir, pack_name, init_mod_name + '.py')
     if not os.path.exists(init_mod_filename):
         _LOG.info(_('No initialization module [%(m)s] found, skipping initialization' % {'m' : init_mod_filename}))
-        raise NoInitModule()
+        raise NoUiHookModule()
 
     # Figure out the full package name for the module and import it.
     init_mod_name = '%s.%s' % (os.path.basename(pack_name), init_mod_name)
 
     try:
         pack_module = __import__(init_mod_name)
-    except ImportError:
+    except Exception, e:
         _LOG.exception(_('Could not load initialization module [%(m)s]' % {'m' : init_mod_name}))
-        raise ImportFailed()
+        raise ImportFailed(), None, sys.exc_info()[2]
 
     # Get a handle on the initialize function
     try:
         cli_module = pack_module.pulp_cli
         init_func = getattr(cli_module, 'initialize')
-    except AttributeError:
+    except AttributeError, e:
         _LOG.exception(_('Module [%(m)s] does not define the required initialize function' % {'m' : init_mod_name}))
-        raise NoInitFunction()
+        raise NoInitFunction(), None, sys.exc_info()[2]
 
     # Invoke the module's initialization, passing a copy of the context so
     # one extension doesn't accidentally muck with it and affect another.
@@ -129,6 +129,6 @@ def _load_pack(extensions_dir, pack_name, context):
 
     try:
         init_func(context_copy)
-    except Exception:
+    except Exception, e:
         _LOG.exception(_('Module [%(m)s] could not be initialized' % {'m' : init_mod_name}))
-        raise InitError()
+        raise InitError(), None, sys.exc_info()[2]
