@@ -368,6 +368,13 @@ if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
 fi
 
+# Label port 5674 as amqp_port_t so qpidd can bind to it.
+if /usr/sbin/selinuxenabled ; then
+ echo "Enabling port 5674 for qpidd"
+ /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5674
+ /usr/sbin/semanage port -a -t amqp_port_t -p udp 5674
+fi
+
 # restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
 # Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
 %posttrans selinux-server
