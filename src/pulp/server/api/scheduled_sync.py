@@ -197,7 +197,7 @@ def _update_repo_scheduled_sync_task(repo, task):
     @param task: task to update
     """
     new_scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    task.kwargs = repo['sync_options']
+    task.kwargs = repo['sync_options'] or {}
     return async.reschedule_async(task, new_scheduler)
 
 
@@ -246,8 +246,8 @@ def update_repo_schedule(repo, new_schedule, new_options):
                                 'sync_options': sync_options}},
                       safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
-    repo['sync_schedule'] = new_schedule
-    repo['sync_options'] = new_options
+    repo['sync_schedule'] = sync_schedule
+    repo['sync_options'] = sync_options
     if task is None:
         _add_repo_scheduled_sync_task(repo)
     else:
