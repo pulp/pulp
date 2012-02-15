@@ -1373,12 +1373,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
             assert(data['checksum'][0] == checksum_type)
 
     def test_repo_create_arch(self):
-        arches = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64', 'ia64']
+        arches = ['noarch', 'i386', 'i686', 'ppc64', 'ppc',  's390x', 'x86_64', 'ia64']
         for arch in arches:
             repo = self.repo_api.create('repo-id-%s' % arch, 'some name', \
             arch, 'http://example.com')
             assert(repo is not None)
             assert(repo['arch'] is not arch)
+            print "created repo %s with arch %s" % (repo['id'], arch)
 
     def test_empty_repo(self, id = "test_empty_repo_1"):
         repo1 = self.repo_api.create(id, 'some name', 'i386', 'http://example.com', preserve_metadata=True)
