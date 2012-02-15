@@ -224,6 +224,9 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        self.check_for_whitespace(id)
+        if relative_path:
+            self.check_for_whitespace(relative_path, "relative_path")
         id = encode_unicode(id)
         repo = self.repository(id)
         if repo is not None:
