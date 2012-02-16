@@ -36,8 +36,7 @@ from pulp.server.event.handler.task import TaskDequeued
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
 from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.util import top_repos_location
-from pulp.server.util import top_gpg_location
+from pulp.server.util import top_repos_location, top_gpg_location, encode_unicode
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()

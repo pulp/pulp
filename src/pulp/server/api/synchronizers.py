@@ -763,7 +763,7 @@ class YumSynchronizer(BaseSynchronizer):
                                 proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
                                 max_speed=limit_in_KB, distro_location=pulp.server.util.top_distribution_location(),
                                 tmp_path = pulp.server.util.tmp_cache_location())
-            relative_path = repo['relative_path']
+            relative_path = encode_unicode(repo['relative_path'])
             if relative_path:
                 store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
             else:
@@ -838,6 +838,7 @@ class YumSynchronizer(BaseSynchronizer):
         # lets lookup the checksum type for primary xml in repomd.xml and use that for createrepo
         log.debug('Determining checksum type for repo id %s' % (repo["id"]))
         repo_metadata = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "repodata/repomd.xml")
+        repo_metadata = encode_unicode(repo_metadata)
         if os.path.exists(repo_metadata):
             repo['checksum_type'] = pulp.server.util.get_repomd_filetype_dump(repo_metadata)['primary']['checksum'][0]
         elif not repo['checksum_type']:

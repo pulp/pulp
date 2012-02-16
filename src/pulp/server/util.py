@@ -437,6 +437,7 @@ def create_rel_symlink(source_path, dest_path):
     return create_symlinks(rel_path, dest_path)
 
 def create_symlinks(source_path, link_path):
+    link_path = encode_unicode(link_path)
     if not os.path.exists(os.path.dirname(link_path)):
         # Create published dir as well as 
         # any needed dir parts if rel_path has multiple parts
@@ -445,8 +446,8 @@ def create_symlinks(source_path, link_path):
         if os.path.lexists(link_path):
             # Clean up broken sym link
             os.unlink(link_path)
-        log.debug("Create symlink for [%s] to [%s]" % (source_path, link_path))
-        os.symlink(source_path, link_path)
+        log.debug("Create symlink for [%s] to [%s]" % (decode_unicode(source_path), decode_unicode(link_path)))
+        os.symlink(encode_unicode(source_path), link_path)
         
 def _create_repo(dir, groups=None, checksum_type="sha256"):
     try:

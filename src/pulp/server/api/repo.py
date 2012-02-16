@@ -227,6 +227,7 @@ class RepoApi(BaseApi):
         self.check_for_whitespace(id)
         if relative_path:
             self.check_for_whitespace(relative_path, "relative_path")
+            relative_path = encode_unicode(relative_path)
         id = encode_unicode(id)
         repo = self.repository(id)
         if repo is not None:
@@ -370,7 +371,6 @@ class RepoApi(BaseApi):
         except Exception, e:
             log.error(e)
             return False
-
         return True
 
     def _create_published_link(self, repo):
