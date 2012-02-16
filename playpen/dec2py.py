@@ -41,12 +41,7 @@ class Line(object):
         return self.ln.startswith('@')
 
     def isfunction(self):
-        if not self.ln.startswith('def'):
-            return False
-        for c in '():':
-            if c not in self.ln:
-                return False
-        return True
+        return self.ln.startswith('def')
 
     def ismlquote(self):
         return self.ln.strip() == '"""'
@@ -72,6 +67,13 @@ class Line(object):
 
     def __lt__(self, other):
         return self.indent < other.indent
+    
+    def __cmp__(self, other):
+        if self.indent < other.indent:
+            return -1
+        if self.indent > other.indent:
+            return 1
+        return 0
 
 
 class Decorator:
@@ -173,7 +175,7 @@ class Parser:
                 ln.decorators = decorators
                 self.push(ln)
 
-    def end(self, ln, out):
+    def end(self, out):
         if self.top().isfunction():
             popped = self.pop()
             md = MockDecorator(popped)
@@ -203,6 +205,12 @@ class Parser:
             if docstring:
                 ofp.write(s)
                 continue
+            if ln <= self.top():
+                chg = self.end(ofp)
+                if chg:
+                    ofp.write(str(chg.md))
+                    ofp.write('\n\n')
+                    chgset.append(chg)
             if ln.isdecorator():
                 self.decorator(ln)
                 continue
@@ -210,20 +218,13 @@ class Parser:
                 self.function(ln)
                 ofp.write(s)
                 continue
-            if ln > self.top():
-                ofp.write(s)
-                continue
-            chg = self.end(ln, ofp)
-            if chg:
-                ofp.write(str(chg.md))
-                ofp.write('\n\n')
-                chgset.append(chg)
+            # other
             ofp.write(s)
         if self.stack:
-            chg = self.end(ln, ofp)
+            chg = self.end(ofp)
             if chg:
                 ofp.write(str(chg.md))
-                ofp.write('\n\n')
+                ofp.write('\n')
                 chgset.append(chg)
         return chgset
 
