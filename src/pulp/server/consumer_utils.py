@@ -81,7 +81,7 @@ def build_bind_data(repo, hostnames, key_list):
         
     # add certificates
     ssl_ca_cert = None
-    clientcert = None
+    client_cert = None
     consumer_cert_path = repo.get('consumer_cert')
     if consumer_cert_path:
         f = open(consumer_cert_path)
