@@ -17,7 +17,7 @@ the objects passed into the components during initialization as well as
 the base classes that extension components must implement.
 """
 
-from okaara.cli import Section, Command
+from okaara.cli import Section, Command, Option, Flag
 
 # -- component initialization -------------------------------------------------
 
@@ -55,5 +55,11 @@ class ClientContext:
 class PulpCliSection(Section):
     pass
 
-class PulpCliCommnad(Command):
+class PulpCliCommand(Command):
+    pass
+
+class PulpCliOption(Option):
+    pass
+
+class PulpCliFlag(Flag):
     pass
