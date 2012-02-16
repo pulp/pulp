@@ -231,20 +231,8 @@ class BaseSynchronizer(object):
             skip = {}
         if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
-            log.debug("Begin to add packages from %s into %s" % (encode_unicode(dir), encode_unicode(repo['id'])))
-            unfiltered_pkglist = pulp.server.util.get_repo_packages(dir)
-            # Process repo filters if any
-            if repo['filters']:
-                log.info("Repo filters : %s" % repo['filters'])
-                whitelist_packages = self.repo_api.find_combined_whitelist_packages(repo['filters'])
-                blacklist_packages = self.repo_api.find_combined_blacklist_packages(repo['filters'])
-                log.info("combined whitelist packages = %s" % whitelist_packages)
-                log.info("combined blacklist packages = %s" % blacklist_packages)
-            else:
-                whitelist_packages = []
-                blacklist_packages = []
-
-            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+            log.info("Begin to add packages from %s into %s" % (encode_unicode(dir), encode_unicode(repo['id'])))
+            package_list = pulp.server.util.get_repo_packages(dir)
             log.debug("Processing %s potential packages" % (len(package_list)))
             for package in package_list:
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package.name, package.version, \
@@ -316,7 +304,7 @@ class BaseSynchronizer(object):
                 log.info("combined whitelist packages = %s" % whitelist_packages)
                 log.info("combined blacklist packages = %s" % blacklist_packages)
             # apply any filters
-            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages, is_clone=True)
 
             for package in package_list:
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package['name'], package['version'], \
@@ -903,7 +891,7 @@ class YumSynchronizer(BaseSynchronizer):
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(dst_pkg_path, repo_pkg_path)
 
-    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages, dst_repo_dir=None, is_clone=False):
         pkglist = []
         if not unfiltered_pkglist:
             return pkglist
@@ -930,6 +918,18 @@ class YumSynchronizer(BaseSynchronizer):
                         break
             for pkg in to_remove:
                 pkglist.remove(pkg)
+
+        # Make sure we don't filter packages that already exist in the repository
+        if not is_clone:
+            assert(dst_repo_dir is not None)
+            for pkg in unfiltered_pkglist:
+                dst_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), pkg.name, pkg.
+                                                         version, pkg.release, pkg.arch, pkg.checksum[:3], os.path.basename(pkg.relativepath))
+                if pulp.server.util.check_package_exists(dst_pkg_path, pkg.checksum, hashtype=pkg.checksum_type):
+                    repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg.relativepath))
+                    if os.path.islink(repo_pkg_path) and pkg not in pkglist:
+                        pkglist.append(pkg)
+
         if len(list(unfiltered_pkglist)) and len(list(unfiltered_pkglist)) != len(pkglist):
             # filters modified the repo state, trigger metadata update
             self.do_update_metadata = True
@@ -948,7 +948,7 @@ class YumSynchronizer(BaseSynchronizer):
                    progress_callback=None):
         # Compute and import packages
         unfiltered_pkglist = pulp.server.util.get_repo_packages(src_repo_dir)
-        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages, dst_repo_dir)
 
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
@@ -1008,7 +1008,7 @@ class YumSynchronizer(BaseSynchronizer):
     def _clone_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, progress_callback=None):
         # Compute and clone packages
         unfiltered_pkglist = self.list_rpms(src_repo_dir)
-        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages, is_clone=True)
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
             progress_callback(self.progress)

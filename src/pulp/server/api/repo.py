@@ -1098,14 +1098,14 @@ class RepoApi(BaseApi):
             # Remove package from repo location on file system
             pkg_repo_path = pulp.server.util.get_repo_package_path(
                 repo['relative_path'], pkg["filename"])
-            if os.path.exists(pkg_repo_path):
+            if os.path.exists(encode_unicode(pkg_repo_path)):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_repo_path))
-                os.remove(pkg_repo_path)
+                os.remove(encode_unicode(pkg_repo_path))
         self.collection.save(repo, safe=True)
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
-        if not os.path.exists(repo_path):
-            pulp.server.util.makedirs(repo_path)
+        if not os.path.exists(encode_unicode(repo_path)):
+            pulp.server.util.makedirs(encode_unicode(repo_path))
         return errors
 
     def find_repos_by_package(self, pkgid):
