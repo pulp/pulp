@@ -80,7 +80,7 @@ def build_bind_data(repo, hostnames, key_list):
         repo_urls.append(repo_url)
         
     # add certificates
-    cacert = None
+    ssl_ca_cert = None
     clientcert = None
     consumer_cert_path = repo.get('consumer_cert')
     if consumer_cert_path:
