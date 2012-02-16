@@ -285,6 +285,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
 
         # Setup
         self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch')
+        self.config.set('security', 'ssl_ca_certificate', '')
 
         # Test
         bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
