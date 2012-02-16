@@ -23,10 +23,11 @@ from okaara.cli import Section, Command
 
 class ClientContext:
 
-    def __init__(self, server, config, logger, cli=None, shell=None):
+    def __init__(self, server, config, logger, prompt, cli=None, shell=None):
         self.server = server
         self.config = config
         self.logger = logger
+        self.prompt = prompt
 
         self.cli = cli
         self.shell = shell
@@ -39,6 +40,15 @@ class ClientContext:
 
     def logger(self):
         return self.logger
+
+    def prompt(self):
+        return self.prompt
+
+    def cli(self):
+        return self.cli
+
+    def shell(self):
+        return self.shell
 
 # -- cli components -----------------------------------------------------------
 

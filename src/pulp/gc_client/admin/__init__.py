@@ -10,21 +10,3 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-"""
-Defines Pulp additions to the okaara base classes. The subclasses
-for the individual components that belong to each UI style
-(e.g. commands, screens) can be found in extensions.py as they are meant to be
-further subclassed by extensions.
-"""
-
-from okaara.cli import Cli
-from okaara.prompt import Prompt, WIDTH_TERMINAL
-
-# -- classes ------------------------------------------------------------------
-
-class PulpPrompt(Prompt):
-    pass
-
-class PulpCli(Cli):
-    pass
