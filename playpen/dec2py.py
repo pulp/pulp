@@ -44,7 +44,14 @@ class Line(object):
         return self.ln.startswith('def')
 
     def ismlquote(self):
-        return self.ln.strip() == '"""'
+        s = self.ln.strip()
+        n = s.count('"""')
+        if n == 1: # only 1 found
+            return True
+        n = s.count("'''")
+        if n == 1: # only 1 found
+            return True
+        return False
 
     def isblank(self):
         return self.ln.strip() == ''
