@@ -37,6 +37,8 @@ TAG_SUCCESS = 'success'
 TAG_FAILURE = 'failure'
 TAG_EXCEPTION = 'exception'
 TAG_DOCUMENT = 'document'
+TAG_PROGRESS_BAR = 'progress_bar'
+TAG_SPINNER = 'spinner'
 
 COLOR_HEADER = okaara.prompt.COLOR_LIGHT_BLUE
 COLOR_SUCCESS = okaara.prompt.COLOR_LIGHT_GREEN
@@ -236,7 +238,8 @@ class PulpPrompt(Prompt):
         width = int(math.floor(BAR_PERCENTAGE * width))
 
         pb = ProgressBar(self, width=width, show_trailing_percentage=show_trailing_percentage,
-                         in_progress_color=COLOR_IN_PROGRESS, completed_color=COLOR_COMPLETED)
+                         in_progress_color=COLOR_IN_PROGRESS, completed_color=COLOR_COMPLETED,
+                         render_tag=TAG_PROGRESS_BAR)
         return pb
 
     def create_spinner(self):
@@ -250,7 +253,7 @@ class PulpPrompt(Prompt):
         @return: Spinner
         """
 
-        spinner = Spinner(self)
+        spinner = Spinner(self, spin_tag=TAG_SPINNER)
         return spinner
 
 class PulpCli(Cli):

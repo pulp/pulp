@@ -77,7 +77,7 @@ class RenderTests(unittest.TestCase):
     def test_render_failure_message(self):
         # Test
         p = core.PulpPrompt(record_tags=True)
-        p.render_failure_message('Failure')
+        p.render_failure_message('Failure', reason='Stuff broke')
 
         # Verify
         self.assertEqual(1, len(p.get_write_tags()))
@@ -120,3 +120,25 @@ class RenderTests(unittest.TestCase):
         # Verify
         self.assertEqual(len(docs), len(p.get_write_tags()))
         self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+    def test_create_progress_bar(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        pb = p.create_progress_bar()
+        for i in range(0, 10):
+            pb.render(i, 10)
+
+        # Verify
+        self.assertEqual(10, len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_PROGRESS_BAR]))
+
+    def test_create_spinner(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        s = p.create_spinner()
+        for i in range(0, 10):
+            s.spin()
+
+        # Verify
+        self.assertEqual(10, len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_SPINNER]))
