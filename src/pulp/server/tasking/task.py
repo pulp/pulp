@@ -115,8 +115,17 @@ class Task(object):
 
         # task resources
         self.callable = callable
-        self.args = args or []
+
+        # encode args and kwargs using 'utf-8' encoding to allow i18n strings
+        if args:
+            self.args = [encode_unicode(arg) for arg in args]
+        else:
+            self.args = []
+        if kwargs:
+            for k, v in kwargs.items():
+                kwargs[k] = encode_unicode(v)
         self.kwargs = dict(kwargs or {})
+
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout_delta = timeout
         self.weight = weight

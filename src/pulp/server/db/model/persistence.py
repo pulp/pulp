@@ -50,13 +50,10 @@ class TaskSnapshot(Model):
         # snapshots from the database
         def _process_value(value):
             if not isinstance(value, basestring):
-                return value
-            try:
-                v = unicode(value).encode('ascii').strip()
-            except UnicodeDecodeError:
-                _log.info("UnicodeDecodeException when serializing task %s: %s, converting to unicode with utf-8" % (type(value), value))
-                v = value.decode('utf-8')
-            return v
+                return v
+            if value is not unicode:
+                value = value.decode('utf-8')
+            return value.encode('utf-8').strip()
 
         return dict([(k, _process_value(v)) for k, v in serialized_task.items()])
 
