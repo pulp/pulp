@@ -33,9 +33,10 @@ class RepoSyncTask(Task):
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
         super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout=timeout)
         self.repo_id = None
-        if len(args) > 0:
+
+        if len(self.args) > 0:
             # Assuming that args first parameter is always the repo_id
-            self.repo_id = args[0]
+            self.repo_id = self.args[0]
         self.synchronizer = None
 
     def set_synchronizer(self, sync_obj):

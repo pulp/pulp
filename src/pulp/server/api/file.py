@@ -29,6 +29,12 @@ log = logging.getLogger(__name__)
 
 file_fields = model.File(None, None, None, None, None, None).keys()
 
+class FileHasReferences(Exception):
+
+    MSG = 'file [%s] has references, delete not permitted'
+
+    def __init__(self, id):
+        Exception.__init__(self, self.MSG % id)
 
 class FileApi(BaseApi):
 
@@ -82,6 +88,8 @@ class FileApi(BaseApi):
         if not fileobj:
             log.error("File id [%s] not found " % id)
             return
+        if self.referenced(id):
+            raise FileHasReferences(id)
         file_path = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
                                         fileobj['filename'], fileobj['checksum']['sha256'],
                                         fileobj['filename'])
@@ -120,6 +128,18 @@ class FileApi(BaseApi):
             return list(self.collection.find(fields=fields))
         else:
             return list(self.collection.find(searchDict, fields=fields))
+
+    def referenced(self, id):
+        """
+        check if a file is referenced.
+        @param id: A file ID.
+        @type id: str
+        @return: True if referenced
+        @rtype: bool
+        """
+        collection = model.Repo.get_collection()
+        repo = collection.find_one({"files":id}, fields=["id"])
+        return (repo is not None)
 
     def orphaned_files(self, fields=["filename", "checksum"]):
         #TODO: Revist this when model changes so we don't need to import RepoApi

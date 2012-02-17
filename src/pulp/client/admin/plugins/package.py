@@ -348,7 +348,7 @@ class Search(PackageAction):
         self.parser.add_option("-v", "--version", dest="version", default=None,
                                help=_("package version regex to search for"))
         self.parser.add_option("-p", "--repoid", action="append", dest="repoid", default=[],
-                               help=_("repository labels; to specify multiple repositories use multiple -p; if not specified, search will be conducted on all the repositories"))
+                               help=_("repository labels; to specify multiple repositories use multiple -p; if not specified, search will be conducted on all repositories"))
 
     def run(self):
         arch = self.opts.arch
@@ -400,7 +400,7 @@ class Search(PackageAction):
 class DependencyList(PackageAction):
 
     name = "deplist"
-    description = _('List available dependencies')
+    description = _('list available dependencies')
 
     def setup_parser(self):
         self.parser.add_option("-n", "--name", action="append", dest="pnames", default=[],

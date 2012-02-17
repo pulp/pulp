@@ -36,8 +36,7 @@ from pulp.server.event.handler.task import TaskDequeued
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
 from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.util import top_repos_location
-from pulp.server.util import top_gpg_location
+from pulp.server.util import top_repos_location, top_gpg_location, encode_unicode
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
@@ -61,6 +60,9 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
             on failure None is returned
     @return
     """
+    repo_api.check_for_whitespace(clone_id, "clone_id")
+    if relative_path:
+        repo_api.check_for_whitespace(relative_path, "relative_path")
     repo = repo_api.repository(id)
     if repo is None:
         raise PulpException("A Repo with id %s does not exist" % id)
@@ -271,7 +273,7 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
         sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()
-        log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
+        log.info("Sync on %s returned %s packages, %s errata in %s seconds" % (repo_id, len(sync_packages),
             len(sync_errataids), (end_sync_items - start_sync_items)))
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call
@@ -381,6 +383,8 @@ def import_comps(repoid, comps_data=None):
     bs = BaseSynchronizer()
     status = bs.sync_groups_data(compsobj, repo)
     repo_api.collection.save(repo, safe=True)
+    # write the xml to repodata location
+    repo_api._update_groups_metadata(repoid)
     return status
 
 def export_comps(repoid):

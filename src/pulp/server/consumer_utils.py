@@ -80,25 +80,28 @@ def build_bind_data(repo, hostnames, key_list):
         repo_urls.append(repo_url)
         
     # add certificates
-    cacert = None
-    clientcert = None
-    path = repo.get('consumer_ca')
-    if path:
-        f = open(path)
-        cacert = f.read()
+    ssl_ca_cert = None
+    client_cert = None
+    consumer_cert_path = repo.get('consumer_cert')
+    if consumer_cert_path:
+        f = open(consumer_cert_path)
+        client_cert = f.read()
         f.close()
-    path = repo.get('consumer_cert')
-    if path:
-        f = open(path)
-        clientcert = f.read()
-        f.close()
+
+        # Only set the ssl ca cert if the repo has been configured to use a
+        # consumer cert.
+        ssl_ca_cert_path = pulp.server.config.config.get('security', 'ssl_ca_certificate')
+        if ssl_ca_cert_path:
+            f = open(ssl_ca_cert_path)
+            ssl_ca_cert = f.read()
+            f.close()
 
     bind_data = {
         'repo' : prune(repo),
         'host_urls' : repo_urls,
         'gpg_keys' : key_list,
-        'cacert' : cacert,
-        'clientcert' : clientcert,
+        'cacert' : ssl_ca_cert,
+        'clientcert' : client_cert,
     }
 
     return bind_data

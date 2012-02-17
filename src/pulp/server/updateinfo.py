@@ -50,7 +50,7 @@ def get_update_notices(path_to_updateinfo):
     Dictionary is based on keys from yum.update_md.UpdateNotice
     """
     um = UpdateMetadata()
-    um.add(path_to_updateinfo)
+    um.add(pulp.server.util.encode_unicode(path_to_updateinfo))
     notices = []
     for info in um.get_notices():
         notices.append(info.get_metadata())

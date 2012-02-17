@@ -59,6 +59,7 @@ _default_values = {
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
+        'ssl_ca_certificate' : '/etc/pki/pulp/ssl_ca.crt',
     },
     'server': {
         'server_name': 'localhost',

@@ -93,18 +93,16 @@ class Revoke(PermissionAction):
         resource = self.get_required_option('resource')
         operations = self.get_required_option('operations', 'operation')
         operations = [o.upper() for o in operations]
+        if not self.opts.users and not self.opts.roles:
+            system_exit(os.EX_NOINPUT, _('Either a user or a role is required'))
         for user in self.opts.users:
-            success = self.permission_api.revoke_permission_from_user(resource,
-                                                                 user,
-                                                                 operations)
+            success = self.permission_api.revoke_permission_from_user(resource, user, operations)
             if not success:
                 continue
             print _('Operations %s revoked from user [ %s ] on resource [ %s ]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
-            success = self.permission_api.revoke_permission_from_role(resource,
-                                                                 role,
-                                                                 operations)
+            success = self.permission_api.revoke_permission_from_role(resource, role, operations)
             if not success:
                 continue
             print _('Operations %s revoked from role [ %s ] on resource [ %s ]') % \

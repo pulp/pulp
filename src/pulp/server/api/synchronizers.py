@@ -40,6 +40,7 @@ from pulp.server.api.file import FileApi
 
 import pulp.server.comps_util
 import pulp.server.util
+from pulp.common.util import encode_unicode, decode_unicode
 from pulp.server import config, constants, updateinfo
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
@@ -230,20 +231,8 @@ class BaseSynchronizer(object):
             skip = {}
         if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
-            log.debug("Begin to add packages from %s into %s" % (pulp.server.util.encode_unicode(dir), pulp.server.util.encode_unicode(repo['id'])))
-            unfiltered_pkglist = pulp.server.util.get_repo_packages(dir)
-            # Process repo filters if any
-            if repo['filters']:
-                log.info("Repo filters : %s" % repo['filters'])
-                whitelist_packages = self.repo_api.find_combined_whitelist_packages(repo['filters'])
-                blacklist_packages = self.repo_api.find_combined_blacklist_packages(repo['filters'])
-                log.info("combined whitelist packages = %s" % whitelist_packages)
-                log.info("combined blacklist packages = %s" % blacklist_packages)
-            else:
-                whitelist_packages = []
-                blacklist_packages = []
-
-            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+            log.info("Begin to add packages from %s into %s" % (encode_unicode(dir), encode_unicode(repo['id'])))
+            package_list = pulp.server.util.get_repo_packages(dir)
             log.debug("Processing %s potential packages" % (len(package_list)))
             for package in package_list:
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package.name, package.version, \
@@ -315,7 +304,7 @@ class BaseSynchronizer(object):
                 log.info("combined whitelist packages = %s" % whitelist_packages)
                 log.info("combined blacklist packages = %s" % blacklist_packages)
             # apply any filters
-            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+            package_list = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages, is_clone=True)
 
             for package in package_list:
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package['name'], package['version'], \
@@ -364,11 +353,11 @@ class BaseSynchronizer(object):
         try:
             repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         except UnicodeDecodeError:
-            dir = pulp.server.util.decode_unicode(dir)
+            dir = decode_unicode(dir)
             repomd_xml_path = os.path.join(dir, 'repodata/repomd.xml')
-        if os.path.isfile(pulp.server.util.encode_unicode(repomd_xml_path)):
+        if os.path.isfile(encode_unicode(repomd_xml_path)):
             repo["repomd_xml_path"] = repomd_xml_path
-            ftypes = pulp.server.util.get_repomd_filetypes(pulp.server.util.encode_unicode(repomd_xml_path))
+            ftypes = pulp.server.util.get_repomd_filetypes(encode_unicode(repomd_xml_path))
             log.debug("repodata has filetypes of %s" % (ftypes))
             if "group" in ftypes:
                 group_xml_path = pulp.server.util.get_repomd_filetype_path(repomd_xml_path.encode('utf-8'), "group")
@@ -376,7 +365,7 @@ class BaseSynchronizer(object):
                     group_xml_path = os.path.join(dir, group_xml_path)
                 else:
                     group_xml_path = os.path.join(dir.encode("ascii", "ignore"), group_xml_path)
-                group_xml_path = pulp.server.util.encode_unicode(group_xml_path)
+                group_xml_path = encode_unicode(group_xml_path)
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
@@ -386,7 +375,7 @@ class BaseSynchronizer(object):
                     log.info("Group info not found at file: %s" % (group_xml_path))
             if "group_gz" in ftypes:
                 group_gz_xml_path = pulp.server.util.get_repomd_filetype_path(
-                        pulp.server.util.encode_unicode(repomd_xml_path), "group_gz")
+                        encode_unicode(repomd_xml_path), "group_gz")
                 if type(dir) is unicode:
                     group_gz_xml_path = os.path.join(dir, group_gz_xml_path)
                 else:
@@ -395,7 +384,7 @@ class BaseSynchronizer(object):
                 repo['group_gz_xml_path'] = group_gz_xml_path
             if "updateinfo" in ftypes and (not skip.has_key('errata') or skip['errata'] != 1):
                 updateinfo_xml_path = pulp.server.util.get_repomd_filetype_path(
-                        pulp.server.util.encode_unicode(repomd_xml_path), "updateinfo")
+                        encode_unicode(repomd_xml_path), "updateinfo")
                 if type(dir) is unicode:
                     updateinfo_xml_path = os.path.join(dir, updateinfo_xml_path)
                 else:
@@ -762,7 +751,7 @@ class YumSynchronizer(BaseSynchronizer):
                                 proxy_user=self.proxy_user or None, proxy_pass=self.proxy_pass or None,
                                 max_speed=limit_in_KB, distro_location=pulp.server.util.top_distribution_location(),
                                 tmp_path = pulp.server.util.tmp_cache_location())
-            relative_path = repo['relative_path']
+            relative_path = encode_unicode(repo['relative_path'])
             if relative_path:
                 store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
             else:
@@ -835,8 +824,9 @@ class YumSynchronizer(BaseSynchronizer):
     def set_repo_checksum_type(self, repo):
         # At this point we have either downloaded the source metadata from a remote or local feed
         # lets lookup the checksum type for primary xml in repomd.xml and use that for createrepo
-        log.debug('Determining checksum type for repo id %s' % repo)
+        log.debug('Determining checksum type for repo id %s' % (repo["id"]))
         repo_metadata = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "repodata/repomd.xml")
+        repo_metadata = encode_unicode(repo_metadata)
         if os.path.exists(repo_metadata):
             repo['checksum_type'] = pulp.server.util.get_repomd_filetype_dump(repo_metadata)['primary']['checksum'][0]
         elif not repo['checksum_type']:
@@ -901,7 +891,7 @@ class YumSynchronizer(BaseSynchronizer):
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(dst_pkg_path, repo_pkg_path)
 
-    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages, dst_repo_dir=None, is_clone=False):
         pkglist = []
         if not unfiltered_pkglist:
             return pkglist
@@ -928,6 +918,18 @@ class YumSynchronizer(BaseSynchronizer):
                         break
             for pkg in to_remove:
                 pkglist.remove(pkg)
+
+        # Make sure we don't filter packages that already exist in the repository
+        if not is_clone:
+            assert(dst_repo_dir is not None)
+            for pkg in unfiltered_pkglist:
+                dst_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), pkg.name, pkg.
+                                                         version, pkg.release, pkg.arch, pkg.checksum[:3], os.path.basename(pkg.relativepath))
+                if pulp.server.util.check_package_exists(dst_pkg_path, pkg.checksum, hashtype=pkg.checksum_type):
+                    repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg.relativepath))
+                    if os.path.islink(repo_pkg_path) and pkg not in pkglist:
+                        pkglist.append(pkg)
+
         if len(list(unfiltered_pkglist)) and len(list(unfiltered_pkglist)) != len(pkglist):
             # filters modified the repo state, trigger metadata update
             self.do_update_metadata = True
@@ -946,7 +948,7 @@ class YumSynchronizer(BaseSynchronizer):
                    progress_callback=None):
         # Compute and import packages
         unfiltered_pkglist = pulp.server.util.get_repo_packages(src_repo_dir)
-        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages, dst_repo_dir)
 
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
@@ -1006,7 +1008,7 @@ class YumSynchronizer(BaseSynchronizer):
     def _clone_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, progress_callback=None):
         # Compute and clone packages
         unfiltered_pkglist = self.list_rpms(src_repo_dir)
-        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
+        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages, is_clone=True)
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
             progress_callback(self.progress)
@@ -1221,11 +1223,11 @@ class YumSynchronizer(BaseSynchronizer):
                 whitelist_packages = []
                 blacklist_packages = []
 
-            src_repo_dir = pulp.server.util.encode_unicode(src_repo_dir)
+            src_repo_dir = encode_unicode(src_repo_dir)
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
 
-            dst_repo_dir = pulp.server.util.encode_unicode(dst_repo_dir)
+            dst_repo_dir = encode_unicode(dst_repo_dir)
             if not os.path.exists(dst_repo_dir):
                 os.makedirs(dst_repo_dir)
 

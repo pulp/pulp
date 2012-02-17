@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.265
+Version:        0.0.267
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -79,6 +79,14 @@ Requires: python-ctypes
 Requires: python-hashlib
 Requires: nss >= 3.12.9
 Requires: curl => 7.19.7
+%endif
+
+%if 0%{?rhel} == 5
+# RHEL-5
+Requires: mkisofs
+%else
+# RHEL-6 & Fedora
+Requires: genisoimage
 %endif
 
 # Both attempt to serve content at the same apache alias, so don't
@@ -360,9 +368,16 @@ if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
 fi
 
+# Label port 5674 as amqp_port_t so qpidd can bind to it.
+if /usr/sbin/selinuxenabled ; then
+ echo "Enabling port 5674 for qpidd"
+ /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5674
+ /usr/sbin/semanage port -a -t amqp_port_t -p udp 5674
+fi
+
 # restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
 # Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
-%posttrans
+%posttrans selinux-server
 if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
 fi
@@ -489,6 +504,55 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Feb 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-1
+- 733312 - Make sure sync does not remove already existing packages from a repo
+  during filter operation (skarmark@redhat.com)
+- 790157 override ssl_ca_cert config in unit test (jslagle@redhat.com)
+- 790157 Fix variable reference (jslagle@redhat.com)
+- 790157 Fix variable reference (jslagle@redhat.com)
+- 790157 Only set cacert if the repo is protected (jslagle@redhat.com)
+- 790005 SELinux fix for qpidd https (jslagle@redhat.com)
+- 790157 Use ssl_ca_certificate config to send down for cacert to consumer
+  during repo bind operation (jslagle@redhat.com)
+- 790806 - Added handling for proper encoding of i18n relativepath with utf-8
+  encoding (skarmark@redhat.com)
+- 790198 - write the updated comps information to the repo
+  (pkilambi@redhat.com)
+- Update URLs in functional tests to use v1 testing (jmatthews@redhat.com)
+- 790069 - pulp repo sync from mounted ISO - Permission denied:
+  repodata.old/repomd.xml (jmatthews@redhat.com)
+- 789083, 790838, 790791 - Added regex checking and validation error when repo
+  id or relative path contains whitespace characters (skarmark@redhat.com)
+- Adding a dependency on mkiosfs/genisoimage to pulp for iso generation on
+  exports (pkilambi@redhat.com)
+- 790602 assuring that if None is passed up from the client, we are not using
+  it as the sync_options (jconnor@redhat.com)
+- 790285 - adding a reference check to file with repo associate on delete
+  (pkilambi@redhat.com)
+- Moved pic under pulp.common (jason.dobies@redhat.com)
+- 790140 added same check in grant for asserting that a user or a role is
+  passed in (jconnor@redhat.com)
+- 790141 added automatic permissions for newly created user that gives them the
+  ability to read and update their own information as well as fetch their admin
+  certificate so they can log in (jconnor@redhat.com)
+- 790218 - adding fix to ensure urls with missing slash are discovered
+  (pkilambi@redhat.com)
+- 790015 - adding support for ppc arch on repos (pkilambi@redhat.com)
+- Adding errata update support to cli and web services (pkilambi@redhat.com)
+- 788565 - fix selinux relabel of files from CDS rpm install
+  (jmatthews@redhat.com)
+* Mon Feb 13 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.266-1
+- 789505 - move encode_unicode() and decode_unicode() to common/utils.py
+  functions referenced in repo_cert_utils.py which is used by the CDS.
+  (jortel@redhat.com)
+- Fixing conversion of task args and kwargs so as to handle unicode as well as
+  other exception correctly (skarmark@redhat.com)
+- Reduce concurrent sync tasks and number of threads (jmatthews@redhat.com)
+- Added unit test runner script from RHEL test debugging
+  (jason.dobies@redhat.com)
+- 712065 - limit the logging when we upload/associate packages
+  (pkilambi@redhat.com)
+
 * Mon Feb 06 2012 Jeff Ortel <jortel@redhat.com> 0.0.265-1
 - 787310 - fixing error during repo sync when trying to access a variable
   before assignment when failed to load repo-md data (skarmark@redhat.com)

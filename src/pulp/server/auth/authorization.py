@@ -223,6 +223,18 @@ def grant_automatic_permissions_for_created_resource(resource):
     return True
 
 
+def grant_automatic_permissions_for_new_user(user_name):
+    """
+    Grant the permissions required for a new user so that they my log into Pulp
+    and update their own information.
+    @param user_name: name of the new user
+    @type  user_name: str
+    """
+    user = _get_user(user_name)
+    _permission_api.grant('/users/%s/' % user_name, user, [READ, UPDATE])
+    _permission_api.grant('/users/admin_certificate/', user, [READ])
+
+
 def grant_automatic_permissions_to_consumer_user(user_name):
     """
     Grant the permissions required by a consumer user.

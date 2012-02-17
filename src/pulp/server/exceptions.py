@@ -11,23 +11,72 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+
+# base exception class ---------------------------------------------------------
 
 class PulpException(Exception):
     """
     Base exception class for Pulp.
     """
+    def __unicode__(self):
+        return u'Pulp exception: %s' % u', '.join(unicode(a) for a in self.args)
+
+
+# execution exceptions ---------------------------------------------------------
+
+class PulpExecutionException(PulpException):
+    """
+    Base class of exceptions raised during the execution of Pulp.
+
+    This should include things like bad configuration values, operation
+    failures (due to networking or tasking issues), or failure to find resources
+    based on the input given
+    """
     pass
 
 
-class PulpRuntimeError(PulpException):
+class InvalidConfiguration(PulpExecutionException):
+    pass
+
+
+class MissingResource(PulpExecutionException):
+    pass
+
+
+class ConflictingOperation(PulpExecutionException):
+    pass
+
+
+class OperationFailed(PulpExecutionException):
+    pass
+
+# data exceptions --------------------------------------------------------------
+
+class PulpDataException(PulpException):
     """
-    Base exception class for runtime errors in Pulp.
+    Base class of exceptions raised due to data validation errors.
+
+    This should include things like invalid, missing or superfluous data.
     """
     pass
 
 
-class PulpValidationError(PulpException):
-    """
-    Base exception class for data validation failures in Pulp.
-    """
+class InvalidType(PulpDataException):
+    pass
+
+
+class InvalidValue(PulpDataException):
+    pass
+
+
+class MissingData(PulpDataException):
+    pass
+
+
+class SuperfluousData(PulpDataException):
+    pass
+
+
+class DuplicateResource(PulpDataException):
     pass

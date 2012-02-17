@@ -22,6 +22,7 @@ import signal
 import shlex
 import shutil
 import sre_constants
+import stat
 import string
 import subprocess
 import tempfile
@@ -35,6 +36,7 @@ import errno
 from pulp.server import config, constants
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
+from pulp.common.util import encode_unicode, decode_unicode
 from grinder import GrinderUtils
 from grinder import RepoFetch
 
@@ -117,22 +119,6 @@ def top_file_location():
 
 def top_distribution_location():
     return os.path.join(constants.LOCAL_STORAGE, "distributions")
-
-def encode_unicode(path):
-    """
-    Check if given path is a unicode and if yes, return utf-8 encoded path
-    """
-    if type(path) is unicode:
-        path = path.encode('utf-8')
-    return path
-
-def decode_unicode(path):
-    """
-    Check if given path is of type str and if yes, convert it to unicode
-    """
-    if type(path) is str:
-        path = path.decode('utf-8')
-    return path
 
 def tmp_cache_location():
     cache_dir = os.path.join(constants.LOCAL_STORAGE, "cache")
@@ -451,6 +437,7 @@ def create_rel_symlink(source_path, dest_path):
     return create_symlinks(rel_path, dest_path)
 
 def create_symlinks(source_path, link_path):
+    link_path = encode_unicode(link_path)
     if not os.path.exists(os.path.dirname(link_path)):
         # Create published dir as well as 
         # any needed dir parts if rel_path has multiple parts
@@ -459,8 +446,8 @@ def create_symlinks(source_path, link_path):
         if os.path.lexists(link_path):
             # Clean up broken sym link
             os.unlink(link_path)
-        log.debug("Create symlink for [%s] to [%s]" % (source_path, link_path))
-        os.symlink(source_path, link_path)
+        log.debug("Create symlink for [%s] to [%s]" % (decode_unicode(source_path), decode_unicode(link_path)))
+        os.symlink(encode_unicode(source_path), link_path)
         
 def _create_repo(dir, groups=None, checksum_type="sha256"):
     try:
@@ -523,9 +510,11 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
                 log.debug("clean up any stale dirs")
                 shutil.rmtree(backup_repo_dir)
             shutil.copytree(current_repo_dir, backup_repo_dir)
+            os.system("chmod -R u+wX %s" % (backup_repo_dir))
         handle = _create_repo(dir, groups=groups, checksum_type=checksum_type)
         if not handle:
             raise CreateRepoError("Unable to execute createrepo on %s" % (dir))
+        os.system("chmod -R ug+wX %s" % (dir))
         CREATE_REPO_PROCESS_LOOKUP[dir] = handle
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
