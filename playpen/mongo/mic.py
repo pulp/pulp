@@ -12,7 +12,7 @@ _db = None
 
 # client api -------------------------------------------------------------------
 
-def connect(db_name='test'):
+def connect(db_name='pulp_database'):
     """
     Connect to a test database.
     Optional argument, db_name, specifies the name of the database.
