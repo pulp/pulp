@@ -19,6 +19,7 @@ further subclassed by extensions.
 """
 
 import math
+import sys
 
 from   okaara.cli import Cli
 from   okaara.progress import ProgressBar, Spinner
@@ -35,7 +36,7 @@ TAG_SECTION = 'section'
 TAG_SUCCESS = 'success'
 TAG_FAILURE = 'failure'
 TAG_EXCEPTION = 'exception'
-TAG_DOCUMENT_LIST = 'document_list'
+TAG_DOCUMENT = 'document'
 
 COLOR_HEADER = okaara.prompt.COLOR_LIGHT_BLUE
 COLOR_SUCCESS = okaara.prompt.COLOR_LIGHT_GREEN
@@ -48,6 +49,11 @@ BAR_PERCENTAGE = .66
 # -- classes ------------------------------------------------------------------
 
 class PulpPrompt(Prompt):
+
+    def __init__(self, input=sys.stdin, output=sys.stdout, enable_color=True,
+                 wrap_width=80, record_tags=False):
+        Prompt.__init__(self, input=input, output=output, enable_color=enable_color,
+                        wrap_width=wrap_width, record_tags=record_tags)
 
     def render_spacer(self, lines=1):
         """
@@ -155,18 +161,13 @@ class PulpPrompt(Prompt):
             self.write(' - %s' % reason)
         self.render_spacer()
 
-    def render_exception(self, exception, traceback=None):
+    def render_document(self, document, filters=None, spaces_between_cols=2, indent=0):
         """
-        Prints an exception and all of its details using standard Pulp formatting.
-
-        @param exception: exception object that occurred
-        @type  exception: Exception
-
-        @param traceback: traceback that caused the exception
-        @type  traceback: traceback
+        Syntactic sugar method for rendering a single document. This call
+        behaves in the same way as render_document_list() but the primary
+        argument is a single document (or dict).
         """
-        pass
-
+        self.render_document_list([document], filters=filters, spaces_between_cols=spaces_between_cols, indent=indent)
 
     def render_document_list(self, items, filters=None, spaces_between_cols=2, indent=0):
         """
@@ -191,14 +192,20 @@ class PulpPrompt(Prompt):
 
         # Apply the filters if specified, making sure to not destroy the
         # caller's object in the process
-        if filters is not None:
-            items = dict([(k, v) for k, v in items if k in filters])
+        if filters is None:
+            filtered_items = items
+        else:
+            filtered_items = []
+            for i in items:
+                filtered = dict([(k, v) for k, v in i.items() if k in filters])
+                filtered_items.append(filtered)
 
         # Print each item
-        for k, v in items:
-            line = line_template % (str(k).capitalize(), str(v))
-            self.write(line, tag=TAG_DOCUMENT_LIST)
-            self.render_spacer()
+        for i in filtered_items:
+            for k, v in i.items():
+                line = line_template % (str(k).capitalize(), str(v))
+                self.write(line, tag=TAG_DOCUMENT)
+                self.render_spacer()
 
         self.render_spacer()
 

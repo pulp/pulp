@@ -1,0 +1,122 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2012 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+# Python
+import os
+import sys
+import unittest
+
+from pulp.gc_client.framework import core
+from okaara.prompt import Recorder
+
+# -- test cases ---------------------------------------------------------------
+
+class RenderTests(unittest.TestCase):
+
+    # These tests don't verify the visual output of the render functions; for
+    # now while we're playing with what they look like it's just too much of a
+    # pain. These tests at least call the methods to make sure they don't error
+    # and verify the proper tags are specified.
+
+    def test_render_title(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        p.render_title('Title')
+
+        # Verify
+        self.assertEqual(1, len(p.get_write_tags()))
+        self.assertEqual(core.TAG_TITLE, p.get_write_tags()[0])
+
+    def test_render_spacer(self):
+        # Test
+        r = Recorder()
+        p = core.PulpPrompt(output=r, enable_color=False)
+        p.render_spacer(lines=4)
+
+        # Verify
+        self.assertEqual(4, len(r.lines))
+        self.assertEqual(0, len([l for l in r.lines if l != '\n']))
+
+    def test_render_section(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        p.render_section('Section')
+
+        # Verify
+        self.assertEqual(1, len(p.get_write_tags()))
+        self.assertEqual(core.TAG_SECTION, p.get_write_tags()[0])
+
+    def test_render_paragraph(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        p.render_paragraph('Paragraph')
+
+        # Verify
+        self.assertEqual(1, len(p.get_write_tags()))
+        self.assertEqual(core.TAG_PARAGRAPH, p.get_write_tags()[0])
+
+    def test_render_success_message(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        p.render_success_message('Success')
+
+        # Verify
+        self.assertEqual(1, len(p.get_write_tags()))
+        self.assertEqual(core.TAG_SUCCESS, p.get_write_tags()[0])
+
+    def test_render_failure_message(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        p.render_failure_message('Failure')
+
+        # Verify
+        self.assertEqual(1, len(p.get_write_tags()))
+        self.assertEqual(core.TAG_FAILURE, p.get_write_tags()[0])
+
+    def test_render_document(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        doc = {'id' : 'd1', 'name' : 'document 1'}
+        p.render_document(doc)
+
+        # Verify
+        self.assertEqual(len(doc), len(p.get_write_tags()))
+        self.assertEqual(core.TAG_DOCUMENT, p.get_write_tags()[0])
+
+    def test_render_document_list(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        docs = [
+            {'id' : 'd1', 'name' : 'document 1'},
+            {'id' : 'd2', 'name' : 'document 2'},
+            {'id' : 'd3', 'name' : 'document 3'},
+        ]
+        p.render_document_list(docs)
+
+        # Verify
+        self.assertEqual(len(docs) * len(docs[0]), len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+    def test_render_document_list_with_filter(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        docs = [
+                {'id' : 'd1', 'name' : 'document 1'},
+                {'id' : 'd2', 'name' : 'document 2'},
+                {'id' : 'd3', 'name' : 'document 3'},
+        ]
+        p.render_document_list(docs, filters=['name'])
+
+        # Verify
+        self.assertEqual(len(docs), len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
