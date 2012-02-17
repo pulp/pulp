@@ -15,7 +15,7 @@
 # base api class --------------------------------------------------------------
 import re
 from gettext import gettext as _
-from pulp.server.exceptions import PulpValidationError
+from pulp.server.exceptions import PulpDataException
 
 
 class BaseApi(object):
@@ -65,12 +65,12 @@ class BaseApi(object):
         Raise an exception if id contains whitespace characters
         """
         if re.search('\s', id):
-            raise PulpValidationError(_("Given %s:[%s] is invalid. %s should not contain whitespace characters." % (entity_name, id, entity_name)))
+            raise PulpDataException(_("Given %s:[%s] is invalid. %s should not contain whitespace characters." % (entity_name, id, entity_name)))
 
     def check_id(self, id):
         """
         Make sure id is compliant with restrictions defined by following regex
         """
         if re.search("[^\w\-.]", id):
-            raise PulpValidationError(_("Given ID is invalid. ID may contain numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)"))
+            raise PulpDataException(_("Given ID is invalid. ID may contain numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)"))
     
