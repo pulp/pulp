@@ -33,9 +33,9 @@ class RepoCloneTask(Task):
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
         super(RepoCloneTask, self).__init__(callable, args, kwargs, timeout=timeout)
         self.clone_id = None
-        if len(args) > 0:
+        if len(self.args) > 0:
             # Assuming that args first parameter is always the clone_id
-            self.clone_id = args[0]
+            self.clone_id = self.args[0]
         self.synchronizer = None
 
     def set_synchronizer(self, sync_obj):

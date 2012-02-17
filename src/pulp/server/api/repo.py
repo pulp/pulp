@@ -528,8 +528,8 @@ class RepoApi(BaseApi):
         Returns True if sync is running for this repo, else returns False.
         """
         tasks = [t for t in find_async(method_name="_sync")
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+                 if (t.args and encode_unicode(id) in t.args) or
+                 (t.kwargs and encode_unicode(id) in t.kwargs.values())]
         for t in tasks:
             if getattr(t, 'state', None) not in (task_running,):
                 continue
@@ -565,10 +565,11 @@ class RepoApi(BaseApi):
 
         #update clone_ids of its parent repo
         parent_repos = self.repositories({'clone_ids' : id})
+
         if len(parent_repos) == 1:
             parent_repo = parent_repos[0]
             clone_ids = parent_repo['clone_ids']
-            clone_ids.remove(id)
+            clone_ids.remove(decode_unicode(id))
             parent_repo['clone_ids'] = clone_ids
             self.collection.save(parent_repo, safe=True)
 
@@ -666,7 +667,7 @@ class RepoApi(BaseApi):
 
         # remove any completed tasks related to this repo
         for task in async.complete_async():
-            if repo['_id'] in task.args or repo['_id'] in task.kwargs.values():
+            if encode_unicode(repo['_id']) in task.args or encode_unicode(repo['_id']) in task.kwargs.values():
                 async.drop_complete_async(task)
 
         # remove task history related to this repo
