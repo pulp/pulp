@@ -210,6 +210,29 @@ class TestRepoFilters(testutil.PulpAsyncTest):
         self.test_remove_packages_from_filter(get_random_unicode())
         self.clean()
         self.test_repo_associated_filter_delete(get_random_unicode())
+        
+    def test_sync_with_filters(self, id = 'some-id'):
+        # Test that sync with filters does not remove old packages
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = my_dir + "/data/repo_resync_b"
+        repo = self.repo_api.create(id, 'some name', 'i386',
+                                'file://%s' % datadir)
+
+        repo_sync._sync(id)
+        found1 = self.repo_api.repository(id)
+        packages1 = found1['packages']
+        assert(packages1 is not None)
+        assert(len(packages1) > 0)
+        
+        # Add filter to repository and sync
+        filter = self.filter_api.create('test-filter', type="blacklist", description="test filter",
+                                package_list=["pulp-test-package*"])
+        self.repo_api.add_filters(id, ['test-filter'])
+        repo_sync._sync(id)
+        found2 = self.repo_api.repository(id)
+        packages2 = found2['packages']
+        assert(packages2 is not None)
+        assert(len(packages1) == len(packages2))
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
