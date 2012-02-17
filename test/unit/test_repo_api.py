@@ -147,6 +147,25 @@ class TestRepoApi(testutil.PulpAsyncTest):
             'i386', 'http://example.com')
         assert(repo is not None)
 
+    def test_repo_create_with_whitespace(self):
+        repo_id = "test  whitespace"
+        self.assertRaises(PulpException, self.repo_api.create, repo_id, 'valid-name', 'bad-arch')
+        self.assertRaises(PulpException, self.repo_api.create, 'valid-id', 'valid-name', 'bad-arch', relative_path=repo_id)
+
+    def test_repo_clone_with_whitespace(self):
+        clone_id = "test  whitespace"
+        repo = self.repo_api.create('valid-id', 'some name',
+            'i386', 'http://example.com')
+        self.assertRaises(PulpException, repo_sync.clone, 'valid-id', clone_id, clone_id)
+        self.assertRaises(PulpException, repo_sync.clone, 'valid-id', 'valid-clone-id', 'valid-clone-id', relative_path=clone_id)
+
+    def test_i18n_repo_relative_path(self):
+        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
+        repo = self.repo_api.create(repo_id, 'some name', 'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/',
+                                    relative_path=repo_id)
+        assert(repo is not None)
+        repo_sync._sync(repo_id)
+
     def test_repo_create_with_notes(self, repo_id = 'some-repo-with-notes-id'):
         notes = {'key':'value','k':'v'}
         repo = self.repo_api.create(repo_id, 'some name',
