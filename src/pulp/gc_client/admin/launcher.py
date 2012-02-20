@@ -162,8 +162,11 @@ def fake_bindings():
             return repos
 
     class Bindings:
+        def __init__(self):
+            self.repo = RepoBindings()
+
         def repo(self):
-            return RepoBindings()
+            return self.repo
 
     return Bindings()
 
