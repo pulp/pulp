@@ -139,11 +139,17 @@ def main():
 
     # Load extensions into the UI in the context
     extensions_dir = config.get('general', 'extensions_dir')
-    extensions_loader.load_extensions(extensions_dir, context)
+    try:
+        extensions_loader.load_extensions(extensions_dir, context)
+    except extensions_loader.LoadFailed, e:
+        prompt.write('The following extensions failed to load: %s' % ', '.join(e.failed_packs))
+        prompt.write('More information on the failures can be found in %s' % config.get('logging', 'filename'))
+        return 1
 
     # Launch the appropriate UI (add in shell support here later)
     cli.run(args)
 
+    return 0
 
 def fake_bindings():
 
