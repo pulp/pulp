@@ -45,7 +45,7 @@ class ExtensionLoaderTests(testutil.PulpTest):
 
         self.prompt = PulpPrompt()
         self.cli = PulpCli(self.prompt)
-        self.context = ClientContext(None, None, None, cli=self.cli)
+        self.context = ClientContext(None, None, None, self.prompt, cli=self.cli)
 
     def test_load_valid_set_cli(self):
         """
@@ -84,7 +84,13 @@ class ExtensionLoaderTests(testutil.PulpTest):
         """
 
         # Test
-        loader.load_extensions(PARTIAL_FAIL_SET, self.context)
+        try:
+            loader.load_extensions(PARTIAL_FAIL_SET, self.context)
+            self.fail('Exception expected')
+        except loader.LoadFailed, e:
+            self.assertTrue(2, len(e.failed_packs))
+            self.assertTrue('init_exception' in e.failed_packs)
+            self.assertTrue('not_python_module' in e.failed_packs)
 
         # Verify
         self.assertTrue(self.cli.root_section.find_subsection('section-z') is not None)
@@ -105,7 +111,8 @@ class ExtensionLoaderTests(testutil.PulpTest):
         """
         Tests loading an extension pack that doesn't contain the cli init module.
         """
-        self.assertRaises(loader.NoUiHookModule, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'no_ui_hook', self.context)
+        # Make sure it doesn't raise an exception
+        loader._load_pack(INDIVIDUAL_FAIL_DIR, 'no_ui_hook', self.context)
 
     def test_load_initialize_error(self):
         """

@@ -45,8 +45,20 @@ class InvalidExtensionsDirectory(ExtensionLoaderException):
     def __str__(self):
         return _('Inaccessible or missing extensions directory [%(d)s]' % {'d' : self.dir})
 
+class LoadFailed(ExtensionLoaderException):
+    """
+    Raised if one or more of the extensions failed to load. All failed
+    extensions will be listed in the exception, however the causes are logged
+    rather than carried in this exception.
+    """
+    def __init__(self, failed_packs):
+        super(ExtensionLoaderException, self).__init__()
+        self.failed_packs = failed_packs
+
+    def __str__(self):
+        return _('The following extension packs failed to load: [%s]' % ', '.join(self.failed_packs))
+
 # Unit test marker exceptions
-class NoUiHookModule(ExtensionLoaderException): pass
 class ImportFailed(ExtensionLoaderException): pass
 class NoInitFunction(ExtensionLoaderException): pass
 class InitError(ExtensionLoaderException): pass
@@ -70,14 +82,18 @@ def load_extensions(extensions_dir, context):
     # Handle each extension pack in the directory in alphabetical order so
     # we can guarantee the loading order
     pack_names = sorted(os.listdir(extensions_dir))
+    error_packs = []
     for pack in pack_names:
         try:
             _load_pack(extensions_dir, pack, context)
         except ExtensionLoaderException:
             # Do a best-effort attempt to load all extensions. If any fail,
             # the cause will be logged by _load_pack. This method should
-            # continue to load extensions and thus the pass below is intentional.
-            pass
+            # continue to load extensions so all of the errors are logged.
+            error_packs.append(pack)
+
+    if len(error_packs) > 0:
+        raise LoadFailed(error_packs)
 
 def _load_pack(extensions_dir, pack_name, context):
 
@@ -98,8 +114,8 @@ def _load_pack(extensions_dir, pack_name, context):
     # UI style and a failure to load the init module.
     init_mod_filename = os.path.join(extensions_dir, pack_name, init_mod_name + '.py')
     if not os.path.exists(init_mod_filename):
-        _LOG.info(_('No initialization module [%(m)s] found, skipping initialization' % {'m' : init_mod_filename}))
-        raise NoUiHookModule()
+        _LOG.info(_('No plugin initialization module [%(m)s] found, skipping initialization' % {'m' : init_mod_filename}))
+        return
 
     # Figure out the full package name for the module and import it.
     init_mod_name = '%s.%s' % (os.path.basename(pack_name), init_mod_name)
