@@ -18,6 +18,7 @@ for the individual components that belong to each UI style
 further subclassed by extensions.
 """
 
+import copy
 import math
 import sys
 
@@ -171,7 +172,8 @@ class PulpPrompt(Prompt):
         """
         self.render_document_list([document], filters=filters, spaces_between_cols=spaces_between_cols, indent=indent)
 
-    def render_document_list(self, items, filters=None, spaces_between_cols=2, indent=0):
+    def render_document_list(self, items, filters=None, order=None,
+                             spaces_between_cols=2, indent=0):
         """
         Prints a list of JSON documents retrieved from the REST bindings (more
         generally, will print any list of dicts). The data will be output as
@@ -183,31 +185,60 @@ class PulpPrompt(Prompt):
         Thus the data does not need to be pre-stripped of unwanted fields, this
         call will skip them.
 
+        The order argument is a list of keys in the order they should be
+        rendered. Any keys not in the given list but that have passed the filter
+        test described above will be rendered in alphabetical order following
+        the ordered items.
+
         @type items: list
         @type filters: list
         @type spaces_between_cols: int
         """
 
-        # Generate template
-        max_key_length = len(max(items, key=len))
-        line_template = (' ' * indent) + '%-' + str(max_key_length) + 's:' + (' ' * spaces_between_cols) + '%s'
+        # Punch out early if the items list is empty; we access the first
+        # element later for max width calculation so we need there to be at
+        # least one item.
+        if len(items) is 0:
+            return
 
-        # Apply the filters if specified, making sure to not destroy the
-        # caller's object in the process
+        all_keys = items[0].keys()
+
+        # Generate template
+        max_key_length = len(max(all_keys, key=len)) + 1 # +1 for the : appended later
+        line_template = (' ' * indent) + '%-' + str(max_key_length) + 's' + (' ' * spaces_between_cols) + '%s'
+
+        # If no filters were specified, consider the filter to be all keys. This
+        # will make later calculations a ton easier.
         if filters is None:
-            filtered_items = items
+            filters = all_keys
+
+        # Apply the filters
+        filtered_items = []
+        for i in items:
+            filtered = dict([(k, v) for k, v in i.items() if k in filters])
+            filtered_items.append(filtered)
+
+        # Determine the order to display the items
+        if order is None:
+            ordered_keys = sorted(filters)
         else:
-            filtered_items = []
-            for i in items:
-                filtered = dict([(k, v) for k, v in i.items() if k in filters])
-                filtered_items.append(filtered)
+            # Remove any keys from the order that weren't in the filter
+            filtered_order = [o for o in order if o in filters]
+
+            # The order may only be a subset of filtered keys, so figure out
+            # which ones are missing and tack them onto the end
+            not_ordered = [k for k in filters if k not in filtered_order]
+
+            # Assemble the pieces: ordered keys + not ordered keys
+            ordered_keys = order + sorted(not_ordered)
 
         # Print each item
         for i in filtered_items:
-            for k, v in i.items():
-                line = line_template % (str(k).capitalize(), str(v))
+            for k in ordered_keys:
+                v = i[k]
+                line = line_template % (str(k).capitalize() + ':', str(v))
                 self.write(line, tag=TAG_DOCUMENT)
-                self.render_spacer()
+            self.render_spacer()
 
         self.render_spacer()
 

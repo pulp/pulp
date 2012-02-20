@@ -107,7 +107,8 @@ class RenderTests(unittest.TestCase):
 
     def test_render_document_list_with_filter(self):
         # Test
-        p = core.PulpPrompt(record_tags=True)
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
         docs = [
                 {'id' : 'd1', 'name' : 'document 1'},
                 {'id' : 'd2', 'name' : 'document 2'},
@@ -118,6 +119,74 @@ class RenderTests(unittest.TestCase):
         # Verify
         self.assertEqual(len(docs), len(p.get_write_tags()))
         self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+        self.assertTrue('Name' in r.lines[1])
+        self.assertEqual('\n', r.lines[2])
+        self.assertTrue('Name' in r.lines[3]) # shouldn't be "Id" since that was filtered out
+
+    def test_render_document_list_with_full_order(self):
+        # Test
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
+        docs = [
+                {'id' : 'd1', 'name' : 'document 1'},
+                {'id' : 'd2', 'name' : 'document 2'},
+                {'id' : 'd3', 'name' : 'document 3'},
+        ]
+        p.render_document_list(docs, order=['name', 'id'])
+
+        # Verify
+        self.assertEqual(len(docs) * len(docs[0]), len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+        self.assertTrue('Name' in r.lines[1])
+        self.assertTrue('Id' in r.lines[2])
+        self.assertEqual('\n', r.lines[3])
+
+    def test_render_document_list_with_partial_order(self):
+        # Test
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
+        docs = [
+                {'id' : 'd1', 'name' : 'document 1', 'description' : 'description 1'},
+        ]
+        p.render_document_list(docs, order=['name'])
+
+        # Verify
+        self.assertEqual(len(docs)* len(docs[0]), len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+        self.assertTrue('Name' in r.lines[1])
+        self.assertTrue('Description' in r.lines[2])
+        self.assertTrue('Id' in r.lines[3])
+        self.assertEqual('\n', r.lines[4])
+
+    def test_render_document_list_order_and_filter(self):
+        # Test
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
+        docs = [
+                {'id' : 'd1', 'name' : 'document 1', 'description' : 'description 1'},
+        ]
+        f = ['id', 'name']
+        p.render_document_list(docs, order=['name'], filters=f)
+
+        # Verify
+        self.assertEqual(len(docs)* len(f), len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+        self.assertTrue('Name' in r.lines[1])
+        self.assertTrue('Id' in r.lines[2])
+        self.assertEqual('\n', r.lines[3])
+
+    def test_render_document_list_no_items(self):
+        # Test
+        p = core.PulpPrompt(record_tags=True)
+        docs = []
+        p.render_document_list(docs)
+
+        # Verify
+        self.assertEqual(0, len(p.get_write_tags()))
 
     def test_create_progress_bar(self):
         # Test
