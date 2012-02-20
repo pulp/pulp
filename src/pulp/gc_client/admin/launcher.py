@@ -132,7 +132,7 @@ def main():
     cli = _create_cli(prompt)
 
     # REST Bindings
-    server = None
+    server = fake_bindings()
 
     # Assemble the client context
     context = ClientContext(server, config, logger, prompt, cli=cli)
@@ -143,6 +143,29 @@ def main():
 
     # Launch the appropriate UI (add in shell support here later)
     cli.run(args)
+
+
+def fake_bindings():
+
+    class RepoBindings:
+        def list(self):
+            repos = []
+
+            for i in range(0, 3):
+                r = {
+                    'id' : 'repo-%d' % i,
+                    'name' : 'Repo %d' % i,
+                    'description' : 'Fake repository #%d' % i,
+                }
+                repos.append(r)
+
+            return repos
+
+    class Bindings:
+        def repo(self):
+            return RepoBindings()
+
+    return Bindings()
 
 if __name__ == '__main__':
     sys.exit(main())
