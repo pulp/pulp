@@ -282,7 +282,7 @@ class Delete(ContentAction):
                 exit_code = os.EX_DATAERR
                 continue
             if pobj.has_key('repoids') and len(pobj['repoids']):
-                print _("Content with filename [%s] is currently associated a repository; skipping delete" % filename)
+                print _("Filename [%s] is currently associated with one or more repositories; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
             #TODO: Once package/file api are merge to contentapi, replace this check with global content_search
