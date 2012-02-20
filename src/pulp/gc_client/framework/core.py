@@ -18,7 +18,6 @@ for the individual components that belong to each UI style
 further subclassed by extensions.
 """
 
-import copy
 import math
 import sys
 
@@ -61,6 +60,9 @@ class PulpPrompt(Prompt):
     def render_spacer(self, lines=1):
         """
         Prints the provided number of blank lines.
+
+        :param lines: number of lines to skip
+        :type  lines: int
         """
         for i in range(0, lines):
             self.write('')
@@ -77,8 +79,8 @@ class PulpPrompt(Prompt):
         For testing verification, this call will result in one instance of
         TAG_TITLE being recorded.
 
-        @param title: text to format as a title
-        @type  title: str
+        :param title: text to format as a title
+        :type  title: str
         """
 
         if self.wrap_width is WIDTH_TERMINAL:
@@ -105,8 +107,8 @@ class PulpPrompt(Prompt):
         For testing verification, this call will result in one instance of
         TAG_SECTION being recorded.
 
-        @param section: text to format as a paragraph.
-        @type  section: str
+        :param section: text to format as a paragraph.
+        :type  section: str
         """
 
         self.write(section, tag=TAG_SECTION)
@@ -125,8 +127,8 @@ class PulpPrompt(Prompt):
         For testing verification, this call will result in one instance of
         TAG_PARAGRAPH being recorded.
 
-        @param paragraph: text to format as a paragraph
-        @type  paragraph: str
+        :param paragraph: text to format as a paragraph
+        :type  paragraph: str
         """
 
         self.write(paragraph, tag=TAG_PARAGRAPH)
@@ -137,8 +139,8 @@ class PulpPrompt(Prompt):
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to indicate an action has successfully taken place.
 
-        @param message: text to format
-        @type  message: str
+        :param message: text to format
+        :type  message: str
         """
 
         self.write(message, color=COLOR_SUCCESS, tag=TAG_SUCCESS)
@@ -152,11 +154,11 @@ class PulpPrompt(Prompt):
         If a separate reason is provided, it will be displayed in conjunction
         with the failure message.
 
-        @param message: text to format
-        @type  message: str
+        :param message: text to format
+        :type  message: str
 
-        @param reason: optional text describing why the failure occurred
-        @type  reason: str
+        :param reason: optional text describing why the failure occurred
+        :type  reason: str
         """
 
         self.write(message, color=COLOR_FAILURE, tag=TAG_FAILURE)
@@ -185,14 +187,22 @@ class PulpPrompt(Prompt):
         Thus the data does not need to be pre-stripped of unwanted fields, this
         call will skip them.
 
-        The order argument is a list of keys in the order they should be
+        The order argument is a list of keys in the order theyg should be
         rendered. Any keys not in the given list but that have passed the filter
         test described above will be rendered in alphabetical order following
         the ordered items.
 
-        @type items: list
-        @type filters: list
-        @type spaces_between_cols: int
+        :param items: list of items (each a dict) to render
+        :type  items: list
+
+        :param filters: list of fields in each dict to display
+        :type  filters: list
+
+        :param order: list of fields specifying the order in which they are rendered
+        :type  order: list
+
+        :param spaces_between_cols: number of spaces between the key and value columns
+        :type  spaces_between_cols: int
         """
 
         # Punch out early if the items list is empty; we access the first
@@ -256,9 +266,9 @@ class PulpPrompt(Prompt):
 
         If false, the bar will simply be displayed by itself.
 
-        @type show_trailing_percentage: bool
+        :type show_trailing_percentage: bool
 
-        @return: ProgressBar
+        :rtype: ProgressBar
         """
 
         if self.wrap_width is WIDTH_TERMINAL:
@@ -281,7 +291,7 @@ class PulpPrompt(Prompt):
         the spinners enumerated set of values is displayed by calling it's
         spin() method.
 
-        @return: Spinner
+        :rtype: Spinner
         """
 
         spinner = Spinner(self, spin_tag=TAG_SPINNER)
