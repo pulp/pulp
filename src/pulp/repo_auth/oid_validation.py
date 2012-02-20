@@ -210,5 +210,5 @@ class OidValidator:
 
         # Remove initial and trailing '/', and substitute the $variables for
         # equivalent regular expressions in oid_url.
-        oid_re = re.sub(r'\$[^/]+/', '[^/]+/', oid_url.strip('/'))
+        oid_re = re.sub(r'\$[^/]+(/|$)', '[^/]+/', oid_url.strip('/'))
         return re.match(oid_re, dest) is not None
