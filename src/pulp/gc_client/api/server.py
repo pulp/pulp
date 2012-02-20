@@ -27,17 +27,44 @@ except ImportError:
 from M2Crypto import SSL, httpslib
 
 from pulp.client.lib.logutil import getLogger, getResponseLogger
+
 # current active server -------------------------------------------------------
 
 active_server = None
 
-
 def set_active_server(server):
     global active_server
-    assert isinstance(server, Server)
+    assert isinstance(server, PulpServer)
     active_server = server
 
-# base server class -----------------------------------------------------------
+
+class PulpConnectionException(Exception):
+    pass
+
+class BadRequestException(PulpConnectionException):
+    """
+    Response code = 400
+    """
+    pass
+
+class NotFoundException(PulpConnectionException):
+    """
+    Response code = 404
+    """
+    pass
+
+class DuplicateResourceException(PulpConnectionException):
+    """
+    Response code = 409
+    """
+    pass
+
+class PulpServerException(PulpConnectionException):
+    """
+    Response code >= 500
+    """
+    pass
+
 
 class ServerRequestError(Exception):
     """
@@ -58,25 +85,35 @@ class NoCredentialsError(Exception):
     """
     pass
 
-class Bytes(str):
-    """
-    Binary (non-json) PUT/POST request body wrapper.
-    """
-    pass
 
+# server wrapper class which makes python connection calls and allows us to mock them
 
-class Server(object):
+class ServerWrapper(object):
+    def __init__(self, connection):
+        self.connection = connection
+
+    def request(self, method, url, body, headers):
+        self.connection.request(method, url, body=body, headers=headers)
+        try:
+            response = self.connection.getresponse()
+        except SSL.SSLError, err:
+            raise ServerRequestError(None, str(err), None)
+        response_body = response.read()
+        try:
+            response_body = json.loads(response_body)
+        except:
+            pass
+        return response.status, response_body
+
+# pulp server class -----------------------------------------------------------
+
+class PulpServer(object):
     """
-    Base server class.
-    @ivar host: host name of the pulp server
-    @ivar port: port the pulp server is listening on (443)
-    @ivar protocol: protocol the pulp server is using (http, https)
-    @ivar path_prefix: mount point of the pulp api (/pulp/api)
-    @ivar headers: dictionary of http headers to send in requests
-    @ivar timeout: connection timeout value in seconds
+    Pulp server connection class.
     """
 
-    def __init__(self, host, port=80, protocol='http', path_prefix='', timeout=60):
+    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api', timeout=120, connection=None,
+                 server_wrapper=None, api_responses_log=None, username=None, password=None, certfile=None):
         assert protocol in ('http', 'https')
 
         self.host = host
@@ -85,106 +122,7 @@ class Server(object):
         self.path_prefix = path_prefix
         self.headers = {}
         self.timeout = timeout
-
-    # credentials setters -----------------------------------------------------
-
-    def set_basic_auth_credentials(self, username, password):
-        """
-        Set username and password credentials for http basic auth
-        @type username: str
-        @param username: username
-        @type password: str
-        @param password: password
-        """
-        raise NotImplementedError('base server class method called')
-
-    def set_ssl_credentials(self, certfile):
-        """
-        Set ssl certificate and public key credentials
-        @type certfile: str
-        @param certfile: absolute path to the certificate file
-        @type keyfile: str
-        @param keyfile: absolute path to the public key file
-        @raise RuntimeError: if either of the files cannot be found or read
-        """
-        raise NotImplementedError('base server class method called')
-
-    def has_credentials_set(self):
-        raise NotImplementedError('base server class method called')
-
-    # request methods ---------------------------------------------------------
-
-    def DELETE(self, path, body=None):
-        """
-        Send a DELETE request to the pulp server.
-        @type path: str
-        @param path: path of the resource to delete
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
-        raise NotImplementedError('base server class method called')
-
-    def GET(self, path, queries=()):
-        """
-        Send a GET request to the pulp server.
-        @type path: str
-        @param path: path of the resource to get
-        @type queries: dict or iterable of tuple pairs
-        @param queries: dictionary of iterable of key, value pairs to send as
-                        query parameters in the request
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
-        raise NotImplementedError('base server class method called')
-
-    def HEAD(self, path):
-        """
-        Send a HEAD request to the pulp server.
-        @type path: str
-        @param path: path of the resource to check
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
-        raise NotImplementedError('base server class method called')
-
-    def POST(self, path, body=None):
-        """
-        Send a POST request to the pulp server.
-        @type path: str
-        @param path: path of the resource to post to
-        @type body: dict or None
-        @param body: (optional) dictionary for json encoding of post parameters
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
-        raise NotImplementedError('base server class method called')
-
-    def PUT(self, path, body):
-        """
-        Send a PUT request to the pulp server.
-        @type path: str
-        @param path: path of the resource to put
-        @type body: dict
-        @param body: dictionary for json encoding of resource
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
-        raise NotImplementedError('base server class method called')
-
-# pulp server class -----------------------------------------------------------
-
-class PulpServer(Server):
-    """
-    Pulp server connection class.
-    """
-
-    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api', timeout=120):
-        super(PulpServer, self).__init__(host, port, protocol, path_prefix, timeout)
+        self.api_responses_log = api_responses_log
 
         default_locale = locale.getdefaultlocale()[0]
         if default_locale:
@@ -201,11 +139,39 @@ class PulpServer(Server):
 
         self.__certfile = None
 
+        if connection:
+            self.connection = connection
+        else:
+            # make an appropriate connection to the pulp server
+            if self.protocol == 'http':
+                self._http_connection()
+            else:
+                self._https_connection()
+
+        if server_wrapper:
+            self.server_wrapper = server_wrapper
+        else:
+            self.server_wrapper = ServerWrapper(connection)
+
+        # set credentials or check if credentials are already set
+        if username and password:
+            self.set_basic_auth_credentials(username, password)
+        elif certfile:
+            self.set_ssl_credentials(certfile)
+        elif self.has_credentials_set():
+            pass
+        else:
+            msg = _('No valid authorization credentials found')
+            # try to deduce the name of the script, if we're being run from one
+            if sys.argv:
+                msg += _(', please see: %s --help') % os.path.basename(sys.argv[0])
+            raise NoCredentialsError(None, msg)
+
 
     # protected server connection methods -------------------------------------
 
     def _http_connection(self):
-        return httplib.HTTPConnection(self.host, self.port, timeout=self.timeout)
+        self.connection = httplib.HTTPConnection(self.host, self.port, timeout=self.timeout)
 
     def _https_connection(self):
         # make sure that passed in username and password overrides cert/key auth
@@ -215,24 +181,11 @@ class PulpServer(Server):
         ssl_context = SSL.Context('sslv3')
         ssl_context.set_session_timeout(self.timeout)
         ssl_context.load_cert(self.__certfile)
-        #print >> sys.stderr, 'making connection with: %s' % (self.__certfile)
-        return httpslib.HTTPSConnection(self.host,
+
+        self.connection = httpslib.HTTPSConnection(self.host,
                                         self.port,
                                         ssl_context=ssl_context)
 
-    def _connect(self):
-        # make sure credentials are set
-        if not self.has_credentials_set():
-            msg = _('No valid authorization credentials found')
-            # try to deduce the name of the script, if we're being run from one
-            if sys.argv:
-                msg += _(', please see: %s --help') % os.path.basename(sys.argv[0])
-            raise NoCredentialsError(None, msg)
-        # make an appropriate connection to the pulp server
-        if self.protocol == 'http':
-            return self._http_connection()
-        else:
-            return self._https_connection()
 
     # protected request utilities ---------------------------------------------
 
@@ -252,45 +205,40 @@ class PulpServer(Server):
             path = '?'.join((path, queries))
         return path
 
+
     def _request(self, method, path, queries=(), body=None):
         # make a request to the pulp server and return the response
         # NOTE this throws a ServerRequestError if the request did not succeed
-        connection = self._connect()
         url = self._build_url(path, queries)
-        if not isinstance(body, (type(None), Bytes,)):
+        if not isinstance(body, (type(None), str,)):
             body = json.dumps(body)
         self._log.debug('sending %s request to %s' % (method, url))
-        #print >> sys.stderr, 'sending %s request to %s' % (method, url)
-        connection.request(method, url, body=body, headers=self.headers)
-        try:
-            response = connection.getresponse()
-        except SSL.SSLError, err:
-            raise ServerRequestError(None, str(err), None)
-        response_body = response.read()
-        try:
-            response_body = json.loads(response_body)
-        except:
-            pass
 
-        if os.getenv("API_RESPONSE_LOG"):
-            self._response_log = getResponseLogger('api_responses', os.getenv("API_RESPONSE_LOG"))
+        response_code, response_body = self.server_wrapper.request(method=method, url=url,
+                                                    body=body, headers=self.headers)
+
+        if self.api_responses_log:
+            self._response_log = getResponseLogger('api_responses', self.api_responses_log)
             self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
-            self._response_log.info("Response status and reason : %s  %s\n" % (response.status, response.reason))
+            self._response_log.info("Response status : %s \n" % response_code)
             self._response_log.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
                 
-        if response.status >= 300:
-            # if the server has responded with a python traceback
-            # try to split it out
-            if isinstance(response_body, basestring) and \
-                    response_body.startswith('Traceback'):
-                traceback, message = response_body.strip().rsplit('\n', 1)
-                raise ServerRequestError(response.status, message, traceback)
-            raise ServerRequestError(response.status, response_body, None)
-        return (response.status, response_body)
+        if response_code >= 300:
+            self.handle_exceptions(response_code, response_body)
+        else:
+            return response_body
 
-    def _encoded(self, body):
-        if body is None:
-            return body
+    # Raise appropriate exceptions based on response code
+
+    def handle_exceptions(self, response_code, response_body):
+        if response_code == 400:
+            raise BadRequestException()
+        elif response_code == 404:
+            raise NotFoundException()
+        elif response_code == 409:
+            raise DuplicateResourceException()
+        else:
+            raise PulpServerException()
 
     # credentials setters -----------------------------------------------------
 
