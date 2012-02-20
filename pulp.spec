@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,6 +489,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Feb 20 2012 James Slagle <jslagle@redhat.com> 0.0.263-8
+- 795570 Fix repo auth oid substitution when the oid ends with a yum variable
+  (jslagle@redhat.com)
+- Forget to add test data dir in prior commit (jmatthews@redhat.com)
+
 * Wed Feb 15 2012 James Slagle <jslagle@redhat.com> 0.0.263-7
 - 788565 - fix selinux relabel of files from CDS rpm install
   (jmatthews@redhat.com)
