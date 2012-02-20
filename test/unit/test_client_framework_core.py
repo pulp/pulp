@@ -12,8 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
-import os
-import sys
 import unittest
 
 from pulp.gc_client.framework import core
