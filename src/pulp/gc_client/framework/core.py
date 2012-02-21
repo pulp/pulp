@@ -48,9 +48,14 @@ COLOR_COMPLETED = okaara.prompt.COLOR_LIGHT_GREEN
 
 BAR_PERCENTAGE = .66
 
+# Shadow here so callers don't need to import okaara directly
+ABORT = okaara.prompt.ABORT
+
 # -- classes ------------------------------------------------------------------
 
 class PulpPrompt(Prompt):
+
+    ABORT = ABORT
 
     def __init__(self, input=sys.stdin, output=sys.stdout, enable_color=True,
                  wrap_width=80, record_tags=False):
