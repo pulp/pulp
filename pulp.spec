@@ -504,6 +504,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Feb 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-2
+- bump release for build. (jortel@redhat.com)
+- bump gofer 0.66 for gofer deps. (jortel@redhat.com)
+- 790285 - fix the error message to be similar for both file and package
+  deletes (pkilambi@redhat.com)
+- 790806 - Changes to encode task args and kwargs to unicode before
+  snapshotting (skarmark@redhat.com)
+
 * Fri Feb 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-1
 - 733312 - Make sure sync does not remove already existing packages from a repo
   during filter operation (skarmark@redhat.com)
