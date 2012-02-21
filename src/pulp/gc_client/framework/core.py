@@ -55,6 +55,7 @@ ABORT = okaara.prompt.ABORT
 
 class PulpPrompt(Prompt):
 
+    # Shadowed for another alternative to referencing it
     ABORT = ABORT
 
     def __init__(self, input=sys.stdin, output=sys.stdout, enable_color=True,
