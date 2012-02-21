@@ -305,7 +305,20 @@ class PulpPrompt(Prompt):
         return spinner
 
 class PulpCli(Cli):
-    pass
+
+    def __init__(self, context):
+        Cli.__init__(self, context.prompt)
+        self.context = context
+
+    def run(self, args):
+        try:
+            Cli.run(self, args)
+            return 0
+        except Exception, e:
+            self.context.logger.exception('An error occurred during CLI execution')
+            log_file = self.context.config.get('logging', 'filename')
+            self.prompt.render_failure_message('An unexpected error has occurred. More information can be found in %s' % log_file)
+            return 1
 
 class ClientContext:
 
