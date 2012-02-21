@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -15,34 +15,15 @@ import datetime
 import logging
 import threading
 from gettext import gettext as _
+from pprint import pformat
 
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch.coordinator import Coordinator
 
 
 _LOG = logging.getLogger(__name__)
-
-# call request run functions ---------------------------------------------------
-
-def _run_via_task_queue(call_request):
-    """
-    Run the call request directly in the task queue
-    """
-    from pulp.server import config
-    from pulp.server.dispatch.task import Task
-    from pulp.server.dispatch.taskqueue import TaskQueue
-    concurrency_threshold = config.config.getint('tasking', 'concurrency_threshold')
-    task_queue = TaskQueue(concurrency_threshold)
-    task = Task(call_request)
-    task_queue.enqueue(task)
-
-
-def _run_via_coordinator(call_request):
-    """
-    Run the call request through the coordinator
-    """
-    raise NotImplementedError()
 
 # tags -------------------------------------------------------------------------
 
@@ -54,18 +35,20 @@ class Scheduler(object):
     """
     Scheduler class
     Manager and dispatcher of scheduled call requests
+    @ivar coordinator: Pulp dispatch coordinator
+    @type coordinator: pulp.server.dispatch.coordinator.Coordinator instance
     @ivar dispatch_interval: time, in seconds, between schedule checks
     @type dispatch_interval: int
     @ivar scheduled_call_collection: db collection of scheduled call requests
     @type scheduled_call_collection: pymongo.collection.Collection
     """
 
-    def __init__(self, dispatch_interval=30, run_method=_run_via_task_queue):
+    def __init__(self, coordinator, dispatch_interval=30):
+        assert isinstance(coordinator, Coordinator)
+        self.coordinator = coordinator
 
         self.dispatch_interval = dispatch_interval
         self.scheduled_call_collection = ScheduledCall.get_collection()
-
-        self._run_method = run_method
 
         self.__exit = False
         self.__lock = threading.RLock()
@@ -105,7 +88,13 @@ class Scheduler(object):
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
             call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, self.call_finished_callback)
-            self._run_method(call_request)
+            call_report = self.coordinator.execute_call_asynchronously(call_request)
+            log_msg = _('Scheduled %s: %s [reasons: %s]') % \
+                      (str(call_request), call_report.response, pformat(call_report.reasons))
+            if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
+                _LOG.error(log_msg)
+            else:
+                _LOG.info(log_msg)
 
     def start(self):
         """

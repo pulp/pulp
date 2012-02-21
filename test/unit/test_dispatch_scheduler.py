@@ -27,7 +27,9 @@ from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallReport, CallRequest
+from pulp.server.dispatch.coordinator import Coordinator
 from pulp.server.dispatch.scheduler import Scheduler
+from pulp.server.dispatch.taskqueue import TaskQueue
 
 # test data --------------------------------------------------------------------
 
@@ -47,12 +49,12 @@ class SchedulerInstantiationTests(testutil.PulpTest):
 
     def test_instantiation(self):
         try:
-            Scheduler()
+            Scheduler(Coordinator(TaskQueue(0)))
         except:
             self.fail(traceback.format_exc())
 
     def test_start_stop(self):
-        scheduler = Scheduler(dispatch_interval=1)
+        scheduler = Scheduler(Coordinator(TaskQueue(0)),dispatch_interval=1)
         self.assertTrue(scheduler._Scheduler__dispatcher is None)
         scheduler.start()
         self.assertTrue(isinstance(scheduler._Scheduler__dispatcher, threading.Thread))
@@ -66,7 +68,9 @@ class SchedulerTests(testutil.PulpTest):
     def setUp(self):
         super(SchedulerTests, self).setUp()
         pickling.initialize()
-        self.scheduler = Scheduler(run_method=mock.Mock())
+        self.scheduler = Scheduler(coordinator=Coordinator(TaskQueue(0)))
+        # replace the coordinator so we do not actually execute tasks
+        self.scheduler.coordinator = mock.Mock()
         # NOTE we are not starting the scheduler
 
     def tearDown(self):
@@ -121,13 +125,13 @@ class SchedulerDispatchControlFlowTests(SchedulerTests):
     def test_run_scheduled_calls(self):
         self.scheduler.add(CallRequest(call), DISPATCH_SCHEDULE)
         self.scheduler._run_scheduled_calls()
-        self.assertTrue(self.scheduler._run_method.call_count == 1)
+        self.assertTrue(self.scheduler.coordinator.execute_call_asynchronously.call_count == 1)
 
     def test_run_scheduled_calls_multiple_calls(self):
         self.scheduler.add(CallRequest(call), DISPATCH_SCHEDULE)
         self.scheduler.add(CallRequest(call), DISPATCH_FUTURE_SCHEDULE)
         self.scheduler._run_scheduled_calls()
-        self.assertTrue(self.scheduler._run_method.call_count == 1)
+        self.assertTrue(self.scheduler.coordinator.execute_call_asynchronously.call_count == 1)
 
 # scheduling tests -------------------------------------------------------------
 
