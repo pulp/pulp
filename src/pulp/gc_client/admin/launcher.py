@@ -22,8 +22,7 @@ from optparse import OptionParser
 import os
 import sys
 
-from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, WIDTH_TERMINAL
-from   pulp.gc_client.framework.extensions import ClientContext
+from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, WIDTH_TERMINAL, ClientContext
 import pulp.gc_client.framework.loader as extensions_loader
 
 # -- constants ----------------------------------------------------------------

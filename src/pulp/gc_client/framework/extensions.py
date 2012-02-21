@@ -12,43 +12,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Classes used in the writing of Pulp client extensions. This includes both
-the objects passed into the components during initialization as well as
-the base classes that extension components must implement.
+Classes used in the writing of Pulp client extensions.
 """
 
 from okaara.cli import Section, Command, Option, Flag
-
-# -- component initialization -------------------------------------------------
-
-class ClientContext:
-
-    def __init__(self, server, config, logger, prompt, cli=None, shell=None):
-        self.server = server
-        self.config = config
-        self.logger = logger
-        self.prompt = prompt
-
-        self.cli = cli
-        self.shell = shell
-
-    def server(self):
-        return self.server
-
-    def config(self):
-        return self.config
-
-    def logger(self):
-        return self.logger
-
-    def prompt(self):
-        return self.prompt
-
-    def cli(self):
-        return self.cli
-
-    def shell(self):
-        return self.shell
 
 # -- cli components -----------------------------------------------------------
 

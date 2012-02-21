@@ -12,8 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Defines Pulp additions to the okaara base classes. The subclasses
-for the individual components that belong to each UI style
+Defines Pulp additions to the okaara base classes. Classes in this module
+are not intended to be instantiated by extensions but rather provided to them.
+The subclasses for the individual components that belong to each UI style
 (e.g. commands, screens) can be found in extensions.py as they are meant to be
 further subclassed by extensions.
 """
@@ -305,3 +306,33 @@ class PulpPrompt(Prompt):
 
 class PulpCli(Cli):
     pass
+
+class ClientContext:
+
+    def __init__(self, server, config, logger, prompt, cli=None, shell=None):
+        self.server = server
+        self.config = config
+        self.logger = logger
+        self.prompt = prompt
+
+        self.cli = cli
+        self.shell = shell
+
+    def server(self):
+        return self.server
+
+    def config(self):
+        return self.config
+
+    def logger(self):
+        return self.logger
+
+    def prompt(self):
+        return self.prompt
+
+    def cli(self):
+        return self.cli
+
+    def shell(self):
+        return self.shell
+

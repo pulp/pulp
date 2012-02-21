@@ -19,8 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pulp.gc_client.framework import loader
-from pulp.gc_client.framework.extensions import ClientContext
-from pulp.gc_client.framework.core import PulpCli, PulpPrompt
+from pulp.gc_client.framework.core import PulpCli, PulpPrompt, ClientContext
 
 # -- test data ----------------------------------------------------------------
 
