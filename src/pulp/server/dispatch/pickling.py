@@ -21,14 +21,14 @@ import types
 import isodate
 
 from pulp.common import dateutils
-from pulp.server.exceptions import PulpRuntimeError
+from pulp.server.exceptions import PulpExecutionException
 
 # exceptions -------------------------------------------------------------------
 
-class PicklingError(PulpRuntimeError):
+class PicklingError(PulpExecutionException):
     pass
 
-class UnpicklingError(PulpRuntimeError):
+class UnpicklingError(PulpExecutionException):
     pass
 
 class InstanceMethodUnpicklingError(UnpicklingError):

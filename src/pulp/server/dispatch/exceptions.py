@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,11 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.exceptions import PulpRuntimeError, PulpValidationError
+from pulp.server.exceptions import PulpExecutionException, PulpDataException
 
 # call exceptions --------------------------------------------------------------
 
-class CallRuntimeError(PulpRuntimeError):
+class CallRuntimeError(PulpExecutionException):
     pass
 
 class MissingControlHook(CallRuntimeError):
@@ -24,7 +24,7 @@ class MissingControlHook(CallRuntimeError):
 class MissingCancelControlHook(MissingControlHook):
     pass
 
-class CallValidationError(PulpValidationError):
+class CallValidationError(PulpDataException):
     pass
 
 class InvalidCallKeywordArgument(CallValidationError):
