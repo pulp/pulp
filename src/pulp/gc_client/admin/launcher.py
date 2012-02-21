@@ -63,8 +63,11 @@ def _initialize_logging(config, debug=False):
 
     filename = os.path.join(full_log_dir, USER_LOG_FILE)
 
+    handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
     pulp_log = logging.getLogger('pulp')
-    pulp_log.addHandler(logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2))
+    pulp_log.addHandler(handler)
 
     if debug:
         pulp_log.setLevel(logging.DEBUG)
@@ -96,15 +99,15 @@ def _create_prompt(config):
     prompt = PulpPrompt(enable_color=enable_color, wrap_width=wrap)
     return prompt
 
-def _create_cli(prompt):
+def _create_cli(context):
     """
     @return: cli instance used to drive the UI
     @rtype:  PulpCli
     """
-    cli = PulpCli(prompt)
+    cli = PulpCli(context)
     return cli
 
-def _create_shell(config, prompt):
+def _create_shell(context):
     # Stub, will implement when we support a shell
     pass
 
@@ -126,15 +129,16 @@ def main():
     config = _load_configuration(filename=options.config)
     logger = _initialize_logging(config, debug=options.debug)
 
-    # UI Components (eventually this will decide between cli and shell)
-    prompt = _create_prompt(config)
-    cli = _create_cli(prompt)
-
     # REST Bindings
     server = fake_bindings()
 
+    # UI Components (eventually this will decide between cli and shell)
+    prompt = _create_prompt(config)
+    context = ClientContext(server, config, logger, prompt)
+    cli = _create_cli(context)
+    context.cli = cli
+
     # Assemble the client context
-    context = ClientContext(server, config, logger, prompt, cli=cli)
 
     # Load extensions into the UI in the context
     extensions_dir = config.get('general', 'extensions_dir')
@@ -146,9 +150,9 @@ def main():
         return 1
 
     # Launch the appropriate UI (add in shell support here later)
-    cli.run(args)
+    code = cli.run(args)
 
-    return 0
+    return code
 
 def fake_bindings():
 
