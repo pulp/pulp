@@ -34,11 +34,17 @@ active_server = None
 
 def set_active_server(server):
     global active_server
-    assert isinstance(server, PulpServer)
+    assert isinstance(server, PulpConnection)
     active_server = server
+    
+
+# exception classes to handle error response codes
 
 
 class PulpConnectionException(Exception):
+    """
+    Base exception class
+    """
     pass
 
 class BadRequestException(PulpConnectionException):
@@ -66,6 +72,7 @@ class PulpServerException(PulpConnectionException):
     pass
 
 
+
 class ServerRequestError(Exception):
     """
     Exception to indicate a less than favorable response from the server.
@@ -86,7 +93,7 @@ class NoCredentialsError(Exception):
     pass
 
 
-# server wrapper class which makes python connection calls and allows us to mock them
+# server wrapper class which invokes python connection apis and allows us to mock them
 
 class ServerWrapper(object):
     def __init__(self, connection):
@@ -107,7 +114,7 @@ class ServerWrapper(object):
 
 # pulp server class -----------------------------------------------------------
 
-class PulpServer(object):
+class PulpConnection(object):
     """
     Pulp server connection class.
     """
@@ -144,14 +151,14 @@ class PulpServer(object):
         else:
             # make an appropriate connection to the pulp server
             if self.protocol == 'http':
-                self._http_connection()
+                self.connection = self._http_connection()
             else:
-                self._https_connection()
+                self.connection = self._https_connection()
 
         if server_wrapper:
             self.server_wrapper = server_wrapper
         else:
-            self.server_wrapper = ServerWrapper(connection)
+            self.server_wrapper = ServerWrapper(self.connection)
 
         # set credentials or check if credentials are already set
         if username and password:

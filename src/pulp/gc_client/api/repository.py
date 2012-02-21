@@ -11,8 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.client.api.base import PulpAPI
-from pulp.client.api.server import ServerRequestError
+from pulp.gc_client.api.base import PulpAPI
+from pulp.gc_client.api.server import ServerRequestError
 from pulp.common import dateutils
 
 
