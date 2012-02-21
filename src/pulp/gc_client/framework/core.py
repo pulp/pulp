@@ -220,7 +220,7 @@ class PulpPrompt(Prompt):
         all_keys = items[0].keys()
 
         # Generate template
-        max_key_length = len(max(all_keys, key=len)) + 1 # +1 for the : appended later
+        max_key_length = reduce(lambda x, y: max(x, len(y)), all_keys, 0) + 1 # +1 for the : appended later
         line_template = (' ' * indent) + '%-' + str(max_key_length) + 's' + (' ' * spaces_between_cols) + '%s'
 
         # If no filters were specified, consider the filter to be all keys. This
