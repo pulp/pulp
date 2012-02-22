@@ -124,3 +124,9 @@ class ExtensionLoaderTests(testutil.PulpTest):
         Tests loading an extension that doesn't have a properly defined UI hook.
         """
         self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'no_init_function', self.context)
+
+    def test_load_invalid_config(self):
+        """
+        Tests loading an extension whose .conf file cannot be loaded.
+        """
+        self.assertRaises(loader.InvalidExtensionConfig, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'invalid_config', self.context)

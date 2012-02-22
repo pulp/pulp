@@ -316,26 +316,31 @@ class PulpCli(Cli):
             return 0
         except Exception, e:
             self.context.logger.exception('An error occurred during CLI execution')
-            log_file = self.context.config.get('logging', 'filename')
+            log_file = self.context.client_config.get('logging', 'filename')
             self.prompt.render_failure_message('An unexpected error has occurred. More information can be found in %s' % log_file)
             return 1
 
 class ClientContext:
 
-    def __init__(self, server, config, logger, prompt, cli=None, shell=None):
+    def __init__(self, server, client_config, logger, prompt, cli=None, shell=None, extension_config=None):
         self.server = server
-        self.config = config
         self.logger = logger
         self.prompt = prompt
 
         self.cli = cli
         self.shell = shell
 
+        self.client_config = client_config
+        self.extension_config = extension_config
+
     def server(self):
         return self.server
 
-    def config(self):
-        return self.config
+    def client_config(self):
+        return self.client_config
+
+    def extension_config(self):
+        return self.extension_config
 
     def logger(self):
         return self.logger

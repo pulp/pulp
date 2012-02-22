@@ -11,12 +11,5 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.gc_client.framework.extensions import PulpCliSection
-
 def initialize(context):
-
-    if context.extension_config is None:
-        raise Exception('Extension config unavailable to ext1')
-
-    section = PulpCliSection('section-1', 'Section 1')
-    context.cli.add_section(section)
+    pass
