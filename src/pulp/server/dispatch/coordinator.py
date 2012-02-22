@@ -273,10 +273,32 @@ class Coordinator(object):
     # control methods ----------------------------------------------------------
 
     def cancel_call(self, task_id):
-        pass
+        """
+        Cancel a call request using the task id.
+        @param task_id: task id for call request to cancel
+        @type  task_id: str
+        @return: True if the task is being cancelled, False if not, or None if the task was not found
+        @rtype:  bool or None
+        """
+        task = self.task_queue.get(task_id)
+        if task is None:
+            return None
+        return self.task_queue.cancel(task)
 
     def cancel_multiple_calls(self, job_id):
-        pass
+        """
+        Cancel multiple call requests using the job id.
+        @param job_id: job id for multiple calls
+        @type  job_id: str
+        @return: dictionary of {task id: cancel return} for tasks associated with the job id
+        @rtype:  dict
+        """
+        cancel_returns = {}
+        for task in self.task_queue.all_tasks():
+            if job_id != task.call_report.job_id:
+                continue
+            cancel_returns[task.id] = self.task_queue.cancel(task)
+        return cancel_returns
 
 # conflict detection utility functions -----------------------------------------
 
