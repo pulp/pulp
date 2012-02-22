@@ -51,7 +51,7 @@ Requires: python-ldap
 Requires: python-gofer >= 0.66
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi >= 3.3-1.pulp%{?dist}
+Requires: mod_wsgi >= 3.3-3.pulp%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
