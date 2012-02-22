@@ -51,7 +51,7 @@ import os
 
 from glob import glob
 from M2Crypto import X509, BIO
-from pulp.server.util import encode_unicode
+from pulp.common.util import encode_unicode
 
 LOG = logging.getLogger(__name__)
 try:

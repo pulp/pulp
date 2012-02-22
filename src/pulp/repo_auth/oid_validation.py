@@ -124,7 +124,8 @@ class OidValidator:
 
         # If the credentials were specified for either case, apply the OID checks.
         is_valid = self._check_extensions(cert_pem, dest, log_func)
-
+        if not is_valid:
+            log_func("Client certificate failed extension check for destination: %s" % (dest))
         return is_valid
 
     def _matching_repo_bundle(self, dest):
@@ -210,5 +211,5 @@ class OidValidator:
 
         # Remove initial and trailing '/', and substitute the $variables for
         # equivalent regular expressions in oid_url.
-        oid_re = re.sub(r'\$[^/]+/', '[^/]+/', oid_url.strip('/'))
+        oid_re = re.sub(r'\$[^/]+(/|$)', '[^/]+/', oid_url.strip('/'))
         return re.match(oid_re, dest) is not None

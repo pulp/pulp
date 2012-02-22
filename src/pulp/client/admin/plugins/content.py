@@ -209,8 +209,8 @@ class List(ContentAction):
                 for checksum in pkg['checksum'].values():
                     print "%s,%s" % (pkg['filename'], checksum)
         if self.opts.repoid:
-            repo_pkgs = self.repository_api.packages(self.opts.repoid)
-            repo_files = self.repository_api.list_files(self.opts.repoid)
+            repo_pkgs = self.repository_api.packages(self.opts.repoid) or []
+            repo_files = self.repository_api.list_files(self.opts.repoid) or []
             repo_data = repo_pkgs + repo_files
             if not len(repo_data):
                 utils.system_exit(os.EX_OK, _("No content in the repo [%s]" % self.opts.repoid))
@@ -282,7 +282,7 @@ class Delete(ContentAction):
                 exit_code = os.EX_DATAERR
                 continue
             if pobj.has_key('repoids') and len(pobj['repoids']):
-                print _("Content with filename [%s] is currently associated a repository; skipping delete" % filename)
+                print _("Filename [%s] is currently associated with one or more repositories; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
             #TODO: Once package/file api are merge to contentapi, replace this check with global content_search

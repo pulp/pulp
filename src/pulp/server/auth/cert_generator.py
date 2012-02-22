@@ -19,7 +19,8 @@ import subprocess
 
 from pulp.server.exceptions import PulpException
 from pulp.server import config
-from pulp.server.util import Singleton, encode_unicode
+from pulp.server.util import Singleton
+from pulp.common.util import encode_unicode
 
 log = logging.getLogger(__name__)
 

@@ -62,10 +62,10 @@ class TestRepoSync(testutil.PulpAsyncTest):
         self.protected_repo_utils = ProtectedRepoUtils(self.config)
 
     def test_sync_multiple_repos(self):
-        feeds = { "el5_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/i386/", "i386"),
-            "el5_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/x86_64/", "x86_64"),
-            "el6_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/i386/", "i386"),
-            "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
+        feeds = { "el5_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/5Server/i386/", "i386"),
+            "el5_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/5Server/x86_64/", "x86_64"),
+            "el6_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/6Server/i386/", "i386"),
+            "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/6Server/x86_64/", "x86_64")}
             #    
             # Note:  rhel5 has issues syncing f16 content if it does not use --compress-type bz2
             #

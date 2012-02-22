@@ -56,6 +56,12 @@ class TestRepoDiscoveryApi(testutil.PulpAsyncTest):
             failed = True
         assert(failed)
 
+    def test_url_without_trailing_slash(self):
+        discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos'
+        d = get_discovery("yum")
+        repourls = d.discover(discover_url)
+        self.assertTrue(len(repourls) != 0)
+
     def test_repo_discovery_group(self):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
         groupid = 'testrepos'

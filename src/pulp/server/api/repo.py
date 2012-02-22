@@ -29,6 +29,7 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
+from pulp.common.util import encode_unicode, decode_unicode
 from pulp.common.bundle import Bundle
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import async
@@ -43,7 +44,7 @@ from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi, DistributionHasReferences
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
-from pulp.server.api.file import FileApi
+from pulp.server.api.file import FileApi, FileHasReferences
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
@@ -223,7 +224,11 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
-        id = pulp.server.util.encode_unicode(id)
+        self.check_for_whitespace(id)
+        if relative_path:
+            self.check_for_whitespace(relative_path, "relative_path")
+            relative_path = encode_unicode(relative_path)
+        id = encode_unicode(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -260,7 +265,7 @@ class RepoApi(BaseApi):
         # Verify that the new relative path will not cause problems with existing repositories
         all_repos = self.collection.find()
         for existing in all_repos:
-            existing['relative_path'] = pulp.server.util.encode_unicode(existing['relative_path'])
+            existing['relative_path'] = encode_unicode(existing['relative_path'])
             if not validate_relative_path(relative_path, existing['relative_path']):
                 msg  = 'New relative path [%s] conflicts with existing relative path [%s]; ' % (relative_path, existing['relative_path'])
                 msg += 'paths may not be a parent or child directory of another relative path'
@@ -316,7 +321,7 @@ class RepoApi(BaseApi):
         # create an empty repodata
         repo_path = os.path.join(\
             pulp.server.util.top_repos_location(), r['relative_path'])
-        repo_path = pulp.server.util.encode_unicode(repo_path)
+        repo_path = encode_unicode(repo_path)
         if not os.path.exists(repo_path):
             pulp.server.util.makedirs(repo_path)
         if content_types in ("yum") and not r['preserve_metadata']:
@@ -366,7 +371,6 @@ class RepoApi(BaseApi):
         except Exception, e:
             log.error(e)
             return False
-
         return True
 
     def _create_published_link(self, repo):
@@ -374,16 +378,16 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                                    repo["relative_path"])
-        source_path = pulp.server.util.encode_unicode(source_path)
+        source_path = encode_unicode(source_path)
         if not os.path.isdir(source_path):
             pulp.server.util.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
-        link_path = pulp.server.util.encode_unicode(link_path)
+        link_path = encode_unicode(link_path)
         pulp.server.util.create_rel_symlink(source_path, link_path)
 
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
-            repo["relative_path"] = pulp.server.util.encode_unicode(repo["relative_path"])
+            repo["relative_path"] = encode_unicode(repo["relative_path"])
             link_path = os.path.join(self.published_path, repo["relative_path"])
             if os.path.lexists(link_path):
                 # need to use lexists so we will return True even for broken links
@@ -524,8 +528,8 @@ class RepoApi(BaseApi):
         Returns True if sync is running for this repo, else returns False.
         """
         tasks = [t for t in find_async(method_name="_sync")
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+                 if (t.args and encode_unicode(id) in t.args) or
+                 (t.kwargs and encode_unicode(id) in t.kwargs.values())]
         for t in tasks:
             if getattr(t, 'state', None) not in (task_running,):
                 continue
@@ -561,10 +565,11 @@ class RepoApi(BaseApi):
 
         #update clone_ids of its parent repo
         parent_repos = self.repositories({'clone_ids' : id})
+
         if len(parent_repos) == 1:
             parent_repo = parent_repos[0]
             clone_ids = parent_repo['clone_ids']
-            clone_ids.remove(id)
+            clone_ids.remove(decode_unicode(id))
             parent_repo['clone_ids'] = clone_ids
             self.collection.save(parent_repo, safe=True)
 
@@ -613,11 +618,11 @@ class RepoApi(BaseApi):
                 log.info("Distribution Id [%s] has other references; leaving it in the db" % distroid)
         #remove files:
         for fileid in repo['files']:
-            repos = self.find_repos_by_files(fileid)
-            if repo["id"] in repos and len(repos) == 1:
+            self.remove_file(repo['id'], [fileid])
+            try:
                 self.fileapi.delete(fileid, keep_files)
-            else:
-                log.debug("Not deleting %s since it is referenced by these repos: %s" % (fileid, repos))
+            except FileHasReferences:
+                log.info("file Id [%s] has other references; leaving it in the db" % fileid)
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi
@@ -662,7 +667,7 @@ class RepoApi(BaseApi):
 
         # remove any completed tasks related to this repo
         for task in async.complete_async():
-            if repo['_id'] in task.args or repo['_id'] in task.kwargs.values():
+            if encode_unicode(repo['_id']) in task.args or encode_unicode(repo['_id']) in task.kwargs.values():
                 async.drop_complete_async(task)
 
         # remove task history related to this repo
@@ -931,12 +936,12 @@ class RepoApi(BaseApi):
         pkg_objects = {}
         for p in result:
             pkg_objects[p["id"]] = p
-        log.info("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
+        log.debug("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
 
         for pkg_id in packageids:
             if not pkg_objects.has_key(pkg_id):
                 # Detect if any packageids passed in could not be located
-                log.warn("No Package with id: %s found" % pkg_id)
+                log.debug("No Package with id: %s found" % pkg_id)
                 errors.append((pkg_id, (None, None, None, None, None), None, None))
                 packageids.remove(pkg_id)
 
@@ -945,8 +950,8 @@ class RepoApi(BaseApi):
             log.info("Repo filters : %s" % repo['filters'])
             whitelist_packages = self.find_combined_whitelist_packages(repo['filters'])
             blacklist_packages = self.find_combined_blacklist_packages(repo['filters'])
-            log.info("combined whitelist packages = %s" % whitelist_packages)
-            log.info("combined blacklist packages = %s" % blacklist_packages)
+            log.debug("combined whitelist packages = %s" % whitelist_packages)
+            log.debug("combined blacklist packages = %s" % blacklist_packages)
         else:
             whitelist_packages = []
             blacklist_packages = []
@@ -961,7 +966,7 @@ class RepoApi(BaseApi):
                     packageids.remove(pkg_id)
 
         if not pkg_objects:
-            log.info("No packages left to be added after removing filtered packages")
+            log.debug("No packages left to be added after removing filtered packages")
             return [], filtered_count
 
         # Desire to keep the order dictated by calling arg of 'packageids'
@@ -970,21 +975,21 @@ class RepoApi(BaseApi):
             pkg_tup = get_pkg_tup(pkg)
 
             if nevras.has_key(pkg_tup):
-                log.warn("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
+                log.debug("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
                          % (pkg_tup, pkg["id"], pkg["checksum"].values()[0]))
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
                 error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
                     % (pkg["filename"], pkg["id"], pkg["checksum"].values()[0])
-                log.warn(error_msg)
+                log.debug(error_msg)
                 errors.append(form_error_tup(pkg, error_msg))
                 continue
             nevras[pkg_tup] = pkg["id"]
             filenames[pkg["filename"]] = pkg
             packages[pkg["id"]] = pkg
         # Check for duplicate NEVRA already in repo
-        log.info("Finished check of NEVRA/filename in argument data by %s seconds" % (time.time() - start_add_packages))
+        log.debug("Finished check of NEVRA/filename in argument data by %s seconds" % (time.time() - start_add_packages))
         # This took 528 seconds with rhel-i386-vt-5 being added and roughly 14Gig of RAM in mongo
         # found = self.get_packages_by_nvrea(repo['id'], nevras.values())
         # Exploring alternate of operating on each nevra one at a time for now
@@ -1002,7 +1007,7 @@ class RepoApi(BaseApi):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
                 continue
             error_message = "Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id'])
-            log.warn(error_message)
+            log.debug(error_message)
             errors.append(form_error_tup(pkg, error_message))
             if packages.has_key(nevras[pkg_tup]):
                 del packages[nevras[pkg_tup]]
@@ -1016,12 +1021,12 @@ class RepoApi(BaseApi):
                 continue
             error_message = "Package with same filename [%s] already exists in repo [%s]" \
                 % (pkg["filename"], repo['id'])
-            log.warn(error_message)
+            log.debug(error_message)
             errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
-        log.info("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
+        log.debug("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
         pkg_collection = model.Package.get_collection()
 
         for index, pid in enumerate(packages):
@@ -1044,7 +1049,7 @@ class RepoApi(BaseApi):
                 pkg_collection.save(pkg, safe=True)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
-        log.info("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
+        log.debug("inside of repo.add_package() adding packages took %s seconds" % (end_add_packages - start_add_packages))
         return errors, filtered_count
 
     def _add_package(self, repo, p):
@@ -1094,14 +1099,14 @@ class RepoApi(BaseApi):
             # Remove package from repo location on file system
             pkg_repo_path = pulp.server.util.get_repo_package_path(
                 repo['relative_path'], pkg["filename"])
-            if os.path.exists(pkg_repo_path):
+            if os.path.exists(encode_unicode(pkg_repo_path)):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_repo_path))
-                os.remove(pkg_repo_path)
+                os.remove(encode_unicode(pkg_repo_path))
         self.collection.save(repo, safe=True)
         repo_path = os.path.join(
             pulp.server.util.top_repos_location(), repo['relative_path'])
-        if not os.path.exists(repo_path):
-            pulp.server.util.makedirs(repo_path)
+        if not os.path.exists(encode_unicode(repo_path)):
+            pulp.server.util.makedirs(encode_unicode(repo_path))
         return errors
 
     def find_repos_by_package(self, pkgid):
@@ -1655,7 +1660,7 @@ class RepoApi(BaseApi):
             #    gz = gzip.open(repo["group_gz_xml_path"], "wb")
             #    gz.write(xml.encode("utf-8"))
             #    gz.close()
-            return comps_util.update_repomd_xml_file(pulp.server.util.encode_unicode(repo["repomd_xml_path"]), pulp.server.util.encode_unicode(repo["group_xml_path"]))
+            return comps_util.update_repomd_xml_file(encode_unicode(repo["repomd_xml_path"]), encode_unicode(repo["group_xml_path"]))
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
             log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -1938,7 +1943,7 @@ class RepoApi(BaseApi):
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Unlinking %s" % link_path)
-        link_path = pulp.server.util.encode_unicode(link_path)
+        link_path = encode_unicode(link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
@@ -2065,7 +2070,10 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         files = []
         for fileid in repo['files']:
-            files.append(self.fileapi.file(fileid))
+            fileobj = self.fileapi.file(fileid)
+            if not fileobj:
+                continue
+            files.append(fileobj)
         return files
 
     def find_repos_by_files(self, fileid):
@@ -2252,7 +2260,7 @@ class RepoApi(BaseApi):
             pulp.server.util.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
         if repo['content_types'] in ('yum'):
-            repo_path = pulp.server.util.encode_unicode(repo_path)
+            repo_path = encode_unicode(repo_path)
             pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         elif repo['content_types'] in ('file'):
             self._generate_file_manifest(repo)
@@ -2557,8 +2565,8 @@ def validate_relative_path(new_path, existing_path):
     @rtype:  bool
     """
     # Easy out clause: if they are the same, they are invalid
-    existing_path = pulp.server.util.decode_unicode(existing_path)
-    new_path = pulp.server.util.decode_unicode(new_path)
+    existing_path = decode_unicode(existing_path)
+    new_path = decode_unicode(new_path)
 
     if new_path == existing_path:
         return False

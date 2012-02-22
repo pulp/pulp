@@ -27,7 +27,7 @@ from pulp.server.tasking.exception import (
     TimeoutException, CancelException, UnscheduledTaskException,
     SnapshotFailure)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.util import encode_unicode
+from pulp.common.util import encode_unicode
 
 _log = logging.getLogger(__name__)
 
@@ -115,8 +115,17 @@ class Task(object):
 
         # task resources
         self.callable = callable
-        self.args = args or []
+
+        # encode args and kwargs using 'utf-8' encoding to allow i18n strings
+        if args:
+            self.args = [encode_unicode(arg) for arg in args]
+        else:
+            self.args = []
+        if kwargs:
+            for k, v in kwargs.items():
+                kwargs[k] = encode_unicode(v)
         self.kwargs = dict(kwargs or {})
+
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout_delta = timeout
         self.weight = weight
@@ -189,25 +198,10 @@ class Task(object):
             return '.'.join((self.class_name, self.method_name))
         # task arguments
         def _args():
-            try:
-                return ', '.join([str(a) for a in self.args])
-            except UnicodeEncodeError:
-                return ', '.join([a.encode('utf-8') for a in self.args])
+            return ', '.join([str(encode_unicode(a)) for a in self.args])
         # task keyword arguments
         def _kwargs():
-            try:
-                return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])
-            except UnicodeEncodeError:
-                for k, v in self.kwargs.items():
-                    if not v:
-                        del self.kwargs[k]
-                    else:
-                        try:
-                            v.encode('utf-8')
-                        except:
-                            del self.kwargs[k]
-
-            return ', '.join(['='.join((str(k), v.encode('utf-8'))) for k, v in self.kwargs.items()])
+            return ', '.join(['='.join((str(encode_unicode(k)), str(encode_unicode(v)))) for k, v in self.kwargs.items()])
 
         # put it all together
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())

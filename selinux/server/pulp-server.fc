@@ -7,6 +7,7 @@
 /srv/pulp/webservices.wsgi gen_context(system_u:object_r:httpd_sys_content_t,s0)
 
 /var/lib/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_content_rw_t,s0)
+/var/lib/pulp-cds(/.*)? gen_context(system_u:object_r:httpd_sys_content_rw_t,s0)
 
 # Pulp uses python logging to handle logrotate, this requires
 # write/unlink and httpd_log_t only allows httpd_t to append

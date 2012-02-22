@@ -14,7 +14,8 @@
 
 # base api class --------------------------------------------------------------
 import re
-from pulp.server.exceptions import PulpException
+from gettext import gettext as _
+from pulp.server.exceptions import PulpDataException
 
 
 class BaseApi(object):
@@ -58,12 +59,18 @@ class BaseApi(object):
         Delete all the Objects in the database.  WARNING: Destructive
         """
         self.collection.remove(safe=True)
-        
+
+    def check_for_whitespace(self, id, entity_name='ID'):
+        """
+        Raise an exception if id contains whitespace characters
+        """
+        if re.search('\s', id):
+            raise PulpDataException(_("Given %s:[%s] is invalid. %s should not contain whitespace characters." % (entity_name, id, entity_name)))
+
     def check_id(self, id):
         """
         Make sure id is compliant with restrictions defined by following regex
         """
         if re.search("[^\w\-.]", id):
-            raise PulpException("Given ID is invalid. ID may contain numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)")
-        
+            raise PulpDataException(_("Given ID is invalid. ID may contain numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)"))
     

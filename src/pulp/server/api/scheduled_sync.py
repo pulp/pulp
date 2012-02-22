@@ -30,10 +30,14 @@ from pulp.server import async, config
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
-from pulp.server.exceptions import PulpException, PulpValidationError
+from pulp.server.exceptions import PulpException, PulpDataException
 from pulp.server.tasking.exception import UnscheduledTaskException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
+
+
+class ScheduleValidationError(PulpDataException):
+    pass
 
 # schedule validation and manipulation -----------------------------------------
 
@@ -74,7 +78,7 @@ def parse_and_validate_repo_sync_options(options):
         try:
             return int(i)
         except TypeError:
-            raise PulpValidationError(_('Invalid value for option %(o)s: %(v)s') %
+            raise ScheduleValidationError(_('Invalid value for option %(o)s: %(v)s') %
                                       {'o': k, 'v': i}), None, sys.exc_info()[2]
 
     def _parse_timeout(t):
@@ -83,10 +87,10 @@ def parse_and_validate_repo_sync_options(options):
         try:
             timeout = dateutils.parse_iso8601_duration(t)
             if not isinstance(timeout, datetime.timedelta):
-                raise PulpValidationError()
+                raise ScheduleValidationError()
             return timeout
-        except (ISO8601Error, PulpValidationError):
-            raise PulpValidationError(_('Invalid value for option timeout: %(v)s') %
+        except (ISO8601Error, ScheduleValidationError):
+            raise ScheduleValidationError(_('Invalid value for option timeout: %(v)s') %
                                       {'v': t}), None, sys.exc_info()[2]
 
     def _parse_skip(s):
@@ -94,11 +98,11 @@ def parse_and_validate_repo_sync_options(options):
         skip_dict = {}
         for skip, value in s.items():
             if skip not in valid_skips:
-                raise PulpValidationError(_('Invalid skip specification: %(s)s') % {'s': skip})
+                raise ScheduleValidationError(_('Invalid skip specification: %(s)s') % {'s': skip})
             try:
                 skip_dict[skip] = int(bool(value))
             except TypeError:
-                raise PulpValidationError(_('Invalid skip value for %(s)s: %(v)s') %
+                raise ScheduleValidationError(_('Invalid skip value for %(s)s: %(v)s') %
                                           {'s': skip, 'v': value}), None, sys.exc_info()[2]
         return skip_dict
 
@@ -109,7 +113,7 @@ def parse_and_validate_repo_sync_options(options):
     valid_keys = ('max_speed', 'threads', 'timeout', 'skip')
     for key, value in options.items():
         if key not in valid_keys:
-            raise PulpValidationError(_('Unknown sync option: %(o)s') % {'o': key})
+            raise ScheduleValidationError(_('Unknown sync option: %(o)s') % {'o': key})
         if key in valid_keys[:2]:
             new_options[key] = _parse_int(key, value)
         elif key == valid_keys[2]:
@@ -197,7 +201,7 @@ def _update_repo_scheduled_sync_task(repo, task):
     @param task: task to update
     """
     new_scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    task.kwargs = repo['sync_options']
+    task.kwargs = repo['sync_options'] or {}
     return async.reschedule_async(task, new_scheduler)
 
 
@@ -246,8 +250,8 @@ def update_repo_schedule(repo, new_schedule, new_options):
                                 'sync_options': sync_options}},
                       safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
-    repo['sync_schedule'] = new_schedule
-    repo['sync_options'] = new_options
+    repo['sync_schedule'] = sync_schedule
+    repo['sync_options'] = sync_options
     if task is None:
         _add_repo_scheduled_sync_task(repo)
     else:

@@ -65,15 +65,17 @@ class ErrataApi(BaseApi):
         erratum = self.erratum(id)
         if not erratum:
             raise Exception('Erratum "%s", not-found', id)
+        valid_keys = ['status', 'updated', 'short', 'severity', 'title', 'issued', 'id', 'rights', 'solution',
+                      'summary', 'pushcount', 'fromstr', 'version', 'release', 'type', 'pkglist']
         for key, value in delta.items():
-            # anything but references
-            if key not in ('references',):
+            if key in valid_keys:
                 erratum[key] = value
                 continue
             # unsupported
             raise Exception, \
-                'update keyword "%s", not-supported' % key
+                  'update keyword "%s", not-supported' % key
         self.collection.save(erratum, safe=True)
+        return erratum
 
     @audit()
     def delete(self, id):

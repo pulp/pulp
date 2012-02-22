@@ -9,6 +9,7 @@
 /sbin/restorecon -R /usr/bin/pulp-consumer
 /sbin/restorecon -R /usr/bin/pulp-migrate
 /sbin/restorecon -R /var/lib/pulp
+/sbin/restorecon -R /var/lib/pulp-cds
 /sbin/restorecon -R /var/log/pulp
 /sbin/restorecon -R /tmp/grinder
 

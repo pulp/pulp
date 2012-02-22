@@ -612,6 +612,30 @@ class TestComps(testutil.PulpAsyncTest):
         self.assertTrue(os.path.isfile(group_path))
         self.assertTrue(os.path.isfile(group_gz_path))
 
+    def test_comps_import(self, repo_id = "test_comps_import_id"):
+        repo = self.repo_api.create(repo_id, "test_name", "i386")
+        target_group_count = 1
+        comps_xml_path_1 = os.path.join(self.data_path, "up_comps_1.xml")
+        repo_sync.import_comps(repo['id'], open(comps_xml_path_1, 'r').read())
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(),
+                repo["id"], mddata["group"]["location"])
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        self.assertEqual(len(yum_group_ids), target_group_count)
+        # update case
+        target_group_count = 2
+        comps_xml_path_2 = os.path.join(self.data_path, "up_comps_2.xml")
+        repo_sync.import_comps(repo['id'], open(comps_xml_path_2, 'r').read())
+        mddata = pulp.server.util.get_repomd_filetype_dump(repo["repomd_xml_path"])
+        group_path = os.path.join(pulp.server.util.top_repos_location(),
+                repo["id"], mddata["group"]["location"])
+        comps = yum.comps.Comps()
+        comps.add(group_path)
+        yum_group_ids = [x.groupid for x in comps.groups]
+        self.assertEqual(len(yum_group_ids), target_group_count)
+
     def test_comps_with_i18n_repoid(self):
         def get_random_unicode():
             return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))

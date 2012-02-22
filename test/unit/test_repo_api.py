@@ -147,6 +147,25 @@ class TestRepoApi(testutil.PulpAsyncTest):
             'i386', 'http://example.com')
         assert(repo is not None)
 
+    def test_repo_create_with_whitespace(self):
+        repo_id = "test  whitespace"
+        self.assertRaises(PulpException, self.repo_api.create, repo_id, 'valid-name', 'bad-arch')
+        self.assertRaises(PulpException, self.repo_api.create, 'valid-id', 'valid-name', 'bad-arch', relative_path=repo_id)
+
+    def test_repo_clone_with_whitespace(self):
+        clone_id = "test  whitespace"
+        repo = self.repo_api.create('valid-id', 'some name',
+            'i386', 'http://example.com')
+        self.assertRaises(PulpException, repo_sync.clone, 'valid-id', clone_id, clone_id)
+        self.assertRaises(PulpException, repo_sync.clone, 'valid-id', 'valid-clone-id', 'valid-clone-id', relative_path=clone_id)
+
+    def test_i18n_repo_relative_path(self):
+        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
+        repo = self.repo_api.create(repo_id, 'some name', 'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/',
+                                    relative_path=repo_id)
+        assert(repo is not None)
+        repo_sync._sync(repo_id)
+
     def test_repo_create_with_notes(self, repo_id = 'some-repo-with-notes-id'):
         notes = {'key':'value','k':'v'}
         repo = self.repo_api.create(repo_id, 'some name',
@@ -285,6 +304,7 @@ class TestRepoApi(testutil.PulpAsyncTest):
 
         # Setup
         self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch')
+        self.config.set('security', 'ssl_ca_certificate', '')
 
         # Test
         bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
@@ -1373,12 +1393,13 @@ class TestRepoApi(testutil.PulpAsyncTest):
             assert(data['checksum'][0] == checksum_type)
 
     def test_repo_create_arch(self):
-        arches = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64', 'ia64']
+        arches = ['noarch', 'i386', 'i686', 'ppc64', 'ppc',  's390x', 'x86_64', 'ia64']
         for arch in arches:
             repo = self.repo_api.create('repo-id-%s' % arch, 'some name', \
             arch, 'http://example.com')
             assert(repo is not None)
             assert(repo['arch'] is not arch)
+            print "created repo %s with arch %s" % (repo['id'], arch)
 
     def test_empty_repo(self, id = "test_empty_repo_1"):
         repo1 = self.repo_api.create(id, 'some name', 'i386', 'http://example.com', preserve_metadata=True)

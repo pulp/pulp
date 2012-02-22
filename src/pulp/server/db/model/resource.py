@@ -253,7 +253,7 @@ class Filter(Model):
 
 class Repo(Model):
 
-    SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64', 'ia64']
+    SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 'ppc', 's390x', 'x86_64', 'ia64']
     SUPPORTED_CHECKSUMS = ['sha256', 'sha', 'sha1', 'md5']
     SUPPORTED_CONTENT_TYPES = ['yum', 'file']
 

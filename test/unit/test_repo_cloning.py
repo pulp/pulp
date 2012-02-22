@@ -25,6 +25,7 @@ import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
 from pulp.server import constants, async
 from pulp.server.api import repo_sync
+from pulp.server.util import encode_unicode
 
 constants.LOCAL_STORAGE="/tmp/pulp/"
 
@@ -57,8 +58,8 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
 
     def check_if_running_clone(self, id):
         clones = [t for t in async.find_async(method_name='_clone')
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+                 if (t.args and encode_unicode(id) in t.args) or
+                 (t.kwargs and encode_unicode(id) in t.kwargs.values())]
         if clones:
             clone_infos = []
             for clone in clones:
@@ -71,7 +72,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
                    clone_id2 = 'clone-some-id-none'):
 
         repo = self.repo_api.create(id, 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
         self.assertTrue(repo is not None)
         try:
             repo_sync._sync(repo['id'])
@@ -172,7 +173,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
                            clone_id2 = 'clone-publish-default'):
 
         repo = self.repo_api.create(id, 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
         self.assertTrue(repo is not None)
         try:
             repo_sync._sync(repo['id'])

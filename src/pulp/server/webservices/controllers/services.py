@@ -229,7 +229,7 @@ class FileSearch(JSONController):
             checksum = data["checksum"]
         files = fapi.files(filename=filename, checksum_type=checksum_type, checksum=checksum, regex=True)
         for f in files:
-            f["repos"] = rapi.find_repos_by_files(f["id"])
+            f["repoids"] = rapi.find_repos_by_files(f["id"])
         return self.ok(files)
 
     def PUT(self):

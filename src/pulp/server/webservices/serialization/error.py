@@ -11,8 +11,8 @@ from pulp.server.webservices.serialization import link
 
 
 _ERROR_OBJ_SKEL = {
+    '_href': None,
     'http_status': httplib.INTERNAL_SERVER_ERROR,
-    'href': None,
     'error_message': None,
     'exception': None,
     'traceback': None,

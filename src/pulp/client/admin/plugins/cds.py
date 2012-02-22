@@ -429,7 +429,7 @@ class Status(CDSAction):
         if len(history_list) is 0:
             print _('The CDS has not yet been synchronized')
         else:
-            history_list.sort(key=lambda x : x['finish_time'])
+            history_list.sort(key=lambda x : x['finish_time'], reverse=True)
 
             # Apply limit restrictions
             if int(self.opts.num_recent_syncs) < len(history_list):

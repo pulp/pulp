@@ -14,6 +14,7 @@
 import httplib
 import logging
 import sys
+import traceback
 from gettext import gettext as _
 
 try:
@@ -21,6 +22,10 @@ try:
 except ImportError:
     import simplejson as json
 
+from pulp.server.exceptions import (
+    PulpException, PulpExecutionException, InvalidConfiguration, MissingResource,
+    ConflictingOperation, OperationFailed, PulpDataException, InvalidType,
+    InvalidValue, MissingData, SuperfluousData, DuplicateResource)
 from pulp.server.webservices.http import http_responses
 from pulp.server.webservices import serialization
 
@@ -38,19 +43,40 @@ class ErrorHandlerMiddleware(object):
     def __init__(self, app, debug=False):
         self.app = app
         self.debug = debug
+        self.headers = {'Content-Type': 'application/json',
+                        'Content-Length': '-1'}
 
-    def __call__(self, enviorn, start_response):
+    def __call__(self, environ, start_response):
         try:
-            return self.app(enviorn, start_response)
-        except Exception, e:
-            _LOG.exception(_('Unhandled exception'))
-            tb = None
-            if self.debug:
-                tb = sys.exc_info()[2]
-            err_obj = serialization.error.exception_obj(e, tb)
-            serial_err = json.dumps(err_obj)
-            status = httplib.INTERNAL_SERVER_ERROR
+            return self.app(environ, start_response)
+        except Exception:
+            e, tb = sys.exc_info()[1:]
+            status = None
+            error_obj = None
+            record_exception_and_traceback = self.debug
+            if isinstance(e, PulpException):
+                if isinstance(e, (InvalidType, InvalidValue, MissingData, SuperfluousData, PulpDataException)):
+                    status = httplib.BAD_REQUEST
+                elif  isinstance(e, (MissingResource,)):
+                    status = httplib.NOT_FOUND
+                elif isinstance(e, (DuplicateResource, ConflictingOperation)):
+                    status = httplib.CONFLICT
+                elif isinstance(e, (InvalidConfiguration, OperationFailed, PulpExecutionException)):
+                    status = httplib.INTERNAL_SERVER_ERROR
+                else: # unknown PulpException
+                    status = httplib.INTERNAL_SERVER_ERROR
+                    record_exception_and_traceback = True
+                error_obj = serialization.error.http_error_obj(status, unicode(e).encode('utf-8'))
+                if record_exception_and_traceback:
+                    error_obj['exception'] = traceback.format_exception_only(type(e), e)
+                    error_obj['traceback'] = traceback.format_tb(tb)
+            else:
+                _LOG.exception(_('Unhandled Exception'))
+                status = httplib.INTERNAL_SERVER_ERROR
+                error_obj = serialization.error.exception_obj(e, tb)
+            error_obj['_href'] = environ['SCRIPT_NAME']
+            serialized_error = json.dumps(error_obj)
             status_str = '%d %s' % (status, http_responses[status])
-            start_response(status_str, [('Content-Type', 'application/json'),
-                                        ('Content-Length', str(len(serial_err)))])
-            return serial_err
+            self.headers['Content-Length'] = len(serialized_error)
+            start_response(status_str, [(k, v) for k, v in self.headers.items()])
+            return serialized_error

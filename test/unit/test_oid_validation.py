@@ -482,6 +482,47 @@ class TestOidValidation(testutil.PulpAsyncTest):
         response_z = oid_validation.authenticate(request_z, config=self.config)
         self.assertTrue(not response_z)
 
+    def test_scenario_14(self):
+        '''
+        Setup
+        - Global auth disabled
+        - Individual repo auth enabled for repo X
+        - Client cert signed by repo X CA
+        - Client cert has an OID entitlement that ends with a yum variable.
+          e.g., repos/pulp/pulp/fedora-14/$basearch/
+
+        Expected
+        - Permitted for both repos
+        '''
+
+        # Setup
+        self.auth_api.disable_global_repo_auth()
+
+        repo_x_bundle = {'ca' : VALID_CA2, 'key' : VALID_CA2_KEY, 'cert' : ANYCERT, }
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = mock_environ(ENDS_WITH_VARIABLE_CLIENT +
+            ENDS_WITH_VARIABLE_CLIENT_KEY, 
+            'https://localhost//pulp/repos/repos/pulp/pulp/fedora-14/x86_64/os/repodata/repomd.xml')
+        request_xx = mock_environ(ENDS_WITH_VARIABLE_CLIENT +
+            ENDS_WITH_VARIABLE_CLIENT_KEY, 
+            'https://localhost//pulp/repos/repos/pulp/pulp/fedora-14/i386/os/repodata/repomd.xml')
+        request_y = mock_environ(ENDS_WITH_VARIABLE_CLIENT +
+            ENDS_WITH_VARIABLE_CLIENT_KEY, 
+            'https://localhost//pulp/repos/repos/pulp/pulp/fedora-13/x86_64/os/repodata/repomd.xml')
+
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_xx = oid_validation.authenticate(request_xx, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(response_y)
+
 
 # -- test data ---------------------------------------------------------------------
 
@@ -936,3 +977,72 @@ tvkBDkSXz3GUeyK11pQC9xYWz7Pyy5+5NktBQ8chDZX0ENWHbGqR9xgHIZXJd0Ks
 4Y0Tl5d9N8mMNOpaDsn9Lr+E72NmK3A7Phl8jQow3g==
 -----END CERTIFICATE-----
 '''
+
+# Entitlements for:
+#  - repos/pulp/pulp/fedora-13/$basearch/
+#  - repos/pulp/pulp/fedora-14/$basearch/
+#
+# Signed with VALID_CA2
+ENDS_WITH_VARIABLE_CLIENT = """
+-----BEGIN CERTIFICATE-----
+MIIFYjCCA0qgAwIBAgIBZDANBgkqhkiG9w0BAQUFADBiMQswCQYDVQQGEwJVUzEL
+MAkGA1UECAwCTkMxEDAOBgNVBAcMB1JhbGVpZ2gxEDAOBgNVBAoMB3Rlc3QtY2Ex
+EDAOBgNVBAsMB3Rlc3QtY2ExEDAOBgNVBAMMB3Rlc3QtY2EwHhcNMTIwMjIwMjIy
+NTU1WhcNMTQxMTE2MjIyNTU1WjBoMQswCQYDVQQGEwJVUzELMAkGA1UECAwCTkMx
+EDAOBgNVBAcMB1JhbGVpZ2gxEjAQBgNVBAoMCVB1bHAgVGVzdDESMBAGA1UECwwJ
+UHVscCBUZXN0MRIwEAYDVQQDDAlwdWxwLXRlc3QwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDEZI7HgKMOnh/yIFm+cw+O0EQNDaPYzahi+qJ0UmGjIwky
+nLt09Zz2wU1ZcUkMPXGodmp16CWhWcyHHO3NETxjKSUd8FXv9LDgTE3g9AhR8HYY
+p9paO+QDC5XXP+6np7jE/W8WkCmdzA0W2pc/hEiFxWT8fzstnKeb1sKtzhEAHEcD
+IXWGX0Y6CmfsUPpB4XSQ+AWmpHnvL8j9qN0/sS2NmTgQS7bocqQfekKwhEqMy/Lt
+mEtw6m6tV9IHtHrm/5ZPkDA467ReZEwuOY4CRMpHURYYCs5zuSAMJx7eTb2dcEMR
+f5QL7epQRubfV7hVdXEDi4hOwc5JQ4zl/ezsvScTAgMBAAGjggEbMIIBFzAJBgNV
+HRMEAjAAMCsGDCsGAQQBkggJAgABAQQbDBlQdWxwIFByb2R1Y3Rpb24gRmVkb3Jh
+IDEzMB8GDCsGAQQBkggJAgABAgQPDA1wdWxwLXByb2QtZjEzMDYGDCsGAQQBkggJ
+AgABBgQmDCRyZXBvcy9wdWxwL3B1bHAvZmVkb3JhLTEzLyRiYXNlYXJjaC8wKwYM
+KwYBBAGSCAkCAwEBBBsMGVB1bHAgUHJvZHVjdGlvbiBGZWRvcmEgMTQwHwYMKwYB
+BAGSCAkCAwECBA8MDXB1bHAtcHJvZC1mMTQwNgYMKwYBBAGSCAkCAwEGBCYMJHJl
+cG9zL3B1bHAvcHVscC9mZWRvcmEtMTQvJGJhc2VhcmNoLzANBgkqhkiG9w0BAQUF
+AAOCAgEAtnDZoKeXtCw/hJAhcUNNoN6VL+B3ShtY3qq0hxNl7lgTPU2908gHVFt5
+PvoDVKIXTdLEbU4mT9Hfnh1zMGOE2IcqviGZ2LfLdtZnmY/khS2KwpH5MzG1K9+L
+eB9F8zEKVa/nnIxw8StsH8z5ejEyOb8z/cOy+lRuHTJZkuiM1sVMOU95ixkJqfJb
+WDZCkzdM+bFfYU9wDM58ONZEn9WsynrswQeXqi6uh6K26DxNMqRqkcHCiEi66H1X
+FiExl7TNxpNMfHS0XY6ZTuO2bI0XgTmFbAHTd3XCpNPhNblpHrHhx+KXrDqHgZBR
+D8MgbvtnhGU/ioUQuwP/h2wOYX7jmOEWWaPishrgEsS0KAvTorDp9esHharcXNnU
+ibYPWp0/4gN/RJAjIRf5DWmcXKRibPfg6qXlADG2MnVp7oZVNqan3W2SLseUMNYS
+ph5EPvhUxLMxDd5gncX1MDBENDX6mzbhpd1+CPB44n+nCpjR0rZkjOG+Q3G1m77V
+09j4IRuYCEtp0NhgQHXV8L0BDofIj8egtE7MmyPCrKIlDTpHZ5cfduzgt0hVpmOt
+zTrt2Dm0DZ9LwFANfRpkpI0ZNKg1/pKlxQOijR/EN2imsLvu/fdfR6dov7PBxfoX
+PQvdFGUaYghwNKmFU3ij98jodzfd4x3CnHXgu+Bh2PO425Ww4/8=
+-----END CERTIFICATE-----
+"""
+
+ENDS_WITH_VARIABLE_CLIENT_KEY = """
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAxGSOx4CjDp4f8iBZvnMPjtBEDQ2j2M2oYvqidFJhoyMJMpy7
+dPWc9sFNWXFJDD1xqHZqdegloVnMhxztzRE8YyklHfBV7/Sw4ExN4PQIUfB2GKfa
+WjvkAwuV1z/up6e4xP1vFpApncwNFtqXP4RIhcVk/H87LZynm9bCrc4RABxHAyF1
+hl9GOgpn7FD6QeF0kPgFpqR57y/I/ajdP7EtjZk4EEu26HKkH3pCsIRKjMvy7ZhL
+cOpurVfSB7R65v+WT5AwOOu0XmRMLjmOAkTKR1EWGArOc7kgDCce3k29nXBDEX+U
+C+3qUEbm31e4VXVxA4uITsHOSUOM5f3s7L0nEwIDAQABAoIBAQCxBnt09U0FZh8h
+n2uFsi15690Lbxob2PVJkuZQt9lutawaxRBsEuETw5Y3Y1gXAmOrGGJKOaGB2XH0
+8GyiBkFKmNHuNK8iBoxRAjbI6O9+/KNXAiZeY9HZtN2yEtzKnvJ8Dn3N9tCsfjvm
+N89R36mHezDWMNFlAepLHMCK7k6Aq2XfMSgHJMmHYv2bBdcnbPidl3kr8Iq3FLL2
+0qoiou+ihvKEj4SAguQNuR8w5oXKc5I3EdmXGGJ0WlZM2Oqg7qL85KhQTg3WEeUj
+XB4cLC4WoV0ukvUBuaCFCLdqOLmHk2NB3b4DEYlEIsz6XiE3Nt7cBO2HBPa/nTFl
+qAvXxQchAoGBAPpY1S1SMHEWH2U/WH57jF+Yh0yKPPxJ6UouG+zzwvtm0pfg7Lkn
+CMDxcTTyMpF+HjU5cbJJrVO/S1UBnWfxFdbsWFcw2JURqXj4FO4J5OcVHrQEA6KY
+9HBdPV6roTYVIUeKZb6TxIC85b/Xkcb3AHYtlDg3ygOjFKD6NUVNHIebAoGBAMjT
+1bylHJXeqDEG+N9sa1suH7nMVsB2PdhsArP3zZAoOIP3lLAdlQefTyhpeDgYbFqD
+wxjeFHDuJjxIvB17rPCKa8Rh4a0GBlhKEDLm+EM3H0FyZ0Yc53dckgDOnJmyh9f+
+8fc7nYqXEA7sD0keE9ANGS+SLV9h9v9A7og7bGHpAoGAU/VU0RU+T77GmrMK36hZ
+pHnH7mByIX48MfeSv/3kR2HtgKgbW+D+a47Nk58iXG76fIkeW1egPHTsM78N5h0R
+YPn0ipFEIYJB3uL8SfShguovWNn7yh0X5VMv0L8omrWtaou8oZR3E2HGf3cxWZPe
+4MNacRwssNmRgodHNE2vIr8CgYABp50vPL0LjxYbsU8DqEUKL0sboM9mLpM74Uf0
+a6pJ8crla3jSKqw7r9hbIONYsvrRlBxbbBkHBS9Td9X0+Dvoj3tr1tKhNld/Cr0v
+bi/FfgLH60Vmkn5lwWGCmDE6IvpzkSo1O0yFA9GiDdfiZlkLcdAvUCkHjCsY11Qf
+0z2FYQKBgQDCbtiEMMHJGICwEX2eNiIfO4vMg1qgzYezJvDej/0UnqnQjbr4OSHf
+0mkVJrA0vycI+lP94eEcAjhFZFjCKgflZL9z5GLPv+vANbzOHyIw+BLzX3SybBeW
+NgH6CEPkQzXt83c+B8nECNWxheP1UkerWfe/gmwQmc0Ntt4JvKeOuw==
+-----END RSA PRIVATE KEY-----
+"""

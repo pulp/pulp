@@ -13,10 +13,14 @@
 
 import copy
 import pickle
+import logging
 from gettext import gettext as _
 
 from pulp.common import dateutils
 from pulp.server.db.model.base import Model
+
+_log = logging.getLogger(__name__)
+
 
 # task snapshot model ---------------------------------------------------------
 
@@ -46,8 +50,10 @@ class TaskSnapshot(Model):
         # snapshots from the database
         def _process_value(value):
             if not isinstance(value, basestring):
-                return value
-            return unicode(value).encode('ascii').strip()
+                return v
+            if value is not unicode:
+                value = value.decode('utf-8')
+            return value.encode('utf-8').strip()
 
         return dict([(k, _process_value(v)) for k, v in serialized_task.items()])
 
