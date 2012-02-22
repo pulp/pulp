@@ -139,7 +139,7 @@ class CallRequest(object):
         @rtype: dict
         """
 
-        data = {}
+        data = {'callable_name': self.callable_name()}
 
         try:
             for field in self.pickled_fields:
