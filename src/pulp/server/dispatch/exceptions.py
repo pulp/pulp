@@ -11,7 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.exceptions import PulpExecutionException, PulpDataException
+from pulp.server.exceptions import (
+    PulpExecutionException, PulpDataException, SuperfluousData)
 
 # call exceptions --------------------------------------------------------------
 
@@ -43,4 +44,7 @@ class SynchronousCallTimeoutError(CallRuntimeError):
     pass
 
 class AsynchronousExecutionError(CallRuntimeError):
+    pass
+
+class UnrecognizedSearchCriteria(SuperfluousData):
     pass
