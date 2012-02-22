@@ -20,6 +20,8 @@ import uuid
 from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
+from pulp.server.dispatch import history as dispatch_history
+from pulp.server.dispatch.call import CallReport
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
@@ -240,7 +242,33 @@ class Coordinator(object):
     # query methods ------------------------------------------------------------
 
     def find_call_reports(self, **criteria):
-        pass
+        """
+        Find call reports that match the criteria given as key word arguments.
+
+        Supported criteria:
+         * task_id
+         * job_id
+         * state
+         * call_name
+         * class_name
+         * args
+         * kwargs
+         * resources
+         * tags
+        """
+        valid_criteria = set(('task_id', 'job_id', 'state', 'call_name',
+                              'class_name', 'args', 'kwargs', 'resources', 'tags'))
+        provided_criteria = set(criteria.keys())
+        superfluous_criteria = provided_criteria - valid_criteria
+        if superfluous_criteria:
+            raise dispatch_exceptions.UnrecognizedSearchCriteria(*list(superfluous_criteria))
+        call_reports = []
+        for task in self.task_queue.all_tasks():
+            if task_matches_criteria(task, criteria):
+                call_reports.append(task.call_report)
+        for archived_call in dispatch_history.find_archived_calls(criteria):
+            call_reports.append(archived_call['serialized_call_report'])
+        return call_reports
 
     # control methods ----------------------------------------------------------
 
@@ -358,6 +386,37 @@ def wait_for_task(task, states, sleep_interval=0.5, timeout=None):
         if now - start < timeout:
             continue
         raise dispatch_exceptions.SynchronousCallTimeoutError(str(task))
+
+# query utility functions ------------------------------------------------------
+
+def task_matches_criteria(task, criteria):
+    """
+    Test a task to see if it matches the given search criteria.
+    @param task: task to test
+    @type  task: pulp.server.dispatch.task.Task
+    @param criteria: search criteria to match
+    @type  criteria: dict
+    @return: True if the task matches, False otherwise
+    @rtype:  bool
+    """
+    if 'task_id' in criteria and criteria['task_id'] != task.call_report.task_id:
+        return False
+    if 'job_id' in criteria and criteria['job_id'] != task.call_report.job_id:
+        return False
+    if 'state' in criteria and criteria['state'] != task.call_report.state:
+        return False
+    if 'call_name' in criteria and dispatch_history.callable_name(criteria.get('class_name'), criteria['call_name']) != task.call_request.callable_name():
+        return False
+    for a in criteria.get('args', []):
+        if a not in task.call_request.args:
+            return False
+    for k, v in criteria.get('kwargs', {}):
+       if v != task.call_request.kwargs.get(k):
+           return False
+    for t in criteria.get('tags', []):
+        if t not in task.call_request.tags:
+            return False
+    return True
 
 # coordinator callbacks --------------------------------------------------------
 
