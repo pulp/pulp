@@ -265,7 +265,7 @@ class TaskArchivalTests(testutil.PulpTest):
         ArchivedCall.get_collection().drop()
 
     def test_task_archival(self):
-        task = Task(CallRequest(call_without_callbacks), archive=True)
+        task = Task(CallRequest(call_without_callbacks, archive=True))
         try:
             task.run()
         except:
