@@ -45,7 +45,13 @@ class PulpConnectionException(Exception):
     """
     Base exception class
     """
-    pass
+    def __init__(self, response_body):
+        Exception.__init__(self)
+        self.href = response_body['href']
+        self.http_status = response_body['http_status']
+        self.error_message = response_body['error_message']
+        self.exception = response_body['exception']
+        self.traceback = response_body['traceback']
 
 class BadRequestException(PulpConnectionException):
     """
@@ -64,6 +70,7 @@ class DuplicateResourceException(PulpConnectionException):
     Response code = 409
     """
     pass
+
 
 class PulpServerException(PulpConnectionException):
     """
@@ -239,13 +246,13 @@ class PulpConnection(object):
 
     def handle_exceptions(self, response_code, response_body):
         if response_code == 400:
-            raise BadRequestException()
+            raise BadRequestException(response_body)
         elif response_code == 404:
-            raise NotFoundException()
+            raise NotFoundException(response_body)
         elif response_code == 409:
-            raise DuplicateResourceException()
+            raise DuplicateResourceException(response_body)
         else:
-            raise PulpServerException()
+            raise PulpServerException(response_body)
 
     # credentials setters -----------------------------------------------------
 
