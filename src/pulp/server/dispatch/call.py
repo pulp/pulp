@@ -172,6 +172,7 @@ class CallRequest(object):
             return None
 
         constructor_kwargs = dict(data)
+        constructor_kwargs.pop('callable_name') # added for search
 
         try:
             for field in cls.pickled_fields:
