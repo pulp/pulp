@@ -58,7 +58,7 @@ Requires: qpid-cpp-server
 %if 0%{?rhel} == 5
 Requires: m2crypto
 %else
-Requires: m2crypto = 0.21.1.pulp
+Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
 %endif
 
 %if %{pulp_selinux}
@@ -167,7 +167,7 @@ Requires:       mod_ssl
 %if 0%{?rhel} == 5
 Requires: m2crypto
 %else
-Requires: m2crypto = 0.21.1.pulp
+Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
 %endif
 %if %{pulp_selinux}
 Requires: %{name}-selinux-server = %{version}
