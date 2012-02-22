@@ -15,7 +15,7 @@ import itertools
 import logging
 import threading
 
-from pulp.server.db.model.dispatch import ArchivedCall, QueuedCall
+from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
 
 
@@ -37,7 +37,6 @@ class TaskQueue(object):
 
         self.concurrency_threshold = concurrency_threshold
         self.dispatch_interval = dispatch_interval
-        self.archived_call_collection = ArchivedCall.get_collection()
         self.queued_call_collection = QueuedCall.get_collection()
 
         self.__waiting_tasks = []
