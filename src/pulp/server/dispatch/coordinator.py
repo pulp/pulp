@@ -244,10 +244,10 @@ class Coordinator(object):
 
     # control methods ----------------------------------------------------------
 
-    def cancel_task(self, task_id):
+    def cancel_call(self, task_id):
         pass
 
-    def cancel_job(self, job_id):
+    def cancel_multiple_calls(self, job_id):
         pass
 
 # conflict detection utility functions -----------------------------------------
