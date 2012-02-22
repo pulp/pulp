@@ -26,6 +26,7 @@ from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
+from pulp.server.dispatch import history as dispatch_history
 
 
 _LOG = logging.getLogger(__name__)
@@ -44,8 +45,6 @@ class Task(object):
     @type call_report: CallReport instance
     @ivar queued_call_id: db id for serialized queued call
     @type queued_call_id: str
-    @ivar archive: toggle call archival on completion
-    @type archive: bool
     @ivar complete_callback: task queue callback called on completion
     @type complete_callback: callable or None
     @ivar progress_callback: call request progress callback called to report execution progress
@@ -54,7 +53,7 @@ class Task(object):
     @type blocking_tasks: set
     """
 
-    def __init__(self, call_request, call_report=None, archive=False):
+    def __init__(self, call_request, call_report=None):
 
         assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
@@ -67,8 +66,6 @@ class Task(object):
         self.call_report = call_report or call.CallReport()
         self.call_report.state = dispatch_constants.CALL_WAITING_STATE
         self.call_report.task_id = self.id
-
-        self.archive = archive
 
         self.complete_callback = None
         self.blocking_tasks = set()
@@ -157,12 +154,10 @@ class Task(object):
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
-        if not self.archive:
+        if not self.call_request.archive:
             return
         # archive the completed call
-        archived_call_collection = ArchivedCall.get_collection()
-        archived_call = ArchivedCall(self.call_request, self.call_report)
-        archived_call_collection.save(archived_call, safe=True)
+        dispatch_history.archive_call(self.call_request, self.call_report)
 
     def _call_complete_callback(self):
         """
