@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -489,6 +489,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 22 2012 James Slagle <jslagle@redhat.com> 0.0.263-9
+- 784280 - SELinux denials during system cli test (jmatthews@redhat.com)
+
 * Mon Feb 20 2012 James Slagle <jslagle@redhat.com> 0.0.263-8
 - 795570 Fix repo auth oid substitution when the oid ends with a yum variable
   (jslagle@redhat.com)
