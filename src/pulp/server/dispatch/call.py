@@ -51,6 +51,8 @@ class CallRequest(object):
     @type control_hooks: dict
     @ivar tags: list of arbitrary tags
     @type tags: list
+    @ivar archive: toggle archival of call request on completion
+    @type archive: bool
     """
 
     def __init__(self,
@@ -61,7 +63,8 @@ class CallRequest(object):
                  success_failure_callback_kwargs=None,
                  resources=None,
                  weight=1,
-                 tags=None):
+                 tags=None,
+                 archive=False):
 
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
@@ -71,6 +74,7 @@ class CallRequest(object):
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
         assert isinstance(tags, (NoneType, list))
+        assert isinstance(archive, bool)
 
         self.call = call
         self.args = args or []
@@ -80,6 +84,7 @@ class CallRequest(object):
         self.resources = resources or {}
         self.weight = weight
         self.tags = tags or []
+        self.archive = archive
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_EXECUTION_HOOKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
         # XXX doesn't work for callable instances and mock objects
