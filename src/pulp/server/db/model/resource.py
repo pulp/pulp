@@ -15,6 +15,7 @@ import datetime
 import urlparse
 
 from pulp.common import dateutils
+from pulp.common.util import encode_unicode
 from pulp.server.db.model.base import Model
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
@@ -329,7 +330,7 @@ class RepoSource(Model):
         self.set_type(url)
 
     def set_type(self, url):
-        proto, netloc, path, params, query, frag = urlparse.urlparse(url)
+        proto, netloc, path, params, query, frag = urlparse.urlparse(encode_unicode(url))
         self.url = url
         if proto in ['http', 'https', 'ftp']:
             self.type = u"remote"

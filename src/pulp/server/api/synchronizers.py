@@ -1205,8 +1205,8 @@ class YumSynchronizer(BaseSynchronizer):
     def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
-        src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
-        log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
+        src_repo_dir = urlparse(encode_unicode(repo_source['url']))[2]
+        log.info("sync of %s for repo %s" % (decode_unicode(src_repo_dir), repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
@@ -1352,7 +1352,7 @@ class FileSynchronizer(BaseSynchronizer):
     def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
               max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
-        src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
+        src_repo_dir = urlparse(encode_unicode(repo_source['url']))[2]
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict)
 
