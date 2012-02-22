@@ -251,7 +251,7 @@ class RepoApi(BaseApi):
                     relative_path = id
                 else:
                     # For none product repos, default to repoid
-                    url_parse = urlparse(str(source["url"]))
+                    url_parse = urlparse(encode_unicode(source["url"]))
                     relative_path = url_parse[2] or id
             else:
                 relative_path = id
@@ -495,7 +495,7 @@ class RepoApi(BaseApi):
             uri = str(gpgkey['gpg_key_url'])
             try:
                 if uri.startswith("file://"):
-                    key_path = urlparse(uri).path.encode('ascii', 'ignore')
+                    key_path = urlparse(encode_unicode(uri)).path
                     ginfo = open(key_path, "rb").read()
                 else:
                     ginfo = serv.fetch_gpgkeys(uri)
@@ -693,7 +693,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         prevpath = ''
         if repo['source']:
-            prevpath = urlparse(repo['source']['url'])[2].strip('/')
+            prevpath = urlparse(encode_unicode(repo['source']['url']))[2].strip('/')
         hascontent = self._hascontent(repo)
         repo_cert_utils = RepoCertUtils(config.config)
         protected_repo_utils = ProtectedRepoUtils(config.config)
@@ -752,7 +752,7 @@ class RepoApi(BaseApi):
             if key == 'feed':
                 repo[key] = value
                 if value:
-                    newpath = urlparse(value)[2].strip('/')
+                    newpath = urlparse(encode_unicode(value))[2].strip('/')
                     if prevpath != newpath:
                         log.error("MisMatch %s != %s" % (prevpath, newpath))
                         raise PulpException("Relativepath of the new feed [%s] does not match existing feed [%s]; cannot perform update" % (newpath, prevpath))
