@@ -1672,7 +1672,7 @@ class RepoApi(BaseApi):
         """
         return [task
                 for task in find_async(method='_sync')
-                if id in task.args]
+                if encode_unicode(id) in task.args]
 
     def get_sync_status_by_tasks(self, tasks):
         """
@@ -1737,8 +1737,8 @@ class RepoApi(BaseApi):
         """
         # Look up the tasks for this repo id
         tasks = [t for t in find_async(method_name="_sync")
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+                 if (t.args and encode_unicode(id) in t.args) or
+                 (t.kwargs and encode_unicode(id) in t.kwargs.values())]
 
         # Assume we only founds 1 task.
         if tasks:
@@ -2273,7 +2273,7 @@ class RepoApi(BaseApi):
         """
         return [task
                 for task in find_async(method='_generate_metadata')
-                if id in task.args]
+                if encode_unicode(id) in task.args]
 
     def set_sync_in_progress(self, id, state):
         """
