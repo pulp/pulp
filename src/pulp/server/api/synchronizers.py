@@ -887,7 +887,7 @@ class YumSynchronizer(BaseSynchronizer):
             shutil.copy(src_pkg_path, dst_pkg_path)
 
             self.progress['num_download'] += 1
-        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg.relativepath))
+        repo_pkg_path = os.path.join(dst_repo_dir, pkg.relativepath)
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(dst_pkg_path, repo_pkg_path)
 
