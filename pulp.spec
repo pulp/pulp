@@ -504,6 +504,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Feb 23 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-1
+- Build 1.0.0 (stable). (jortel@redhat.com)
+- Update requires on mod_wsgi (jslagle@redhat.com)
+- Add requires for updated m2crypto (jmatthews@redhat.com)
+
 * Tue Feb 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-2
 - bump release for build. (jortel@redhat.com)
 - bump gofer 0.66 for gofer deps. (jortel@redhat.com)
