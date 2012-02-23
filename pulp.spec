@@ -504,6 +504,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Feb 23 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-2
+- bump release for build. (jortel@redhat.com)
+- adding some safety checks before computing bytes (pkilambi@redhat.com)
+- 795819 - account for the relativepath from the metadata location field
+  (pkilambi@redhat.com)
+
 * Thu Feb 23 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-1
 - Build 1.0.0 (stable). (jortel@redhat.com)
 - Update requires on mod_wsgi (jslagle@redhat.com)
