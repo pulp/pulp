@@ -14,7 +14,7 @@
 from pulp.server import config as pulp_config
 from pulp.server.dispatch import pickling
 from pulp.server.dispatch.coordinator import Coordinator
-from pulp.server.dispatch.scheduler import Scheduler, _run_via_coordinator
+from pulp.server.dispatch.scheduler import Scheduler
 from pulp.server.dispatch.taskqueue import TaskQueue
 
 # globals ----------------------------------------------------------------------
@@ -36,9 +36,9 @@ def _initialize_coordinator():
 def _initialize_scheduler():
     global _SCHEDULER
     assert _SCHEDULER is None
+    assert _COORDINATOR is not None
     dispatch_interval = 30 # can make this configurable
-    run_method = _run_via_coordinator
-    _SCHEDULER = Scheduler(dispatch_interval, run_method)
+    _SCHEDULER = Scheduler(_COORDINATOR, dispatch_interval)
 
 
 def _initialize_task_queue():
