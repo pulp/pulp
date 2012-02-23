@@ -87,7 +87,7 @@ class Task(object):
         @type  kwarg_name: str
         """
         spec = inspect.getargspec(self.call_request.call)
-        if kwarg_name not in spec.args:
+        if kwarg_name not in spec[0]:
             raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(kwarg_name)
         self.call_request.kwargs[kwarg_name] = self._report_progress
 
@@ -214,9 +214,9 @@ class AsyncTask(Task):
         _succeeded and _failed methods.
         """
         spec = inspect.getargspec(self.call_request.call)
-        if success_callback_kwarg_name not in spec.args:
+        if success_callback_kwarg_name not in spec[0]:
             raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(success_callback_kwarg_name)
-        if failure_callback_kwarg_name not in spec.args:
+        if failure_callback_kwarg_name not in spec[0]:
             raise dispatch_exceptions.MissingFailureCallbackKeywordArgument(failure_callback_kwarg_name)
         self.call_request.kwargs[success_callback_kwarg_name] = self._succeeded
         self.call_request.kwargs[failure_callback_kwarg_name] = self._failed

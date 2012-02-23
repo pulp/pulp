@@ -92,13 +92,13 @@ class CallRequest(object):
 
     def _validate_callbacks(self):
         spec = inspect.getargspec(self.call)
-        if spec.keywords: # **kwargs magic, can't be verified any further
+        if spec[2]: # **kwargs magic, can't be verified any further
             return
-        if self.progress_callback_kwarg is not None and self.progress_callback_kwarg not in spec.args:
+        if self.progress_callback_kwarg is not None and self.progress_callback_kwarg not in spec[0]:
             raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(self.call.__name__, self.progress_callback_kwarg)
-        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[0] not in spec.args:
+        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[0] not in spec[0]:
             raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(self.call.__name__, self.success_failure_callback_kwargs[0])
-        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[1] not in spec.args:
+        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[1] not in spec[0]:
             raise dispatch_exceptions.MissingFailureCallbackKeywordArgument(self.call.__name__, self.success_failure_callback_kwargs[1])
 
     def callable_name(self):
