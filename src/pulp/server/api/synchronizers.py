@@ -659,7 +659,9 @@ class BaseSynchronizer(object):
     def _calculate_bytes(self, dir, pkglist):
         bytes = 0
         for pkg in pkglist:
-            bytes += os.stat(os.path.join(dir, pkg))[6]
+            pkg_path = os.path.join(dir, pkg)
+            if os.path.exists(pkg_path):
+                bytes += os.stat(pkg_path)[6]
         return bytes
 
     def _add_error_details(self, file_name, item_type, error_info):
