@@ -59,7 +59,7 @@ class Harness:
 
     def run(self):
         """
-        Runs the appropriate commands accroding the script given at instantiation.
+        Runs the appropriate commands according to the script given at instantiation.
         """
 
         if self.script.getboolean('general', 'run_delete_repo'):
@@ -145,14 +145,17 @@ class Harness:
 
         repo_id = self.script.get('general', 'repo_id')
 
-        importer_config = dict(self.script.items('importer'))
+        importer_config_type = self.script.get('general', 'importer_config_type')
+        importer_config = dict(self.script.items(importer_config_type))
+        importer_type_id = self.script.get('general', 'importer_type_id')
 
         url = '/v2/repositories/%s/importers/' % repo_id
         body = {
-            'importer_type_id' : 'harness_importer',
+            'importer_type_id' : importer_type_id,
             'importer_config'  : importer_config,
         }
 
+        self.prompt.write("importer_config_type = %s" % (importer_config_type))
         self.prompt.write('Adding the harness importer to repository [%s]' % repo_id)
         self.prompt.write('Importer configuration:')
         for k, v in importer_config.items():

@@ -51,18 +51,18 @@ Requires: python-ldap
 Requires: python-gofer >= 0.65
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi >= 3.3-1.pulp%{?dist}
+Requires: mod_wsgi >= 3.3-3.pulp%{?dist}
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
 %if 0%{?rhel} == 5
 Requires: m2crypto
 %else
-Requires: m2crypto = 0.21.1.pulp
+Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
 %endif
 
 %if %{pulp_selinux}
-Requires: %{name}-selinux-server = %{version}
+Requires: %{name}-selinux-server = %{version}-%{release}
 %endif
 
 %if 0%{?rhel} == 5
@@ -167,10 +167,10 @@ Requires:       mod_ssl
 %if 0%{?rhel} == 5
 Requires: m2crypto
 %else
-Requires: m2crypto = 0.21.1.pulp
+Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
 %endif
 %if %{pulp_selinux}
-Requires: %{name}-selinux-server = %{version}
+Requires: %{name}-selinux-server = %{version}-%{release}
 %endif
 BuildRequires:  rpm-python
 # Both attempt to serve content at the same apache alias, so don't
