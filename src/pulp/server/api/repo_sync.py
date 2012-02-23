@@ -103,6 +103,9 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     # Associate filters if specified
     if len(filters) > 0:
         repo_api.add_filters(clone_id, filter_ids=filters)
+        encoded_filters = [encode_unicode(f) for f in filters]
+    else:
+        encoded_filters = []
 
     task = RepoCloneTask(_clone,
                          [clone_id],
@@ -111,7 +114,7 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
                           'feed':feed,
                           'relative_path':relative_path,
                           'groupid':groupid,
-                          'filters':filters},
+                          'filters':encoded_filters},
                          timeout=timeout)
     if feed in ('feedless', 'parent'):
         task.set_progress('progress_callback', local_progress_callback)
