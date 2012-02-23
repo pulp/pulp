@@ -504,6 +504,21 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Feb 23 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-3
+- bump release for v1 candidate build. (jortel@redhat.com)
+- 790806 - Fixed encoding error thrown when repo cloning with unicode id,
+  filters and relativepath (skarmark@redhat.com)
+- 790806 - fixed client task list to not convert task args to str instead
+  encode them with 'utf-8' (skarmark@redhat.com)
+- 790806 - fixes to cancel_sync which was resulting in sync not found due to
+  improper encoding of unicode ids (skarmark@redhat.com)
+- 790806 - urlparse is not handling unicode urls correctly, so encoding them
+  with utf-8 before parsing (skarmark@redhat.com)
+- 790005 Require exact matching version and release of pulp-selinux-server for
+  pulp (jslagle@redhat.com)
+- Update requires on mod_wsgi (jslagle@redhat.com)
+- Add requires for updated m2crypto (jmatthews@redhat.com)
+
 * Tue Feb 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-2
 - bump release for build. (jortel@redhat.com)
 - bump gofer 0.66 for gofer deps. (jortel@redhat.com)
