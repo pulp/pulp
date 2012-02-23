@@ -18,7 +18,7 @@ def get_package_xml(pkg):
                }
     return metadata
 
-def add_package_primary_to_repo(primary_xml_path, package):
+def add_package_primary_to_repo(primary_xml_path, pkg_path):
     print "start time %s" % time.ctime()
     node = get_package_xml(pkg_path)['primary']
     XML_STR_FILLED = XML_STR % (1, node)
