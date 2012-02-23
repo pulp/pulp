@@ -19,6 +19,7 @@ import traceback
 from types import NoneType, TracebackType
 
 from pulp.common import dateutils
+from pulp.common.util import encode_unicode
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 
@@ -173,6 +174,8 @@ class CallRequest(object):
 
         constructor_kwargs = dict(data)
         constructor_kwargs.pop('callable_name') # added for search
+        for key, value in constructor_kwargs.items():
+            constructor_kwargs[encode_unicode(key)] = constructor_kwargs.pop(key)
 
         try:
             for field in cls.pickled_fields:
