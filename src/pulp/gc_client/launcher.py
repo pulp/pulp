@@ -141,7 +141,7 @@ def main():
     # Assemble the client context
 
     # Load extensions into the UI in the context
-    extensions_dir = config.get('general', 'extensions_dir')
+    extensions_dir = config.get('filesystem', 'extensions_dir')
     try:
         extensions_loader.load_extensions(extensions_dir, context)
     except extensions_loader.LoadFailed, e:

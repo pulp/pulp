@@ -17,7 +17,7 @@
 
 import sys
 
-import pulp.gc_client.admin.launcher
+import pulp.gc_client.launcher
 
 if __name__ == "__main__":
     sys.exit(pulp.gc_client.admin.launcher.main())
