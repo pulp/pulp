@@ -35,6 +35,7 @@ def add_package_primary_to_repo(primary_xml_path, package):
     for c1 in pkg_et.getchildren():
         if c1[-2].values()[0] in et_child_locations:
             print "exists skipping"
+            continue
         root.append(c1)
     new_et_children = root.getchildren()
     print "Current count %s" % len(et_children)
