@@ -50,6 +50,14 @@ class TaskAction(Action):
 
     def setup_parser(self):
         self.parser.add_option('--id', dest='id', help=_('task id'))
+        
+    def encode_unicode(self,path):
+        """
+        Check if given path is a unicode and if yes, return utf-8 encoded path
+        """
+        if type(path) is unicode:
+            path = path.encode('utf-8')
+        return path
 
     def format_task(self, task):
         def _call(task):
@@ -61,7 +69,7 @@ class TaskAction(Action):
                                  task['job_id'],
                                  task['scheduler'],
                                  _call(task),
-                                 ', '.join([str(a) for a in task['args']]),
+                                 ', '.join([self.encode_unicode(a) for a in task['args']]),
                                  task['state'],
                                  task['start_time'],
                                  task['finish_time'],
