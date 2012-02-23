@@ -77,6 +77,7 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
 
     # Utility function to save space making sure files are closed after reading
     def read_cert_file(filename):
+        filename = encode_unicode(filename)
         f = open(filename, 'r')
         contents = f.read()
         f.close()
