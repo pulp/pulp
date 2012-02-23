@@ -74,9 +74,9 @@ class RepoCollection(JSONController):
         try:
             repo = repo_manager.create_repo(id, display_name, description, notes)
             return self.created(None, repo)
-        except errors.DuplicateRepoId, e:
+        except errors.DuplicateRepoId:
             _LOG.exception('Duplicate repo ID [%s]' % id)
-            serialized = http_error_obj(409, e.__str__())
+            serialized = http_error_obj(409)
             return self.conflict(serialized)
         except (errors.InvalidRepoId, errors.InvalidRepoMetadata):
             _LOG.exception('Bad request data for repository [%s]' % id)
