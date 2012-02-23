@@ -54,7 +54,7 @@ class ScheduledCall(Model):
         interval, start_date, runs = dateutils.parse_iso8601_interval(schedule)
         start_date = start_date or datetime.now()
 
-        self.interval_in_seconds = interval.total_seconds()
+        self.interval_in_seconds = interval.seconds + interval.days * 86400
         self.start_date = dateutils.to_naive_utc_datetime(start_date)
         self.remaining_runs = runs
 
