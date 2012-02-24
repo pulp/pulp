@@ -17,6 +17,8 @@ Importer plugin for Yum functionality
 
 import logging
 import os
+import time
+
 import pulp.server.util 
 from grinder.RepoFetch import YumRepoGrinder
 from pulp.server.content.plugins.importer import Importer
@@ -25,6 +27,7 @@ from pulp.server.content.plugins.importer import Importer
 _LOG = logging.getLogger(__name__)
 _LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
 
+RPM_TYPE_ID="rpm"
 YUM_IMPORTER_TYPE_ID="yum_importer"
 
 REQUIRED_CONFIG_KEYS = ['feed_url']
@@ -41,7 +44,7 @@ class YumImporter(Importer):
         return {
             'id'           : YUM_IMPORTER_TYPE_ID,
             'display_name' : 'Yum Importer',
-            'types'        : ['rpm']
+            'types'        : [RPM_TYPE_ID]
         }
 
     def validate_config(self, repo, config):
@@ -103,7 +106,7 @@ class YumImporter(Importer):
     # -- actions --------------------------------------------------------------
 
     def sync_repo(self, repo, sync_conduit, config):
-        _LOG.info("sync_repo invoked")
+        start = time.time()
         _LOG.info("Sync repo <%s> from feed_url <%s>, with working_dir = <%s>" % (repo, config.get("feed_url"), repo.working_dir))
         repo_label = config.get("repo_label") or repo.id
         repo_url = config.get("feed_url")
@@ -131,7 +134,6 @@ class YumImporter(Importer):
         for u in sync_conduit.get_units():
             key = self.form_lookup_key(u.unit_key)
             existing_units[key] = u
-        _LOG.info("existing_units = %s" % (existing_units.keys()))
         ###
         # Prepare repo and determine what rpms to sync
         ###
@@ -186,16 +188,13 @@ class YumImporter(Importer):
         for rpm in new_rpms.values():
             unit_key = self.form_rpm_unit_key(rpm)
             metadata = self.form_rpm_metadata(rpm)
-            unit = sync_conduit.init_unit(YUM_IMPORTER_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
+            unit = sync_conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
             rpm["pkgpath"] = unit.storage_path
-            _LOG.info("unit = %s" % (unit))
             proposed_units[self.form_lookup_key(unit.unit_key)] = unit
-        _LOG.info("proposed_units = %s" % (proposed_units))
         for key in missing_rpms:
             rpm = missing_rpms[key]
             unit = missing_units[key]
             rpm["pkgpath"] = unit.storage_path
-
         ###
         # Sync the new rpms
         ###
@@ -206,32 +205,40 @@ class YumImporter(Importer):
         _LOG.info("Finished download of %s.  Report = %s" % (repo.id, report))
         # Verify we synced what we expected
         not_synced = {}
-        for key in missing_rpms:
+        for key in missing_rpms.keys():
             rpm = missing_rpms[key]
             if not self.verify_exists(rpm["pkgpath"]):
                 not_synced[key] = rpm
-        for key in new_rpms:
+                del missing_rpms[key]
+        for key in new_rpms.keys():
             rpm = new_rpms[key]
             if not self.verify_exists(rpm["pkgpath"]):
                 not_synced[key] = rpm
-        if not_synced:
-            _LOG.info("%s packages have not been synced" % (len(not_synced)))
+                del new_rpms[key]
+        # Remove items not synced from proposed_units
+        for key in not_synced:
+            del proposed_units[key]
         ###
         # Save the new units
         ###
-        for key, unit in proposed_units.items():
-            if key not in not_synced:
-                # Only add new units we have verified are synced and exist on the disk
-                _LOG.info("Save key=%s, unit=%s" % (key, unit))
-                _LOG.info("unit.metadata = %s" % (unit.metadata))
-                sync_conduit.save_unit(unit)
+        for key in proposed_units:
+            sync_conduit.save_unit(proposed_units[key])
+        if not_synced:
+            _LOG.info("%s packages have not been synced" % (len(not_synced)))
         ###
         # Remove the orphaned units
         ###
         for key, unit in orphaned_units.items():
+            _LOG.info("Removing Orphaned Package: %s, %s" % (key, unit))
             sync_conduit.remove_unit(unit)
-        summary = "Summary"
-        details = "Details"
+        end = time.time()
+        summary =  "Synchronization Successful"
+        details =  "Import Details\n"
+        details += "Ellapsed time in seconds: %d\n" % (end - start)
+        details += "%s new rpms imported" % (len(new_rpms))
+        details += "%s existing rpms re-synchronized" % (len(missing_rpms))
+        details += "%s rpms showed a problem and weren't downloaded" % (len(not_synced))
+        details += "%s rpms were orphaned from the feed repository and removed" % (len(orphaned_units))
         return sync_conduit.build_report(summary, details)
 
     def form_rpm_unit_key(self, rpm):

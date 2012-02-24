@@ -342,7 +342,7 @@ class Harness:
     def list_units(self):
         self._print_divider()
 
-        type_id = 'harness_type_one'
+        type_id = self.script.get('general', 'list_content_id')
         url = '/v2/content/%s/units/' % type_id
 
         self.prompt.write('Retrieving list of units of type [%s]' % type_id)
