@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.db.model.base import Model
+from pulp.server.db.model.gc_base import Model
 
 # -- classes -----------------------------------------------------------------
 
@@ -46,8 +46,9 @@ class ContentType(Model):
     unique_indices = ('id',)
 
     def __init__(self, id, display_name, description, unit_key, search_indexes, referenced_types):
+        super(ContentType, self).__init__()
+
         self.id = id
-        self._id = id
 
         self.display_name = display_name
         self.description = description

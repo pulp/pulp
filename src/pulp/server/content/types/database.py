@@ -218,7 +218,7 @@ def type_definition(type_id):
     @rtype: SON or None
     """
     collection = ContentType.get_collection()
-    type_ = collection.find_one({'_id': type_id})
+    type_ = collection.find_one({'id': type_id})
     return type_
 
 
@@ -247,7 +247,7 @@ def type_units_unit_key(type_id):
     @rtype: list of str or None
     """
     collection = ContentType.get_collection()
-    type_def = collection.find_one(type_id)
+    type_def = collection.find_one({'id': type_id})
     if type_def is None:
         return None
     return type_def['unit_key']
@@ -263,10 +263,16 @@ def _create_or_update_type(type_def):
     if collection_name not in database.collection_names():
         pulp_db.get_collection(collection_name, create=True)
 
-    # Add an entry to the types list
+    # Add or update an entry in the types list
+    content_type_collection = ContentType.get_collection()
     content_type = ContentType(type_def.id, type_def.display_name, type_def.description,
                                type_def.unit_key, type_def.search_indexes, type_def.referenced_types)
-    ContentType.get_collection().save(content_type, safe=True)
+    # no longer rely on _id = id
+    existing_type = content_type_collection.find_one({'id': type_def.id}, fields=[])
+    if existing_type is not None:
+        content_type._id = existing_type['_id']
+    # XXX this still causes a potential race condition when 2 users are updating the same type
+    content_type_collection.save(content_type, safe=True)
 
 def _update_indexes(type_def, unique):
 
