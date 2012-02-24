@@ -181,7 +181,8 @@ class CdsApi(BaseApi):
         # Explicitly unassociate each repo from the CDS first so the cluster
         # and redistribution changes can take place
         for repo_id in doomed['repo_ids']:
-            self.unassociate_repo(hostname, repo_id, deleted=False, apply_to_cluster=True)
+            self.unassociate_repo(hostname, repo_id, deleted=False,
+                apply_to_cluster=False)
 
         try:
             self.dispatcher.release_cds(doomed)
