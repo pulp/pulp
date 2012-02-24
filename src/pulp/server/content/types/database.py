@@ -218,7 +218,7 @@ def type_definition(type_id):
     @rtype: SON or None
     """
     collection = ContentType.get_collection()
-    type_ = collection.find_one({'_id': type_id})
+    type_ = collection.find_one({'id': type_id})
     return type_
 
 
@@ -247,7 +247,7 @@ def type_units_unit_key(type_id):
     @rtype: list of str or None
     """
     collection = ContentType.get_collection()
-    type_def = collection.find_one(type_id)
+    type_def = collection.find_one({'id': type_id})
     if type_def is None:
         return None
     return type_def['unit_key']

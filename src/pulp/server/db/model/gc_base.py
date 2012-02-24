@@ -13,6 +13,7 @@
 
 from pymongo import DESCENDING
 
+from bson.objectid import ObjectId
 from pulp.server.db.connection import get_collection
 
 
@@ -56,6 +57,9 @@ class Model(dict):
     search_indices = ()
 
     # -------------------------------------------------------------------------
+
+    def __init__(self):
+        self._id = ObjectId()
 
     # XXX only for use in constructors
     # dict to dot-notation mapping methods

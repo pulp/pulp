@@ -15,7 +15,7 @@ import datetime
 import traceback as traceback_module
 
 import pulp.common.dateutils as dateutils
-from pulp.server.db.model.base import Model
+from pulp.server.db.model.gc_base import Model
 
 # -- classes -----------------------------------------------------------------
 
@@ -53,12 +53,9 @@ class Repo(Model):
     unique_indices = ('id',)
 
     def __init__(self, id, display_name, description=None, notes=None):
+        super(Repo, self).__init__()
 
-        # Don't call super.__init__ since it generates a UUID
-
-        # General
         self.id = id
-        self._id = id
         self.display_name = display_name
         self.description = description
         self.notes = notes or {}
@@ -72,6 +69,7 @@ class Repo(Model):
         # Importers, Distributors, and Content Units are not referenced from
         # repo instances. They are retrieved separately through their respective
         # collections.
+
 
 class RepoImporter(Model):
     """
@@ -111,9 +109,7 @@ class RepoImporter(Model):
     unique_indices = ( ('repo_id', 'id'), )
 
     def __init__(self, repo_id, id, importer_type_id, config):
-
-        # Generate a UUID for _id
-        Model.__init__(self)
+        super(RepoImporter, self).__init__()
 
         # General
         self.repo_id = repo_id
@@ -125,6 +121,7 @@ class RepoImporter(Model):
         # Sync
         self.sync_in_progress = False
         self.last_sync = None
+
 
 class RepoDistributor(Model):
     """
@@ -168,9 +165,7 @@ class RepoDistributor(Model):
     unique_indices = ( ('repo_id', 'id'), )
 
     def __init__(self, repo_id, id, distributor_type_id, config, auto_publish):
-
-        # Generate a UUID for _id
-        Model.__init__(self)
+        super(RepoDistributor, self).__init__()
 
         self.repo_id = repo_id
         self.id = id
@@ -182,6 +177,7 @@ class RepoDistributor(Model):
         # Publish
         self.publish_in_progress = False
         self.last_publish = None
+
 
 class RepoContentUnit(Model):
     """
@@ -237,9 +233,7 @@ class RepoContentUnit(Model):
     OWNER_TYPE_USER = 'user'
 
     def __init__(self, repo_id, unit_id, unit_type_id, owner_type, owner_id):
-
-        # Generate a UUID for _id
-        Model.__init__(self)
+        super(RepoContentUnit, self).__init__()
 
         # Mapping Identity Information
         self.repo_id = repo_id
@@ -252,6 +246,7 @@ class RepoContentUnit(Model):
 
         self.created = dateutils.format_iso8601_datetime(datetime.datetime.now())
         self.updated = self.created
+
 
 class RepoSyncResult(Model):
     """
@@ -295,7 +290,7 @@ class RepoSyncResult(Model):
         r.error_message = str(exception)
         r.exception = repr(exception)
         r.traceback = traceback_module.format_tb(traceback)
-                
+
         return r
 
     @classmethod
@@ -349,7 +344,7 @@ class RepoSyncResult(Model):
         Rather than directory instantiating instances, use one of the above
         factory methods to make sure all the necessary fields are specified.
         """
-        Model.__init__(self)
+        super(RepoSyncResult, self).__init__()
 
         self.repo_id = repo_id
         self.importer_id = importer_id
@@ -368,6 +363,7 @@ class RepoSyncResult(Model):
         self.removed_count = None
         self.summary = None
         self.details = None
+
 
 class RepoPublishResult(Model):
     """
@@ -407,11 +403,11 @@ class RepoPublishResult(Model):
         @type  traceback: traceback
         """
 
-        r = RepoPublishResult(repo_id, distributor_id, distributor_type_id, started, completed, RepoPublishResult.RESULT_ERROR)
+        r = cls(repo_id, distributor_id, distributor_type_id, started, completed, cls.RESULT_ERROR)
         r.error_message = str(exception)
         r.exception = repr(exception)
         r.traceback = traceback_module.format_tb(traceback)
-        
+
         return r
 
     @classmethod
@@ -441,7 +437,7 @@ class RepoPublishResult(Model):
         @type  details: any serializable
         """
 
-        r = RepoPublishResult(repo_id, distributor_id, distributor_type_id, started, completed, RepoSyncResult.RESULT_SUCCESS)
+        r = cls(repo_id, distributor_id, distributor_type_id, started, completed, cls.RESULT_SUCCESS)
         r.summary = summary
         r.details = details
 
@@ -453,7 +449,7 @@ class RepoPublishResult(Model):
         Rather than directory instantiating instances, use one of the above
         factory methods to make sure all the necessary fields are specified.
         """
-        Model.__init__(self)
+        super(RepoPublishResult, self).__init__()
 
         self.repo_id = repo_id
         self.distributor_id = distributor_id
