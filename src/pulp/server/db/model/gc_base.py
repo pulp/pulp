@@ -60,6 +60,7 @@ class Model(dict):
 
     def __init__(self):
         self._id = ObjectId()
+        self.id = str(self._id) # legacy behavior, would love to rid ourselves of this
 
     # XXX only for use in constructors
     # dict to dot-notation mapping methods
