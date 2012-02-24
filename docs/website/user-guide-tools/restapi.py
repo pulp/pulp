@@ -35,8 +35,8 @@ def parse_args(args=sys.argv[1:]):
 
 _parent_module = 'pulp.server.webservices.controllers'
 
-_module_names = ('audit', 'cds', 'consumergroups', 'consumers', 'content',
-                 'distribution', 'errata', 'filters', 'orphaned', 'packages',
+_module_names = ('audit', 'cds', 'consumergroups', 'consumers',
+                 'distribution', 'filters', 'orphaned', 'packages',
                  'permissions', 'repositories', 'roles', 'services', 'tasks',
                  'users', 'jobs',)
 
