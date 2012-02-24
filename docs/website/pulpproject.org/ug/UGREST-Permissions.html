@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Permissions.html#top">Permissions RESTful API</a>
+    <ol>
+      <li>
+        <a href="UGREST-Permissions.html#GrantRolePermissions">Grant Role Permissions</a>
+      </li>
+      <li>
+        <a href="UGREST-Permissions.html#GrantUserPermissions">Grant User Permissions</a>
+      </li>
+      <li>
+        <a href="UGREST-Permissions.html#RevokeRolePermissions">Revoke Role Permissions</a>
+      </li>
+      <li>
+        <a href="UGREST-Permissions.html#RevokeUserPermissions">Revoke User Permissions</a>
+      </li>
+      <li>
+        <a href="UGREST-Permissions.html#ShowPermissions">Show Permissions</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="top">Permissions RESTful API</h1>
+<p>
+<em>No description.</em> <br />
+<br />
+</p>
+<hr />
+<h2 id="GrantRolePermissions">Grant Role Permissions</h2>
+<p>
+<em>Grant permissions for a resource to a role</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /permissions/role/grant/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if the required parameters are not present <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>rolename</strong> <em>(required)</em> &lt;str&gt; <em>name of role to grant permissions to</em>
+</li><li><strong>resource</strong> <em>(required)</em> &lt;str&gt; <em>uri path of resource to grant permissions on</em>
+</li><li><strong>operations</strong> <em>(required)</em> &lt;list of strings&gt; <em>valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE</em>
+</li></ul><p>
+<br />
+</p>
+<h2 id="GrantUserPermissions">Grant User Permissions</h2>
+<p>
+<em>Grant permissions for a resource to a user</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /permissions/user/grant/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if the required parameters are not present <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>username</strong> <em>(required)</em> &lt;str&gt; <em>login of user to grant permissions to</em>
+</li><li><strong>resource</strong> <em>(required)</em> &lt;str&gt; <em>uri path of resource to grant permissions on</em>
+</li><li><strong>operations</strong> <em>(required)</em> &lt;list of strings&gt; <em>valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE</em>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RevokeRolePermissions">Revoke Role Permissions</h2>
+<p>
+<em>Revoke permissions for a resource from a role</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /permissions/role/revoke/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if the required parameters are not present <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>rolename</strong> <em>(required)</em> &lt;str&gt; <em>name of role to revoke permissions from</em>
+</li><li><strong>resource</strong> <em>(required)</em> &lt;str&gt; <em>uri path of resource to revoke permissions on</em>
+</li><li><strong>operations</strong> <em>(required)</em> &lt;list of strings&gt; <em>valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE</em>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RevokeUserPermissions">Revoke User Permissions</h2>
+<p>
+<em>Revoke permissions for a resource from a user</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /permissions/user/revoke/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if the required parameters are not present <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>username</strong> <em>(required)</em> &lt;str&gt; <em>login of user to revoke permissions from</em>
+</li><li><strong>resource</strong> <em>(required)</em> &lt;str&gt; <em>uri path of resource to revoke permissions on</em>
+</li><li><strong>operations</strong> <em>(required)</em> &lt;list of strings&gt; <em>valid operations are: CREATE, READ, UPDATE, DELETE, EXECUTE</em>
+</li></ul><p>
+<br />
+</p>
+<hr />
+<h2 id="ShowPermissions">Show Permissions</h2>
+<p>
+<em>Show the permissions for a given resource</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /permissions/show/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if the required parameters are not present <br />
+<br />
+<strong>return</strong>: permissions for given resource <br />
+<br />
+<strong>example</strong>: 
+</p>
+<div class="code"><pre><span class="p">{</span><span class="s2">"id"</span><span class="o">:</span> <span class="s2">"78daa991-ec1f-4908-9b59-5c1010bde7a6"</span><span class="p">,</span>
+ <span class="s2">"resource"</span><span class="o">:</span> <span class="s2">"/"</span><span class="p">,</span>
+ <span class="s2">"users"</span><span class="o">:</span> <span class="p">{</span><span class="s2">"admin"</span><span class="o">:</span> <span class="p">[</span><span class="s2">"CREATE"</span><span class="p">,</span> <span class="s2">"READ"</span><span class="p">,</span> <span class="s2">"UPDATE"</span><span class="p">,</span> <span class="s2">"DELETE"</span><span class="p">,</span> <span class="s2">"EXECUTE"</span><span class="p">]}</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>resource</strong> <em>(required)</em> &lt;str&gt; <em>resource path</em>
+</li></ul><p>
+<br />
+</p>
+</div>
+        
+        
+      </div>
+      
+
+    </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
+    
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

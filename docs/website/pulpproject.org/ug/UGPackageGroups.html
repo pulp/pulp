@@ -32,39 +32,36 @@
 
 <div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroups">PackageGroups</h1>
 <p>
-A <em>packagegroup</em> corresponds to a collection of package names in the Pulp server.  
-Yum uses packagegroups to install multiple related packages as a single collection. 
-An example of using a packagegroup is: "yum groupinstall fonts". 
-Additionally the concept of a collection of groups is present, which is called a "Category", 
-in pulp this is a "packagegroupcategory".
+A <em>package group</em> corresponds to a collection of package names in the Pulp server. Yum uses package groups to install multiple related packages as a single collection, for example "yum groupinstall fonts". Additionally, the concept of a collection of groups exists, called a "Category".
 </p>
 <hr />
 <h2 id="install">Installation</h2>
 <p>
-Remote packagegroup installation on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install">Consumers</a> section of the User Guide.
+Remote package group installation on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install">Consumers</a> section of the User Guide.
 </p>
 <hr />
 <h2 id="uninstall">Removal</h2>
 <p>
-Remote packagegroup removal on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install">Consumers</a> section of the User Guide.
+Remote package group removal on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install">Consumers</a> section of the User Guide.
 </p>
 <hr />
 <h2 id="list">List</h2>
 <p>
-The <tt>packagroup list</tt> command displays packagegroups defined by this repository, it requires at a minimum a 'repository id'.
+The <tt>packagegroup list</tt> command displays package groups defined by a given repository.
 </p>
 <p>
 Parameters:
 </p>
 <table class="wiki">
 <tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> </td><td> <strong><a class="missing wiki">Optional/Required?</a></strong> 
-</td></tr><tr><td> -r/--repoid </td><td> Repository id </td><td> Required 
-</td></tr><tr><td> -f/--filter </td><td> Removes groups that contain a package name outside of it's own repository. </td><td> Optional 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> Repository ID </td><td> Required 
+</td></tr><tr><td> <tt>-f</tt> or <tt>--filter</tt> </td><td> Removes groups that contain a package name outside of it's own repository. </td><td> Optional 
 </td></tr></table>
 <p>
-A packagegroup may contain package names of packages not included in it's repository.  An optional parameter may be passed into this <tt></tt><tt>packagegroup list</tt><tt></tt> command to limit returned results to only include those groups where each package mentioned resides in the repository.  This option would be specified as  <tt></tt><tt>packagegroup list --filter</tt><tt></tt>
+A package group may contain names of packages not included in it's repository. An optional parameter may be passed into the <tt></tt><tt>packagegroup list</tt><tt></tt> command to limit returned results to only include those groups where each package mentioned is present in the repository. This option would be specified as <tt></tt><tt>packagegroup list --filter</tt><tt></tt>.
 </p>
-<pre class="wiki">pulp-admin packagegroup list --repoid repo_with_groups
+<h4 id="Example">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup list --repoid repo_with_groups
 +------------------------------------------+
         Repository: repo_with_groups
           Package Group Information
@@ -96,30 +93,30 @@ pulp-admin packagegroup list --repoid pulp_f14 --filter
 	 all_pkgs_in_repo_test
 
 </pre><hr />
-<h2 id="info">Info</h2>
+<h2 id="groupinfo">Info</h2>
 <p>
-The <tt></tt><tt>packagegroup info</tt><tt></tt> command displays information about a specific packagegroup.  The packagegroup is specified with a 'repository id' and a 'packagegroup id'.  
+The <tt></tt><tt>packagegroup info</tt><tt></tt> command displays information about a specific package group. The package group is indicated by both a repository ID and a package group ID.
 </p>
 <p>
 Parameters:
 </p>
 <table class="wiki">
 <tr><td> <strong>Parameter</strong> </td><td style="text-align: left">| <strong>Description</strong> 
-</td></tr><tr><td> --id  </td><td> Packagegroup id 
-</td></tr><tr><td> -r/--repoid </td><td> Repository id 
-</td></tr><tr><td> -f/--filter </td><td> For each group, only return package names which are part of the repository 
+</td></tr><tr><td> <tt>--id</tt>  </td><td> Package group ID 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> Repository ID 
+</td></tr><tr><td> <tt>-f</tt> or <tt>--filter</tt> </td><td> For each group, only return package names which are part of the repository 
 </td></tr></table>
 <p>
-Information about a packagegroup includes:
+Information about a package group includes:
 </p>
 <table class="wiki">
 <tr><td> <strong>Field</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> Name </td><td> Name of this packagegroup 
-</td></tr><tr><td> Id </td><td> Id of this packagegroup, typically the name in lowercase 
-</td></tr><tr><td> Mandatory packages </td><td> These packages are always installed if this package group is installed 
-</td></tr><tr><td> Default packages </td><td> These packages are typically installed, but it's possible if using something like PackageKit to unselect a particular package. 
-</td></tr><tr><td> Optional packages </td><td> These packages are typically NOT installed, but they can be selected with a GUI like PackageKit 
-</td></tr><tr><td> Conditional packages </td><td> These packages are associated with a 'requires' package. If the 'requires' package is installed, then the list of packages under this group would also be installed 
+</td></tr><tr><td> Name </td><td> Name of this package group 
+</td></tr><tr><td> ID </td><td> ID of this package group, typically the name in lowercase 
+</td></tr><tr><td> Mandatory Packages </td><td> These packages are always installed if this package group is installed 
+</td></tr><tr><td> Default Packages </td><td> These packages are typically installed, but it's possible if using something like PackageKit to unselect a particular package 
+</td></tr><tr><td> Optional Packages </td><td> These packages are typically NOT installed, but they can be selected with a GUI like PackageKit 
+</td></tr><tr><td> Conditional Packages </td><td> These packages are associated with a 'requires' package; if the 'requires' package is installed, then the list of packages under this group would also be installed 
 </td></tr></table>
 <pre class="wiki">$ pulp-admin packagegroup info --repoid repo_with_groups --id window-managers
 +------------------------------------------+
@@ -148,7 +145,6 @@ Conditional packages	{'moodle-sq': 'moodle', 'hunspell-sq': 'hunspell'}
 </pre><p>
 If a user installed this packagegroup, 'albanian-support', yum would install the package 'moodle-sq' only if 'moodle' was installed, the same with 'hunspell-sq' would only be installed if 'hunspell' was installed.
 </p>
-<hr />
 <h4 id="Examplewithwithout--filter1">Example with/without --filter</h4>
 <pre class="wiki">$ pulp-admin content list --repoid pulp_f14
 pulp-common-0.0.176-1.fc14.noarch.rpm,0918d5a0399bd8ce0d4c03d2a073f6434049ff2af28cd946b3a62dcf2758c1bc
@@ -188,7 +184,8 @@ Default packages    	[u'ruby-gofer']
 Optional packages   	[]                       
 Conditional packages	{}                       
 
-</pre><h2 id="create">Create</h2>
+</pre><hr />
+<h2 id="create">Create</h2>
 <p>
 The <tt>packagegroup create</tt> command allows a packagegroup to be created in a repository.
 </p>
@@ -197,12 +194,12 @@ Parameters:
 </p>
 <table class="wiki">
 <tr><td> <strong>Parameter</strong> </td><td style="text-align: left">| <strong>Description</strong> 
-</td></tr><tr><td> --id </td><td style="text-align: right"> ID of packagegroup (required)
-</td></tr><tr><td> -r/--repoid </td><td> ID of repository (required) 
-</td></tr><tr><td> -n/--name </td><td> Name of packagegroup (required) 
-</td></tr><tr><td> -d/--description </td><td> Description of packagegroup (optional) 
+</td></tr><tr><td> <tt>--id</tt> </td><td style="text-align: right"> ID of packagegroup (required)
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of repository (required) 
+</td></tr><tr><td> <tt>-n</tt> or <tt>--name</tt> </td><td> Name of packagegroup (required) 
+</td></tr><tr><td> <tt>-d</tt> or <tt>--description</tt> </td><td> Description of packagegroup (optional) 
 </td></tr></table>
-<h4 id="Example">Example</h4>
+<h4 id="Example1">Example</h4>
 <pre class="wiki">$ pulp-admin packagegroup create --repoid f14 --id test_group -n test_group_name -d "Test Description"
 Package group [test_group] created in repository [f14]
 </pre><hr />
@@ -210,7 +207,7 @@ Package group [test_group] created in repository [f14]
 <p>
 The <tt>packagegroup delete</tt> command allows a packagegroup to be deleted from a repository.  The delete will only be allowed on user created packagegroups.  Those packagegroups imported into pulp through a repository synchronization are marked as immutable and will not be allowed to be deleted.  
 </p>
-<h4 id="Example1">Example</h4>
+<h4 id="Example2">Example</h4>
 <pre class="wiki">$ pulp-admin packagegroup delete -r f14 --id test_group
 Packagegroup [test_group] deleted from repository [f14]
 </pre><hr />
@@ -223,10 +220,10 @@ Parameters:
 </p>
 <table class="wiki">
 <tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> --id </td><td> ID of packagegroup 
-</td></tr><tr><td> -n/--name </td><td> Name of package to add 
-</td></tr><tr><td> -t/--type </td><td> Type of list to add package to.  Example values: 'mandatory', 'optional', 'default', 'conditional' 
-</td></tr><tr><td> --requires </td><td> Required package name, only used by 'conditional' package group type 
+</td></tr><tr><td> <tt>--id</tt> </td><td> ID of packagegroup 
+</td></tr><tr><td> <tt>-n</tt> or <tt>--name</tt> </td><td> Name of package to add 
+</td></tr><tr><td> <tt>-t</tt> or <tt>--type</tt> </td><td> Type of list to add package to.  Example values: 'mandatory', 'optional', 'default', 'conditional' 
+</td></tr><tr><td> <tt>--requires</tt> </td><td> Required package name, only used by 'conditional' package group type 
 </td></tr></table>
 <p>
 A description of the different types of packagegroup lists is below
@@ -238,7 +235,7 @@ A description of the different types of packagegroup lists is below
 </td></tr><tr><td> Optional packages </td><td> These packages are typically NOT installed, but they can be selected with a GUI like PackageKit 
 </td></tr><tr><td> Conditional packages </td><td> These packages are associated with a 'requires' package. If the 'requires' package is installed, then the list of packages under this group would also be installed 
 </td></tr></table>
-<h4 id="Example2">Example</h4>
+<h4 id="Example3">Example</h4>
 <pre class="wiki">$ pulp-admin packagegroup add_package -r f14 --id test_group -n grinder
 Following packages added to group [test_group] in repository [f14]: 
  ['grinder']
@@ -247,7 +244,8 @@ Following packages added to group [test_group] in repository [f14]:
 <pre class="wiki">$ pulp-admin packagegroup add_package -r f14 --id test_group --type 'conditional' -n 'grinder-docs' --requires 'grinder'
 Following packages added to group [test_group] in repository [f14] for required package [grinder]: 
  ['grinder-docs']
-</pre><h2 id="delete_package">Delete Package</h2>
+</pre><hr />
+<h2 id="delete_package">Delete Package</h2>
 <p>
 The <tt></tt><tt>packagegroup delete_package</tt><tt></tt> command removes a package name from a packagegroup.
 </p>
@@ -256,16 +254,15 @@ Parameters
 </p>
 <table class="wiki">
 <tr><td> <strong>Parameters</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> --id </td><td> ID of packagegroup 
-</td></tr><tr><td> -r/--repoid </td><td> ID of Repository 
-</td></tr><tr><td> -n/--name </td><td> Package name to remove 
-</td></tr><tr><td> -t/--type </td><td> Group type, possible values: 'mandatory', 'optional', 'default', 'conditional' 
+</td></tr><tr><td> <tt>--id</tt> </td><td> ID of packagegroup 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of Repository 
+</td></tr><tr><td> <tt>-n</tt> or <tt>--name</tt> </td><td> Package name to remove 
+</td></tr><tr><td> <tt>-t</tt> or <tt>--type</tt> </td><td> Group type, possible values: 'mandatory', 'optional', 'default', 'conditional' 
 </td></tr></table>
-<h4 id="Example3">Example</h4>
+<h4 id="Example4">Example</h4>
 <pre class="wiki">$ pulp-admin packagegroup delete_package -r f14 --id test_group -t 'conditional' -n grinder-docs
 Package [grinder-docs] deleted from group [test_group] in repository [f14]
-</pre><hr />
-</div>
+</pre></div>
         
         
       </div>

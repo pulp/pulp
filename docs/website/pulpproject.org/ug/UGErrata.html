@@ -173,9 +173,89 @@ For example:
 </p>
 <pre class="wiki">$ pulp-admin errata install --consumerid test-consumer RHBA-2010:0826 -i
 </pre><hr />
+<h2 id="create">Create Errata</h2>
+<p>
+Create a custom errata in pulp. This will create the errata with given advisory id. This errata needs to be associated to the repo via <tt>add_errata</tt> call in order to be consumed by subscribed users.
+</p>
+<p>
+The <tt>errata create</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> advisory id of the erratum to be created 
+</td></tr><tr><td> TITLE </td><td> <tt>--title</tt> </td><td> title of the erratum 
+</td></tr><tr><td> DESCRIPTION </td><td> <tt>--description</tt> </td><td> description of the erratum 
+</td></tr><tr><td> VERSION </td><td> <tt>--version</tt> </td><td> version of the erratum 
+</td></tr><tr><td> RELEASE </td><td> <tt>--release</tt> </td><td> release of the erratum 
+</td></tr><tr><td> TYPE </td><td> <tt>--type</tt> </td><td> type of the erratum.Supported:security, enhancement, bugfix 
+</td></tr><tr><td> ISSUED </td><td> <tt>--issued</tt> </td><td> erratum issued date; format:YYYY-MM-DD HH:MM:SS 
+</td></tr><tr><td> STATUS </td><td> <tt>--status</tt> </td><td> status of this update. eg:stable 
+</td></tr><tr><td> UPDATED </td><td> <tt>--updated</tt> </td><td> erratum updated date; format:YYYY-MM-DD HH:MM:SS 
+</td></tr><tr><td> FROMSTR </td><td> <tt>--fromstr</tt> </td><td>     from contact string who released the Erratum, eg:updates@fedoraproject.org 
+</td></tr><tr><td> PKGCSV </td><td> <tt>--effected-packages</tt> </td><td> a csv file with effected packages; format:name,version,release,epoch,arch,filename,checksum,checksum_type,sourceurl 
+</td></tr><tr><td> PUSHCOUNT </td><td> <tt>--pushcount</tt> </td><td> pushcount on the erratum 
+</td></tr><tr><td> REFCSV </td><td> <tt>--references</tt> </td><td> A reference csv file; format:href,type,id,title 
+</td></tr><tr><td> REBOOT SUGGESTED </td><td> <tt>--reboot-suggested</tt> </td><td> reboot suggested on errata 
+</td></tr><tr><td> SHORT </td><td> <tt>--short</tt> </td><td> short release name; eg: F14 
+</td></tr><tr><td> SEVERITY </td><td> <tt>--severity</tt> </td><td>   optional severity information; eg: Low,Moderate,Critical 
+</td></tr><tr><td> RIGHTS </td><td> <tt>--rights</tt> </td><td> optional copyright information 
+</td></tr><tr><td> SUMMARY </td><td> <tt>--summary</tt> </td><td> optional summary information 
+</td></tr><tr><td> SOLUTION </td><td> <tt>--solution</tt> </td><td> optional solution information 
+</td></tr></table>
+<h4 id="Example:createacustomerrata">Example: create a custom errata</h4>
+<pre class="wiki">$ pulp-admin errata create --id=TEST_ERRATA-1 --title=TEST_ERRATA-1 --description="Security fixes." --version=0.1.1 --release=1 --type=security --issued="2012-02-13 14:30:00" --status=stable --fromstr=prad@redhat.com --effected-packages=pkgs.csv
+Successfully created an Erratum with id [TEST_ERRATA-1]
+
+</pre><hr />
+<h2 id="update">Update Errata</h2>
+<p>
+Update an existing custom errata in pulp. This will update the errata with given advisory id.
+</p>
+<p>
+The <tt>errata update</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> advisory id of the erratum to be updated 
+</td></tr><tr><td> DESCRIPTION </td><td> <tt>--description</tt> </td><td> description of the erratum 
+</td></tr><tr><td> VERSION </td><td> <tt>--version</tt> </td><td> version of the erratum 
+</td></tr><tr><td> RELEASE </td><td> <tt>--release</tt> </td><td> release of the erratum 
+</td></tr><tr><td> TYPE </td><td> <tt>--type</tt> </td><td> type of the erratum.Supported:security, enhancement, bugfix 
+</td></tr><tr><td> ISSUED </td><td> <tt>--issued</tt> </td><td> erratum issued date; format:YYYY-MM-DD HH:MM:SS 
+</td></tr><tr><td> STATUS </td><td> <tt>--status</tt> </td><td> status of this update. eg:stable 
+</td></tr><tr><td> UPDATED </td><td> <tt>--updated</tt> </td><td> erratum updated date; format:YYYY-MM-DD HH:MM:SS 
+</td></tr><tr><td> FROMSTR </td><td> <tt>--fromstr</tt> </td><td>     from contact string who released the Erratum, eg:updates@fedoraproject.org 
+</td></tr><tr><td> PKGCSV </td><td> <tt>--effected-packages</tt> </td><td> a csv file with effected packages; format:name,version,release,epoch,arch,filename,checksum,checksum_type,sourceurl 
+</td></tr><tr><td> PUSHCOUNT </td><td> <tt>--pushcount</tt> </td><td> pushcount on the erratum 
+</td></tr><tr><td> REFCSV </td><td> <tt>--references</tt> </td><td> A reference csv file; format:href,type,id,title 
+</td></tr><tr><td> SHORT </td><td> <tt>--short</tt> </td><td> short release name; eg: F14 
+</td></tr><tr><td> SEVERITY </td><td> <tt>--severity</tt> </td><td>   optional severity information; eg: Low,Moderate,Critical 
+</td></tr><tr><td> RIGHTS </td><td> <tt>--rights</tt> </td><td> optional copyright information 
+</td></tr><tr><td> SUMMARY </td><td> <tt>--summary</tt> </td><td> optional summary information 
+</td></tr><tr><td> SOLUTION </td><td> <tt>--solution</tt> </td><td> optional solution information 
+</td></tr></table>
+<h4 id="Example:Updateacustomerrata">Example: Update a custom errata</h4>
+<pre class="wiki">$ pulp-admin errata update --id=TEST_ERRATA-1 --title=TEST_ERRATA-1 --description="Security fixes." --version=0.1.2 --release=2 --type=security --issued="2012-02-13 14:30:00" --status=stable --fromstr=prad@redhat.com --effected-packages=pkgs.csv
+Successfully updated an Erratum with id [TEST_ERRATA-1]
+
+</pre><hr />
+<h2 id="deleteerrata">Delete Errata</h2>
+<p>
+Delete an errata from pulp. 
+</p>
+<p>
+The <tt>repo delete_errata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td>  Errata Id to delete from this repository. 
+</td></tr></table>
+<h4 id="Example:Deleteanerratafrompulp">Example: Delete an errata from pulp</h4>
+<pre class="wiki">$ pulp-admin errata delete --id  TEST_ERRATA-1
+</pre><hr />
 <h2 id="add">Add Errata</h2>
 <p>
-Associate an errata and its packages to a repository. When add_errata is invoked, an erratum and its associated packages are selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
+Associate an errata and its packages to a repository. Erratum should already exist in pulp to be able to perform this association. When add_errata is invoked, an erratum and its associated packages are selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
 </p>
 <p>
 The <tt>repo add_errata</tt> command takes following arguments:
@@ -193,9 +273,9 @@ The <tt>repo add_errata</tt> command takes following arguments:
 </pre><h4 id="Example:Addanerratafromsourcetotargetrepositoryrecursive">Example: Add an errata from source to target repository (recursive)</h4>
 <pre class="wiki">pulp-admin repo add_errata --id=test17 --source=f13-updates -e FEDORA-2010-5816 -r
 </pre><hr />
-<h2 id="deleteerrata">Delete Errata</h2>
+<h2 id="removeerrata">Remove Errata</h2>
 <p>
-Remove an errata from repository. When delete_package is invoked, an errata and its associated packages are selected from a repository and removed. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
+Dis-associate an erratum from repository. When remove_errata is invoked, an errata and its associated packages are selected from a repository and removed. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
 </p>
 <p>
 The <tt>repo delete_errata</tt> command takes following arguments:
@@ -207,10 +287,10 @@ The <tt>repo delete_errata</tt> command takes following arguments:
 </td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of delete operation. 
 </td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
 </td></tr></table>
-<h4 id="Example:Deleteanerratafromrepositorytopleveldependencyresolution">Example: Delete an errata from repository (top level dependency resolution)</h4>
-<pre class="wiki">$ pulp-admin repo delete_errata --id test17 -e  FEDORA-2010-5816
-</pre><h4 id="Example:Deleteanerratafromrepositoryrecursive">Example: Delete an errata from repository (recursive)</h4>
-<pre class="wiki">$ pulp-admin repo delete_errata --id test17 -e FEDORA-2010-5816 -r
+<h4 id="Example:Removeanerratafromrepositorytopleveldependencyresolution">Example: Remove an errata from repository (top level dependency resolution)</h4>
+<pre class="wiki">$ pulp-admin repo remove_errata --id test17 -e  FEDORA-2010-5816
+</pre><h4 id="Example:Removeanerratafromrepositoryrecursive">Example: Remove an errata from repository (recursive)</h4>
+<pre class="wiki">$ pulp-admin repo remove_errata --id test17 -e FEDORA-2010-5816 -r
 </pre></div>
         
         

@@ -34,8 +34,18 @@
 <p>
 Repository authentication allows the creation of <em>protected</em> repositories in the Pulp server. Consumer attempting to use protected repositories require some sort of authentication in order to be granted access.
 </p>
+<h2 id="Configuration">Configuration</h2>
 <p>
-<em>Note: The intent is that this authentication information is that is communicated to consumers during repository bind. However, this feature is not provided in the first phase of repository authentication.</em>
+Two configuration file changes are necessary to use repository authentication.
+</p>
+<p>
+First, edit <tt>/etc/pulp/pulp.conf</tt> and set the <tt>ssl_ca_certificate</tt> option to the full path of the CA certificate that signed the Pulp server's httpd SSL certificate.  If this option is not set, it will default to <tt>/etc/pki/pulp/ssl_ca.crt</tt>.  This path must be readable by the apache user.
+</p>
+<p>
+<strong>Note:</strong> If the default self signed certificate that is generated when mod_ssl is installed is being used as the Pulp server's certificate, copying that certificate to <tt>/etc/pki/pulp/ssl_ca.crt</tt> and making it apache readable will suffice.  The default location for that certificate is <tt>/etc/pki/tls/certs/localhost.crt</tt> or <tt>/etc/pki/tls/certs/&lt;hostname&gt;.crt</tt>.
+</p>
+<p>
+Second, edit <tt>/etc/pulp/repo_auth.conf</tt> and set the <tt>enabled</tt> option to <tt>true</tt>.  Save the file and restart the <tt>pulp-server</tt> service.
 </p>
 <h2 id="Globalv.Individual">Global v. Individual</h2>
 <p>
@@ -43,6 +53,22 @@ Repository authentication may be configured globally for all repositories in the
 </p>
 <p>
 Global repository authentication is enabled and disabled using the <tt>auth</tt> commands in <tt>pulp-admin</tt>. Individual repository authentication is configured through the <tt>repo create</tt> and <tt>repo update</tt> commands, the latter providing a specific flag for the removal of the repository's authentication settings.
+</p>
+<h2 id="ConfiguringGlobalRepositoryAuthentication">Configuring Global Repository Authentication</h2>
+<p>
+Enabling global repository authentication is done using the <tt>auth enable_global_repo_auth</tt> command. This command accepts the following parameters:
+</p>
+<table class="wiki">
+<tr><td> Consumer CA Certificate </td><td> <tt>--ca</tt> </td><td> Full path to the CA certificate used to verify consumer certificates for protected repositories. 
+</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--cert</tt> </td><td> Full path to the certificate bound consumers will receive that will grant access to any repository. The file may contain both the private key as well as the certificate. 
+</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--key</tt> </td><td>  Full path to file containing the certificate's associated private key. 
+</td></tr></table>
+<p>
+Disabling global repository authentication is done using the <tt>auth disable_global_repo_auth</tt> command. There are no parameters to this command.
+</p>
+<h2 id="ConfiguringIndividualRepositoryAuthentication">Configuring Individual Repository Authentication</h2>
+<p>
+Information on the required fields can be found in the <a class="wiki" href="UGRepo.html#crud">Repository Create, Update, and Delete</a> section. 
 </p>
 <hr />
 <h1 id="AuthenticationSchemes">Authentication Schemes</h1>
@@ -53,16 +79,7 @@ Ultimately, multiple mechanisms of authenticating a user accessing a repository 
 <p>
 The default (and currently only) form of authentication uses the Red Hat OID entitlement schema introduced in RHEL 6. This form of authentication uses client-side x.509 certificates to convey entitlement information. For more information on using the OID schema, please contact the Pulp team through <a class="ext-link" href="https://www.redhat.com/mailman/listinfo/pulp-list"><span class="icon"> </span>the Pulp Users mailing list</a>.
 </p>
-<p>
-Enabling OID validation, either globally or on individual repositories, requires one argument to the appropriate commands as described above:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description </strong> 
-</td></tr><tr><td> CA Certificate </td><td> <tt>--ca</tt> or <tt>--consumer_ca</tt> </td><td> Used to verify the client-provided entitlement certificate should be trusted. This prevents malicious users from self-signing their own entitlement certificates with the correct OID entitlement information. 
-</td></tr></table>
-<p>
-Additionally, a valid entitlement certificate (and its private key) may be specified when enabling repository authentication. This certificate will be sent to consumers on repository bind, automatically configuring them with credentials that will pass the authentication checks. <em>See note above about this feature not yet being implemented.</em>
-</p>
+<hr />
 <h1 id="CertificateRevocationLists">Certificate Revocation Lists</h1>
 <p>
 Pulp supports the ability to honor Certificate Revocation Lists (CRLs).

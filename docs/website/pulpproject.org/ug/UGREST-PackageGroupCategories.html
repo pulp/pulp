@@ -32,233 +32,55 @@
 
 <div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroupCategories">Package Group Categories</h1>
 <p>
-Once you get a repository created you can start managing package group categories. Package group categories exist as members of a repository.
-</p>
-<p>
 A package group category is a collection of package group ids
-</p>
-<p>
-Base URL Path: <strong>/repositories/&lt;repoid&gt;/</strong>
-</p>
-<blockquote>
-<p>
+<br />
+Once you get a repository created you can start managing package group categories. Package group categories exist as members of a repository.
+<br />
 Note: PackageGroupCategory operations are served from the repository controller
 </p>
-</blockquote>
 <hr />
 <h2 id="List">List</h2>
 <p>
 List the package group categories under a repository
-</p>
-<p>
-Status: <strong>complete</strong> 
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/packagegroupcategories/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-<strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">"multimedia"</span><span class="p">:</span> 
-  <span class="p">{</span><span class="s">"description"</span><span class="p">:</span> <span class="s">"multimedia created from package kit group data"</span><span class="p">,</span> <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> <span class="s">"display_order"</span><span class="p">:</span> <span class="mi">99</span><span class="p">,</span> <span class="s">"immutable"</span><span class="p">:</span> false<span class="p">,</span> <span class="s">"translated_name"</span><span class="p">:</span> <span class="p">{},</span> <span class="s">"packagegroupids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"sound-and-video"</span><span class="p">],</span> <span class="s">"translated_description"</span><span class="p">:</span> <span class="p">{},</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"multimedia"</span><span class="p">,</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"multimedia"</span><span class="p">,</span> <span class="s">"name"</span><span class="p">:</span> <span class="s">"multimedia"</span><span class="p">}</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no repository
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#RepositoryPackageGroupCategories">UGREST-Repositories#RepositoryPackageGroupCategories</a>
 </p>
 <hr />
 <h2 id="Create">Create</h2>
 <p>
 Create a new packagegroup
-</p>
-<p>
-Status: <strong>partial</strong> - location header not properly filled in
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/create_packagegroupcategory/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>categoryid: package group category id
-</li><li>categoryname: package group category name
-</li><li>description: package group category description
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Error: <strong>409 Conflict</strong> if there is a packagegroupcategory with the same: id
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#CreatePackageGroupCategory">UGREST-Repositories#CreatePackageGroupCategory</a>
 </p>
 <hr />
 <h2 id="Delete">Delete</h2>
 <p>
-Delete a single package group category
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/delete_packagegroupcategory/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>categoryid: package group category id
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such package
+Delete a package group category
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#DeletePackageGroupCategory">UGREST-Repositories#DeletePackageGroupCategory</a>
 </p>
 <hr />
 <h2 id="AddaPackageGroup">Add a Package Group</h2>
 <p>
 Add a package group to a package group category
-</p>
-<p>
-Status: <strong>complete</strong> 
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/add_packagegroup_to_category/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>categoryid: package group category id
-</li><li>groupid: package group id
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#AddPackageGroupToCategory">UGREST-Repositories#AddPackageGroupToCategory</a>
 </p>
 <hr />
 <h2 id="DeleteaPackageGroup">Delete a Package Group</h2>
 <p>
 Delete a package group from a package group category
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#DeletePackageGroupFromCategory">UGREST-Repositories#DeletePackageGroupFromCategory</a>
 </p>
+<hr />
+<h2 id="InstallaPackageGroupCategory">Install a Package Group Category</h2>
 <p>
-Status: <strong>complete</strong> 
+Install a package group category on a consumer
+<br />
+See <a class="wiki" href="UGREST-Consumers.html#InstallPackageGroupCategory">UGREST-Consumers#InstallPackageGroupCategory</a>
 </p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/delete_packagegroup_from_category/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>categoryid: package group category id
-</li><li>groupid: package group id
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
- 
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
-</p>
+<hr />
 </div>
         
         
@@ -266,9 +88,6 @@ Error: <strong>404 Not Found</strong> if there is no such repository
       
 
     </div>
-    <script type="text/javascript">
-        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
-    </script>
     
 <!-- BEGIN FOOTER -->
 </body>

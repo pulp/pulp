@@ -30,177 +30,231 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="Filters">Filters</h1>
-<p>
-Repo filters are ways of filtering available source content for repositories. 
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Filters.html#Filters">Filters</a>
+    <ol>
+      <li>
+        <a href="UGREST-Filters.html#List">List</a>
+      </li>
+      <li>
+        <a href="UGREST-Filters.html#Create">Create</a>
+      </li>
+      <li>
+        <a href="UGREST-Filters.html#Info">Info</a>
+      </li>
+      <li>
+        <a href="UGREST-Filters.html#Delete">Delete</a>
+      </li>
+      <li>
+        <a href="UGREST-Filters.html#AddPackages">Add Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-Filters.html#RemovePackages">Remove Packages</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
 </p>
+<h1 id="Filters">Filters</h1>
 <p>
-Base URL Path: <strong>/filters/</strong>
+Repository filters are ways of filtering available source content from repositories. 
 </p>
 <hr />
-<h2 id="ListAllFilters">List All Filters</h2>
+<h2 id="List">List</h2>
 <p>
-List all filters
-</p>
-<p>
-Status: <strong>COMPLETE</strong>
-</p>
-<p>
-Path: <strong>/filters/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
-  <span class="s">'type'</span><span class="p">:</span> <span class="s">'blacklist'</span><span class="p">,</span>
-  <span class="s">'package_list'</span><span class="p">:</span> <span class="s">'grinder'</span><span class="p">},</span>
- <span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter2'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter2'</span><span class="p">,</span>
-  <span class="s">'type'</span><span class="p">:</span> <span class="s">'whitelist'</span><span class="p">,</span>
-  <span class="s">'package_list'</span><span class="p">:</span> <span class="p">[</span><span class="s">"pulp*"</span><span class="p">,</span> <span class="s">"^python"</span><span class="p">]}</span>
+<em>Returns a list of filters in Pulp Server</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /pulp/api<em>filters/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;List&gt; Filter objects <br />
+<br />
+<strong>sample response</strong>:
+</em></p>
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-filter"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"filters"</span><span class="p">,</span> 
+    <span class="s">"package_list"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="s">"foo"</span>
+    <span class="p">],</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-filter"</span><span class="p">,</span> 
+    <span class="s">"type"</span><span class="p">:</span> <span class="s">"blacklist"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-filter"</span>
+  <span class="p">},</span> 
+  <span class="p">{</span>
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-filter1"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"filters"</span><span class="p">,</span> 
+    <span class="s">"package_list"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="s">"foo1"</span>
+    <span class="p">],</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-filter1"</span><span class="p">,</span> 
+    <span class="s">"type"</span><span class="p">:</span> <span class="s">"blacklist"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-filter1"</span>
+  <span class="p">}</span>
 <span class="p">]</span>
+
 </pre></div><p>
-Error: None
+<br />
 </p>
 <hr />
 <h2 id="Create">Create</h2>
 <p>
-Create a filter
-</p>
-<p>
-Status: <strong>COMPLETE</strong>
-</p>
-<p>
-Path: <strong>/filters/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>id: <em>required</em> filter id
-</li><li>type: <em>required</em> filter type - blacklist/whitelist
-</li><li>description: <em>optional</em> description for the filter
-</li><li>package_list: <em>optional</em> packages to be filtered - name or full NEVRA or python re syntax compatible regexes.
+<em>Creates a blacklist/whitelist filter</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>filters/ <br />
+<br />
+<strong>parameters</strong>:
+</em></p>
+<ul><li><strong>id</strong> &lt;str&gt; <strong>Filter ID</strong> required
+</li><li><strong>type</strong> &lt;str&gt; <strong>blacklist OR whitelist</strong> required
+</li><li><strong>description</strong> &lt;str&gt; <strong>Filter description</strong> optional - defaulted to filter id
+</li><li><strong>package_list</strong> &lt;list of str&gt; <strong>List of names or full NEVRA or python re syntax compatible regexes for packages</strong> optional 
 </li></ul><p>
-Authentication:
+<br />
+<strong>permission</strong>: CREATE <br />
+<br />
+<strong>success response</strong>:  201 - Created <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<blockquote>
-<p>
-username/pass
+<ul><li>409 - Conflict when filter with the same id already exists  <br />
+</li></ul><p>
+<strong>return</strong>:  &lt;dict&gt; Newly created filter object <br />
+<br />
+<strong>sample response</strong>:
 </p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Headers:
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
-  <span class="s">'type'</span><span class="p">:</span> <span class="s">'blacklist'</span><span class="p">,</span>
-  <span class="s">'package_list'</span><span class="p">:</span> <span class="s">'grinder'</span><span class="p">}</span>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-filter"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"filters"</span><span class="p">,</span> 
+  <span class="s">"package_list"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">"foo"</span>
+  <span class="p">],</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-filter"</span><span class="p">,</span> 
+  <span class="s">"type"</span><span class="p">:</span> <span class="s">"blacklist"</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-filter"</span>
+<span class="p">}</span>
 </pre></div><p>
-Error: <strong>409 Conflict</strong> if there is an existing filter with the same id
+<br />
 </p>
 <hr />
-<h2 id="Information">Information</h2>
+<h2 id="Info">Info</h2>
 <p>
-Get information on a filter, given the filter's id
+<em>Returns information about a filter</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /pulp/api/filters/&lt;filter-id&gt;/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-Status: <strong>COMPLETE</strong>
+<ul><li>404 - Not Found if a filter with given id does not exist <br />
+</li></ul><p>
+<strong>return</strong>:  &lt;dict&gt; filter object <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Path: <strong>/filters/&lt;filter id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'filter1'</span><span class="p">,</span>
-  <span class="s">'type'</span><span class="p">:</span> <span class="s">'blacklist'</span><span class="p">,</span>
-  <span class="s">'package_list'</span><span class="p">:</span> <span class="s">'grinder'</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span>
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-filter"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"filters"</span><span class="p">,</span> 
+  <span class="s">"package_list"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">"foo"</span>
+  <span class="p">],</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-filter"</span><span class="p">,</span> 
+  <span class="s">"type"</span><span class="p">:</span> <span class="s">"blacklist"</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-filter"</span>
+<span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such filter
+<br />
 </p>
 <hr />
 <h2 id="Delete">Delete</h2>
 <p>
-Delete a filter
+<em>Deletes a filter and it's associations with repositories, if any.</em> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /pulp/api/filters/&lt;filter-id&gt;/ <br />
+<br />
+<strong>permission</strong>: DELETE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
+<ul><li>404 - Not Found if a filter with given id does not exist<br />
+</li></ul><p>
+<strong>return</strong>:  true if filter is successfully deleted <br />
+<br />
+</p>
+<hr />
+<h2 id="AddPackages">Add Packages</h2>
 <p>
-Status: <strong>COMPLETE</strong>
+<em>Adds names/NVREA/regexes of packages to an existing filter</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/filters/&lt;filter-id&gt;/add_packages/ <br />
+<br />
+<strong>parameters</strong>:
 </p>
+<ul><li><strong>packages</strong> &lt;list of str&gt; <strong>List of names or full NEVRA or python re syntax compatible regexes for packages</strong>  
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>404 - Not Found if a filter with given id does not exist <br />
+</li></ul><p>
+<strong>return</strong>:  true if packages are successfully added to the filter <br />
+<br />
+</p>
+<hr />
+<h2 id="RemovePackages">Remove Packages</h2>
 <p>
-Path: <strong>/filters/&lt;filter id&gt;/</strong>
+<em>Removes names/NVREA/regexes of packages from an existing filter</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>filters/&lt;filter-id&gt;/remove_packages/ <br />
+<br />
+<strong>parameters</strong>:
+</em></p>
+<ul><li><strong>packages</strong> &lt;list of str&gt; <strong>List of names or full NEVRA or python re syntax compatible regexes for packages</strong>  
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-Method: <strong>DELETE</strong>
+<ul><li>404 - Not Found if a filter with given id does not exist <br />
+</li></ul><p>
+<strong>return</strong>:  true if packages are successfully removed from the filter <br />
+<br />
 </p>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such filter
-</p>
+<hr />
 </div>
         
         

@@ -30,7 +30,33 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="Packages">Packages</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Packages.html#Packages">Packages</a>
+    <ol>
+      <li>
+        <a href="UGREST-Packages.html#ListAllAvailablePackages">List All Available Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-Packages.html#Create">Create</a>
+      </li>
+      <li>
+        <a href="UGREST-Packages.html#InformationbyPackageID">Information by Package ID</a>
+      </li>
+      <li>
+        <a href="UGREST-Packages.html#InformationbyPackageNVREA">Information by Package NVREA</a>
+      </li>
+      <li>
+        <a href="UGREST-Packages.html#DeleteaPackage">Delete a Package</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="Packages">Packages</h1>
 <p>
 Once you get a repository created you can start managing packages. Packages can be created on their own or created as members of a repository
 </p>
@@ -41,9 +67,6 @@ Base URL Path: <strong>/packages/</strong>
 <h2 id="ListAllAvailablePackages">List All Available Packages</h2>
 <p>
 List all available packages
-</p>
-<p>
-Status: <strong>complete</strong>
 </p>
 <p>
 Path: <strong>/packages/</strong>
@@ -76,16 +99,41 @@ None
 </p>
 </blockquote>
 <p>
-Response: <strong>200 OK</strong>
+Success: <strong>200 OK</strong>
+<br />
+Sample Response:
 </p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'Test package.  Nothing to see here.'</span><span class="p">,</span>
-  <span class="s">'name'</span><span class="p">:</span> <span class="s">'pulp-test-package'</span><span class="p">},</span>
- <span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
-  <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">}]</span>
+<div class="code"><pre><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">"_id"</span><span class="p">:</span> <span class="s">"2c24a865-0089-4c1a-8cac-77146a5fe65f"</span><span class="p">,</span> 
+        <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"packages"</span><span class="p">,</span> 
+        <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> 
+        <span class="s">"buildhost"</span><span class="p">:</span> <span class="s">"jwm-devel.home"</span><span class="p">,</span> 
+        <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"7b6d84f97ec0e6917f7a4cc3f14e1db7c8df6d1c14dcc3c528de5ba73cd1fb74"</span>
+        <span class="p">},</span> 
+        <span class="s">"description"</span><span class="p">:</span> <span class="s">"Test package.  Nothing to see here."</span><span class="p">,</span> 
+        <span class="s">"download_url"</span><span class="p">:</span> <span class="s">"https://localhost//pulp/repos/test_bandwidth_repo/pulp-large_1mb_test-packageC-0.1.1-1.fc14.noarch.rpm"</span><span class="p">,</span> 
+        <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+        <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-large_1mb_test-packageC-0.1.1-1.fc14.noarch.rpm"</span><span class="p">,</span> 
+        <span class="s">"group"</span><span class="p">:</span> <span class="s">"Development/Libraries"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"2c24a865-0089-4c1a-8cac-77146a5fe65f"</span><span class="p">,</span> 
+        <span class="s">"license"</span><span class="p">:</span> <span class="s">"MIT"</span><span class="p">,</span> 
+        <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-large_1mb_test-packageC"</span><span class="p">,</span> 
+        <span class="s">"provides"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s">"pulp-large_1mb_test-packageC"</span><span class="p">,</span> 
+            <span class="s">"config(pulp-large_1mb_test-packageC)"</span>
+        <span class="p">],</span> 
+        <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc14"</span><span class="p">,</span> 
+        <span class="s">"repo_defined"</span><span class="p">:</span> true<span class="p">,</span> 
+        <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s">"test_bandwidth"</span>
+        <span class="p">],</span> 
+        <span class="s">"requires"</span><span class="p">:</span> <span class="p">[],</span> 
+        <span class="s">"size"</span><span class="p">:</span> <span class="mi">1051164</span><span class="p">,</span> 
+        <span class="s">"vendor"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+        <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.1.1"</span>
+    <span class="p">}]</span>
 </pre></div><p>
 Error: None
 </p>
@@ -93,9 +141,6 @@ Error: None
 <h2 id="Create">Create</h2>
 <p>
 Create a new package
-</p>
-<p>
-Status: <strong>partial</strong> - location header not properly filled in
 </p>
 <p>
 Path: <strong>/packages/</strong>
@@ -132,33 +177,42 @@ None
 </p>
 </blockquote>
 <p>
-Response: <strong>201 Created</strong>
+Success: <strong>201 Created</strong>
+<br />
+Sample Response:
 </p>
-<p>
-Headers:
-</p>
-<ul><li>location - path to package resource
-<div class="code"><pre><span class="p">{</span><span class="s">'arch'</span><span class="p">:</span> <span class="s">'noarch'</span><span class="p">,</span>
- <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'md5'</span><span class="p">:</span> <span class="s">'41be1e70179ddf079ceda621df818341'</span><span class="p">},</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
- <span class="s">'epoch'</span><span class="p">:</span> <span class="s">'0'</span><span class="p">,</span>
- <span class="s">'filename'</span><span class="p">:</span> <span class="s">'my_package.pkg'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span><span class="p">,</span>
- <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">,</span>
- <span class="s">'provides'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">'2'</span><span class="p">,</span>
- <span class="s">'requires'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">'1'</span><span class="p">}</span>
-</pre></div></li></ul><p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"7451b6fa-8c3e-41a8-a89a-3143b20c93d4"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"packages"</span><span class="p">,</span> 
+    <span class="s">"arch"</span><span class="p">:</span> <span class="s">"i386"</span><span class="p">,</span> 
+    <span class="s">"buildhost"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"6f619869dd4b83c12460558d85d14590f638a72717824136baacf6538fa114bb"</span>
+    <span class="p">},</span> 
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"Description for test_api_example_package_name_3109"</span><span class="p">,</span> 
+    <span class="s">"download_url"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+    <span class="s">"filename"</span><span class="p">:</span> <span class="s">"test_api_example_package_name_3109.rpm"</span><span class="p">,</span> 
+    <span class="s">"group"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"7451b6fa-8c3e-41a8-a89a-3143b20c93d4"</span><span class="p">,</span> 
+    <span class="s">"license"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"test_api_example_package_name_3109"</span><span class="p">,</span> 
+    <span class="s">"provides"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+    <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"requires"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"size"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"vendor"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"1"</span>
+<span class="p">}</span>
+</pre></div><p>
 Error: <strong>409 Conflict</strong> if there is a package with the same: name, version, revision, epoch, arch, and checksum
 </p>
 <hr />
 <h2 id="InformationbyPackageID">Information by Package ID</h2>
 <p>
 Get package information, given a package id
-</p>
-<p>
-Status: <strong>complete</strong>
 </p>
 <p>
 Path: <strong>/packages/&lt;package id&gt;/</strong>
@@ -191,19 +245,35 @@ None
 </p>
 </blockquote>
 <p>
-Response: <strong>200 OK</strong>
+Success: <strong>200 OK</strong>
+<br />
+Sample Response:
 </p>
-<div class="code"><pre><span class="p">{</span><span class="s">'arch'</span><span class="p">:</span> <span class="s">'noarch'</span><span class="p">,</span>
- <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'md5'</span><span class="p">:</span> <span class="s">'41be1e70179ddf079ceda621df818341'</span><span class="p">},</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
- <span class="s">'epoch'</span><span class="p">:</span> <span class="s">'0'</span><span class="p">,</span>
- <span class="s">'filename'</span><span class="p">:</span> <span class="s">'my_package.pkg'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span><span class="p">,</span>
- <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">,</span>
- <span class="s">'provides'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">'2'</span><span class="p">,</span>
- <span class="s">'requires'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">'1'</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"7451b6fa-8c3e-41a8-a89a-3143b20c93d4"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"packages"</span><span class="p">,</span> 
+    <span class="s">"arch"</span><span class="p">:</span> <span class="s">"i386"</span><span class="p">,</span> 
+    <span class="s">"buildhost"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"6f619869dd4b83c12460558d85d14590f638a72717824136baacf6538fa114bb"</span>
+    <span class="p">},</span> 
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"Description for test_api_example_package_name_3109"</span><span class="p">,</span> 
+    <span class="s">"download_url"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+    <span class="s">"filename"</span><span class="p">:</span> <span class="s">"test_api_example_package_name_3109.rpm"</span><span class="p">,</span> 
+    <span class="s">"group"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"7451b6fa-8c3e-41a8-a89a-3143b20c93d4"</span><span class="p">,</span> 
+    <span class="s">"license"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"test_api_example_package_name_3109"</span><span class="p">,</span> 
+    <span class="s">"provides"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+    <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"requires"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"size"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"vendor"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"1"</span>
+<span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
@@ -246,19 +316,35 @@ None
 </p>
 </blockquote>
 <p>
-Response: <strong>200 OK</strong>
+Success: <strong>200 OK</strong>
+<br />
+Sample Reponse:
 </p>
-<div class="code"><pre><span class="p">{</span><span class="s">'arch'</span><span class="p">:</span> <span class="s">'noarch'</span><span class="p">,</span>
- <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'md5'</span><span class="p">:</span> <span class="s">'41be1e70179ddf079ceda621df818341'</span><span class="p">},</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
- <span class="s">'epoch'</span><span class="p">:</span> <span class="s">'0'</span><span class="p">,</span>
- <span class="s">'filename'</span><span class="p">:</span> <span class="s">'my_package.pkg'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span><span class="p">,</span>
- <span class="s">'name'</span><span class="p">:</span> <span class="s">'my_package'</span><span class="p">,</span>
- <span class="s">'provides'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">'2'</span><span class="p">,</span>
- <span class="s">'requires'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">'1'</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"7451b6fa-8c3e-41a8-a89a-3143b20c93d4"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"packages"</span><span class="p">,</span> 
+    <span class="s">"arch"</span><span class="p">:</span> <span class="s">"i386"</span><span class="p">,</span> 
+    <span class="s">"buildhost"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"6f619869dd4b83c12460558d85d14590f638a72717824136baacf6538fa114bb"</span>
+    <span class="p">},</span> 
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"Description for test_api_example_package_name_3109"</span><span class="p">,</span> 
+    <span class="s">"download_url"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+    <span class="s">"filename"</span><span class="p">:</span> <span class="s">"test_api_example_package_name_3109.rpm"</span><span class="p">,</span> 
+    <span class="s">"group"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"7451b6fa-8c3e-41a8-a89a-3143b20c93d4"</span><span class="p">,</span> 
+    <span class="s">"license"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"test_api_example_package_name_3109"</span><span class="p">,</span> 
+    <span class="s">"provides"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+    <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"requires"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"size"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"vendor"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"1"</span>
+<span class="p">}</span>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such package
 </p>
@@ -301,7 +387,8 @@ None
 </p>
 </blockquote>
 <p>
-Response: <strong>200 OK</strong>
+Success: <strong>200 OK</strong>
+<br />
 </p>
 <div class="code"><pre><span class="bp">True</span>
 </pre></div><p>

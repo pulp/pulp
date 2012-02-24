@@ -50,198 +50,143 @@ Base URL Path: <strong>/users/</strong>
 List all users
 </p>
 <p>
-Status: <strong>DRAFT</strong>
+<strong>method</strong>: GET
 </p>
 <p>
-Path: <strong>/users/</strong>
+<strong>path</strong>: /users/
 </p>
 <p>
-Method: <strong>GET</strong>
+<strong>parameters</strong>: None
 </p>
 <p>
-Parameters:
+<strong>permission</strong>: READ
 </p>
-<blockquote>
 <p>
-None
+<strong>success response</strong>:  200 - OK
 </p>
-</blockquote>
 <p>
-Authentication:
+<strong>failure response</strong>: N/A
 </p>
-<blockquote>
 <p>
-username/pass
+<strong>return</strong>: <em>list of:</em> &lt;dict&gt; User object
 </p>
-</blockquote>
 <p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
+<strong>sample response</strong>:
 </p>
 <div class="code"><pre><span class="p">[{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span><span class="p">,</span>
   <span class="s">'login'</span><span class="p">:</span> <span class="s">'tito'</span><span class="p">,</span>
-  <span class="s">'password'</span><span class="p">:</span> <span class="s">'*****'</span><span class="p">,</span>
   <span class="s">'name'</span><span class="p">:</span> <span class="s">'Tito Jones'</span><span class="p">,</span>
   <span class="s">'roles'</span><span class="p">:</span> <span class="p">[</span><span class="s">u'consumer-users'</span><span class="p">]},</span>
 <span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'10df8a48-e4ec-474d-85c5-a7f657870cb3'</span><span class="p">,</span>
   <span class="s">'login'</span><span class="p">:</span> <span class="s">'admin'</span><span class="p">,</span>
-  <span class="s">'password'</span><span class="p">:</span> <span class="s">'*****'</span><span class="p">,</span>
   <span class="s">'name'</span><span class="p">:</span> <span class="s">'Admin User'</span><span class="p">,</span>
   <span class="s">'roles'</span><span class="p">:</span> <span class="p">[</span><span class="s">u'consumer-users'</span><span class="p">]}</span>
 <span class="p">]</span>
-</pre></div><p>
-Error: None
-</p>
-<hr />
+</pre></div><hr />
 <h2 id="Create">Create</h2>
 <p>
 Creates a new user in the Pulp server.
 </p>
 <p>
-Status: <strong>DRAFT</strong>
+<strong>method</strong>: POST
 </p>
 <p>
-Path: <strong>/users/</strong>
+<strong>path</strong>: /users/
 </p>
 <p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
+<strong>parameters</strong>:
 </p>
 <ul><li>login: <em>required</em> unique login used to identify this user in human readable cases (CLI, webui)
 </li><li>password: <em>required</em> password to specify
 </li><li>name: <em>required</em> A human readable name to use for display purposes.
 </li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
+<strong>permission</strong>: CREATE
 </p>
 <p>
-Headers:
+<strong>success response</strong>: 201 Created
 </p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer group'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
-  <span class="s">'consumerids'</span><span class="p">:</span> <span class="p">[]}]</span>
-</pre></div><p>
-Error: <strong>409 Conflict</strong> if there is an existing user with the same login
+<p>
+<strong>failure response</strong>: 409  Conflict if there is an existing user with the same login
 </p>
-<hr />
+<p>
+<strong>return</strong>: &lt;dict&gt; User object
+</p>
+<p>
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"b79c5544-8cd7-4057-a29d-6b7cce252992"</span><span class="p">,</span> 
+  <span class="s">"name"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"roles"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"users"</span><span class="p">,</span> 
+  <span class="s">"login"</span><span class="p">:</span> <span class="s">"jortel2"</span><span class="p">,</span> 
+  <span class="s">"password"</span><span class="p">:</span> <span class="s">"JxAHnHlp4p0=,hA0fKCNsKYmgGVcS68F7Dr2V6e+8EQqnUYHdqLbSfkE="</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"b79c5544-8cd7-4057-a29d-6b7cce252992"</span>
+<span class="p">}</span>
+</pre></div><hr />
 <h2 id="Information">Information</h2>
 <p>
 Get information on a user, given the user's id
 </p>
 <p>
-Status: <strong>DRAFT</strong>
+<strong>method</strong>: GET
 </p>
 <p>
-Path: <strong>/users/&lt;user id&gt;/</strong>
+<strong>path</strong>: /users/&lt;user id&gt;/
 </p>
 <p>
-Method: <strong>GET</strong>
+<strong>parameters</strong>: None
 </p>
 <p>
-Parameters:
+<strong>permission</strong>: READ
 </p>
-<blockquote>
 <p>
-None
+<strong>success response</strong>: 200 OK
 </p>
-</blockquote>
 <p>
-Authentication:
+<strong>failure response</strong>: 404 Not Found
 </p>
-<blockquote>
 <p>
-username/pass
+<strong>return</strong>: &lt;dict&gt; a User object
 </p>
-</blockquote>
 <p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
+<strong>sample response</strong>:
 </p>
 <div class="code"><pre><span class="p">{</span><span class="s">'id'</span><span class="p">:</span> <span class="s">'fb12d975-1f33-4b34-8ac9-0adb6089fb87'</span><span class="p">,</span>
  <span class="s">'login'</span><span class="p">:</span> <span class="s">'tito'</span><span class="p">,</span>
- <span class="s">'password'</span><span class="p">:</span> <span class="s">'*****'</span><span class="p">,</span>
  <span class="s">'name'</span><span class="p">:</span> <span class="s">'Tito Jones'</span><span class="p">,</span>
  <span class="s">'roles'</span> <span class="p">:</span> <span class="p">[</span><span class="s">u'super-users'</span><span class="p">]}</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such user
-</p>
-<hr />
+</pre></div><hr />
 <h2 id="Delete">Delete</h2>
 <p>
 Delete a user
 </p>
 <p>
-Status: <strong>DRAFT</strong>
+<strong>method</strong>: DELETE
 </p>
 <p>
-Path: <strong>/users/&lt;user id&gt;/</strong>
+<strong>path</strong>: /users/&lt;user id&gt;/
 </p>
 <p>
-Method: <strong>DELETE</strong>
+<strong>parameters</strong>: None
 </p>
 <p>
-Parameters:
+<strong>permission</strong>: DELETE
 </p>
-<blockquote>
 <p>
-None
+<strong>success response</strong>: 200 OK
 </p>
-</blockquote>
 <p>
-Authentication:
+<strong>failure response</strong>: 404 Not Found
 </p>
-<blockquote>
 <p>
-username/pass
+<strong>return</strong>: &lt;bool&gt; True (on success)
 </p>
-</blockquote>
 <p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
+<strong>sample response</strong>:
 </p>
 <div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: None
-</p>
-</div>
+</pre></div></div>
         
         
       </div>

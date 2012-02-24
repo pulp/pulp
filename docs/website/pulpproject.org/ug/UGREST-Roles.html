@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Roles.html#top">Roles RESTful API</a>
+    <ol>
+      <li>
+        <a href="UGREST-Roles.html#DeleteaRole">Delete a Role</a>
+      </li>
+      <li>
+        <a href="UGREST-Roles.html#GetaRole">Get a Role</a>
+      </li>
+      <li>
+        <a href="UGREST-Roles.html#AddaUser">Add a User</a>
+      </li>
+      <li>
+        <a href="UGREST-Roles.html#RemoveaUser">Remove a User</a>
+      </li>
+      <li>
+        <a href="UGREST-Roles.html#ListRoles">List Roles</a>
+      </li>
+      <li>
+        <a href="UGREST-Roles.html#CreateaRole">Create a Role</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="top">Roles RESTful API</h1>
+<p>
+<em>No description.</em> <br />
+<br />
+</p>
+<hr />
+<h2 id="DeleteaRole">Delete a Role</h2>
+<p>
+<em>Delete a role</em> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /roles/&lt;role name&gt;/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+</p>
+<h2 id="GetaRole">Get a Role</h2>
+<p>
+<em>Get a the object representation of the given role</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /roles/&lt;role name&gt;/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found <br />
+<br />
+<strong>return</strong>: role object <br />
+<br />
+</p>
+<hr />
+<h2 id="AddaUser">Add a User</h2>
+<p>
+<em>Add a user to the given role</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /roles/&lt;role name&gt;/add/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if required parameters are not found <br />
+<br />
+<strong>return</strong>: true or false if the user is already a member of the role <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>username</strong> <em>(required)</em> &lt;str&gt; <em>login of user to add to role</em>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RemoveaUser">Remove a User</h2>
+<p>
+<em>Remove a user from the given role</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /roles/&lt;role name&gt;/remove/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if required parameters are not found <br />
+</p>
+<blockquote>
+<p>
+400 Bad Request is the user is the last member of the super-users role <br />
+</p>
+</blockquote>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: true or false if the user is not a member of the role <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>username</strong> <em>(required)</em> &lt;str&gt; <em>login of user to remove from role</em>
+</li></ul><p>
+<br />
+</p>
+<hr />
+<h2 id="ListRoles">List Roles</h2>
+<p>
+<em>List currently defined roles</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /roles/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of roles <br />
+<br />
+</p>
+<h2 id="CreateaRole">Create a Role</h2>
+<p>
+<em>Create a new role</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /roles/ <br />
+<br />
+<strong>permission</strong>: super user only <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request if required parameters are not found <br />
+<br />
+<strong>return</strong>: role object <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>rolename</strong> <em>(required)</em> &lt;str&gt; <em>name of the role</em>
+</li></ul><p>
+<br />
+</p>
+</div>
+        
+        
+      </div>
+      
+
+    </div>
+    
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

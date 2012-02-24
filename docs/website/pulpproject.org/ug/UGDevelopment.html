@@ -107,6 +107,11 @@ $ setfacl -m user:apache:rwx .
 <h2 id="SELinux">SELinux</h2>
 <ul><li>If you are running with SELinux enabled you will need to follow the steps here: <a class="wiki" href="https://fedorahosted.org/pulp/wiki/SELinux/DevSetup">SELinux/DevSetup</a> 
 </li></ul><hr />
+<h2 id="mod_python">mod_python</h2>
+<p>
+Pulp is a mod_wsgi application.  mod_wsgi and mod_python can not both be loaded into apache, as they don't function correctly when running alongside each other.  Either uninstall mod_python before starting Pulp, or make sure the mod_python module is not loaded in the apache config.
+</p>
+<hr />
 <h2 id="init">Initialize and Start</h2>
 <p>
 At this point, the <a class="wiki" href="UGInstallation.html#fserver">Server Installation</a> guide can be followed to initialize and start Pulp.
@@ -115,6 +120,10 @@ At this point, the <a class="wiki" href="UGInstallation.html#fserver">Server Ins
 Keep in mind that code changes will often require Apache to be restarted to load the changes.
 </p>
 <hr />
+<h2 id="UnitTests">Unit Tests</h2>
+<p>
+See: <a class="wiki" href="https://fedorahosted.org/pulp/wiki/UnitTests">Unit Tests</a>
+</p>
 <h2 id="UnitTestCoverage">Unit Test Coverage</h2>
 <ol><li>Install the coverage plugin for nosetests:
 <pre class="wiki">easy_install coverage

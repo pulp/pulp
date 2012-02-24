@@ -30,405 +30,457 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="Errata">Errata</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Errata.html#Errata">Errata</a>
+    <ol>
+      <li>
+        <a href="UGREST-Errata.html#ListListbytype">List / List by type</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#ListErratabyRepository">List Errata by Repository</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#ListErratabyConsumer">List Errata by Consumer</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#Create">Create</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#Update">Update</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#Delete">Delete</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#Info">Info</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#InstallErrataonConsumers">Install Errata on Consumers</a>
+      </li>
+      <li>
+        <a href="UGREST-Errata.html#InstallErrataonConsumerGroups">Install Errata on Consumer Groups</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="Errata">Errata</h1>
 <p>
 An erratum is an entity in pulp representing update metadata information for a given package update. Errata usually has associations with Packages, Repo and Consumers.   
 </p>
 <p>
-Base URL Path: <strong>/errata/</strong>
+Base URL Path: <strong>/pulp/api/errata/</strong>
 </p>
 <hr />
-<h2 id="ListAllAvailableErrata">List All Available Errata</h2>
+<h2 id="ListListbytype">List / List by type</h2>
 <p>
-List all available Errata.
+<em>List all available errata</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/errata/<br />
+<br />
+<strong>filters</strong>: &lt;str&gt; <strong>errata type - e.g. security, bugfix, enhancement etc.</strong> optional<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  List of Erratum objects <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/errata/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: None
-</p>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
- <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
- <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@fedoraproject.org'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
- <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
- <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
- <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
- <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span><span class="p">),</span> 
-                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
-                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'551949'</span><span class="p">,</span>
-                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add emacs terminal mode to desktop menu'</span><span class="p">)}],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">u'Fedora 13'</span><span class="p">,</span>
- <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'status'</span><span class="p">:</span> <span class="s">u'stable'</span><span class="p">,</span>
- <span class="s">'title'</span><span class="p">:</span> <span class="s">u'emacs-23.2-4.fc13'</span><span class="p">,</span>
- <span class="s">'type'</span><span class="p">:</span> <span class="s">u'bugfix'</span><span class="p">,</span>
- <span class="s">'updated'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">u'1.4'</span><span class="p">},{</span><span class="o">...</span><span class="p">]</span>
+<div class="code"><pre><span class="p">[</span>
+ <span class="p">{</span>
+    <span class="s">"issued"</span><span class="p">:</span> <span class="s">"2009-03-19 00:00:00"</span><span class="p">,</span> 
+    <span class="s">"references"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s">"href"</span><span class="p">:</span> <span class="s">"http://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=476560"</span><span class="p">,</span> 
+        <span class="s">"type"</span><span class="p">:</span> <span class="s">"bugzilla"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"476560"</span><span class="p">,</span> 
+        <span class="s">"title"</span><span class="p">:</span> null
+      <span class="p">},</span> 
+      <span class="p">{</span>
+        <span class="s">"href"</span><span class="p">:</span> <span class="s">"http://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=484947"</span><span class="p">,</span> 
+        <span class="s">"type"</span><span class="p">:</span> <span class="s">"bugzilla"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"484947"</span><span class="p">,</span> 
+        <span class="s">"title"</span><span class="p">:</span> null
+      <span class="p">},</span> 
+      <span class="p">{</span>
+        <span class="s">"href"</span><span class="p">:</span> <span class="s">"https://www.redhat.com/security/data/cve/CVE-2008-5086.html"</span><span class="p">,</span> 
+        <span class="s">"type"</span><span class="p">:</span> <span class="s">"cve"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"CVE-2008-5086"</span><span class="p">,</span> 
+        <span class="s">"title"</span><span class="p">:</span> null
+      <span class="p">},</span> 
+      <span class="p">{</span>
+        <span class="s">"href"</span><span class="p">:</span> <span class="s">"https://www.redhat.com/security/data/cve/CVE-2009-0036.html"</span><span class="p">,</span> 
+        <span class="s">"type"</span><span class="p">:</span> <span class="s">"cve"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"CVE-2009-0036"</span><span class="p">,</span> 
+        <span class="s">"title"</span><span class="p">:</span> null
+      <span class="p">}</span>
+    <span class="p">],</span> 
+    <span class="s">"pkglist"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s">"packages"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="p">{</span>
+            <span class="s">"src"</span><span class="p">:</span> <span class="s">"libvirt-0.3.3-14.el5_3.1.src.rpm"</span><span class="p">,</span> 
+            <span class="s">"name"</span><span class="p">:</span> <span class="s">"libvirt-devel"</span><span class="p">,</span> 
+            <span class="s">"sum"</span><span class="p">:</span> <span class="p">[</span>
+              <span class="s">"md5"</span><span class="p">,</span> 
+              <span class="s">"286078e3603347e1d3143981edaf1439"</span>
+            <span class="p">],</span> 
+            <span class="s">"filename"</span><span class="p">:</span> <span class="s">"libvirt-devel-0.3.3-14.el5_3.1.i386.rpm"</span><span class="p">,</span> 
+            <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+            <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.3"</span><span class="p">,</span> 
+            <span class="s">"release"</span><span class="p">:</span> <span class="s">"14.el5_3.1"</span><span class="p">,</span> 
+            <span class="s">"arch"</span><span class="p">:</span> <span class="s">"i386"</span>
+          <span class="p">},</span> 
+          <span class="p">{</span>
+            <span class="s">"src"</span><span class="p">:</span> <span class="s">"libvirt-0.3.3-14.el5_3.1.src.rpm"</span><span class="p">,</span> 
+            <span class="s">"name"</span><span class="p">:</span> <span class="s">"libvirt"</span><span class="p">,</span> 
+            <span class="s">"sum"</span><span class="p">:</span> <span class="p">[</span>
+              <span class="s">"md5"</span><span class="p">,</span> 
+              <span class="s">"e50072ce3a0b192fb94042c667c591ab"</span>
+            <span class="p">],</span> 
+            <span class="s">"filename"</span><span class="p">:</span> <span class="s">"libvirt-0.3.3-14.el5_3.1.i386.rpm"</span><span class="p">,</span> 
+            <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+            <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.3"</span><span class="p">,</span> 
+            <span class="s">"release"</span><span class="p">:</span> <span class="s">"14.el5_3.1"</span><span class="p">,</span> 
+            <span class="s">"arch"</span><span class="p">:</span> <span class="s">"i386"</span>
+          <span class="p">},</span> 
+          <span class="p">{</span>
+            <span class="s">"src"</span><span class="p">:</span> <span class="s">"libvirt-0.3.3-14.el5_3.1.src.rpm"</span><span class="p">,</span> 
+            <span class="s">"name"</span><span class="p">:</span> <span class="s">"libvirt-python"</span><span class="p">,</span> 
+            <span class="s">"sum"</span><span class="p">:</span> <span class="p">[</span>
+              <span class="s">"md5"</span><span class="p">,</span> 
+              <span class="s">"86e8779f369913f62eb792656c5fb0b7"</span>
+            <span class="p">],</span> 
+            <span class="s">"filename"</span><span class="p">:</span> <span class="s">"libvirt-python-0.3.3-14.el5_3.1.i386.rpm"</span><span class="p">,</span> 
+            <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+            <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.3"</span><span class="p">,</span> 
+            <span class="s">"release"</span><span class="p">:</span> <span class="s">"14.el5_3.1"</span><span class="p">,</span> 
+            <span class="s">"arch"</span><span class="p">:</span> <span class="s">"i386"</span>
+          <span class="p">}</span>
+        <span class="p">],</span> 
+        <span class="s">"name"</span><span class="p">:</span> <span class="s">"RHEL Virtualization (v. 5 for 32-bit x86)"</span><span class="p">,</span> 
+        <span class="s">"short"</span><span class="p">:</span> <span class="s">"rhel-i386-server-vt-5"</span>
+      <span class="p">}</span>
+    <span class="p">],</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"RHSA-2009:0382"</span><span class="p">,</span> 
+    <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"title"</span><span class="p">:</span> <span class="s">"Moderate: libvirt security update"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"errata"</span><span class="p">,</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"7"</span><span class="p">,</span> 
+    <span class="s">"reboot_suggested"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"type"</span><span class="p">:</span> <span class="s">"security"</span><span class="p">,</span> 
+    <span class="s">"immutable"</span><span class="p">:</span> true<span class="p">,</span> 
+    <span class="s">"status"</span><span class="p">:</span> <span class="s">"final"</span><span class="p">,</span> 
+    <span class="s">"updated"</span><span class="p">:</span> <span class="s">"2009-03-19 00:00:00"</span><span class="p">,</span> 
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"libvirt is a C API for managing and interacting with the virtualization</span><span class="se">\n</span><span class="s">capabilities of Linux and other operating systems. libvirt also provides</span><span class="se">\n</span><span class="s">tools for remotely managing virtualized systems.</span><span class="se">\n\n</span><span class="s">The libvirtd daemon was discovered to not properly check user connection</span><span class="se">\n</span><span class="s">permissions before performing certain privileged actions, such as</span><span class="se">\n</span><span class="s">requesting migration of an unprivileged guest domain to another system. A</span><span class="se">\n</span><span class="s">local user able to establish a read-only connection to libvirtd could use</span><span class="se">\n</span><span class="s">this flaw to perform actions that should be restricted to read-write</span><span class="se">\n</span><span class="s">connections. (CVE-2008-5086)</span><span class="se">\n\n</span><span class="s">libvirt_proxy, a setuid helper application allowing non-privileged users to</span><span class="se">\n</span><span class="s">communicate with the hypervisor, was discovered to not properly validate</span><span class="se">\n</span><span class="s">user requests. Local users could use this flaw to cause a stack-based</span><span class="se">\n</span><span class="s">buffer overflow in libvirt_proxy, possibly allowing them to run arbitrary</span><span class="se">\n</span><span class="s">code with root privileges. (CVE-2009-0036)</span><span class="se">\n\n</span><span class="s">All users are advised to upgrade to these updated packages, which contain</span><span class="se">\n</span><span class="s">backported patches which resolve these issues. After installing the update,</span><span class="se">\n</span><span class="s">libvirtd must be restarted manually (for example, by issuing a</span><span class="se">\n\"</span><span class="s">service libvirtd restart</span><span class="se">\"</span><span class="s"> command) for this change to take effect."</span><span class="p">,</span> 
+    <span class="s">"repo_defined"</span><span class="p">:</span> true<span class="p">,</span> 
+    <span class="s">"pushcount"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+    <span class="s">"from_str"</span><span class="p">:</span> <span class="s">"security@redhat.com"</span><span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="s">"test"</span><span class="p">,</span> 
+      <span class="s">"test2"</span>
+    <span class="p">],</span> 
+    <span class="s">"rights"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"solution"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"summary"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"RHSA-2009:0382"</span>
+  <span class="p">},</span>
+ <span class="o">...</span>
+<span class="p">]</span>
 </pre></div><p>
-Error: None
+<br />
 </p>
 <hr />
 <h2 id="ListErratabyRepository">List Errata by Repository</h2>
 <p>
-See <a href="UGREST-Repositories.html#Errata">List Errata by Repository</a>
+See <a href="UGREST-Repositories.html#RepositoryErrata">List Errata by Repository</a>
 </p>
 <hr />
 <h2 id="ListErratabyConsumer">List Errata by Consumer</h2>
 <p>
-List available errata for a given repo. This will return a list of all errata on associated to that specific repoid. The list is empty if no repositories are found.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;id&gt;/listerrata</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters: 
-</p>
-<blockquote>
-<p>
-consumerid : consumer id for which errata is queried
-types      : optional ['bugzilla', 'enhancement', 'security']
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: None
-</p>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
- <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
- <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@fedoraproject.org'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
- <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
- <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
- <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
- <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span><span class="p">),</span> 
-                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
-                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'551949'</span><span class="p">,</span>
-                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add emacs terminal mode to desktop menu'</span><span class="p">)}],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">u'Fedora 13'</span><span class="p">,</span>
- <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'status'</span><span class="p">:</span> <span class="s">u'stable'</span><span class="p">,</span>
- <span class="s">'title'</span><span class="p">:</span> <span class="s">u'emacs-23.2-4.fc13'</span><span class="p">,</span>
- <span class="s">'type'</span><span class="p">:</span> <span class="s">u'bugfix'</span><span class="p">,</span>
- <span class="s">'updated'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">u'1.4'</span><span class="p">}</span>
-
-</pre></div><p>
-Error: None
+See <a href="UGREST-Consumers.html#ConsumerErrata">List Errata by Consumer</a>
 </p>
 <hr />
 <h2 id="Create">Create</h2>
 <p>
-Create a new errata given the passed info in the metadata.
+<em>Creates a new errata.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/errata/ <br />
+<br />
+<strong>parameters</strong>:
 </p>
-<p>
-Status: <strong>partial</strong> - updateinfo xml needs to be updated appropriately for new errata
-</p>
-<p>
-Path: <strong>/errata/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>id: unique identifier
-</li><li>title: human-readable title for erratum
-</li><li>description: errata description
-</li><li>version: erratum version
-</li><li>release: erratum release
-</li><li>type   : type of errata (currently supports: ['bugzilla', 'enhancement', 'security'])
-</li><li>status : Erratum status information (optional)
-</li><li>updated : updated erratum date (optional)
-</li><li>issued  : Erratum issued date (optional)
-</li><li>from_str : who issued the erratum (optional)
-</li><li>reboot_suggested : if errataum requires a reboot upon applying (optional)
-</li><li>references : includes bugzilla id info, CVE info for security errata etc (optional)
-</li><li>pkglist  : packages effected by this erratum  
-</li><li>immutable : can this erratum be modified (optional)
-</li><li>repo_defined: should this errata added as part of a repo vs custom (optional)
-</li><li>severity : erratum severity (Currently supports: [Critical, Important, Moderate, Low])
-</li><li>summary : erratum summary information
-</li><li>solution : any solution text associated to the errtum
-</li><li>rights: rights information
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Headers:
-</p>
-<ul><li>location: '/errata/test-errata/'
-<div class="code"><pre>
-<span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'test-errata'</span><span class="p">,</span>
- <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
- <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@example.org'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'TEST-ERRATA-2010-12094'</span><span class="p">,</span>
- <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
- <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
- <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
- <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=xxxxxx'</span><span class="p">),</span> 
-                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
-                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'xxxxxx'</span><span class="p">,</span>
-                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add test info mode to desktop menu'</span><span class="p">)}],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">'Fedora 13'</span><span class="p">,</span>
- <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'status'</span><span class="p">:</span> <span class="s">'stable'</span><span class="p">,</span>
- <span class="s">'title'</span><span class="p">:</span> <span class="s">'test-rpm-23.2-4.fc13'</span><span class="p">,</span>
- <span class="s">'type'</span><span class="p">:</span> <span class="s">'bugfix'</span><span class="p">,</span>
- <span class="s">'updated'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">'1.4'</span><span class="p">}</span>
-
+<ul><li><strong>id</strong> &lt;str&gt; <strong>Errata ID</strong> required
+</li><li><strong>title</strong> &lt;str&gt; <strong>human-readable title for erratum</strong> 
+</li><li><strong>description</strong> &lt;str&gt; <strong>errata description</strong>
+</li><li><strong>version</strong> &lt;str&gt; <strong>errata version</strong>
+</li><li><strong>release</strong> &lt;str&gt; <strong>errata release</strong>
+</li><li><strong>type</strong> &lt;str&gt; <strong>type of errata eg. 'bugzilla', 'enhancement', 'security</strong>'
+</li><li><strong>status</strong> &lt;str&gt; <strong>Erratum status information</strong>
+</li><li><strong>updated</strong> &lt;str&gt; <strong>updated erratum date </strong>
+</li><li><strong>issued</strong> &lt;str&gt; <strong>erratum issued date</strong>
+</li><li><strong>from_str</strong> &lt;str&gt; <strong>rwho issued the erratum</strong>
+</li><li><strong>reboot_suggested</strong> &lt;str&gt; <strong>if errataum requires a reboot upon applying</strong>
+</li><li><strong>references</strong> &lt;list&gt; of str <strong>includes bugzilla id info, CVE info for security errata etc</strong>
+</li><li><strong>pkglist</strong> &lt;list of package objects&gt; <strong>packages effected by this erratum </strong> <br />
+Example - 
+<div class="code"><pre>     <span class="p">[</span>
+      <span class="p">{</span><span class="s">"packages"</span><span class="p">:</span> 
+       <span class="p">[</span>
+         <span class="p">{</span>
+          <span class="s">"src"</span><span class="p">:</span> <span class="s">"http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span>
+          <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-test-package"</span><span class="p">,</span> 
+          <span class="s">"type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> 
+          <span class="s">"sums"</span><span class="p">:</span> <span class="s">"9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"</span><span class="p">,</span> 
+          <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span>
+          <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+          <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.1"</span><span class="p">,</span> 
+          <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11"</span><span class="p">,</span> 
+          <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span>
+         <span class="p">}</span>
+       <span class="p">],</span> 
+       <span class="s">"name"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+       <span class="s">"short"</span><span class="p">:</span> <span class="s">""</span>
+      <span class="p">}</span>
+     <span class="p">]</span>
 </pre></div></li></ul><p>
-Error: <strong>409 Conflict</strong> if there is an existing errata with the same id
+<br />
+</p>
+<ul><li><strong>immutable</strong> &lt;str&gt; <strong>can this erratum be modified</strong>
+</li><li><strong>repo_defined</strong> &lt;str&gt; <strong>should this errata added as part of a repo vs custom</strong>
+</li><li><strong>severity</strong> &lt;str&gt; <strong>erratum severity (Currently supports: [Critical, Important, Moderate, Low]</strong>
+</li><li><strong>summary</strong> &lt;str&gt; <strong>erratum summary information</strong>
+</li><li><strong>solution</strong> &lt;str&gt; <strong>any solution text associated to the errtum</strong>
+</li><li><strong>rights</strong> &lt;str&gt; <em>rights information<strong>'
+</strong></em></li></ul><p>
+<br />
+<strong>permission</strong>: CREATE <br />
+<br />
+<strong>success response</strong>:  201 - Created <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; Newly created errata object <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"issued"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"references"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"pkglist"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s">"packages"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s">"src"</span><span class="p">:</span> <span class="s">"http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+          <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-test-package"</span><span class="p">,</span> 
+          <span class="s">"type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> 
+          <span class="s">"sums"</span><span class="p">:</span> <span class="s">"9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"</span><span class="p">,</span> 
+          <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+          <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+          <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.1"</span><span class="p">,</span> 
+          <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11"</span><span class="p">,</span> 
+          <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span>
+        <span class="p">}</span>
+      <span class="p">],</span> 
+      <span class="s">"name"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+      <span class="s">"short"</span><span class="p">:</span> <span class="s">""</span>
+    <span class="p">}</span>
+  <span class="p">],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"title"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"errata"</span><span class="p">,</span> 
+  <span class="s">"version"</span><span class="p">:</span> <span class="s">"1.0"</span><span class="p">,</span> 
+  <span class="s">"reboot_suggested"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"type"</span><span class="p">:</span> <span class="s">"security"</span><span class="p">,</span> 
+  <span class="s">"immutable"</span><span class="p">:</span> false<span class="p">,</span> 
+  <span class="s">"status"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"updated"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+  <span class="s">"pushcount"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+  <span class="s">"from_str"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"rights"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"solution"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"summary"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-errata"</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="Update">Update</h2>
+<p>
+<em>Update an Erratum</em> <br />
+<br />
+<strong>method</strong>: PUT <br />
+<br />
+<strong>path</strong>: /pulp/api/errata/ <br />
+<br />
+<strong>permission</strong>: UPDATE <br />
+<br />
+<strong>success response</strong>:  200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; updated errata object <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"issued"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"references"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"pkglist"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s">"packages"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s">"src"</span><span class="p">:</span> <span class="s">"http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+          <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-test-package"</span><span class="p">,</span> 
+          <span class="s">"type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> 
+          <span class="s">"sums"</span><span class="p">:</span> <span class="s">"9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"</span><span class="p">,</span> 
+          <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+          <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+          <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.1"</span><span class="p">,</span> 
+          <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11"</span><span class="p">,</span> 
+          <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span>
+        <span class="p">}</span>
+      <span class="p">],</span> 
+      <span class="s">"name"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+      <span class="s">"short"</span><span class="p">:</span> <span class="s">""</span>
+    <span class="p">}</span>
+  <span class="p">],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"title"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"errata"</span><span class="p">,</span> 
+  <span class="s">"version"</span><span class="p">:</span> <span class="s">"1.0"</span><span class="p">,</span> 
+  <span class="s">"reboot_suggested"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"type"</span><span class="p">:</span> <span class="s">"security"</span><span class="p">,</span> 
+  <span class="s">"immutable"</span><span class="p">:</span> false<span class="p">,</span> 
+  <span class="s">"status"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"updated"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+  <span class="s">"pushcount"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+  <span class="s">"from_str"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"rights"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"solution"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"summary"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-errata"</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<br />
 </p>
 <hr />
 <h2 id="Delete">Delete</h2>
 <p>
-Remove all repositories under pulp
-</p>
-<p>
-Status: <strong>partial</strong> - updateinfo xml needs to be updated appropriately for deleted errata
-</p>
-<p>
-Path: <strong>/errata/&gt;errata id&gt;</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters: None
-</p>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: None
+<em>Deletes errata from pulp server</em> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /pulp/api/errata/&lt;errata-id&gt;/ <br />
+<br />
+<strong>permission</strong>: DELETE <br />
+<br />
+<strong>success response</strong>: 200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  true - when errata is deleted successfully, else null <br />
+<br />
 </p>
 <hr />
-<h2 id="Information">Information</h2>
+<h2 id="Info">Info</h2>
 <p>
-Get the information on a single erratum
+<em>Returns information about an erratum</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/errata/&lt;erratum-id&gt;/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; erratum object <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/errata/&lt;erratum id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>
-<span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
- <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'errata'</span><span class="p">,</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
- <span class="s">'from_str'</span><span class="p">:</span> <span class="s">'updates@fedoraproject.org'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'FEDORA-2010-12094'</span><span class="p">,</span>
- <span class="s">'immutable'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'issued'</span><span class="p">:</span> <span class="s">'2010-08-05 23:03:01'</span><span class="p">,</span>
- <span class="s">'pkglist'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'pushcount'</span><span class="p">:</span> <span class="s">''</span><span class="p">,</span>
- <span class="s">'reboot_suggested'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
- <span class="s">'references'</span><span class="p">:</span> <span class="p">[{</span><span class="s">'href'</span> <span class="p">:</span> <span class="s">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span><span class="p">),</span> 
-                <span class="s">'type'</span> <span class="p">:</span> <span class="s">'bugzilla'</span><span class="p">,</span>
-                <span class="s">'id'</span>   <span class="p">:</span> <span class="s">'551949'</span><span class="p">,</span>
-                <span class="s">'title'</span><span class="p">:</span> <span class="s">'Add emacs terminal mode to desktop menu'</span><span class="p">)}],</span>
- <span class="s">'release'</span><span class="p">:</span> <span class="s">u'Fedora 13'</span><span class="p">,</span>
- <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
- <span class="s">'status'</span><span class="p">:</span> <span class="s">u'stable'</span><span class="p">,</span>
- <span class="s">'title'</span><span class="p">:</span> <span class="s">u'emacs-23.2-4.fc13'</span><span class="p">,</span>
- <span class="s">'type'</span><span class="p">:</span> <span class="s">u'bugfix'</span><span class="p">,</span>
- <span class="s">'updated'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span>
- <span class="s">'version'</span><span class="p">:</span> <span class="s">u'1.4'</span><span class="p">}</span>
-
+<div class="code"><pre><span class="p">{</span>
+  <span class="s">"issued"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"references"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"pkglist"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s">"packages"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s">"src"</span><span class="p">:</span> <span class="s">"http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+          <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-test-package"</span><span class="p">,</span> 
+          <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
+          <span class="s">"sums"</span><span class="p">:</span> <span class="s">"9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"</span><span class="p">,</span> 
+          <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+          <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+          <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.1"</span><span class="p">,</span> 
+          <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11"</span><span class="p">,</span> 
+          <span class="s">"type"</span><span class="p">:</span> <span class="s">"sha256"</span>
+        <span class="p">}</span>
+      <span class="p">],</span> 
+      <span class="s">"name"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+      <span class="s">"short"</span><span class="p">:</span> <span class="s">""</span>
+    <span class="p">}</span>
+  <span class="p">],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"title"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"errata"</span><span class="p">,</span> 
+  <span class="s">"version"</span><span class="p">:</span> <span class="s">"1.0"</span><span class="p">,</span> 
+  <span class="s">"reboot_suggested"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"type"</span><span class="p">:</span> <span class="s">"security"</span><span class="p">,</span> 
+  <span class="s">"immutable"</span><span class="p">:</span> false<span class="p">,</span> 
+  <span class="s">"status"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"updated"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+  <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+  <span class="s">"pushcount"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+  <span class="s">"from_str"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"rights"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"solution"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"summary"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+  <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-errata"</span>
+<span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
+<br />
 </p>
 <hr />
 <h2 id="InstallErrataonConsumers">Install Errata on Consumers</h2>
-<ul><li>Install errata on specific consumer Ids. 
-</li><li>If no errata id specified, installs all applicable errata
-</li><li>If type specified, only installs errata of that types
-</li></ul><p>
-Status: <strong>complete</strong>
-</p>
 <p>
-Path: <strong>/consumers/&lt;consumer id&gt;/installerrata/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>errataids : list of errata ids to perform installs 
-</li><li>types:      type of errata to perform install
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: None
-</p>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[</span><span class="s">'fedora-packager'</span><span class="p">,</span> <span class="s">'zsh'</span><span class="p">]</span>
-</pre></div><p>
-Error: None
+See <a href="UGREST-Consumers.html#InstallErrata">Consumer Install Errata</a>
 </p>
 <hr />
 <h2 id="InstallErrataonConsumerGroups">Install Errata on Consumer Groups</h2>
-<ul><li>Install errata on specific consumer Ids. 
-</li><li>If no errata id specified, installs all applicable errata
-</li><li>If type specified, only installs errata of that types
-</li></ul><p>
-Status: <strong>complete</strong>
-</p>
 <p>
-Path: <strong>/consumergroups/&lt;consumergroup id&gt;/installerrata/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>errataids : list of errata ids to perform installs 
-</li><li>types:      type of errata to perform install
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: None
-</p>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[</span><span class="s">'fedora-packager'</span><span class="p">,</span> <span class="s">'zsh'</span><span class="p">]</span>
-</pre></div><p>
-Error: None
+See <a href="UGREST-ConsumerGroups.html#InstallErrata">ConsumerGroups Install Errata</a>
 </p>
 </div>
         

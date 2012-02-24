@@ -30,658 +30,564 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="ConsumerGroups">Consumer Groups</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-ConsumerGroups.html#ConsumerGroups">Consumer Groups</a>
+    <ol>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#List">List</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Delete">Delete</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Create">Create</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Info">Info</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Addconsumertoagroup">Add consumer to a group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Deleteconsumerfromagroup">Delete consumer from a group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Bindrepositorytoconsumergroup">Bind repository to consumer group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Unbindrepositoryfromaconsumergroup">Unbind repository from a consumer group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Addkey-valuetoaconsumergroup">Add key-value to a consumer group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Deletekey-valuefromaconsumergroup">Delete key-value from a consumer group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#Updatekey-valueofaconsumergroup">Update key-value of a consumer group</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#InstallPackages">Install Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#UninstallPackages">Uninstall Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#UpdatePackages">Update Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#InstallPackageGroups">Install Package Groups</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#UninstallPackageGroups">Uninstall Package Groups</a>
+      </li>
+      <li>
+        <a href="UGREST-ConsumerGroups.html#InstallErrata">Install Errata</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="ConsumerGroups">Consumer Groups</h1>
 <p>
-Base URL Path: <strong>/consumergroups/</strong>
+<em>Consumer groups let you create and perform certain operations on a group of consumers.</em>
 </p>
 <hr />
 <h2 id="List">List</h2>
 <p>
-List all consumer groups
+<em>List all Consumer Groups</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  List of Consumer Group objects <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumergroup'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
-  <span class="s">'consumerids'</span><span class="p">:</span> <span class="p">[</span><span class="s">'consumer1'</span><span class="p">,</span><span class="s">'consumer2'</span><span class="p">]}]</span>
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"description"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumergroups"</span><span class="p">,</span> 
+    <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+    <span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"group1"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"group1"</span>
+  <span class="p">},</span> 
+  <span class="p">{</span>
+    <span class="s">"description"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumergroups"</span><span class="p">,</span> 
+    <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+    <span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"group2"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"group2"</span>
+  <span class="p">}</span>
+<span class="p">]</span>
 </pre></div><p>
-Error: None
+<br />
 </p>
 <hr />
 <h2 id="Delete">Delete</h2>
 <p>
-Delete all the consumergroups
+<em>Deletes a Consumer Group</em> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/ <br />
+<br />
+<strong>permission</strong>: DELETE <br />
+<br />
+<strong>success response</strong>: 200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-Status: <strong>partial</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass 
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: None
+<ul><li>404 - Not Found if consumer group with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true - when consumer group is deleted successfully <br />
+<br />
 </p>
 <hr />
 <h2 id="Create">Create</h2>
 <p>
-Create a consumer group
+<em>Creates a consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/ <br />
+<br />
+<strong>parameters</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>id: consumer id
-</li><li>description: consumer description (optional)
-</li><li>consumerids: consumer ids to be associated with this group (optional)
+<ul><li><strong>id</strong> &lt;str&gt; <strong>Consumer Group ID</strong> required
+</li><li><strong>description</strong> &lt;str&gt; <strong>Consumer group description</strong> optional - defaulted to None
 </li></ul><p>
-Authentication:
+<br />
+<strong>permission</strong>: CREATE <br />
+<br />
+<strong>success response</strong>:  201 - Created <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<blockquote>
-<p>
-username/pass 
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Headers:
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer group'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
-  <span class="s">'consumerids'</span><span class="p">:</span> <span class="p">[]}]</span>
-</pre></div><p>
-Error: <strong>409 Conflict</strong> if there is an existing consumer group with the same id
-</p>
-<hr />
-<h2 id="Information">Information</h2>
-<p>
-Get information of a consumer group, given the consumer group id
-</p>
-<p>
-Status: <strong>partial</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumergroup id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass 
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer group'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'mygroup'</span><span class="p">,</span>
- <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[</span><span class="s">'consumer1'</span><span class="p">,</span> <span class="s">'consumer2'</span><span class="p">]}</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
-</p>
-<hr />
-<h2 id="Remove">Remove</h2>
-<p>
-Remove a single consumer
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumer group id&gt;/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
-</p>
-<hr />
-<h2 id="AddaConsumer">Add a Consumer</h2>
-<p>
-Add a consumer to this consumer group
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumer group id&gt;/add/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>consumerid: consumer id
+<ul><li>409 - Conflict when consumer group with the same id already exists  <br />
 </li></ul><p>
-Authentication:
+<br />
+<strong>return</strong>:  &lt;dict&gt; Newly created consumer group object <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-group"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumergroups"</span><span class="p">,</span> 
+  <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-group"</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-group"</span>
+<span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<br />
 </p>
 <hr />
-<h2 id="RemoveaConsumer">Remove a Consumer</h2>
+<h2 id="Info">Info</h2>
 <p>
-Remove a consumer from a consumer group
+<em>Returns information about a consumer group</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumergroups/&lt;group-id&gt;/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; consumer group object <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumer group id&gt;/remove/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-*consumerid: consumer id
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-group"</span><span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumergroups"</span><span class="p">,</span> 
+  <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-group"</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-group"</span>
+<span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<br />
 </p>
 <hr />
-<h2 id="BindConsumers">Bind Consumers</h2>
+<h2 id="Addconsumertoagroup">Add consumer to a group</h2>
 <p>
-Bind a repository to all consumers in this consumer group.
+<em>Adds a consumer to an existing consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/add_consumer/ <br />
+<br />
+<strong>parameter</strong>: &lt;str&gt; <strong>consumer id</strong> <br /> 
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;group id&gt;/bind/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>repoid: repository id
+<ul><li>404 - Not Found if a consumer with given id does not exist <br />
 </li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<br />
+<strong>return</strong>:  true if consumer is successfully added to the consumer group <br />
+<br />
 </p>
 <hr />
-<h2 id="Unbind">Unbind</h2>
+<h2 id="Deleteconsumerfromagroup">Delete consumer from a group</h2>
 <p>
-Unbind a repository from all consumers belonging to a consumer group
+<em>Deletes a consumer from an existing consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/delete_consumer/ <br />
+<br />
+<strong>parameters</strong>: &lt;str&gt; <strong>consumer id</strong> <br /> 
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;group id&gt;/unbind/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-*repoid: repository id
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<ul><li>404 - Not Found if a consumer with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if consumer is successfully deleted from the consumer group <br />
+<br />
 </p>
 <hr />
-<h2 id="AddKey-ValuePair">Add Key-Value Pair</h2>
+<h2 id="Bindrepositorytoconsumergroup">Bind repository to consumer group</h2>
 <p>
-Add a key value to this consumergroup
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumergroup id&gt;/add_key_value_pair/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<pre class="wiki">{ 'key' : "test-key",
-  'value' : "test-value"
-}
-</pre><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<em>Binds a repository to all consumers in the consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumergroups/&lt;group-id&gt;/bind/ <br />
+<br />
+<strong>parameter</strong>: &lt;str&gt; <strong>repository id</strong> <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</em></p>
+<ul><li>404 - Not Found if a consumer group with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if repository bind is successful <br />
+<br />
 </p>
 <hr />
-<h2 id="UpdateKey-ValuePair">Update Key-Value Pair</h2>
+<h2 id="Unbindrepositoryfromaconsumergroup">Unbind repository from a consumer group</h2>
 <p>
-Update a key value for this consumergroup
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumergroup id&gt;/update_key_value_pair/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<pre class="wiki">{ 'key' : "test-key",
-  'value' : "test-value"
-}
-</pre><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<em>Unbinds a repository from all consumers in the consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumergroups/&lt;group-id&gt;/unbind/ <br />
+<br />
+<strong>parameter</strong>: &lt;str&gt; <strong>repository id</strong> <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</em></p>
+<ul><li>404 - Not Found if a consumer group with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if repository unbind is successful <br />
+<br />
 </p>
 <hr />
-<h2 id="DeleteKey-ValuePair">Delete Key-Value Pair</h2>
+<h2 id="Addkey-valuetoaconsumergroup">Add key-value to a consumer group</h2>
 <p>
-Delete a key value for this consumergroup.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumergroups/&lt;consumergroup id&gt;/delete_key_value_pair/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>key
+<em>Adds key-value information to an existing consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumergroups/&lt;group-id&gt;/add_key_value_pair/ <br />
+<br />
+<strong>parameters</strong>: 
+</em></p>
+<ul><li><strong>key</strong> &lt;str&gt; <strong>key</strong> - required <br />
+</li><li><strong>value</strong> &lt;str&gt; <strong>value</strong> - required <br />
+</li><li><strong>force</strong> &lt;str&gt; <strong>optional, 'true' - force change consumer's key-values in case of conflicting values, else 'false</strong>' <br />
 </li></ul><p>
-Authentication:
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer group
+<ul><li>404 - Not Found if consumer group with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if key-values are successfully added to the consumer group <br />
+<br />
 </p>
 <hr />
-<h2 id="InstallPackage">Install Package</h2>
+<h2 id="Deletekey-valuefromaconsumergroup">Delete key-value from a consumer group</h2>
 <p>
-<em>Request that package(s) be installed on a consumer group.</em>
-</p>
-<p>
-<strong>method:</strong> POST
-</p>
-<p>
-<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackages/
-</p>
-<p>
-<strong>permission:</strong> EXECUTE
-</p>
-<p>
-<strong>success response:</strong> 202 ACCEPTED
-</p>
-<p>
-<strong>failure response:</strong>
-</p>
-<ul><li>404 Not Found if there is no such group
+<em>Deletes key-value information from an existing consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumergroups/&lt;group-id&gt;/delete_key_value_pair/ <br />
+<br />
+<strong>parameters</strong>: &lt;str&gt; <strong>key</strong> - required <br /> 
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</em></p>
+<ul><li>404 - Not Found if consumer group with given id does not exist <br />
 </li></ul><p>
-<strong>return:</strong> <em>job ID</em>
+<br />
+<strong>return</strong>:  true if key-value is successfully deleted from the consumer group <br />
+<br />
 </p>
+<hr />
+<h2 id="Updatekey-valueofaconsumergroup">Update key-value of a consumer group</h2>
 <p>
-<strong>parameters:</strong>
+<em>Updates key-value information of an existing consumer group</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/update_key_value_pair/ <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><hr />
-<h2 id="UninstallPackage">Uninstall Package</h2>
-<p>
-<em>Request that package(s) be uninstalled on a consumer group.</em>
-</p>
-<p>
-<strong>method:</strong> POST
-</p>
-<p>
-<strong>path:</strong> /consumergroups/&lt;group id&gt;/uninstallpackages/
-</p>
-<p>
-<strong>permission:</strong> EXECUTE
-</p>
-<p>
-<strong>success response:</strong> 202 ACCEPTED
-</p>
-<p>
-<strong>failure response:</strong>
-</p>
-<ul><li>404 Not Found if there is no such group
+<ul><li><strong>key</strong> &lt;str&gt; <strong>key</strong> - required <br />
+</li><li><strong>value</strong> &lt;str&gt; <strong>value</strong> - required <br />
 </li></ul><p>
-<strong>return:</strong> <em>job ID</em>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-<strong>parameters:</strong>
-</p>
-<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><hr />
-<h2 id="InstallPackageGroup">Install Package Group</h2>
-<p>
-<em>Request that package groups (s) be installed on a consumer group.</em>
-</p>
-<p>
-<strong>method:</strong> POST
-</p>
-<p>
-<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackagegroups/
-</p>
-<p>
-<strong>permission:</strong> EXECUTE
-</p>
-<p>
-<strong>success response:</strong> 202 ACCEPTED
-</p>
-<p>
-<strong>failure response:</strong>
-</p>
-<ul><li>404 Not Found if there is no such group
+<ul><li>404 - Not Found if consumer group with given id does not exist <br />
 </li></ul><p>
-<strong>return:</strong> <em>job ID</em>
+<br />
+<strong>return</strong>:  true if key-values are successfully updated for the consumer group <br />
+<br />
 </p>
+<hr />
+<h2 id="InstallPackages">Install Packages</h2>
 <p>
-<strong>parameters:</strong>
+<em>Request that package(s) be installed on a consumer group.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/installpackages/ <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<ul><li><strong>grpids</strong> &lt;list&gt; <em>a list of group names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><hr />
-<h2 id="UninstallPackageGroup">Uninstall Package Group</h2>
-<p>
-<em>Request that package group(s) be uninstalled on a consumer group.</em>
-</p>
-<p>
-<strong>method:</strong> POST
-</p>
-<p>
-<strong>path:</strong> /consumergroups/&lt;group id&gt;/installpackagegroups/
-</p>
-<p>
-<strong>permission:</strong> EXECUTE
-</p>
-<p>
-<strong>success response:</strong> 202 ACCEPTED
-</p>
-<p>
-<strong>failure response:</strong>
-</p>
-<ul><li>404 Not Found if there is no such group
+<ul><li><strong>packagenames</strong> &lt;list&gt; <strong>a list of package names</strong>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <strong>(optional) schedule in iso8601 format; immediate when Null</strong> 
 </li></ul><p>
-<strong>return:</strong> <em>job ID</em>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of tasks and job id to check status, 'null' in case of failure to install packages <br />
+<br />
+<strong>sample response</strong>:
 </p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"c48c1467-841f-41b6-a1d5-2dbd3c638ef9"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="UninstallPackages">Uninstall Packages</h2>
 <p>
-<strong>parameters:</strong>
+<em>Request that package(s) be uninstalled from a consumer group.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/uninstallpackages/ <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<ul><li><strong>grpids</strong> &lt;list&gt; <em>a list of group names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><hr />
+<ul><li><strong>packagenames</strong> &lt;list&gt; <strong>a list of package names</strong>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <strong>(optional) schedule in iso8601 format; immediate when Null</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of tasks and job id to check status, 'null' in case of failure to uninstall packages <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"c48c1467-841f-41b6-a1d5-2dbd3c638ef9"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="UpdatePackages">Update Packages</h2>
+<p>
+<em>Request that package(s) be updated on a consumer group.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/updatepackages/ <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <strong>a list of package names</strong>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <strong>(optional) schedule in iso8601 format; immediate when Null</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of tasks and job id to check status, 'null' in case of failure to update packages <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"c48c1467-841f-41b6-a1d5-2dbd3c638ef9"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="InstallPackageGroups">Install Package Groups</h2>
+<p>
+<em>Request that package groups (s) be installed on a consumer group.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/installpackagegroups/ <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>grpids</strong> &lt;list&gt; <strong>a list of package group ids</strong>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <strong>(optional) schedule in iso8601 format; immediate when Null</strong> 
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of tasks and job id to check status, 'null' in case of failure to install package groups <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"c48c1467-841f-41b6-a1d5-2dbd3c638ef9"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="UninstallPackageGroups">Uninstall Package Groups</h2>
+<p>
+<em>Request that package groups (s) be uninstalled from a consumer group.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/uninstallpackagegroups/ <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>grpids</strong> &lt;list&gt; <strong>a list of package group ids</strong>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <strong>(optional) schedule in iso8601 format; immediate when Null</strong> 
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of tasks and job id to check status, 'null' in case of failure to uninstall package groups <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"c48c1467-841f-41b6-a1d5-2dbd3c638ef9"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="InstallErrata">Install Errata</h2>
+<p>
+<em>Request that errata be installed on a consumer group.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumergroups/&lt;group-id&gt;/installerrata/ <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>errataids</strong> &lt;list&gt; <strong>a list of errata ids</strong>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <strong>(optional) schedule in iso8601 format; immediate when Null</strong>
+</li><li><strong>importkeys</strong> &lt;boolean&gt; <strong>true or false</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of tasks and job id to check status, 'null' in case of failure to install errata <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"c48c1467-841f-41b6-a1d5-2dbd3c638ef9"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
 </div>
         
         

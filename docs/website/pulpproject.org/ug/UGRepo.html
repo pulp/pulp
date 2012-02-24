@@ -60,12 +60,14 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository.  The file may contain both the private key as well as the certificate in which case the --feed_key should not be specified. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
-</td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> The path to a file containing a certificate.  The file may contain both the private key as well as the certificate in which case the --consumer_key should not be specified.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td>  The path to file containing the certificate's associated private key.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> Full path to the CA certificate used to verify consumer certificates for protected repositories. Specifying this will flag the repository as protected. See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> for more information. 
+</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> Full path to the certificate bound consumers will receive that will grant access to this repository.  The file may contain both the private key as well as the certificate in which case the --consumer_key should not be specified.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> for more information. 
+</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td>  Full path to file containing the certificate's associated private key.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> for more information. 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
 </td></tr><tr><td> GPG Keys </td><td> <tt>--gpgkeys</tt> </td><td> A comma-separated list of GPG public key files that can be used to verify the packages found within the repository. 
+</td></tr><tr><td> Checksum Type </td><td> <tt>--checksum_type</tt> </td><td> checksum type to use when yum metadata is generated 
+</td></tr><tr><td> Preserve Metadata </td><td> <tt>--preserve_metadata</tt> </td><td> Preserves the original metadata; only works with feed repos 
 </td></tr><tr><td> Content Type </td><td> <tt>--content_type</tt> </td><td> content type allowed in this repository; default:yum; supported: [yum, file] 
 </td></tr></table>
 <h4 id="Feeds">Feeds</h4>
@@ -97,14 +99,15 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository.  The file may contain both the private key as well as the certificate in which case the --feed_key is not necessary. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
 </td></tr><tr><td> Remove Feed Entitlement Certificate </td><td> <tt>--remove_feed_cert</tt> </td><td> Removes any feed HTTPS data, including the CA certificate, entitlement certificate and its private key. This cannot be specified at the same time as any of the <tt>--feed_*</tt> attributes. 
-</td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
-</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> Full path to the CA certificate used to verify consumer certificates for protected repositories. Specifying this will flag the repository as protected. See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> for more information. 
+</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> Full path to the certificate bound consumers will receive that will grant access to this repository.  The file may contain both the private key as well as the certificate in which case the --consumer_key should not be specified.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> for more information. 
+</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td>  Full path to file containing the certificate's associated private key.  See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> for more information. 
 </td></tr><tr><td> Remove Consumer Entitlement Certificate </td><td> <tt>--remove_consumer_cert</tt> </td><td> Disabled repository authentication from the repository. For more information, see <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a>. 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Change the relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
 </td></tr><tr><td> Add GPG keys </td><td> <tt>--addkeys</tt> </td><td> A comma-separated list of GPG public key files to be added. 
 </td></tr><tr><td> Remove GPG keys </td><td> <tt>--rmkeys</tt> </td><td> A comma-separated list of GPG public key files to be removed. 
+</td></tr><tr><td> Checksum Type </td><td> <tt>--checksum_type</tt> </td><td> checksum type to use when yum metadata is generated 
 </td></tr></table>
 <h3 id="Removal">Removal</h3>
 <p>
@@ -143,8 +146,12 @@ The following fields are displayed for each repository:
 <tr><td> <strong>Name</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> ID </td><td> Unique identifier for the repository; used throughout the Pulp interfaces when referring to the repo. 
 </td></tr><tr><td> Name </td><td> User-friendly, descriptive name of the repository. 
+</td></tr><tr><td> Repo URL </td><td> URL of where the repository is hosted on the Pulp server 
 </td></tr><tr><td> Feed URL </td><td> URL of the feed from which this the contents of this repository will be synchronized. 
 </td></tr><tr><td> Feed Type </td><td> Identifies the synchronization scheme used when downloading content from the feed. 
+</td></tr><tr><td> Content Type </td><td> Identifies the content type of the repository,  yum or file. 
+</td></tr><tr><td> Feed Certs </td><td> Indicates whether certificates are used for the repository feed. 
+</td></tr><tr><td> Consumer Certs </td><td> Indicates whether certificates are used for consumer access. 
 </td></tr><tr><td> Architecture </td><td> Describes the architecture of packages found within the repository. 
 </td></tr><tr><td> Synchronization Schedule </td><td> Cron syntax describing when (if at all) the repository will automatically be synchronized. 
 </td></tr><tr><td> Packages </td><td> Number of packages in the repository. 
@@ -155,6 +162,8 @@ The following fields are displayed for each repository:
 </td></tr><tr><td> Groups </td><td> A list of groups to which the repository belongs. 
 </td></tr><tr><td> Filters </td><td> A list of filters that are associated with this repository. 
 </td></tr><tr><td> Notes </td><td> A dictionary of additional key-value information about repository. 
+</td></tr><tr><td> Preserve Metadata </td><td> Indicates whether metadata is regenerated during repository synchronization. 
+</td></tr><tr><td> Checksum Type </td><td> Identifies the checksum type in the yum metadata for the repository. 
 </td></tr></table>
 <p>
 You can also query repositories based on certain supported filtering parameters like group id, notes.
