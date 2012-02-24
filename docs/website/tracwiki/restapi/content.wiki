@@ -8,3 +8,21 @@ If you do edit this page directly, please remove this comment
 = Content RESTful API = #top
 ''No description.'' [[BR]]
 [[BR]]
+
+----
+
+== Get File info ==
+''lookup file for a given id'' [[BR]]
+[[BR]]
+'''method''': PUT [[BR]]
+[[BR]]
+'''path''': /content/file/<id>/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 400 Bad Request when trying to change the id [[BR]]
+[[BR]]
+'''return''': a File object [[BR]]
+[[BR]]
