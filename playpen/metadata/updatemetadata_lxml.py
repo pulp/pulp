@@ -1,9 +1,11 @@
+import gzip
 import os
 import rpmUtils
 from createrepo import yumbased, utils
 from lxml import etree
 import time
 import sys
+import pulp.server.util
 from pulp.server.util import get_repomd_filetype_dump, get_repomd_filetype_path
 
 PRIMARY_XML_STR="""<?xml version="1.0" encoding="UTF-8"?>\n <metadata xmlns="http://linux.duke.edu/metadata/common"
@@ -48,7 +50,9 @@ def add_primary(primary_xml_path, pkg_path):
     new_et_children = root.getchildren()
     print "Current count %s" % len(et_children)
     print "Updated count %s" % len(new_et_children)
-    repo_et.write("/tmp/foo-primary.xml")
+    primary_xml = "/tmp/tmp-primary.xml"
+    repo_et.write(primary_xml)
+    compute_gzip_xml(primary_xml)
     print "end time %s" % time.ctime()
 
 def add_filelists(filelists_path, pkg_path):
@@ -64,16 +68,20 @@ def add_filelists(filelists_path, pkg_path):
     root = repo_et.getroot()
     #load repo primary xml children
     et_children = root.getchildren()
-    et_child_locations = [c.items() + c[0].items() for c in et_children]
+    et_child_locations = [dict(c.items() + c[0].items()) for c in et_children]
     for c1 in pkg_et.getchildren():
-        pinfo = c1.items() + c1[0].items()
+        pinfo = dict(c1.items() + c1[0].items())
+        for c2 in et_child_locations:
+            print pinfo, c2
         if pinfo in et_child_locations:
             continue
         root.append(c1)
     new_et_children = root.getchildren()
     print "Current count %s" % len(et_children)
     print "Updated count %s" % len(new_et_children)
-    repo_et.write("/tmp/foo-filelists.xml")
+    filelist_xml = "/tmp/tmp-filelists.xml"
+    repo_et.write(filelist_xml)
+    compute_gzip_xml(filelist_xml)
     print "end time %s" % time.ctime()
 
 def add_otherdata(otherdata_xml, pkg_path):
@@ -89,17 +97,33 @@ def add_otherdata(otherdata_xml, pkg_path):
     root = repo_et.getroot()
     #load repo primary xml children
     et_children = root.getchildren()
-    et_child_locations = [c.items() + c[0].items() for c in et_children]
+    et_child_locations = [dict(c.items() + c[0].items()) for c in et_children]
     for c1 in pkg_et.getchildren():
-        pinfo = c1.items() + c1[0].items()
+        pinfo = dict(c1.items() + c1[0].items())
         if pinfo in et_child_locations:
+            print "skipping"
             continue
         root.append(c1)
     new_et_children = root.getchildren()
     print "Current count %s" % len(et_children)
     print "Updated count %s" % len(new_et_children)
-    repo_et.write("/tmp/foo-other.xml")
+    other_xml = "/tmp/tmp-other.xml"
+    repo_et.write(other_xml)
+    compute_gzip_xml(other_xml)
     print "end time %s" % time.ctime()
+
+def compute_gzip_xml(xml):
+    gz_path_orig = "%s.gz" % xml
+    f_in = open(xml, 'rb')
+    f_out = gzip.open(gz_path_orig, 'wb')
+    try:
+        f_out.writelines(f_in)
+    finally:
+        f_in.close()
+        f_out.close()
+    xml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
+        filename=gz_path_orig)
+    print xml_gz_checksum
 
 def main():
     repo_dir = sys.argv[1] #"/home/pkilambi/testrepo/"
