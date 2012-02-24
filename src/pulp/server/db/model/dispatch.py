@@ -14,7 +14,7 @@
 from datetime import datetime
 
 from pulp.common import dateutils
-from pulp.server.db.model.base import Model
+from pulp.server.db.model.gc_base import Model
 
 
 class QueuedCall(Model):
@@ -42,7 +42,7 @@ class ScheduledCall(Model):
     def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
 
-        call_request.tags.append(self._id)
+        call_request.tags.append(str(self._id))
 
         self.serialized_call_request = call_request.serialize()
         self.schedule = schedule
