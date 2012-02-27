@@ -528,8 +528,8 @@ urls = (
     '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
 
-    '/([^/]+)/sync_history/$', 'RepoSyncHistory', # sub-collection
-    '/([^/]+)/publish_history/([^/]+)/$', 'RepoPublishHistory', # sub-collection
+    '/([^/]+)/history/sync/$', 'RepoSyncHistory', # sub-collection
+    '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory', # sub-collection
 
     '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
     '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
