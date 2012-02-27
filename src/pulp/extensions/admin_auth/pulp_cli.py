@@ -19,16 +19,13 @@ import os
 
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand
 
-CONTEXT = None
+def initialize(context):
+
+    # To be implemented soon
+
+    pass
 
 # -- cli components -----------------------------------------------------------
-
-class LoginCommand(PulpCliCommand):
-    def __init__(self, context):
-        PulpCliCommand.__init__(self, 'login', 'logs into the Pulp server and stores a session certificate', _do_login)
-
-        global CONTEXT
-        CONTEXT = context
 
 # -- shell components ---------------------------------------------------------
 
@@ -36,16 +33,3 @@ class LoginCommand(PulpCliCommand):
 
 # -- functionality logic ------------------------------------------------------
 
-def _do_login(self):
-
-    # Make the login call to the server
-
-
-    # Determine and create certificate directory
-    relative_dir = CONTEXT.client_config.get('filesystem', 'user_cert_dir')
-    cert_dir = os.path.expanduser(relative_dir)
-    if not os.path.exists(cert_dir):
-        os.makedirs(cert_dir)
-
-    filename = CONTEXT.client_config.get('filesystem', 'user_cert_filename')
-    full_cert_filename = os.path.join(cert_dir, filename)
