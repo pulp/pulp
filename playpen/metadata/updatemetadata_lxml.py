@@ -58,7 +58,6 @@ def add_primary(repo_dir, pkg_path):
     et_child_locations = [c[-2].values()[0] for c in et_children]
     for c1 in pkg_et.getchildren():
         if c1[-2].values()[0] in et_child_locations:
-            print "exists skipping"
             continue
         root.append(c1)
     new_et_children = root.getchildren()
@@ -83,10 +82,8 @@ def remove_primary(repo_dir, pkg_path):
     root = repo_et.getroot()
     #load repo other xml children
     et_children = root.getchildren()
-    et_child_locations = [dict(c.items() + c[0].items()) for c in et_children]
     pkg_et_children = [c[-2].values()[0] for c in pkg_et.getchildren()]
     for c2 in et_children:
-        #print c2[-2].values()[0], pkg_et_children
         if c2[-2].values()[0] in pkg_et_children:
             print "removing node %s" % c2.items()
             root.remove(c2)
@@ -97,7 +94,6 @@ def remove_primary(repo_dir, pkg_path):
     # update package count
     root.set('packages', str(len(new_et_children)))
     repo_et.write(primary_xml)
-    compute_gzip_xml(primary_xml)
     primary_xml_gz = "%s.gz" % primary_xml
     utils.compressFile(primary_xml, primary_xml_gz, 'gz')
     print "end time %s" % time.ctime()
@@ -145,7 +141,6 @@ def remove_filelists(repo_dir, pkg_path):
     root = repo_et.getroot()
     #load repo other xml children
     et_children = root.getchildren()
-    et_child_locations = [dict(c.items() + c[0].items()) for c in et_children]
     pkg_et_children = [dict(c1.items() + c1[0].items()) for c1 in pkg_et.getchildren()]
     for c2 in et_children:
         c2_info = dict(c2.items() + c2[0].items())
@@ -159,7 +154,6 @@ def remove_filelists(repo_dir, pkg_path):
     root.set('packages', str(len(new_et_children)))
     filelist_xml = "%s/.repodata/filelists.xml" % repo_dir
     repo_et.write(filelist_xml)
-    compute_gzip_xml(filelist_xml)
     filelist_xml_gz = "%s.gz" % filelist_xml
     utils.compressFile(filelist_xml, filelist_xml_gz, 'gz')
     print "end time %s" % time.ctime()
@@ -207,7 +201,6 @@ def remove_otherdata(repo_dir, pkg_path):
     root = repo_et.getroot()
     #load repo other xml children
     et_children = root.getchildren()
-    et_child_locations = [dict(c.items() + c[0].items()) for c in et_children]
     pkg_et_children = [dict(c1.items() + c1[0].items()) for c1 in pkg_et.getchildren()]
     for c2 in et_children:
         c2_info = dict(c2.items() + c2[0].items())
