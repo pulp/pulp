@@ -87,6 +87,15 @@ def request_info(key):
     return web.ctx.environ.get(key, None)
 
 
+def request_method():
+    """
+    Get the request method for the current request.
+    @return: request method
+    @rtype:  str
+    """
+    return request_info('REQUEST_METHOD')
+
+
 def request_url():
     """
     Rebuild the full request url from the request information.
