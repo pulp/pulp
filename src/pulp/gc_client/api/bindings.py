@@ -16,11 +16,11 @@ from pulp.gc_client.api.repository import *
 
 class Bindings(object):
     def __init__(self, pulp_connection):
-        self.repo_api = RepositoryAPI(pulp_connection)
-        self.repo_importer_api = RepositoryImporterAPI(pulp_connection)
-        self.repo_distributor_api = RepositoryDistributorAPI(pulp_connection)
-        self.repo_history_api = RepositoryHistoryAPI(pulp_connection)
-        self.repo_actions_api = RepositoryActionsAPI(pulp_connection)
-        self.repo_unit_search_api = RepositoryUnitSearchAPI(pulp_connection)
+        self.repo = RepositoryAPI(pulp_connection)
+        self.repo_importer = RepositoryImporterAPI(pulp_connection)
+        self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
+        self.repo_history = RepositoryHistoryAPI(pulp_connection)
+        self.repo_actions = RepositoryActionsAPI(pulp_connection)
+        self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
 
         
