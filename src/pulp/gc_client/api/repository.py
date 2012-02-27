@@ -12,8 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.gc_client.api.base import PulpAPI
-from pulp.gc_client.api.server import ServerRequestError
-from pulp.common import dateutils
 
 
 class RepositoryAPI(PulpAPI):

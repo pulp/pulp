@@ -38,10 +38,10 @@ def set_active_server(server):
     active_server = server
     
 
-# exception classes to handle error response codes
+# exception classes to handle server request exceptions
 
 
-class PulpConnectionException(Exception):
+class RequestException(Exception):
     """
     Base exception class
     """
@@ -52,35 +52,28 @@ class PulpConnectionException(Exception):
         self.error_message = response_body['error_message']
         self.exception = response_body['exception']
         self.traceback = response_body['traceback']
+        
+    def __str__(self):
+        return _('RequestException: %s - %s' % (self.http_status, self.error_message))
+            
 
-class BadRequestException(PulpConnectionException):
-    """
-    Response code = 400
-    """
-    pass
+# Response code = 400
+class BadRequestException(RequestException): pass
 
-class NotFoundException(PulpConnectionException):
-    """
-    Response code = 404
-    """
-    pass
+# Response code = 401. Commented out for now until we fix server side exception handling to follow same hierarchy.
+# class PermissionsException(RequestException): pass
 
-class DuplicateResourceException(PulpConnectionException):
-    """
-    Response code = 409
-    """
-    pass
+# Response code = 404
+class NotFoundException(RequestException): pass
 
+# Response code = 409
+class DuplicateResourceException(RequestException): pass
 
-class PulpServerException(PulpConnectionException):
-    """
-    Response code >= 500
-    """
-    pass
+# Response code >= 500
+class PulpServerException(RequestException): pass
 
 
-
-class ServerRequestError(Exception):
+class ConnectionException(Exception):
     """
     Exception to indicate a less than favorable response from the server.
     The arguments are [0] the response status as an integer and
@@ -90,15 +83,13 @@ class ServerRequestError(Exception):
     """
     pass
 
-
-class NoCredentialsError(Exception):
+class PermissionsException(Exception):
     """
     Indicates an attempt was made to do a server call without providing
     authentication credentials, either through a certificate or as command
     line flags.
     """
     pass
-
 
 # server wrapper class which invokes python connection apis and allows us to mock them
 
@@ -111,13 +102,33 @@ class ServerWrapper(object):
         try:
             response = self.connection.getresponse()
         except SSL.SSLError, err:
-            raise ServerRequestError(None, str(err), None)
+            raise ConnectionException(None, str(err), None)
         response_body = response.read()
         try:
             response_body = json.loads(response_body)
         except:
             pass
         return response.status, response_body
+    
+# response classes ------------------------------------------------------------
+
+class Response(object):
+    """
+    Successful response class
+    """
+    def __init__(self, response_code, response_body):
+        self.response_code = response_code
+        self.response_body = response_body
+        
+    def __str__(self):
+        return _("Response:\ncode - %s\nresponse_body - %s\n" % (self.response_code, self.response_body))
+
+
+class AsyncResponse(Response):
+    """
+    Async task response class. For now, this is identical to Response class until server side async response is flushed out
+    """
+    pass
 
 # pulp server class -----------------------------------------------------------
 
@@ -126,13 +137,11 @@ class PulpConnection(object):
     Pulp server connection class.
     """
 
-    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api', timeout=120, connection=None,
+    def __init__(self, host, port=443, path_prefix='/pulp/api', timeout=120, connection=None,
                  server_wrapper=None, api_responses_log=None, username=None, password=None, certfile=None):
-        assert protocol in ('http', 'https')
 
         self.host = host
         self.port = port
-        self.protocol = protocol
         self.path_prefix = path_prefix
         self.headers = {}
         self.timeout = timeout
@@ -155,12 +164,8 @@ class PulpConnection(object):
 
         if connection:
             self.connection = connection
-        else:
-            # make an appropriate connection to the pulp server
-            if self.protocol == 'http':
-                self.connection = self._http_connection()
-            else:
-                self.connection = self._https_connection()
+        else:                
+            self.connection = self._https_connection()
 
         if server_wrapper:
             self.server_wrapper = server_wrapper
@@ -172,20 +177,10 @@ class PulpConnection(object):
             self.set_basic_auth_credentials(username, password)
         elif certfile:
             self.set_ssl_credentials(certfile)
-        elif self.has_credentials_set():
-            pass
         else:
-            msg = _('No valid authorization credentials found')
-            # try to deduce the name of the script, if we're being run from one
-            if sys.argv:
-                msg += _(', please see: %s --help') % os.path.basename(sys.argv[0])
-            raise NoCredentialsError(None, msg)
+            pass
 
-
-    # protected server connection methods -------------------------------------
-
-    def _http_connection(self):
-        self.connection = httplib.HTTPConnection(self.host, self.port, timeout=self.timeout)
+    # protected server connection method -------------------------------------
 
     def _https_connection(self):
         # make sure that passed in username and password overrides cert/key auth
@@ -222,7 +217,8 @@ class PulpConnection(object):
 
     def _request(self, method, path, queries=(), body=None):
         # make a request to the pulp server and return the response
-        # NOTE this throws a ServerRequestError if the request did not succeed
+        # NOTE this throws a ConnectionException or one of the RequestExceptions (depending on response codes) 
+        # in case of unsuccessful request
         url = self._build_url(path, queries)
         if not isinstance(body, (type(None), str,)):
             body = json.dumps(body)
@@ -240,13 +236,15 @@ class PulpConnection(object):
         if response_code >= 300:
             self.handle_exceptions(response_code, response_body)
         else:
-            return response_body
+            return Response(response_code, response_body)
 
     # Raise appropriate exceptions based on response code
 
     def handle_exceptions(self, response_code, response_body):
         if response_code == 400:
             raise BadRequestException(response_body)
+        elif response_code == 401:
+            raise PermissionsException(response_body)
         elif response_code == 404:
             raise NotFoundException(response_body)
         elif response_code == 409:

@@ -3,7 +3,7 @@
 import os
 import sys
 from pulp.gc_client.api import server
-from pulp.gc_client.api.server import DuplicateResourceException
+from pulp.gc_client.api.server import DuplicateResourceException, PermissionsException
 from pulp.gc_client.api.repository import RepositoryAPI
 import time
 
@@ -17,7 +17,7 @@ class RepoBindingsTest(object):
         
     def clean(self):
         print "Cleaning all repositories..."
-        for repo in self.rapi.repositories():
+        for repo in self.rapi.repositories().response_body:
             self.rapi.delete(repo['id'])
         
     def test_list(self):
@@ -28,17 +28,17 @@ class RepoBindingsTest(object):
         assert(repo1 is not None)
         assert(repo2 is not None)
         print "listing all repositories..."
-        repos = self.rapi.repositories()
+        repos = self.rapi.repositories().response_body
         assert(len(repos)==2)
         
     def test_create(self, repoid):
         print "Will create repository [%s]..." % repoid
-        repo = self.rapi.create(id=repoid, display_name=repoid, description=repoid, notes={})
+        repo = self.rapi.create(id=repoid, display_name=repoid, description=repoid, notes={}).response_body
         assert(repo is not None)
         try:
             self.rapi.create(id=repoid, display_name=repoid, description=repoid, notes={})
         except DuplicateResourceException, e:
-            print e.href, e.error_message
+            print e
         
 if __name__ == "__main__":
     repo_bindings = RepoBindingsTest()
