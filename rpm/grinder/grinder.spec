@@ -59,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Feb 27 2012 Jeff Ortel <jortel@redhat.com> 0.0.139-1
+- rel-eng: add grinder under rpm/. (jortel@redhat.com)
+
 * Mon Feb 27 2012 John Matthews <jmatthews@redhat.com> 0.0.139-1
 - 797195 - Syncing multiple repos concurrently could cause missing symlinks
   (jmatthews@redhat.com)
