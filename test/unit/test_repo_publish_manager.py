@@ -98,7 +98,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertEqual({}, call_args[2].override_config)
 
         self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
-        
+
     def test_publish_with_config_override(self):
         """
         Tests a publish when passing in override values.
@@ -274,7 +274,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Verify
         self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_count)
         self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
-        
+
     def test_auto_publish_no_repo(self):
         """
         Tests that calling auto publish on a repo that doesn't exist or one that
@@ -461,4 +461,4 @@ def add_result(repo_id, dist_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
     r = RepoPublishResult.success_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details')
-    RepoPublishResult.get_collection().save(r, safe=True)
+    RepoPublishResult.get_collection().insert(r, safe=True)

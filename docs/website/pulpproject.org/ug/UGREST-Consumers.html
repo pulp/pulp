@@ -30,799 +30,747 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="Consumers">Consumers</h1>
-<p>
-Base URL Path: <strong>/consumers/</strong>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Consumers.html#Consumers">Consumers</a>
+    <ol>
+      <li>
+        <a href="UGREST-Consumers.html#List">List</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Unregister">Unregister</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Register">Register</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Info">Info</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#ConsumerPackageProfile">Consumer Package Profile</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#ConsumerRepositories">Consumer Repositories</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#ConsumerKeyvalues">Consumer Keyvalues</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#ConsumerPackageUpdates">Consumer Package Updates</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#ConsumerErrata">Consumer Errata</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Bindconsumertorepository">Bind consumer to repository</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Unbindrepositoryfromaconsumer">Unbind repository from a consumer</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Addkey-valuetoaconsumer">Add key-value to a consumer</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Deletekey-valuefromaconsumer">Delete key-value from a consumer</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Updatekey-valueofaconsumer">Update key-value of a consumer</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#UploadConsumerProfile">Upload Consumer Profile</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#ConsumerHistory">Consumer History</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#Listapplicableerrataforconsumersfromgivensetofrepositories">List applicable errata for consumers from given set of repositories</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#InstallPackage">Install Package</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#UpdatePackage">Update Package</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#UninstallPackage">Uninstall Package</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#InstallPackageGroup">Install Package Group</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#UninstallPackageGroup">Uninstall Package Group</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#InstallPackageGroupCategory">Install Package Group Category</a>
+      </li>
+      <li>
+        <a href="UGREST-Consumers.html#InstallErrata">Install Errata</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
 </p>
+<h1 id="Consumers">Consumers</h1>
 <hr />
 <h2 id="List">List</h2>
 <p>
-List all consumers
+<em>List all Consumers</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /pulp/api/consumers/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  List of Consumer objects <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<ul><li>package_name : Will fetch all Consumer objects who have an package with specified name associated with them
-</li></ul><p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'me'</span><span class="p">,</span>
-  <span class="s">'package_profile'</span><span class="p">:</span> <span class="p">{},</span>
-  <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[]}]</span>
-</pre></div><p>
-Error: None
-</p>
-<hr />
-<h2 id="Delete">Delete</h2>
-<p>
-Delete all the consumers
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: None
-</p>
-<hr />
-<h2 id="Create">Create</h2>
-<p>
-Create a consumer
-</p>
-<p>
-Status: <strong>partial</strong> - location header not filled in
-</p>
-<p>
-Path: <strong>/consumers/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>id: consumer id
-</li><li>description: consumer description
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass 
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Headers:
-</p>
-<ul><li>location - path to consumer resource
-<div class="code"><pre><span class="p">[{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'me'</span><span class="p">,</span>
-  <span class="s">'package_profile'</span><span class="p">:</span> <span class="p">{</span><span class="s">'href'</span><span class="p">},</span>
-  <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[]}]</span>
-</pre></div></li></ul><p>
-Error: <strong>409 Conflict</strong> if there is an existing consumer with the same id
-</p>
-<hr />
-<h2 id="Information">Information</h2>
-<p>
-Get a consumers's information, given the consumer id
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">'description'</span><span class="p">:</span> <span class="s">'test consumer'</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'me'</span><span class="p">,</span>
- <span class="s">'package_profile'</span><span class="p">:</span> <span class="p">{},</span>
- <span class="s">'packageids'</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">'repoids'</span><span class="p">:</span> <span class="p">[]</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
-</p>
-<hr />
-<h2 id="PackagesList">Packages List</h2>
-<p>
-Get a consumers's set of installed packages.  This is a large document and is only returned when asked for.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/packages/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span>
- <span class="s">"GConf2"</span><span class="p">:</span> <span class="p">[</span>
+<div class="code"><pre> <span class="p">[</span>
   <span class="p">{</span>
-   <span class="s">"OS"</span><span class="p">:</span> <span class="s">"linux"</span><span class="p">,</span> 
-   <span class="s">"Platform"</span><span class="p">:</span> <span class="s">"x86_64-redhat-linux-gnu"</span><span class="p">,</span> 
-   <span class="s">"Size"</span><span class="p">:</span> <span class="mi">5986194</span><span class="p">,</span> 
-   <span class="s">"URL"</span><span class="p">:</span> <span class="s">"http://projects.gnome.org/gconf/"</span><span class="p">,</span> 
-   <span class="s">"Vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
-   <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
-   <span class="s">"description"</span><span class="p">:</span> <span class="s">"GConf is a process-transparent configuration database API used to</span><span class="se">\n</span><span class="s">store user preferences. It has pluggable backends and features to</span><span class="se">\n</span><span class="s">support workgroup administration."</span><span class="p">,</span> 
-   <span class="s">"epoch"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
-   <span class="s">"fileName"</span><span class="p">:</span> <span class="s">"GConf2-2.26.2-1.fc11.2.x86_64"</span><span class="p">,</span> 
-   <span class="s">"group"</span><span class="p">:</span> <span class="s">"System Environment/Base"</span><span class="p">,</span> 
-   <span class="s">"installtime"</span><span class="p">:</span> <span class="mi">1272900387</span><span class="p">,</span> 
-   <span class="s">"name"</span><span class="p">:</span> <span class="s">"GConf2"</span><span class="p">,</span> 
-   <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11.2"</span><span class="p">,</span> 
-   <span class="s">"summary"</span><span class="p">:</span> <span class="s">"A process-transparent configuration system"</span><span class="p">,</span> 
-   <span class="s">"version"</span><span class="p">:</span> <span class="s">"2.26.2"</span>
+    <span class="s">"description"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"certificate"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/certificate/"</span><span class="p">,</span> 
+    <span class="s">"uri_ref"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/"</span><span class="p">,</span> 
+    <span class="s">"package_profile"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/package_profile/"</span><span class="p">,</span> 
+    <span class="s">"keyvalues"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/keyvalues/"</span><span class="p">,</span> 
+    <span class="s">"errata"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/errata/"</span><span class="p">,</span> 
+    <span class="s">"package_updates"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/package_updates/"</span><span class="p">,</span> 
+    <span class="s">"errata_package_updates"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/errata_package_updates/"</span><span class="p">,</span> 
+    <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+    <span class="s">"capabilities"</span><span class="p">:</span> <span class="p">{</span><span class="s">"heartbeat"</span><span class="p">:</span> true<span class="p">,</span> <span class="s">"bind"</span><span class="p">:</span> true<span class="p">},</span> 
+    <span class="s">"heartbeat"</span><span class="p">:</span> <span class="p">[</span>
+      true<span class="p">,</span> 
+      <span class="s">"2012-01-02T21:02:03.081381+00:00"</span><span class="p">,</span> 
+      <span class="p">{}</span>
+    <span class="p">],</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/repoids/"</span>
   <span class="p">}</span>
- <span class="p">],</span> 
- <span class="s">"GConf2-devel"</span><span class="p">:</span> <span class="p">[</span>
-  <span class="p">{</span>
-   <span class="s">"OS"</span><span class="p">:</span> <span class="s">"linux"</span><span class="p">,</span> 
-   <span class="s">"Platform"</span><span class="p">:</span> <span class="s">"x86_64-redhat-linux-gnu"</span><span class="p">,</span> 
-   <span class="s">"Size"</span><span class="p">:</span> <span class="mi">854255</span><span class="p">,</span> 
-   <span class="s">"URL"</span><span class="p">:</span> <span class="s">"http://projects.gnome.org/gconf/"</span><span class="p">,</span> 
-   <span class="s">"Vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
-   <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
-   <span class="s">"description"</span><span class="p">:</span> <span class="s">"GConf development package. Contains files needed for doing</span><span class="se">\n</span><span class="s">development using GConf."</span><span class="p">,</span> 
-   <span class="s">"epoch"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
-   <span class="s">"fileName"</span><span class="p">:</span> <span class="s">"GConf2-devel-2.26.2-1.fc11.2.x86_64"</span><span class="p">,</span> 
-   <span class="s">"group"</span><span class="p">:</span> <span class="s">"Development/Libraries"</span><span class="p">,</span> 
-   <span class="s">"installtime"</span><span class="p">:</span> <span class="mi">1272900476</span><span class="p">,</span> 
-   <span class="s">"name"</span><span class="p">:</span> <span class="s">"GConf2-devel"</span><span class="p">,</span> 
-   <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11.2"</span><span class="p">,</span> 
-   <span class="s">"summary"</span><span class="p">:</span> <span class="s">"Headers and libraries for GConf development"</span><span class="p">,</span> 
-   <span class="s">"version"</span><span class="p">:</span> <span class="s">"2.26.2"</span>
-  <span class="p">}</span>
- <span class="p">],</span> 
-<span class="o">...</span>
+<span class="p">]</span>
+
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="Unregister">Unregister</h2>
+<p>
+<em>Unregisters a Consumer from pulp server</em> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /pulp/api/consumers/&lt;consumer-id&gt;/ <br />
+<br />
+<strong>permission</strong>: DELETE <br />
+<br />
+<strong>success response</strong>: 200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>404 - Not Found if consumer with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true - when consumer is deleted successfully <br />
+<br />
+</p>
+<hr />
+<h2 id="Register">Register</h2>
+<p>
+<em>Registers a consumer to pulp server</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumers/ <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <strong>Consumer ID</strong> required
+</li><li><strong>description</strong> &lt;str&gt; <strong>Consumer description</strong> optional - defaulted to null
+</li><li><strong>key_value_pairs</strong> &lt;dict&gt; <strong>Key-value information for the consumer</strong> optional - defaulted to {}
+</li><li><strong>capabilities</strong> &lt;dict&gt; <strong>Consumer capabilities</strong> optional - defaulted to {}
+<ul><li><strong>heartbeat</strong> &lt;bool&gt; <em>The consumer supports sending heartbeats</em>
+</li><li><strong>bind</strong> &lt;bool&gt; <em>The consumer supports bind/unbind requests</em>
+</li></ul></li></ul><p>
+<br />
+<strong>permission</strong>: CREATE <br />
+<br />
+<strong>success response</strong>:  201 - Created <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>409 - Conflict when consumer with the same id already exists  <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  &lt;dict&gt; Newly created consumer object <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumers"</span><span class="p">,</span> 
+  <span class="s">"package_profile"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">"capabilities"</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+  <span class="s">"description"</span><span class="p">:</span> null
+  <span class="s">"certificate"</span> <span class="p">:</span> <span class="s">"""
+    -----BEGIN CERTIFICATE-----
+    MIICGTCCAQECAQEwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0
+    MB4XDTEwMDgxMzE5MzYyMloXDTIwMDgxMDE5MzYyMlowFTETMBEGA1UEAxMKMTI4 
+    MTcyODE4MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArUSjsf/dJvJH79sv
+    G7D9bsxR74cKmrQUKKbD+Ij5W9hKMrf5Fo1evd2phCkXf+Oup+Y+I9DAJCvKAWCe
+    aEKZP5zqLmQlsB87YXp9fyK4Gitgl3v0HOEeRFPDG3pZQJ0vwcMY1S/CcCoamQ7v
+    oseGTfQT8HvWjI09wp3e9MJnIJECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEATm0+
+    7JzT8dChDwPFUOEhxGUtPmfTgPoZWYvspy2xtNZ1DgJ2T16TD5MotdU1DAYNdKE0
+    ye7+tadKFVy/yYgt2YBgHZeNs95yeGeB+1fAhNZDgBTiLoMhNMAk0XqqvCj1R07P
+    bfKQfcqKzF8s9HpYA4sigee5VYZbLqbZxWt1NZitxneL9Hb5NGFC7tG+SoYt9Su2
+    y90OR83QjF+fqRTtnqAHqUmeqA8xCRyaWgGvHCXmmhIUMSnMgHC2XK6CQWbSOA3G
+    Nq5GdPADF5exjxRqoX+9IV27FTAu+3LZgq9dfeuCY/BZSp+BUTsb3fAmuWMiPThe
+    8pJWO1s+EUSGwkg8qw==
+    -----END CERTIFICATE----- 
+    -----BEGIN RSA PRIVATE KEY-----
+    MIICXQIBAAKBgQCtRKOx/90m8kfv2y8bsP1uzFHvhwqatBQopsP4iPlb2Eoyt/kW
+    jV693amEKRd/466n5j4j0MAkK8oBYJ5oQpk/nOouZCWwHzthen1/IrgaK2CXe/Qc
+    4R5EU8MbellAnS/BwxjVL8JwKhqZDu+ix4ZN9BPwe9aMjT3Cnd70wmcgkQIDAQAB
+    AoGBAJDugEqs7izcrmWonq/4DRU33TWRbMJY7R/P1s62rHYx5makUruVhvEkT95X
+    jOuR5I9W3RWSUJYw9qjOS9KEGrCl1nEIKzE01eWO15WsvW3ZRwCdse3fRN4g319J
+    bReHgiYazIWN6MXpfB20y0Q9jU52VdaSptMyIW2PA9x7SE1RAkEA0zp9ngCsY575
+    g7B7vH8RGkwvw0urBi1sFplcdJR+5kZojCwvoWWC6WcxKjX4djKXDLycYN0Q803s
+    /b/QsU4axQJBANH+X9/OAfZ77M4/I44Ih+vvl70hFHmHEbxxo4W48lqABmrPEz2z
+    5TlU4GV1/R7q2y0znj4dIQTqwBmKx7MsO10CQQCu7JRUwdgBVAjr/r4p1szSC1/O
+    ip5iKkGF4ZFIViVVC9/OnVUAgrFMGxIDE9jkAXdHq/aQ3OIJq3HknfH0s2rFAkAv
+    FsOZBDEcfJ2VgkMOzorsNUXpe0mEFu27PCBXFCoEcUD/IoBGDdkRCh9noRWpoTCU
+    6kZJ125YE+wPzjcJzplhAkBe+SBjwZyWpkaTXI69tnarRTPj1/8Rdssv8J2frSfY
+    fHtXVkM+JakzknrCIHOJEXVeA30sX/0Vscs37KlQ0V9N
+    -----END RSA PRIVATE KEY-----"""</span>
 <span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<br />
 </p>
 <hr />
-<h2 id="CertificateGeneration">Certificate Generation</h2>
+<h2 id="Info">Info</h2>
 <p>
-Generate an x509 Certificate to represent this Consumer.  This Certificate is signed by the Pulp server using the SSL CA Cert configured in apache's /etc/httpd/conf.d/pulp.conf configuration file.
+<em>Returns information about a consumer</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
+<ul><li>404 - Not Found if consumer with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  &lt;dict&gt; consumer object <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/certificate/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span>
- <span class="s">"certificate"</span><span class="p">:</span> 
- <span class="s">"-----BEGIN CERTIFICATE-----</span>
-MIICGTCCAQECAQEwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0
-MB4XDTEwMDgxMzE5MzYyMloXDTIwMDgxMDE5MzYyMlowFTETMBEGA1UEAxMKMTI4
-MTcyODE4MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArUSjsf<span class="o">/</span>dJvJH79sv
-G7D9bsxR74cKmrQUKKbD<span class="o">+</span>Ij5W9hKMrf5Fo1evd2phCkXf<span class="o">+</span>Oup<span class="o">+</span>Y<span class="o">+</span>I9DAJCvKAWCe
-aEKZP5zqLmQlsB87YXp9fyK4Gitgl3v0HOEeRFPDG3pZQJ0vwcMY1S<span class="o">/</span>CcCoamQ7v
-oseGTfQT8HvWjI09wp3e9MJnIJECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEATm0<span class="o">+</span>
-<span class="mi">7</span>JzT8dChDwPFUOEhxGUtPmfTgPoZWYvspy2xtNZ1DgJ2T16TD5MotdU1DAYNdKE0
-ye7<span class="o">+</span>tadKFVy<span class="o">/</span>yYgt2YBgHZeNs95yeGeB<span class="o">+</span><span class="mi">1</span>fAhNZDgBTiLoMhNMAk0XqqvCj1R07P
-bfKQfcqKzF8s9HpYA4sigee5VYZbLqbZxWt1NZitxneL9Hb5NGFC7tG<span class="o">+</span>SoYt9Su2
-y90OR83QjF<span class="o">+</span>fqRTtnqAHqUmeqA8xCRyaWgGvHCXmmhIUMSnMgHC2XK6CQWbSOA3G
-Nq5GdPADF5exjxRqoX<span class="o">+</span><span class="mi">9</span>IV27FTAu<span class="o">+</span><span class="il">3L</span>Zgq9dfeuCY<span class="o">/</span>BZSp<span class="o">+</span>BUTsb3fAmuWMiPThe
-<span class="mi">8</span>pJWO1s<span class="o">+</span>EUSGwkg8qw<span class="o">==</span>
-<span class="o">-----</span>END CERTIFICATE<span class="o">-----</span><span class="s">", </span>
- <span class="s">"key"</span><span class="p">:</span> 
- <span class="s">"-----BEGIN RSA PRIVATE KEY-----</span>
-MIICXQIBAAKBgQCtRKOx<span class="o">/</span><span class="mi">90</span>m8kfv2y8bsP1uzFHvhwqatBQopsP4iPlb2Eoyt<span class="o">/</span>kW
-jV693amEKRd<span class="o">/</span><span class="mi">466</span>n5j4j0MAkK8oBYJ5oQpk<span class="o">/</span>nOouZCWwHzthen1<span class="o">/</span>IrgaK2CXe<span class="o">/</span>Qc
-<span class="mi">4</span>R5EU8MbellAnS<span class="o">/</span>BwxjVL8JwKhqZDu<span class="o">+</span>ix4ZN9BPwe9aMjT3Cnd70wmcgkQIDAQAB
-AoGBAJDugEqs7izcrmWonq<span class="o">/</span><span class="mi">4</span>DRU33TWRbMJY7R<span class="o">/</span>P1s62rHYx5makUruVhvEkT95X
-jOuR5I9W3RWSUJYw9qjOS9KEGrCl1nEIKzE01eWO15WsvW3ZRwCdse3fRN4g319J
-bReHgiYazIWN6MXpfB20y0Q9jU52VdaSptMyIW2PA9x7SE1RAkEA0zp9ngCsY575
-g7B7vH8RGkwvw0urBi1sFplcdJR<span class="o">+</span><span class="mi">5</span>kZojCwvoWWC6WcxKjX4djKXDLycYN0Q803s
-<span class="o">/</span>b<span class="o">/</span>QsU4axQJBANH<span class="o">+</span>X9<span class="o">/</span>OAfZ77M4<span class="o">/</span>I44Ih<span class="o">+</span>vvl70hFHmHEbxxo4W48lqABmrPEz2z
-<span class="mi">5</span>TlU4GV1<span class="o">/</span>R7q2y0znj4dIQTqwBmKx7MsO10CQQCu7JRUwdgBVAjr<span class="o">/</span>r4p1szSC1<span class="o">/</span>O
-ip5iKkGF4ZFIViVVC9<span class="o">/</span>OnVUAgrFMGxIDE9jkAXdHq<span class="o">/</span>aQ3OIJq3HknfH0s2rFAkAv
-FsOZBDEcfJ2VgkMOzorsNUXpe0mEFu27PCBXFCoEcUD<span class="o">/</span>IoBGDdkRCh9noRWpoTCU
-<span class="mi">6</span>kZJ125YE<span class="o">+</span>wPzjcJzplhAkBe<span class="o">+</span>SBjwZyWpkaTXI69tnarRTPj1<span class="o">/</span><span class="mi">8</span>Rdssv8J2frSfY
-fHtXVkM<span class="o">+</span>JakzknrCIHOJEXVeA30sX<span class="o">/</span><span class="mi">0</span>Vscs37KlQ0V9N
-<span class="o">-----</span>END RSA PRIVATE KEY<span class="o">-----</span><span class="s">"</span>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"description"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"certificate"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/certificate/"</span><span class="p">,</span> 
+  <span class="s">"uri_ref"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/"</span><span class="p">,</span> 
+  <span class="s">"package_profile"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/package_profile/"</span><span class="p">,</span> 
+  <span class="s">"keyvalues"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/keyvalues/"</span><span class="p">,</span> 
+  <span class="s">"errata"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/errata/"</span><span class="p">,</span> 
+  <span class="s">"package_updates"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/package_updates/"</span><span class="p">,</span> 
+  <span class="s">"errata_package_updates"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/errata_package_updates/"</span><span class="p">,</span> 
+  <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
+  <span class="s">"capabilities"</span><span class="p">:</span> <span class="p">{</span><span class="s">"heartbeat"</span> <span class="p">:</span> true<span class="p">,</span> <span class="s">"bind"</span> <span class="p">:</span> true<span class="p">},</span> 
+  <span class="s">"heartbeat"</span><span class="p">:</span> <span class="p">[</span>
+    true<span class="p">,</span> 
+    <span class="s">"2012-01-02T21:20:15.491060+00:00"</span><span class="p">,</span> 
+    <span class="p">{}</span>
+  <span class="p">],</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+  <span class="s">"repoids"</span><span class="p">:</span> <span class="s">"/pulp/api/consumers/consumer1/repoids/"</span>
 <span class="p">}</span>
+
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<br />
 </p>
 <hr />
-<h2 id="Update">Update</h2>
+<h2 id="ConsumerPackageProfile">Consumer Package Profile</h2>
 <p>
-Update a consumer
-</p>
-<p>
-Status: <strong>partial</strong> - invalid filed update not checked for
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>consumer: consumer object with changes
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer<br />
-Error: <strong>400 Bad Request</strong> if there is a change to the consumer id
-</p>
-<hr />
-<h2 id="Delete1">Delete</h2>
-<p>
-Delete a single consumer
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
-</p>
-<hr />
-<h2 id="Bind">Bind</h2>
-<p>
-Bind a repository to this consumer
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/bind/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>id: consumer id
-</li><li>repoid: repository id
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-The response will be a map of three items:
-</p>
-<ul><li>'repo': map of data describing the repository; same as retrieved through the repository information call.
-</li><li>'host_urls': ordered list of URLs to access for the repository; the ordering describes Pulp's suggested preference for accessing the repo
-</li><li>'key_urls': similar to host_urls, this indicates the location at which keys for the repo can be found
-</li></ul><div class="code"><pre><span class="p">{</span><span class="s">"repo"</span><span class="p">:</span>
-    <span class="p">{</span><span class="s">"use_symlinks"</span><span class="p">:</span> false<span class="p">,</span> <span class="s">"sync_schedule"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"package_count"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">"ca"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"distributionid"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"simple-repo"</span><span class="p">,</span>
-     <span class="s">"repomd_xml_path"</span><span class="p">:</span> <span class="s">"/var/lib/pulp//repos/repos/pulp/pulp/fedora-14/i386/repodata/repomd.xml"</span><span class="p">,</span>
-     <span class="s">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s">"url"</span><span class="p">:</span> <span class="s">"http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386"</span><span class="p">,</span> <span class="s">"type"</span><span class="p">:</span> <span class="s">"yum"</span><span class="p">,</span> <span class="s">"supported_types"</span><span class="p">:</span> <span class="p">[</span><span class="s">"yum"</span><span class="p">,</span> <span class="s">"local"</span><span class="p">,</span> <span class="s">"rhn"</span><span class="p">]},</span> <span class="s">"group_xml_path"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span>
-     <span class="s">"publish"</span><span class="p">:</span> true<span class="p">,</span> <span class="s">"groupid"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"packagegroups"</span><span class="p">:</span> <span class="p">{},</span> <span class="s">"files"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"relative_path"</span><span class="p">:</span> <span class="s">"repos/pulp/pulp/fedora-14/i386"</span><span class="p">,</span> <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> <span class="s">"key"</span><span class="p">:</span> null<span class="p">,</span>
-     <span class="s">"packages"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"group_gz_xml_path"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> <span class="s">"name"</span><span class="p">:</span> <span class="s">"simple-repo"</span><span class="p">,</span> <span class="s">"last_sync"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"clone_ids"</span><span class="p">:</span> <span class="p">[],</span> <span class="s">"cert"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"packagegroupcategories"</span><span class="p">:</span> <span class="p">{},</span>
-     <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"repos"</span><span class="p">,</span> <span class="s">"release"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"checksum_type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"simple-repo"</span><span class="p">,</span> <span class="s">"errata"</span><span class="p">:</span> <span class="p">{}},</span>
- <span class="s">"host_urls"</span><span class="p">:</span> <span class="p">[</span><span class="s">"https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/i386"</span><span class="p">],</span>
- <span class="s">"key_urls"</span><span class="p">:</span> <span class="p">[]</span>
-<span class="p">}</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
-</p>
-<hr />
-<h2 id="Unbind">Unbind</h2>
-<p>
-Unbind a repository from a consumer
-</p>
-<p>
-Status: <strong>partial</strong> - no error checking for unbound repository
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/unbind/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-*repoid: repository id
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
-</p>
-<hr />
-<h2 id="UploadProfile">Upload Profile</h2>
-<p>
-Upload a consumer's package profile
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/package_profile/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>list of packages
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
-</p>
-<hr />
-<h2 id="ViewHistory">View History</h2>
-<p>
-Retrieve the history of events that occurred on a consumer
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/history/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters (all are optional):
-</p>
-<ul><li>event_type: type of events to retrieve
-</li><li>limit: maximum number of results to retrieve
-</li><li>sort: direction of sort by event timestamp; possible values: 'ascending', 'descending'
-</li><li>start_date: earliest date of events that will be retrieved; format: yyyy-mm-dd
-</li><li>end_date: latest date of events that will be retrieved; format: yyyy-mm-dd
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-Consumer Certificate
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
+<em>Returns information about packages profile of a consumer</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/package_profile/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;list&gt; of package objects <br />
+<br />
+<strong>sample response</strong>:
 </p>
 <div class="code"><pre><span class="p">[</span>
-<span class="p">{</span><span class="s">"originator"</span><span class="p">:</span> <span class="s">"consumer"</span><span class="p">,</span> <span class="s">"timestamp"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$date"</span><span class="p">:</span> <span class="mi">1283519842366</span><span class="p">},</span> <span class="s">"type_name"</span><span class="p">:</span> <span class="s">"consumer_created"</span><span class="p">,</span> <span class="s">"consumer_id"</span><span class="p">:</span> <span class="s">"jdob"</span><span class="p">,</span> <span class="s">"details"</span><span class="p">:</span> null<span class="p">,</span> <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumer_history"</span><span class="p">,</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"9b81254d-cbb3-463d-a7ba-59106e78a5fe"</span><span class="p">,</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"9b81254d-cbb3-463d-a7ba-59106e78a5fe"</span><span class="p">},</span>
-<span class="p">{</span><span class="s">"originator"</span><span class="p">:</span> <span class="s">"consumer"</span><span class="p">,</span> <span class="s">"timestamp"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$date"</span><span class="p">:</span> <span class="mi">1283519842366</span><span class="p">},</span> <span class="s">"type_name"</span><span class="p">:</span> <span class="s">"repo_bound"</span><span class="p">,</span> <span class="s">"consumer_id"</span><span class="p">:</span> <span class="s">"jdob"</span><span class="p">,</span> <span class="s">"details"</span><span class="p">:</span> <span class="p">{</span><span class="s">"repo_id"</span><span class="p">:</span> <span class="s">"repo1"</span><span class="p">},</span> <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumer_history"</span><span class="p">,</span> <span class="s">"_id"</span><span class="p">:</span> <span class="s">"53dd60e5-ca4b-47b0-8f90-325aeb0da17a"</span><span class="p">,</span> <span class="s">"id"</span><span class="p">:</span> <span class="s">"53dd60e5-ca4b-47b0-8f90-325aeb0da17a"</span><span class="p">}</span>
+ <span class="p">{</span><span class="s">"vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
+  <span class="s">"name"</span><span class="p">:</span> <span class="s">"telepathy-butterfly"</span><span class="p">,</span> 
+  <span class="s">"epoch"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+  <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.5.15"</span><span class="p">,</span> 
+  <span class="s">"release"</span><span class="p">:</span> <span class="s">"3.fc16"</span><span class="p">,</span> 
+  <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">},</span> 
+ <span class="p">{</span><span class="s">"vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
+  <span class="s">"name"</span><span class="p">:</span> <span class="s">"libdvdnav"</span><span class="p">,</span> 
+  <span class="s">"epoch"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+  <span class="s">"version"</span><span class="p">:</span> <span class="s">"4.1.4"</span><span class="p">,</span> 
+  <span class="s">"release"</span><span class="p">:</span> <span class="s">"0.3.svn1226.fc16"</span><span class="p">,</span> 
+  <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">}</span>
+<span class="o">...</span>
 <span class="p">]</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<br />
 </p>
 <hr />
-<h2 id="AddKey-ValuePair">Add Key-Value Pair</h2>
+<h2 id="ConsumerRepositories">Consumer Repositories</h2>
 <p>
-Add a key value to this consumer
+<em>Returns ids of repositories the consumer is bound to.</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/repoids/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of repoids:uri reference <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/add_key_value_pair/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<pre class="wiki">{ 'key' : "test-key",
-  'value' : "test-value"
-}
-</pre><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
+<div class="code"><pre><span class="p">{</span><span class="s">"foo"</span><span class="p">:</span> <span class="s">"/repositories/foo/"</span><span class="p">,</span>
+ <span class="s">"test"</span><span class="p">:</span> <span class="s">"/repositories/test/"</span><span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<br />
 </p>
 <hr />
-<h2 id="UpdateKey-ValuePair">Update Key-Value Pair</h2>
+<h2 id="ConsumerKeyvalues">Consumer Keyvalues</h2>
 <p>
-Update a key value for this consumer
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/consumers/&lt;consumer id&gt;/update_key_value_pair/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<pre class="wiki">{ 'key' : "test-key",
-  'value' : "test-value"
-}
-</pre><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
+<em>Returns key value information associated to a consumer. This also includes key-values inherited from consumergroup.' <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/keyvalues/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of key-values <br />
+<br />
+<strong>sample response</strong>:
+</em></p>
+<div class="code"><pre><span class="p">{</span><span class="s">"key2"</span><span class="p">:</span> <span class="s">"value2"</span><span class="p">,</span> 
+ <span class="s">"key1"</span><span class="p">:</span> <span class="s">"value1"</span><span class="p">}</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<br />
 </p>
 <hr />
-<h2 id="DeleteKey-ValuePair">Delete Key-Value Pair</h2>
+<h2 id="ConsumerPackageUpdates">Consumer Package Updates</h2>
 <p>
-Delete a key value for this consumer
+<em>Returns list of applicable package updates for a given consumerid' <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/package_updates/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;list&gt; of package objects <br />
+<br />
+<strong>sample response</strong>:
+</em></p>
+<div class="code"><pre><span class="p">[</span> 
+ <span class="p">{</span><span class="s">"src"</span><span class="p">:</span> <span class="s">"http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+  <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-test-package"</span><span class="p">,</span> 
+  <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
+  <span class="s">"sums"</span><span class="p">:</span> <span class="s">"9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"</span><span class="p">,</span> 
+  <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+  <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+  <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.1"</span><span class="p">,</span> 
+  <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11"</span><span class="p">,</span> 
+  <span class="s">"type"</span><span class="p">:</span> <span class="s">"sha256"</span>
+ <span class="p">}</span>
+<span class="p">]</span>
+</pre></div><p>
+<br />
 </p>
+<hr />
+<h2 id="ConsumerErrata">Consumer Errata</h2>
 <p>
-Status: <strong>complete</strong>
+<em>Returns list of applicable errata for a given consumerid' <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/errata/<br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  &lt;list&gt; of errata <br />
+<br />
+<strong>sample response</strong>:
+</em></p>
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"issued"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"references"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"pkglist"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s">"packages"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="p">{</span>
+            <span class="s">"src"</span><span class="p">:</span> <span class="s">"http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+            <span class="s">"name"</span><span class="p">:</span> <span class="s">"pulp-test-package"</span><span class="p">,</span> 
+            <span class="s">"type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> 
+            <span class="s">"sums"</span><span class="p">:</span> <span class="s">"9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"</span><span class="p">,</span> 
+            <span class="s">"filename"</span><span class="p">:</span> <span class="s">"pulp-test-package-0.3.1-1.fc11.x86_64.rpm"</span><span class="p">,</span> 
+            <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+            <span class="s">"version"</span><span class="p">:</span> <span class="s">"0.3.1"</span><span class="p">,</span> 
+            <span class="s">"release"</span><span class="p">:</span> <span class="s">"1.fc11"</span><span class="p">,</span> 
+            <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span>
+          <span class="p">}</span>
+        <span class="p">],</span> 
+        <span class="s">"name"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+        <span class="s">"short"</span><span class="p">:</span> <span class="s">""</span>
+      <span class="p">}</span>
+    <span class="p">],</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+    <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"title"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"errata"</span><span class="p">,</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"1.0"</span><span class="p">,</span> 
+    <span class="s">"reboot_suggested"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"type"</span><span class="p">:</span> <span class="s">"security"</span><span class="p">,</span> 
+    <span class="s">"immutable"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"status"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"updated"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-errata"</span><span class="p">,</span> 
+    <span class="s">"repo_defined"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"pushcount"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+    <span class="s">"from_str"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="s">"test2"</span>
+    <span class="p">],</span> 
+    <span class="s">"rights"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"solution"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"summary"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-errata"</span>
+  <span class="p">}</span>
+<span class="p">]</span>
+</pre></div><p>
+<br />
 </p>
+<hr />
+<h2 id="Bindconsumertorepository">Bind consumer to repository</h2>
 <p>
-Path: <strong>/consumers/&lt;consumer id&gt;/delete_key_value_pair/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>key
+<em>Binds consumer to a repository</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumers/&lt;consumer-id&gt;/bind/ <br />
+<br />
+<strong>parameter</strong>: &lt;str&gt; <strong>repository id</strong> <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</em></p>
+<ul><li>404 - Not Found if a consumer with given id does not exist 
+</li><li>404 - Not Found if a repository with given repoid does not exist <br />
 </li></ul><p>
-Authentication:
+<br />
+<strong>return</strong>:  &lt;dict&gt; containing details about the repo that will describe how to use the bound repo if repository bind is successful, else null <br />
+<br />
+<strong>sample response</strong>:
 </p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"repo"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"group_gz_xml_path"</span><span class="p">:</span> <span class="s">"/var/lib/pulp//repos/yum/1.6/Fedora/16/x86_64/repodata/f54d92c2e06b271ce8b3951d6542e44d24310cc81f226106708f6be54d2a1df0-comps-spacewalk-server-fedora16.xml.gz"</span><span class="p">,</span> 
+    <span class="s">"preserve_metadata"</span><span class="p">:</span> false<span class="p">,</span> 
+    <span class="s">"feed_cert"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"foo"</span><span class="p">,</span> 
+    <span class="s">"feed_ca"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"repos"</span><span class="p">,</span> 
+    <span class="s">"content_types"</span><span class="p">:</span> <span class="s">"yum"</span><span class="p">,</span> 
+    <span class="s">"publish"</span><span class="p">:</span> true<span class="p">,</span> 
+    <span class="s">"relative_path"</span><span class="p">:</span> <span class="s">"yum/1.6/Fedora/16/x86_64"</span><span class="p">,</span> 
+    <span class="s">"consumer_cert"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"consumer_ca"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"group_xml_path"</span><span class="p">:</span> <span class="s">"/var/lib/pulp//repos/yum/1.6/Fedora/16/x86_64/repodata/3d69fb2caa66f1626fc181ab5e69b86f45950445579e9a7c13550caef978c247-comps-spacewalk-server-fedora16.xml"</span><span class="p">,</span> 
+    <span class="s">"release"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"checksum_type"</span><span class="p">:</span> <span class="s">"sha256"</span><span class="p">,</span> 
+    <span class="s">"sync_options"</span><span class="p">:</span> <span class="p">{},</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"foo"</span><span class="p">,</span> 
+    <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"foo"</span><span class="p">,</span> 
+    <span class="s">"repomd_xml_path"</span><span class="p">:</span> <span class="s">"/var/lib/pulp//repos/yum/1.6/Fedora/16/x86_64/repodata/repomd.xml"</span>
+  <span class="p">},</span> 
+  <span class="s">"cacert"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"host_urls"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">"https://localhost/pulp/repos/yum/1.6/Fedora/16/x86_64"</span>
+  <span class="p">],</span> 
+  <span class="s">"clientcert"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"gpg_keys"</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<br />
 </p>
 <hr />
-<h2 id="RetrieveKey-ValuePairs">Retrieve Key-Value Pairs</h2>
+<h2 id="Unbindrepositoryfromaconsumer">Unbind repository from a consumer</h2>
 <p>
-Get all key-value pairs for this consumer. 
-This also includes key-values inherited from consumergroups that this consumer belongs.
+<em>Unbinds repository from a consumer</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumers/&lt;consumer-id&gt;/unbind/ <br />
+<br />
+<strong>parameter</strong>: &lt;str&gt; <strong>repository id</strong> <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</em></p>
+<ul><li>404 - Not Found if a consumer with given id does not exist 
+</li><li>404 - Not Found if a repository with given repoid does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if repository unbind is successful <br />
+<br />
 </p>
+<hr />
+<h2 id="Addkey-valuetoaconsumer">Add key-value to a consumer</h2>
 <p>
-Status: <strong>complete</strong>
+<em>Adds key-value information to an existing consumer</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumers/&lt;consumer-id&gt;/add_key_value_pair/ <br />
+<br />
+<strong>parameters</strong>: 
+</em></p>
+<ul><li><strong>key</strong> &lt;str&gt; <strong>key</strong> - required <br />
+</li><li><strong>value</strong> &lt;str&gt; <strong>value</strong> - required <br />
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
 </p>
+<ul><li>404 - Not Found if consumer with given id does not exist
+</li><li>409 - Conflict if given key already exists in consumer key-values <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if key-value is successfully added to the consumer <br />
+<br />
+</p>
+<hr />
+<h2 id="Deletekey-valuefromaconsumer">Delete key-value from a consumer</h2>
 <p>
-Path: <strong>/consumers/&lt;consumer id&gt;/keyvalues/</strong>
+<em>Deletes key-value information from an existing consumer</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api<em>consumers/&lt;consumer-id&gt;/delete_key_value_pair/ <br />
+<br />
+<strong>parameters</strong>: &lt;str&gt; <strong>key</strong> - required <br /> 
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</em></p>
+<ul><li>404 - Not Found if consumer with given id does not exist 
+</li><li>404 - Not Found if given key does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if key-value is successfully deleted from the consumer <br />
+<br />
 </p>
+<hr />
+<h2 id="Updatekey-valueofaconsumer">Update key-value of a consumer</h2>
 <p>
-Method: <strong>GET</strong>
+<em>Updates key-value information of an existing consumer</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /pulp/api/consumers/&lt;consumer-id&gt;/update_key_value_pair/ <br />
+<br />
+<strong>parameters</strong>: 
 </p>
+<ul><li><strong>key</strong> &lt;str&gt; <strong>key</strong> - required <br />
+</li><li><strong>value</strong> &lt;str&gt; <strong>value</strong> - required <br />
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>404 - Not Found if consumer with given id does not exist 
+</li><li>404 - Not Found if given key does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  true if key-values are successfully updated for the consumer <br />
+<br />
+</p>
+<hr />
+<h2 id="UploadConsumerProfile">Upload Consumer Profile</h2>
 <p>
-Parameters:
+<em>Uploads packages profile of a consumer</em> <br />
+<br />
+<strong>method</strong>: PUT <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/package_profile/<br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<blockquote>
+<ul><li><strong>package_profile</strong> &lt;list&gt; of dict containing package information. For example - [{"vendor": "Fedora Project", "name": "ant-apache-xalan2", "epoch": 0, "version": "1.8.2", "release": "6.fc16", "arch": "noarch"}] - required <br />
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXEUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>:  true if profile upload is successful <br />
+<br />
+</p>
+<hr />
+<h2 id="ConsumerHistory">Consumer History</h2>
 <p>
-None
+<em>Retrieves history of events that occurred on a consumer</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/&lt;consumer-id&gt;/history/<br />
+<br />
+<strong>parameters</strong>:  
 </p>
-</blockquote>
+<ul><li><strong>event_type</strong> &lt;str&gt; <strong>type of events to retrieve - supported types ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound", "package_installed", "package_uninstalled", "errata_installed", "profile_changed")</strong>
+</li><li><strong>limit</strong> &lt;str&gt; <strong>maximum number of results to retrieve</strong>
+</li><li><strong>sort</strong> &lt;str&gt; <strong>direction of sort by event timestamp; possible values: 'ascending', 'descending</strong>'
+</li><li><strong>start_date</strong> &lt;str&gt; <strong>earliest date of events that will be retrieved; format: yyyy-mm-dd</strong>
+</li><li><strong>end_date</strong> &lt;str&gt; <strong>latest date of events that will be retrieved; format: yyyy-mm-dd</strong> <br />
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXEUTE <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<ul><li>404 - Not Found if consumer with given id does not exist <br />
+</li></ul><p>
+<br />
+<strong>return</strong>:  &lt;list&gt; of history objects <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"originator"</span><span class="p">:</span> <span class="s">"admin"</span><span class="p">,</span> 
+    <span class="s">"timestamp"</span><span class="p">:</span> <span class="s">"2012-01-04T19:32:22Z"</span><span class="p">,</span> 
+    <span class="s">"type_name"</span><span class="p">:</span> <span class="s">"consumer_registered"</span><span class="p">,</span> 
+    <span class="s">"consumer_id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+    <span class="s">"details"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumer_history"</span><span class="p">,</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"518a4b5f-173e-47a4-93f9-64f27d8b4d8b"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"518a4b5f-173e-47a4-93f9-64f27d8b4d8b"</span>
+  <span class="p">},</span> 
+  <span class="p">{</span>
+    <span class="s">"originator"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+    <span class="s">"timestamp"</span><span class="p">:</span> <span class="s">"2012-01-04T19:32:00Z"</span><span class="p">,</span> 
+    <span class="s">"type_name"</span><span class="p">:</span> <span class="s">"repo_unbound"</span><span class="p">,</span> 
+    <span class="s">"consumer_id"</span><span class="p">:</span> <span class="s">"consumer1"</span><span class="p">,</span> 
+    <span class="s">"details"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"repo_id"</span><span class="p">:</span> <span class="s">"foo"</span>
+    <span class="p">},</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumer_history"</span><span class="p">,</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"b84f1b7e-eadf-486d-b4f0-3bf9c43962cc"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"b84f1b7e-eadf-486d-b4f0-3bf9c43962cc"</span>
+  <span class="p">},</span> 
+<span class="p">]</span>
+
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="Listapplicableerrataforconsumersfromgivensetofrepositories">List applicable errata for consumers from given set of repositories</h2>
 <p>
-Authentication:
+<em>Retrieves list of errata applicable for consumers in a given set of repositories. Result also returns consumer ids for each erratum.</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>:  /pulp/api/consumers/applicable_errata_in_repos/<br />
+<br />
+<strong>parameters</strong>:  
 </p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
+<ul><li><strong>repoids</strong> &lt;list&gt; of &lt;str&gt; <strong>list of repository ids to look for applicable errata</strong> <br />
+</li><li><strong>send_only_applicable_errata</strong> &lt;str&gt; <strong>'true' if only applicable errata should be returned, else 'false'. default value - 'true</strong>' <br />
+</li></ul><p>
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>:  200 - OK <br />
+<br />
+<strong>failure response</strong>:  400 - Bad Request in case of invalid input for send_only_applicable_errata <br />
+<br />
+<strong>return</strong>:  &lt;dict&gt; of objects that are mappings of errata id to errata info and applicable consumerids <br />
+<br />
+<strong>sample response</strong>:
 </p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<pre class="wiki">{u'key1': u'value1', u'key2': u'value2', u'key3': u'value3'}
-</pre><p>
-Error: <strong>404 Not Found</strong> if there is no such consumer
+<div class="code"><pre><span class="p">{</span><span class="s">"RHBA-2008:0279"</span><span class="p">:</span> <span class="p">{</span><span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[</span><span class="s">'consumer1'</span><span class="p">],</span> 
+                    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"abc"</span><span class="p">],</span> 
+                    <span class="s">"type"</span><span class="p">:</span> <span class="s">"bugfix"</span><span class="p">,</span> 
+                    <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+                    <span class="s">"title"</span><span class="p">:</span> <span class="s">"xen bug fix update"</span><span class="p">},</span> 
+ <span class="s">"RHBA-2008:0291"</span><span class="p">:</span> <span class="p">{</span><span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[</span><span class="s">'consumer1'</span><span class="p">,</span> <span class="s">'consumer2'</span><span class="p">],</span> 
+                    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"abc"</span><span class="p">],</span> 
+                    <span class="s">"type"</span><span class="p">:</span> <span class="s">"bugfix"</span><span class="p">,</span> 
+                    <span class="s">"severity"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+                    <span class="s">"title"</span><span class="p">:</span> <span class="s">"libvirt bug fix and enhancement update"</span><span class="p">},</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
 </p>
 <hr />
 <h2 id="InstallPackage">Install Package</h2>
@@ -836,6 +784,11 @@ Error: <strong>404 Not Found</strong> if there is no such consumer
 <strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackages/
 </p>
 <p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
 <strong>permission:</strong> EXECUTE
 </p>
 <p>
@@ -849,11 +802,6 @@ Error: <strong>404 Not Found</strong> if there is no such consumer
 <strong>return:</strong> <em>Task</em>
 </p>
 <p>
-<strong>parameters:</strong>
-</p>
-<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><p>
 <strong>task result</strong> &lt;dict&gt;
 </p>
 <ul><li><strong>installed</strong>  &lt;list&gt; <em>A list of packages actually installed.  Could be empty if package(s) already installed.</em>
@@ -874,6 +822,11 @@ Example:
 <strong>path:</strong> /consumers/&lt;consumer id&gt;/updatepackages/
 </p>
 <p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>an (optional) list of package names; empty=ALL</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
 <strong>permission:</strong> EXECUTE
 </p>
 <p>
@@ -887,11 +840,6 @@ Example:
 <strong>return:</strong> <em>Task</em>
 </p>
 <p>
-<strong>parameters:</strong>
-</p>
-<ul><li><strong>packagenames</strong> &lt;list&gt; <em>an (optional) list of package names; empty=ALL</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><p>
 <strong>task result</strong> &lt;dict&gt;
 </p>
 <ul><li><strong>updated</strong>  &lt;list&gt;:
@@ -917,6 +865,11 @@ Example:
 <strong>path:</strong> /consumers/&lt;consumer id&gt;/uninstallpackages/
 </p>
 <p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
 <strong>permission:</strong> EXECUTE
 </p>
 <p>
@@ -930,11 +883,6 @@ Example:
 <strong>return:</strong> <em>Task</em>
 </p>
 <p>
-<strong>parameters:</strong>
-</p>
-<ul><li><strong>packagenames</strong> &lt;list&gt; <em>a list of package names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><p>
 <strong>task result</strong> &lt;list&gt; a list of packages actually uninstalled.  Could be empty if package(s) not installed.<em>
 </em></p>
 <p>
@@ -953,6 +901,11 @@ Example:
 <strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackagegroups/
 </p>
 <p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>groupids</strong> &lt;list&gt; <em>a list of group names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
 <strong>permission:</strong> EXECUTE
 </p>
 <p>
@@ -966,11 +919,6 @@ Example:
 <strong>return:</strong> <em>Task</em>
 </p>
 <p>
-<strong>parameters:</strong>
-</p>
-<ul><li><strong>groupids</strong> &lt;list&gt; <em>a list of group names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><p>
 <strong>task result</strong> &lt;dict&gt; keys are installed group name; values are the list of installed packages
 </p>
 <p>
@@ -989,6 +937,11 @@ Example:
 <strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackagegroups/
 </p>
 <p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>groupids</strong> &lt;list&gt; <em>a list of group names</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
 <strong>permission:</strong> EXECUTE
 </p>
 <p>
@@ -1002,11 +955,6 @@ Example:
 <strong>return:</strong> <em>Task</em>
 </p>
 <p>
-<strong>parameters:</strong>
-</p>
-<ul><li><strong>groupids</strong> &lt;list&gt; <em>a list of group names</em>
-</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
-</li></ul><p>
 <strong>task result</strong> &lt;dict&gt; keys are removed group name; values are the list of uninstalled packages
 </p>
 <p>
@@ -1014,6 +962,102 @@ Example:
 </p>
 <pre class="wiki">{'Tibetan Support': ['tibetan-machine-uni-fonts-1.901-6.fc14.noarch', 'jomolhari-fonts-0.003-9.fc14.noarch', 'ibus-m17n-1.3.2-5.fc14.i686']}
 </pre><hr />
+<h2 id="InstallPackageGroupCategory">Install Package Group Category</h2>
+<p>
+<em>Request that a package group category be installed on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /consumers/&lt;consumer id&gt;/installpackagegroupcategories/
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>categoryids</strong> &lt;list&gt; <em>a list of category ids</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>(optional) schedule in iso8601 format; immediate when Null</em>
+</li></ul><p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong>
+</p>
+<ul><li>404 Not Found if there is no such consumer
+</li><li>409 Conflict when a problem occurs with a specified category id
+</li></ul><p>
+  
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>task result</strong> &lt;dict&gt; keys are installed group name; values are the list of installed packages
+</p>
+<p>
+Example:
+</p>
+<pre class="wiki">{'Tibetan Support': ['tibetan-machine-uni-fonts-1.901-6.fc14.noarch', 'jomolhari-fonts-0.003-9.fc14.noarch', 'ibus-m17n-1.3.2-5.fc14.i686']}
+</pre><hr />
+<h2 id="InstallErrata">Install Errata</h2>
+<p>
+<em>Request that errata be installed on a consumer.</em>
+</p>
+<p>
+<strong>method:</strong> POST
+</p>
+<p>
+<strong>path:</strong> /pulp/api/consumers/&lt;consumer-id&gt;/installerrata/
+</p>
+<p>
+<strong>parameters:</strong>
+</p>
+<ul><li><strong>consumerid</strong> &lt;str&gt; <em>consumer id to install errata on</em>
+</li><li><strong>scheduled_time</strong> &lt;str&gt; <em>Format YYYY-MM-DDThh:mm</em>
+</li><li><strong>errataids</strong> &lt;list of str&gt; <em>list of errata ids to be installed, if empty all applicable errata are installed</em>
+</li><li><strong>type</strong> &lt;str&gt; <em>errata type - if no errata ids are provided all applicable errata of given type are installed</em>
+</li><li><strong>importkeys</strong> &lt;boolean&gt; <em>true of false depending on whether required GPG keys should be imported</em>
+</li></ul><p>
+<strong>permission:</strong> EXECUTE
+</p>
+<p>
+<strong>success response:</strong> 202 ACCEPTED
+</p>
+<p>
+<strong>failure response:</strong> 404 Not Found if given consumer does not exist
+</p>
+<p>
+<strong>return:</strong> <em>Task</em>
+</p>
+<p>
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-09T06:06:47Z"</span><span class="p">,</span> 
+  <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">"consumer1"</span><span class="p">,</span> 
+    <span class="p">[</span>
+      <span class="s">"pulp-test-package"</span>
+    <span class="p">]</span>
+  <span class="p">],</span> 
+  <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerApi"</span><span class="p">,</span> 
+  <span class="s">"start_time"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+  <span class="s">"finish_time"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+  <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+  <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"1cdf59b3-3a88-11e1-bdb2-001e4f99b058"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
 </div>
         
         

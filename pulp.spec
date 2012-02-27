@@ -43,7 +43,7 @@ Requires: python-oauth2 >= 1.5.170-2.pulp%{?dist}
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp%{?dist}
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.136
+Requires: grinder >= 0.0.138
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -62,7 +62,7 @@ Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
 %endif
 
 %if %{pulp_selinux}
-Requires: %{name}-selinux-server = %{version}
+Requires: %{name}-selinux-server = %{version}-%{release}
 %endif
 
 %if 0%{?rhel} == 5
@@ -170,7 +170,7 @@ Requires: m2crypto
 Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
 %endif
 %if %{pulp_selinux}
-Requires: %{name}-selinux-server = %{version}
+Requires: %{name}-selinux-server = %{version}-%{release}
 %endif
 BuildRequires:  rpm-python
 # Both attempt to serve content at the same apache alias, so don't

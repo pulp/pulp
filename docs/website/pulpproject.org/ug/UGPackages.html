@@ -102,7 +102,7 @@ These search arguments can be combined for advanced queries:
 </p>
 <h4 id="Example:Alli386Pulppackages">Example: All i386 Pulp packages</h4>
 <pre class="wiki">$ pulp-admin package search --name 'pulp.*' --arch 'noarch'
-</pre><h4 id="Example:Alli386Pulppackagesinpulp-testandpulp-devrepositories">Example: All i386 Pulp packages in pulp-test and pulp-dev repositories</h4>
+</pre><h4 id="Example:Alli386Pulppackagesinpulp-testorpulp-devrepositories">Example: All i386 Pulp packages in pulp-test or pulp-dev repositories</h4>
 <pre class="wiki">$ pulp-admin package search --name 'pulp.*' --arch 'noarch' --repoid 'pulp-test' --repoid 'pulp-dev'
 </pre><h4 id="Example:Allpackagesfromthex86_64versionofbuild0.0.117">Example: All packages from the x86_64 version of build 0.0.117</h4>
 <pre class="wiki">$ pulp-admin package search --arch 'x86_64' --version '117$'
@@ -115,8 +115,8 @@ Lookup dependencies on a rpm package. The following arguments are required:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> PKG-NAME </td><td> <tt>-n --name</tt> </td><td> package to lookup dependencies; to specify multiple packages use multiple -n. 
-</td></tr><tr><td> ID </td><td> <tt>-repoid</tt> </td><td> Identifies the repository in which the dependency lookup happens; to specify multiple packages use multiple -r 
+</td></tr><tr><td> PKG-NAME </td><td> <tt>-n</tt> or <tt>--name</tt> </td><td> package to lookup dependencies; to specify multiple packages use multiple -n. 
+</td></tr><tr><td> ID </td><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> Identifies the repository in which the dependency lookup happens; to specify multiple packages use multiple -r 
 </td></tr></table>
 <h4 id="Example:Lookupdependencylistonapackage">Example: Lookup dependency list on a package</h4>
 <pre class="wiki">$ sudo pulp-admin package deplist -n emoticons -r testrepo -r f13-updates

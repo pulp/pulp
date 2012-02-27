@@ -100,6 +100,7 @@ import web
 
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server import async
+from pulp.server.util import encode_unicode
 from pulp.server.api import repo_sync, exporter
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
@@ -2147,8 +2148,8 @@ class RepositoryActions(JSONController):
             return self.not_found('No information for %s on repository %s' %
                                  (action_name, id))
         tasks = [t for t in async.find_async(method_name=action_methods[action_name])
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+                 if (t.args and encode_unicode(id) in t.args) or
+                 (t.kwargs and encode_unicode(id) in t.kwargs.values())]
         if not tasks:
             return self.not_found('No recent %s on repository %s found' %
                                  (action_name, id))

@@ -659,7 +659,9 @@ class BaseSynchronizer(object):
     def _calculate_bytes(self, dir, pkglist):
         bytes = 0
         for pkg in pkglist:
-            bytes += os.stat(os.path.join(dir, pkg))[6]
+            pkg_path = os.path.join(dir, pkg)
+            if os.path.exists(pkg_path):
+                bytes += os.stat(pkg_path)[6]
         return bytes
 
     def _add_error_details(self, file_name, item_type, error_info):
@@ -887,7 +889,7 @@ class YumSynchronizer(BaseSynchronizer):
             shutil.copy(src_pkg_path, dst_pkg_path)
 
             self.progress['num_download'] += 1
-        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg.relativepath))
+        repo_pkg_path = os.path.join(dst_repo_dir, pkg.relativepath)
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(dst_pkg_path, repo_pkg_path)
 
@@ -1205,8 +1207,8 @@ class YumSynchronizer(BaseSynchronizer):
     def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
-        src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
-        log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
+        src_repo_dir = urlparse(encode_unicode(repo_source['url']))[2]
+        log.info("sync of %s for repo %s" % (decode_unicode(src_repo_dir), repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
@@ -1352,7 +1354,7 @@ class FileSynchronizer(BaseSynchronizer):
     def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
               max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
-        src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
+        src_repo_dir = urlparse(encode_unicode(repo_source['url']))[2]
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict)
 

@@ -32,334 +32,84 @@
 
 <div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroups">Package Groups</h1>
 <p>
-Once you get a tepository created you can start managing package groups. Package groups exist as members of a repository.
-</p>
-<p>
-Base URL Path: <strong>/repositories/&lt;repoid&gt;/packagegroups/</strong>
+Once you get a repository created you can start managing package groups.
+<br />
+Package groups exist as members of a repository.
+<br />
+Note: PackageGroup operations are served from the repository controller
 </p>
 <hr />
 <h2 id="List">List</h2>
 <p>
 List the package groups under a repository
-</p>
-<p>
-Status: <strong>complete</strong> 
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/packagegroups/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-<strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span>
-<span class="s">u'demo'</span><span class="p">:</span> <span class="p">{</span>
-  <span class="s">u'mandatory_package_names'</span><span class="p">:</span> <span class="p">[],</span> 
-  <span class="s">u'description'</span><span class="p">:</span> <span class="s">u''</span><span class="p">,</span> 
-  <span class="s">u'repo_defined'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span> 
-  <span class="s">u'default'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span> 
-  <span class="s">u'display_order'</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span> 
-  <span class="s">u'immutable'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span> 
-  <span class="s">u'user_visible'</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span> 
-  <span class="s">u'translated_name'</span><span class="p">:</span> <span class="p">{},</span> 
-  <span class="s">u'translated_description'</span><span class="p">:</span> <span class="p">{},</span> 
-  <span class="s">u'conditional_package_names'</span><span class="p">:</span> <span class="p">{},</span> 
-  <span class="s">u'default_package_names'</span><span class="p">:</span> <span class="p">[</span><span class="s">u'zsh'</span><span class="p">,</span> <span class="s">u'zsh-html'</span><span class="p">],</span> 
-  <span class="s">u'optional_package_names'</span><span class="p">:</span> <span class="p">[],</span> 
-  <span class="s">u'langonly'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> 
-  <span class="s">u'_id'</span><span class="p">:</span> <span class="s">u'demo'</span><span class="p">,</span> 
-  <span class="s">u'id'</span><span class="p">:</span> <span class="s">u'demo'</span><span class="p">,</span> 
-  <span class="s">u'name'</span><span class="p">:</span> <span class="s">u'demo_name'</span><span class="p">}</span>
-<span class="p">}</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no repository
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#RepositoryPackageGroups">UGREST-Repositories#RepositoryPackageGroups</a>
 </p>
 <hr />
 <h2 id="Create">Create</h2>
 <p>
 Create a new package group
-</p>
-<p>
-Status: <strong>partial</strong> - location header not properly filled in
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/create_packagegroup/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>groupid: package group id
-</li><li>groupname: package group name
-</li><li>description: package group description
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Error: <strong>409 Conflict</strong> if there is a packagegroup with the same: id
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#CreateAPackageGroup">UGREST-Repositories#CreateAPackageGroup</a>
 </p>
 <hr />
 <h2 id="Delete">Delete</h2>
 <p>
-Delete a single packagegroup
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/delete_packagegroup/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>groupid: package group id
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such package
+Delete a packagegroup
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#DeleteAPackageGroup">UGREST-Repositories#DeleteAPackageGroup</a>
 </p>
 <hr />
 <h2 id="AddPackage">Add Package</h2>
 <p>
 Add a package to a package group
-</p>
-<p>
-Status: <strong>complete</strong> 
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/add_package_to_group/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>groupid: package group id
-</li><li>name: package name
-</li><li>type: package list type, example: {mandatory, default, optional}
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#AddPackagesToPackageGroup">UGREST-Repositories#AddPackagesToPackageGroup</a> 
 </p>
 <hr />
 <h2 id="DeletePackage">Delete Package</h2>
 <p>
 Delete a package from a package group
-</p>
-<p>
-Status: <strong>complete</strong> 
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/delete_package_from_group/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>groupid: package group id
-</li><li>name: package name
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#DeleteAPackageGroup">UGREST-Repositories#DeleteAPackageGroup</a>
  
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
 <hr />
 <h2 id="Import">Import</h2>
 <p>
 Import a comps.xml and create groups and categories
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#ImportComps">UGREST-Repositories#ImportComps</a>
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repoid&gt;/import_comps/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>comps: comps xml data stream
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: 
-</p>
-<div class="code"><pre><span class="bp">True</span>
-</pre></div><hr />
+<hr />
 <h2 id="Export">Export</h2>
 <p>
 Export a comps.xml for a repository
+<br />
+See <a class="wiki" href="UGREST-Repositories.html#RepositoryCompsXML">UGREST-Repositories#RepositoryCompsXML</a>
 </p>
+<hr />
+<h2 id="Install">Install</h2>
 <p>
-Status: <strong>complete</strong>
+Install a package group on a consumer
+<br />
+See <a class="wiki" href="UGREST-Consumers.html#InstallPackageGroup">UGREST-Consumers#InstallPackageGroup</a>
+<br />
+Install a package group on a consumer group 
+See <a class="wiki" href="UGREST-ConsumerGroups.html#InstallPackageGroups">UGREST-ConsumerGroups#InstallPackageGroups</a>
 </p>
+<hr />
+<h2 id="Uninstall">Uninstall</h2>
 <p>
-Path: <strong>/repositories/&lt;repoid&gt;/comps/</strong>
+Uninstall a package group on a consumer
+<br />
+See <a class="wiki" href="UGREST-Consumers.html#UninstallPackageGroup">UGREST-Consumers#UninstallPackageGroup</a>
+<br />
+Uninstall a package group on a consumer
+<br />
+See <a class="wiki" href="UGREST-ConsumerGroups.html#UninstallPackageGroups">UGREST-ConsumerGroups#UninstallPackageGroups</a>
 </p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: 
-</p>
-<div class="code"><pre><span class="o">&lt;</span><span class="err">?</span>xml version<span class="o">=</span><span class="s">"1.0"</span> encoding<span class="o">=</span><span class="s">"UTF-8"</span><span class="err">?</span><span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="err">!</span>DOCTYPE comps PUBLIC <span class="s">"-//Red Hat, Inc.//DTD Comps info//EN"</span> <span class="s">"comps.dtd"</span><span class="o">&gt;</span>
-<span class="o">&lt;</span>comps<span class="o">&gt;</span>
-        
-  <span class="o">&lt;</span>group<span class="o">&gt;</span>
-   <span class="o">&lt;</span><span class="nb">id</span><span class="o">&gt;</span>admin<span class="o">-</span>tools<span class="o">&lt;/</span><span class="nb">id</span><span class="o">&gt;</span>
-<span class="o">...</span>
-<span class="o">&lt;/</span>grouplist<span class="o">&gt;</span>
-  <span class="o">&lt;/</span>category<span class="o">&gt;</span>
-
-<span class="o">&lt;/</span>comps<span class="o">&gt;</span>
-</pre></div><hr />
+<hr />
 </div>
         
         
@@ -367,9 +117,6 @@ Response:
       
 
     </div>
-    <script type="text/javascript">
-        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
-    </script>
     
 <!-- BEGIN FOOTER -->
 </body>

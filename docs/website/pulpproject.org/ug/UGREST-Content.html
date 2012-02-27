@@ -30,113 +30,98 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="Content">Content</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Content.html#Content">Content</a>
+    <ol>
+      <li>
+        <a href="UGREST-Content.html#FindContent">Find Content</a>
+      </li>
+      <li>
+        <a href="UGREST-Content.html#DeleteContent">Delete Content</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="Content">Content</h1>
 <p>
 Pulp exposes a content API to perform file specific operations.
-</p>
-<p>
-Eventually all API methods with have a specification on which level of access is required to call them.
 </p>
 <p>
 Base URL Path: <strong>/content/</strong>
 </p>
 <hr />
-<h2 id="LookupFile">Lookup File</h2>
+<h2 id="FindContent">Find Content</h2>
 <p>
-lookup files on pulp server by id.
+<em>lookup files on pulp server by id</em>
 </p>
 <p>
-Status: <strong>complete</strong>
+<strong>method</strong>: GET
 </p>
 <p>
-Path: <strong>/content/files/</strong>
+<strong>path</strong>: /content/file/&lt;id&gt;
 </p>
 <p>
-Method: <strong>GET</strong>
+<strong>permission</strong>: READ
 </p>
 <p>
-Parameters:
+<strong>success response</strong>: 200, OK
 </p>
-<blockquote>
 <p>
-{'id' : fileid}
+<strong>failure response</strong>: 404, Not Found
 </p>
-</blockquote>
 <p>
-Authentication:
+<strong>return</strong>: &lt;dict&gt;
 </p>
-<blockquote>
-<p>
-username/pass
+<ul><li><strong>id</strong> &lt;str&gt; <em>the content id</em>
+</li><li><strong>checksum</strong> &lt;str&gt; <em>the content checksum</em>
+</li><li><strong>description</strong> &lt;str&gt; <em>the content description</em>
+</li><li><strong>download_url</strong> &lt;str&gt; <em>the file download URL</em>
+</li><li><strong>filename</strong> &lt;str&gt; <em>the name of the file containing the content as stored on the server</em>
+</li><li><strong>repo_defined</strong>: &lt;bool&gt; <em>indicates the content belongs to a repository</em>
+</li><li><strong>size</strong> &lt;int&gt; <em>the content file size in bytes</em>
+</li></ul><p>
+<strong>sample response</strong>:
 </p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'Test package.  Nothing to see here.'</span><span class="p">,</span>
-  <span class="s">'filename'</span><span class="p">:</span> <span class="s">'test.iso'</span><span class="p">,</span> checksum<span class="o">=</span><span class="s">"f242d4h4v23jf42f5423h4fh32f23fh2gfh32"</span><span class="p">},</span>
- <span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span><span class="p">,</span>
-  <span class="s">'id'</span><span class="p">:</span> <span class="s">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span><span class="p">,</span>
-  <span class="s">'description'</span><span class="p">:</span> <span class="s">'test package'</span><span class="p">,</span>
-  <span class="s">'filename'</span><span class="p">:</span> <span class="s">'test2.iso'</span><span class="p">,</span> checksum<span class="o">=</span><span class="s">"f242d4h4v23jf42f5423h4fh32f23fh2gfh32"</span><span class="p">}]</span>
-<span class="p">}]</span>
-
+<div class="code"><pre><span class="p">{</span> <span class="s">'id'</span><span class="p">:</span> <span class="s">'c5b1dd1e-2770-416f-8966-1c7c4a8832e7'</span><span class="p">,</span>
+  <span class="s">'checksum'</span><span class="p">:</span> <span class="p">{</span><span class="s">'sha256'</span><span class="p">:</span> <span class="s">'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'</span><span class="p">},</span>
+  <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+  <span class="s">'download_url'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+  <span class="s">'filename'</span><span class="p">:</span> <span class="s">'fake.iso'</span><span class="p">,</span>
+  <span class="s">'repo_defined'</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+  <span class="s">'size'</span><span class="p">:</span> <span class="bp">None</span><span class="p">}</span>
 </pre></div><hr />
-<h2 id="DeleteaFile">Delete a File</h2>
+<h2 id="DeleteContent">Delete Content</h2>
 <p>
-Delete a single file
+<em>Delete a single content file.</em>
 </p>
 <p>
-Status: <strong>complete</strong>
+<strong>method</strong>: DELETE
 </p>
 <p>
-Path: <strong>/content/files/&lt;file id&gt;/</strong>
+<strong>path</strong>: /content/file/&lt;id&gt;/
 </p>
 <p>
-Method: <strong>DELETE</strong>
+<strong>permission</strong>: DELETE
 </p>
 <p>
-Parameters:
+<strong>success response</strong>: 200, OK
 </p>
-<blockquote>
 <p>
-None
+<strong>failure response</strong>: 404, Not Found
 </p>
-</blockquote>
 <p>
-Authentication:
+<strong>return</strong>: &lt;bool&gt; True
 </p>
-<blockquote>
 <p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
+<strong>sample response</strong>:
 </p>
 <div class="code"><pre><span class="bp">True</span>
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such file
-</p>
-</div>
+</pre></div></div>
         
         
       </div>

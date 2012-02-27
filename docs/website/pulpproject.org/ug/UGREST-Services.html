@@ -30,11 +30,755 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Services RESTful API</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Services.html#top">Services RESTful API</a>
+    <ol>
+      <li>
+        <a href="UGREST-Services.html#AssociatePackages">Associate Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#DisassociatePackages">Disassociate Packages</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#Dependencies">Dependencies</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#PackageSearch">Package Search</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#FileSearch">File Search</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#PackageChecksumSearch">Package Checksum Search</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#FilesChecksumSearch">Files Checksum Search</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#InitiateFileUpload">Initiate File Upload</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#AppendFileUpload">Append File Upload</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#ImportFileUpload">Import File Upload</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#DatabaseVersionStatus">Database Version Status</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#AgentStatus">Agent Status</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#EnableGlobalRepositoryAuthentication">Enable Global Repository Authentication</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#DisableGlobalRepositoryAuthentication">Disable Global Repository Authentication</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#RepositoryDiscovery">Repository Discovery</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#Repositorygroupexport">Repository group export</a>
+      </li>
+      <li>
+        <a href="UGREST-Services.html#RepositoryContentExport">Repository Content Export</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="top">Services RESTful API</h1>
 <p>
 <em>No description.</em> <br />
 <br />
 </p>
+<hr />
+<h2 id="AssociatePackages">Associate Packages</h2>
+<p>
+<em>Associate a collection of filename and checksum tuples to a list of repositories.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /services/assocate/packages/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - Ok <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: Returns an empty list on success or a dictionary of items which could not be associated <br />
+</p>
+<p>
+<br />
+<strong>sample request</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+  <span class="s">"package_info"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">[</span>
+      <span class="p">[</span>
+        <span class="s">"zsh-4.3.11-2.fc15.x86_64.rpm"</span><span class="p">,</span> 
+        <span class="s">"ad398562306061d4662d4c4212b8af8c5a2bb401d7d2ebabd5daa6e4f50b14a5"</span>
+      <span class="p">],</span> 
+      <span class="p">[</span>
+        <span class="s">"repo_id"</span>
+      <span class="p">]</span>
+    <span class="p">]</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<strong>sample success response</strong>:
+</p>
+<div class="code"><pre><span class="p">{}</span>
+</pre></div><p>
+<br />
+<strong>sample failure response</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"zsh-4.3.11-2.fc15.x86_64.rpm"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"ad398562306061d4662d4c4212b8af8c5a2bb401d7d2ebabd5daa6e4f50b14a5"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s">"repo_id"</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="DisassociatePackages">Disassociate Packages</h2>
+<p>
+<em>Disassociate a collection of filename and checksum tuples to a list of repositories.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /services/disassocate/packages/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - Ok <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: Returns an empty list on success or a dictionary of items which could not be disassociated <br />
+</p>
+<p>
+<br />
+<strong>sample request</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+  <span class="s">"package_info"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">[</span>
+      <span class="p">[</span>
+        <span class="s">"zsh-4.3.11-2.fc15.x86_64.rpm"</span><span class="p">,</span> 
+        <span class="s">"ad398562306061d4662d4c4212b8af8c5a2bb401d7d2ebabd5daa6e4f50b14a5"</span>
+      <span class="p">],</span> 
+      <span class="p">[</span>
+        <span class="s">"repo_id"</span>
+      <span class="p">]</span>
+    <span class="p">]</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<strong>sample success response</strong>:
+</p>
+<div class="code"><pre><span class="p">{}</span>
+</pre></div><p>
+<br />
+<strong>sample failure response</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"zsh-4.3.11-2.fc15.x86_64.rpm"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"ad398562306061d4662d4c4212b8af8c5a2bb401d7d2ebabd5daa6e4f50b14a5"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s">"repo_id"</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="Dependencies">Dependencies</h2>
+<p>
+<em>List Available dependencies</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /services/dependencies/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>:  200 - Ok <br />
+<br />
+<strong>failure response</strong>:
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: Returns an empty list on success or a dictionary of items which could not be associated <br />
+</p>
+<p>
+<br />
+<strong>sample request</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+ <span class="s">"pkgnames"</span><span class="p">:</span> <span class="p">[</span><span class="s">"fedora-release"</span><span class="p">],</span>
+ <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"f15-x86_64"</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div><p>
+<strong>sample success response</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"printable_dependency_result"</span><span class="p">:</span> <span class="s">"</span><span class="se">\n</span><span class="s"> dependency: fedora-release-rawhide = 15-1 </span><span class="se">\n</span><span class="s">   provider: fedora-release-rawhide.noarch 15-1</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> 
+    <span class="s">"resolved"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"fedora-release-rawhide = 15-1"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s">"_id"</span><span class="p">:</span> <span class="s">"30c0a47f-c3ee-4ab1-9330-405f43e18755"</span><span class="p">,</span> 
+                <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"packages"</span><span class="p">,</span> 
+                <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> 
+                <span class="s">"buildhost"</span><span class="p">:</span> <span class="s">"x86-07.phx2.fedoraproject.org"</span><span class="p">,</span> 
+                <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"75eb96db5fd7fdb0e94a7ab48261056dfaa3d5f34fb5b4752df6a4bc77763506"</span>
+                <span class="p">},</span> 
+                <span class="s">"description"</span><span class="p">:</span> <span class="s">"This package provides the rawhide repo definitions."</span><span class="p">,</span> 
+                <span class="s">"download_url"</span><span class="p">:</span> <span class="s">"https://localhost//pulp/repos/fedora/releases/15/Fedora/x86_64/os/fedora-release-rawhide-15-1.noarch.rpm"</span><span class="p">,</span> 
+                <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+                <span class="s">"filename"</span><span class="p">:</span> <span class="s">"fedora-release-rawhide-15-1.noarch.rpm"</span><span class="p">,</span> 
+                <span class="s">"group"</span><span class="p">:</span> <span class="s">"System Environment/Base"</span><span class="p">,</span> 
+                <span class="s">"id"</span><span class="p">:</span> <span class="s">"30c0a47f-c3ee-4ab1-9330-405f43e18755"</span><span class="p">,</span> 
+                <span class="s">"license"</span><span class="p">:</span> <span class="s">"GPLv2"</span><span class="p">,</span> 
+                <span class="s">"name"</span><span class="p">:</span> <span class="s">"fedora-release-rawhide"</span><span class="p">,</span> 
+                <span class="s">"provides"</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s">"fedora-release-rawhide"</span><span class="p">,</span> 
+                    <span class="s">"config(fedora-release-rawhide)"</span>
+                <span class="p">],</span> 
+                <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+                <span class="s">"repo_defined"</span><span class="p">:</span> true<span class="p">,</span> 
+                <span class="s">"requires"</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s">"fedora-release"</span>
+                <span class="p">],</span> 
+                <span class="s">"size"</span><span class="p">:</span> <span class="mi">10860</span><span class="p">,</span> 
+                <span class="s">"vendor"</span><span class="p">:</span> <span class="s">"Fedora Project"</span><span class="p">,</span> 
+                <span class="s">"version"</span><span class="p">:</span> <span class="s">"15"</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">},</span> 
+    <span class="s">"unresolved"</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+</p>
+<hr />
+<h2 id="PackageSearch">Package Search</h2>
+<p>
+<em>List all available packages on the Pulp Server</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /search/packages <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: list of all packages on the Pulp server <br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">"_id"</span><span class="p">:</span> <span class="s">"00833a55-bdda-4cd0-a2c2-efd591de87df"</span><span class="p">,</span> 
+        <span class="s">"description"</span><span class="p">:</span> <span class="s">"X.Org X11 nouveau video driver."</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"00833a55-bdda-4cd0-a2c2-efd591de87df"</span><span class="p">,</span> 
+        <span class="s">"name"</span><span class="p">:</span> <span class="s">"xorg-x11-drv-nouveau"</span>
+    <span class="p">},</span> 
+    <span class="p">{</span>
+        <span class="s">"_id"</span><span class="p">:</span> <span class="s">"3f6cc374-e3b0-4e14-8906-1c77246fcebc"</span><span class="p">,</span> 
+        <span class="s">"description"</span><span class="p">:</span> <span class="s">"This package provides a library build of mcpp."</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"3f6cc374-e3b0-4e14-8906-1c77246fcebc"</span><span class="p">,</span> 
+        <span class="s">"name"</span><span class="p">:</span> <span class="s">"libmcpp"</span>
+    <span class="p">},</span> 
+    <span class="o">...</span>
+<span class="p">]</span>
+</pre></div><p>
+<br />
+</p>
+<p>
+<em>Search all available packages on the Pulp Server</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /search/packages <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>name</strong> &lt;str&gt; <strong>package name</strong>
+</li><li><strong>epoch</strong> &lt;str&gt; <strong>package epoch</strong>
+</li><li><strong>version</strong> &lt;str&gt; <strong>package version</strong>
+</li><li><strong>release</strong> &lt;str&gt; <strong>package release</strong>
+</li><li><strong>arch</strong> &lt;str&gt; <strong>package arch</strong>
+</li><li><strong>filename</strong> &lt;str&gt; <strong>package filename</strong>
+</li><li><strong>checksum_type</strong> &lt;str&gt; <strong>package checksum type</strong>
+</li><li><strong>checksum</strong> &lt;str&gt; <strong>package checksum</strong>
+</li><li><strong>regex</strong> &lt;str&gt; <strong>package regex</strong>
+</li><li><strong>repoids</strong> [&lt;str&gt;,] <strong>repository id's to which packages belong</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: packages that match the search criteria on the Pulp server <br />
+<br />
+<strong>sample request</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span><span class="s">"name"</span><span class="p">:</span> <span class="s">"fedora-release"</span><span class="p">,</span>
+ <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"f15-x86_64"</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">"_id"</span><span class="p">:</span> <span class="s">"28efda09-6687-41c2-a175-718b8f7096a0"</span><span class="p">,</span> 
+        <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> 
+        <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"025a37cfb7fdca99b04546e6bd1c641db4daca54b0f9d7272c9cb8aa29f49332"</span>
+        <span class="p">},</span> 
+        <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+        <span class="s">"filename"</span><span class="p">:</span> <span class="s">"fedora-release-15-1.noarch.rpm"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"28efda09-6687-41c2-a175-718b8f7096a0"</span><span class="p">,</span> 
+        <span class="s">"name"</span><span class="p">:</span> <span class="s">"fedora-release"</span><span class="p">,</span> 
+        <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+        <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s">"f15-x86_64"</span>
+        <span class="p">],</span> 
+        <span class="s">"version"</span><span class="p">:</span> <span class="s">"15"</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div><hr />
+<h2 id="FileSearch">File Search</h2>
+<p>
+<em>Search all available files on the Pulp Server</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /search/files <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>filename</strong> &lt;str&gt; <strong>package filename</strong>
+</li><li><strong>checksum_type</strong> &lt;str&gt; <strong>package checksum type</strong>
+</li><li><strong>checksum</strong> &lt;str&gt; <strong>package checksum</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: files that match the search criteria on the Pulp server <br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s">"_id"</span><span class="p">:</span> <span class="s">"dd00f635-beef-46b6-8013-c674d0f60a0f"</span><span class="p">,</span> 
+        <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"83a505eea950932aca0efe670757b83249fa37712ecf7d1fbca3567b2b50f41e"</span>
+        <span class="p">},</span> 
+        <span class="s">"filename"</span><span class="p">:</span> <span class="s">"post.txt"</span><span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"dd00f635-beef-46b6-8013-c674d0f60a0f"</span><span class="p">,</span> 
+        <span class="s">"repos"</span><span class="p">:</span> <span class="p">[],</span> 
+        <span class="s">"size"</span><span class="p">:</span> <span class="mi">53</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div><hr />
+<h2 id="PackageChecksumSearch">Package Checksum Search</h2>
+<p>
+<em>Search for checksums for a list of package file names.</em>
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /search/packages/checksum <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li> &lt;list&gt; <strong>package filenames</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: package filenames and their list of checksums
+<br />
+<strong>sample request</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">[</span>
+    <span class="s">"fedora-release-15-1.noarch.rpm"</span>
+<span class="p">]</span>
+</pre></div><p>
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"fedora-release-15-1.noarch.rpm"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"025a37cfb7fdca99b04546e6bd1c641db4daca54b0f9d7272c9cb8aa29f49332"</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div><hr />
+<h2 id="FilesChecksumSearch">Files Checksum Search</h2>
+<p>
+<em>Search for checksums for a list of filenames.</em>
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /search/files/checksum <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li> &lt;list&gt; <strong>filenames</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: filenames and their list of checksums
+<br />
+<strong>sample request</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">[</span>
+    <span class="s">"post.txt"</span>
+<span class="p">]</span>
+</pre></div><p>
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"post.txt"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"83a505eea950932aca0efe670757b83249fa37712ecf7d1fbca3567b2b50f41e"</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div><hr />
+<h2 id="InitiateFileUpload">Initiate File Upload</h2>
+<p>
+<em>Initiate a file upload to the Pulp server.</em><br />
+<em>A file upload to Pulp consists of 3 steps:</em><br />
+</p>
+<blockquote>
+<p>
+1 <em>Initiate the file upload to tell Pulp metadata about the file.</em> <br />
+1 <em>Append data to the initiate file.  This call uploads the actual file data.</em> <br />
+1 <em>Import file to finialize the upload and tell Pulp all the data has been uploaded.</em><br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /upload<br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>name</strong> &lt;str&gt; <strong>filename</strong>
+</li><li><strong>checksum</strong> &lt;str&gt; <strong>file checksum</strong>
+</li><li><strong>size</strong> &lt;str&gt; <strong>file size</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: file id and offset of where to begin upload append 
+<br />
+<strong>sample request</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"/tmp/post.txt"</span><span class="p">,</span>
+    <span class="s">"checksum"</span><span class="p">:</span> <span class="s">"c270cc7da31eb20e2cc9ba42d971d6ec16441009"</span><span class="p">,</span>
+    <span class="s">"size"</span><span class="p">:</span> <span class="s">"19"</span>
+<span class="p">}</span>
+</pre></div><p>
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"cf033af1-7be2-4150-89ce-12fd14da65a1"</span><span class="p">,</span> 
+    <span class="s">"offset"</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
+</pre></div><hr />
+<h2 id="AppendFileUpload">Append File Upload</h2>
+<p>
+<em>Append to a file upload to the Pulp server.</em><br />
+<em>A file upload to Pulp consists of 3 steps:</em><br />
+</p>
+<blockquote>
+<p>
+1 <em>Initiate the file upload to tell Pulp metadata about the file.</em> <br />
+1 <em>Append data to the initiate file.  This call uploads the actual file data.</em> <br />
+1 <em>Import file to finialize the upload and tell Pulp all the data has been uploaded.</em><br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>method</strong>: PUT <br />
+<br />
+<strong>path</strong>: /upload/append/&lt;file-id&gt;&gt; <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li>&lt;file-id&gt; is the id returned from the initiate file upload call
+</li><li>file data is the body of the request
+</li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: True if data was successfully appended to the file
+<br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<pre class="wiki">true
+</pre><hr />
+<h2 id="ImportFileUpload">Import File Upload</h2>
+<p>
+<em>Finalize a file upload to the Pulp server.</em><br />
+<em>A file upload to Pulp consists of 3 steps:</em><br />
+</p>
+<blockquote>
+<p>
+1 <em>Initiate the file upload to tell Pulp metadata about the file.</em> <br />
+1 <em>Append data to the initiate file.  This call uploads the actual file data.</em> <br />
+1 <em>Import file to finialize the upload and tell Pulp all the data has been uploaded.</em><br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /upload/import <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>uploadid</strong> &lt;str&gt; <strong>file id returned during the initiate call and used during the append call</strong>
+</li><li><strong>metadata</strong> &lt;dict&gt; <strong>consisting of:</strong>
+<ul><li><strong>type</strong> &lt;str&gt; <strong>type of file, either rpm or file</strong>
+</li><li><strong>checksum</strong> &lt;str&gt; <strong>package checksum</strong>
+</li><li><strong>hashtype</strong> &lt;str&gt; <strong>package checksum algorithm</strong>
+</li><li><strong>pkgname</strong> &lt;str&gt; <strong>package name</strong>
+</li><li><strong>nvrea</strong> &lt;str&gt; <strong>package nvrea</strong>
+</li><li><strong>size</strong> &lt;str&gt; <strong>package size</strong>
+</li><li><strong>description</strong> &lt;str&gt; <strong>package description</strong>
+</li><li><strong>license</strong> &lt;str&gt; <strong>package license</strong>
+</li><li><strong>group</strong> &lt;str&gt; <strong>package group</strong>
+</li><li><strong>vendor</strong> &lt;str&gt; <strong>package vendor</strong>
+</li><li><strong>requires</strong> &lt;str&gt; <strong>package requires</strong>
+</li></ul></li></ul><p>
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: Package data represenation of the imported file.
+<br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"0e4f9583-11cc-435c-afb4-779fbd98201f"</span><span class="p">,</span> 
+    <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> 
+    <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"c8138ef82ab995279539a525802935cd3e2bf18babed352b78b31e5fd98e5dc9"</span>
+    <span class="p">},</span> 
+    <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+    <span class="s">"filename"</span><span class="p">:</span> <span class="s">"fedora-release-16-1.noarch.rpm"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"0e4f9583-11cc-435c-afb4-779fbd98201f"</span><span class="p">,</span> 
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"fedora-release"</span><span class="p">,</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"f16-x86_64"</span>
+    <span class="p">],</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"16"</span>
+<span class="p">},</span> 
+<span class="p">{</span>
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"28efda09-6687-41c2-a175-718b8f7096a0"</span><span class="p">,</span> 
+    <span class="s">"arch"</span><span class="p">:</span> <span class="s">"noarch"</span><span class="p">,</span> 
+    <span class="s">"checksum"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"sha256"</span><span class="p">:</span> <span class="s">"025a37cfb7fdca99b04546e6bd1c641db4daca54b0f9d7272c9cb8aa29f49332"</span>
+    <span class="p">},</span> 
+    <span class="s">"epoch"</span><span class="p">:</span> <span class="s">"0"</span><span class="p">,</span> 
+    <span class="s">"filename"</span><span class="p">:</span> <span class="s">"fedora-release-15-1.noarch.rpm"</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"28efda09-6687-41c2-a175-718b8f7096a0"</span><span class="p">,</span> 
+    <span class="s">"name"</span><span class="p">:</span> <span class="s">"fedora-release"</span><span class="p">,</span> 
+    <span class="s">"release"</span><span class="p">:</span> <span class="s">"1"</span><span class="p">,</span> 
+    <span class="s">"repoids"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"f15-x86_64"</span>
+    <span class="p">],</span> 
+    <span class="s">"version"</span><span class="p">:</span> <span class="s">"15"</span>
+<span class="p">}</span>
+</pre></div><hr />
+<h2 id="DatabaseVersionStatus">Database Version Status</h2>
+<p>
+<em>Prints the database version on the Pulp Server, the count of the times this
+API has been called, and time since it was last called.</em><br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /status <br />
+<br />
+<strong>parameters</strong>:
+<br />
+<strong>permission</strong>: <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: Database version and time stats.
+<br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">"db_version"</span><span class="p">:</span> <span class="mi">35</span><span class="p">,</span> 
+    <span class="s">"status_count"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> 
+    <span class="s">"status_duration_ms"</span><span class="p">:</span> <span class="s">"1.57"</span>
+<span class="p">}</span>
+</pre></div><hr />
+<h2 id="AgentStatus">Agent Status</h2>
+<p>
+<em>Get the availability of an agent.</em><br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /agent/status <br />
+<br />
+<strong>parameters</strong>:
+</p>
+<ul><li><strong>filter</strong> : &lt;list&gt; <strong>of agent uuids</strong>
+</li></ul><p>
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: &lt;dict&gt;:
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <em>the agent id</em>
+</li><li><strong>status</strong> &lt;dict&gt; <em>agent status</em>:
+<ul><li><strong>online</strong> &lt;bool&gt; <em>indicates agent is online based on heartbeat</em>
+</li><li><strong>heartbeat</strong> &lt;str&gt; <em>date/time of last heartbeat received<strong>
+</strong></em></li><li><strong>capabilities</strong> &lt;dict&gt; <em>agent capabilities</em>:
+<ul><li><strong>bind</strong> &lt;bool&gt; <em>(optional) agent supports bind/unbind API</em>
+</li><li><strong>heartbeat</strong> &lt;bool&gt; <em>(optional) agent supports (sends) heartbeats</em>
+</li></ul></li></ul></li></ul><p>
+<br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<div class="code"><pre><span class="p">{</span>
+    <span class="s">'f15'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">'online'</span> <span class="p">:</span> true<span class="p">,</span>
+        <span class="s">'heartbeat'</span> <span class="p">:</span> <span class="s">"2012-01-04 19:44:38.684277+00:00"</span><span class="p">,</span>
+        <span class="s">'capabilities'</span> <span class="p">:</span>
+             <span class="p">{</span> <span class="s">'bind'</span> <span class="p">:</span> true<span class="p">,</span>
+               <span class="s">'heartbeat'</span> <span class="p">:</span> true
+             <span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div><hr />
+<h2 id="EnableGlobalRepositoryAuthentication">Enable Global Repository Authentication</h2>
+<p>
+<em>Configures the Pulp server to apply the given credentials to requests against all of its repositories.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /enable_global_repo_credentials <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+</p>
+<ul><li>None
+</li></ul><p>
+<br />
+<strong>return</strong>: list of CDS hostnames that were successfully updated and a list of the ones that failed to update <br />
+<br />
+<strong>sample response</strong>: <br />
+</p>
+<blockquote>
+<p>
+<em>Empty Response Body</em>
+</p>
+</blockquote>
 <hr />
 <h2 id="DisableGlobalRepositoryAuthentication">Disable Global Repository Authentication</h2>
 <p>
@@ -49,50 +793,19 @@
 <strong>success response</strong>: 200 OK <br />
 <br />
 <strong>failure response</strong>: 206 PARTIAL CONTENT <br />
-<br />
-<strong>return</strong>: list of CDS hostnames that were successfully updated and a list of the ones that failed to update <br />
-<br />
 </p>
-<hr />
-<h2 id="Disassociateacollectionoffilenamechecksumtuplesfrommultiplerepositories">Disassociate a collection of filename,checksum tuples from multiple repositories</h2>
-<p>
-<em>Disassociate a collection of packages from a series of repositories</em> <br />
-<br />
-<strong>method</strong>: POST <br />
-<br />
-<strong>path</strong>: /services/disassociate/packages/ <br />
-<br />
-<strong>permission</strong>: READ <br />
-<br />
-<strong>success response</strong>: 200 OK <br />
-<br />
-<strong>failure response</strong>: <br />
-<strong>return</strong>: a list of errors in the format of [{'filename':{'checksum_value':[repoid]}}] <br />
-<br />
-<strong>parameters</strong>: 
-</p>
-<ul><li><strong>package_info: list of tuples in the format [((filename</strong> &lt;checksum)&gt; <em>[repoids]]</em>
+<ul><li>None
 </li></ul><p>
 <br />
-</p>
-<hr />
-<h2 id="EnableGlobalRepositoryAuthentication">Enable Global Repository Authentication</h2>
-<p>
-<em>Configures the Pulp server to apply the given credentials to requests against all of its repositories.</em> <br />
-<br />
-<strong>method</strong>: POST <br />
-<br />
-<strong>path</strong>: /enable_global_repo_credentials <br />
-<br />
-<strong>permission</strong>: EXECUTE <br />
-<br />
-<strong>success response</strong>: 200 OK <br />
-<br />
-<strong>failure response</strong>: 206 PARTIAL CONTENT <br />
-<br />
 <strong>return</strong>: list of CDS hostnames that were successfully updated and a list of the ones that failed to update <br />
 <br />
+<strong>sample response</strong>: <br />
 </p>
+<blockquote>
+<p>
+<em>Empty Response Body</em>
+</p>
+</blockquote>
 <hr />
 <h2 id="RepositoryDiscovery">Repository Discovery</h2>
 <p>
@@ -107,6 +820,9 @@
 <strong>success response</strong>: 200 OK <br />
 <br />
 <strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+</p>
+<ul><li>None
+</li></ul><p>
 <br />
 <strong>return</strong>: list of matching repourls. <br />
 <br />
@@ -117,8 +833,30 @@
 </li><li><strong>cert_data</strong> <em>(optional)</em> &lt;dict&gt; <em>a hash of ca and cert info to access if url is secure; {'ca' : &lt;ca&gt;,'cert': &lt;cert&gt;}</em>
 </li></ul><p>
 <br />
+<strong>sample response</strong>: <br />
 </p>
-<hr />
+<pre class="wiki"> {
+  "scheduled_time": null, 
+  "exception": null, 
+  "args": [
+    "https://teletran-1/pulp/repos/fedora/releases/15/Fedora/x86_64/", 
+    null, 
+    null
+  ], 
+  "job_id": null, 
+  "class_name": "YumDiscovery", 
+  "start_time": "2012-01-04T15:31:50-05:00", 
+  "traceback": null, 
+  "method_name": "discover", 
+  "finish_time": "2012-01-04T15:31:50-05:00", 
+  "state": "finished", 
+  "result": [], 
+  "scheduler": "immediate", 
+  "snapshot_id": "0c209f63-a68e-4d5f-bc98-5636ce8ba72c", 
+  "progress": null, 
+  "id": "215aacd1-3713-11e1-ab74-f0def14122c8"
+}
+</pre><hr />
 <h2 id="Repositorygroupexport">Repository group export</h2>
 <p>
 <em>schedule an export on a group of repositories</em> <br />
@@ -132,6 +870,9 @@
 <strong>success response</strong>: 200 OK <br />
 <br />
 <strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+</p>
+<ul><li>None
+</li></ul><p>
 <br />
 <strong>return</strong>: Job object <br />
 <br />
@@ -144,8 +885,33 @@
 </li><li><strong>overwrite</strong> <em>(optional)</em> &lt;boolean&gt; <em>overwrite the content in target location if not empty</em>
 </li></ul><p>
 <br />
+<strong>sample response</strong>: <br />
 </p>
-<hr />
+<pre class="wiki"> {
+  "tasks": [
+    {
+      "scheduled_time": "2012-01-04T20:35:44Z", 
+      "exception": null, 
+      "args": [
+        "f15-x86_64", 
+        "/tmp/export/f15-x86_64"
+      ], 
+      "job_id": "38529ce2-1c56-4bde-ad0c-6beeb58366a4", 
+      "class_name": null, 
+      "start_time": null, 
+      "traceback": null, 
+      "method_name": "_export", 
+      "finish_time": null, 
+      "state": "waiting", 
+      "result": null, 
+      "scheduler": "immediate", 
+      "progress": null, 
+      "id": "ad39c90f-3713-11e1-801d-f0def14122c8"
+    }
+  ], 
+  "id": "38529ce2-1c56-4bde-ad0c-6beeb58366a4"
+}
+</pre><hr />
 <h2 id="RepositoryContentExport">Repository Content Export</h2>
 <p>
 <em>Export the repository's content into target directory from its source.</em> <br />
@@ -179,14 +945,37 @@
 </li><li><strong>overwrite</strong> <em>(optional)</em> &lt;boolean&gt; <em>overwrite the content in target location if not empty</em>
 </li></ul><p>
 <br />
+<strong>sample response</strong>: <br />
 </p>
-</div>
+<pre class="wiki">{
+  "scheduled_time": "2012-01-04T20:37:46Z", 
+  "exception": null, 
+  "args": [
+    "f15-x86_64", 
+    "/tmp/export2"
+  ], 
+  "job_id": null, 
+  "class_name": null, 
+  "start_time": null, 
+  "traceback": null, 
+  "method_name": "_export", 
+  "finish_time": null, 
+  "state": "waiting", 
+  "result": null, 
+  "scheduler": "immediate", 
+  "progress": null, 
+  "id": "f604cd28-3713-11e1-9d19-f0def14122c8"
+}
+</pre></div>
         
         
       </div>
       
 
     </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
     
 <!-- BEGIN FOOTER -->
 </body>

@@ -30,7 +30,8 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="ContentDeliveryServer">Content Delivery Server</h1>
+<div id="content" class="wiki"><div id="wikipage"><h1 id="ContentDeliveryServers">Content Delivery Servers</h1>
+<h2 id="Introduction">Introduction</h2>
 <p>
 A Content Delivery Server (CDS) is a way to offload content serving from the Pulp server to a separate machine. A CDS is configured to host one or more repositories and consumers accessing those repositories are evenly distributed across CDS instances that serve them. The Pulp server is still used to manage and synchronize content into repositories; the CDS instances synchronize repositories from the Pulp server itself and make them available to consumers.
 </p>
@@ -42,7 +43,38 @@ Furthermore, consumers will be configured with the remaining CDS instances and t
 </p>
 <p>
 Each CDS instance sends a heartbeat on a regular interval over the message bus.  This is used to determine the status of the CDS as it pertains to connectivity and availability.
-The interval is specified in the /etc/cds.conf and can be different for each CDS.  The heartbeat statistics are included in the <em>list</em> and <em>info</em> CDS commands.
+The interval is specified in the <tt>/etc/cds.conf</tt> and can be different for each CDS.  The heartbeat statistics are included in the <em>list</em> and <em>info</em> CDS commands.
+</p>
+<h2 id="Overview">Overview</h2>
+<p>
+Installation and Configuration
+</p>
+<p>
+A server is configured to run as a CDS by first installing the Pulp CDS package and its dependencies:
+</p>
+<pre class="wiki">$ yum install pulp-cds
+</pre><p>
+If not already installed, <tt>httpd</tt> will be installed as part of the installation process. The virtual host for the CDS is also installed through the <tt>/etc/httpd/conf.d/pulp-cds.conf</tt> file.
+</p>
+<p>
+The CDS will need to be able to resolve the hostname of the Pulp server in order to be able to download content from it. This will typically be done through DNS, but in development environments this often means needing to edit <tt>/etc/hosts</tt> to add an entry for the Pulp server.
+</p>
+<p>
+Additionally, the CDS will have to be configured to use the messaging broker on the Pulp server so it can be manipulated from the server itself. This is done through the <tt>/etc/pulp/cds.conf</tt> file:
+</p>
+<pre class="wiki">[server]
+host = pulp.example.com
+</pre><p>
+Like the Pulp server itself, the CDS uses Apache to host its repositories. The typical steps to configure the Apache instance with an SSL certificate should be taken at this point.
+</p>
+<p>
+Once the configuration changes have been made, the CDS processes are started through the init script:
+</p>
+<pre class="wiki">$ service pulp-cds start
+Starting goferd                                            [  OK  ]
+Starting httpd:                                            [  OK  ]
+</pre><p>
+Once the CDS server is running, it must be registered to a Pulp server. A CDS may only be registered to one Pulp server at a given time. Once registered, the CDS will only accept commands from the Pulp server that it is currently registered to. When a CDS is unregistered from a Pulp server, it is once again open to be registered by a different Pulp server.
 </p>
 <hr />
 <h2 id="display">Display and History</h2>

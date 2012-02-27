@@ -32,15 +32,10 @@ class File(JSONController):
     @auth_required(READ)
     def GET(self, id):
         """
-        [[wiki]]
-        title: Get File info
-        description: lookup file for a given id
-        method: PUT
-        path: /content/file/<id>/
-        permission: READ
-        success response: 200 OK
-        failure response: 400 Bad Request when trying to change the id
-        return: a File object
+        Get File info
+        @param id: file id to delete
+        @type id: str
+        @return: a File object
         """
         return self.ok(api.file(id))
 

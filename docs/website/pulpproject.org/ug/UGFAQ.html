@@ -31,7 +31,48 @@
 
 
 <div id="content" class="wiki"><div id="wikipage"><p>
-<a class="missing wiki">TOC?</a>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGFAQ.html#FrequentlyAskedQuestions">Frequently Asked Questions</a>
+    <ol>
+      <li>
+        <a href="UGFAQ.html#WhydoIgetSSLWrongHosterrorswhenrunningtheclient">Why do I get "SSL WrongHost" errors when running the client?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#CanIoverridesettingsinetcpulpclient.confonaperuserbasis">Can I override settings in /etc/pulp/client.conf on a per user basis?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#Whyispulptimingouthanging">Why is pulp timing out/hanging?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#Whyarepackageinstallsgettingrequesttimeouts">Why are package installs getting request timeouts?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#Ivejustupgradedwhyaremycredentialsfailing">I've just upgraded, why are my credentials failing?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#Igetatracebackusingadmincertswithpulp-adminonfedora-14">I get a traceback using admin certs with pulp-admin on fedora-14</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#Permissiondenied:etcpki.contentrepo_name_idonrepocreate">Permission denied: '/etc/pki.content/repo_name_id' on repo create</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#WhydoesPulpdiesometimesat3amESTorotherscheduledtime">Why does Pulp die sometimes at 3am EST, or other scheduled time?</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
 </p>
 <h1 id="FrequentlyAskedQuestions">Frequently Asked Questions</h1>
 <hr />
@@ -225,31 +266,6 @@ $ chgrp mongodb /var/lib/mongodb
 To build the QPID rpms, follow the instructions <a class="wiki" href="UGInstallCentOS.html">here</a>.
 </p>
 <hr />
-<h2 id="PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</h2>
-<p>
-Some queries in pulp require mongo 1.5 or greater, yet Fedora 13 is at mongo 1.4.x.  
-The solution is to manually install 1.6.  Below are the recommended steps.  (For reference mongodb provides instructions <a class="ext-link" href="http://www.mongodb.org/display/DOCS/Quickstart+Unix"><span class="icon"> </span>here</a>
-</p>
-<pre class="wiki"> 1. Download mongo
- For 32-bit
-  curl http://downloads.mongodb.org/linux/mongodb-linux-i686-1.6.5.tgz &gt; mongo.tgz
- For 64-bit
-  curl http://downloads.mongodb.org/linux/mongodb-linux-x86_64-1.6.5.tgz &gt; mongo.tgz
- Below assumes 64-bit, change filename if using 32-bit
- 2. cp mongodb-linux-x86_64-1.6.5.tgz /opt
- 3. cd /opt
- 4. sudo tar xvfz mongodb-linux-x86_64-1.6.5.tgz
- 5. sudo mv /usr/bin/mongod /usr/bin/mongod.old
- 6. sudo ln -s /opt/mongodb-linux-x86_64-1.6.5/bin/mongod /usr/bin/mongod
- Restart mongo
- 7. sudo /etc/init.d/mongod restart
-</pre><h2 id="Mongo1.8.shellfreezesonf15howdoidowngrade">Mongo 1.8.* shell freezes on f15, how do i downgrade</h2>
-<blockquote>
-<p>
-When running queries in mongo shell 1.8.* users shell hangs indefinitely. This is not an issue in 1.7.5, so downgrading to this version should help. 
-</p>
-<pre class="wiki"> $ yum downgrade mongodb mongodb-server libmongodb js elinks
-</pre></blockquote>
 <h2 id="Permissiondenied:etcpki.contentrepo_name_idonrepocreate">Permission denied: '/etc/pki.content/repo_name_id' on repo create</h2>
 <blockquote>
 <p>
@@ -280,7 +296,18 @@ LABEL=79d3d2d4    /         ext4    defaults,acl         1 1
 EOFError: compressed file ended before the logical end-of-stream was detected
 </pre><ul><li>Issue is that RHEL-5 yum assumes data is bzip2, yet Fedora 16 createrepo defaults to gzip when compressing primary.sqlite
 </li><li>Workaround is to use <tt>createrepo --compress-type bz2</tt> when generating metadata on Fedora 16
-</li></ul></li></ul></div>
+</li></ul></li></ul><hr />
+<h2 id="WhydoesPulpdiesometimesat3amESTorotherscheduledtime">Why does Pulp die sometimes at 3am EST, or other scheduled time?</h2>
+<p>
+Pulp is a mod_wsgi application running under apache.  Apache comes bundled with a default logrotate configuration so that it's logs don't grow without bound.  Once the logs have grown to a certain size, logrotate will archive the log files, create new ones and restart Apache with a SIGHUP signal.  
+</p>
+<p>
+SIGHUP is not supposed to interrupt running processes, but it seems it does for mod_wsgi, and any running processes will be killed.
+</p>
+<p>
+This issue could be mitigated somewhat by tweaking the logrotate configuration.  logrotate provides documentation on how it can be configured.
+</p>
+</div>
         
         
       </div>

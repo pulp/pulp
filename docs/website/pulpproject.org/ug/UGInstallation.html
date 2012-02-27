@@ -36,7 +36,7 @@
 <strong>Community Release 19</strong>
 </p>
 <table class="wiki">
-<tr><td> <strong>Pulp Build</strong> </td><td> 0.254-7 
+<tr><td> <strong>Pulp Build</strong> </td><td> 0.254 
 </td></tr><tr><td> <strong>Released</strong> </td><td> December 15th, 2011 
 </td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 15 (i386, x86_64), Fedora 16 (i386, x86_64), Red Hat Enterprise Linux 5 (i386, x86_64), Red Hat Enterprise Linux 6 (i386, x86_64) 
 </td></tr></table>
@@ -59,7 +59,8 @@ The repo files for <a class="ext-link" href="http://repos.fedorapeople.org/repos
 </li><li>5672 for non-ssl or 5674 for SSL message bus connections
 </li></ul></li><li>The following ports must be open into consumer systems:
 <ul><li>5672 for non-ssl or 5674 for SSL message bus connections
-</li></ul></li></ul><hr />
+</li></ul></li><li>mod_python must be uninstalled (or at least not loaded by apache).  mod_wsgi, a Pulp requirement, does not function alongside mod_python.
+</li></ul><hr />
 <h2 id="installation">Installation</h2>
 <h3 id="fserver">Server</h3>
 <ol><li>Download the necessary repository configuration files:
@@ -85,7 +86,7 @@ $ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pu
 </pre>
 Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a>
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
-$ rpm -Uvh http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-4.noarch.rpm
+$ rpm -Uvh http://dl.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm
 </pre>
 Subscribe the Pulp server to the RHN channels:
 <ul>
@@ -107,7 +108,7 @@ $ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pu
 </pre>
 Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a> for RHEL 6
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
-$ rpm -Uvh http://download.fedora.redhat.com/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+$ rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-5.noarch.rpm
 </pre>
 </div>
 <ol start="2"><li>Install Pulp and its dependencies:
@@ -119,8 +120,8 @@ CentOS
 QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
 </div>
 <pre class="wiki">$ yum install pulp
-</pre><ol start="3"><li>Update '/etc/pulp/pulp.conf' to reflect the hostname of the Pulp server.
-<ul><li>Change 'localhost' in the below to the hostname of the Pulp server. 
+</pre><ol start="3"><li>Update <tt>/etc/pulp/pulp.conf</tt> to reflect the hostname of the Pulp server.
+<ul><li>Change <tt>localhost</tt> in the below to the hostname of the Pulp server. 
 <pre class="wiki">[server]
 server_name: localhost
 ...

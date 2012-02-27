@@ -30,7 +30,39 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Tasking RESTful Interface</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Tasks.html#top">Tasking RESTful Interface</a>
+    <ol>
+      <li>
+        <a href="UGREST-Tasks.html#CancelATask">Cancel A Task</a>
+      </li>
+      <li>
+        <a href="UGREST-Tasks.html#DeleteATaskSnapshot">Delete A Task Snapshot</a>
+      </li>
+      <li>
+        <a href="UGREST-Tasks.html#GetATaskSnapshot">Get A Task Snapshot</a>
+      </li>
+      <li>
+        <a href="UGREST-Tasks.html#GetAllTaskSnapshots">Get All Task Snapshots</a>
+      </li>
+      <li>
+        <a href="UGREST-Tasks.html#RemoveATask">Remove A Task</a>
+      </li>
+      <li>
+        <a href="UGREST-Tasks.html#GetATask">Get A Task</a>
+      </li>
+      <li>
+        <a href="UGREST-Tasks.html#GetAllTasks">Get All Tasks</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="top">Tasking RESTful Interface</h1>
 <p>
 <em>RESTful interface providing an administrative and debugging api for</em> <br />
 <em>pulp's tasking system.</em> <br />
@@ -51,7 +83,7 @@
 </li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <em>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</em>
 </li><li><strong>snapshot_id</strong> &lt;str&gt; <em>id of task's snapshot, if it has one</em>
 </li></ul><p>
-<strong>TaskSnapshot object fields</strong>: 
+<strong><a class="missing wiki">TaskSnapshot?</a> object fields</strong>: 
 </p>
 <ul><li><strong>id</strong> &lt;str&gt; <em>unique task id</em>
 </li><li><strong>class_name</strong> &lt;str&gt; <em>name of the class, if the task's method is an instance method</em>
@@ -88,8 +120,58 @@
 <br />
 <strong>return</strong>: Task object <br />
 <br />
+<strong>sample response:</strong><br />
 </p>
-<hr />
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-04T21:25:45Z"</span><span class="p">,</span> 
+  <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">"f15-x86_64"</span>
+  <span class="p">],</span> 
+  <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-04T16:25:45-05:00"</span><span class="p">,</span> 
+  <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"_sync"</span><span class="p">,</span> 
+  <span class="s">"finish_time"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"state"</span><span class="p">:</span> <span class="s">"running"</span><span class="p">,</span> 
+  <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+  <span class="s">"progress"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"status"</span><span class="p">:</span> <span class="s">"FINISHED"</span><span class="p">,</span> 
+    <span class="s">"num_success"</span><span class="p">:</span> <span class="mi">2941</span><span class="p">,</span> 
+    <span class="s">"size_total"</span><span class="p">:</span> <span class="mi">3369661596</span><span class="p">,</span> 
+    <span class="s">"num_download"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"item_name"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"items_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"items_total"</span><span class="p">:</span> <span class="mi">2941</span><span class="p">,</span> 
+    <span class="s">"item_type"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"step"</span><span class="p">:</span> <span class="s">"Importing data into pulp"</span><span class="p">,</span> 
+    <span class="s">"size_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"details"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"tree_file"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"num_success"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> 
+        <span class="s">"total_count"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> 
+        <span class="s">"items_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"size_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"total_size_bytes"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"num_error"</span><span class="p">:</span> <span class="mi">0</span>
+      <span class="p">},</span> 
+      <span class="s">"rpm"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"num_success"</span><span class="p">:</span> <span class="mi">2935</span><span class="p">,</span> 
+        <span class="s">"total_count"</span><span class="p">:</span> <span class="mi">2935</span><span class="p">,</span> 
+        <span class="s">"items_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"size_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"total_size_bytes"</span><span class="p">:</span> <span class="mi">3369661596</span><span class="p">,</span> 
+        <span class="s">"num_error"</span><span class="p">:</span> <span class="mi">0</span>
+      <span class="p">}</span>
+    <span class="p">},</span> 
+    <span class="s">"error_details"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"num_error"</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="p">},</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"a9abeedc-371a-11e1-88df-f0def14122c8"</span>
+<span class="p">}</span>
+</pre></div><hr />
 <h2 id="DeleteATaskSnapshot">Delete A Task Snapshot</h2>
 <p>
 <em>Delete the snapshot for a given task</em> <br />
@@ -106,8 +188,38 @@
 <br />
 <strong>return</strong>: TaskSnapshot object <br />
 <br />
+<strong>sample response:</strong><br />
 </p>
-<h2 id="GetATaskSnapshot">Get A Task Snapshot</h2>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"weight"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+  <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"hooks"</span><span class="p">:</span> <span class="s">"(dp0</span><span class="se">\n</span><span class="s">S'dequeue'</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">(lp2</span><span class="se">\n</span><span class="s">(ipulp.server.event.handler.task</span><span class="se">\n</span><span class="s">TaskDequeued</span><span class="se">\n</span><span class="s">p3</span><span class="se">\n</span><span class="s">(dp4</span><span class="se">\n</span><span class="s">baccopy_reg</span><span class="se">\n</span><span class="s">_reconstructor</span><span class="se">\n</span><span class="s">p5</span><span class="se">\n</span><span class="s">(cpulp.server.auth.authorization</span><span class="se">\n</span><span class="s">RevokePermissionsForTask</span><span class="se">\n</span><span class="s">p6</span><span class="se">\n</span><span class="s">c__builtin__</span><span class="se">\n</span><span class="s">object</span><span class="se">\n</span><span class="s">p7</span><span class="se">\n</span><span class="s">Ntp8</span><span class="se">\n</span><span class="s">Rp9</span><span class="se">\n</span><span class="s">(dp10</span><span class="se">\n</span><span class="s">S'user_name'</span><span class="se">\n</span><span class="s">p11</span><span class="se">\n</span><span class="s">Vadmin</span><span class="se">\n</span><span class="s">p12</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g6</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp13</span><span class="se">\n</span><span class="s">Rp14</span><span class="se">\n</span><span class="s">(dp15</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">VSYSTEM</span><span class="se">\n</span><span class="s">p16</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g6</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp17</span><span class="se">\n</span><span class="s">Rp18</span><span class="se">\n</span><span class="s">(dp19</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">VSYSTEM</span><span class="se">\n</span><span class="s">p20</span><span class="se">\n</span><span class="s">sbasS'enqueue'</span><span class="se">\n</span><span class="s">p21</span><span class="se">\n</span><span class="s">(lp22</span><span class="se">\n</span><span class="s">g5</span><span class="se">\n</span><span class="s">(cpulp.server.auth.authorization</span><span class="se">\n</span><span class="s">GrantPermissionsForTask</span><span class="se">\n</span><span class="s">p23</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp24</span><span class="se">\n</span><span class="s">Rp25</span><span class="se">\n</span><span class="s">(dp26</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g12</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g23</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp27</span><span class="se">\n</span><span class="s">Rp28</span><span class="se">\n</span><span class="s">(dp29</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g16</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g23</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp30</span><span class="se">\n</span><span class="s">Rp31</span><span class="se">\n</span><span class="s">(dp32</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g20</span><span class="se">\n</span><span class="s">sbas."</span><span class="p">,</span> 
+  <span class="s">"result"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"timeout_delta"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"527a6a5c-371b-11e1-9b2a-f0def14122c8"</span><span class="p">,</span> 
+  <span class="s">"task_class"</span><span class="p">:</span> <span class="s">"cpulp.server.api.repo_sync_task</span><span class="se">\n</span><span class="s">RepoSyncTask</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"repo_id"</span><span class="p">:</span> <span class="s">"f15-x86_64"</span><span class="p">,</span> 
+  <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"task_snapshots"</span><span class="p">,</span> 
+  <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"_sync"</span><span class="p">,</span> 
+  <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+  <span class="s">"_progress_callback"</span><span class="p">:</span> <span class="s">"cpulp.server.api.synchronizers</span><span class="se">\n</span><span class="s">yum_rhn_progress_callback</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"failure_threshold"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"consecutive_failures"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+  <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"args"</span><span class="p">:</span> <span class="s">"(lp0</span><span class="se">\n</span><span class="s">Vf15-x86_64</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">a."</span><span class="p">,</span> 
+  <span class="s">"callable"</span><span class="p">:</span> <span class="s">"cpulp.server.api.repo_sync</span><span class="se">\n</span><span class="s">_sync</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"cancel_attempts"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+  <span class="s">"exception"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"schedule_threshold"</span><span class="p">:</span> <span class="s">"cdatetime</span><span class="se">\n</span><span class="s">timedelta</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">(I0</span><span class="se">\n</span><span class="s">I300</span><span class="se">\n</span><span class="s">I0</span><span class="se">\n</span><span class="s">tp1</span><span class="se">\n</span><span class="s">Rp2</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"synchronizer_class"</span><span class="p">:</span> <span class="s">"cpulp.server.api.synchronizers</span><span class="se">\n</span><span class="s">YumSynchronizer</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"kwargs"</span><span class="p">:</span> <span class="s">"(dp0</span><span class="se">\n</span><span class="s">S'skip'</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">(dp2</span><span class="se">\n</span><span class="s">sS'max_speed'</span><span class="se">\n</span><span class="s">p3</span><span class="se">\n</span><span class="s">NsS'threads'</span><span class="se">\n</span><span class="s">p4</span><span class="se">\n</span><span class="s">Ns."</span><span class="p">,</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"460e866c-075c-451e-8cac-37a65508ef7f"</span>
+<span class="p">}</span>
+</pre></div><h2 id="GetATaskSnapshot">Get A Task Snapshot</h2>
 <p>
 <em>Get a TaskSnapshot object for the give task</em> <br />
 <br />
@@ -123,8 +235,38 @@
 <br />
 <strong>return</strong>: TaskSnapshot object <br />
 <br />
+<strong>sample response:</strong><br />
 </p>
-<hr />
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"weight"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+  <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"hooks"</span><span class="p">:</span> <span class="s">"(dp0</span><span class="se">\n</span><span class="s">S'dequeue'</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">(lp2</span><span class="se">\n</span><span class="s">(ipulp.server.event.handler.task</span><span class="se">\n</span><span class="s">TaskDequeued</span><span class="se">\n</span><span class="s">p3</span><span class="se">\n</span><span class="s">(dp4</span><span class="se">\n</span><span class="s">baccopy_reg</span><span class="se">\n</span><span class="s">_reconstructor</span><span class="se">\n</span><span class="s">p5</span><span class="se">\n</span><span class="s">(cpulp.server.auth.authorization</span><span class="se">\n</span><span class="s">RevokePermissionsForTask</span><span class="se">\n</span><span class="s">p6</span><span class="se">\n</span><span class="s">c__builtin__</span><span class="se">\n</span><span class="s">object</span><span class="se">\n</span><span class="s">p7</span><span class="se">\n</span><span class="s">Ntp8</span><span class="se">\n</span><span class="s">Rp9</span><span class="se">\n</span><span class="s">(dp10</span><span class="se">\n</span><span class="s">S'user_name'</span><span class="se">\n</span><span class="s">p11</span><span class="se">\n</span><span class="s">Vadmin</span><span class="se">\n</span><span class="s">p12</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g6</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp13</span><span class="se">\n</span><span class="s">Rp14</span><span class="se">\n</span><span class="s">(dp15</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">VSYSTEM</span><span class="se">\n</span><span class="s">p16</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g6</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp17</span><span class="se">\n</span><span class="s">Rp18</span><span class="se">\n</span><span class="s">(dp19</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">VSYSTEM</span><span class="se">\n</span><span class="s">p20</span><span class="se">\n</span><span class="s">sbasS'enqueue'</span><span class="se">\n</span><span class="s">p21</span><span class="se">\n</span><span class="s">(lp22</span><span class="se">\n</span><span class="s">g5</span><span class="se">\n</span><span class="s">(cpulp.server.auth.authorization</span><span class="se">\n</span><span class="s">GrantPermissionsForTask</span><span class="se">\n</span><span class="s">p23</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp24</span><span class="se">\n</span><span class="s">Rp25</span><span class="se">\n</span><span class="s">(dp26</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g12</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g23</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp27</span><span class="se">\n</span><span class="s">Rp28</span><span class="se">\n</span><span class="s">(dp29</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g16</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g23</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp30</span><span class="se">\n</span><span class="s">Rp31</span><span class="se">\n</span><span class="s">(dp32</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g20</span><span class="se">\n</span><span class="s">sbas."</span><span class="p">,</span> 
+  <span class="s">"result"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"timeout_delta"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"527a6a5c-371b-11e1-9b2a-f0def14122c8"</span><span class="p">,</span> 
+  <span class="s">"task_class"</span><span class="p">:</span> <span class="s">"cpulp.server.api.repo_sync_task</span><span class="se">\n</span><span class="s">RepoSyncTask</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"repo_id"</span><span class="p">:</span> <span class="s">"f15-x86_64"</span><span class="p">,</span> 
+  <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"task_snapshots"</span><span class="p">,</span> 
+  <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"_sync"</span><span class="p">,</span> 
+  <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+  <span class="s">"_progress_callback"</span><span class="p">:</span> <span class="s">"cpulp.server.api.synchronizers</span><span class="se">\n</span><span class="s">yum_rhn_progress_callback</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"failure_threshold"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"consecutive_failures"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+  <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"args"</span><span class="p">:</span> <span class="s">"(lp0</span><span class="se">\n</span><span class="s">Vf15-x86_64</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">a."</span><span class="p">,</span> 
+  <span class="s">"callable"</span><span class="p">:</span> <span class="s">"cpulp.server.api.repo_sync</span><span class="se">\n</span><span class="s">_sync</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"cancel_attempts"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+  <span class="s">"exception"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+  <span class="s">"schedule_threshold"</span><span class="p">:</span> <span class="s">"cdatetime</span><span class="se">\n</span><span class="s">timedelta</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">(I0</span><span class="se">\n</span><span class="s">I300</span><span class="se">\n</span><span class="s">I0</span><span class="se">\n</span><span class="s">tp1</span><span class="se">\n</span><span class="s">Rp2</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"synchronizer_class"</span><span class="p">:</span> <span class="s">"cpulp.server.api.synchronizers</span><span class="se">\n</span><span class="s">YumSynchronizer</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+  <span class="s">"kwargs"</span><span class="p">:</span> <span class="s">"(dp0</span><span class="se">\n</span><span class="s">S'skip'</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">(dp2</span><span class="se">\n</span><span class="s">sS'max_speed'</span><span class="se">\n</span><span class="s">p3</span><span class="se">\n</span><span class="s">NsS'threads'</span><span class="se">\n</span><span class="s">p4</span><span class="se">\n</span><span class="s">Ns."</span><span class="p">,</span> 
+  <span class="s">"_id"</span><span class="p">:</span> <span class="s">"460e866c-075c-451e-8cac-37a65508ef7f"</span>
+<span class="p">}</span>
+</pre></div><hr />
 <h2 id="GetAllTaskSnapshots">Get All Task Snapshots</h2>
 <p>
 <em>Get a list of all task snapshots currently in the system</em> <br />
@@ -141,8 +283,40 @@
 <br />
 <strong>return</strong>: a list of TaskSnapshot objects <br />
 <br />
+<strong>sample response:</strong><br />
 </p>
-<hr />
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+    <span class="s">"weight"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+    <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"hooks"</span><span class="p">:</span> <span class="s">"(dp0</span><span class="se">\n</span><span class="s">S'dequeue'</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">(lp2</span><span class="se">\n</span><span class="s">(ipulp.server.event.handler.task</span><span class="se">\n</span><span class="s">TaskDequeued</span><span class="se">\n</span><span class="s">p3</span><span class="se">\n</span><span class="s">(dp4</span><span class="se">\n</span><span class="s">baccopy_reg</span><span class="se">\n</span><span class="s">_reconstructor</span><span class="se">\n</span><span class="s">p5</span><span class="se">\n</span><span class="s">(cpulp.server.auth.authorization</span><span class="se">\n</span><span class="s">RevokePermissionsForTask</span><span class="se">\n</span><span class="s">p6</span><span class="se">\n</span><span class="s">c__builtin__</span><span class="se">\n</span><span class="s">object</span><span class="se">\n</span><span class="s">p7</span><span class="se">\n</span><span class="s">Ntp8</span><span class="se">\n</span><span class="s">Rp9</span><span class="se">\n</span><span class="s">(dp10</span><span class="se">\n</span><span class="s">S'user_name'</span><span class="se">\n</span><span class="s">p11</span><span class="se">\n</span><span class="s">Vadmin</span><span class="se">\n</span><span class="s">p12</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g6</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp13</span><span class="se">\n</span><span class="s">Rp14</span><span class="se">\n</span><span class="s">(dp15</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">VSYSTEM</span><span class="se">\n</span><span class="s">p16</span><span class="se">\n</span><span class="s">sbasS'enqueue'</span><span class="se">\n</span><span class="s">p17</span><span class="se">\n</span><span class="s">(lp18</span><span class="se">\n</span><span class="s">g5</span><span class="se">\n</span><span class="s">(cpulp.server.auth.authorization</span><span class="se">\n</span><span class="s">GrantPermissionsForTask</span><span class="se">\n</span><span class="s">p19</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp20</span><span class="se">\n</span><span class="s">Rp21</span><span class="se">\n</span><span class="s">(dp22</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g12</span><span class="se">\n</span><span class="s">sbag5</span><span class="se">\n</span><span class="s">(g19</span><span class="se">\n</span><span class="s">g7</span><span class="se">\n</span><span class="s">Ntp23</span><span class="se">\n</span><span class="s">Rp24</span><span class="se">\n</span><span class="s">(dp25</span><span class="se">\n</span><span class="s">g11</span><span class="se">\n</span><span class="s">g16</span><span class="se">\n</span><span class="s">sbas."</span><span class="p">,</span> 
+    <span class="s">"result"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+    <span class="s">"timeout_delta"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"527a6a5c-371b-11e1-9b2a-f0def14122c8"</span><span class="p">,</span> 
+    <span class="s">"task_class"</span><span class="p">:</span> <span class="s">"cpulp.server.api.repo_sync_task</span><span class="se">\n</span><span class="s">RepoSyncTask</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+    <span class="s">"repo_id"</span><span class="p">:</span> <span class="s">"f15-x86_64"</span><span class="p">,</span> 
+    <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"task_snapshots"</span><span class="p">,</span> 
+    <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"_sync"</span><span class="p">,</span> 
+    <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+    <span class="s">"_progress_callback"</span><span class="p">:</span> <span class="s">"cpulp.server.api.synchronizers</span><span class="se">\n</span><span class="s">yum_rhn_progress_callback</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+    <span class="s">"failure_threshold"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"consecutive_failures"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+    <span class="s">"args"</span><span class="p">:</span> <span class="s">"(lp0</span><span class="se">\n</span><span class="s">Vf15-x86_64</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">a."</span><span class="p">,</span> 
+    <span class="s">"callable"</span><span class="p">:</span> <span class="s">"cpulp.server.api.repo_sync</span><span class="se">\n</span><span class="s">_sync</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+    <span class="s">"cancel_attempts"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"exception"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+    <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"N."</span><span class="p">,</span> 
+    <span class="s">"schedule_threshold"</span><span class="p">:</span> <span class="s">"cdatetime</span><span class="se">\n</span><span class="s">timedelta</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">(I0</span><span class="se">\n</span><span class="s">I300</span><span class="se">\n</span><span class="s">I0</span><span class="se">\n</span><span class="s">tp1</span><span class="se">\n</span><span class="s">Rp2</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+    <span class="s">"synchronizer_class"</span><span class="p">:</span> <span class="s">"cpulp.server.api.synchronizers</span><span class="se">\n</span><span class="s">YumSynchronizer</span><span class="se">\n</span><span class="s">p0</span><span class="se">\n</span><span class="s">."</span><span class="p">,</span> 
+    <span class="s">"kwargs"</span><span class="p">:</span> <span class="s">"(dp0</span><span class="se">\n</span><span class="s">S'skip'</span><span class="se">\n</span><span class="s">p1</span><span class="se">\n</span><span class="s">(dp2</span><span class="se">\n</span><span class="s">sS'max_speed'</span><span class="se">\n</span><span class="s">p3</span><span class="se">\n</span><span class="s">NsS'threads'</span><span class="se">\n</span><span class="s">p4</span><span class="se">\n</span><span class="s">Ns."</span><span class="p">,</span> 
+    <span class="s">"_id"</span><span class="p">:</span> <span class="s">"2821b9f1-3889-4628-bb82-4503013c9e36"</span>
+  <span class="p">}</span>
+<span class="p">]</span>
+</pre></div><hr />
 <h2 id="RemoveATask">Remove A Task</h2>
 <p>
 <em>Remove a task from the tasking sub-system. This does not interrupt the task if it is running</em> <br />
@@ -159,8 +333,58 @@
 <br />
 <strong>return</strong>: Task object <br />
 <br />
+<strong>sample response:</strong><br />
 </p>
-<h2 id="GetATask">Get A Task</h2>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">"f15-x86_64"</span>
+  <span class="p">],</span> 
+  <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-04T16:25:45-05:00"</span><span class="p">,</span> 
+  <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"_sync"</span><span class="p">,</span> 
+  <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-04T16:29:14-05:00"</span><span class="p">,</span> 
+  <span class="s">"state"</span><span class="p">:</span> <span class="s">"canceled"</span><span class="p">,</span> 
+  <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+  <span class="s">"progress"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"status"</span><span class="p">:</span> <span class="s">"FINISHED"</span><span class="p">,</span> 
+    <span class="s">"num_success"</span><span class="p">:</span> <span class="mi">2941</span><span class="p">,</span> 
+    <span class="s">"size_total"</span><span class="p">:</span> <span class="mi">3369661596</span><span class="p">,</span> 
+    <span class="s">"num_download"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"item_name"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"items_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"items_total"</span><span class="p">:</span> <span class="mi">2941</span><span class="p">,</span> 
+    <span class="s">"item_type"</span><span class="p">:</span> <span class="s">""</span><span class="p">,</span> 
+    <span class="s">"step"</span><span class="p">:</span> <span class="s">"Importing data into pulp"</span><span class="p">,</span> 
+    <span class="s">"size_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+    <span class="s">"details"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"tree_file"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"num_success"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> 
+        <span class="s">"total_count"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> 
+        <span class="s">"items_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"size_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"total_size_bytes"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"num_error"</span><span class="p">:</span> <span class="mi">0</span>
+      <span class="p">},</span> 
+      <span class="s">"rpm"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"num_success"</span><span class="p">:</span> <span class="mi">2935</span><span class="p">,</span> 
+        <span class="s">"total_count"</span><span class="p">:</span> <span class="mi">2935</span><span class="p">,</span> 
+        <span class="s">"items_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"size_left"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+        <span class="s">"total_size_bytes"</span><span class="p">:</span> <span class="mi">3369661596</span><span class="p">,</span> 
+        <span class="s">"num_error"</span><span class="p">:</span> <span class="mi">0</span>
+      <span class="p">}</span>
+    <span class="p">},</span> 
+    <span class="s">"error_details"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"num_error"</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="p">},</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"a9abeedc-371a-11e1-88df-f0def14122c8"</span>
+<span class="p">}</span>
+</pre></div><h2 id="GetATask">Get A Task</h2>
 <p>
 <em>Get a Task object for a specific task</em> <br />
 <br />
@@ -176,8 +400,26 @@
 <br />
 <strong>return</strong>: Task object <br />
 <br />
+<strong>sample response:</strong><br />
 </p>
-<hr />
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-05T06:00:00Z"</span><span class="p">,</span> 
+  <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"args"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"start_time"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"cull_history"</span><span class="p">,</span> 
+  <span class="s">"finish_time"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+  <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"interval"</span><span class="p">,</span> 
+  <span class="s">"snapshot_id"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"7e419e4f-3719-11e1-9ea0-f0def14122c8"</span>
+<span class="p">}</span>
+</pre></div><hr />
 <h2 id="GetAllTasks">Get All Tasks</h2>
 <p>
 <em>Get a list of all tasks currently in the tasking system</em> <br />
@@ -196,17 +438,58 @@
 <br />
 <strong>filters</strong>: 
 </p>
-<ul><li><strong>state</strong> &lt;str&gt; <em>tasking system task state: waiting, running, complete, incomplete, all</em>
+<ul><li><strong>id</strong> &lt;str&gt; <em>task id</em>
+</li><li><strong>state</strong> &lt;str&gt; <em>tasking system task state: waiting, running, complete, incomplete, current, archived (current is the same as waiting, running, complete, and imcomplete, also the same as ommitting the state filter; archived looks into the the task history, will not return archived tasks without this filter)</em>
 </li></ul><p>
 <br />
+<strong>sample response:</strong><br />
 </p>
-</div>
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-05T01:00:00Z"</span><span class="p">,</span> 
+    <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"args"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"start_time"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"cull_audited_events"</span><span class="p">,</span> 
+    <span class="s">"finish_time"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+    <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"interval"</span><span class="p">,</span> 
+    <span class="s">"snapshot_id"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"6cd50f8f-371a-11e1-ba28-f0def14122c8"</span>
+  <span class="p">},</span> 
+  <span class="p">{</span>
+    <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-05T06:00:00Z"</span><span class="p">,</span> 
+    <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"args"</span><span class="p">:</span> <span class="p">[],</span> 
+    <span class="s">"job_id"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"class_name"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"start_time"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"cull_history"</span><span class="p">,</span> 
+    <span class="s">"finish_time"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"state"</span><span class="p">:</span> <span class="s">"waiting"</span><span class="p">,</span> 
+    <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"interval"</span><span class="p">,</span> 
+    <span class="s">"snapshot_id"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"6cd53278-371a-11e1-ba29-f0def14122c8"</span>
+  <span class="p">}</span>
+<span class="p">]</span>
+</pre></div></div>
         
         
       </div>
       
 
     </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
     
 <!-- BEGIN FOOTER -->
 </body>

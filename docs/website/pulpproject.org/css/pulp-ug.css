@@ -56,14 +56,14 @@ td {
 
 /* Header stuff ripped from pulp.css */
 #header {
-  height: 210px;
+  height: 150px;
 }
 
 #logo {
   width: 298px;
-  height: 220px;
+  height: 162px;
   margin-left: 0px;
-  background: url('../images/pulp-logo.png') no-repeat left top;
+  background: url('../images/pulp-v1-logo.png') no-repeat left top;
   position: absolute;
   left: 0px;
   top: 0px;

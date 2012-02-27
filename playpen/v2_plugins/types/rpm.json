@@ -1,0 +1,16 @@
+{"types": [
+    {
+        "id" : "rpm",
+        "display_name" : "RPM",
+        "description" : "RPM",
+        "unit_key" :
+            ["name", "epoch", "version", "release", "arch", "fileName", "checksumtype", "checksum"],
+        "search_indexes" : [
+            "name", "epoch", "version", "release", "arch", "description",
+            "vendor", "filename", "checksum", "checksumtype", "download_url", "repo_defined",
+            "requires", "provides", "size", "buildhost", "license", "group",
+            "repoids"
+        ]
+    }
+]}
+

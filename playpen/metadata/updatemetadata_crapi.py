@@ -20,6 +20,7 @@ def setup_metadata_conf(repodir):
     conf.update = 1
     conf.database = 1
     conf.verbose = 1
+    conf.skip_stat = 1
     return conf
     
 def add_package_to_repo(repodir, packages):
@@ -41,7 +42,7 @@ def add_package_to_repo(repodir, packages):
 
 if __name__ == '__main__': 
     if len(sys.argv) < 2:
-        print "USAGE: python get_package_xml.py <repodir> <pkgname>"
+        print "USAGE: python updatemetadata_crapi.py <repodir> <pkgname>"
         sys.exit(0)
    
     repodata_xml = get_package_xml(sys.argv[2])

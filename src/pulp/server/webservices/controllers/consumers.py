@@ -638,15 +638,9 @@ class ApplicableErrataInRepos(JSONController):
     @auth_required(READ)
     def GET(self):
         """
-        [[wiki]]
-        title: Applicable Errata In Repos 
-        description: List all errata associated with a group of repositories along with consumers that it is applicable to
-        method: GET
-        path: /consumers/applicable_errata_in_repos/
-        permission: READ
-        success response: 200 OK
-        failure response: None
-        return: list of object that are mappings of errata id in given repoids to applicable consumers
+        List all errata associated with a group of repositories along with consumers that it is applicable to
+        @param repoids: repository ids
+        @return: list of object that are mappings of errata id in given repoids to applicable consumers
         """
         valid_filters = ('repoids','send_only_applicable_errata',)
         filters = self.filters(valid_filters)

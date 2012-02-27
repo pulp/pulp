@@ -50,10 +50,16 @@ The list of consumers registered to the Pulp server can be retrieved with the <t
             Consumer Information
 +------------------------------------------+
 
-Id                 	test-consumer
+Id                 	        test-consumer                   
 Description        	None                     
-Subscribed Repos   	/pulp/api/consumers/test-consumer/repoids/
-Additional info    	                         
+Capabilities
+  [x] bind
+  [x] heartbeat
+Subscribed Repos   	['atlantis']             
+Agent Status
+   Responding      	Yes                      
+   Last Heartbeat  	2012-02-02 21:52:08.406543+00:00
+Additional Info   	                         
 </pre><p>
 Information about a specific consumer can be retrieved using the <tt>consumer info</tt> command, indicating an individual consumer using the <tt>--id</tt> flag:
 </p>
@@ -62,10 +68,16 @@ Information about a specific consumer can be retrieved using the <tt>consumer in
             Consumer Information
 +------------------------------------------+
 
-Id                 	test-consumer    
+Id                 	        test-consumer                   
 Description        	None                     
-Subscribed Repos   	[]                       
-Additional info    	{}            
+Capabilities
+  [x] bind
+  [x] heartbeat
+Subscribed Repos   	['atlantis']             
+Agent Status
+   Responding      	Yes                      
+   Last Heartbeat  	2012-02-02 21:52:08.406543+00:00
+Additional Info            
 </pre><p>
 The following fields are displayed for both <tt>consumer list</tt> and <tt>consumer info</tt> commands:
 </p>
@@ -73,22 +85,43 @@ The following fields are displayed for both <tt>consumer list</tt> and <tt>consu
 <tr><td> <strong>Name</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> Id </td><td> Unique identifier provided when the consumer was registered. 
 </td></tr><tr><td> Description </td><td> User-supplied description of the consumer. 
+</td></tr><tr><td> Capabilities </td><td> Agent capabilities <em>([x]=supported)</em> 
 </td></tr><tr><td> Subscribed Repos </td><td> List of repo IDs the consumer is subscribed to. 
+</td></tr><tr><td> Agent Status </td><td> The agent status 
 </td></tr><tr><td> Additional Info </td><td> List of key-value pairs assigned to further tag and organize consumers. For more information, see the ??? section of the user guide. 
 </td></tr></table>
 <p>
 Additionally, the <tt>consumer info</tt> command supports the <tt>--show-profile</tt> flag. If specified, the listing of packages installed on the consumer is displayed:
 </p>
 <pre class="wiki">$ pulp-admin consumer info --id test-consumer --show-profile
++------------------------------------------+
+            Consumer Information
++------------------------------------------+
 
-+------------------------------------------+
- Package Profile associated with consumer [foo]
-+------------------------------------------+
- 
-dbus-libs-1.4.0-2.fc14.x86_64 
-lua-5.1.4-5.fc14.x86_64 
-rdist-6.1.5-49.fc14.x86_64 
-gucharmap-2.32.0-1.fc14.x86_64 
+Id                 	jortel                   
+Description        	None                     
+Capabilities
+  [x] bind
+  [x] heartbeat
+Subscribed Repos   	['atlantis']             
+Agent Status
+   Responding      	Yes                      
+   Last Heartbeat  	2012-02-02 22:01:19.934522+00:00
+Additional Info    	                         
+
+Package Profile
+  a52dec-0.7.4-13.fc8.i386
+  faac-1.25-7.fc8.i386
+  flash-plugin-10.3.183.10-release.i386
+  gnome-spell-1.0.8-1.fc8.i386
+  lame-libs-3.98.2-2.fc8.i386
+  libXfontcache-1.0.4-5.fc9.i386
+  libdca-0.0.5-3.fc8.i386
+  libdvbpsi-0.1.6-3.fc8.i386
+  libdvdcss-1.2.9-4.lvn6.i386
+  libmad-0.15.1b-8.fc8.i386
+  live555-0-0.20.2008.07.25.fc8.i386
+
 
 # Output truncated for the user guide
 </pre><hr />

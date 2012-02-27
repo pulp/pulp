@@ -35,7 +35,7 @@ class Model(dict):
     provided for convenience when declaring fields in the constructors, and
     should not be used by code. Documents that are retrieved from a document
     collection are also derivatives of dictionaries, but are not derivatives
-    of the Model class. To ensure interchangability, make sure to use python's
+    of the Model class. To ensure interchangeability, make sure to use python's
     regular dictionary key lookup when using Model instances.
     """
 

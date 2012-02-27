@@ -30,7 +30,27 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="top">Jobs RESTful Interface</h1>
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Jobs.html#top">Jobs RESTful Interface</a>
+    <ol>
+      <li>
+        <a href="UGREST-Jobs.html#GetAJob">Get A Job</a>
+      </li>
+      <li>
+        <a href="UGREST-Jobs.html#GetAllJobs">Get All Jobs</a>
+      </li>
+      <li>
+        <a href="UGREST-Jobs.html#CancelAJob">Cancel A Job</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="top">Jobs RESTful Interface</h1>
 <p>
 <em>RESTful interface providing access to pulp jobs.</em> <br />
 <br />
@@ -67,24 +87,6 @@
 </li><li><strong>exception</strong> &lt;str&gt; <em>pickled error, if one occurred</em>
 </li><li><strong>traceback</strong> &lt;str&gt; <em>pickled traceback, if one occured</em>
 </li></ul><hr />
-<h2 id="CancelAJob">Cancel A Job</h2>
-<p>
-<em>Cancel a waiting or running job.</em> <br />
-<br />
-<strong>method</strong>: POST <br />
-<br />
-<strong>path</strong>: /jobs/&lt;id&gt;/cancel/ <br />
-<br />
-<strong>permission</strong>: UPDATE <br />
-<br />
-<strong>success response</strong>: 202 Accepted <br />
-<br />
-<strong>failure response</strong>: 404 Not Found <br />
-<br />
-<strong>return</strong>: Cancel object <br />
-<br />
-</p>
-<hr />
 <h2 id="GetAJob">Get A Job</h2>
 <p>
 <em>Get a Job object for a specific job</em> <br />
@@ -99,7 +101,63 @@
 <br />
 <strong>failure response</strong>: 404 Not Found if no such job <br />
 <br />
-<strong>return</strong>: Job object <br />
+<strong>return</strong>: &lt;dict&gt; Job object <br />
+<br />
+<strong>sample return</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+  <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"exception"</span><span class="p">:</span> <span class="s">"('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+      <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"atlantis"</span><span class="p">,</span> 
+        <span class="p">[</span>
+          <span class="s">"python-suds"</span>
+        <span class="p">]</span>
+      <span class="p">],</span> 
+      <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span><span class="p">,</span> 
+      <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+      <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:32-06:00"</span><span class="p">,</span> 
+      <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"RequestTimeout('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+      <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+      <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:43-06:00"</span><span class="p">,</span> 
+      <span class="s">"state"</span><span class="p">:</span> <span class="s">"error"</span><span class="p">,</span> 
+      <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+      <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"id"</span><span class="p">:</span> <span class="s">"66d7b070-3641-11e1-b151-0019d21a40be"</span>
+    <span class="p">},</span> 
+    <span class="p">{</span>
+      <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"jortel"</span><span class="p">,</span> 
+        <span class="p">[</span>
+          <span class="s">"python-suds"</span>
+        <span class="p">]</span>
+      <span class="p">],</span> 
+      <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span><span class="p">,</span> 
+      <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+      <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:32-06:00"</span><span class="p">,</span> 
+      <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+      <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:48-06:00"</span><span class="p">,</span> 
+      <span class="s">"state"</span><span class="p">:</span> <span class="s">"finished"</span><span class="p">,</span> 
+      <span class="s">"result"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"reboot_scheduled"</span><span class="p">:</span> false<span class="p">,</span> 
+        <span class="s">"installed"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"python-suds-0.4.1-1.fc14.noarch"</span>
+        <span class="p">]</span>
+      <span class="p">},</span> 
+      <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+      <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"id"</span><span class="p">:</span> <span class="s">"66f298b8-3641-11e1-b201-0019d21a40be"</span>
+    <span class="p">}</span>
+  <span class="p">],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span>
+<span class="p">}</span>
+</pre></div><p>
 <br />
 </p>
 <hr />
@@ -115,11 +173,251 @@
 <br />
 <strong>success response</strong>: 200 OK <br />
 <br />
-<strong>failure response</strong>: None <br />
+<strong>failure response</strong>: N/A <br />
 <br />
-<strong>return</strong>: list of job objects <br />
+<strong>return</strong>: <em>list of:</em> &lt;dict&gt; Job object <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"exception"</span><span class="p">:</span> <span class="s">"('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+        <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"atlantis"</span><span class="p">,</span> 
+          <span class="p">[</span>
+            <span class="s">"python-suds"</span>
+          <span class="p">]</span>
+        <span class="p">],</span> 
+        <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span><span class="p">,</span> 
+        <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+        <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:32-06:00"</span><span class="p">,</span> 
+        <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"RequestTimeout('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+        <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+        <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:43-06:00"</span><span class="p">,</span> 
+        <span class="s">"state"</span><span class="p">:</span> <span class="s">"error"</span><span class="p">,</span> 
+        <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+        <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"66d7b070-3641-11e1-b151-0019d21a40be"</span>
+      <span class="p">},</span> 
+      <span class="p">{</span>
+        <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"exception"</span><span class="p">:</span> <span class="s">"('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+        <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"atlantis"</span><span class="p">,</span> 
+          <span class="p">[</span>
+            <span class="s">"python-suds"</span>
+          <span class="p">]</span>
+        <span class="p">],</span> 
+        <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span><span class="p">,</span> 
+        <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+        <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:32-06:00"</span><span class="p">,</span> 
+        <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"RequestTimeout('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+        <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+        <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:43-06:00"</span><span class="p">,</span> 
+        <span class="s">"state"</span><span class="p">:</span> <span class="s">"error"</span><span class="p">,</span> 
+        <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+        <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"66d7b070-3641-11e1-b151-0019d21a40be"</span>
+      <span class="p">}</span>
+    <span class="p">],</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span>
+  <span class="p">},</span> 
+  <span class="p">{</span>
+    <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"jortel"</span><span class="p">,</span> 
+          <span class="p">[</span>
+            <span class="s">"zsh"</span>
+          <span class="p">]</span>
+        <span class="p">],</span> 
+        <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"c8a2a80a-9f88-4a77-8552-9f583a1f1e78"</span><span class="p">,</span> 
+        <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+        <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:28:41-06:00"</span><span class="p">,</span> 
+        <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+        <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:28:44-06:00"</span><span class="p">,</span> 
+        <span class="s">"state"</span><span class="p">:</span> <span class="s">"finished"</span><span class="p">,</span> 
+        <span class="s">"result"</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s">"reboot_scheduled"</span><span class="p">:</span> false<span class="p">,</span> 
+          <span class="s">"installed"</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">},</span> 
+        <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+        <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"249982f5-3641-11e1-bf2f-0019d21a40be"</span>
+      <span class="p">},</span> 
+      <span class="p">{</span>
+        <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"jortel"</span><span class="p">,</span> 
+          <span class="p">[</span>
+            <span class="s">"zsh"</span>
+          <span class="p">]</span>
+        <span class="p">],</span> 
+        <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"c8a2a80a-9f88-4a77-8552-9f583a1f1e78"</span><span class="p">,</span> 
+        <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+        <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:28:41-06:00"</span><span class="p">,</span> 
+        <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+        <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:28:44-06:00"</span><span class="p">,</span> 
+        <span class="s">"state"</span><span class="p">:</span> <span class="s">"finished"</span><span class="p">,</span> 
+        <span class="s">"result"</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s">"reboot_scheduled"</span><span class="p">:</span> false<span class="p">,</span> 
+          <span class="s">"installed"</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">},</span> 
+        <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+        <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"249982f5-3641-11e1-bf2f-0019d21a40be"</span>
+      <span class="p">}</span>
+    <span class="p">],</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"c8a2a80a-9f88-4a77-8552-9f583a1f1e78"</span>
+  <span class="p">},</span> 
+  <span class="p">{</span>
+    <span class="s">"tasks"</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"exception"</span><span class="p">:</span> <span class="s">"('242a020d-9c32-48fa-8b9d-ca2eb6abebac', 0)"</span><span class="p">,</span> 
+        <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"atlantis"</span><span class="p">,</span> 
+          <span class="p">[</span>
+            <span class="s">"zsh"</span>
+          <span class="p">]</span>
+        <span class="p">],</span> 
+        <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"c0520345-722c-4753-9bf0-96f3efd5a2c1"</span><span class="p">,</span> 
+        <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+        <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:18:30-06:00"</span><span class="p">,</span> 
+        <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"RequestTimeout('242a020d-9c32-48fa-8b9d-ca2eb6abebac', 0)"</span><span class="p">,</span> 
+        <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+        <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:18:41-06:00"</span><span class="p">,</span> 
+        <span class="s">"state"</span><span class="p">:</span> <span class="s">"error"</span><span class="p">,</span> 
+        <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+        <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"b8a37905-363f-11e1-adee-0019d21a40be"</span>
+      <span class="p">},</span> 
+      <span class="p">{</span>
+        <span class="s">"scheduled_time"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"exception"</span><span class="p">:</span> <span class="s">"('242a020d-9c32-48fa-8b9d-ca2eb6abebac', 0)"</span><span class="p">,</span> 
+        <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"atlantis"</span><span class="p">,</span> 
+          <span class="p">[</span>
+            <span class="s">"zsh"</span>
+          <span class="p">]</span>
+        <span class="p">],</span> 
+        <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"c0520345-722c-4753-9bf0-96f3efd5a2c1"</span><span class="p">,</span> 
+        <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+        <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:18:30-06:00"</span><span class="p">,</span> 
+        <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"RequestTimeout('242a020d-9c32-48fa-8b9d-ca2eb6abebac', 0)"</span><span class="p">,</span> 
+        <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+        <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:18:41-06:00"</span><span class="p">,</span> 
+        <span class="s">"state"</span><span class="p">:</span> <span class="s">"error"</span><span class="p">,</span> 
+        <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"scheduler"</span><span class="p">:</span> <span class="s">"immediate"</span><span class="p">,</span> 
+        <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"b8a37905-363f-11e1-adee-0019d21a40be"</span>
+      <span class="p">}</span>
+    <span class="p">],</span> 
+    <span class="s">"id"</span><span class="p">:</span> <span class="s">"c0520345-722c-4753-9bf0-96f3efd5a2c1"</span>
+  <span class="p">}</span>
+<span class="p">]</span>
+</pre></div><p>
 <br />
 </p>
+<hr />
+<h2 id="CancelAJob">Cancel A Job</h2>
+<p>
+<em>Cancel a waiting or running job.</em> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /jobs/&lt;id&gt;/cancel/ <br />
+<br />
+<strong>permission</strong>: UPDATE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 404 Not Found <br />
+<br />
+<strong>return</strong>: &lt;dict&gt; Cancel object <br />
+<br />
+<strong>sample response</strong>:
+</p>
+<div class="code"><pre><span class="p">{</span>
+  <span class="s">"cancelled"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"completed"</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-03T19:30:32Z"</span><span class="p">,</span> 
+      <span class="s">"exception"</span><span class="p">:</span> <span class="s">"('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+      <span class="s">"task_type"</span><span class="p">:</span> <span class="s">"AsyncTask"</span><span class="p">,</span> 
+      <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span><span class="p">,</span> 
+      <span class="s">"traceback"</span><span class="p">:</span> <span class="s">"RequestTimeout('b4f44c0e-c277-46e8-bccd-d8a98ed777e8', 0)"</span><span class="p">,</span> 
+      <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+      <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"task_history"</span><span class="p">,</span> 
+      <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:32-06:00"</span><span class="p">,</span> 
+      <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"atlantis"</span><span class="p">,</span> 
+        <span class="p">[</span>
+          <span class="s">"python-suds"</span>
+        <span class="p">]</span>
+      <span class="p">],</span> 
+      <span class="s">"task_string"</span><span class="p">:</span> <span class="s">"Task 66d7b070-3641-11e1-b151-0019d21a40be: ConsumerGroupApi.__installpackages(atlantis, ['python-suds'], )"</span><span class="p">,</span> 
+      <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+      <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:43-06:00"</span><span class="p">,</span> 
+      <span class="s">"state"</span><span class="p">:</span> <span class="s">"error"</span><span class="p">,</span> 
+      <span class="s">"result"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"kwargs"</span><span class="p">:</span> <span class="p">{},</span> 
+      <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"_id"</span><span class="p">:</span> <span class="s">"a03fdc50-3c75-4d26-a7ab-a1285ba640a9"</span><span class="p">,</span> 
+      <span class="s">"consecutive_failures"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> 
+      <span class="s">"id"</span><span class="p">:</span> <span class="s">"66d7b070-3641-11e1-b151-0019d21a40be"</span>
+    <span class="p">},</span> 
+    <span class="p">{</span>
+      <span class="s">"scheduled_time"</span><span class="p">:</span> <span class="s">"2012-01-03T19:30:32Z"</span><span class="p">,</span> 
+      <span class="s">"exception"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"task_type"</span><span class="p">:</span> <span class="s">"AsyncTask"</span><span class="p">,</span> 
+      <span class="s">"job_id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span><span class="p">,</span> 
+      <span class="s">"traceback"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"class_name"</span><span class="p">:</span> <span class="s">"ConsumerGroupApi"</span><span class="p">,</span> 
+      <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"task_history"</span><span class="p">,</span> 
+      <span class="s">"start_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:32-06:00"</span><span class="p">,</span> 
+      <span class="s">"args"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s">"jortel"</span><span class="p">,</span> 
+        <span class="p">[</span>
+          <span class="s">"python-suds"</span>
+        <span class="p">]</span>
+      <span class="p">],</span> 
+      <span class="s">"task_string"</span><span class="p">:</span> <span class="s">"Task 66f298b8-3641-11e1-b201-0019d21a40be: ConsumerGroupApi.__installpackages(jortel, ['python-suds'], )"</span><span class="p">,</span> 
+      <span class="s">"method_name"</span><span class="p">:</span> <span class="s">"__installpackages"</span><span class="p">,</span> 
+      <span class="s">"finish_time"</span><span class="p">:</span> <span class="s">"2012-01-03T13:30:48-06:00"</span><span class="p">,</span> 
+      <span class="s">"state"</span><span class="p">:</span> <span class="s">"finished"</span><span class="p">,</span> 
+      <span class="s">"result"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"reboot_scheduled"</span><span class="p">:</span> false<span class="p">,</span> 
+        <span class="s">"installed"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s">"python-suds-0.4.1-1.fc14.noarch"</span>
+        <span class="p">]</span>
+      <span class="p">},</span> 
+      <span class="s">"kwargs"</span><span class="p">:</span> <span class="p">{},</span> 
+      <span class="s">"progress"</span><span class="p">:</span> null<span class="p">,</span> 
+      <span class="s">"_id"</span><span class="p">:</span> <span class="s">"fff348d2-0ed1-4fb7-9d81-fc6a4a7a11da"</span><span class="p">,</span> 
+      <span class="s">"consecutive_failures"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> 
+      <span class="s">"id"</span><span class="p">:</span> <span class="s">"66f298b8-3641-11e1-b201-0019d21a40be"</span>
+    <span class="p">}</span>
+  <span class="p">],</span> 
+  <span class="s">"id"</span><span class="p">:</span> <span class="s">"bc4d0a35-6b94-44e3-a5e0-b41907b35031"</span>
+<span class="p">}</span>
+
+</pre></div><p>
+<br />
+</p>
+<hr />
 </div>
         
         
@@ -127,6 +425,9 @@
       
 
     </div>
+    <script type="text/javascript">
+        jQuery.loadStyleSheet("/pulp/pygments/trac.css", "text/css");
+    </script>
     
 <!-- BEGIN FOOTER -->
 </body>

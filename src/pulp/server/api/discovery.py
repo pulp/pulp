@@ -25,6 +25,8 @@ import BeautifulSoup
 import logging
 import unicodedata
 
+from pulp.common.util import encode_unicode
+
 log = logging.getLogger(__name__)
 
 class InvalidDiscoveryInput(Exception):
@@ -168,7 +170,7 @@ class BaseDiscovery(object):
         for item in matches:
             if not item.has_key('href'):
                 continue
-            link = urlparse.urlparse(item['href'])
+            link = urlparse.urlparse(encode_unicode(item['href']))
             proto, netloc, path, params, query, frag = link
             if not path or path == '/':
                 continue
@@ -217,7 +219,7 @@ class YumDiscovery(BaseDiscovery):
         self.url = check_url_trailing_slash(url)
         if ca or cert or key:
             self.setup_certificate(ca=ca, cert=cert, key=key, sslverify=sslverify)
-        proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
+        proto, netloc, path, params, query, frag = urlparse.urlparse(encode_unicode(self.url))
         if proto in ['http', 'https', 'ftp']:
             repourls = self._remote(progress_callback=progress_callback)
         elif proto in ['file']:
@@ -261,7 +263,7 @@ class YumDiscovery(BaseDiscovery):
         @return: list of matching filepath urls
         @rtype: list
         """
-        proto, netloc, path, params, query, frag = urlparse.urlparse(self.url)
+        proto, netloc, path, params, query, frag = urlparse.urlparse(encode_unicode(self.url))
         repourls = []
         for root, dirs, files in os.walk(path):
             for dir in dirs:
