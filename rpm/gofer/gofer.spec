@@ -242,6 +242,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Feb 27 2012 Jeff Ortel <jortel@redhat.com> 0.66-1
+- new package built with tito
+
 * Tue Feb 21 2012 Jeff Ortel <jortel@redhat.com> 0.66-1
 - Add DistGit releaser. (jortel@redhat.com)
 - Add deps: python-iniparse; python-hashlib (rhel5). (jortel@redhat.com)
