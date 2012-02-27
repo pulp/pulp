@@ -63,6 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Feb 27 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.5-1
+- Upgraded okaara from 1.0.4 to 1.0.5 (jason.dobies@redhat.com)
+
+* Mon Feb 27 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.5-1
 - Added remove section/command methods (jason.dobies@redhat.com)
 
 * Mon Feb 27 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.4-1
