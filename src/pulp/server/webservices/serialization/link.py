@@ -27,24 +27,24 @@ _LINK_OBJ_SKEL = {
 
 def link_obj(href):
     link = copy.copy(_LINK_OBJ_SKEL)
-    link['href'] = href
+    link['_href'] = href
     return link
 
 
 def current_link_obj():
     link = copy.copy(_LINK_OBJ_SKEL)
-    link['href'] = http.uri_path()
+    link['_href'] = http.uri_path()
     return link
 
 
 def child_link_obj(*path_elements):
     suffix = '/'.join(path_elements)
     link = copy.copy(_LINK_OBJ_SKEL)
-    link['href'] = http.extend_uri_path(suffix)
+    link['_href'] = http.extend_uri_path(suffix)
     return link
 
 
 def sibling_link_obj(*path_replacements):
     link = copy.copy(_LINK_OBJ_SKEL)
-    link['href'] = http.sub_uri_path(*path_replacements)
+    link['_href'] = http.sub_uri_path(*path_replacements)
     return link

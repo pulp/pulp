@@ -50,7 +50,7 @@ class ErrorHandlerMiddleware(object):
         try:
             return self.app(environ, start_response)
         except Exception:
-            e, tb = sys.exc_info()[1:]
+            t, e, tb = sys.exc_info()
             status = None
             error_obj = None
             record_exception_and_traceback = self.debug
@@ -68,13 +68,13 @@ class ErrorHandlerMiddleware(object):
                     record_exception_and_traceback = True
                 error_obj = serialization.error.http_error_obj(status, unicode(e).encode('utf-8'))
                 if record_exception_and_traceback:
-                    error_obj['exception'] = traceback.format_exception_only(type(e), e)
+                    error_obj['exception'] = traceback.format_exception_only(t, e)
                     error_obj['traceback'] = traceback.format_tb(tb)
             else:
-                _LOG.exception(_('Unhandled Exception'))
+                msg = _('Unhandled Exception')
+                _LOG.exception(msg)
                 status = httplib.INTERNAL_SERVER_ERROR
-                error_obj = serialization.error.exception_obj(e, tb)
-            error_obj['_href'] = environ['SCRIPT_NAME']
+                error_obj = serialization.error.exception_obj(e, tb, msg)
             serialized_error = json.dumps(error_obj)
             status_str = '%d %s' % (status, http_responses[status])
             self.headers['Content-Length'] = len(serialized_error)
