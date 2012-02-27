@@ -4,7 +4,7 @@
 
 Name:		    okaara-lib
 Version:        1.0.4
-Release:	    1%{?dist}
+Release:	    2%{?dist}
 Summary:	    Python command line utilities
 
 Group:		    Development/Tools
@@ -62,6 +62,9 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
+* Mon Feb 27 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.4-2
+- new package built with tito
+
 * Mon Feb 27 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.4-1
 - Added ThreadedSpinner class (jason.dobies@redhat.com)
 - Added message support to Spinner (jason.dobies@redhat.com)
