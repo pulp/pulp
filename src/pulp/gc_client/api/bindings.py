@@ -12,10 +12,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.gc_client.api.repository import *
-
+from pulp.gc_client.api.server_plugin import ServerPluginAPI
 
 class Bindings(object):
     def __init__(self, pulp_connection):
+
+        # Please keep the following in alphabetical order to ease reading
+
         self.repo = RepositoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
         self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
@@ -23,4 +26,4 @@ class Bindings(object):
         self.repo_actions = RepositoryActionsAPI(pulp_connection)
         self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
 
-        
+        self.server_plugins = ServerPluginAPI(pulp_connection)
