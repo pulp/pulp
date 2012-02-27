@@ -10,9 +10,3 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-from pulp.gc_client.framework.extensions import PulpCliSection
-
-def initialize(context):
-    section = PulpCliSection('section-not-python-module', 'Section Busted')
-    context.cli.add_section(section)

@@ -25,11 +25,14 @@ from pulp.gc_client.framework.core import PulpCli, PulpPrompt, ClientContext
 
 TEST_DIRS_ROOT = os.path.abspath(os.path.dirname(__file__)) + "/data/extensions_loader_tests/"
 
-# Contains 3 properly structured plugins, 2 of which contain the CLI init module
+# Contains 4 properly structured plugins, 3 of which contain the CLI init module
 VALID_SET = TEST_DIRS_ROOT + 'valid_set'
 
 # Contains 2 plugins, 1 of which loads correct and another that fails
 PARTIAL_FAIL_SET = TEST_DIRS_ROOT + 'partial_fail_set'
+
+# Contains 1 plugin which fails the initial import step
+PARTIAL_FAIL_SET_2 = TEST_DIRS_ROOT + 'partial_fail_set_2'
 
 # Not meant to be loaded as a base directory, each should be loaded individually
 # through _load_pack to verify the proper exception case is raised
@@ -63,6 +66,23 @@ class ExtensionLoaderTests(testutil.PulpTest):
         self.assertTrue(self.cli.root_section.find_subsection('section-1') is not None)
         self.assertTrue(self.cli.root_section.find_subsection('section-2') is not None)
 
+    def test_resolve_order(self):
+        """
+        Tests the ordering functionality using the valid_set directory extensions.
+        """
+
+        # Test
+        modules = loader._load_pack_modules(VALID_SET)
+        sorted_modules = loader._resolve_order(modules)
+
+        # Verify
+        self.assertEqual(4, len(sorted_modules))
+        self.assertEqual('ext3', sorted_modules[0].__name__)
+        self.assertEqual('ext1', sorted_modules[1].__name__)
+        self.assertEqual('ext4', sorted_modules[2].__name__)
+        self.assertEqual('ext2', sorted_modules[3].__name__)
+
+
     def test_load_extensions_bad_dir(self):
         """
         Tests loading extensions on a directory that doesn't exist.
@@ -74,59 +94,61 @@ class ExtensionLoaderTests(testutil.PulpTest):
             print(e) # for coverage
 
     def test_load_partial_fail_set_cli(self):
-        """
-        Tests loading the set of CLI extensions in the partial_fail_set directory.
-        The extensions within will load errors for various reasons. The final
-        extension pack in there (in the sense that it's loaded last) is valid
-        and this test is to ensure that despite all of the errors it is still
-        loaded.
-        """
-
         # Test
         try:
             loader.load_extensions(PARTIAL_FAIL_SET, self.context)
             self.fail('Exception expected')
         except loader.LoadFailed, e:
-            self.assertTrue(2, len(e.failed_packs))
+            self.assertEqual(1, len(e.failed_packs))
             self.assertTrue('init_exception' in e.failed_packs)
+
+    def test_load_partial_fail_set_2_cli(self):
+        # Test
+        try:
+            loader.load_extensions(PARTIAL_FAIL_SET_2, self.context)
+            self.fail('Exception expected')
+        except loader.LoadFailed, e:
+            self.assertEqual(1, len(e.failed_packs))
             self.assertTrue('not_python_module' in e.failed_packs)
-
-        # Verify
-        self.assertTrue(self.cli.root_section.find_subsection('section-z') is not None)
-
-    def test_load_failed_import(self):
-        """
-        Tests an extension pack where the import is unsuccessful.
-        """
-        self.assertRaises(loader.ImportFailed, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'failed_import', self.context)
-
-    def test_load_not_python_module(self):
-        """
-        Tests loading an extension that forgot to identify itself as a python module.
-        """
-        self.assertRaises(loader.ImportFailed, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'not_python_module', self.context)
+            print(e) # for coverage
 
     def test_load_no_init_module(self):
         """
         Tests loading an extension pack that doesn't contain the cli init module.
         """
+        if INDIVIDUAL_FAIL_DIR not in sys.path:
+            sys.path.append(INDIVIDUAL_FAIL_DIR)
+        mod = __import__('no_ui_hook')
+
         # Make sure it doesn't raise an exception
-        loader._load_pack(INDIVIDUAL_FAIL_DIR, 'no_ui_hook', self.context)
+        loader._load_pack(INDIVIDUAL_FAIL_DIR, mod, self.context)
 
     def test_load_initialize_error(self):
         """
         Tests loading an extension that raises an error during the initialize call.
         """
-        self.assertRaises(loader.InitError, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'init_error', self.context)
+        if INDIVIDUAL_FAIL_DIR not in sys.path:
+            sys.path.append(INDIVIDUAL_FAIL_DIR)
+        mod = __import__('init_error')
+
+        self.assertRaises(loader.InitError, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
 
     def test_load_no_init_function(self):
         """
         Tests loading an extension that doesn't have a properly defined UI hook.
         """
-        self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'no_init_function', self.context)
+        if INDIVIDUAL_FAIL_DIR not in sys.path:
+            sys.path.append(INDIVIDUAL_FAIL_DIR)
+        mod = __import__('no_init_function')
+
+        self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
 
     def test_load_invalid_config(self):
         """
         Tests loading an extension whose .conf file cannot be loaded.
         """
-        self.assertRaises(loader.InvalidExtensionConfig, loader._load_pack, INDIVIDUAL_FAIL_DIR, 'invalid_config', self.context)
+        if INDIVIDUAL_FAIL_DIR not in sys.path:
+            sys.path.append(INDIVIDUAL_FAIL_DIR)
+        mod = __import__('invalid_config')
+
+        self.assertRaises(loader.InvalidExtensionConfig, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
