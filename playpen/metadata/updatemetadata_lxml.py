@@ -1,9 +1,23 @@
-import gzip
+#!/usr/bin/env python
+#
+# Copyright (c) 2011 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU Lesser General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (LGPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of LGPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/lgpl-2.0.txt.
+#
+#
+
 import os
-import rpmUtils
-from lxml import etree
 import time
 import sys
+import rpmUtils
+from lxml import etree
 from createrepo import MetaDataGenerator, MetaDataConfig
 from createrepo import yumbased, utils
 from pulp.server.util import get_repomd_filetype_path
@@ -54,7 +68,8 @@ def add_primary(repo_dir, pkg_path):
     # update package count
     root.set('packages', str(len(new_et_children)))
     repo_et.write(primary_xml)
-    compute_gzip_xml(primary_xml)
+    primary_xml_gz = "%s.gz" % primary_xml
+    utils.compressFile(primary_xml, primary_xml_gz, 'gz')
     print "end time %s" % time.ctime()
 
 def remove_primary(repo_dir, pkg_path):
@@ -83,6 +98,9 @@ def remove_primary(repo_dir, pkg_path):
     root.set('packages', str(len(new_et_children)))
     repo_et.write(primary_xml)
     compute_gzip_xml(primary_xml)
+    primary_xml_gz = "%s.gz" % primary_xml
+    utils.compressFile(primary_xml, primary_xml_gz, 'gz')
+    print "end time %s" % time.ctime()
 
 def add_filelists(repo_dir, pkg_path):
     print "start Adding filelists %s" % time.ctime()
@@ -112,7 +130,8 @@ def add_filelists(repo_dir, pkg_path):
     root.set('packages', str(len(new_et_children)))
     filelist_xml = "%s/.repodata/filelists.xml" % repo_dir
     repo_et.write(filelist_xml)
-    compute_gzip_xml(filelist_xml)
+    filelist_xml_gz = "%s.gz" % filelist_xml
+    utils.compressFile(filelist_xml, filelist_xml_gz, 'gz')
     print "end time %s" % time.ctime()
 
 def remove_filelists(repo_dir, pkg_path):
@@ -141,6 +160,9 @@ def remove_filelists(repo_dir, pkg_path):
     filelist_xml = "%s/.repodata/filelists.xml" % repo_dir
     repo_et.write(filelist_xml)
     compute_gzip_xml(filelist_xml)
+    filelist_xml_gz = "%s.gz" % filelist_xml
+    utils.compressFile(filelist_xml, filelist_xml_gz, 'gz')
+    print "end time %s" % time.ctime()
 
 def add_otherdata(repo_dir, pkg_path):
     print "start Adding otherdata %s" % time.ctime()
@@ -169,9 +191,9 @@ def add_otherdata(repo_dir, pkg_path):
     root.set('packages', str(len(new_et_children)))
     other_xml = "%s/.repodata/other.xml" % repo_dir
     repo_et.write(other_xml)
-    compute_gzip_xml(other_xml)
+    other_xml_gz = "%s.gz" % other_xml
+    utils.compressFile(other_xml, other_xml_gz, 'gz')
     print "end time %s" % time.ctime()
-    return
 
 def remove_otherdata(repo_dir, pkg_path):
     ## Remove pkgs
@@ -200,18 +222,9 @@ def remove_otherdata(repo_dir, pkg_path):
     # update package count
     root.set('packages', str(len(new_et_children)))
     repo_et.write(other_xml)
-    compute_gzip_xml(other_xml)
+    other_xml_gz = "%s.gz" % other_xml
+    utils.compressFile(other_xml, other_xml_gz, 'gz')
     print "complete the xml to disk %s" % time.ctime()
-
-def compute_gzip_xml(xml):
-    gz_path_orig = "%s.gz" % xml
-    f_in = open(xml, 'rb')
-    f_out = gzip.open(gz_path_orig, 'wb')
-    try:
-        f_out.writelines(f_in)
-    finally:
-        f_in.close()
-        f_out.close()
 
 def parse_args():
     from optparse import OptionParser
