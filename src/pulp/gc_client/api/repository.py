@@ -117,14 +117,14 @@ class RepositoryHistoryAPI(PulpAPI):
     """
     def __init__(self, pulp_connection):
         super(RepositoryHistoryAPI, self).__init__(pulp_connection)
-        self.base_path = "/v2/repositories/%s/"
+        self.base_path = "/v2/repositories/%s/history/"
 
     def sync_history(self, repo_id):
-        path = self.base_path % repo_id + "/sync_history/"
+        path = self.base_path % repo_id + "/sync/"
         return self.server.GET(path)
 
     def publish_history(self, repo_id, distributor_id):
-        path = self.base_path % repo_id + "/publish_history/" + "%s/" % distributor_id
+        path = self.base_path % repo_id + "/publish/" + "%s/" % distributor_id
         return self.server.GET(path)
 
 class RepositoryActionsAPI(PulpAPI):
