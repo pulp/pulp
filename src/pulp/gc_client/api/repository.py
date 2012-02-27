@@ -18,7 +18,8 @@ class RepositoryAPI(PulpAPI):
     """
     Connection class to access repo specific calls
     """
-    def __init__(self):
+    def __init__(self, pulp_connection):
+        super(RepositoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/"
         
     def repositories(self):
@@ -50,7 +51,8 @@ class RepositoryImporterAPI(PulpAPI):
     """
     Connection class to access repo importer specific calls
     """
-    def __init__(self):
+    def __init__(self, pulp_connection):
+        super(RepositoryImporterAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/importers/"
     
     def importers(self, repo_id):
@@ -80,7 +82,8 @@ class RepositoryDistributorAPI(PulpAPI):
     """
     Connection class to access repo distributor specific calls
     """
-    def __init__(self):
+    def __init__(self, pulp_connection):
+        super(RepositoryDistributorAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/distributors/"
     
     def distributors(self, repo_id):
@@ -112,7 +115,8 @@ class RepositoryHistoryAPI(PulpAPI):
     """
     Connection class to access repo history specific calls
     """
-    def __init__(self):
+    def __init__(self, pulp_connection):
+        super(RepositoryHistoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/"
 
     def sync_history(self, repo_id):
@@ -127,7 +131,8 @@ class RepositoryActionsAPI(PulpAPI):
     """
     Connection class to access repo actions specific calls
     """
-    def __init__(self):
+    def __init__(self, pulp_connection):
+        super(RepositoryActionsAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/actions/"
 
     def sync(self, repo_id, override_config):
@@ -150,7 +155,8 @@ class RepositoryUnitSearchAPI(PulpAPI):
     """
     Connection class to access repo search specific calls
     """
-    def __init__(self):
+    def __init__(self, pulp_connection):
+        super(RepositoryUnitSearchAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/search/units/"
 
     def search(self, repo_id, query):

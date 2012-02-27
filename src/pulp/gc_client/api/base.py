@@ -11,17 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.gc_client.api import server
-
 
 class PulpAPI(object):
     """
-    Base api class that allows an internal server object to be set after
-    instantiation.
-    @ivar server: L{Server} instance
+    Base api class that allows an internal server object to be set at instantiation
+    @ivar server: L{PulpConnection} instance
     """
-
-    @property
-    def server(self):
-        return server.active_server
+    def __init__(self, pulp_connection):
+        self.server = pulp_connection
 

@@ -15,7 +15,6 @@ import base64
 import httplib
 import locale
 import os
-import sys
 import urllib
 from gettext import gettext as _
 
@@ -27,16 +26,6 @@ except ImportError:
 from M2Crypto import SSL, httpslib
 
 from pulp.client.lib.logutil import getLogger, getResponseLogger
-
-# current active server -------------------------------------------------------
-
-active_server = None
-
-def set_active_server(server):
-    global active_server
-    assert isinstance(server, PulpConnection)
-    active_server = server
-    
 
 # exception classes to handle server request exceptions
 
