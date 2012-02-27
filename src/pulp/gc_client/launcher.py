@@ -15,27 +15,20 @@
 Entry point for the admin client.
 """
 
-from ConfigParser import SafeConfigParser
+from   ConfigParser import SafeConfigParser
+from   gettext import gettext as _
 import logging
 import logging.handlers
-from optparse import OptionParser
+from   optparse import OptionParser
 import os
 import sys
 
 from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, WIDTH_TERMINAL, ClientContext
 import pulp.gc_client.framework.loader as extensions_loader
 
-# -- constants ----------------------------------------------------------------
-
-CONFIG_FILE = '/etc/pulp/admin/gc_admin.conf'
-
-USER_DIR = '~/.pulp'
-USER_LOG_FILE = 'admin.log'
-USER_CONFIG = 'gc_admin.conf'
-
 # -- configuration and logging ------------------------------------------------
 
-def _load_configuration(filename):
+def _load_configuration(filename, override_filename):
     """
     @param filename: absolute path to the config file
     @type  filename: str
@@ -43,12 +36,10 @@ def _load_configuration(filename):
     @return: configuration object
     @rtype:  ConfigParser
     """
-    # Calculate the override config filename
-    full_user_dir = os.path.expanduser(USER_DIR)
-    override_config = os.path.join(full_user_dir, USER_CONFIG)
 
+    # Calculate the override config filename
     config = SafeConfigParser()
-    config.read([filename, override_config])
+    config.read([filename, override_filename])
     return config
 
 def _initialize_logging(config, debug=False):
@@ -56,12 +47,8 @@ def _initialize_logging(config, debug=False):
     @return: configured logger
     """
 
-    # Make sure the directory exists in the user's home
-    full_log_dir = os.path.expanduser(USER_DIR)
-    if not os.path.exists(full_log_dir):
-        os.makedirs(full_log_dir)
-
-    filename = os.path.join(full_log_dir, USER_LOG_FILE)
+    filename = config.get('logging', 'filename')
+    filename = os.path.expanduser(filename)
 
     handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -73,11 +60,6 @@ def _initialize_logging(config, debug=False):
         pulp_log.setLevel(logging.DEBUG)
     else:
         pulp_log.setLevel(logging.INFO)
-
-    # Add the log file name to config so the rest of the app can access it for
-    # output messages to the user
-    config.add_section('logging')
-    config.set('logging', 'filename', filename)
 
     return pulp_log
 
@@ -113,20 +95,26 @@ def _create_shell(context):
 
 # -- main execution -----------------------------------------------------------
 
-def main():
+def main(config_filename, override_config_filename=None):
 
     # Command line argument handling
     parser = OptionParser()
     parser.disable_interspersed_args()
+    parser.add_option('-u', '--username', dest='username', action='store', default=None,
+                      help=_('credentials for the Pulp server; if specified will bypass the stored certificate'))
+    parser.add_option('-p', '--password', dest='password', action='store', default=None,
+                      help=_('credentials for the Pulp server; must be specified with --username'))
     parser.add_option('--debug', dest='debug', action='store_true', default='False',
-                      help='enables debug logging')
-    parser.add_option('--config', dest='config', default=CONFIG_FILE,
-                      help='absolute path to the configuration file; defaults to %s' % CONFIG_FILE)
+                      help=_('enables debug logging'))
+    parser.add_option('--config', dest='config', default=None,
+                      help=_('absolute path to the configuration file; defaults to %(f)s' % {'f' : config_filename}))
 
     options, args = parser.parse_args()
 
     # Configuration and Logging
-    config = _load_configuration(filename=options.config)
+    if options.config is not None:
+        config_filename = options.config
+    config = _load_configuration(config_filename, override_config_filename)
     logger = _initialize_logging(config, debug=options.debug)
 
     # REST Bindings
@@ -141,12 +129,13 @@ def main():
     # Assemble the client context
 
     # Load extensions into the UI in the context
-    extensions_dir = config.get('general', 'extensions_dir')
+    extensions_dir = config.get('filesystem', 'extensions_dir')
+    extensions_dir = os.path.expanduser(extensions_dir)
     try:
         extensions_loader.load_extensions(extensions_dir, context)
     except extensions_loader.LoadFailed, e:
-        prompt.write('The following extensions failed to load: %s' % ', '.join(e.failed_packs))
-        prompt.write('More information on the failures can be found in %s' % config.get('logging', 'filename'))
+        prompt.write(_('The following extensions failed to load: %(f)s' % {'f' : ', '.join(e.failed_packs)}))
+        prompt.write(_('More information on the failures can be found in %(l)s' % {'l' : config.get('logging', 'filename')}))
         return 1
 
     # Launch the appropriate UI (add in shell support here later)
