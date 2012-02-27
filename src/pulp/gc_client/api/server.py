@@ -36,14 +36,18 @@ class RequestException(Exception):
     """
     def __init__(self, response_body):
         Exception.__init__(self)
-        self.href = response_body['href']
+        self._href = response_body['_href']
+        self.http_request_method = response_body['http_request_method']
         self.http_status = response_body['http_status']
         self.error_message = response_body['error_message']
         self.exception = response_body['exception']
         self.traceback = response_body['traceback']
         
     def __str__(self):
-        return _('RequestException: %s - %s' % (self.http_status, self.error_message))
+        return _('RequestException: %s request on %s failed with %s - %s\n' % (self.http_request_method, 
+                                                                               self._href, 
+                                                                               self.http_status, 
+                                                                               self.error_message))
             
 
 # Response code = 400
