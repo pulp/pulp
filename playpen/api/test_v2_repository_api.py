@@ -17,26 +17,26 @@ class RepoBindingsTest(object):
         
     def clean(self):
         print "Cleaning all repositories..."
-        for repo in self.bindings.repo_api.repositories().response_body:
-            self.bindings.repo_api.delete(repo['id'])
+        for repo in self.bindings.repo.repositories().response_body:
+            self.bindings.repo.delete(repo['id'])
         
     def test_list(self):
         repoid1 = "test-repo1"
         repoid2 = "test-repo2"
-        repo1 = self.bindings.repo_api.create(id=repoid1, display_name=repoid1, description=repoid1, notes={})
-        repo2 = self.bindings.repo_api.create(id=repoid2, display_name=repoid2, description=repoid2, notes={})
+        repo1 = self.bindings.repo.create(id=repoid1, display_name=repoid1, description=repoid1, notes={})
+        repo2 = self.bindings.repo.create(id=repoid2, display_name=repoid2, description=repoid2, notes={})
         assert(repo1 is not None)
         assert(repo2 is not None)
         print "listing all repositories..."
-        repos = self.bindings.repo_api.repositories().response_body
+        repos = self.bindings.repo.repositories().response_body
         assert(len(repos)==2)
         
     def test_create(self, repoid):
         print "Will create repository [%s]..." % repoid
-        repo = self.bindings.repo_api.create(id=repoid, display_name=repoid, description=repoid, notes={}).response_body
+        repo = self.bindings.repo.create(id=repoid, display_name=repoid, description=repoid, notes={}).response_body
         assert(repo is not None)
         try:
-            self.bindings.repo_api.create(id=repoid, display_name=repoid, description=repoid, notes={})
+            self.bindings.repo.create(id=repoid, display_name=repoid, description=repoid, notes={})
         except DuplicateResourceException, e:
             print e
         
