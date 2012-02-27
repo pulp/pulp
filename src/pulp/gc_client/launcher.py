@@ -12,7 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Entry point for the admin client.
+Entry point for both the admin and consumer clients. The config file location
+is passed in and its contents are used to drive the rest of the client execution.
 """
 
 from   ConfigParser import SafeConfigParser
@@ -21,10 +22,11 @@ import logging
 import logging.handlers
 from   optparse import OptionParser
 import os
-import sys
 
-from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, WIDTH_TERMINAL, ClientContext
+from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, ClientContext, WIDTH_TERMINAL
 import pulp.gc_client.framework.loader as extensions_loader
+from   pulp.gc_client.api.bindings import Bindings
+from   pulp.gc_client.api.server import PulpConnection
 
 # -- configuration and logging ------------------------------------------------
 
@@ -63,6 +65,29 @@ def _initialize_logging(config, debug=False):
 
     return pulp_log
 
+# -- server connection --------------------------------------------------------
+
+def _create_bindings(config, username, password):
+    """
+    @return: bindings with a fully configured Pulp connection
+    """
+
+    # Extract all of the necessary values
+    hostname = config.get('server', 'host')
+    port = config.getint('server', 'port')
+
+    cert_dir = config.get('filesystem', 'id_cert_dir')
+    cert_name = config.get('filesystem', 'id_cert_filename')
+
+    cert_dir = os.path.expanduser(cert_dir) # this will likely be in a user directory
+    cert_filename = os.path.join(cert_dir, cert_name)
+
+    # Create the connection and bindings
+    conn = PulpConnection(hostname, port, username=username, password=password, certfile=cert_filename)
+    bindings = Bindings(conn)
+
+    return bindings
+
 # -- ui components initialization ---------------------------------------------
 
 def _create_prompt(config):
@@ -96,6 +121,16 @@ def _create_shell(context):
 # -- main execution -----------------------------------------------------------
 
 def main(config_filename, override_config_filename=None):
+    """
+    Entry point into the launcher. Any extra necessary values will be pulled
+    from the given configuration files.
+
+    @param config_filename: full path to the config file
+    @param override_config_filename: full path; values will override those in the
+           base config
+
+    @return: exit code suitable to return to the shell launching the client
+    """
 
     # Command line argument handling
     parser = OptionParser()
@@ -118,15 +153,13 @@ def main(config_filename, override_config_filename=None):
     logger = _initialize_logging(config, debug=options.debug)
 
     # REST Bindings
-    server = fake_bindings()
+    server = _create_bindings(config, options.username, options.password)
 
-    # UI Components (eventually this will decide between cli and shell)
+    # Client context
     prompt = _create_prompt(config)
     context = ClientContext(server, config, logger, prompt)
     cli = _create_cli(context)
     context.cli = cli
-
-    # Assemble the client context
 
     # Load extensions into the UI in the context
     extensions_dir = config.get('filesystem', 'extensions_dir')
@@ -136,37 +169,9 @@ def main(config_filename, override_config_filename=None):
     except extensions_loader.LoadFailed, e:
         prompt.write(_('The following extensions failed to load: %(f)s' % {'f' : ', '.join(e.failed_packs)}))
         prompt.write(_('More information on the failures can be found in %(l)s' % {'l' : config.get('logging', 'filename')}))
-        return 1
+        return os.EX_OSFILE
 
     # Launch the appropriate UI (add in shell support here later)
     code = cli.run(args)
 
     return code
-
-def fake_bindings():
-
-    class RepoBindings:
-        def list(self):
-            repos = []
-
-            for i in range(0, 3):
-                r = {
-                    'id' : 'repo-%d' % i,
-                    'name' : 'Repo %d' % i,
-                    'description' : 'Fake repository #%d' % i,
-                }
-                repos.append(r)
-
-            return repos
-
-    class Bindings:
-        def __init__(self):
-            self.repo = RepoBindings()
-
-        def repo(self):
-            return self.repo
-
-    return Bindings()
-
-if __name__ == '__main__':
-    sys.exit(main())
