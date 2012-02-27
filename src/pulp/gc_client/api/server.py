@@ -235,8 +235,10 @@ class PulpConnection(object):
                 
         if response_code >= 300:
             self.handle_exceptions(response_code, response_body)
-        else:
+        elif response_code == 200:
             return Response(response_code, response_body)
+        elif response_code == 201:
+            return AsyncResponse(response_code, response_body)
 
     # Raise appropriate exceptions based on response code
 
