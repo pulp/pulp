@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import httplib
+
 # base exception class ---------------------------------------------------------
 
 class PulpException(Exception):
@@ -19,12 +21,13 @@ class PulpException(Exception):
 
     Provides base class __unicode__ and __str__ implementations
     """
+    http_status_code = httplib.INTERNAL_SERVER_ERROR
 
     def __unicode__(self):
         # NOTE this is the method that derived classes should override in order
         # to create custom messages
         class_name = unicode(self.__class__.__name__)
-        return u'%s: %s' % (class_name, u', '.join(unicode(a) for a in self.args))
+        return u'%s: %s' % (class_name, u', '.join(unicode(a, 'utf-8') for a in self.args))
 
     def __str__(self):
         u = unicode(self)
@@ -57,7 +60,7 @@ class MissingResource(PulpExecutionException):
     Base class for exceptions raised due to requesting a resource that does not
     exits.
     """
-    pass
+    http_status_code = httplib.NOT_FOUND
 
 
 class ConflictingOperation(PulpExecutionException):
@@ -65,7 +68,7 @@ class ConflictingOperation(PulpExecutionException):
     Base class for exceptions raised when an operation cannot be completed due
     to another operation already in progress.
     """
-    pass
+    http_status_code = httplib.CONFLICT
 
 
 class OperationFailed(PulpExecutionException):
@@ -82,7 +85,7 @@ class PulpDataException(PulpException):
 
     This should include things like invalid, missing or superfluous data.
     """
-    pass
+    http_status_code = httplib.BAD_REQUEST
 
 
 class InvalidType(PulpDataException):
@@ -117,4 +120,5 @@ class DuplicateResource(PulpDataException):
     """
     Bass class of exceptions raised due to duplicate resource ids.
     """
-    pass
+    http_status_code = httplib.CONFLICT
+
