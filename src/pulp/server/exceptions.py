@@ -44,18 +44,33 @@ class PulpExecutionException(PulpException):
 
 
 class InvalidConfiguration(PulpExecutionException):
+    """
+    Base class for exceptions raised with invalid or unsupported configuration
+    values are encountered.
+    """
     pass
 
 
 class MissingResource(PulpExecutionException):
+    """"
+    Base class for exceptions raised due to requesting a resource that does not
+    exits.
+    """
     pass
 
 
 class ConflictingOperation(PulpExecutionException):
+    """
+    Base class for exceptions raised when an operation cannot be completed due
+    to another operation already in progress.
+    """
     pass
 
 
 class OperationFailed(PulpExecutionException):
+    """
+    Base class for exceptions raise when an operation fails at runtime.
+    """
     pass
 
 # data exceptions --------------------------------------------------------------
@@ -70,20 +85,35 @@ class PulpDataException(PulpException):
 
 
 class InvalidType(PulpDataException):
+    """
+    Base class of exceptions raised due to an unknown or malformed type.
+    """
     pass
 
 
 class InvalidValue(PulpDataException):
+    """
+    Base class of exceptions raised due invalid data values.
+    """
     pass
 
 
 class MissingData(PulpDataException):
+    """
+    Base class of exceptions raised due to missing required data.
+    """
     pass
 
 
 class SuperfluousData(PulpDataException):
+    """
+    Base class of exceptions raised due to extra unknown data.
+    """
     pass
 
 
 class DuplicateResource(PulpDataException):
+    """
+    Bass class of exceptions raised due to duplicate resource ids.
+    """
     pass
