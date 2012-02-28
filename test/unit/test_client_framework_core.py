@@ -204,7 +204,7 @@ class RenderTests(unittest.TestCase):
         p = core.PulpPrompt(record_tags=True)
         s = p.create_spinner()
         for i in range(0, 10):
-            s.spin()
+            s.next()
 
         # Verify
         self.assertEqual(10, len(p.get_write_tags()))
