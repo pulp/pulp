@@ -43,6 +43,25 @@ class TaskResource(JSONController):
     def DELETE(self, task_id):
         pass
 
+# queued call controllers ------------------------------------------------------
+
+class QueuedCallCollection(JSONController):
+
+    @auth_required(authorization.READ)
+    def GET(self):
+        pass
+
+
+class QueuedCallResource(JSONController):
+
+    @auth_required(authorization.READ)
+    def GET(self, task_id):
+        pass
+
+    @auth_required(authorization.DELETE)
+    def DELETE(self, task_id):
+        pass
+
 # job controllers --------------------------------------------------------------
 
 class JobCollection(JSONController):
@@ -71,6 +90,11 @@ TASK_URLS = (
 
 task_application = web.application(TASK_URLS, globals())
 
+
+QUEUED_CALL_URLS = (
+    '/', QueuedCallCollection,
+    '/([^/]+)/', QueuedCallResource,
+)
 
 JOB_URLS = (
     '/', JobCollection,
