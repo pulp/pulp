@@ -17,10 +17,10 @@ Handles calls to the server that query the plugin and type capabilities.
 
 from pulp.gc_client.api.base import PulpAPI
 
-class ServerPluginAPI(PulpAPI):
+class ServerInfoAPI(PulpAPI):
     def __init__(self, pulp_connection):
-        super(ServerPluginAPI, self).__init__(pulp_connection)
-        self.base_path = '/v2/plugins'
+        super(ServerInfoAPI, self).__init__(pulp_connection)
+        self.base_path = 'v2/plugins/'
 
     def get_types(self):
         """
@@ -50,4 +50,13 @@ class ServerPluginAPI(PulpAPI):
         @return: Response
         """
         path = self.base_path + 'distributors/'
+        return self.server.GET(path)
+
+    def ping(self):
+        """
+        Retrieves basic status information from the server.
+
+        @return: Response
+        """
+        path = '/v2/services/status/'
         return self.server.GET(path)

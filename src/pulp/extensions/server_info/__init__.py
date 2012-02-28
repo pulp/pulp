@@ -10,26 +10,3 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-"""
-Contains components for plugging into the client extension framework.
-"""
-
-import os
-
-from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand
-
-def initialize(context):
-
-    # To be implemented soon
-
-    pass
-
-# -- cli components -----------------------------------------------------------
-
-# -- shell components ---------------------------------------------------------
-
-# To be added when shell support exists
-
-# -- functionality logic ------------------------------------------------------
-
