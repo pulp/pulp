@@ -11,14 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from gettext import gettext as _
-
 # base exception class ---------------------------------------------------------
 
 class PulpException(Exception):
     """
     Base exception class for Pulp.
+
+    Provides base class __unicode__ and __str__ implementations
     """
+
     def __unicode__(self):
         # NOTE this is the method that derived classes should override in order
         # to create custom messages
