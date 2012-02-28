@@ -20,6 +20,8 @@ class PulpException(Exception):
     Base exception class for Pulp.
     """
     def __unicode__(self):
+        # NOTE this is the method that derived classes should override in order
+        # to create custom messages
         class_name = unicode(self.__class__.__name__)
         return u'%s: %s' % (class_name, u', '.join(unicode(a) for a in self.args))
 
