@@ -20,6 +20,7 @@ further subclassed by extensions.
 """
 
 import math
+import os
 import sys
 
 from   okaara.cli import Cli
@@ -220,10 +221,6 @@ class PulpPrompt(Prompt):
 
         all_keys = items[0].keys()
 
-        # Generate template
-        max_key_length = reduce(lambda x, y: max(x, len(y)), all_keys, 0) + 1 # +1 for the : appended later
-        line_template = (' ' * indent) + '%-' + str(max_key_length) + 's' + (' ' * spaces_between_cols) + '%s'
-
         # If no filters were specified, consider the filter to be all keys. This
         # will make later calculations a ton easier.
         if filters is None:
@@ -249,11 +246,40 @@ class PulpPrompt(Prompt):
             # Assemble the pieces: ordered keys + not ordered keys
             ordered_keys = order + sorted(not_ordered)
 
+        # Generate a list of tuples of key to pretty-formatted key
+        ordered_formatted_keys = []
+        for k in ordered_keys:
+            formatted_key = None
+
+            # Don't apply the fancy _ stripping logic to values that start with _
+            # These values probably shouldn't be in the returned document, but
+            # let's not rely on that.
+            if k.startswith('_'):
+                formatted_key = k
+            else:
+                for part in k.split('_'):
+                    part = str(part)
+                    if formatted_key is None:
+                        formatted_key = part.capitalize()
+                    else:
+                        formatted_key += ' '
+                        formatted_key += part.capitalize()
+            ordered_formatted_keys.append((k, formatted_key))
+
+        # Generate template using the formatted key values for proper length checking
+        max_key_length = reduce(lambda x, y: max(x, len(y)), [o[1] for o in ordered_formatted_keys], 0) + 1 # +1 for the : appended later
+        line_template = (' ' * indent) + '%-' + str(max_key_length) + 's' + (' ' * spaces_between_cols) + '%s'
+
         # Print each item
         for i in filtered_items:
-            for k in ordered_keys:
+            for k, formatted_k in ordered_formatted_keys:
                 v = i[k]
-                line = line_template % (str(k).capitalize() + ':', str(v))
+
+                # If the value is a list, pretty it up
+                if isinstance(v, (tuple, list)):
+                    v = ', '.join(v)
+
+                line = line_template % (formatted_k + ':', str(v))
                 self.write(line, tag=TAG_DOCUMENT)
             self.render_spacer()
 
@@ -313,12 +339,12 @@ class PulpCli(Cli):
     def run(self, args):
         try:
             Cli.run(self, args)
-            return 0
+            return os.EX_OK
         except Exception, e:
             self.context.logger.exception('An error occurred during CLI execution')
             log_file = self.context.client_config.get('logging', 'filename')
             self.prompt.render_failure_message('An unexpected error has occurred. More information can be found in %s' % log_file)
-            return 1
+            return os.EX_SOFTWARE
 
 class ClientContext:
 
@@ -332,25 +358,4 @@ class ClientContext:
 
         self.client_config = client_config
         self.extension_config = extension_config
-
-    def server(self):
-        return self.server
-
-    def client_config(self):
-        return self.client_config
-
-    def extension_config(self):
-        return self.extension_config
-
-    def logger(self):
-        return self.logger
-
-    def prompt(self):
-        return self.prompt
-
-    def cli(self):
-        return self.cli
-
-    def shell(self):
-        return self.shell
 
