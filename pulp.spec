@@ -504,6 +504,21 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Feb 28 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-4
+- bump release for build. (jortel@redhat.com)
+- Automatic commit of package [okaara-lib] minor release [1.0.5-1].
+  (jason.dobies@redhat.com)
+- Upgraded okaara from 1.0.4 to 1.0.5 (jason.dobies@redhat.com)
+- Automatic commit of package [okaara-lib] minor release [1.0.4-2].
+  (jason.dobies@redhat.com)
+- Initial inclusion of okaara for building (jason.dobies@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.139-1].
+  (jortel@redhat.com)
+- rel-eng: add grinder under rpm/. (jortel@redhat.com)
+- Automatic commit of package [gofer] minor release [0.66-1].
+  (jortel@redhat.com)
+- rel-eng: add gofer under rpm/. (jortel@redhat.com)
+
 * Tue Feb 28 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-3
 - bump release for build. (jortel@redhat.com)
 - Require grinder 0.139 (jmatthews@redhat.com)
