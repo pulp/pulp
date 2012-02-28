@@ -155,6 +155,14 @@ class PulpConnection(object):
 
         self.__certfile = None
 
+        # set credentials or check if credentials are already set
+        if username and password:
+            self.set_basic_auth_credentials(username, password)
+        elif certfile:
+            self.set_ssl_credentials(certfile)
+        else:
+            pass
+
         if connection:
             self.connection = connection
         else:                
@@ -164,14 +172,6 @@ class PulpConnection(object):
             self.server_wrapper = server_wrapper
         else:
             self.server_wrapper = ServerWrapper(self.connection)
-
-        # set credentials or check if credentials are already set
-        if username and password:
-            self.set_basic_auth_credentials(username, password)
-        elif certfile:
-            self.set_ssl_credentials(certfile)
-        else:
-            pass
 
     # protected server connection method -------------------------------------
 
@@ -184,10 +184,8 @@ class PulpConnection(object):
         ssl_context.set_session_timeout(self.timeout)
         ssl_context.load_cert(self.__certfile)
 
-        self.connection = httpslib.HTTPSConnection(self.host,
-                                        self.port,
-                                        ssl_context=ssl_context)
-
+        connection = httpslib.HTTPSConnection(self.host, self.port, ssl_context=ssl_context)
+        return connection
 
     # protected request utilities ---------------------------------------------
 
