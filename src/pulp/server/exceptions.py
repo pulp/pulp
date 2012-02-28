@@ -20,7 +20,12 @@ class PulpException(Exception):
     Base exception class for Pulp.
     """
     def __unicode__(self):
-        return u'Pulp exception: %s' % u', '.join(unicode(a) for a in self.args)
+        class_name = unicode(self.__class__.__name__)
+        return u'%s: %s' % (class_name, u', '.join(unicode(a) for a in self.args))
+
+    def __str__(self):
+        u = unicode(self)
+        return u.encode('utf-8')
 
 
 # execution exceptions ---------------------------------------------------------
