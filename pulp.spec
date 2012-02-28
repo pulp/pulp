@@ -187,7 +187,7 @@ BuildRequires:  hardlink
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
 %endif
-Requires(post): /usr/sbin/semodule, /sbin/fixfiles
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
 Requires(postun): /usr/sbin/semodule
 
 %description    selinux-server
