@@ -139,7 +139,7 @@ def main(config_filename, override_config_filename=None):
                       help=_('credentials for the Pulp server; if specified will bypass the stored certificate'))
     parser.add_option('-p', '--password', dest='password', action='store', default=None,
                       help=_('credentials for the Pulp server; must be specified with --username'))
-    parser.add_option('--debug', dest='debug', action='store_true', default='False',
+    parser.add_option('--debug', dest='debug', action='store_true', default=False,
                       help=_('enables debug logging'))
     parser.add_option('--config', dest='config', default=None,
                       help=_('absolute path to the configuration file; defaults to %(f)s' % {'f' : config_filename}))
