@@ -11,16 +11,24 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from gettext import gettext as _
-
 # base exception class ---------------------------------------------------------
 
 class PulpException(Exception):
     """
     Base exception class for Pulp.
+
+    Provides base class __unicode__ and __str__ implementations
     """
+
     def __unicode__(self):
-        return u'Pulp exception: %s' % u', '.join(unicode(a) for a in self.args)
+        # NOTE this is the method that derived classes should override in order
+        # to create custom messages
+        class_name = unicode(self.__class__.__name__)
+        return u'%s: %s' % (class_name, u', '.join(unicode(a) for a in self.args))
+
+    def __str__(self):
+        u = unicode(self)
+        return u.encode('utf-8')
 
 
 # execution exceptions ---------------------------------------------------------
@@ -37,18 +45,33 @@ class PulpExecutionException(PulpException):
 
 
 class InvalidConfiguration(PulpExecutionException):
+    """
+    Base class for exceptions raised with invalid or unsupported configuration
+    values are encountered.
+    """
     pass
 
 
 class MissingResource(PulpExecutionException):
+    """"
+    Base class for exceptions raised due to requesting a resource that does not
+    exits.
+    """
     pass
 
 
 class ConflictingOperation(PulpExecutionException):
+    """
+    Base class for exceptions raised when an operation cannot be completed due
+    to another operation already in progress.
+    """
     pass
 
 
 class OperationFailed(PulpExecutionException):
+    """
+    Base class for exceptions raise when an operation fails at runtime.
+    """
     pass
 
 # data exceptions --------------------------------------------------------------
@@ -63,20 +86,35 @@ class PulpDataException(PulpException):
 
 
 class InvalidType(PulpDataException):
+    """
+    Base class of exceptions raised due to an unknown or malformed type.
+    """
     pass
 
 
 class InvalidValue(PulpDataException):
+    """
+    Base class of exceptions raised due invalid data values.
+    """
     pass
 
 
 class MissingData(PulpDataException):
+    """
+    Base class of exceptions raised due to missing required data.
+    """
     pass
 
 
 class SuperfluousData(PulpDataException):
+    """
+    Base class of exceptions raised due to extra unknown data.
+    """
     pass
 
 
 class DuplicateResource(PulpDataException):
+    """
+    Bass class of exceptions raised due to duplicate resource ids.
+    """
     pass

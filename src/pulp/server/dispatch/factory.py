@@ -28,7 +28,7 @@ _TASK_QUEUE = None
 def _initialize_coordinator():
     global _COORDINATOR
     assert _COORDINATOR is None
-    assert _TASK_QUEUE is not None
+    assert isinstance(_TASK_QUEUE, TaskQueue)
     task_wait_sleep_interval = 0.5
     _COORDINATOR = Coordinator(_TASK_QUEUE, task_wait_sleep_interval)
 
@@ -36,7 +36,7 @@ def _initialize_coordinator():
 def _initialize_scheduler():
     global _SCHEDULER
     assert _SCHEDULER is None
-    assert _COORDINATOR is not None
+    assert isinstance(_COORDINATOR, Coordinator)
     dispatch_interval = 30 # can make this configurable
     _SCHEDULER = Scheduler(_COORDINATOR, dispatch_interval)
 
@@ -59,10 +59,10 @@ def initialize():
 # factory functions ------------------------------------------------------------
 
 def get_coordinator():
-    assert _COORDINATOR is not None
+    assert isinstance(_COORDINATOR, Coordinator)
     return _COORDINATOR
 
 
 def get_scheduler():
-    assert _SCHEDULER is not None
+    assert isinstance(_SCHEDULER, Scheduler)
     return _SCHEDULER

@@ -811,7 +811,7 @@ class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
             self.add_success_result('sync-test', i)
 
         # Test
-        status, body = self.get('/v2/repositories/sync-test/sync_history/')
+        status, body = self.get('/v2/repositories/sync-test/history/sync/')
 
         # Verify
         self.assertEqual(200, status)
@@ -826,7 +826,7 @@ class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
         self.repo_manager.create_repo('boring')
 
         # Test
-        status, body = self.get('/v2/repositories/boring/sync_history/')
+        status, body = self.get('/v2/repositories/boring/history/sync/')
 
         # Verify
         self.assertEqual(200, status)
@@ -838,7 +838,7 @@ class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
         """
 
         # Test
-        status, body = self.get('/v2/repositories/no/sync_history/')
+        status, body = self.get('/v2/repositories/no/history/sync/')
 
         # Verify
         self.assertEqual(404, status)
@@ -853,7 +853,7 @@ class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
         self.add_success_result('sync-test', 0)
 
         # Test
-        status, body = self.get('/v2/repositories/sync-test/sync_history/?limit=unparsable')
+        status, body = self.get('/v2/repositories/sync-test/history/sync/?limit=unparsable')
 
         # Verify
         self.assertEqual(400, status)
@@ -899,7 +899,7 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
             self._add_success_result('pub-test', 'dist-1', i)
 
         # Test
-        status, body = self.get('/v2/repositories/pub-test/publish_history/dist-1/')
+        status, body = self.get('/v2/repositories/pub-test/history/publish/dist-1/')
 
         # Verify
         self.assertEqual(200, status)
@@ -915,7 +915,7 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
         self.distributor_manager.add_distributor('foo', 'mock-distributor', {}, True, distributor_id='empty')
 
         # Test
-        status, body = self.get('/v2/repositories/foo/publish_history/empty/')
+        status, body = self.get('/v2/repositories/foo/history/publish/empty/')
 
         # Verify
         self.assertEqual(200, status)
@@ -927,7 +927,7 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
         """
 
         # Test
-        status, body = self.get('/v2/repositories/foo/publish_history/irrlevant/')
+        status, body = self.get('/v2/repositories/foo/history/publish/irrlevant/')
 
         # Verify
         self.assertEqual(404, status)
@@ -941,7 +941,7 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
         self.repo_manager.create_repo('foo')
 
         # Test
-        status, body = self.get('/v2/repositories/foo/publish_history/irrlevant/')
+        status, body = self.get('/v2/repositories/foo/history/publish/irrlevant/')
 
         # Verify
         self.assertEqual(404, status)
@@ -952,7 +952,7 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
         """
 
         # Test
-        status, body = self.get('/v2/repositories/foo/publish_history/empty/?limit=unparsable')
+        status, body = self.get('/v2/repositories/foo/history/publish/empty/?limit=unparsable')
 
         # Verify
         self.assertEqual(400, status)
