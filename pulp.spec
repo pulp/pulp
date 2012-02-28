@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        10%{?dist}
+Release:        11%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -490,6 +490,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Feb 28 2012 James Slagle <jslagle@redhat.com> 0.0.263-11
+- 796818 make pulp require rh-rhua-selinux-policy for rhui (jslagle@redhat.com)
+
 * Fri Feb 24 2012 James Slagle <jslagle@redhat.com> 0.0.263-10
 - 796934 - Do not apply repo unassociations to the whole CDS cluster during CDS
   removal (jslagle@redhat.com)
