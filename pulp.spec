@@ -63,6 +63,7 @@ Requires: m2crypto = 0.21.1.pulp
 
 %if %{pulp_selinux}
 Requires: %{name}-selinux-server = %{version}
+Requires: rh-rhua-selinux-policy
 %endif
 
 %if 0%{?rhel} == 5
@@ -187,7 +188,7 @@ BuildRequires:  hardlink
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
 %endif
-Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule
 
 %description    selinux-server
@@ -358,13 +359,6 @@ fi
 # Enable SELinux policy modules
 if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
-fi
-
-# Label port 5674 as amqp_port_t so qpidd can bind to it.
-if /usr/sbin/selinuxenabled ; then
- echo "Enabling port 5674 for qpidd"
- /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5674
- /usr/sbin/semanage port -a -t amqp_port_t -p udp 5674
 fi
 
 # restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
