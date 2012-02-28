@@ -504,6 +504,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Feb 28 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-3
+- bump release for build. (jortel@redhat.com)
+- Require grinder 0.139 (jmatthews@redhat.com)
+- removing wiki tags from errata controller as api docs are updated manually
+  (skarmark@redhat.com)
+
 * Thu Feb 23 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-2
 - bump release for build. (jortel@redhat.com)
 - adding some safety checks before computing bytes (pkilambi@redhat.com)
