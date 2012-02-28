@@ -43,7 +43,8 @@ class ErrorHandlerMiddleware(object):
     def __init__(self, app, debug=False):
         self.app = app
         self.debug = debug
-        self.headers = {'Content-Type': 'application/json',
+        self.headers = {'Content-Encoding': 'utf-8',
+                        'Content-Type': 'application/json',
                         'Content-Length': '-1'}
 
     def __call__(self, environ, start_response):
@@ -66,7 +67,7 @@ class ErrorHandlerMiddleware(object):
                 else: # unknown PulpException
                     status = httplib.INTERNAL_SERVER_ERROR
                     record_exception_and_traceback = True
-                error_obj = serialization.error.http_error_obj(status, unicode(e).encode('utf-8'))
+                error_obj = serialization.error.http_error_obj(status, str(e))
                 if record_exception_and_traceback:
                     error_obj['exception'] = traceback.format_exception_only(t, e)
                     error_obj['traceback'] = traceback.format_tb(tb)
@@ -76,7 +77,7 @@ class ErrorHandlerMiddleware(object):
                 status = httplib.INTERNAL_SERVER_ERROR
                 error_obj = serialization.error.exception_obj(e, tb, msg)
             serialized_error = json.dumps(error_obj)
-            status_str = '%d %s' % (status, http_responses[status])
             self.headers['Content-Length'] = len(serialized_error)
+            status_str = '%d %s' % (status, http_responses[status])
             start_response(status_str, [(k, v) for k, v in self.headers.items()])
             return serialized_error
