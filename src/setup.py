@@ -49,7 +49,7 @@ setup(
     packages=find_packages(exclude=excluded_packages),
     scripts=[
         '../bin/pulp-admin',
-        '../bin/pulp-v2-admin',
+#        '../bin/pulp-v2-admin',
         '../bin/pulp-consumer',
         '../bin/pulp-migrate',
     ],
