@@ -143,6 +143,8 @@ def main(config_filename, override_config_filename=None):
                       help=_('enables debug logging'))
     parser.add_option('--config', dest='config', default=None,
                       help=_('absolute path to the configuration file; defaults to %(f)s' % {'f' : config_filename}))
+    parser.add_option('--map', dest='print_map', action='store_true', default=False,
+                      help=_('prints a map of the CLI sections and commands'))
 
     options, args = parser.parse_args()
 
@@ -172,6 +174,9 @@ def main(config_filename, override_config_filename=None):
         return os.EX_OSFILE
 
     # Launch the appropriate UI (add in shell support here later)
-    code = cli.run(args)
-
-    return code
+    if options.print_map:
+        cli.print_cli_map()
+        return os.EX_OK
+    else:
+        code = cli.run(args)
+        return code
