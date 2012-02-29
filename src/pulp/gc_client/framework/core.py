@@ -183,7 +183,8 @@ class PulpPrompt(Prompt):
         self.render_document_list([document], filters=filters, spaces_between_cols=spaces_between_cols, indent=indent)
 
     def render_document_list(self, items, filters=None, order=None,
-                             spaces_between_cols=2, indent=0):
+                             spaces_between_cols=2, indent=0, step=2,
+                             omit_hidden=True):
         """
         Prints a list of JSON documents retrieved from the REST bindings (more
         generally, will print any list of dicts). The data will be output as
@@ -255,7 +256,10 @@ class PulpPrompt(Prompt):
             # These values probably shouldn't be in the returned document, but
             # let's not rely on that.
             if k.startswith('_'):
-                formatted_key = k
+                if omit_hidden:
+                    continue
+                else:
+                    formatted_key = k
             else:
                 for part in k.split('_'):
                     part = str(part)
@@ -275,15 +279,31 @@ class PulpPrompt(Prompt):
             for k, formatted_k in ordered_formatted_keys:
                 v = i[k]
 
+                if isinstance(v, dict):
+                    self.write(line_template % (formatted_k + ':', ''))
+                    self.render_document_list([v], indent=indent+step)
+                    continue
+
                 # If the value is a list, pretty it up
                 if isinstance(v, (tuple, list)):
-                    v = ', '.join(v)
+
+                    if len(v) > 0 and isinstance(v[0], dict):
+                        self.write(line_template % (formatted_k + ':', ''))
+                        self.render_document_list(v, indent=indent+step)
+                        continue
+                    else:
+                        v = ', '.join(v)
 
                 line = line_template % (formatted_k + ':', str(v))
                 self.write(line, tag=TAG_DOCUMENT)
-            self.render_spacer()
 
-        self.render_spacer()
+            # Only add a space if we're at the highest level of the rendering
+            if indent is 0:
+                self.render_spacer()
+
+        # Only add a space if we're at the highest level of the rendering
+        if indent is 0:
+            self.render_spacer()
 
     def create_progress_bar(self, show_trailing_percentage=True):
         """
