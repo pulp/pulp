@@ -63,6 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.7-1
+- okaara 1.0.7; fix for python 2.4 compatibility (jason.dobies@redhat.com)
+
+* Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.7-1
 - Fixed for 2.4 compatibility (jason.dobies@redhat.com)
 
 * Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.6-1
