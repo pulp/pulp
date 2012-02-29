@@ -22,10 +22,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from pulp.server.exceptions import (
-    PulpException, PulpExecutionException, InvalidConfiguration, MissingResource,
-    ConflictingOperation, OperationFailed, PulpDataException, InvalidType,
-    InvalidValue, MissingData, SuperfluousData, DuplicateResource)
+from pulp.server.exceptions import PulpException
 from pulp.server.webservices.http import http_responses
 from pulp.server.webservices import serialization
 
@@ -56,16 +53,9 @@ class ErrorHandlerMiddleware(object):
             error_obj = None
             record_exception_and_traceback = self.debug
             if isinstance(e, PulpException):
-                if isinstance(e, (InvalidType, InvalidValue, MissingData, SuperfluousData, PulpDataException)):
-                    status = httplib.BAD_REQUEST
-                elif  isinstance(e, (MissingResource,)):
-                    status = httplib.NOT_FOUND
-                elif isinstance(e, (DuplicateResource, ConflictingOperation)):
-                    status = httplib.CONFLICT
-                elif isinstance(e, (InvalidConfiguration, OperationFailed, PulpExecutionException)):
-                    status = httplib.INTERNAL_SERVER_ERROR
-                else: # unknown PulpException
-                    status = httplib.INTERNAL_SERVER_ERROR
+                status = e.http_status_code
+                if type(e) == PulpException:
+                    # un-derived exceptions earn you a traceback
                     record_exception_and_traceback = True
                 error_obj = serialization.error.http_error_obj(status, str(e))
                 if record_exception_and_traceback:
