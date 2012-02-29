@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.268
+Version:        0.0.269
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -504,6 +504,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.269-1
+- Initial implementation of the repo extension (jason.dobies@redhat.com)
+- Tweaks to render_document_list and support for recursively displaying lists
+  of dicts (jason.dobies@redhat.com)
+- Added hook to call CLI map (jason.dobies@redhat.com)
+
 * Wed Feb 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.268-1
 - Renamed okaara RPM (jason.dobies@redhat.com)
 - 797929 add requirement on semanage command (jslagle@redhat.com)
