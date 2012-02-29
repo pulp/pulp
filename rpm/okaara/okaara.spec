@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.6
+Version:        1.0.7
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,8 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.6-1
-- new package built with tito
+* Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.7-1
+- Fixed for 2.4 compatibility (jason.dobies@redhat.com)
 
 * Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.6-1
 - new package built with tito
