@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.267
+Version:        0.0.268
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -504,6 +504,215 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.268-1
+- Renamed okaara RPM (jason.dobies@redhat.com)
+- 797929 add requirement on semanage command (jslagle@redhat.com)
+- Require grinder 0.139 (jmatthews@redhat.com)
+- Initial implementation of server info extension (jason.dobies@redhat.com)
+- added queued call controllers and application (jconnor@redhat.com)
+- changed history to be a sub-collection still need to fix publish history to
+  filter by distributor instead of having extraneous distributor id in the uri
+  path (jconnor@redhat.com)
+- Using _href instead of href and updating __str__ to return a better error
+  message now that we have http_request_method in the exception object
+  (skarmark@redhat.com)
+- Updating repo history client api to update path according to changes in
+  server api (skarmark@redhat.com)
+- Adding support for removing metadata, updating index and finalizing sqlite
+  files (pkilambi@redhat.com)
+- Added server plugin bindings (jason.dobies@redhat.com)
+- Added bindings creation to client launcher (jason.dobies@redhat.com)
+- For now use the same user cert location as the v1 client until we add in auth
+  to the v2 client (jason.dobies@redhat.com)
+- Refactored extensions loading to use a priority concept
+  (jason.dobies@redhat.com)
+- enhancing gc cli server.py to add request exceptions, response objects for
+  successful response, removing http connection and ability to connect without
+  credentials (skarmark@redhat.com)
+- re-based dispatch models off of new base (jconnor@redhat.com)
+- added work-around for _id=id upsert (jconnor@redhat.com)
+- gzip the updated xmls and get checksums (pkilambi@redhat.com)
+- adding .id = ._id hack (jconnor@redhat.com)
+- Updates to RPM Importer plugin, basic rpm import functionality working, needs
+  more work on verifying list of contents from WS (jmatthews@redhat.com)
+- 796934 - Do not apply repo unassociations to the whole CDS cluster during CDS
+  removal (jslagle@redhat.com)
+- first real pass at trying to make _id an ObjectId (jconnor@redhat.com)
+- new gc base model class that does not override _id generation
+  (jconnor@redhat.com)
+- 790806 - encoding repo cert filenames before trying to access them
+  (skarmark@redhat.com)
+- 795819 - account for the relativepath from the metadata location field
+  (pkilambi@redhat.com)
+- fixed named tuple utilization for inspect module returns (2.4 compatability)
+  (jconnor@redhat.com)
+- changed interval_in_seconds computation to be 2.4 compatible
+  (jconnor@redhat.com)
+- First cut at a rpm importer plugin, needs more testing (jmatthews@redhat.com)
+- Rquires for grinder to 0.138 (jmatthews@redhat.com)
+- 790806 - Fixed encoding error thrown when repo cloning with unicode id,
+  filters and relativepath (skarmark@redhat.com)
+- 790806 - fixed client task list to not convert task args to str instead
+  encode them with 'utf-8' (skarmark@redhat.com)
+- 790806 - fixes to cancel_sync which was resulting in sync not found due to
+  improper encoding of unicode ids (skarmark@redhat.com)
+- skip add if pkg already exists (pkilambi@redhat.com)
+- update scripts to add package to existing metadata (pkilambi@redhat.com)
+- 790806 - urlparse is not handling unicode urls correctly, so encoding them
+  with utf-8 before parsing (skarmark@redhat.com)
+- 790005 Require exact matching version and release of pulp-selinux-server for
+  pulp (jslagle@redhat.com)
+- Added optional .conf file loading for extensions (jason.dobies@redhat.com)
+- added stricter check for kwarg match between task and search criteria
+  (jconnor@redhat.com)
+- implemented cancellation for tasks and jobs (jconnor@redhat.com)
+- removing callable_name from constructor arguments (jconnor@redhat.com)
+- removed archive from task and utilized task history module for archival
+  (jconnor@redhat.com)
+- Add requires for updated m2crypto (jmatthews@redhat.com)
+- Small change to allow harness to be reused by other gc plugins
+  (jmatthews@redhat.com)
+- SELinux dev setup for gc plugins (jmatthews@redhat.com)
+- Adding repo bindings functionality tests, Storing data coming from server
+  exceptions to binding exceptions according to response codes
+  (skarmark@redhat.com)
+- converted scheduler to be coordinator execturion only (jconnor@redhat.com)
+- Exception catching at the root of CLI execution (jason.dobies@redhat.com)
+- Moved ClientContext out to core (jason.dobies@redhat.com)
+- Made max_width command 2.4 compatible (jason.dobies@redhat.com)
+- Shadow abort to decouple extensions from okaara directly
+  (jason.dobies@redhat.com)
+- 795570 Fix repo auth oid substitution when the oid ends with a yum variable
+  (jslagle@redhat.com)
+- User-friendly message when one or more packs fails to load
+  (jason.dobies@redhat.com)
+- Extension loading will now fail on any extension failure
+  (jason.dobies@redhat.com)
+- Made repo an attribute instead of a method; just feels better
+  (jason.dobies@redhat.com)
+- 790285 - fix the error message to be similar for both file and package
+  deletes (pkilambi@redhat.com)
+- Import clean up (jason.dobies@redhat.com)
+- Cleaning up server.py and adding ServerWrapper class that can mock http
+  connection api (skarmark@redhat.com)
+- changing base class pulp exceptions and added some intermediate classes as
+  well as automatic handling by error middleware to map said exceptions to http
+  errors (jconnor@redhat.com)
+- 790806 - Changes to encode task args and kwargs to unicode before
+  snapshotting (skarmark@redhat.com)
+- Added tag support for progress bar and spinner; unit test for both
+  (jason.dobies@redhat.com)
+- Added single document rendering and fixed issue in render doc list
+  (jason.dobies@redhat.com)
+- Quite a bit of work on the core rendering methods (jason.dobies@redhat.com)
+- Added pulp subclasses for options and flags (jason.dobies@redhat.com)
+- Can't deepcopy the config (jason.dobies@redhat.com)
+- Adding repo history, actions and search related REST bindings
+  (skarmark@redhat.com)
+- initial dispatch entity factory (jconnor@redhat.com)
+- greatly simplified coordinator api by moving callback indicators into
+  CallRequest objects, where they belong (jconnor@redhat.com)
+- added progress, success, and failure callback keyword argument names
+  (jconnor@redhat.com)
+- correcting year in the CR information (skarmark@redhat.com)
+- V2 api rest bindings for respository, importers and distributors
+  (skarmark@redhat.com)
+- refactored execute api to be more readible added docstrings
+  (jconnor@redhat.com)
+- simplified progress callbacks to make folks do their processing
+  (jconnor@redhat.com)
+- refactored execution methods to allow callback assignment
+  (jconnor@redhat.com)
+- realized my get postponing/rejecting operations logic was inverted
+  (jconnor@redhat.com)
+- first pass at a sane find conflicts algorithm (jconnor@redhat.com)
+- added more sane task resource model to allow more efficient queries by the
+  coordinator (jconnor@redhat.com)
+- added existentially lock and unlock methods (jconnor@redhat.com)
+- added resource operations matrix (jconnor@redhat.com)
+- added coordinator task model (jconnor@redhat.com)
+- added resouce types and operations (jconnor@redhat.com)
+- added to_string functions for execution and control hook numbers
+  (jconnor@redhat.com)
+- moved dequeue execution callback addition to run instead of add so that the
+  callback does not get pickled (jconnor@redhat.com)
+- added ascii encoding for pickling to account for unicode coming out of the
+  database added desialization of None to return None (jconnor@redhat.com)
+- consolidated all custom pickling functions (jconnor@redhat.com)
+- deterministic scheduler unit tests (jconnor@redhat.com)
+- added collection drop to teardown (jconnor@redhat.com)
+- removed singleton (jconnor@redhat.com)
+- un-protected call_execution_hooks as it is used by the task queue
+  (jconnor@redhat.com)
+- made call archival optional (jconnor@redhat.com)
+- removed superfluous , when missing args or kwargs (jconnor@redhat.com)
+- added custom exceptions for missing control hooks (jconnor@redhat.com)
+- added custom exceptions for missing kwargs (jconnor@redhat.com)
+- removed progess control hook (jconnor@redhat.com)
+- removed progress callback from constructor (jconnor@redhat.com)
+- removed confusing asynchronous flag (jconnor@redhat.com)
+- added async call validation to AsyncTask constructor (jconnor@redhat.com)
+- moved call archival to task._complete moved complete callback reset to
+  taskqueue.deque (jconnor@redhat.com)
+- made progress callback kwargs name a argument to the constuctor
+  (jconnor@redhat.com)
+- re-factored out asynchronous support into derived class changed setting of
+  complete state until task is actually complete made non-public methods
+  protected (jconnor@redhat.com)
+- added state assertions for succeeded and failed (jconnor@redhat.com)
+- simplified consecutive failur math (jconnor@redhat.com)
+- added loging of scheduled task disable clearing consecutive failures on
+  success (jconnor@redhat.com)
+- added direct task queue dispatch (jconnor@redhat.com)
+- added failure threshold tracking to the scheduler (jconnor@redhat.com)
+- adding failure threshold and consecutive failures fields to scheduled calls
+  (jconnor@redhat.com)
+- converted task queue to handle blocking tasks implemented query methods
+  (jconnor@redhat.com)
+- added blocking tasks set (jconnor@redhat.com)
+- purely fifo implementation of new task queue (jconnor@redhat.com)
+- cleanup in light of new tasking (jconnor@redhat.com)
+- added call complete execution hook (jconnor@redhat.com)
+- added constructor for queued call and added archived call class
+  (jconnor@redhat.com)
+- added calls to execution hooks for finished, error, and complete
+  (jconnor@redhat.com)
+- changed im_class logic to make pycharm happy (jconnor@redhat.com)
+- setting progress callback with defualt key word of: progress_callback
+  (jconnor@redhat.com)
+- changed task to be a call request and report aggregate type added
+  asynchronous behavior (jconnor@redhat.com)
+- added start and finish times to call report (jconnor@redhat.com)
+- had presentation twice instead of progress (jconnor@redhat.com)
+- added execution and control hook constants changed call request to use new
+  constants (jconnor@redhat.com)
+- changed finished call update to utilize call dequeue hook execution
+  (jconnor@redhat.com)
+- changed so that even disabled calls are still re-scheduled
+  (jconnor@redhat.com)
+- query api for scheduler (jconnor@redhat.com)
+- added docstrings (jconnor@redhat.com)
+- removed history in leiu of history module (jconnor@redhat.com)
+- added enable/disable scheduled call api (jconnor@redhat.com)
+- updates to dispatch (jconnor@redhat.com)
+- added recording of raw schedule and list_run as well as start_date using new
+  dateutils naive utc cast (jconnor@redhat.com)
+- added history module (jconnor@redhat.com)
+- added super constructor call and put tzinfo manipulation into conditional,
+  assumes utc tz if absent (jconnor@redhat.com)
+- initial scheduling algorithm (jconnor@redhat.com)
+- added unique indices and and fixed indicies spelling (jconnor@redhat.com)
+- removed task call report factory (jconnor@redhat.com)
+- removed last references to now unsupported timeout (jconnor@redhat.com)
+- renamed to: taskqueue (jconnor@redhat.com)
+- renamed module to: dispatch (jconnor@redhat.com)
+- skeleton scheduler (jconnor@redhat.com)
+- place holder for async specific errors (jconnor@redhat.com)
+- initial implementation of task wrappers for call requests
+  (jconnor@redhat.com)
+- initial call request and report implementations (jconnor@redhat.com)
+- initial async_ module layout (jconnor@redhat.com)
+- removed scheduling module (jconnor@redhat.com)
 * Fri Feb 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-1
 - 733312 - Make sure sync does not remove already existing packages from a repo
   during filter operation (skarmark@redhat.com)
