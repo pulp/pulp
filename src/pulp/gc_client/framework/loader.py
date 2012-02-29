@@ -44,8 +44,9 @@ class ExtensionLoaderException(Exception):
     pass
 
 class InvalidExtensionsDirectory(ExtensionLoaderException):
+
     def __init__(self, dir):
-        super(InvalidExtensionsDirectory, self).__init__()
+        ExtensionLoaderException.__init__(self)
         self.dir = dir
 
     def __str__(self):
@@ -58,7 +59,7 @@ class LoadFailed(ExtensionLoaderException):
     rather than carried in this exception.
     """
     def __init__(self, failed_packs):
-        super(ExtensionLoaderException, self).__init__()
+        ExtensionLoaderException.__init__(self)
         self.failed_packs = failed_packs
 
     def __str__(self):
@@ -67,7 +68,7 @@ class LoadFailed(ExtensionLoaderException):
 # Unit test marker exceptions
 class ImportFailed(ExtensionLoaderException):
     def __init__(self, pack_name):
-        super(ExtensionLoaderException, self).__init__()
+        ExtensionLoaderException.__init__(self)
         self.pack_name = pack_name
 
 class NoInitFunction(ExtensionLoaderException): pass
