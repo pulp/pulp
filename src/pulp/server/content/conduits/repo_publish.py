@@ -87,6 +87,20 @@ class RepoPublishConduit(BaseDistributorConduit):
 
     # -- public ---------------------------------------------------------------
 
+    def set_progress(self, status):
+        """
+        Informs the server of the current state of the publish operation. The
+        contents of the status is dependent on how the distributor
+        implementation chooses to divide up the publish process.
+
+        @param status: contains arbitrary data to describe the state of the
+               publish; the contents may contain whatever information is relevant
+               to the distributor implementation so long as it is serializable
+        @type  status: dict
+        """
+
+        _LOG.info('Set progress for repo [%s]' % self.repo_id)
+
     def last_publish(self):
         """
         Returns the timestamp of the last time this repo was published,
