@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.269
+Version:        0.0.270
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -504,6 +504,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Feb 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.270-1
+- Exclude pulp-v2-admin from setup.py until it can be packaged.
+  (jortel@redhat.com)
+- Exclude pulp.gc_client.* from packages in setup.py (jortel@redhat.com)
+- Fixed 2.4 incompatibility (jason.dobies@redhat.com)
+
 * Wed Feb 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.269-1
 - Initial implementation of the repo extension (jason.dobies@redhat.com)
 - Tweaks to render_document_list and support for recursively displaying lists
