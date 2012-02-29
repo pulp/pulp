@@ -66,9 +66,9 @@ def add_metadata(repo_dir, pkg_path):
         et_children = root.getchildren()
         if ftype == 'primary':
             # compare location href
-            et_child_locations = [c[-2].values()[0] for c in et_children]
+            et_child_locations = [c[-2].get('href') for c in et_children]
             for c1 in pkg_et.getchildren():
-                if c1[-2].values()[0] in et_child_locations:
+                if c1[-2].get('href') in et_child_locations:
                     continue
                 root.append(c1)
         else: # if filelists or other
@@ -85,8 +85,10 @@ def add_metadata(repo_dir, pkg_path):
         new_ftype_xml = "%s/.repodata/%s.xml" % (repo_dir, ftype)
         # update package count
         root.set('packages', str(len(new_et_children)))
+        # write xml to disk
         repo_et.write(new_ftype_xml)
         ftype_xml_gz = "%s.gz" % new_ftype_xml
+        # write compressed xml file
         utils.compressFile(new_ftype_xml, ftype_xml_gz, 'gz')
         print "end time %s" % time.ctime()
 
@@ -103,7 +105,7 @@ def remove_metadata(repo_dir, pkg_path):
         repo_et = etree.parse(ftype_xml)
         # get root element from repo xml
         root = repo_et.getroot()
-        #load repo primary xml children
+        #load repo ftype xml children
         #pkgs = repo_et.findall("//{http://linux.duke.edu/metadata/common}package")
         et_children = root.getchildren()
         if ftype == 'primary':
@@ -125,8 +127,10 @@ def remove_metadata(repo_dir, pkg_path):
         new_ftype_xml = "%s/.repodata/%s.xml" % (repo_dir, ftype)
         # update package count
         root.set('packages', str(len(new_et_children)))
+        # write xml to disk
         repo_et.write(new_ftype_xml)
         ftype_xml_gz = "%s.gz" % new_ftype_xml
+        # write compressed xml file
         utils.compressFile(new_ftype_xml, ftype_xml_gz, 'gz')
         print "end time %s" % time.ctime()
 
@@ -151,6 +155,14 @@ def parse_args():
         print("pkgpath is required")
         sys.exit(-1)
 
+    if not os.path.exists(options.pkgpath):
+        print("package path %s doesn't exist" %options.pkgpath)
+        sys.exit(-1)
+
+    if not os.path.exists(options.repodir):
+        print("repo dir path %s doesn't exist" %options.pkgpath)
+        sys.exit(-1)
+
     return options
 
 def setup_metadata_conf(repodir):
@@ -172,16 +184,20 @@ def do_add(repo_dir, pkg_path):
         mdgen.doFinalMove()
     except (IOError, OSError), e:
         raise utils.MDError, ('Cannot access/write repodata files: %s') % e
+    except Exception, e:
+        print("Unknown Error: %s" % str(e))
 
 def do_remove(repo_dir, pkg_path):
     mdgen = MetaDataGenerator(setup_metadata_conf(repo_dir))
     try:
-        print("Removing package %s to repodir %s" % (pkg_path, repo_dir))
+        print("Removing package %s from repodir %s" % (pkg_path, repo_dir))
         remove_metadata(repo_dir, pkg_path)
         mdgen.doRepoMetadata()
         mdgen.doFinalMove()
     except (IOError, OSError), e:
         raise utils.MDError, ('Cannot access/write repodata files: %s') % e
+    except Exception, e:
+        print("Unknown Error: %s" % str(e))
 
 def main():
     options = parse_args()

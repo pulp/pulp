@@ -41,12 +41,11 @@ def add_package_to_repo(repodir, packages):
     
     mdgen = MetaDataGenerator(setup_metadata_conf(repodir))
     try:
-#        mdgen.doPkgMetadata()
         mdgen._setup_old_metadata_lookup()
-        packages = mdgen.getFileList(mdgen.package_dir, '.rpm')
-        mdgen.pkgcount = len(packages)
+        all_packages = mdgen.getFileList(mdgen.package_dir, '.rpm') + packages
+        mdgen.pkgcount = len(all_packages)
         mdgen.openMetadataDocs()
-        mdgen.writeMetadataDocs(packages)
+        mdgen.writeMetadataDocs(all_packages)
         mdgen.closeMetadataDocs()
         mdgen.doRepoMetadata()
         mdgen.doFinalMove()
