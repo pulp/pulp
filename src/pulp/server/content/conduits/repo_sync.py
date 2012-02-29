@@ -114,36 +114,19 @@ class RepoSyncConduit(BaseImporterConduit):
 
     # -- public ---------------------------------------------------------------
 
-    def set_progress(self, current_step, total_steps, message):
+    def set_progress(self, status):
         """
         Informs the server of the current state of the sync operation. The
-        granularity of what a "step" is is dependent on how the importer
+        contents of the status is dependent on how the importer
         implementation chooses to divide up the sync process.
 
-        If the step data being set is invalid, this method will do nothing. No
-        error will be thrown in the case of invalid step data.
-
-        @param current_step: indicates where in the total process the sync is;
-                             must be less than total_steps, greater than 0
-        @type  current_step: int
-
-        @param total_steps: indicates how much total work is needed; must be
-                            greater than 0
-        @type  total_steps: int
-
-        @param message: message to make available to the user describing where
-                        in the sync process the actual sync run is
-        @type  message: str
+        @param status: contains arbitrary data to describe the state of the
+               sync; the contents may contain whatever information is relevant
+               to the importer implementation so long as it is serializable
+        @type  status: dict
         """
 
-        # Validation
-        if current_step < 1 or total_steps < 1 or current_step > total_steps:
-            _LOG.warn('Invalid step data [current: %d, total: %d], set_progress aborting' % (current_step, total_steps))
-            return
-
-        # TODO: add hooks into tasking subsystem
-
-        _LOG.info('Progress for repo [%s] sync: %s - %d/%d' % (self.repo_id, message, current_step, total_steps))
+        _LOG.info('Set progress for repo [%s]' % self.repo_id)
 
     # -- unit lifecycle -------------------------------------------------------
 
