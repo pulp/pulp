@@ -286,8 +286,8 @@ class Coordinator(object):
         tasks = self.find_tasks(**criteria)
         call_reports = [t.call_report for t in tasks]
         # XXX should we be appending history here?
-        for archived_call in dispatch_history.find_archived_calls(criteria):
-            call_reports.append(archived_call['serialized_call_report'])
+        #for archived_call in dispatch_history.find_archived_calls(**criteria):
+        #    call_reports.append(archived_call['serialized_call_report'])
         return call_reports
 
     # control methods ----------------------------------------------------------

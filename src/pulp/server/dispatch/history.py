@@ -21,7 +21,7 @@ def archive_call(call_request, call_report):
     collection.insert(archived_call, safe=True)
 
 
-def find_archived_calls(criteria):
+def find_archived_calls(**criteria):
     query = {}
     if 'task_id' in criteria:
         query['serialized_call_report.task_id'] = criteria['task_id']
