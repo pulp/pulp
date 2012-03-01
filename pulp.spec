@@ -39,7 +39,7 @@ Requires: python-ldap
 Requires: python-gofer >= 0.37
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
+Requires: mod_wsgi = 3.2-3.sslpatch
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
@@ -106,7 +106,7 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.37
 Requires:       grinder
 Requires:       httpd
-Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
+Requires:       mod_wsgi = 3.2-3.sslpatch
 Requires:       mod_ssl
 Requires:       m2crypto
 
