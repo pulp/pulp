@@ -22,7 +22,7 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import (MissingRepo, MissingDistributor,
     InvalidDistributorId, InvalidDistributorType, InvalidDistributorConfiguration, DistributorInitializationException)
-
+from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, InvalidConfiguration, OperationFailed
 # -- constants ----------------------------------------------------------------
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -46,14 +46,14 @@ class RepoDistributorManager:
         @return: key-value pairs describing the distributor
         @rtype:  dict
 
-        @raises MissingDistributor: if either the repo doesn't exist or there is no
+        @raises MissingResource: if either the repo doesn't exist or there is no
                     distributor with the given ID
         """
 
         distributor = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
 
         if distributor is None:
-            raise MissingDistributor(distributor_id)
+            raise MissingResource(distributor_id)
 
         return distributor
 
@@ -68,12 +68,12 @@ class RepoDistributorManager:
                  if there are none for the given repo
         @rtype:  list of dict or None
 
-        @raises MissingRepo: if the given repo doesn't exist
+        @raises MissingResource: if the given repo doesn't exist
         """
 
         repo = Repo.get_collection().find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         distributors = list(RepoDistributor.get_collection().find({'repo_id' : repo_id}))
         return distributors
@@ -107,13 +107,13 @@ class RepoDistributorManager:
 
         @return: ID assigned to the distributor (only valid in conjunction with the repo)
 
-        @raises MissingRepo: if the given repo_id does not refer to a valid repo
-        @raises InvalidDistributorType: if the given distributor type ID does not
+        @raises MissingResource: if the given repo_id does not refer to a valid repo
+        @raises InvalidType: if the given distributor type ID does not
                                         refer to a valid distributor
-        @raises InvalidDistributorId: if the distributor ID is provided and unacceptable
-        @raises InvalidDistributorConfiguration: if the distributor plugin does not
+        @raises InvalidValue: if the distributor ID is provided and unacceptable
+        @raises InvalidConfiguration: if the distributor plugin does not
                     accept the given configuration
-        @raises DistributorInitializationException: if the distributor fails
+        @raises OperationFailed: if the distributor fails
                     while initializing itself to handle the repo
         """
 
@@ -123,10 +123,10 @@ class RepoDistributorManager:
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         if not plugin_loader.is_valid_distributor(distributor_type_id):
-            raise InvalidDistributorType(distributor_type_id)
+            raise InvalidType(distributor_type_id)
 
         # Determine the ID for this distributor on this repo; will be
         # unique for all distributors on this repository but not globally
@@ -135,7 +135,7 @@ class RepoDistributorManager:
         else:
             # Validate if one was passed in
             if not is_distributor_id_valid(distributor_id):
-                raise InvalidDistributorId(distributor_id)
+                raise InvalidValue(distributor_id)
 
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
 
@@ -148,15 +148,15 @@ class RepoDistributorManager:
             valid_config = distributor_instance.validate_config(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
-            raise InvalidDistributorConfiguration()
+            raise InvalidConfiguration()
 
         if not valid_config:
-            raise InvalidDistributorConfiguration()
+            raise InvalidConfiguration()
 
         # Remove the old distributor if it exists
         try:
             self.remove_distributor(repo_id, distributor_id)
-        except MissingDistributor:
+        except MissingResource:
             pass # if it didn't exist, no problem
 
         # Let the distributor plugin initialize the repository
@@ -164,7 +164,7 @@ class RepoDistributorManager:
             distributor_instance.distributor_added(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
-            raise DistributorInitializationException(), None, sys.exc_info()[2]
+            raise OperationFailed(), None, sys.exc_info()[2]
 
         # Database Update
         distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, repo_plugin_config, auto_publish)
@@ -182,8 +182,8 @@ class RepoDistributorManager:
         @param distributor_id: identifies the distributor to delete
         @type  distributor_id: str
 
-        @raises MissingRepo: if repo_id doesn't correspond to a valid repo
-        @raises MissingDistributor: if there is no distributor with the given ID
+        @raises MissingResource: if repo_id doesn't correspond to a valid repo
+        @raises MissingResource: if there is no distributor with the given ID
         """
 
         repo_coll = Repo.get_collection()
@@ -192,11 +192,11 @@ class RepoDistributorManager:
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingDistributor(distributor_id)
+            raise MissingResource(distributor_id)
 
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']
@@ -231,9 +231,9 @@ class RepoDistributorManager:
         @return: the updated distributor
         @rtype:  dict
 
-        @raises MissingRepo: if the given repo doesn't exist
-        @raises MissingDistributor: if the given distributor doesn't exist
-        @raises InvalidDistributorConfiguration: if the plugin rejects the given changes
+        @raises MissingResource: if the given repo doesn't exist
+        @raises MissingResource: if the given distributor doesn't exist
+        @raises InvalidConfiguration: if the plugin rejects the given changes
         """
 
         repo_coll = Repo.get_collection()
@@ -242,11 +242,11 @@ class RepoDistributorManager:
         # Input Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingDistributor(distributor_id)
+            raise MissingResource(distributor_id)
 
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
@@ -260,10 +260,10 @@ class RepoDistributorManager:
             valid_config = distributor_instance.validate_config(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Exception raised from distributor [%s] while validating config for repo [%s]' % (distributor_type_id, repo_id))
-            raise InvalidDistributorConfiguration, None, sys.exc_info()[2]
+            raise InvalidConfiguration, None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidDistributorConfiguration()
+            raise InvalidConfiguration()
 
         # If we got this far, the new config is valid, so update the database
         repo_distributor['config'] = distributor_config

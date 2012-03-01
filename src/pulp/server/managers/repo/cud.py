@@ -26,7 +26,7 @@ from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImport
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import MissingRepo, InvalidRepoId, InvalidRepoMetadata, DuplicateRepoId, RepoDeleteException
-
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 # -- constants ----------------------------------------------------------------
 
 _REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -59,21 +59,16 @@ class RepoManager:
         @param notes: key-value pairs to programmatically tag the repo
         @type  notes: dict
 
-        @raises InvalidRepoId: if the repo ID is unacceptable
-        @raises DuplicateRepoId: if there is already a repo with the requested ID
-        @raises InvalidRepoMetadata: if any of the non-ID fields is unacceptable
+        @raises DuplicateResource: if there is already a repo with the requested ID
+        @raises InvalidValue: if any of the non-ID fields is unacceptable
         """
-
-        # Validation
-        #if not is_repo_id_valid(repo_id):
-        #    raise InvalidRepoId(repo_id)
 
         existing_repo = Repo.get_collection().find_one({'id' : repo_id})
         if existing_repo is not None:
-            raise DuplicateRepoId(repo_id)
+            raise DuplicateResource(repo_id)
 
         if notes is not None and not isinstance(notes, dict):
-            raise InvalidRepoMetadata(notes)
+            raise InvalidValue(notes)
 
         # Use the ID for the display name if one was not specified
         display_name = display_name or repo_id
@@ -92,7 +87,7 @@ class RepoManager:
         @param repo_id: identifies the repo being deleted
         @type  repo_id: str
 
-        @raises MissingRepo: if the given repo does not exist
+        @raises MissingResource: if the given repo does not exist
         @raises RepoDeleteException: if any part of the delete process fails;
                 the exception will contain information on which sections failed
         """
@@ -100,7 +95,7 @@ class RepoManager:
         # Validation
         found = Repo.get_collection().find_one({'id' : repo_id})
         if found is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         # With so much going on during a delete, it's possible that a few things
         # could go wrong while others are successful. We track lesser errors
@@ -178,14 +173,14 @@ class RepoManager:
         @param delta: list of attributes and their new values to change
         @type  delta: dict
 
-        @raises MissingRepo: if there is no repo with repo_id
+        @raises MissingResource: if there is no repo with repo_id
         """
 
         repo_coll = Repo.get_collection()
 
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         # There are probably all sorts of clever ways to not hard code the
         # fields here, but frankly, there are so few that this is just easier.

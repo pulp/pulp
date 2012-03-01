@@ -21,6 +21,7 @@ import web
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._exceptions as errors
+import pulp.server.exceptions as exceptions
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.queries.repo import unit_association_criteria
@@ -74,11 +75,11 @@ class RepoCollection(JSONController):
         try:
             repo = repo_manager.create_repo(id, display_name, description, notes)
             return self.created(None, repo)
-        except errors.DuplicateRepoId:
+        except exceptions.DuplicateResource:
             _LOG.exception('Duplicate repo ID [%s]' % id)
             serialized = http_error_obj(409)
             return self.conflict(serialized)
-        except (errors.InvalidRepoId, errors.InvalidRepoMetadata):
+        except exceptions.InvalidValue:
             _LOG.exception('Bad request data for repository [%s]' % id)
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
@@ -119,7 +120,7 @@ class RepoResource(JSONController):
         try:
             repo_manager.delete_repo(id)
             return self.ok(None)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -138,7 +139,7 @@ class RepoResource(JSONController):
         try:
             repo = repo_manager.update_repo(id, delta)
             return self.ok(repo)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
         
@@ -158,7 +159,7 @@ class RepoImporters(JSONController):
             importers = importer_manager.get_importers(repo_id)
             # TODO: serialize properly
             return self.ok(importers)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -185,10 +186,10 @@ class RepoImporters(JSONController):
             importer = importer_manager.set_importer(repo_id, importer_type, importer_config)
             # TODO: serialize importer
             return self.created(None, importer)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (errors.InvalidImporterType, errors.InvalidImporterConfiguration):
+        except (exceptions.InvalidType, exceptions.InvalidConfiguration):
             _LOG.exception('Bad request data adding importer of type [%s] to repository [%s]' % (importer_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
@@ -209,7 +210,7 @@ class RepoImporter(JSONController):
             importer = importer_manager.get_importer(repo_id)
             # TODO: serialize properly
             return self.ok(importer)
-        except errors.MissingImporter:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -221,7 +222,7 @@ class RepoImporter(JSONController):
         try:
             importer_manager.remove_importer(repo_id)
             return self.ok(None)
-        except (errors.MissingRepo, errors.MissingImporter):
+        except (exceptions.MissingResource, exceptions.MissingResource):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -242,7 +243,7 @@ class RepoImporter(JSONController):
         try:
             importer = importer_manager.update_importer_config(repo_id, importer_config)
             return self.ok(importer)
-        except (errors.MissingRepo, errors.MissingImporter):
+        except (exceptions.MissingResource, exceptions.MissingResource):
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -262,7 +263,7 @@ class RepoDistributors(JSONController):
             distributor_list = distributor_manager.get_distributors(repo_id)
             # TODO: serialize each distributor before returning
             return self.ok(distributor_list)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
     
@@ -287,10 +288,10 @@ class RepoDistributors(JSONController):
         try:
             added = distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
             return self.created(None, added)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (errors.InvalidDistributorId, errors.InvalidDistributorType, errors.InvalidDistributorConfiguration):
+        except (exceptions.InvalidValue, exceptions.InvalidType, exceptions.InvalidConfiguration):
             _LOG.exception('Bad request adding distributor of type [%s] to repo [%s]' % (distributor_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
@@ -310,7 +311,7 @@ class RepoDistributor(JSONController):
             distributor = distributor_manager.get_distributor(repo_id, distributor_id)
             # TODO: serialize properly
             return self.ok(distributor)
-        except errors.MissingDistributor:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -321,7 +322,7 @@ class RepoDistributor(JSONController):
         try:
             distributor_manager.remove_distributor(repo_id, distributor_id)
             return self.ok(None)
-        except (errors.MissingRepo, errors.MissingDistributor):
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
         
@@ -342,7 +343,7 @@ class RepoDistributor(JSONController):
         try:
             updated = distributor_manager.update_distributor_config(repo_id, distributor_id, distributor_config)
             return self.ok(updated)
-        except (errors.MissingRepo, errors.MissingDistributor):
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
