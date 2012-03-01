@@ -22,6 +22,7 @@ def _handle_with_processors(self):
             return p(lambda : process(processors))
         else:
             return self.handle()
+    return process(self.processors)
 
 import web
 
