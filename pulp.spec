@@ -307,6 +307,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-1.1
+- Bump release to 1.1.  RHUI 2.0 needs a hotfix (jslagle@redhat.com)
+- no need to generate updateinfo.xml if metadata is preserved
+  (pkilambi@redhat.com)
+- 738657 - changing add/remove operations to not invoke createrepo and let
+  users call generate_metadata (pkilambi@redhat.com)
+
 * Tue Jul 26 2011 Sayli Karmarkar <skarmark@redhat.com> 0.0.214-1
 - Restricting threads to 4 to avoid memory leak (skarmark@redhat.com)
 - Brought in line with master's version (jason.dobies@redhat.com)
