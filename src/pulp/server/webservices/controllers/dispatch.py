@@ -34,8 +34,8 @@ _LOG = logging.getLogger(__name__)
 
 class TaskNotFound(MissingResource):
 
-    def __unicode__(self):
-        return unicode(_('Task Not Found: %{id}s')) % {'id': unicode(self.args[0], 'utf-8')}
+    def __str__(self):
+        return _('Task Not Found: %{id}s') % {'id': self.args[0]}
 
 
 class TaskCancelNotImplemented(PulpExecutionException):
