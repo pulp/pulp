@@ -24,7 +24,7 @@ import os
 import sys
 
 from   okaara.cli import Cli
-from   okaara.progress import ProgressBar, Spinner
+from   okaara.progress import ProgressBar, Spinner, ThreadedSpinner
 import okaara.prompt
 from   okaara.prompt import Prompt, WIDTH_TERMINAL
 
@@ -41,6 +41,7 @@ TAG_EXCEPTION = 'exception'
 TAG_DOCUMENT = 'document'
 TAG_PROGRESS_BAR = 'progress_bar'
 TAG_SPINNER = 'spinner'
+TAG_THREADED_SPINNER = 'threaded-spinner'
 
 COLOR_HEADER = okaara.prompt.COLOR_LIGHT_BLUE
 COLOR_SUCCESS = okaara.prompt.COLOR_LIGHT_GREEN
@@ -348,6 +349,22 @@ class PulpPrompt(Prompt):
         """
 
         spinner = Spinner(self, spin_tag=TAG_SPINNER)
+        return spinner
+
+    def create_threaded_spinner(self):
+        """
+        Creates a spinner that will continually run in its own thread. Unlike
+        the spinner returned from create_spinner, the step iteration is not
+        controlled by the caller. Once started, the spinner will continue to
+        spin at a regular rate in its own thread. The spinner must be stopped
+        before any further calls are made to the prompt.
+
+        :rtype: ThreadedSpinner
+        """
+
+        spinner = ThreadedSpinner(self, refresh_seconds=.5,
+                                  in_progress_color=COLOR_IN_PROGRESS, completed_color=COLOR_COMPLETED,
+                                  spin_tag=TAG_THREADED_SPINNER)
         return spinner
 
 class PulpCli(Cli):
