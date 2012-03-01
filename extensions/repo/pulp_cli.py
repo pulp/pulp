@@ -57,6 +57,9 @@ class RepoSection(PulpCliSection):
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of repository fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
 
+        # Subsections
+        self.add_subsection(ImporterSection(context))
+
     def create(self, **kwargs):
 
         # Collect input
@@ -112,6 +115,44 @@ class RepoSection(PulpCliSection):
 
         self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order)
 
+class ImporterSection(PulpCliSection):
+
+    def __init__(self, context):
+        PulpCliSection.__init__(self, 'importer', 'manage importers for existing repositories')
+        self.context = context
+        self.prompt = context.prompt
+
+        # No options/flags configured; the parsing will be done in the handling method
+        self.add_command(PulpCliCommand('add', 'adds an importer to a repository', self.add_importer))
+
+    def add_importer(self, *args):
+
+        # Input Validation
+        try:
+            kwargs = parse_unknown_args(args)
+        except Unparsable:
+            self.prompt.render_failure_message('Unable to parse arguments')
+            return
+
+        required_message = 'Argument [%s] is required' # TODO: replace with standard lookup
+
+        missing_required = False
+        for i in ('type_id', 'repo_id'):
+            if i not in kwargs:
+                self.prompt.render_failure_message(required_message % i)
+                missing_required = True
+
+        if missing_required:
+            return
+
+        repo_id = kwargs.pop('repo_id')
+        importer_type_id = kwargs.pop('type_id')
+
+        # Everything left in kwargs is considered part of the importer config
+        self.context.server.repo_importer.create(repo_id, importer_type_id, kwargs)
+        self.prompt.render_success_message('Successfully added importer of type [%s] to repository [%s]' % (importer_type_id, repo_id))
+
+
 # -- utility ------------------------------------------------------------------
 
 class Unparsable(Exception):
@@ -137,8 +178,8 @@ def parse_unknown_args(args):
     The argument/value pairs are returned as a dictionary. In the event an empty
     list of arguments is supplied, an empty dictionary is returned.
 
-    @param args: list of arguments passed to the command
-    @type  args: list
+    @param args: tuple of arguments passed to the command
+    @type  args: tuple
 
     @return: dictionary of argument name to value(s); see above for details
     @rtype:  dict
