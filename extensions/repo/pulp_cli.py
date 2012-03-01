@@ -59,12 +59,15 @@ class RepoSection(PulpCliSection):
 
         # Subsections
         self.add_subsection(ImporterSection(context))
+        self.add_subsection(SyncSection(context))
 
     def create(self, **kwargs):
 
         # Collect input
         id = kwargs['id']
-        name = kwargs['name'] or id
+        name = id
+        if 'name' in kwargs:
+            name = kwargs['name']
         description = kwargs['description']
         notes = None # TODO: add support later
 
@@ -137,7 +140,7 @@ class ImporterSection(PulpCliSection):
         required_message = 'Argument [%s] is required' # TODO: replace with standard lookup
 
         missing_required = False
-        for i in ('type_id', 'repo_id'):
+        for i in ('type_id', 'id'):
             if i not in kwargs:
                 self.prompt.render_failure_message(required_message % i)
                 missing_required = True
@@ -145,13 +148,38 @@ class ImporterSection(PulpCliSection):
         if missing_required:
             return
 
-        repo_id = kwargs.pop('repo_id')
+        repo_id = kwargs.pop('id')
         importer_type_id = kwargs.pop('type_id')
 
         # Everything left in kwargs is considered part of the importer config
         self.context.server.repo_importer.create(repo_id, importer_type_id, kwargs)
         self.prompt.render_success_message('Successfully added importer of type [%s] to repository [%s]' % (importer_type_id, repo_id))
 
+class SyncSection(PulpCliSection):
+
+    def __init__(self, context):
+        PulpCliSection.__init__(self, 'sync', 'run, schedule, or view the status of sync operations')
+        self.context = context
+        self.prompt = context.prompt
+
+        run_command = PulpCliCommand('run', 'triggers an immediate sync of a specific repository', self.run)
+        run_command.add_option(PulpCliOption('--id', 'identifies the repository to sync', required=True))
+        self.add_command(run_command)
+
+    def run(self, **kwargs):
+
+        repo_id = kwargs['id']
+        self.prompt.render_paragraph('Synchronizing repository [%s]' % repo_id)
+
+        spinner = self.prompt.create_threaded_spinner()
+        spinner.start()
+        try:
+            # TODO: Replace with unknown arg parsing and allow for sync override config
+            self.context.server.repo_actions.sync(repo_id, None)
+        finally:
+            spinner.stop()
+
+        self.prompt.render_success_message('Repository sync completed for repository [%s]' % repo_id)
 
 # -- utility ------------------------------------------------------------------
 
