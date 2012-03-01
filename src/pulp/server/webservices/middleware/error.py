@@ -67,7 +67,7 @@ class ErrorHandlerMiddleware(object):
                 status = httplib.INTERNAL_SERVER_ERROR
                 error_obj = serialization.error.exception_obj(e, tb, msg)
             serialized_error = json.dumps(error_obj)
-            self.headers['Content-Length'] = len(serialized_error)
+            self.headers['Content-Length'] = str(len(serialized_error))
             status_str = '%d %s' % (status, http_responses[status])
             start_response(status_str, [(k, v) for k, v in self.headers.items()])
             return serialized_error
