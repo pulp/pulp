@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        1.1%{?dist}
+Release:        1.2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -307,6 +307,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-1.2
+- Remove requirement on mod_wsgi dist (jslagle@redhat.com)
+
 * Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-1.1
 - Bump release to 1.1.  RHUI 2.0 needs a hotfix (jslagle@redhat.com)
 - no need to generate updateinfo.xml if metadata is preserved
