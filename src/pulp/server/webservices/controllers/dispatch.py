@@ -11,12 +11,18 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import httplib
 import logging
+from gettext import gettext as _
 
 import web
 
 from pulp.server.auth import authorization
+from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch import history as dispatch_history
+from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
@@ -24,24 +30,78 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 _LOG = logging.getLogger(__name__)
 
+# exceptions -------------------------------------------------------------------
+
+class TaskNotFound(MissingResource):
+
+    def __unicode__(self):
+        return _(u'Task Not Found: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+
+
+class TaskCancelNotImplemented(PulpExecutionException):
+
+    http_status_code = httplib.NOT_IMPLEMENTED
+
+    def __unicode__(self):
+        return _(u'Cancel Not Implemented for Task: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+
+
+class QueuedCallNotFound(MissingResource):
+
+    def __unicode__(self):
+        return _(u'Snapshot Not Found: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+
+
+class JobNotFound(MissingResource):
+
+    def __unicode__(self):
+        return _(u'Job Not Found: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+
+
+class JobCancelNotImplemented(PulpExecutionException):
+
+    http_status_code = httplib.NOT_IMPLEMENTED
+
+    def __unicode__(self):
+        return _(u'Cancel Not Implemented for Job: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+
 # task controllers -------------------------------------------------------------
 
 class TaskCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        tasks = coordinator.task_queue.all_tasks()
+        serialized_call_reports = [t.call_report.serialize() for t in tasks]
+        return self.ok(serialized_call_reports)
 
 
 class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        call_reports = coordinator.find_call_reports(task_id=task_id)
+        if call_reports:
+            serialized_call_report = call_reports[0].serialize()
+            return self.ok(serialized_call_report)
+        archived_calls = dispatch_history.find_archived_calls(task_id=task_id)
+        if archived_calls:
+            serialized_call_report = archived_calls[0]['serialized_call_report']
+            return self.ok(serialized_call_report)
+        raise TaskNotFound(task_id)
 
     @auth_required(authorization.DELETE)
     def DELETE(self, task_id):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        result = coordinator.cancel_call(task_id)
+        if result is None:
+            raise MissingResource(task_id)
+        if result is False:
+            raise TaskCancelNotImplemented(task_id)
+        link = serialization.link.current_link_obj()
+        return self.accepted(link)
 
 # queued call controllers ------------------------------------------------------
 
@@ -49,18 +109,36 @@ class QueuedCallCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        tasks = coordinator.task_queue.all_tasks()
+        queued_calls = []
+        for t in tasks:
+            data = {'task_id': t.id, 'queued_call_id': t.queued_call_id}
+            data.update(serialization.link.child_link_obj(t.queued_call_id))
+            queued_calls.append(data)
+        return self.ok(queued_calls)
 
 
 class QueuedCallResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        tasks = coordinator.find_tasks(task_id=task_id)
+        if not tasks:
+            raise QueuedCallNotFound(task_id)
+        return self.ok(tasks[0].queued_call_id)
 
     @auth_required(authorization.DELETE)
     def DELETE(self, task_id):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        tasks = coordinator.find_tasks(task_id=task_id)
+        if not tasks:
+            raise QueuedCallNotFound(task_id)
+        collection = QueuedCall.get_collection()
+        collection.remove({'_id': tasks[0].queued_call_id}, safe=True)
+        link = serialization.link.current_link_obj()
+        return self.accepted(link)
 
 # job controllers --------------------------------------------------------------
 
@@ -68,18 +146,44 @@ class JobCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        pass
+        job_ids = set()
+        coordinator = dispatch_factory.get_coordinator()
+        for task in coordinator.task_queue.all_tasks():
+            job_id = task.call_report.job_id
+            if job_id is None:
+                continue
+            job_ids.add(job_id)
+        job_links = []
+        for id in job_ids:
+            link = {'job_id': id}
+            link.update(serialization.link.child_link_obj(id))
+            job_links.append(link)
+        return self.ok(job_links)
 
 
 class JobResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, job_id):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        call_reports = coordinator.find_call_reports(job_id=job_id)
+        serialized_call_reports = [c.serialize() for c in call_reports]
+        archived_calls = dispatch_history.find_archived_calls(job_id=job_id)
+        serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
+        if not serialized_call_reports:
+            raise JobNotFound(job_id)
+        return self.ok(serialized_call_reports)
+
 
     @auth_required(authorization.DELETE)
     def DELETE(self, job_id):
-        pass
+        coordinator = dispatch_factory.get_coordinator()
+        results = coordinator.cancel_multiple_calls(job_id)
+        if not results:
+            raise JobNotFound(job_id)
+        if None in results.values():
+            raise JobCancelNotImplemented(job_id)
+        return self.accepted(results)
 
 # web.py applications ----------------------------------------------------------
 
@@ -95,6 +199,9 @@ QUEUED_CALL_URLS = (
     '/', QueuedCallCollection,
     '/([^/]+)/', QueuedCallResource,
 )
+
+queued_call_application = web.application(QUEUED_CALL_URLS, globals())
+
 
 JOB_URLS = (
     '/', JobCollection,
