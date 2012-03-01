@@ -46,7 +46,7 @@ from pulp.server.webservices.controllers import (
     filters, histories, jobs, orphaned, packages, permissions, statuses,
     repositories, roles, services, tasks, users)
 from pulp.server.webservices.controllers import (
-    api_v2, gc_contents, gc_plugins, gc_repositories)
+    dispatch, gc_contents, gc_plugins, gc_repositories)
 from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
 
 from gofer.messaging.broker import Broker
@@ -97,10 +97,12 @@ URLS = (
     '/v1/tasks', tasks.application,
     '/v1/users', users.application,
     # version 2 api
-    #'/v2', api_v2.application,
     '/v2/content', gc_contents.application,
+    '/v2/jobs', dispatch.job_application,
     '/v2/plugins', gc_plugins.application,
+    '/v2/queued_calls', dispatch.queued_call_application,
     '/v2/repositories', gc_repositories.application,
+    '/v2/tasks', dispatch.task_application,
 )
 
 _LOG = logging.getLogger(__name__)
