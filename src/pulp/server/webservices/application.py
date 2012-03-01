@@ -192,6 +192,7 @@ def wsgi_application():
     @return: wsgi application callable
     """
     application = web.subdir_application(URLS)
-    stack = application.wsgifunc(ErrorHandlerMiddleware)
+    # TODO make debug configurable
+    stack = ErrorHandlerMiddleware(application.wsgifunc(), debug=True)
     _initialize_pulp()
     return stack
