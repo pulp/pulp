@@ -306,6 +306,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-8.2
+- Update requires on mod_wsgi (jslagle@redhat.com)
+
 * Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-8.1
 - no need to generate updateinfo.xml if metadata is preserved
   (pkilambi@redhat.com)
