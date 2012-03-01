@@ -87,7 +87,7 @@ class TaskResource(JSONController):
             serialized_call_report = call_reports[0].serialize()
             return self.ok(serialized_call_report)
         archived_calls = dispatch_history.find_archived_calls(task_id=task_id)
-        if archived_calls:
+        if archived_calls.count() > 0:
             serialized_call_report = archived_calls[0]['serialized_call_report']
             return self.ok(serialized_call_report)
         raise TaskNotFound(task_id)
