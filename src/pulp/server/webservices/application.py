@@ -14,7 +14,19 @@
 import atexit
 import logging
 
+# XXX monkey patching web.py YUCK!
+def _handle_with_processors(self):
+    def process(processors):
+        if processors:
+            p, processors = processors[0], processors[1:]
+            return p(lambda : process(processors))
+        else:
+            return self.handle()
+
 import web
+
+web.application.handle_with_processors = _handle_with_processors
+
 
 from pulp.server import config # automatically loads config
 from pulp.server import logs
@@ -180,7 +192,6 @@ def wsgi_application():
     @return: wsgi application callable
     """
     application = web.subdir_application(URLS)
-    # TODO make debug configurable
-    stack = ErrorHandlerMiddleware(application.wsgifunc(), debug=True)
+    stack = application.wsgifunc(ErrorHandlerMiddleware)
     _initialize_pulp()
     return stack
