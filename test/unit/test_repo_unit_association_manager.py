@@ -27,7 +27,7 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import Repository
 from pulp.server.content.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit, Repo, RepoImporter
-from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingImporter, MissingRepo, UnsupportedTypes, ImporterAssociationException
+import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.unit_association as association_manager
@@ -119,7 +119,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
     def test_associate_invalid_owner_type(self):
         # Test
-        self.assertRaises(InvalidOwnerType, self.manager.associate_unit_by_id, 'repo-1', 'type-1', 'unit-1', 'bad-owner', 'irrelevant')
+        self.assertRaises(exceptions.InvalidType, self.manager.associate_unit_by_id, 'repo-1', 'type-1', 'unit-1', 'bad-owner', 'irrelevant')
 
     def test_associate_all(self):
         """
@@ -282,11 +282,11 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo(source_repo_id, dest_repo_id)
             self.fail('Exception expected')
-        except UnsupportedTypes, e:
-            self.assertEqual(e.repo_id, dest_repo_id)
-            self.assertEqual(1, len(e.type_ids))
-            self.assertEqual('bad-type', e.type_ids[0])
-            print(e) # for coverage
+        except exceptions.InvalidType, e:
+            self.assertTrue(dest_repo_id in e)
+#            self.assertEqual(1, len(e.type_ids))
+#            self.assertEqual('bad-type', e.type_ids[0])
+#            print(e) # for coverage
 
     def test_associate_from_repo_dest_unsupported_types(self):
         # Setup
@@ -302,7 +302,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo(source_repo_id, dest_repo_id)
             self.fail('Exception expected')
-        except MissingImporter, e:
+        except exceptions.MissingResource, e:
             print(e)
 
     def test_associate_from_repo_importer_error(self):
@@ -326,7 +326,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo(source_repo_id, dest_repo_id)
             self.fail('Exception expected')
-        except ImporterAssociationException:
+        except exceptions.OperationFailed:
             pass
 
         # Cleanup
@@ -360,8 +360,8 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo('missing', dest_repo_id)
             self.fail('Exception expected')
-        except MissingRepo, e:
-            self.assertEqual(e.repo_id, 'missing')
+        except exceptions.MissingResource, e:
+            self.assertTrue('missing' in e)
 
     def test_associate_from_repo_missing_destination(self):
         # Setup
@@ -374,5 +374,5 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo(source_repo_id, 'missing')
             self.fail('Exception expected')
-        except MissingRepo, e:
-            self.assertEqual(e.repo_id, 'missing')
+        except exceptions.MissingResource, e:
+            self.assertTrue('missing' in e)
