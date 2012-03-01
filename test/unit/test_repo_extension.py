@@ -15,64 +15,72 @@ import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/')
+from pulp.gc_client.framework.core import PulpPrompt
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/')
 from repo import pulp_cli
 
+
 class RepoExtensionTest(unittest.TestCase):
+
+    def setUp(self):
+        super(RepoExtensionTest, self).setUp()
 
     def test_parse_unknown_args_1(self):
         """
         Simple case where only key/value pairs are specified, no fuplicates, no flags.
         """
         # Test
-        args = ['--foo', 'f', '--bar', 'b', '-c', 'c']
-        parsed = pulp_cli.parse_unknown_args(args)
+        args = ('--foo', 'f', '--bar', 'b', '-c', 'c')
+        parser = pulp_cli.UnknownArgsParser(PulpPrompt(), 'test_1')
+        parsed, remaining = parser.parse_args(args)
 
         # Verify
-        self.assertEqual(3, len(parsed))
-        self.assertEqual(parsed['foo'], 'f')
-        self.assertEqual(parsed['bar'], 'b')
-        self.assertEqual(parsed['c'], 'c')
+        self.assertEqual(3, len(parsed.__dict__))
+        self.assertEqual(parsed.foo, 'f')
+        self.assertEqual(parsed.bar, 'b')
+        self.assertEqual(parsed.c, 'c')
 
     def test_parse_unknown_args_2(self):
         """
         Mix of arguments and flags.
         """
         # Test
-        args = ['--fus', '--ro', 'r', '--dah']
-        parsed = pulp_cli.parse_unknown_args(args)
+        args = ('--fus', '--ro', 'r', '--dah')
+        parser = pulp_cli.UnknownArgsParser(PulpPrompt(), 'test_1')
+        parsed, remaining = parser.parse_args(args)
 
         # Verify
-        self.assertEqual(3, len(parsed))
-        self.assertEqual(parsed['fus'], True)
-        self.assertEqual(parsed['ro'], 'r')
-        self.assertEqual(parsed['dah'], True)
+        self.assertEqual(3, len(parsed.__dict__))
+        self.assertEqual(parsed.fus, True)
+        self.assertEqual(parsed.ro, 'r')
+        self.assertEqual(parsed.dah, True)
 
     def test_parse_unknown_args_3(self):
         """
         Multiple values for a single argument.
         """
         # Test
-        args = ['--aaa', '1', '-b', '--aaa', '2', '--ccc', 'c']
-        parsed = pulp_cli.parse_unknown_args(args)
+        args = ('--aaa', '1', '-b', '--aaa', '2', '--ccc', 'c')
+        parser = pulp_cli.UnknownArgsParser(PulpPrompt(), 'test_3')
+        parsed, remaining = parser.parse_args(args)
 
         # Verify
-        self.assertEqual(3, len(parsed))
-        self.assertEqual(parsed['aaa'], ['1', '2'])
-        self.assertEqual(parsed['b'], True)
-        self.assertEqual(parsed['ccc'], 'c')
+        self.assertEqual(3, len(parsed.__dict__))
+        self.assertEqual(parsed.aaa, ['1', '2'])
+        self.assertEqual(parsed.b, True)
+        self.assertEqual(parsed.ccc, 'c')
 
     def test_parse_unknown_args_empty(self):
         """
         Empty argument list.
         """
         # Test
-        parsed = pulp_cli.parse_unknown_args([])
+        parser = pulp_cli.UnknownArgsParser(PulpPrompt(), 'test_empty')
+        parsed, remaining = parser.parse_args(())
 
         # Verify
-        self.assertTrue(isinstance(parsed, dict))
-        self.assertEqual(0, len(parsed))
+        self.assertEqual(0, len(parsed.__dict__))
 
     def test_parse_unknown_args_fail(self):
         """
@@ -80,5 +88,15 @@ class RepoExtensionTest(unittest.TestCase):
         instead of an argument, that's bad.
         """
         # Test
-        args = ['value', '--key']
-        self.assertRaises(pulp_cli.Unparsable, pulp_cli.parse_unknown_args, args)
+        args = ('value', '--key')
+        parser = pulp_cli.UnknownArgsParser(PulpPrompt(), 'test_fail', exit_on_abort=False)
+        self.assertRaises(parser.Unparsable, parser.parse_args, args)
+
+    def test_parse_missing_required(self):
+        """
+        Tests the parser aborts properly when a required option is missing.
+        """
+        # Test
+        args = ('--aaa', '1', '-b', '--aaa', '2', '--ccc', 'c')
+        parser = pulp_cli.UnknownArgsParser(PulpPrompt(), 'test_missing', [('--req', 'required param')], exit_on_abort=False)
+        self.assertRaises(parser.MissingRequired, parser.parse_args, args)

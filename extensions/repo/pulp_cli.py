@@ -11,8 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from optparse import Values
+import os
+import sys
+
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.gc_client.api.server import NotFoundException
+
+# -- framework hook -----------------------------------------------------------
 
 def initialize(context):
     context.cli.add_section(RepoSection(context))
@@ -92,7 +98,6 @@ class RepoSection(PulpCliSection):
         except NotFoundException:
             self.prompt.write('Repository [%s] does not exist on the server' % kwargs['id'], tag='not-found')
 
-
     def delete(self, **kwargs):
         id = kwargs['id']
 
@@ -139,29 +144,15 @@ class ImporterSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt
 
-        # No options/flags configured; the parsing will be done in the handling method
-        self.add_command(PulpCliCommand('add', 'adds an importer to a repository', self.add_importer))
+        # Add Importer Command
+        required_options = [
+            ('--id', 'identifies the repository'),
+            ('--type_id', 'identifies the type of importer being added'),
+        ]
+        add_parser = UnknownArgsParser(self.prompt, 'repo add', required_options)
+        self.add_command(PulpCliCommand('add', 'adds an importer to a repository', self.add_importer, parser=add_parser))
 
-    def add_importer(self, *args):
-
-        # Input Validation
-        try:
-            kwargs = parse_unknown_args(args)
-        except Unparsable:
-            self.prompt.render_failure_message('Unable to parse arguments')
-            return
-
-        required_message = 'Argument [%s] is required' # TODO: replace with standard lookup
-
-        missing_required = False
-        for i in ('type_id', 'id'):
-            if i not in kwargs:
-                self.prompt.render_failure_message(required_message % i)
-                missing_required = True
-
-        if missing_required:
-            return
-
+    def add_importer(self, **kwargs):
         repo_id = kwargs.pop('id')
         importer_type_id = kwargs.pop('type_id')
 
@@ -200,74 +191,163 @@ class SyncSection(PulpCliSection):
 
 # -- utility ------------------------------------------------------------------
 
-class Unparsable(Exception):
+class UnknownArgsParser:
     """
-    Raised by parse_unknown_args to indicate the argument string is invalid.
+    Duck-typed parser that can be passed to a Command. This implementation won't
+    expect all of the possible options to be enumerated ahead of time. This is
+    useful for any server-plugin-related call where the arguments will vary
+    based on the type of plugin being manipulated.
+
+    While this instance will support undefined options and flags, it is possible
+    to provide a list of required options. These will factor into the usage
+    display and be validated
     """
-    pass
 
-def parse_unknown_args(args):
-    """
-    Parses arguments to add/update importer/distributor. Since the possible
-    arguments are contingent on the type of plugin and thus not statically
-    defined, we can't simply use optparse to gather them. This method will
-    parse through the argument list and attempt to resolve the arguments into
-    key/value pairs.
+    class Unparsable(Exception): pass
+    class MissingRequired(Exception): pass
 
-    The keys will be the name of the argument with any leading hyphens removed.
-    The value will be one of three possibilties:
-    * The string representation of the value immediately following it (common case)
-    * The boolean True if no value or another argument definition follows it
-    * A list of strings if the argument is specified more than once
+    def __init__(self, prompt, path, required_options=None, exit_on_abort=True):
+        """
+        @param prompt: prompt instance to write the usage to
+        @type  prompt: PulpPrompt
 
-    The argument/value pairs are returned as a dictionary. In the event an empty
-    list of arguments is supplied, an empty dictionary is returned.
+        @param path: section/command path to reach the command currently executing
+        @type  path: str
 
-    @param args: tuple of arguments passed to the command
-    @type  args: tuple
+        @param required_options: list of tuples of option name to description
+        @type  required_options: list
 
-    @return: dictionary of argument name to value(s); see above for details
-    @rtype:  dict
-    """
-    parsed = {}
+        @param exit_on_abort: flag that indicates how to proceed if the argument
+               list cannot be parsed or is missing required values; if true,
+               sys.exit will be called with the appropriate exit code; set to
+               false during unit tests to cause an exception to raise instead
+        @type  exit_on_abort: bool
+        """
 
-    def arg_name(arg):
-        if arg.startswith('--'):
-            return arg[2:]
-        elif arg.startswith('-'):
-            return arg[1:]
+        self.prompt = prompt
+        self.path = path
+        self.required_options = required_options or []
+        self.exit_on_abort = exit_on_abort
+
+    def parse_args(self, args):
+        """
+        Parses arguments to add/update importer/distributor. Since the possible
+        arguments are contingent on the type of plugin and thus not statically
+        defined, we can't simply use optparse to gather them. This method will
+        parse through the argument list and attempt to resolve the arguments into
+        key/value pairs.
+
+        The keys will be the name of the argument with any leading hyphens removed.
+        The value will be one of three possibilties:
+        * The string representation of the value immediately following it (common case)
+        * The boolean True if no value or another argument definition follows it
+        * A list of strings if the argument is specified more than once
+
+        The argument/value pairs are returned as a dictionary. In the event an empty
+        list of arguments is supplied, an empty dictionary is returned.
+
+        @param args: tuple of arguments passed to the command
+        @type  args: tuple
+
+        @return: dictionary of argument name to value(s); see above for details
+        @rtype:  dict
+        """
+        def arg_name(arg):
+            if arg.startswith('--'):
+                return arg[2:]
+            elif arg.startswith('-'):
+                return arg[1:]
+            else:
+                return None
+
+        parsed = {}
+        required_names = [r[0] for r in self.required_options]
+
+        index = 0 # this won't necessarily step by 1 each time, so dont' use something like enumerate
+        while index < len(args):
+            item = args[index]
+
+            # The required names use the option name directly (with the hyphens)
+            # so do the check here
+            if item in required_names:
+                required_names.remove(item)
+
+            name = arg_name(item)
+
+            if name is None or name in ('h', 'help'):
+                self.usage()
+                self.abort(exception_class=self.Unparsable)
+
+            # If we're at the end there is nothing after it, it's also a flag.
+            if (index + 1) == len(args):
+                parsed[name] = True
+                index += 1
+                continue
+
+            # If the next value is another argument, the current is a flag.
+            if args[index + 1].startswith('-'):
+                parsed[name] = True
+                index += 1
+                continue
+
+            # If we're here, the next in the list is the value for the argument.
+            value = args[index + 1]
+
+            # If the argument already has a value, convert the value to a list and
+            # add in the new one (preserving order).
+            if name in parsed:
+                if not isinstance(parsed[name], list):
+                    parsed[name] = [parsed[name]]
+                parsed[name].append(value)
+            else:
+                parsed[name] = value
+
+            index += 2 # to take into account the value we read
+
+        # If all of the required options haven't been removed yet, we're
+        # missing at least one.
+        if len(required_names) > 0:
+            self.usage()
+            self.abort(exception_class=self.MissingRequired)
+
+        # The CLI is expecting the return result of OptionParser, which wraps
+        # the dict in Values, so we do that here.
+        return Values(parsed), []
+
+    def usage(self):
+        launch_script = os.path.basename(sys.argv[0])
+        self.prompt.write('Usage: %s %s OPTION [OPTION, ..]' % (launch_script, self.path))
+        self.prompt.render_spacer()
+
+        m  = 'Options will vary based on the type of server-side plugin being used. '
+        m += 'Valid options follow one of the following formats:'
+        self.prompt.write(m)
+
+        self.prompt.write('  --<option> <value>')
+        self.prompt.write('  --<flag>')
+        self.prompt.render_spacer()
+
+        if len(self.required_options) > 0:
+            self.prompt.write('The following options are required:')
+
+            max_width = reduce(lambda x, y: max(x, len(y[0])), self.required_options, 0)
+            template = '  %-' + str(max_width) + 's - %s'
+            for r, d in self.required_options:
+                self.prompt.write(template % (r, d))
+
+    def abort(self, exception_class=None):
+        """
+        Called when the arguments are unparsable or missing. The actual
+        OptionParser implementation calls sys.exit on a failed parse, so
+        this method, by default, does the same (this is actually a cleaner
+        implementation since it uses the EX_USAGE code where as OptionParser
+        just exits with 2, but I digress).
+
+        The instance variable exit_on_abort controls the behavior of this call.
+        That variable should be set to false to avoid the sys.exit call in the
+        case of a unit test.
+        """
+        if self.exit_on_abort:
+            sys.exit(os.EX_USAGE)
         else:
-            raise Unparsable()
-
-    index = 0 # this won't necessarily step by 1 each time, so dont' use something like enumerate
-    while index < len(args):
-        item = args[index]
-        name = arg_name(item)
-
-        # If we're at the end there is nothing after it, it's also a flag.
-        if (index + 1) == len(args):
-            parsed[name] = True
-            index += 1
-            continue
-
-        # If the next value is another argument, the current is a flag.
-        if args[index + 1].startswith('-'):
-            parsed[name] = True
-            index += 1
-            continue
-
-        # If we're here, the next in the list is the value for the argument.
-        value = args[index + 1]
-
-        # If the argument already has a value, convert the value to a list and
-        # add in the new one (preserving order).
-        if name in parsed:
-            if not isinstance(parsed[name], list):
-                parsed[name] = [parsed[name]]
-            parsed[name].append(value)
-        else:
-            parsed[name] = value
-
-        index += 2 # to take into account the value we read
-
-    return parsed
+            raise exception_class('Parsing aborted')
