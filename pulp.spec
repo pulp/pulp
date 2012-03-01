@@ -306,6 +306,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-8.1
+- no need to generate updateinfo.xml if metadata is preserved
+  (pkilambi@redhat.com)
+- 738657 - changing add/remove operations to not invoke createrepo and let
+  users call generate_metadata (pkilambi@redhat.com)
+- Bump release to 8.1 for RHUI 2.0.1 hotfix (jslagle@redhat.com)
+
 * Thu Oct 27 2011 James Slagle <jslagle@redhat.com> 0.0.214-8
 - 737584 Switch remove_old_packages back to false.  Since we're not
   regenerating repo metadata on sync, the packages we don't keep will 404 for
