@@ -62,7 +62,7 @@ def content_unit_child_link_objs(unit):
         for child_id in child_list:
             href = '/'.join((CONTENT_URI_PATH, child_type, 'units', child_id))
             link = {'child_id': child_id,
-                    'href': http.ensure_ending_slash(href)}
+                    '_href': http.ensure_ending_slash(href)}
             child_type_links.append(link)
         links[child_type] = child_type_links
     # side effect: remove the child keys

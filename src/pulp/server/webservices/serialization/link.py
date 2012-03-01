@@ -21,7 +21,7 @@ from pulp.server.webservices import http
 
 
 _LINK_OBJ_SKEL = {
-    'href': None,
+    '_href': None,
 }
 
 
