@@ -19,7 +19,7 @@ from pulp.server.auth.authorization import (
     CREATE, READ, UPDATE, DELETE, EXECUTE)
 from pulp.server.managers import factory
 from pulp.server.webservices import serialization
-from pulp.server.managers.content._exceptions import ContentUnitNotFound
+from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
@@ -184,7 +184,7 @@ class ContentUnitResource(JSONController):
         cqm = factory.content_query_manager()
         try:
             unit = cqm.get_content_unit_by_id(type_id, unit_id)
-        except ContentUnitNotFound:
+        except MissingResource:
             return self.not_found(_('No content unit resource: %(r)s') %
                                   {'r': unit_id})
         resource = serialization.content.content_unit_obj(unit)

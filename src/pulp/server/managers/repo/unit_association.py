@@ -27,7 +27,7 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.content.types.database as types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
-from pulp.server.managers.repo._exceptions import InvalidOwnerType, MissingRepo, UnsupportedTypes, ImporterAssociationException
+import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
@@ -94,11 +94,11 @@ class RepoUnitAssociationManager:
                          the importer ID or user login
         @type  owner_id: str
 
-        @raises InvalidOwnerType: if the given owner type is not of the valid enumeration
+        @raises InvalidType: if the given owner type is not of the valid enumeration
         """
 
         if owner_type not in _OWNER_TYPES:
-            raise InvalidOwnerType()
+            raise exceptions.InvalidType()
 
         # If the association already exists, no need to do anything else
         spec = {'repo_id' : repo_id,
@@ -137,7 +137,7 @@ class RepoUnitAssociationManager:
                          the importer ID or user login
         @type  owner_id: str
 
-        @raises InvalidOwnerType: if the given owner type is not of the valid enumeration
+        @raises InvalidType: if the given owner type is not of the valid enumeration
         """
 
         # There may be a way to batch this in mongo which would be ideal for a
@@ -173,10 +173,10 @@ class RepoUnitAssociationManager:
                          from the source repository
         @type  criteria: L{Criteria}
 
-        @raises MissingRepo: if either of the specified repositories don't exist
+        @raises MissingResource: if either of the specified repositories don't exist
         @raises MissingImporter: if the destination repository does not have
                 a configured importer
-        @raises UnsupportedTypes: if one or more units that would be associated
+        @raises InvalidType: if one or more units that would be associated
                 are of types not supported by the destination repository's importer
         """
 
@@ -186,11 +186,11 @@ class RepoUnitAssociationManager:
 
         source_repo = repo_query_manager.find_by_id(source_repo_id)
         if source_repo is None:
-            raise MissingRepo(source_repo_id)
+            raise exceptions.MissingResource(source_repo_id)
 
         dest_repo = repo_query_manager.find_by_id(dest_repo_id)
         if dest_repo is None:
-            raise MissingRepo(dest_repo_id)
+            raise exceptions.MissingResource(dest_repo_id)
 
         # This will raise MissingImporter if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
@@ -220,7 +220,7 @@ class RepoUnitAssociationManager:
         unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
 
         if len(unsupported_types) > 0:
-            raise UnsupportedTypes(dest_repo_id, unsupported_types)
+            raise exceptions.InvalidType(dest_repo_id, unsupported_types)
 
         # Convert all of the units into the plugin standard representation
         type_defs = {}
@@ -247,7 +247,7 @@ class RepoUnitAssociationManager:
             importer_instance.import_units(transfer_repo, transfer_units, conduit, call_config)
         except Exception:
             _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (repo_importer['importer_type_id'], dest_repo_id))
-            raise ImporterAssociationException(), None, sys.exc_info()[2]
+            raise exceptions.OperationFailed(), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
         """

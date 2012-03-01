@@ -17,9 +17,7 @@ from pprint import pformat
 
 from pulp.server.constants import LOCAL_STORAGE
 from pulp.server.content.types import database as content_types_db
-from pulp.server.managers.content._exceptions import (
-    ContentTypeNotFound, ContentUnitNotFound)
-
+from pulp.server.exceptions import InvalidType, MissingResource
 
 class ContentQueryManager(object):
     """
@@ -91,14 +89,14 @@ class ContentQueryManager(object):
                  keys dict
         @rtype: dict
         @raise: ValueError if the unit_keys_dict is invalid
-        @raise: L{ContentUnitNotFound} if no content unit in the content type
+        @raise: L{MissingResource} if no content unit in the content type
                 collection matches the keys dict
         """
         units = self.get_multiple_units_by_keys_dicts(content_type,
                                                       (unit_keys_dict,),
                                                       model_fields)
         if not units:
-            raise ContentUnitNotFound(_('No content unit for keys: %(k)s') %
+            raise MissingResource(_('No content unit for keys: %(k)s') %
                                       {'k': pformat(unit_keys_dict)})
         return units[0]
 
@@ -116,14 +114,14 @@ class ContentQueryManager(object):
         @return: content unit from the content type collection that matches the
                  given id
         @rtype: dict
-        @raise: L{ContentUnitNotFound} if no content unit in the content type
+        @raise: L{MissingResource} if no content unit in the content type
                 collection matches the id
         """
         units = self.get_multiple_units_by_ids(content_type,
                                                (unit_id,),
                                                model_fields)
         if not units:
-            raise ContentUnitNotFound(_('No content unit found for: %(i)s') %
+            raise MissingResource(_('No content unit found for: %(i)s') %
                                       {'i': unit_id})
         return units[0]
 
@@ -182,7 +180,7 @@ class ContentQueryManager(object):
         """
         key_fields = content_types_db.type_units_unit_key(content_type)
         if key_fields is None:
-            raise ContentTypeNotFound(_('No content type found: %(c)') %
+            raise InvalidType(_('No content type found: %(c)') %
                                       {'c': content_type})
         all_fields = ['_id']
         _flatten_keys(all_fields, key_fields)

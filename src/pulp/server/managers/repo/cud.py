@@ -25,8 +25,7 @@ import shutil
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import MissingRepo, InvalidRepoId, InvalidRepoMetadata, DuplicateRepoId, RepoDeleteException
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, OperationFailed
 # -- constants ----------------------------------------------------------------
 
 _REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -88,7 +87,7 @@ class RepoManager:
         @type  repo_id: str
 
         @raises MissingResource: if the given repo does not exist
-        @raises RepoDeleteException: if any part of the delete process fails;
+        @raises OperationFailed: if any part of the delete process fails;
                 the exception will contain information on which sections failed
         """
 
@@ -113,7 +112,7 @@ class RepoManager:
                 importer_manager.remove_importer(repo_id)
             except Exception:
                 _LOG.exception('Error received removing importer [%s] from repo [%s]' % (repo_importer['importer_type_id'], repo_id))
-                error_codes.append(RepoDeleteException.CODE_IMPORTER)
+                error_codes.append("importer-error")
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
@@ -124,7 +123,7 @@ class RepoManager:
                 distributor_manager.remove_distributor(repo_id, repo_distributor['id'])
             except Exception:
                 _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
-                error_codes.append(RepoDeleteException.CODE_DISTRIBUTOR)
+                error_codes.append("distributor-error")
 
         # Delete the repository working directory
         repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)
@@ -133,7 +132,7 @@ class RepoManager:
                 shutil.rmtree(repo_working_dir)
             except Exception:
                 _LOG.exception('Error while deleting repo working dir [%s] for repo [%s]' % (repo_working_dir, repo_id))
-                error_codes.append(RepoDeleteException.CODE_WORKING_DIR)
+                error_codes.append("working-dir-error")
 
         # Database Updates
         try:
@@ -153,10 +152,10 @@ class RepoManager:
             RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
         except Exception:
             _LOG.exception('Error updating one or more database collections while removing repo [%s]' % repo_id)
-            error_codes.append(RepoDeleteException.CODE_DATABASE)
+            error_codes.append("database-error")
 
         if len(error_codes) > 0:
-            raise RepoDeleteException(error_codes)
+            raise OperationFailed(error_codes)
 
     def update_repo(self, repo_id, delta):
         """
