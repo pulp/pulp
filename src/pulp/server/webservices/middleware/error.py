@@ -47,7 +47,7 @@ class ErrorHandlerMiddleware(object):
     def __call__(self, environ, start_response):
         try:
             return self.app(environ, start_response)
-        except Exception:
+        except:
             t, e, tb = sys.exc_info()
             status = None
             error_obj = None
