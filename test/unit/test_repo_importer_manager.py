@@ -26,7 +26,8 @@ from pulp.server.content.plugins.importer import Importer
 from pulp.server.content.plugins.model import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
-import pulp.server.managers.repo._exceptions as errors
+#import pulp.server.managers.repo._exceptions as errors
+import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 
@@ -109,8 +110,8 @@ class RepoManagerTests(testutil.PulpTest):
         # Test
         try:
             self.importer_manager.set_importer('fake', 'mock-importer', None)
-        except errors.MissingRepo, e:
-            self.assertEqual(e.repo_id, 'fake')
+        except exceptions.MissingResource, e:
+            self.assertTrue('fake' in e)
             print(e) # for coverage
 
     def test_set_importer_no_importer(self):
@@ -124,8 +125,8 @@ class RepoManagerTests(testutil.PulpTest):
         # Test
         try:
             self.importer_manager.set_importer('real-repo', 'fake-importer', None)
-        except errors.InvalidImporterType, e:
-            self.assertEqual(e.importer_type_id, 'fake-importer')
+        except exceptions.InvalidType, e:
+            self.assertTrue('fake-importer' in e)
             print(e) # for coverage
 
     def test_set_importer_with_existing(self):
@@ -172,7 +173,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('repo-1', 'mock-importer', config)
             self.fail('Exception expected for importer plugin exception')
-        except errors.ImporterInitializationException:
+        except exceptions.OperationFailed:
             pass
 
         # Cleanup
@@ -192,7 +193,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('bad_config', 'mock-importer', config)
             self.fail('Exception expected for bad config')
-        except errors.InvalidImporterConfiguration:
+        except exceptions.InvalidConfiguration:
             pass
 
         # Cleanup
@@ -212,7 +213,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('bad_config', 'mock-importer', config)
             self.fail('Exception expected for bad config')
-        except errors.InvalidImporterConfiguration:
+        except exceptions.InvalidConfiguration:
             pass
 
     # -- remove ---------------------------------------------------------------
@@ -244,8 +245,8 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.remove_importer('not-there')
             self.fail('Exception expected')
-        except errors.MissingRepo, e:
-            self.assertEqual(e.repo_id, 'not-there')
+        except exceptions.MissingResource, e:
+            self.assertTrue('not-there' in e)
 
     def test_remove_importer_missing_importer(self):
         """
@@ -259,7 +260,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.remove_importer('solitude')
             self.fail('Exception expected')
-        except errors.MissingImporter:
+        except exceptions.MissingResource:
             pass
 
     # -- update ---------------------------------------------------------------
@@ -299,8 +300,8 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('not-there', 'mock-importer')
             self.fail('Exception expected')
-        except errors.MissingRepo, e:
-            self.assertEqual(e.repo_id, 'not-there')
+        except exceptions.MissingResource, e:
+            self.assertTrue('not-there' in e)
 
     def test_update_importer_missing_importer(self):
         """
@@ -314,7 +315,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('empty', 'no-importer-here')
             self.fail('Exception expected')
-        except errors.MissingImporter:
+        except exceptions.MissingResource:
             pass
 
     def test_update_importer_plugin_exception(self):
@@ -332,7 +333,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('riverwood', {})
             self.fail('Exception expected')
-        except errors.InvalidImporterConfiguration:
+        except exceptions.InvalidConfiguration:
             pass
 
         # Cleanup
@@ -353,7 +354,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('restoration', {})
             self.fail('Exception expected')
-        except errors.InvalidImporterConfiguration:
+        except exceptions.InvalidConfiguration:
             pass
 
         # Cleanup
@@ -386,7 +387,7 @@ class RepoManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.assertRaises(errors.MissingImporter, self.importer_manager.get_importer, 'fake-repo')
+        self.assertRaises(exceptions.MissingResource, self.importer_manager.get_importer, 'fake-repo')
 
     def test_get_importer_missing_importer(self):
         """
@@ -397,7 +398,7 @@ class RepoManagerTests(testutil.PulpTest):
         self.repo_manager.create_repo('empty')
 
         # Test
-        self.assertRaises(errors.MissingImporter, self.importer_manager.get_importer, 'empty')
+        self.assertRaises(exceptions.MissingResource, self.importer_manager.get_importer, 'empty')
 
     def test_get_importers(self):
         """
@@ -440,8 +441,8 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.get_importers('fake')
             self.fail('Exception expected')
-        except errors.MissingRepo, e:
-            self.assertEqual('fake', e.repo_id)
+        except exceptions.MissingResource, e:
+            self.assertTrue('fake'in e)
 
     # -- scratchpad -----------------------------------------------------------
 

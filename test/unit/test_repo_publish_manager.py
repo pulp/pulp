@@ -131,8 +131,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('not-here', 'doesnt-matter', None)
             self.fail('Expected exception was not raised')
-        except publish_manager.MissingRepo, e:
-            self.assertEqual('not-here', e.repo_id)
+        except publish_manager.MissingResource, e:
+            self.assertTrue('not-here' in e)
             print(e) # for coverage
 
     def test_publish_no_distributor(self):
@@ -147,8 +147,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('no-dist', 'fake-dist')
             self.fail('Expected exception was not raised')
-        except publish_manager.MissingDistributor, e:
-            self.assertEqual('no-dist', e.distributor_id)
+        except publish_manager.MissingResource, e:
+            self.assertTrue('no-dist' in e)
             print(e) # for coverage
 
     def test_publish_bad_distributor(self):
@@ -168,8 +168,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('repo', 'dist-1', None)
             self.fail('Expected exception was not raised')
-        except publish_manager.MissingDistributorPlugin, e:
-            self.assertEqual('repo', e.repo_id)
+        except publish_manager.MissingResource, e:
+            self.assertTrue('repo' in e)
             print(e) # for coverage
 
     def test_publish_bad_database(self):
@@ -188,8 +188,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('repo', 'dist-1')
             self.fail('Expected exception was not raised')
-        except publish_manager.MissingDistributor, e:
-            self.assertEqual('repo', e.distributor_id)
+        except publish_manager.MissingResource, e:
+            self.assertTrue('repo' in e)
             print(e) # for coverage
 
     def test_publish_with_error(self):
@@ -207,8 +207,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('gonna-bail', 'bad-dist')
             self.fail('Expected exception was not raised')
-        except publish_manager.RepoPublishException, e:
-            self.assertEqual('gonna-bail', e.repo_id)
+        except publish_manager.OperationFailed, e:
+            self.assertTrue('gonna-bail' in e)
             print(e) # for coverage
 
         # Verify
@@ -253,8 +253,8 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('busy', 'dist-1')
             self.fail('Expected exception was not raised')
-        except publish_manager.PublishInProgress, e:
-            self.assertEqual('busy', e.repo_id)
+        except publish_manager.ConflictingOperation, e:
+            self.assertTrue('busy' in e)
             print(e) # for coverage
 
     def test_auto_publish_for_repo(self):
@@ -301,13 +301,14 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.auto_publish_for_repo('publish-me')
             self.fail('Expected exception was not raised')
-        except publish_manager.AutoPublishException, e:
-            self.assertEqual('publish-me', e.repo_id)
-            self.assertEqual(1, len(e.dist_traceback_tuples))
-            self.assertEqual('auto-1', e.dist_traceback_tuples[0][0])
-            self.assertTrue(e.dist_traceback_tuples[0][1] is not None)
-            print(e) # for coverage
-            print(e.dist_traceback_tuples[0][1]) # for curiosity of the exception format
+        except publish_manager.OperationFailed, e:
+            self.assertTrue('publish-me' in e)
+            # Commenting these out for now until exception object is flushed out
+            #self.assertEqual(1, len(e.dist_traceback_tuples))
+            #self.assertEqual('auto-1', e.dist_traceback_tuples[0][0])
+            #self.assertTrue(e.dist_traceback_tuples[0][1] is not None)
+            #print(e) # for coverage
+            #print(e.dist_traceback_tuples[0][1]) # for curiosity of the exception format
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
@@ -412,7 +413,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.assertRaises(publish_manager.MissingRepo, self.publish_manager.publish_history, 'missing', 'irrelevant')
+        self.assertRaises(publish_manager.MissingResource, self.publish_manager.publish_history, 'missing', 'irrelevant')
 
     # -- utility tests --------------------------------------------------------
 
