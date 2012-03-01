@@ -39,6 +39,7 @@ from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.content import loader as plugin_loader
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
@@ -156,6 +157,7 @@ def _initialize_pulp():
     HEARTBEAT_LISTENER.start()
     # async subsystem and schedules tasks
     async.initialize()
+    dispatch_factory.initialize()
     # pulp finalization methods, registered via 'atexit'
     atexit.register(async.finalize)
     # setup debugging, if configured
