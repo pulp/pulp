@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        8.1%{?dist}
+Release:        8.2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -39,7 +39,7 @@ Requires: python-ldap
 Requires: python-gofer >= 0.37
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi = 3.2-3.sslpatch%{?dist}
+Requires: mod_wsgi = 3.2-3.sslpatch.el6
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
@@ -106,7 +106,7 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.37
 Requires:       grinder
 Requires:       httpd
-Requires:       mod_wsgi = 3.2-3.sslpatch%{?dist}
+Requires:       mod_wsgi = 3.2-3.sslpatch.el6
 Requires:       mod_ssl
 Requires:       m2crypto
 
