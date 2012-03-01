@@ -241,7 +241,7 @@ class Coordinator(object):
 
     # query methods ------------------------------------------------------------
 
-    def find_call_reports(self, **criteria):
+    def find_tasks(self, **criteria):
         """
         Find call reports that match the criteria given as key word arguments.
 
@@ -262,10 +262,30 @@ class Coordinator(object):
         superfluous_criteria = provided_criteria - valid_criteria
         if superfluous_criteria:
             raise dispatch_exceptions.UnrecognizedSearchCriteria(*list(superfluous_criteria))
-        call_reports = []
+        tasks = []
         for task in self.task_queue.all_tasks():
             if task_matches_criteria(task, criteria):
-                call_reports.append(task.call_report)
+                tasks.append(task)
+        return tasks
+
+    def find_call_reports(self, **criteria):
+        """
+        Find call reports that match the criteria given as key word arguments.
+
+        Supported criteria:
+         * task_id
+         * job_id
+         * state
+         * call_name
+         * class_name
+         * args
+         * kwargs
+         * resources
+         * tags
+        """
+        tasks = self.find_tasks(**criteria)
+        call_reports = [t.call_report for t in tasks]
+        # XXX should we be appending history here?
         for archived_call in dispatch_history.find_archived_calls(criteria):
             call_reports.append(archived_call['serialized_call_report'])
         return call_reports
