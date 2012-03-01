@@ -35,7 +35,7 @@ _LOG = logging.getLogger(__name__)
 class TaskNotFound(MissingResource):
 
     def __unicode__(self):
-        return _(u'Task Not Found: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+        return unicode(_('Task Not Found: %{id}s')) % {'id': unicode(self.args[0], 'utf-8')}
 
 
 class TaskCancelNotImplemented(PulpExecutionException):
@@ -43,19 +43,19 @@ class TaskCancelNotImplemented(PulpExecutionException):
     http_status_code = httplib.NOT_IMPLEMENTED
 
     def __unicode__(self):
-        return _(u'Cancel Not Implemented for Task: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+        return unicode(_('Cancel Not Implemented for Task: %{id}s')) % {'id': unicode(self.args[0], 'utf-8')}
 
 
 class QueuedCallNotFound(MissingResource):
 
     def __unicode__(self):
-        return _(u'Snapshot Not Found: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+        return unicode(_('Snapshot Not Found: %{id}s')) % {'id': unicode(self.args[0], 'utf-8')}
 
 
 class JobNotFound(MissingResource):
 
     def __unicode__(self):
-        return _(u'Job Not Found: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+        return unicode(_('Job Not Found: %{id}s')) % {'id': unicode(self.args[0], 'utf-8')}
 
 
 class JobCancelNotImplemented(PulpExecutionException):
@@ -63,7 +63,7 @@ class JobCancelNotImplemented(PulpExecutionException):
     http_status_code = httplib.NOT_IMPLEMENTED
 
     def __unicode__(self):
-        return _(u'Cancel Not Implemented for Job: %{id}s') % {'id': unicode(self.args[0], 'utf-8')}
+        return unicode(_('Cancel Not Implemented for Job: %{id}s')) % {'id': unicode(self.args[0], 'utf-8')}
 
 # task controllers -------------------------------------------------------------
 
