@@ -36,6 +36,7 @@ from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResul
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import MissingRepo, RepoSyncException, NoImporter, MissingImporterPlugin, SyncInProgress
+from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, InvalidConfiguration, OperationFailed, ConflictingOperation
 
 # -- constants ----------------------------------------------------------------
 
@@ -71,8 +72,8 @@ class RepoSyncManager:
                                      for this sync only
         @type  sync_config_override: dict
 
-        @raises MissingRepo: if repo_id does not refer to a valid repo
-        @raises NoImporter: if the given repo does not have an importer set
+        @raises MissingResource: if repo_id does not refer to a valid repo
+        @raises OperationFailed: if the given repo does not have an importer set
         """
 
         repo_coll = Repo.get_collection()
@@ -82,21 +83,21 @@ class RepoSyncManager:
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         repo_importers = list(importer_coll.find({'repo_id' : repo_id}))
 
         if len(repo_importers) is 0:
-            raise NoImporter(repo_id)
+            raise OperationFailed(repo_id)
         repo_importer = repo_importers[0]
 
         if repo_importer['sync_in_progress']:
-            raise SyncInProgress(repo_id)
+            raise ConflictingOperation(repo_id)
 
         try:
             importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
         except plugin_loader.PluginNotFound:
-            raise MissingImporterPlugin(repo_id), None, sys.exc_info()[2]
+            raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
         conduit = RepoSyncConduit(repo_id, repo_importer['id'])
@@ -127,7 +128,7 @@ class RepoSyncManager:
             sync_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
-            raise RepoSyncException(repo_id), None, sys.exc_info()[2]
+            raise OperationFailed(repo_id), None, sys.exc_info()[2]
 
         sync_end_timestamp = _now_timestamp()
 
@@ -197,13 +198,13 @@ class RepoSyncManager:
         @return: list of sync history result instances
         @rtype:  list of L{pulp.server.db.model.gc_repository.RepoSyncResult}
 
-        @raises MissingRepo: if repo_id does not reference a valid repo
+        @raises MissingResource: if repo_id does not reference a valid repo
         """
 
         # Validation
         repo = Repo.get_collection().find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         if limit is None:
             limit = 10 # default here for each of REST API calls into here

@@ -372,7 +372,7 @@ class RepoSyncHistory(JSONController):
         try:
             entries = sync_manager.sync_history(repo_id, limit=limit)
             return self.ok(entries)
-        except errors.MissingRepo:
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 
@@ -399,7 +399,7 @@ class RepoPublishHistory(JSONController):
         try:
             entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
             return self.ok(entries)
-        except (errors.MissingRepo, errors.MissingDistributor):
+        except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
 

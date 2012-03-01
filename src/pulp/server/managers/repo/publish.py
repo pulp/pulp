@@ -33,6 +33,7 @@ from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublis
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import MissingRepo, RepoPublishException, MissingDistributorPlugin, PublishInProgress, AutoPublishException, MissingDistributor
+from pulp.server.exceptions import MissingResource, ConflictingOperation, OperationFailed
 
 # -- constants ----------------------------------------------------------------
 
@@ -69,20 +70,20 @@ class RepoPublishManager:
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingDistributor(repo_id)
+            raise MissingResource(repo_id)
 
         if repo_distributor['publish_in_progress']:
-            raise PublishInProgress(repo_id)
+            raise ConflictingOperation(repo_id)
 
         try:
             distributor_instance, plugin_config = \
                 plugin_loader.get_distributor_by_id(repo_distributor['distributor_type_id'])
         except plugin_loader.PluginNotFound:
-            raise MissingDistributorPlugin(repo_id), None, sys.exc_info()[2]
+            raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish
         repo_manager = manager_factory.repo_manager()
@@ -113,7 +114,7 @@ class RepoPublishManager:
             publish_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
-            raise RepoPublishException(repo_id), None, sys.exc_info()[2]
+            raise OperationFailed(repo_id), None, sys.exc_info()[2]
 
         publish_end_timestamp = _now_timestamp()
 
@@ -153,7 +154,7 @@ class RepoPublishManager:
         @param repo_id: identifies the repo
         @type  repo_id: str
 
-        @raises AutoPublishException: if one or more of the distributors errors
+        @raises OperationFailed: if one or more of the distributors errors
                 during publishing; the exception will contain information on all
                 failures
         """
@@ -177,7 +178,7 @@ class RepoPublishManager:
                 error_runs.append( (dist_id, error_string) )
 
         if len(error_runs) > 0:
-            raise AutoPublishException(repo_id, error_runs)
+            raise OperationFailed(repo_id, error_runs)
 
     def last_publish(self, repo_id, distributor_id):
         """
@@ -193,7 +194,7 @@ class RepoPublishManager:
         @return: timestamp of the last publish
         @rtype:  datetime or None
 
-        @raises NoDistributor: if there is no distributor identified by the
+        @raises MissingResource: if there is no distributor identified by the
                 given repo ID and distributor ID
         """
 
@@ -202,7 +203,7 @@ class RepoPublishManager:
         repo_distributor = coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
 
         if repo_distributor is None:
-            raise MissingDistributor(repo_id)
+            raise MissingResource(repo_id)
 
         # Convert to datetime instance
         date_str = repo_distributor['last_publish']
@@ -230,17 +231,17 @@ class RepoPublishManager:
         @return: list of publish history result instances
         @rtype:  list of L{pulp.server.db.model.gc_repository.RepoPublishResult}
 
-        @raises MissingRepo: if repo_id does not reference a valid repo
+        @raises MissingResource: if repo_id does not reference a valid repo
         """
 
         # Validation
         repo = Repo.get_collection().find_one({'id' : repo_id})
         if repo is None:
-            raise MissingRepo(repo_id)
+            raise MissingResource(repo_id)
 
         dist = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if dist is None:
-            raise MissingDistributor(distributor_id)
+            raise MissingResource(distributor_id)
 
         if limit is None:
             limit = 10 # default here for each of REST API calls into here

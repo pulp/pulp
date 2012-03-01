@@ -58,7 +58,7 @@ class InvalidConfiguration(PulpExecutionException):
 class MissingResource(PulpExecutionException):
     """"
     Base class for exceptions raised due to requesting a resource that does not
-    exits.
+    exist.
     """
     http_status_code = httplib.NOT_FOUND
 
