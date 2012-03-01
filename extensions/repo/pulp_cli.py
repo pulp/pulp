@@ -57,6 +57,11 @@ class RepoSection(PulpCliSection):
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of repository fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
 
+        # List Units Command
+        units_command = PulpCliCommand('units', 'lists content units in the repository', self.units)
+        units_command.add_option(id_option)
+        self.add_command(units_command)
+
         # Subsections
         self.add_subsection(ImporterSection(context))
         self.add_subsection(SyncSection(context))
@@ -118,6 +123,15 @@ class RepoSection(PulpCliSection):
 
         self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order)
 
+    def units(self, **kwargs):
+        repo_id = kwargs['id']
+        self.prompt.render_title('Units in Repository [%s]' % repo_id)
+
+        query = {}
+        units = self.context.server.repo_search.search(repo_id, query)
+
+        self.prompt.render_document_list(units.response_body)
+
 class ImporterSection(PulpCliSection):
 
     def __init__(self, context):
@@ -162,9 +176,12 @@ class SyncSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt
 
+        # Run an Immediate Sync
         run_command = PulpCliCommand('run', 'triggers an immediate sync of a specific repository', self.run)
         run_command.add_option(PulpCliOption('--id', 'identifies the repository to sync', required=True))
         self.add_command(run_command)
+
+        # TODO: Add sync schedule and status commands
 
     def run(self, **kwargs):
 
