@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        1.2%{?dist}
+Release:        1.3%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -307,6 +307,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-1.3
+- Add requirement on el6 dist for mod_wsgi (jslagle@redhat.com)
+
 * Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-1.2
 - Remove requirement on mod_wsgi dist (jslagle@redhat.com)
 
