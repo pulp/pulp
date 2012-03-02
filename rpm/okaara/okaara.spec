@@ -63,6 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.8-1
+- Upgraded okaara to 1.0.8 (jason.dobies@redhat.com)
+
+* Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.8-1
 - Fixed infinite loop in small circumstances when remaining_line_indent is used
   (jason.dobies@redhat.com)
 - Helps if you actually retain a handle to the parser (jason.dobies@redhat.com)
