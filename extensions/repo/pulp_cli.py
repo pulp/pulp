@@ -16,7 +16,7 @@ import os
 import sys
 
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag
-from pulp.gc_client.api.server import NotFoundException
+from pulp.gc_client.api.exceptions import NotFoundException
 
 # -- framework hook -----------------------------------------------------------
 
