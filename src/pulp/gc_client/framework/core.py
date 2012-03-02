@@ -319,7 +319,7 @@ class PulpPrompt(Prompt):
                             # lists of other lists.
                             pass
                 else:
-                    if isinstance(v, str):
+                    if isinstance(v, (str, unicode)):
                         v = v.replace('\n', ' ')
 
                 line = line_template % (formatted_k + ':', str(v))
