@@ -15,6 +15,10 @@ import atexit
 import logging
 
 # XXX monkey patching web.py YUCK!
+# This keeps the web.py wsgi app from trying to handle otherwise unhandled
+# exceptions and lets Pulp error handling middleware handle them instead
+# This exists here as it is the first place that Pulp imports web.py, so all
+# web.py applications will be instantiated *after* their base class is patched
 def _handle_with_processors(self):
     def process(processors):
         if processors:
