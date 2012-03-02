@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.270
+Version:        0.0.271
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -504,6 +504,47 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Mar 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.271-1
+- Fixed reST formatting in docs (jason.dobies@redhat.com)
+- Apply some basic filters/ordering to unit list (jason.dobies@redhat.com)
+- Made render_document_list a bit more robust (jason.dobies@redhat.com)
+- Playing with color in cli map output to make it more readable
+  (jason.dobies@redhat.com)
+- Refactored so all logging configuration is done in the launcher. Removed
+  hardcoded logging filename client.log. (jason.dobies@redhat.com)
+- Tweaks and additions to render_document_list. (jason.dobies@redhat.com)
+- Added getResponseLogger to gc_client to remove it's dependecy on v1 client
+  and moved exceptions into seperate file (skarmark@redhat.com)
+- Update search indexes for rpm type (jmatthews@redhat.com)
+- Added support for logging HTTP calls in the admin config
+  (jason.dobies@redhat.com)
+- Raised priority for built in extensions (should probably be a constant
+  somewhere, I'm just not sure where). (jason.dobies@redhat.com)
+- tied new dispatch collections into webservices (jconnor@redhat.com)
+- finished first pass implementation of new dispatch controllers
+  (jconnor@redhat.com)
+- add _ in front of href fields as per specification (jconnor@redhat.com)
+- refactored find to allow methods for tasks and call_reports
+  (jconnor@redhat.com)
+- changes to content and unit association managers and controllers to use new
+  exception middleware (skarmark@redhat.com)
+- Refactored unknown args parsing to fit better into the CLI framework and
+  added probably the coolest testing fixture I've ever set up to test it.
+  (jason.dobies@redhat.com)
+- Updating manager unit tests for updated exceptions (skarmark@redhat.com)
+- Initial implementation of the list units command (jason.dobies@redhat.com)
+- Initial implementation of repo sync (jason.dobies@redhat.com)
+- Added wrapper for creating a threaded spinner (jason.dobies@redhat.com)
+- Manager layer and controller changes for repo sync and publish functionality
+  to use newly added exception middleware (skarmark@redhat.com)
+- Manager layer and controller changes to use newly added exception middleware
+  (skarmark@redhat.com)
+- Update to sync pulp_unittest repo for harness testing of rpm importer
+  (jmatthews@redhat.com)
+- RPM Importer updates to begin unit tests (jmatthews@redhat.com)
+- Initial implementation of add importer (jason.dobies@redhat.com)
+- Implemented unknown argument parser (jason.dobies@redhat.com)
+
 * Wed Feb 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.270-1
 - Exclude pulp-v2-admin from setup.py until it can be packaged.
   (jortel@redhat.com)
