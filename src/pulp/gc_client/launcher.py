@@ -23,6 +23,8 @@ import logging.handlers
 from   optparse import OptionParser
 import os
 
+from   okaara.prompt import COLOR_CYAN, COLOR_LIGHT_CYAN
+
 from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, ClientContext, WIDTH_TERMINAL
 import pulp.gc_client.framework.loader as extensions_loader
 from   pulp.gc_client.api.bindings import Bindings
@@ -187,7 +189,7 @@ def main(config_filename, override_config_filename=None):
 
     # Launch the appropriate UI (add in shell support here later)
     if options.print_map:
-        cli.print_cli_map()
+        cli.print_cli_map(section_color=COLOR_LIGHT_CYAN, command_color=COLOR_CYAN)
         return os.EX_OK
     else:
         code = cli.run(args)
