@@ -67,7 +67,7 @@ def _initialize_logging(config, debug=False):
 
 # -- server connection --------------------------------------------------------
 
-def _create_bindings(config, username, password):
+def _create_bindings(config, logger, username, password):
     """
     @return: bindings with a fully configured Pulp connection
     """
@@ -82,13 +82,20 @@ def _create_bindings(config, username, password):
     cert_dir = os.path.expanduser(cert_dir) # this will likely be in a user directory
     cert_filename = os.path.join(cert_dir, cert_name)
 
-    call_log_filename = None
+    call_log = None
     if config.has_option('logging', 'call_log_filename'):
-        call_log_filename = config.get('logging', 'call_log_filename')
-        call_log_filename = os.path.expanduser(call_log_filename) # also likely in a user dir
+        filename = config.get('logging', 'call_log_filename')
+        filename = os.path.expanduser(filename) # also likely in a user dir
+
+        handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
+        handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+        call_log = logging.getLogger('call_log')
+        call_log.addHandler(handler)
+        call_log.setLevel(logging.INFO)
 
     # Create the connection and bindings
-    conn = PulpConnection(hostname, port, username=username, password=password, certfile=cert_filename, api_responses_log=call_log_filename)
+    conn = PulpConnection(hostname, port, username=username, password=password, certfile=cert_filename, logger=logger, api_responses_logger=call_log)
     bindings = Bindings(conn)
 
     return bindings
@@ -160,7 +167,7 @@ def main(config_filename, override_config_filename=None):
     logger = _initialize_logging(config, debug=options.debug)
 
     # REST Bindings
-    server = _create_bindings(config, options.username, options.password)
+    server = _create_bindings(config, logger, options.username, options.password)
 
     # Client context
     prompt = _create_prompt(config)

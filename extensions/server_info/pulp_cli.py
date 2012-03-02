@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand
-from pulp.gc_client.api.server import RequestException
+from pulp.gc_client.api.exceptions import RequestException
 
 def initialize(context):
     context.cli.add_section(ServerPluginsSection(context))

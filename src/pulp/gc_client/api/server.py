@@ -14,6 +14,7 @@
 import base64
 import httplib
 import locale
+import logging
 import os
 import urllib
 from gettext import gettext as _
@@ -25,7 +26,6 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
-from pulp.gc_client.lib.logutil import getLogger, getResponseLogger
 import pulp.gc_client.api.exceptions as exceptions 
 
 
@@ -76,14 +76,16 @@ class PulpConnection(object):
     """
 
     def __init__(self, host, port=443, path_prefix='/pulp/api', timeout=120, connection=None,
-                 server_wrapper=None, api_responses_log=None, username=None, password=None, certfile=None):
+                 server_wrapper=None, logger=None, api_responses_logger=None, username=None, password=None, certfile=None):
 
         self.host = host
         self.port = port
         self.path_prefix = path_prefix
         self.headers = {}
         self.timeout = timeout
-        self.api_responses_log = api_responses_log
+
+        self._log = logger or logging.getLogger(__name__)
+        self.api_responses_logger = api_responses_logger
 
         default_locale = locale.getdefaultlocale()[0]
         if default_locale:
@@ -95,8 +97,6 @@ class PulpConnection(object):
                    'Accept-Language': default_locale,
                    'Content-Type': 'application/json'}
         self.headers.update(headers)
-
-        self._log = getLogger('pulp')
 
         self.__certfile = None
 
@@ -163,11 +163,10 @@ class PulpConnection(object):
         response_code, response_body = self.server_wrapper.request(method=method, url=url,
                                                     body=body, headers=self.headers)
 
-        if self.api_responses_log:
-            self._response_log = getResponseLogger('api_responses', self.api_responses_log)
-            self._response_log.info('%s request to %s with parameters %s' % (method, url, body))
-            self._response_log.info("Response status : %s \n" % response_code)
-            self._response_log.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
+        if self.api_responses_logger:
+            self.api_responses_logger.info('%s request to %s with parameters %s' % (method, url, body))
+            self.api_responses_logger.info("Response status : %s \n" % response_code)
+            self.api_responses_logger.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
                 
         if response_code >= 300:
             self.handle_exceptions(response_code, response_body)
