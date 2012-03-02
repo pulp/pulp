@@ -77,8 +77,8 @@ class RepoSection(PulpCliSection):
         # Collect input
         id = kwargs['id']
         name = id
-        if 'name' in kwargs:
-            name = kwargs['name']
+        if 'display_name' in kwargs:
+            name = kwargs['display_name']
         description = kwargs['description']
         notes = None # TODO: add support later
 
@@ -126,7 +126,8 @@ class RepoSection(PulpCliSection):
                 filters.append('id')
             order = ['id']
 
-        self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order)
+        def header_func(i) : return '-- ' + i['display_name'] + ' ' + ('-' * (20 - len(i['display_name'])))
+        self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order, header_func=header_func)
 
     def units(self, **kwargs):
         repo_id = kwargs['id']
@@ -135,7 +136,8 @@ class RepoSection(PulpCliSection):
         query = {}
         units = self.context.server.repo_search.search(repo_id, query)
 
-        self.prompt.render_document_list(units.response_body)
+        def header_func(i) : return '-----------'
+        self.prompt.render_document_list(units.response_body, header_func=header_func)
 
 class ImporterSection(PulpCliSection):
 

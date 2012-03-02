@@ -49,6 +49,7 @@ COLOR_FAILURE = okaara.prompt.COLOR_LIGHT_RED
 COLOR_IN_PROGRESS = okaara.prompt.COLOR_LIGHT_YELLOW
 COLOR_COMPLETED = okaara.prompt.COLOR_LIGHT_GREEN
 
+TITLE_PERCENTAGE = .75
 BAR_PERCENTAGE = .66
 
 # Shadow here so callers don't need to import okaara directly
@@ -97,10 +98,13 @@ class PulpPrompt(Prompt):
         else:
             width = self.wrap_width
 
+        width = int(math.floor(TITLE_PERCENTAGE * width))
         divider = '+' + ('-' * (width - 2)) + '+'
 
+        title = self.center(title, width=width)
+
         self.write(divider)
-        self.write(title, center=True, color=COLOR_HEADER, tag=TAG_TITLE)
+        self.write(title, color=COLOR_HEADER, tag=TAG_TITLE)
         self.write(divider)
         self.render_spacer()
 
@@ -184,8 +188,8 @@ class PulpPrompt(Prompt):
         self.render_document_list([document], filters=filters, spaces_between_cols=spaces_between_cols, indent=indent)
 
     def render_document_list(self, items, filters=None, order=None,
-                             spaces_between_cols=2, indent=0, step=2,
-                             omit_hidden=True):
+                             spaces_between_cols=1, indent=0, step=2,
+                             omit_hidden=True, header_func=None):
         """
         Prints a list of JSON documents retrieved from the REST bindings (more
         generally, will print any list of dicts). The data will be output as
@@ -202,6 +206,12 @@ class PulpPrompt(Prompt):
         test described above will be rendered in alphabetical order following
         the ordered items.
 
+        If specified, the header_func must be a function that accepts a single
+        parameter and returns a string. The parameter will be the item (document)
+        about to be rendered. The returned value will be rendered prior to
+        rendering the document itself, providing a way to output a header or
+        separator between items for UI clarity.
+
         :param items: list of items (each a dict) to render
         :type  items: list
 
@@ -213,6 +223,10 @@ class PulpPrompt(Prompt):
 
         :param spaces_between_cols: number of spaces between the key and value columns
         :type  spaces_between_cols: int
+
+        :param header_func: function to be applied to the item before it is
+               rendered; the results will be printed prior to rendering the item
+        :type  header_func: function
         """
 
         # Punch out early if the items list is empty; we access the first
@@ -277,6 +291,11 @@ class PulpPrompt(Prompt):
 
         # Print each item
         for i in filtered_items:
+
+            if header_func is not None:
+                h = header_func(i)
+                self.write(h)
+
             for k, formatted_k in ordered_formatted_keys:
                 v = i[k]
 
@@ -293,10 +312,20 @@ class PulpPrompt(Prompt):
                         self.render_document_list(v, indent=indent+step)
                         continue
                     else:
-                        v = ', '.join(v)
+                        try:
+                            v = ', '.join(v)
+                        except TypeError:
+                            # This is ugly, but it's the quickest way to get around
+                            # lists of other lists.
+                            pass
+                else:
+                    if isinstance(v, str):
+                        v = v.replace('\n', ' ')
 
                 line = line_template % (formatted_k + ':', str(v))
-                self.write(line, tag=TAG_DOCUMENT)
+                long_value_indent = max_key_length + spaces_between_cols + 2
+                line = self.wrap(line, remaining_line_indent=long_value_indent)
+                self.write(line, tag=TAG_DOCUMENT, skip_wrap=True)
 
             # Only add a space if we're at the highest level of the rendering
             if indent is 0:
