@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.8
+Version:        1.0.9
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,9 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.8-1
-- Upgraded okaara to 1.0.8 (jason.dobies@redhat.com)
+* Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.9-1
+- Added optional color for cli map output (jason.dobies@redhat.com)
+- Hardened color command to handle None as the color (jason.dobies@redhat.com)
 
 * Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.8-1
 - Fixed infinite loop in small circumstances when remaining_line_indent is used
