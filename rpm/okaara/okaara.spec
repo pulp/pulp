@@ -63,6 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.9-1
+- Upgrade okaara to 1.0.9 (jason.dobies@redhat.com)
+
+* Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.9-1
 - Added optional color for cli map output (jason.dobies@redhat.com)
 - Hardened color command to handle None as the color (jason.dobies@redhat.com)
 
