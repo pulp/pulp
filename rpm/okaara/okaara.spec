@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.7
+Version:        1.0.8
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,16 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.7-1
-- okaara 1.0.7; fix for python 2.4 compatibility (jason.dobies@redhat.com)
+* Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.8-1
+- Fixed infinite loop in small circumstances when remaining_line_indent is used
+  (jason.dobies@redhat.com)
+- Helps if you actually retain a handle to the parser (jason.dobies@redhat.com)
+- Added timeout to threaded spinner (jason.dobies@redhat.com)
+- Added ability to delete spinners/bars after they are finished
+  (jason.dobies@redhat.com)
+- Cleaned up the CLI map output (jason.dobies@redhat.com)
+- Import clean up (jason.dobies@redhat.com)
+- Cleaned up --help output (jason.dobies@redhat.com)
 
 * Wed Feb 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.7-1
 - Fixed for 2.4 compatibility (jason.dobies@redhat.com)
