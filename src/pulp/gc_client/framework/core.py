@@ -28,6 +28,8 @@ from   okaara.progress import ProgressBar, Spinner, ThreadedSpinner
 import okaara.prompt
 from   okaara.prompt import Prompt, WIDTH_TERMINAL
 
+from   pulp.gc_client.framework.extensions import PulpCliSection
+
 # -- constants ----------------------------------------------------------------
 
 # Values used for tags in each of the rendering calls; these should be used
@@ -411,6 +413,29 @@ class PulpCli(Cli):
             log_file = self.context.client_config.get('logging', 'filename')
             self.prompt.render_failure_message('An unexpected error has occurred. More information can be found in %s' % log_file)
             return os.EX_SOFTWARE
+
+    def create_section(self, name, description):
+        """
+        Creates a new subsection at the root of the CLI. The given name must be
+        unique across all commands and subsections within this section. The
+        section instance is returned and can be further edited except for its name.
+
+        Sections created in this fashion do not need to be added to this section
+        through the add_section method.
+
+        :param name: identifies the section
+        :type  name: str
+
+        :param description: user-readable text describing the contents of this
+               subsection
+        :type  description: str
+
+        :return: instance representing the newly added section
+        :rtype:  PulpCliSection
+        """
+        subsection = PulpCliSection(name, description)
+        self.add_section(subsection)
+        return subsection
 
 class ClientContext:
 
