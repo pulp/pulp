@@ -137,7 +137,9 @@ class RepoSection(PulpCliSection):
         units = self.context.server.repo_search.search(repo_id, query)
 
         def header_func(i) : return '-----------'
-        self.prompt.render_document_list(units.response_body, header_func=header_func)
+        filters = ['unit_type_id', 'unit_id', 'owner_type', 'owner_id', 'created', 'updated', 'repo_id', 'metadata']
+        order = filters
+        self.prompt.render_document_list(units.response_body, header_func=header_func, filters=filters, order=order)
 
 class ImporterSection(PulpCliSection):
 
