@@ -25,35 +25,36 @@ import os
 import sys
 import types
 
-_host = 'localhost'
-_port = 443
-_path_prefix = '/pulp/api'
-_auth_scheme = 'basic' # can also be 'oauth'
-_user = 'admin'
-_password = 'admin'
+HOST = 'localhost'
+PORT = 443
+PATH_PREFIX = '/pulp/api'
+AUTH_SCHEME = 'basic' # can also be 'oauth' (XXX not really)
+USER = 'admin'
+PASSWORD = 'admin'
 
 # connection management -------------------------------------------------------
 
-_connection = None
+_CONNECTION = None
 
 def connect():
-    global _connection
-    _connection = httplib.HTTPSConnection(_host, _port)
+    global _CONNECTION
+    _CONNECTION = httplib.HTTPSConnection(HOST, PORT)
 
 # auth credentials ------------------------------------------------------------
 
 def set_basic_auth_credentials(user, password):
-    global _auth_scheme, _user, _password
-    _auth_scheme = 'basic'
-    _user = user
-    _password = password
+    global AUTH_SCHEME, USER, PASSWORD
+    AUTH_SCHEME = 'basic'
+    USER = user
+    PASSWORD = password
 
 
-def set_oauth_credendtials(user):
-    global _auth_scheme, _user, _password
-    _auth_scheme = 'oauth'
-    _user = user
-    _password = ''
+# XXX misspelled as well as incorrect
+#def set_oauth_credentials(user):
+#    global _auth_scheme, _user, _password
+#    _auth_scheme = 'oauth'
+#    _user = user
+#    _password = ''
 
 # requests --------------------------------------------------------------------
 
@@ -63,28 +64,28 @@ class RequestError(Exception):
 
 def _auth_header():
     def _basic_auth_header():
-        raw = ':'.join((_user, _password))
+        raw = ':'.join((USER, PASSWORD))
         encoded = base64.encodestring(raw)[:-1]
         return {'Authorization': 'Basic %s' % encoded}
     def _oauth_header():
         return {}
-    if _auth_scheme == 'basic':
+    if AUTH_SCHEME == 'basic':
         return _basic_auth_header()
-    if _auth_scheme == 'oauth':
+    if AUTH_SCHEME == 'oauth':
         return _oauth_header()
     return {}
 
 
 def _request(method, path, body=None):
-    if _connection is None:
+    if _CONNECTION is None:
         raise RuntimeError('You must run connect() before making requests')
     if not isinstance(body, types.NoneType):
         body = json.dumps(body)
-    _connection.request(method,
-                        _path_prefix + path,
+    _CONNECTION.request(method,
+                        PATH_PREFIX + path,
                         body=body,
                         headers=_auth_header())
-    response = _connection.getresponse()
+    response = _CONNECTION.getresponse()
     response_body = response.read()
     try:
         response_body = json.loads(response_body)
