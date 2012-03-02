@@ -6,7 +6,7 @@
 
 Name:           pulp
 Version:        0.0.214
-Release:        8.2%{?dist}
+Release:        8.3%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -306,6 +306,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Mar 02 2012 James Slagle <jslagle@redhat.com> 0.0.214-8.3
+- Bump for new build
+
 * Thu Mar 01 2012 James Slagle <jslagle@redhat.com> 0.0.214-8.2
 - Update requires on mod_wsgi (jslagle@redhat.com)
 
