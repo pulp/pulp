@@ -82,8 +82,13 @@ def _create_bindings(config, username, password):
     cert_dir = os.path.expanduser(cert_dir) # this will likely be in a user directory
     cert_filename = os.path.join(cert_dir, cert_name)
 
+    call_log_filename = None
+    if config.has_option('logging', 'call_log_filename'):
+        call_log_filename = config.get('logging', 'call_log_filename')
+        call_log_filename = os.path.expanduser(call_log_filename) # also likely in a user dir
+
     # Create the connection and bindings
-    conn = PulpConnection(hostname, port, username=username, password=password, certfile=cert_filename)
+    conn = PulpConnection(hostname, port, username=username, password=password, certfile=cert_filename, api_responses_log=call_log_filename)
     bindings = Bindings(conn)
 
     return bindings
