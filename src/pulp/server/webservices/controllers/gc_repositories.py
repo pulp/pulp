@@ -18,10 +18,14 @@ import logging
 import web
 
 # Pulp
-from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._exceptions as errors
 import pulp.server.exceptions as exceptions
+from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
+from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch.call import CallRequest
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.queries.repo import unit_association_criteria
@@ -419,12 +423,20 @@ class RepoSync(JSONController):
         params = self.params()
         overrides = params.get('override_config', None)
 
-        # Trigger the sync
-        # TODO: Make this run asynchronously
+        # Execute the sync asynchronously
+        coordinator = dispatch_factory.get_coordinator()
         repo_sync_manager = manager_factory.repo_sync_manager()
-        repo_sync_manager.sync(repo_id, overrides)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]}}
+        call_request = CallRequest(repo_sync_manager.sync, [repo_id, overrides], resources=resources, archive=True)
+        call_report = coordinator.execute_call_asynchronously(call_request)
 
-        return self.ok({})
+        # Report the results
+        serialized_call_report = call_report.serialize()
+        if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
+            raise exceptions.ConflictingOperation(serialized_call_report)
+        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
+        serialized_call_report.update(link)
+        return self.accepted(serialized_call_report)
 
 class RepoPublish(JSONController):
 
