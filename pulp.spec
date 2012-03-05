@@ -504,10 +504,6 @@ fi
 - Migrate the pulp-protected-repos file to the correct location
   (jslagle@redhat.com)
 
-* Mon Mar 05 2012 James Slagle <jslagle@redhat.com>
-- Migrate the pulp-protected-repos file to the correct location
-  (jslagle@redhat.com)
-
 * Tue Feb 28 2012 James Slagle <jslagle@redhat.com> 0.0.263-11
 - 796818 make pulp require rh-rhua-selinux-policy for rhui (jslagle@redhat.com)
 
