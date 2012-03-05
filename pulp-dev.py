@@ -80,7 +80,7 @@ LINKS = (
     ('extensions/repo', '/var/lib/pulp/client/admin/extensions/repo'),
     ('extensions/server_info', '/var/lib/pulp/client/admin/extensions/server_info'),
     ('playpen/v2/plugins/rpm.json', '/var/lib/pulp/plugins/types/rpm.json'),
-    ('playpen/v2/plugins/yum_importer'), ('/var/lib/pulp/plugins/importers/yum_importer'),
+    ('playpen/v2/plugins/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
 )
 
 def parse_cmdline():
