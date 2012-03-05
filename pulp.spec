@@ -308,7 +308,17 @@ rm -rf %{buildroot}
 # -- post - pulp server ------------------------------------------------------
 
 %post
-#chown -R apache:apache /etc/pki/pulp/content/
+# Migrate pulp-protected-repos to new location
+if [ ! -e /etc/pki/pulp/content/pulp-protected-repos ]
+then
+  if [ -e /etc/pki/content/pulp-protected-repos ]
+  then
+    mv /etc/pki/content/pulp-protected-repos /etc/pki/pulp/content/pulp-protected-repos
+    chown apache:apache /etc/pki/pulp/content/pulp-protected-repos
+  fi
+fi
+
+chown apache:apache /etc/pki/pulp/content/pulp-protected-repos
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
