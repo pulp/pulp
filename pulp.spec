@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        12%{?dist}
+Release:        13%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,7 +500,7 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
-* Mon Mar 05 2012 James Slagle <jslagle@redhat.com> 0.0.263-12
+* Mon Mar 05 2012 James Slagle <jslagle@redhat.com> 0.0.263-13
 - Migrate the pulp-protected-repos file to the correct location
   (jslagle@redhat.com)
 
