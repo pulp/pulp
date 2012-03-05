@@ -34,6 +34,7 @@ DIRS = (
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',
+    '/var/lib/pulp/client/admin/extensions',
     '/var/lib/pulp/plugins',
     '/var/lib/pulp/plugins/distributors',
     '/var/lib/pulp/plugins/importers',
@@ -58,6 +59,7 @@ LINKS = (
     'etc/pulp/admin/admin.conf',
     'etc/pulp/admin/task.conf',
     'etc/pulp/admin/job.conf',
+    'etc/pulp/admin/v2_admin.conf',
     'etc/pulp/consumer/consumer.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
@@ -72,6 +74,11 @@ LINKS = (
     ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
     ('src/pulp/client/consumer/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('etc/pulp/logging', '/etc/pulp/logging'),
+    ('extensions/admin_auth', '/var/lib/pulp/client/admin/extensions/admin_auth'),
+    ('extensions/repo', '/var/lib/pulp/client/admin/extensions/repo'),
+    ('extensions/server_info', '/var/lib/pulp/client/admin/extensions/server_info'),
+    ('playpen/v2/plugins/rpm.json', '/var/lib/pulp/plugins/types/rpm.json'),
+    ('playpen/v2/plugins/yum_importer'), ('/var/lib/pulp/plugins/importers/yum_importer'),
 )
 
 def parse_cmdline():
