@@ -119,14 +119,17 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
+        coordinator = dispatch_factory.get_coordinator()
         repo_manager = manager_factory.repo_manager()
-
-        try:
-            repo_manager.delete_repo(id)
-            return self.ok(None)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: [dispatch_constants.RESOURCE_DELETE_OPERATION]}}
+        call_request = CallRequest(repo_manager.delete_repo, [id], resources=resources)
+        call_report = coordinator.execute_call_asychronously(call_request)
+        serialized_call_report = call_report.serialize()
+        if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
+            raise exceptions.ConflictingOperation(serialized_call_report)
+        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
+        serialized_call_report.update(link)
+        return self.accepted(serialized_call_report)
 
     @auth_required(UPDATE)
     def PUT(self, id):
