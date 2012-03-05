@@ -34,6 +34,8 @@ DIRS = (
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',
+    '/var/lib/pulp/client',
+    '/var/lib/pulp/client/admin',
     '/var/lib/pulp/client/admin/extensions',
     '/var/lib/pulp/plugins',
     '/var/lib/pulp/plugins/distributors',
