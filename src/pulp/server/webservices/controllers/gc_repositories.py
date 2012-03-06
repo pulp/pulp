@@ -465,7 +465,7 @@ class RepoPublish(JSONController):
 
         # Report the results
         serialized_call_report = call_report.serialize()
-        if call_report.response = dispatch_constants.CALL_REJECTED_RESPONSE:
+        if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
             raise exceptions.ConflictingOperation(serialized_call_report)
         link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
         serialized_call_report.update(link)
