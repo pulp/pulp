@@ -54,6 +54,11 @@ def _initialize_logging(config, debug=False):
     filename = config.get('logging', 'filename')
     filename = os.path.expanduser(filename)
 
+    # Make sure the parent directories for the log files exist
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
     handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
@@ -84,10 +89,19 @@ def _create_bindings(config, logger, username, password):
     cert_dir = os.path.expanduser(cert_dir) # this will likely be in a user directory
     cert_filename = os.path.join(cert_dir, cert_name)
 
+    # If the certificate doesn't exist, don't pass it to the connection creation
+    if not os.path.exists(cert_filename):
+        cert_filename = None
+
     call_log = None
     if config.has_option('logging', 'call_log_filename'):
         filename = config.get('logging', 'call_log_filename')
         filename = os.path.expanduser(filename) # also likely in a user dir
+
+        # Make sure the parent directories for the log files exist
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
         handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
         handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
