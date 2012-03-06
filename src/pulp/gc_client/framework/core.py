@@ -325,7 +325,7 @@ class PulpPrompt(Prompt):
                         v = v.replace('\n', ' ')
 
                 line = line_template % (formatted_k + ':', str(v))
-                long_value_indent = max_key_length + spaces_between_cols + 2
+                long_value_indent = max_key_length + spaces_between_cols + indent
                 line = self.wrap(line, remaining_line_indent=long_value_indent)
                 self.write(line, tag=TAG_DOCUMENT, skip_wrap=True)
 
