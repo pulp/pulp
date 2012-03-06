@@ -30,7 +30,7 @@ db_connection.initialize()
 from pulp.client.lib.utils import parse_interval_schedule
 from pulp.common.dateutils import (parse_iso8601_interval,
     parse_iso8601_duration, format_iso8601_duration,
-    format_iso8601_datetime)
+    format_iso8601_interval, format_iso8601_datetime)
 
 from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
@@ -153,13 +153,11 @@ def _update_sync_schedules():
     def _sync_schedule_param(sync_schedule, new_sync_freq_iso):
         interval, start, runs = parse_iso8601_interval(sync_schedule)
         interval_iso = format_iso8601_duration(interval)
-        param = {}
         if interval_iso != new_sync_freq_iso:
-            start_iso = format_iso8601_datetime(start)
-            runs = None
-            param["sync_schedule"] = parse_interval_schedule(new_sync_freq_iso,
-                start_iso, runs)
-            return param
+            sync_freq = parse_iso8601_duration(new_sync_freq_iso)
+            schedule = format_iso8601_interval(sync_freq, start,
+                runs)
+            return schedule
         else:
             return None
 
@@ -169,14 +167,14 @@ def _update_sync_schedules():
             continue
         param = _sync_schedule_param(_repo["sync_schedule"], repo_sync_freq_iso)
         if param:
-            repo_api.update(_repo["id"], param)
+            scheduled_sync.update_repo_schedule(_repo, param, {})
         else:
             continue
 
     for _cds in cds_list:
         param = _sync_schedule_param(_cds["sync_schedule"], cds_sync_freq_iso)
         if param:
-            cds_api.update(_cds["id"], param)
+            scheduled_sync.update_cds_schedule(_cds, param)
         else:
             continue
 
@@ -230,8 +228,8 @@ def _initialize_pulp():
     # setup recurring tasks
     auditing.init_culling_task()
     consumer_history.init_culling_task()
-    _update_sync_schedules()
     scheduled_sync.init_scheduled_syncs()
+    _update_sync_schedules()
     # pulp generic content initialization
     manager_factory.initialize()
     plugin_loader.initialize()
