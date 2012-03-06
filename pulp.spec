@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,6 +500,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Mar 06 2012 James Slagle <jslagle@redhat.com> 0.0.263-14
+- 800614 use newer api to update repo and cds sync schedules
+  (jslagle@redhat.com)
+- pulp migrate to add task weight to snapshots (jconnor@redhat.com)
+
 * Mon Mar 05 2012 James Slagle <jslagle@redhat.com> 0.0.263-13
 - Migrate the pulp-protected-repos file to the correct location
   (jslagle@redhat.com)
