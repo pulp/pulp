@@ -1911,10 +1911,12 @@ class RepoApi(BaseApi):
         for imfile in distro_obj['files']:
             if os.path.basename(imfile) in ['treeinfo', '.treeinfo']:
                 repo_treefile_path = os.path.join(repo_path, os.path.basename(imfile))
+                repo_treefile_path = encode_unicode(repo_treefile_path)
                 if os.path.islink(repo_treefile_path):
                     os.unlink(repo_treefile_path)
             else:
                 repo_dist_path = "%s/%s/%s" % (repo_path, "images", imfile.split(distro_path)[-1])
+                repo_dist_path = encode_unicode(repo_dist_path)
                 if os.path.islink(repo_dist_path):
                     os.unlink(repo_dist_path)
         del repo['distributionid'][repo['distributionid'].index(distroid)]
