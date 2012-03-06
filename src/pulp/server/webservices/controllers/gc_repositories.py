@@ -456,12 +456,20 @@ class RepoPublish(JSONController):
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
 
-        # Trigger the publish
-        # TODO: Make this run asynchronously
+        # Execute the publish asynchronously
+        coordinator = dispatch_factory.coordinator()
         repo_publish_manager = manager_factory.repo_publish_manager()
-        repo_publish_manager.publish(repo_id, distributor_id, overrides)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]}}
+        call_request = CallRequest(repo_publish_manager.publish, [repo_id, distributor_id, overrides], archive=True)
+        call_report = coordinator.execute_call_asynchronously(call_request)
 
-        return self.ok({})
+        # Report the results
+        serialized_call_report = call_report.serialize()
+        if call_report.response = dispatch_constants.CALL_REJECTED_RESPONSE:
+            raise exceptions.ConflictingOperation(serialized_call_report)
+        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
+        serialized_call_report.update(link)
+        return self.accepted(serialized_call_report)
 
 class RepoAssociate(JSONController):
 
