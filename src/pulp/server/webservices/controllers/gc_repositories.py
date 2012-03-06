@@ -119,7 +119,7 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: [dispatch_constants.RESOURCE_DELETE_OPERATION]}}
         call_request = CallRequest(repo_manager.delete_repo, [id], resources=resources)
@@ -149,7 +149,7 @@ class RepoResource(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        
+
 # -- importer controllers -----------------------------------------------------
 
 class RepoImporters(JSONController):
@@ -273,7 +273,7 @@ class RepoDistributors(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-    
+
     @auth_required(CREATE)
     def POST(self, repo_id):
 
@@ -332,7 +332,7 @@ class RepoDistributor(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        
+
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
 
@@ -427,7 +427,7 @@ class RepoSync(JSONController):
         overrides = params.get('override_config', None)
 
         # Execute the sync asynchronously
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         repo_sync_manager = manager_factory.repo_sync_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]}}
         call_request = CallRequest(repo_sync_manager.sync, [repo_id, overrides], resources=resources, archive=True)
@@ -460,7 +460,7 @@ class RepoPublish(JSONController):
         # TODO: Make this run asynchronously
         repo_publish_manager = manager_factory.repo_publish_manager()
         repo_publish_manager.publish(repo_id, distributor_id, overrides)
-        
+
         return self.ok({})
 
 class RepoAssociate(JSONController):

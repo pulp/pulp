@@ -71,7 +71,7 @@ class TaskCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         tasks = coordinator.task_queue.all_tasks()
         serialized_call_reports = [t.call_report.serialize() for t in tasks]
         return self.ok(serialized_call_reports)
@@ -81,7 +81,7 @@ class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(task_id=task_id)
         if call_reports:
             serialized_call_report = call_reports[0].serialize()
@@ -94,7 +94,7 @@ class TaskResource(JSONController):
 
     @auth_required(authorization.DELETE)
     def DELETE(self, task_id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         result = coordinator.cancel_call(task_id)
         if result is None:
             raise MissingResource(task_id)
@@ -109,7 +109,7 @@ class QueuedCallCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         tasks = coordinator.task_queue.all_tasks()
         queued_calls = []
         for t in tasks:
@@ -123,7 +123,7 @@ class QueuedCallResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         tasks = coordinator.find_tasks(task_id=task_id)
         if not tasks:
             raise QueuedCallNotFound(task_id)
@@ -131,7 +131,7 @@ class QueuedCallResource(JSONController):
 
     @auth_required(authorization.DELETE)
     def DELETE(self, task_id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         tasks = coordinator.find_tasks(task_id=task_id)
         if not tasks:
             raise QueuedCallNotFound(task_id)
@@ -147,7 +147,7 @@ class JobCollection(JSONController):
     @auth_required(authorization.READ)
     def GET(self):
         job_ids = set()
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         for task in coordinator.task_queue.all_tasks():
             job_id = task.call_report.job_id
             if job_id is None:
@@ -165,7 +165,7 @@ class JobResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, job_id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(job_id=job_id)
         serialized_call_reports = [c.serialize() for c in call_reports]
         archived_calls = dispatch_history.find_archived_calls(job_id=job_id)
@@ -177,7 +177,7 @@ class JobResource(JSONController):
 
     @auth_required(authorization.DELETE)
     def DELETE(self, job_id):
-        coordinator = dispatch_factory.get_coordinator()
+        coordinator = dispatch_factory.coordinator()
         results = coordinator.cancel_multiple_calls(job_id)
         if not results:
             raise JobNotFound(job_id)

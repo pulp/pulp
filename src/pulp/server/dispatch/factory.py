@@ -58,11 +58,11 @@ def initialize():
 
 # factory functions ------------------------------------------------------------
 
-def get_coordinator():
+def coordinator():
     assert isinstance(_COORDINATOR, Coordinator)
     return _COORDINATOR
 
 
-def get_scheduler():
+def scheduler():
     assert isinstance(_SCHEDULER, Scheduler)
     return _SCHEDULER
