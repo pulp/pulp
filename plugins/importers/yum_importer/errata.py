@@ -122,7 +122,7 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
         new_units[key] = sync_conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
     return new_errata, new_units, sync_conduit
 
-def _sync_errata(repo, sync_conduit,  config, progress_callback=None):
+def _sync(repo, sync_conduit,  config, progress_callback=None):
     """
       Invokes errata sync sequence
 

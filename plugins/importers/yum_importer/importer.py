@@ -119,9 +119,9 @@ class YumImporter(Importer):
                 status[f] = getattr(report, f)
             sync_conduit.set_progress(status)
         # sync rpms
-        rpm_summary, rpm_details = rpm._sync_rpms(repo, sync_conduit, config, progress_callback)
+        rpm_summary, rpm_details = rpm._sync(repo, sync_conduit, config, progress_callback)
         # sync errata
-        errata_summary, errata_details = errata._sync_errata(repo, sync_conduit, config, progress_callback)
+        errata_summary, errata_details = errata._sync(repo, sync_conduit, config, progress_callback)
         summary = dict(rpm_summary.items() + errata_summary.items())
         details = dict(rpm_details.items() + errata_details.items())
         return summary, details

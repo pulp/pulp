@@ -236,7 +236,7 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
         purge_orphaned=purge_orphaned, distro_location=None, tmp_path=tmp_path)
     return yumRepoGrinder
 
-def _sync_rpms(repo, sync_conduit, config, progress_callback=None):
+def _sync(repo, sync_conduit, config, progress_callback=None):
     ####
         # Syncs operate on 2 types of data structures
         # 1) RPM info, each 'rpm' is a single dictionary of key/value pairs created in grinder.YumInfo.__getRPMs()
