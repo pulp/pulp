@@ -17,11 +17,11 @@ import time
 import types
 import uuid
 
-from pulp.server.db.model.dispatch import TaskResource
+from pulp.server.db.model.dispatch import QueuedCall, TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import history as dispatch_history
-from pulp.server.dispatch.call import CallReport
+from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
@@ -45,6 +45,24 @@ class Coordinator(object):
         self.task_queue = task_queue
         self.task_resource_collection = TaskResource.get_collection()
         self.task_wait_sleep_interval = task_wait_sleep_interval
+
+    # explicit initialization --------------------------------------------------
+
+    def start(self):
+        """
+        Start the coordinator by clearing conflict metadata and restarting any
+        interrupted tasks.
+        """
+        # drop all previous knowledge of running tasks
+        self.task_resource_collection.remove(safe=True)
+        # re-start interrupted tasks
+        queued_call_collection = QueuedCall.get_collection()
+        queued_call_list = list(queued_call_collection.find())
+        queued_call_collection.drop() # there are no indices, so this is safe
+        for queued_call in queued_call_list:
+            call_request = CallRequest.deserialize(queued_call['serialized_call_request'])
+            call_report = self.execute_call_asynchronously(call_request)
+            # TODO log rejected calls?
 
     # execution methods --------------------------------------------------------
 
