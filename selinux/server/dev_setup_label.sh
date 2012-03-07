@@ -46,6 +46,9 @@ adjust_context "lib_t" "${PULP_SRC_DIR}/src(/.*)?"
 adjust_context "lib_t" "${PULP_SRC_DIR}/playpen/v2_plugins(/.*)?"
 /sbin/restorecon -R ${PULP_SRC_DIR}/playpen/v2_plugins
 
+adjust_context "lib_t" "${PULP_SRC_DIR}/plugins(/.*)?"
+/sbin/restorecon -R ${PULP_SRC_DIR}/plugins
+
 
 if [ -e ${PYTHON_SITE_PKGS}/gofer.egg-link ]; then
     GOFER_SRC=`head -n 1 ${PYTHON_SITE_PKGS}/gofer.egg-link`
