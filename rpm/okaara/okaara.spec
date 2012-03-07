@@ -63,6 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Mar 07 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.10-1
+- Upgraded version of okaara (jason.dobies@redhat.com)
+
+* Wed Mar 07 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.10-1
 - Added parser implementation for common scenarios (jason.dobies@redhat.com)
 - Upped docs version to match RPM version (jason.dobies@redhat.com)
 - Max width calculation needs to take the color characters into account
