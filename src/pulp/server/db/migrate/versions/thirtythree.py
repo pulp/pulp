@@ -14,6 +14,7 @@
 
 import logging
 import os
+import pwd
 import shutil
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server import config
@@ -27,6 +28,9 @@ def migrate():
     repo_cert_utils = RepoCertUtils(config.config)
     collection = Repo.get_collection()
     all_repos = list(collection.find())
+    apache_pwd = pwd.getpwnam("apache")
+    apache_uid = apache_pwd.pw_uid
+    apache_gid = apache_pwd.pw_gid
     for r in all_repos:
         try:
             modified = False
@@ -44,6 +48,7 @@ def migrate():
                 if not os.path.exists(expected_repo_cert_dir):
                     os.makedirs(expected_repo_cert_dir)
                 shutil.move(old_path, updated_path)
+                os.chown(updated_path, apache_uid, apache_gid)
                 r[cf] = updated_path
                 modified = True
             if modified:
