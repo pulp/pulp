@@ -149,6 +149,8 @@ class Coordinator(object):
                         None means indefinitely
         @type  timeout: None or datetime.timedelta
         """
+        # we have to lock the task queue here as there is a race condition
+        # between calculating the blocking/postponing tasks and enqueue the task
         self.task_queue.lock()
         try:
             task.call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
