@@ -150,7 +150,9 @@ class Coordinator(object):
         @type  timeout: None or datetime.timedelta
         """
         # we have to lock the task queue here as there is a race condition
-        # between calculating the blocking/postponing tasks and enqueue the task
+        # between calculating the blocking/postponing tasks and enqueueing the
+        # task when 2 or more tasks are being run that may have
+        # interdependencies
         self.task_queue.lock()
         try:
             task.call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
@@ -167,6 +169,8 @@ class Coordinator(object):
         finally:
             self.task_queue.unlock()
 
+        # if the call has requested synchronous execution or can be
+        # synchronously executed, do so
         if synchronous or (synchronous is None and response is dispatch_constants.CALL_ACCEPTED_RESPONSE):
             try:
                 wait_for_task(task, [dispatch_constants.CALL_RUNNING_STATE], timeout=timeout)
