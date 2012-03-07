@@ -39,6 +39,7 @@ def _initialize_scheduler():
     assert isinstance(_COORDINATOR, Coordinator)
     dispatch_interval = 30 # can make this configurable
     _SCHEDULER = Scheduler(_COORDINATOR, dispatch_interval)
+    _SCHEDULER.start()
 
 
 def _initialize_task_queue():
@@ -47,6 +48,7 @@ def _initialize_task_queue():
     concurrency_threshold = pulp_config.config.getint('tasking', 'concurrency_threshold')
     dispatch_interval = 0.5 # can make this configurable
     _TASK_QUEUE = TaskQueue(concurrency_threshold, dispatch_interval)
+    _TASK_QUEUE.start()
 
 
 def initialize():
