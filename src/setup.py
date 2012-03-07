@@ -32,24 +32,19 @@ if minor not in ['6', '7']:
         'simplejson == 2.0.9',
     ])
 
-excluded_packages = [
-    'pulp.gc_client',
-    'pulp.gc_client.*',
-]
-
 
 setup(
     name='pulp',
     version='0.0.129',
     description='content mangement and delivery',
-    author='Jason L Connor, Mike McCune',
-    author_email='jconnor@redhat.com, mmcune@redhat.com',
+    author='Pulp Team',
+    author_email='pulp-list@redhat.com',
     url='',
     license='GPLv2+',
-    packages=find_packages(exclude=excluded_packages),
+    packages=find_packages(),
     scripts=[
         '../bin/pulp-admin',
-#        '../bin/pulp-v2-admin',
+        '../bin/pulp-v2-admin',
         '../bin/pulp-consumer',
         '../bin/pulp-migrate',
     ],

@@ -182,6 +182,7 @@ Tools necessary to interact synchronize content from a pulp server and serve tha
 to clients.
 
 # -- headers - pulp-selinux-server ---------------------------------------------------
+
 %if %{pulp_selinux}
 %package        selinux-server
 Summary:        Pulp SELinux policy for server components.
@@ -257,6 +258,13 @@ mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
+# Pulp Plugins
+cp -R plugins/types/* %{buildroot}/var/lib/pulp/plugins/types
+cp -R plugins/importers/* %{buildroot}/var/lib/pulp/plugins/importers
+
+# Enable when there's at least one distributor
+# cp -R plugins/distributors/* %{buildroot}/var/lib/pulp/plugins/distributors
+
 # Client and CDS Gofer Plugins
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
@@ -297,8 +305,8 @@ mkdir -p %{buildroot}/var/log/pulp-cds
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 
-%if %{pulp_selinux}
 # Install SELinux policy modules
+%if %{pulp_selinux}
 cd selinux/server
 ./install.sh %{buildroot}%{_datadir}
 mkdir -p %{buildroot}%{_datadir}/pulp/selinux/server
@@ -308,15 +316,22 @@ cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
 cd -
 %endif
 
+# Admin Client Extensions
+mkdir -p %{buildroot}/var/lib/pulp_client/admin/extensions
+cp -R extensions/pulp_server_info %{buildroot}/var/lib/pulp_client/admin/extensions
+cp -R extensions/pulp_repo %{buildroot}/var/lib/pulp_client/admin/extensions
+
+# -- clean --------------------------------------------------------------------
 
 %clean
 rm -rf %{buildroot}
 
-# -- post - pulp server ------------------------------------------------------
+# -- post - pulp server -------------------------------------------------------
 
 %post
-#chown -R apache:apache /etc/pki/pulp/content/
-# -- post - pulp cds ---------------------------------------------------------
+# chown -R apache:apache /etc/pki/pulp/content/
+
+# -- post - pulp cds ----------------------------------------------------------
 
 %post cds
 #chown -R apache:apache /etc/pki/pulp/content/
@@ -336,30 +351,6 @@ chown apache:apache /var/lib/pulp-cds/.cluster-members
 if [ "$1" = "1" ]; then
   ln -s %{_sysconfdir}/rc.d/init.d/goferd %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
-#######################################################################
-# MOVE THE OLD CERT LOCATION
-# THIS SHOULD BE REMOVED AROUND VER: 0.260
-# NOTE: THIS ONLY WORKS FOR DEFAULT CERT LOCATION SO IF USER CHANGES
-#       IN THE consumer.conf, THIS WONT WORK.
-#######################################################################
-CERT="cert.pem"
-OLDDIR="/etc/pki/consumer/pulp/"
-NEWDIR="/etc/pki/pulp/consumer/"
-if [ -d $OLDDIR ]
-then
-  cd $OLDDIR
-  if [ -f $CERT ]
-  then
-    if [ ! -e $NEWDIR ]
-    then
-      mkdir -p $NEWDIR
-    fi
-    mv $CERT $NEWDIR
-    rmdir --ignore-fail-on-non-empty $OLDDIR
-  fi
-fi
-#######################################################################
-
 
 %if %{pulp_selinux}
 %post selinux-server
@@ -391,13 +382,14 @@ fi
 exit 0
 %endif
 
-
+# -- postun - pulp consumer ---------------------------------------------------
 
 %postun consumer
 if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
 
+# -- postun - pulp cds --------------------------------------------------------
 
 %postun cds
 # Clean up after package removal
@@ -421,6 +413,7 @@ fi
 %config(noreplace) %{_sysconfdir}/pki/pulp
 %attr(755, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
+
 # -- files - common ----------------------------------------------------------
 
 %files common
@@ -466,10 +459,14 @@ fi
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/admin
+%{python_sitelib}/pulp/gc_client
 %{_bindir}/pulp-admin
+%{_bindir}/pulp-v2-admin
 %config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
+%config(noreplace) %{_sysconfdir}/pulp/admin/v2_admin.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/task.conf
 %config(noreplace) %{_sysconfdir}/pulp/admin/job.conf
+/var/lib/pulp_client/admin
 
 # -- files - pulp cds --------------------------------------------------------
 
