@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        14%{?dist}
+Release:        15%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,6 +500,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 07 2012 James Slagle <jslagle@redhat.com> 0.0.263-15
+- 800468 Use collection.update instead of collection.save to avoid race
+  condition (jslagle@redhat.com)
+
 * Tue Mar 06 2012 James Slagle <jslagle@redhat.com> 0.0.263-14
 - 800614 use newer api to update repo and cds sync schedules
   (jslagle@redhat.com)
