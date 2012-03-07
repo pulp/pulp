@@ -11,8 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+from pprint import pformat
+
 from pulp.server.exceptions import (
-    PulpExecutionException, PulpDataException, SuperfluousData)
+    ConflictingOperation, PulpExecutionException, PulpDataException,
+    SuperfluousData)
 
 # call exceptions --------------------------------------------------------------
 
@@ -48,3 +52,16 @@ class AsynchronousExecutionError(CallRuntimeError):
 
 class UnrecognizedSearchCriteria(SuperfluousData):
     pass
+
+# call rejected exception ------------------------------------------------------
+
+class CallRejectedException(ConflictingOperation):
+
+    def __init__(self, serialized_call_report):
+        super(CallRejectedException, self).__init__(serialized_call_report)
+
+    def __str__(self):
+        serialized_call_report = self.args[0]
+        reasons = serialized_call_report['reasons']
+        msg = _('Call rejected due to the following conflicting operation(s): %[r]s') % {'r': pformat(reasons)}
+        return msg
