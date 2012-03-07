@@ -1,0 +1,13 @@
+{"types": [
+    {
+        "id" : "erratum",
+        "display_name" : "ERRATUM",
+        "description" : "Erratum advisory information",
+        "unit_key" :
+            ["id"],
+        "search_indexes" : [
+            "id", "title", "version", "release", "type",
+            "status", "updated", "issued", "severity", "references"
+        ]
+    }
+]}
