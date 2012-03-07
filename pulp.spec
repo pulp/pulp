@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        15%{?dist}
+Release:        16%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,6 +500,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 07 2012 James Slagle <jslagle@redhat.com> 0.0.263-16
+- 801161 Add missing db migration (jslagle@redhat.com)
+
 * Wed Mar 07 2012 James Slagle <jslagle@redhat.com> 0.0.263-15
 - 800468 Use collection.update instead of collection.save to avoid race
   condition (jslagle@redhat.com)
