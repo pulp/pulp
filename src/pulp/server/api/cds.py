@@ -603,8 +603,8 @@ class CdsApi(BaseApi):
 
         # Update the CDS to indicate the last sync time
         now = datetime.datetime.now(dateutils.local_tz())
-        cds['last_sync'] = dateutils.format_iso8601_datetime(now)
-        self.collection.save(cds, safe=True)
+        last_sync = dateutils.format_iso8601_datetime(now)
+        self.collection.update({"hostname":cds_hostname}, {"$set":{"last_sync":last_sync}})
 
         # Make sure the caller gets the error like normal (after the event logging) if
         # one occurred
