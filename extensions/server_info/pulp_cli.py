@@ -25,7 +25,9 @@ class ServerPluginsSection(PulpCliSection):
         self.add_command(PulpCliCommand('types', 'lists content types installed on the server', self.types))
         self.add_command(PulpCliCommand('importers', 'lists importers installed on the server', self.importers))
         self.add_command(PulpCliCommand('distributors', 'lists distributors installed on the server', self.distributors))
-        self.add_command(PulpCliCommand('ping', 'tests server availability', self.ping))
+
+        # Disabled until we update the server-side API
+        # self.add_command(PulpCliCommand('ping', 'tests server availability', self.ping))
 
     def types(self):
         all_types = self.context.server.server_info.get_types()
