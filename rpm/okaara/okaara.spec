@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.9
+Version:        1.0.10
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,11 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.9-1
-- Upgrade okaara to 1.0.9 (jason.dobies@redhat.com)
+* Wed Mar 07 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.10-1
+- Added parser implementation for common scenarios (jason.dobies@redhat.com)
+- Upped docs version to match RPM version (jason.dobies@redhat.com)
+- Max width calculation needs to take the color characters into account
+  (jason.dobies@redhat.com)
 
 * Fri Mar 02 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.9-1
 - Added optional color for cli map output (jason.dobies@redhat.com)
