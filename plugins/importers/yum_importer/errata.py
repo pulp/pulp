@@ -17,6 +17,7 @@ Errata Support for Yum Importer
 import os
 import sys
 import time
+import yum
 import logging
 from pulp.server import updateinfo
 from pulp.server.util import get_repomd_filetype_path, get_repomd_filetypes
@@ -24,7 +25,7 @@ from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
 #TODO Fix up logging so we log to a separate file to aid debugging
-#_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
+_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
 
 ERRATA_TYPE_ID="erratum"
 ERRATA_UNIT_KEY = ("id",)
@@ -51,7 +52,10 @@ def get_available_errata(repo_dir):
     updateinfo_xml_path = os.path.join(repo_dir, get_repomd_filetype_path(repomd_xml, "updateinfo"))
     if not os.path.exists(updateinfo_xml_path):
         return {}
-    errata_from_xml = updateinfo.get_errata(updateinfo_xml_path)
+    try:
+        errata_from_xml = updateinfo.get_errata(updateinfo_xml_path)
+    except yum.Errors.YumBaseError, e:
+        _LOG.error("Error parsing updateinfo file [%s]; Error: %s" % (updateinfo_xml_path, e))
     errata_items = {}
     for e_obj in errata_from_xml:
         errata_items[e_obj['id']] = e_obj
@@ -76,17 +80,22 @@ def get_existing_errata(sync_conduit, criteria=None):
         existing_units[key] = u
     return existing_units
 
-def form_errata_unit_key(erratum):
-    unit_key = {}
-    for key in ERRATA_UNIT_KEY:
-        unit_key[key] = erratum[key]
-    return unit_key
+def get_orphaned_errata(available_errata, existing_errata):
+    """
+    @param available_errata a dict of errata
+    @type available_errata {}
 
-def form_errata_metadata(erratum):
-    metadata = {}
-    for key in ERRATA_METADATA:
-        metadata[key] = erratum[key]
-    return metadata
+    @param existing_errata dict of units
+    @type existing_errata {key:pulp.server.content.plugins.model.Unit}
+
+    @return a dictionary of orphaned units, key is the errata id and the value is the unit
+    @rtype {key:pulp.server.content.plugins.model.Unit}
+    """
+    orphaned_errata = {}
+    for key in existing_errata:
+        if key not in available_errata:
+            orphaned_errata[key] = existing_errata[key]
+    return orphaned_errata
 
 def get_new_errata_units(available_errata, existing_errata, sync_conduit):
     """
@@ -139,28 +148,59 @@ def _sync(repo, sync_conduit,  config, progress_callback=None):
       @rtype ({}, {})
     """
     start = time.time()
-
-    available_errata = get_available_errata("%s/%s" % (repo.working_dir, repo.id))
+    repo_dir = "%s/%s" % (repo.working_dir, repo.id)
+    available_errata = get_available_errata(repo_dir)
     _LOG.info("Available Errata %s" % len(available_errata))
 
     criteria = Criteria(type_ids=ERRATA_TYPE_ID)
     existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
     _LOG.info("Existing Errata %s" % len(existing_errata))
-
+    orphaned_units = get_orphaned_errata(available_errata, existing_errata)
     new_errata, new_units, sync_conduit = get_new_errata_units(available_errata, existing_errata, sync_conduit)
 
     # Save the new units
     for u in new_units.values():
         sync_conduit.save_unit(u)
+
+    # clean up any orphaned errata
+    for u in orphaned_units.values():
+        sync_conduit.remove_unit(u)
+    # get errata sync details
+    errata_details = errata_sync_details(new_errata)
     end = time.time()
 
-    summary = {}
+    summary = dict()
     summary["num_new_errata"] = len(new_errata)
+    summary["num_orphaned_errata"] = len(orphaned_units)
     summary["time_total_sec"] = end - start
 
-    details = {}
-#    details["num_bugfix_errata"] = len(bugfix_errata)
-#    details["num_security_errata"] = len(security_errata)
-#    details["num_enhancement_errata"] = len(enhancement_errata)
-
+    details = dict()
+    details["num_bugfix_errata"] = len(errata_details['types']['bugfix'])
+    details["num_security_errata"] = len(errata_details['types']['security'])
+    details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
+    _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
     return summary, details
+
+def form_errata_unit_key(erratum):
+    unit_key = {}
+    for key in ERRATA_UNIT_KEY:
+        unit_key[key] = erratum[key]
+    return unit_key
+
+def form_errata_metadata(erratum):
+    metadata = {}
+    for key in ERRATA_METADATA:
+        metadata[key] = erratum[key]
+    return metadata
+
+def errata_sync_details(errata_list):
+    errata_details = dict()
+    errata_details['types'] = {'bugfix' : [], 'security' : [], 'enhancement' : [], }
+    for erratum in errata_list.values():
+        if erratum['type'] == 'bugfix':
+            errata_details['types']["bugfix"].append(erratum)
+        elif erratum['type'] == 'security':
+            errata_details['types']["security"].append(erratum)
+        elif erratum['type'] == 'enhancement':
+            errata_details['types']["enhancement"].append(erratum)
+    return errata_details

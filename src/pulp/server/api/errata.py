@@ -66,7 +66,7 @@ class ErrataApi(BaseApi):
         if not erratum:
             raise Exception('Erratum "%s", not-found', id)
         valid_keys = ['status', 'updated', 'short', 'severity', 'title', 'issued', 'id', 'rights', 'solution',
-                      'summary', 'pushcount', 'fromstr', 'version', 'release', 'type', 'pkglist']
+                      'summary', 'pushcount', 'fromstr', 'version', 'release', 'type', 'pkglist', 'description']
         for key, value in delta.items():
             if key in valid_keys:
                 erratum[key] = value
