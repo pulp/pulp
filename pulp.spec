@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.271
+Version:        0.0.272
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -501,6 +501,31 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.272-1
+- Adding errata detail info (pkilambi@redhat.com)
+- Added v2 client/extensions and plugins to RPM build (jason.dobies@redhat.com)
+- Renamed extensions to differentiate from RPM client extensions
+  (jason.dobies@redhat.com)
+- SELinux update for developer setup of GC plugins (jmatthews@redhat.com)
+- renaming the sync call (pkilambi@redhat.com)
+- Errata sync support for Yum importer plugin * Erratum type definition * type
+  module to sync errata * refactor importer.py and move rpm specific logic to
+  rpm.py (pkilambi@redhat.com)
+- Disabled the ping command until it works (jason.dobies@redhat.com)
+- Upgraded version of okaara (jason.dobies@redhat.com)
+- Moved RPM plugins out of playpen into production location
+  (jason.dobies@redhat.com)
+- 800468 Use collection.update instead of collection.save to avoid race
+  condition (jslagle@redhat.com)
+- Added safeties for first-run missing files/dirs. (jason.dobies@redhat.com)
+- pulp migrate to add task weight to snapshots (jconnor@redhat.com)
+- Fixed indentation calculation (jason.dobies@redhat.com)
+- 790806 - Added utf-8 encoding of distribution file path when path contains
+  non-ascii characters (skarmark@redhat.com)
+- More tests for rpm importer (jmatthews@redhat.com)
+- 796854 - Removing encode_unicode from task list as changes to tasking now
+  converts all task information in unicode format (skarmark@redhat.com)
+
 * Fri Mar 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.271-1
 - Fixed reST formatting in docs (jason.dobies@redhat.com)
 - Apply some basic filters/ordering to unit list (jason.dobies@redhat.com)
