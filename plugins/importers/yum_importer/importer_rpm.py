@@ -210,24 +210,24 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
     @return an instantiated YumRepoGrinder instance
     @rtype grinder.RepoFetch.YumRepoGrinder
     """
-    repo_label = config.get("repo_label") or repo_id
+    repo_label = repo_id
     repo_url = config.get("feed_url")
-    cacert = config.get("cacert")
     num_threads = config.get("num_threads") or 5
-    clicert = config.get("clicert")
-    clikey = config.get("clikey")
     proxy_url = config.get("proxy_url")
     proxy_port = config.get("proxy_port")
     proxy_user = config.get("proxy_user")
     proxy_pass = config.get("proxy_pass")
-    sslverify = config.get("sslverify")
+    sslverify = config.get("ssl_verify")
+    cacert = config.get("ssl_ca_cert")
+    clicert = config.get("ssl_client_cert")
+    clikey = config.get("ssl_client_key")
     max_speed = config.get("max_speed")
     verify_options = config.get("verify_options")
-    newest = False
-    remove_old = False
-    purge_orphaned = True
-    num_old_packages = 2
-    skip = None
+    newest = config.get("newest") or False
+    remove_old = config.get("remove_old") or False
+    purge_orphaned = config.get("purge_orphaned") or True
+    num_old_packages = config.get("num_old_packages") or 0
+    skip = config.get("skip") 
     yumRepoGrinder = YumRepoGrinder(repo_label=repo_label, repo_url=repo_url, parallel=num_threads,\
         mirrors=None, newest=newest, cacert=cacert, clicert=clicert, clikey=clikey,\
         proxy_url=proxy_url, proxy_port=proxy_port, proxy_user=proxy_user,\

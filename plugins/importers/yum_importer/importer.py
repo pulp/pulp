@@ -30,9 +30,30 @@ _LOG = logging.getLogger(__name__)
 YUM_IMPORTER_TYPE_ID="yum_importer"
 
 REQUIRED_CONFIG_KEYS = ['feed_url']
-OPTIONAL_CONFIG_KEYS = ['sslcacert', 'sslclientcert', 'sslclientkey', 'sslverify', 
+OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
                         'proxy_url', 'proxy_port', 'proxy_pass', 'proxy_user',
-                        'max_speed', 'verify_options', 'num_threads']
+                        'max_speed', 'verify_options', 'num_threads', 'remove_old',
+                        'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip']
+###
+# Config Options Explained
+###
+# feed_url: Repository URL
+# ssl_verify: True/False to control if yum/curl should perform SSL verification of the host
+# ssl_ca_cert: Path to SSL CA certificate used for ssl verification
+# ssl_client_cert: Path to SSL Client certificate, used for protected repository access
+# ssl_client_key: Path to SSL Client key, used for protected repository access
+# proxy_url: Proxy URL 
+# proxy_port: Port Port
+# proxy_user: Username for Proxy
+# proxy_pass: Password for Proxy
+# max_speed: Limit the Max speed in KB/sec per thread during package downloads
+# verify_options: Dictionary of {'checksum':Boolean, 'size':Boolean} to control verify operations on existing items
+# num_threads: Controls number of threads to use for package download (technically number of processes spawned)
+# newest: Boolean option, if True only download the latest packages
+# remove_old: Boolean option, if True remove old packages
+# num_old_packages: Defaults to 0, controls how many old packages to keep if remove_old is True
+# purge_orphaned: Defaults to True, when True will delete packages no longer available from the source repository
+# skip: Dictionary of what content types to skip during sync, options: {"packages", "distribution"}
 
 class YumImporter(Importer):
     PROGRESS_REPORT_FIELDS = ["items_total", "items_left", "size_total", "size_left", 
