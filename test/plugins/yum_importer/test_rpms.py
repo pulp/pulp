@@ -22,14 +22,12 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
 import mock
-
+import importer_mocks
 from importer import YumImporter
 from importer import YUM_IMPORTER_TYPE_ID
 from importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 import importer_rpm
 
-from pulp.server.content.conduits.repo_sync import RepoSyncConduit
-from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import Repository, Unit
 
 class TestRPMs(unittest.TestCase):
@@ -60,50 +58,15 @@ class TestRPMs(unittest.TestCase):
             rpm[k] = value
         return rpm
 
-    def get_sync_conduit(self, existing_units=None):
-        def side_effect(type_id, key, metadata, rel_path):
-            if rel_path:
-                rel_path = os.path.join(self.pkg_dir, rel_path)
-            unit = Unit(type_id, key, metadata, rel_path)
-            return unit
-
-        def get_units(criteria=None):
-            ret_rpms = True
-            if criteria and hasattr(criteria, "type_ids"):
-                if RPM_TYPE_ID not in criteria.type_ids:
-                    ret_rpms = False
-            if ret_rpms and existing_units:
-                return existing_units
-            return []
-
-        sync_conduit = mock.Mock(spec=RepoSyncConduit)
-        sync_conduit.init_unit.side_effect = side_effect
-        sync_conduit.get_units = mock.Mock()
-        sync_conduit.get_units.side_effect = get_units
-        return sync_conduit
-
-    def get_basic_config(self, feed_url, num_threads=1):
-        def side_effect(arg):
-            result = {
-                    "feed_url":feed_url,
-                    "num_threads":num_threads,
-                    }
-            if result.has_key(arg):
-                return result[arg]
-            return None
-        config = mock.Mock(spec=PluginCallConfiguration)
-        config.get.side_effect = side_effect
-        return config
-
     def test_basic_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
-        sync_conduit = self.get_sync_conduit()
-        config = self.get_basic_config(feed_url)
-        summary, details = importer._sync_repo(repo, sync_conduit, config)
+        sync_conduit = importer_mocks.get_sync_conduit()
+        config = importer_mocks.get_basic_config(feed_url)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
@@ -120,11 +83,11 @@ class TestRPMs(unittest.TestCase):
         unit_key = {}
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
-        existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", "test_rel_path")]
-        sync_conduit = self.get_sync_conduit(existing_units=existing_units)
+        existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
-        config = self.get_basic_config(feed_url)
-        summary, details = importer._sync_repo(repo, sync_conduit, config)
+        config = importer_mocks.get_basic_config(feed_url)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
@@ -165,10 +128,10 @@ class TestRPMs(unittest.TestCase):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_progress_sync"
-        sync_conduit = self.get_sync_conduit()
+        sync_conduit = importer_mocks.get_sync_conduit()
         sync_conduit.set_progress = mock.Mock()
         sync_conduit.set_progress.side_effect = set_progress
-        config = self.get_basic_config(feed_url)
+        config = importer_mocks.get_basic_config(feed_url)
         summary, details = importer._sync_repo(repo, sync_conduit, config)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertTrue(updated_progress is not None)
@@ -179,8 +142,8 @@ class TestRPMs(unittest.TestCase):
         unit_key = {}
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
-        existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", "test_rel_path")]
-        sync_conduit = self.get_sync_conduit(existing_units=existing_units)
+        existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         actual_existing_units = importer_rpm.get_existing_units(sync_conduit)
         self.assertEquals(len(actual_existing_units), 1)
         self.assertEquals(len(existing_units), len(actual_existing_units))
@@ -231,7 +194,7 @@ class TestRPMs(unittest.TestCase):
         unit_a = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
-        sync_conduit = self.get_sync_conduit()
+        sync_conduit = importer_mocks.get_sync_conduit()
         new_rpms, new_units = importer_rpm.get_new_rpms_and_units(available_rpms, 
                 existing_units, sync_conduit)
         self.assertEquals(len(new_rpms), 1)

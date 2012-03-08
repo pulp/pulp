@@ -171,6 +171,7 @@ def _sync(repo, sync_conduit,  config, progress_callback=None):
 
     summary = dict()
     summary["num_new_errata"] = len(new_errata)
+    summary["num_existing_errata"] = len(existing_errata)
     summary["num_orphaned_errata"] = len(orphaned_units)
     summary["time_total_sec"] = end - start
 
