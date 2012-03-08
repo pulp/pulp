@@ -40,6 +40,9 @@ _default_values = {
         'seeds': 'localhost:27017',
         'operation_retries': '2',
     },
+    'exception_handler': {
+        'debug': 'false',
+    },
     'logs': {
         'qpid_log_level': 'info',
         'level': 'info',
