@@ -17,6 +17,7 @@ import datetime
 import mock
 import os
 import sys
+from pprint import pformat
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 
@@ -26,6 +27,7 @@ import mock_plugins
 from pulp.common import dateutils
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor, RepoSyncResult, RepoPublishResult
+from pulp.server.dispatch import constants as dispatch_constants
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.unit_association_query import Criteria
 
@@ -121,7 +123,7 @@ class RepoCollectionTest(testutil.PulpWebserviceTest):
         # Verify
         self.assertEqual(409, status)
 
-class RepoResourceTests(testutil.PulpWebserviceTest):
+class RepoResourceTests(testutil.PulpV2WebServicesTest):
 
     def setUp(self):
         testutil.PulpWebserviceTest.setUp(self)
@@ -169,7 +171,13 @@ class RepoResourceTests(testutil.PulpWebserviceTest):
         status, body = self.delete('/v2/repositories/doomed/')
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(202, status)
+
+        while body['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+            href = body['_href'][9:]
+            status, body = self.get(href)
+            if status != 200:
+                self.fail('%d\n%s' % (status, pformat(body)))
 
         repo = Repo.get_collection().find_one({'id' : 'doomed'})
         self.assertTrue(repo is None)
@@ -183,7 +191,15 @@ class RepoResourceTests(testutil.PulpWebserviceTest):
         status, body = self.delete('/v2/repositories/fake/')
 
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
+
+        while body['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+            href = body['_href'][9:]
+            status, body = self.get(href)
+            if status != 200:
+                self.fail('%d\n%s' % (status, pformat(body)))
+
+        self.assertTrue(body['state'] == dispatch_constants.CALL_ERROR_STATE)
 
     def test_put(self):
         """
@@ -412,7 +428,7 @@ class RepoImporterTest(testutil.PulpWebserviceTest):
 
         # Test
         status, body = self.get('/v2/repositories/not-there/importers/irrelevant')
-        
+
         # Verify
         self.assertEqual(404, status)
 
@@ -426,7 +442,7 @@ class RepoImporterTest(testutil.PulpWebserviceTest):
 
         # Test
         status, body = self.get('/v2/repositories/cherry_pie/importers/not_there/')
-        
+
         # Verify
         self.assertEqual(404, status)
 
@@ -444,7 +460,7 @@ class RepoImporterTest(testutil.PulpWebserviceTest):
 
         # Verify
         self.assertEqual(200, status)
-        
+
         importer = RepoImporter.get_collection().find_one({'repo_id' : 'blueberry_pie'})
         self.assertTrue(importer is None)
 
