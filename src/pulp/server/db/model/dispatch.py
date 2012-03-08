@@ -28,6 +28,7 @@ class QueuedCall(Model):
     def __init__(self, call_request):
         super(QueuedCall, self).__init__()
         self.serialized_call_request = call_request.serialize()
+        self.timestamp = datetime.now()
 
 
 class ScheduledCall(Model):
