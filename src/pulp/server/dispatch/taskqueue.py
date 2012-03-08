@@ -130,7 +130,7 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
-    def stop(self):
+    def stop(self, clear_queued_calls=False):
         """
         Stop the task queue
         """
@@ -141,6 +141,8 @@ class TaskQueue(object):
         self.__lock.release()
         self.__dispatcher.join()
         self.__dispatcher = None
+        if clear_queued_calls:
+            self.queued_call_collection.drop()
 
     def lock(self):
         """
