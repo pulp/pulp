@@ -30,7 +30,7 @@ from pulp.server.webservices import serialization
 _LOG = logging.getLogger(__name__)
 
 
-class ErrorHandlerMiddleware(object):
+class ExceptionHandlerMiddleware(object):
     """
     Catch otherwise unhandled exceptions and return appropriate 500 responses.
     @ivar app: WSGI application or middleware

@@ -65,7 +65,7 @@ from pulp.server.webservices.controllers import (
     repositories, roles, services, tasks, users)
 from pulp.server.webservices.controllers import (
     dispatch, gc_contents, gc_plugins, gc_repositories)
-from pulp.server.webservices.middleware.error import ErrorHandlerMiddleware
+from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 
 from gofer.messaging.broker import Broker
 
@@ -198,6 +198,6 @@ def wsgi_application():
     """
     application = web.subdir_application(URLS)
     # TODO make debug configurable
-    stack = ErrorHandlerMiddleware(application.wsgifunc(), debug=True)
+    stack = ExceptionHandlerMiddleware(application.wsgifunc(), debug=True)
     _initialize_pulp()
     return stack
