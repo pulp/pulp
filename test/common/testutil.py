@@ -63,6 +63,7 @@ from pulp.server.content.types import database as types_database
 from pulp.server.db import connection
 from pulp.server.db.model import Delta, TaskHistory
 from pulp.server.db.model.cds import CDSRepoRoundRobin
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
 import pulp.server.managers.factory as manager_factory
 from pulp.server.util import random_string
@@ -73,9 +74,12 @@ from pulp.server import constants
 from pulp.server.auth import authorization
 from pulp.server.webservices import http
 
+# test configuration -----------------------------------------------------------
+
 SerialNumber.PATH = '/tmp/sn.dat'
 constants.LOCAL_STORAGE = "/tmp/pulp/"
 constants.CACHE_DIR = "/tmp/pulp/cache"
+
 
 def load_test_config():
     if not os.path.exists('/tmp/pulp'):
@@ -96,6 +100,8 @@ def load_test_config():
     repo_cert_utils.CONFIG_FILENAME = override_file
 
     return config.config
+
+# test data generation ---------------------------------------------------------
 
 def create_package(api, name, version="1.2.3", release="1.el5", epoch="1",
         arch="x86_64", description="test description text",
@@ -158,6 +164,8 @@ def create_random_package(api):
     api.update(p.id, d)
     return p
 
+# base unittest class ----------------------------------------------------------
+
 class PulpTest(unittest.TestCase):
 
     def setUp(self):
@@ -204,6 +212,7 @@ class PulpTest(unittest.TestCase):
         unittest.TestCase.tearDown(self)
         self.unmock_all()
         self.clean()
+        self.teardown_async()
 
     def clean(self):
         '''
@@ -241,6 +250,9 @@ class PulpTest(unittest.TestCase):
     def setup_async(self):
         async._queue = mock.Mock()
 
+    def teardown_async(self):
+        pass
+
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
         if mock_object is None:
@@ -252,18 +264,32 @@ class PulpTest(unittest.TestCase):
             for mocked_attr, original_attr in self._mocks[parent].items():
                 setattr(parent, mocked_attr, original_attr)
 
+# asynchronous unittest classes ------------------------------------------------
 
 class PulpAsyncTest(PulpTest):
-
-    def tearDown(self):
-        PulpTest.tearDown(self)
-        async._queue._cancel_dispatcher()
-        async._queue = None
 
     def setup_async(self):
         async.config.config = self.config
         async.initialize()
 
+    def teardown_async(self):
+        async._queue._cancel_dispatcher()
+        async._queue = None
+
+
+class PulpCoordinatorTest(PulpTest): # V2 asynchronous sub-system
+
+    def setup_async(self):
+        dispatch_factory.initialize()
+
+    def teardown_async(self):
+        dispatch_factory._SCHEDULER.stop()
+        dispatch_factory._TASK_QUEUE.stop(clear_queued_calls=True)
+        dispatch_factory._SCHEDULER = None
+        dispatch_factory._COORDINATOR = None
+        dispatch_factory._TASK_QUEUE = None
+
+# webservices unittest classes -------------------------------------------------
 
 class PulpWebserviceTest(PulpAsyncTest):
 
@@ -356,3 +382,8 @@ class PulpWebserviceTest(PulpAsyncTest):
             body = None
 
         return status, body
+
+
+class PulpV2WebServicesTest(PulpCoordinatorTest, PulpWebserviceTest):
+    # utilize multiple inheritance to override setup_async and teardown_async
+    pass
