@@ -15,6 +15,7 @@
 Defines exception classes to handle server connection and request exceptions
 """
 
+from gettext import gettext as _
 
 # Base class for server request exceptions
 

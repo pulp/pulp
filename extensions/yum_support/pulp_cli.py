@@ -11,9 +11,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import sys
+
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
+from pulp.gc_client.api.exceptions import RequestException, DuplicateResourceException, BadRequestException
+
+IMPORTER_TYPE_ID = 'yum_importer'
 
 def initialize(context):
+
+    if not context.extension_config.getboolean('main', 'enabled'):
+        return
 
     # Remove generic commands/sections that we want to override
     repo_section = context.cli.find_section('repo')
@@ -24,7 +32,7 @@ def initialize(context):
     # Add in overridden yum functionality
     repo_section.add_command(YumRepoCreateCommand(context))
 
-def create_repo_options(command):
+def create_repo_options(command, is_update):
     """
     Adds options/flags for all repo configuration values (repo, importer, and
     distributor). This is meant to be called for both create and update commands
@@ -35,11 +43,22 @@ def create_repo_options(command):
 
     # Groups
     required_group = PulpCliOptionGroup('Required')
-    metadata_group = PulpCliOptionGroup('Metadata', '(optional)')
-    throttling_group = PulpCliOptionGroup('Throttling', '(optional)')
+    d = '(optional) user-readable information about the repository'
+    if is_update: d += '; specify "" to remove any of these values'
+    metadata_group = PulpCliOptionGroup('Metadata', d)
 
+    throttling_group = PulpCliOptionGroup('Throttling', '(optional) controls the bandwidth and CPU usage when synchronizing this repo')
+    ssl_group = PulpCliOptionGroup('Security', '(optional) credentials and configuration for synchronizing secured external repositories')
+    verify_group = PulpCliOptionGroup('Verification', '(optional) controls the amount of verification on synchronized data')
+    proxy_group = PulpCliOptionGroup('Proxy', '(optional) configures synchronization to go through a proxy server')
+
+    # Order added indicates order in usage, so pay attention to this order when
+    # dorking with it to make sure it makes sense
     command.add_option_group(required_group)
     command.add_option_group(metadata_group)
+    command.add_option_group(verify_group)
+    command.add_option_group(ssl_group)
+    command.add_option_group(proxy_group)
     command.add_option_group(throttling_group)
 
     # Required Options
@@ -50,9 +69,41 @@ def create_repo_options(command):
     metadata_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
     metadata_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
 
+    # Verify Options
+    verify_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    verify_group.add_option(PulpCliOption('--verify_checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+
+    # Proxy Options
+    proxy_group.add_option(PulpCliOption('--proxy_url', 'URL to the proxy server to use', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy_port', 'port on the proxy server to make requests', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy_user', 'username used to authenticate with the proxy server', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy_pass', 'password used to authenticate with the proxy server', required=False))
+
     # Throttling Options
     throttling_group.add_option(PulpCliOption('--max_speed', 'maximum bandwidth used per download thread, in KB/sec, when synchronizing the repo', required=False))
     throttling_group.add_option(PulpCliOption('--num_threads', 'number of threads that will be used to synchronize the repo', required=False))
+
+    # SSL Options
+    ssl_group.add_option(PulpCliOption('--feed_ca_cert', 'full path to the CA certificate that should be used to verify the external repo server\'s SSL certificate', required=False))
+    ssl_group.add_option(PulpCliOption('--verify_feed_ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert', required=False))
+    ssl_group.add_option(PulpCliOption('--feed_cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
+    ssl_group.add_option(PulpCliOption('--feed_key', 'full path to the private key for feed_cert', required=False))
+
+def args_to_importer_config(kwargs):
+    """
+    Takes the arguments read from the CLI and converts the client-side input
+    to the server-side expectations. The dict will be edited in place.
+    """
+
+    # Simple name translations
+    translations = [
+        ('sslcacert', 'feed_ca_cert'),
+        ('sslclientcert', 'feed_cert'),
+        ('sslclientkey', 'feed_key'),
+        ('sslverify', 'verify_feed_ssl'),
+    ]
+    for t, o in translations:
+        kwargs[t] = kwargs.pop(o, None)
 
 # -- command implementations --------------------------------------------------
 
@@ -63,7 +114,46 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         self.context = context
 
-        create_repo_options(self)
+        create_repo_options(self, False)
 
     def create(self, **kwargs):
-        pass
+
+        # All of the options will be present, even if the user didn't specify
+        # them. Their values will be None, which the yum importer is set up
+        # to handle.
+
+        repo_id = kwargs.pop('id') # pop it out so it's not part of importer config
+        description = kwargs.pop('description', None)
+        display_name = kwargs.pop('display_name', None)
+
+        # TODO: split apart the remaining arguments between importer and distributor config
+        importer_config = args_to_importer_config(kwargs)
+
+        # TODO: This whole mess of exception stuff is gonna be handled by the exception handler
+
+        # Create the repository
+        try:
+            self.context.server.repo.create(repo_id, display_name, description, None)
+        except DuplicateResourceException:
+            self.context.prompt.render_failure_message('Repository already exists with ID [%s]' % repo_id)
+            return
+        except BadRequestException:
+            self.context.logger.exception('Invalid data during repository [%s] creation' % repo_id)
+            self.context.prompt.render_failure_message('Repository metadata (id, display_name, description) was invalid')
+            return
+        except RequestException, e:
+            self.context.logger.exception('Error creating repository [%s]' % repo_id)
+            self.context.prompt.render_failure_message('Error creating repository [%s]' % repo_id)
+            raise e, None, sys.exc_info()[2]
+
+        # Add the importer
+        try:
+            self.context.server.repo_importer.create(repo_id, IMPORTER_TYPE_ID, importer_config)
+        except BadRequestException:
+            self.context.logger.exception('Invalid data during importer addition to repository [%s]' % repo_id)
+            self.context.prompt.render_failure_message('Error during importer configuration of repository [%s]' % repo_id)
+            return
+        except RequestException, e:
+            self.context.logger.exception('Error adding importer')
+            self.context.prompt.render_failure_message('Error configuring importer for repository [%s]' % repo_id)
+            raise e, None, sys.exc_info()[2]

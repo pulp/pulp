@@ -13,11 +13,11 @@
 
 import base64
 import httplib
+from gettext import gettext as _
 import locale
 import logging
 import os
 import urllib
-from gettext import gettext as _
 
 try:
     import json
@@ -28,43 +28,22 @@ from M2Crypto import SSL, httpslib
 
 import pulp.gc_client.api.exceptions as exceptions 
 
-
-# server wrapper class which invokes python connection apis and allows us to mock them
-
-class ServerWrapper(object):
-    def __init__(self, connection):
-        self.connection = connection
-
-    def request(self, method, url, body, headers):
-        self.connection.request(method, url, body=body, headers=headers)
-        try:
-            response = self.connection.getresponse()
-        except SSL.SSLError, err:
-            raise exceptions.ConnectionException(None, str(err), None)
-        response_body = response.read()
-        try:
-            response_body = json.loads(response_body)
-        except:
-            pass
-        return response.status, response_body
-    
-# response classes ------------------------------------------------------------
+# -- response classes ---------------------------------------------------------
 
 class Response(object):
     """
-    Successful response class
+    Contains the data received from the server on a successful request.
     """
     def __init__(self, response_code, response_body):
         self.response_code = response_code
         self.response_body = response_body
         
     def __str__(self):
-        return _("Response:\ncode - %s\nresponse_body - %s\n" % (self.response_code, self.response_body))
-
+        return _("Response: code - %(c)s, body - %(b)s" % {'c' : self.response_code, 'b' : self.response_body})
 
 class AsyncResponse(Response):
     """
-    Async task response class. For now, this is identical to Response class until server side async response is flushed out
+    TODO: Implement this with the fields that come back from an Accepted response.
     """
     pass
 
@@ -72,7 +51,7 @@ class AsyncResponse(Response):
 
 class PulpConnection(object):
     """
-    Pulp server connection class.
+    Stub for invoking methods against the Pulp server. 
     """
 
     def __init__(self, host, port=443, path_prefix='/pulp/api', timeout=120, connection=None,
@@ -221,3 +200,30 @@ class PulpConnection(object):
 
     def PUT(self, path, body):
         return self._request('PUT', path, body=body)
+
+# -- wrapper classes ----------------------------------------------------------
+
+class ServerWrapper(object):
+    """
+    Used by the PulpConnection class to make an invocation against the server.
+    This abstraction is used to simplify mocking. In this implementation, the
+    intricacies (read: ugliness) of invoking and getting the response from
+    the HTTPConnection class are hidden in favor of a simpler API to mock.
+    """
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    def request(self, method, url, body, headers):
+        self.connection.request(method, url, body=body, headers=headers)
+        try:
+            response = self.connection.getresponse()
+        except SSL.SSLError, err:
+            raise exceptions.ConnectionException(None, str(err), None)
+        response_body = response.read()
+        try:
+            response_body = json.loads(response_body)
+        except:
+            pass
+        return response.status, response_body
+
