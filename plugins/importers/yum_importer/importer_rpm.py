@@ -96,7 +96,7 @@ def get_new_rpms_and_units(available_rpms, existing_units, sync_conduit):
             # We need to determine where the unit should be stored and update
             # rpm["pkgpath"] so Grinder will store the rpm to the correct location
             rpm["pkgpath"] = new_units[key].storage_path
-    return new_rpms, new_units, sync_conduit
+    return new_rpms, new_units
 
 def get_missing_rpms_and_units(available_rpms, existing_units):
     """
@@ -263,7 +263,7 @@ def _sync(repo, sync_conduit, config, progress_callback=None):
     orphaned_units = get_orphaned_units(available_rpms, existing_units)
 
     # Determine new and missing items
-    new_rpms, new_units, sync_conduit = get_new_rpms_and_units(available_rpms, existing_units, sync_conduit)
+    new_rpms, new_units = get_new_rpms_and_units(available_rpms, existing_units, sync_conduit)
     missing_rpms, missing_units = get_missing_rpms_and_units(available_rpms, existing_units)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
                 (repo.id, len(existing_units), len(orphaned_units), len(new_rpms), len(missing_rpms)))

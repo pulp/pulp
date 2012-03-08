@@ -20,26 +20,28 @@ import tempfile
 import time
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../importers/yum_importer/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
 import mock
 
 from importer import YumImporter
-from importer import YUM_IMPORTER_TYPE_ID, RPM_TYPE_ID, RPM_UNIT_KEY
+from importer import YUM_IMPORTER_TYPE_ID
+from importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
+import importer_rpm
 
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import Repository, Unit
 
-class TestYumImporter(unittest.TestCase):
+class TestRPMs(unittest.TestCase):
 
     def setUp(self):
-        super(TestYumImporter, self).setUp()
+        super(TestRPMs, self).setUp()
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
 
     def tearDown(self):
-        super(TestYumImporter, self).tearDown()
+        super(TestRPMs, self).tearDown()
         shutil.rmtree(self.temp_dir)
 
     def test_metadata(self):
@@ -60,17 +62,24 @@ class TestYumImporter(unittest.TestCase):
 
     def get_sync_conduit(self, existing_units=None):
         def side_effect(type_id, key, metadata, rel_path):
-            rel_path = os.path.join(self.pkg_dir, rel_path)
+            if rel_path:
+                rel_path = os.path.join(self.pkg_dir, rel_path)
             unit = Unit(type_id, key, metadata, rel_path)
             return unit
-        sync_conduit = mock.Mock(spec=RepoSyncConduit)
-        sync_conduit.get_units = mock.Mock()
-        if not existing_units:
-            sync_conduit.get_units.return_value = []
-        else:
-            sync_conduit.get_units.return_value = existing_units
 
+        def get_units(criteria=None):
+            ret_rpms = True
+            if criteria and hasattr(criteria, "type_ids"):
+                if RPM_TYPE_ID not in criteria.type_ids:
+                    ret_rpms = False
+            if ret_rpms and existing_units:
+                return existing_units
+            return []
+
+        sync_conduit = mock.Mock(spec=RepoSyncConduit)
         sync_conduit.init_unit.side_effect = side_effect
+        sync_conduit.get_units = mock.Mock()
+        sync_conduit.get_units.side_effect = get_units
         return sync_conduit
 
     def get_basic_config(self, feed_url, num_threads=1):
@@ -167,29 +176,26 @@ class TestYumImporter(unittest.TestCase):
             self.assertTrue(key in updated_progress)
 
     def test_get_existing_units(self):
-        importer = YumImporter()
         unit_key = {}
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
         existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", "test_rel_path")]
         sync_conduit = self.get_sync_conduit(existing_units=existing_units)
-        actual_existing_units = importer.get_existing_units(sync_conduit)
+        actual_existing_units = importer_rpm.get_existing_units(sync_conduit)
         self.assertEquals(len(actual_existing_units), 1)
         self.assertEquals(len(existing_units), len(actual_existing_units))
-        lookup_key = importer.form_lookup_key(unit_key)
+        lookup_key = importer_rpm.form_lookup_key(unit_key)
         self.assertEqual(existing_units[0], actual_existing_units[lookup_key])
 
     def test_get_available_rpms(self):
-        importer = YumImporter()
         rpm = {}
         for k in RPM_UNIT_KEY:
             rpm[k] = "test_value"
-        available_rpms = importer.get_available_rpms([rpm])
-        lookup_key = importer.form_lookup_key(rpm)
+        available_rpms = importer_rpm.get_available_rpms([rpm])
+        lookup_key = importer_rpm.form_lookup_key(rpm)
         self.assertEqual(available_rpms[lookup_key], rpm)
 
     def test_get_orphaned_units(self):
-        importer = YumImporter()
         # Create A & B, Orphan B
         unit_key_a = {}
         for k in RPM_UNIT_KEY:
@@ -200,13 +206,13 @@ class TestYumImporter(unittest.TestCase):
         unit_a = Unit(RPM_TYPE_ID, unit_key_a, "test_metadata", "test_rel_path")
         unit_b = Unit(RPM_TYPE_ID, unit_key_b, "test_metadata", "test_rel_path")
         existing_units = {
-                importer.form_lookup_key(unit_key_a):unit_a, 
-                importer.form_lookup_key(unit_key_b):unit_b
+                importer_rpm.form_lookup_key(unit_key_a):unit_a, 
+                importer_rpm.form_lookup_key(unit_key_b):unit_b
                 }
         available_rpms = {}
-        available_rpms[importer.form_lookup_key(unit_key_a)] = unit_key_a
-        orphaned_units = importer.get_orphaned_units(available_rpms, existing_units)
-        expected_orphan_key = importer.form_lookup_key(unit_key_b)
+        available_rpms[importer_rpm.form_lookup_key(unit_key_a)] = unit_key_a
+        orphaned_units = importer_rpm.get_orphaned_units(available_rpms, existing_units)
+        expected_orphan_key = importer_rpm.form_lookup_key(unit_key_b)
         self.assertEquals(len(orphaned_units), 1)
         self.assertTrue(expected_orphan_key in orphaned_units)
 
@@ -214,20 +220,19 @@ class TestYumImporter(unittest.TestCase):
         # 1 Existing RPM
         # 2 RPMs in available
         # Expected 1 New RPM
-        importer = YumImporter()
         rpm_a = self.get_simple_rpm("test_value_a")
         rpm_b = self.get_simple_rpm("test_value_b")
-        rpm_lookup_key_a = importer.form_lookup_key(rpm_a)
-        rpm_lookup_key_b = importer.form_lookup_key(rpm_b)
+        rpm_lookup_key_a = importer_rpm.form_lookup_key(rpm_a)
+        rpm_lookup_key_b = importer_rpm.form_lookup_key(rpm_b)
         available_rpms = {}
         available_rpms[rpm_lookup_key_a] = rpm_a
         available_rpms[rpm_lookup_key_b] = rpm_b
 
-        unit_a = Unit(RPM_TYPE_ID, importer.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path")
+        unit_a = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         sync_conduit = self.get_sync_conduit()
-        new_rpms, new_units = importer.get_new_rpms_and_units(available_rpms, 
+        new_rpms, new_units = importer_rpm.get_new_rpms_and_units(available_rpms, 
                 existing_units, sync_conduit)
         self.assertEquals(len(new_rpms), 1)
         self.assertEquals(len(new_units), 1)
@@ -237,11 +242,11 @@ class TestYumImporter(unittest.TestCase):
         #
         # Repeat test but now nothing is new
         #
-        unit_b = Unit(RPM_TYPE_ID, importer.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
+        unit_b = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         existing_units[rpm_lookup_key_b] = unit_b
-        new_rpms, new_units = importer.get_new_rpms_and_units(available_rpms, 
+        new_rpms, new_units = importer_rpm.get_new_rpms_and_units(available_rpms, 
                 existing_units, sync_conduit)
         self.assertEquals(len(new_rpms), 0)
         self.assertEquals(len(new_units), 0)
@@ -249,7 +254,7 @@ class TestYumImporter(unittest.TestCase):
         # Repeat test but now both rpms in available are new
         #
         existing_units = {}
-        new_rpms, new_units = importer.get_new_rpms_and_units(available_rpms, 
+        new_rpms, new_units = importer_rpm.get_new_rpms_and_units(available_rpms, 
                 existing_units, sync_conduit)
         self.assertEquals(len(new_rpms), 2)
         self.assertEquals(len(new_units), 2)
@@ -264,25 +269,24 @@ class TestYumImporter(unittest.TestCase):
             if arg == "rel_path_b":
                 return False
             return True
-        importer = YumImporter()
-        importer.verify_exists = mock.Mock()
-        importer.verify_exists.side_effect = side_effect
+        importer_rpm.verify_exists = mock.Mock()
+        importer_rpm.verify_exists.side_effect = side_effect
 
         rpm_a = self.get_simple_rpm("test_value_a")
         rpm_b = self.get_simple_rpm("test_value_b")
-        rpm_lookup_key_a = importer.form_lookup_key(rpm_a)
-        rpm_lookup_key_b = importer.form_lookup_key(rpm_b)
+        rpm_lookup_key_a = importer_rpm.form_lookup_key(rpm_a)
+        rpm_lookup_key_b = importer_rpm.form_lookup_key(rpm_b)
         available_rpms = {}
         available_rpms[rpm_lookup_key_a] = rpm_a
         available_rpms[rpm_lookup_key_b] = rpm_b
 
-        unit_a = Unit(RPM_TYPE_ID, importer.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path_a")
-        unit_b = Unit(RPM_TYPE_ID, importer.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
+        unit_a = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path_a")
+        unit_b = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         existing_units[rpm_lookup_key_b] = unit_b
 
-        missing_rpms, missing_units = importer.get_missing_rpms_and_units(available_rpms, 
+        missing_rpms, missing_units = importer_rpm.get_missing_rpms_and_units(available_rpms, 
                 existing_units)
         self.assertEquals(len(missing_rpms), 1)
         self.assertEquals(len(missing_units), 1)

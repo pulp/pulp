@@ -19,9 +19,10 @@ import logging
 import os
 import time
 
-import rpm
 import errata
+import importer_rpm
 from pulp.server.content.plugins.importer import Importer
+
 _LOG = logging.getLogger(__name__)
 #TODO Fix up logging so we log to a separate file to aid debugging
 #_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
@@ -43,7 +44,7 @@ class YumImporter(Importer):
         return {
             'id'           : YUM_IMPORTER_TYPE_ID,
             'display_name' : 'Yum Importer',
-            'types'        : [rpm.RPM_TYPE_ID, errata.ERRATA_TYPE_ID]
+            'types'        : [importer_rpm.RPM_TYPE_ID, errata.ERRATA_TYPE_ID]
         }
 
     def validate_config(self, repo, config):
@@ -119,7 +120,7 @@ class YumImporter(Importer):
                 status[f] = getattr(report, f)
             sync_conduit.set_progress(status)
         # sync rpms
-        rpm_summary, rpm_details = rpm._sync(repo, sync_conduit, config, progress_callback)
+        rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config, progress_callback)
         # sync errata
         errata_summary, errata_details = errata._sync(repo, sync_conduit, config, progress_callback)
         summary = dict(rpm_summary.items() + errata_summary.items())
