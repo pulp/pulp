@@ -29,7 +29,7 @@ def _initialize_coordinator():
     global _COORDINATOR
     assert _COORDINATOR is None
     assert isinstance(_TASK_QUEUE, TaskQueue)
-    task_state_poll_interval = 0.5
+    task_state_poll_interval = pulp_config.config.getfloat('coordinator', 'task_state_poll_interval')
     _COORDINATOR = Coordinator(_TASK_QUEUE, task_state_poll_interval)
     _COORDINATOR.start()
 
@@ -38,7 +38,7 @@ def _initialize_scheduler():
     global _SCHEDULER
     assert _SCHEDULER is None
     assert isinstance(_COORDINATOR, Coordinator)
-    dispatch_interval = 30 # can make this configurable
+    dispatch_interval = pulp_config.config.getfloat('scheduler', 'dispatch_interval')
     _SCHEDULER = Scheduler(_COORDINATOR, dispatch_interval)
     _SCHEDULER.start()
 
@@ -46,8 +46,8 @@ def _initialize_scheduler():
 def _initialize_task_queue():
     global _TASK_QUEUE
     assert _TASK_QUEUE is None
-    concurrency_threshold = pulp_config.config.getint('tasking', 'concurrency_threshold')
-    dispatch_interval = 0.5 # can make this configurable
+    concurrency_threshold = pulp_config.config.getint('task_queue', 'concurrency_threshold')
+    dispatch_interval = pulp_config.config.getfloat('task_queue', 'dispatch_interval')
     _TASK_QUEUE = TaskQueue(concurrency_threshold, dispatch_interval)
     _TASK_QUEUE.start()
 

@@ -31,6 +31,9 @@ _default_values = {
     'consumer_history': {
         'lifetime': '180', # in days
     },
+    'coordinator': {
+        'task_state_poll_interval': '0.5',
+    },
     'database': {
         'auto_migrate': 'true',
         'name': 'pulp_database',
@@ -56,6 +59,9 @@ _default_values = {
         'use_entitlement_certs': 'false',
         'default_to_published': 'true',
     },
+    'scheduler': {
+        'dispatch_interval': '30',
+    },
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
@@ -74,6 +80,10 @@ _default_values = {
         'concurrency_threshold': '4',
         'schedule_threshold': '5 minutes',
         'failure_threshold': '-1',
+    },
+    'task_queue': {
+        'concurrency_threshold': '4',
+        'dispatch_interval': '0.5',
     },
     'yum': {
         'task_weight': '1',
