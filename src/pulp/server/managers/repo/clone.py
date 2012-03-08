@@ -25,5 +25,5 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoCloneManager:
+class RepoCloneManager(object):
     pass

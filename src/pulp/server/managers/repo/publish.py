@@ -41,7 +41,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoPublishManager:
+class RepoPublishManager(object):
 
     def publish(self, repo_id, distributor_id, publish_config_override=None):
         """

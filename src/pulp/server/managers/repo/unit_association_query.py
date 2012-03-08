@@ -42,7 +42,7 @@ _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoUnitAssociationQueryManager:
+class RepoUnitAssociationQueryManager(object):
 
     def get_unit_ids(self, repo_id, unit_type_id=None):
         """

@@ -27,7 +27,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoImporterManager:
+class RepoImporterManager(object):
 
     def get_importer(self, repo_id):
         """

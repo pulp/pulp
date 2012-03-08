@@ -35,7 +35,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoManager:
+class RepoManager(object):
     """
     Performs repository related functions relating to both CRUD operations and
     actions performed on or by repositories.

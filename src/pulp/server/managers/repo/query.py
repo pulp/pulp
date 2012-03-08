@@ -26,7 +26,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoQueryManager:
+class RepoQueryManager(object):
     """
     Manager used to process user queries on repositories. Repos returned from
     these calls will be serialized to a specific format instead of simply being
@@ -62,7 +62,7 @@ class RepoQueryManager:
             repo = _serialize_repo(repo)
 
         return repo
-            
+
     def find_by_id_list(self, repo_id_list):
         """
         Returns serialized versions of all of the given repositories. Any

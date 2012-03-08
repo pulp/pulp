@@ -46,7 +46,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoSyncManager:
+class RepoSyncManager(object):
     """
     Manager used to handle sync and sync query operations.
     """
@@ -151,7 +151,7 @@ class RepoSyncManager:
 
             added_count = updated_count = removed_count = -1
             summary = details = _('Unknown')
-            
+
         result = RepoSyncResult.success_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
                                                sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
                                                removed_count, summary, details)

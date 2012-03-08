@@ -57,7 +57,7 @@ _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoUnitAssociationManager:
+class RepoUnitAssociationManager(object):
     """
     Manager used to handle the associations between repositories and content
     units. The functionality provided within assumes the repo and units have

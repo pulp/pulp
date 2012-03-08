@@ -31,7 +31,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- manager ------------------------------------------------------------------
 
-class RepoDistributorManager:
+class RepoDistributorManager(object):
 
     def get_distributor(self, repo_id, distributor_id):
         """
