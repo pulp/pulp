@@ -25,7 +25,7 @@ from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
 #TODO Fix up logging so we log to a separate file to aid debugging
-_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
+#_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
 
 ERRATA_TYPE_ID="erratum"
 ERRATA_UNIT_KEY = ("id",)
