@@ -504,6 +504,27 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 08 2012 Jeff Ortel <jortel@redhat.com> 1.0.1-1
+- Reset version = 1.0.1-1 for v1 (testing). (jortel@redhat.com)
+- 797929 add requirement on semanage command (jslagle@redhat.com)
+- 790806 - Added utf-8 encoding of distribution file path when path contains
+  non-ascii characters (skarmark@redhat.com)
+- 796854 - Removing encode_unicode from task list as changes to tasking now
+  converts all task information in unicode format (skarmark@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.139-1].
+  (jortel@redhat.com)
+- rel-eng: add grinder under rpm/. (jortel@redhat.com)
+- rel-eng: add gofer under rpm/. (jortel@redhat.com)
+- Renamed okaara RPM (jason.dobies@redhat.com)
+- Require grinder 0.139 (jmatthews@redhat.com)
+- removing wiki tags from errata controller as api docs are updated manually
+  (skarmark@redhat.com)
+- 790806 - encoding repo cert filenames before trying to access them
+  (skarmark@redhat.com)
+- adding some safety checks before computing bytes (pkilambi@redhat.com)
+- 795819 - account for the relativepath from the metadata location field
+  (pkilambi@redhat.com)
+
 * Thu Feb 23 2012 Jeff Ortel <jortel@redhat.com> 0.0.267-3
 - bump release for v1 candidate build. (jortel@redhat.com)
 - 790806 - Fixed encoding error thrown when repo cloning with unicode id,
