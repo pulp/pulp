@@ -15,7 +15,7 @@
 Classes used in the writing of Pulp client extensions.
 """
 
-from okaara.cli import Section, Command, Option, Flag
+from okaara.cli import Section, Command, Option, Flag, OptionGroup
 
 # -- cli components -----------------------------------------------------------
 
@@ -163,4 +163,7 @@ class PulpCliOption(Option):
     pass
 
 class PulpCliFlag(Flag):
+    pass
+
+class PulpCliOptionGroup(OptionGroup):
     pass
