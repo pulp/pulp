@@ -234,6 +234,7 @@ def get_file_timestamp(filename):
 
 def get_repomd_filetypes(repomd_path):
     """
+    @deprecated
     @param repomd_path: path to repomd.xml
     @return: List of available metadata types
     """
@@ -243,6 +244,7 @@ def get_repomd_filetypes(repomd_path):
 
 def get_repomd_filetype_dump(repomd_path):
     """
+    @deprecated
     @param repomd_path: path to repomd.xml
     @return: dump of metadata information
     """
@@ -266,6 +268,7 @@ def get_repomd_filetype_dump(repomd_path):
 
 def _get_yum_repomd(path, temp_path=None):
     """
+    @deprecated
     @param path: path to repo
     @param temp_path: optional parameter to specify temporary path
     @return yum.yumRepo.YumRepository object initialized for querying repodata
@@ -341,6 +344,7 @@ def get_repo_packages(path):
 
 def get_repomd_filetype_path(path, filetype):
     """
+    @deprecated
     @param path: path to repo
     @param filetype: metadata type to query, example "group", "primary", etc
     @return: Path for filetype, or None

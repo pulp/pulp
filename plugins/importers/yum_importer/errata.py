@@ -19,8 +19,8 @@ import sys
 import time
 import yum
 import logging
-from pulp.server import updateinfo
-from pulp.server.util import get_repomd_filetype_path, get_repomd_filetypes
+import updateinfo
+from util import get_repomd_filetype_path, get_repomd_filetypes
 from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
