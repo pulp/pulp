@@ -12,19 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
-import httplib
 from gettext import gettext as _
 import locale
 import logging
-import os
+from M2Crypto import SSL, httpslib
 import urllib
 
 try:
     import json
 except ImportError:
     import simplejson as json
-
-from M2Crypto import SSL, httpslib
 
 import pulp.gc_client.api.exceptions as exceptions 
 
@@ -51,140 +48,50 @@ class AsyncResponse(Response):
 
 class PulpConnection(object):
     """
-    Stub for invoking methods against the Pulp server. 
+    Stub for invoking methods against the Pulp server. By default, the
+    constructor will assemble the necessary server component configured with
+    the values provided. Instead of this behavior, the server_wrapper
+    parameter can be used to pass in another mechanism to make the actual
+    call to the server. The likely use of this is a duck-typed mock object
+    for unit testing purposes.
     """
 
-    def __init__(self, host, port=443, path_prefix='/pulp/api', timeout=120, connection=None,
-                 server_wrapper=None, logger=None, api_responses_logger=None, username=None, password=None, certfile=None):
+    def __init__(self, host, port=443, path_prefix='/pulp/api', timeout=120,
+                 logger=None, api_responses_logger=None,
+                 username=None, password=None, cert_filename=None, server_wrapper=None):
 
         self.host = host
         self.port = port
         self.path_prefix = path_prefix
-        self.headers = {}
         self.timeout = timeout
 
-        self._log = logger or logging.getLogger(__name__)
+        self.log = logger or logging.getLogger(__name__)
         self.api_responses_logger = api_responses_logger
 
+        # Credentials
+        self.username = username
+        self.password = password
+        self.cert_filename = cert_filename
+
+        # Locale
         default_locale = locale.getdefaultlocale()[0]
         if default_locale:
             default_locale = default_locale.lower().replace('_', '-')
         else:
             default_locale = 'en-us'
 
-        headers = {'Accept': 'application/json',
-                   'Accept-Language': default_locale,
-                   'Content-Type': 'application/json'}
-        self.headers.update(headers)
+        # Headers
+        self.headers = {'Accept': 'application/json',
+                        'Accept-Language': default_locale,
+                        'Content-Type': 'application/json'}
 
-        self.__certfile = None
-
-        # set credentials or check if credentials are already set
-        if username and password:
-            self.set_basic_auth_credentials(username, password)
-        elif certfile:
-            self.set_ssl_credentials(certfile)
-        else:
-            pass
-
-        if connection:
-            self.connection = connection
-        else:                
-            self.connection = self._https_connection()
-
+        # Server Wrapper
         if server_wrapper:
             self.server_wrapper = server_wrapper
         else:
-            self.server_wrapper = ServerWrapper(self.connection)
+            self.server_wrapper = HTTPSServerWrapper(self)
 
-    # protected server connection method -------------------------------------
-
-    def _https_connection(self):
-        # make sure that passed in username and password overrides cert/key auth
-        if self.__certfile is None or \
-                'Authorization' in self.headers:
-            return httplib.HTTPSConnection(self.host, self.port)
-        ssl_context = SSL.Context('sslv3')
-        ssl_context.set_session_timeout(self.timeout)
-        ssl_context.load_cert(self.__certfile)
-
-        connection = httpslib.HTTPSConnection(self.host, self.port, ssl_context=ssl_context)
-        return connection
-
-    # protected request utilities ---------------------------------------------
-
-    def _build_url(self, path, queries=()):
-        # build the request url from the path and queries dict or tuple
-        if not path.startswith(self.path_prefix):
-            path = '/'.join((self.path_prefix, path))
-        # Check if path is ascii and uses appropriate characters, else convert to binary or unicode as necessary.
-        try:
-            path = urllib.quote(str(path))
-        except UnicodeEncodeError:
-            path = urllib.quote(path.encode('utf-8'))
-        except UnicodeDecodeError:
-            path = urllib.quote(path.decode('utf-8'))
-        queries = urllib.urlencode(queries)
-        if queries:
-            path = '?'.join((path, queries))
-        return path
-
-
-    def _request(self, method, path, queries=(), body=None):
-        # make a request to the pulp server and return the response
-        # NOTE this throws a ConnectionException or one of the RequestExceptions (depending on response codes) 
-        # in case of unsuccessful request
-        url = self._build_url(path, queries)
-        if not isinstance(body, (type(None), str,)):
-            body = json.dumps(body)
-        self._log.debug('sending %s request to %s' % (method, url))
-
-        response_code, response_body = self.server_wrapper.request(method=method, url=url,
-                                                    body=body, headers=self.headers)
-
-        if self.api_responses_logger:
-            self.api_responses_logger.info('%s request to %s with parameters %s' % (method, url, body))
-            self.api_responses_logger.info("Response status : %s \n" % response_code)
-            self.api_responses_logger.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
-                
-        if response_code >= 300:
-            self.handle_exceptions(response_code, response_body)
-        elif response_code == 200:
-            return Response(response_code, response_body)
-        elif response_code == 201:
-            return AsyncResponse(response_code, response_body)
-
-    # Raise appropriate exceptions based on response code
-
-    def handle_exceptions(self, response_code, response_body):
-        if response_code == 400:
-            raise exceptions.BadRequestException(response_body)
-        elif response_code == 401:
-            raise exceptions.PermissionsException(response_body)
-        elif response_code == 404:
-            raise exceptions.NotFoundException(response_body)
-        elif response_code == 409:
-            raise exceptions.DuplicateResourceException(response_body)
-        else:
-            raise exceptions.PulpServerException(response_body)
-
-    # credentials setters -----------------------------------------------------
-
-    def set_basic_auth_credentials(self, username, password):
-        raw = ':'.join((username, password))
-        encoded = base64.encodestring(raw)[:-1]
-        self.headers['Authorization'] = 'Basic ' + encoded
-
-    def set_ssl_credentials(self, certfile):
-        if not os.access(certfile, os.R_OK):
-            raise RuntimeError(_('certificate file %s does not exist or cannot be read')
-                               % certfile)
-        self.__certfile = certfile
-
-    def has_credentials_set(self):
-        return 'Authorization' in self.headers or self.__certfile is not None
-
-    # request methods ---------------------------------------------------------
+    # -- public methods -------------------------------------------------------
 
     def DELETE(self, path, body=None):
         return self._request('DELETE', path, body=body)
@@ -201,9 +108,62 @@ class PulpConnection(object):
     def PUT(self, path, body):
         return self._request('PUT', path, body=body)
 
+    # protected request utilities ---------------------------------------------
+
+    def _request(self, method, path, queries=(), body=None):
+        # make a request to the pulp server and return the response
+        # NOTE this throws a ConnectionException or one of the RequestExceptions (depending on response codes) 
+        # in case of unsuccessful request
+        url = self._build_url(path, queries)
+        if not isinstance(body, (type(None), str,)):
+            body = json.dumps(body)
+        self.log.debug('sending %s request to %s' % (method, url))
+
+        response_code, response_body = self.server_wrapper.request(method, url, body)
+
+        if self.api_responses_logger:
+            self.api_responses_logger.info('%s request to %s with parameters %s' % (method, url, body))
+            self.api_responses_logger.info("Response status : %s \n" % response_code)
+            self.api_responses_logger.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
+                
+        if response_code >= 300:
+            self._handle_exceptions(response_code, response_body)
+        elif response_code == 200:
+            return Response(response_code, response_body)
+        elif response_code == 201:
+            return AsyncResponse(response_code, response_body)
+
+    def _handle_exceptions(self, response_code, response_body):
+
+        code_class_mappings = {400 : exceptions.BadRequestException,
+                               401 : exceptions.PermissionsException,
+                               404 : exceptions.NotFoundException,
+                               409 : exceptions.DuplicateResourceException}
+
+        if response_code not in code_class_mappings:
+            raise exceptions.PulpServerException(response_body)
+        else:
+            raise code_class_mappings[response_code](response_body)
+
+    def _build_url(self, path, queries=()):
+        # build the request url from the path and queries dict or tuple
+        if not path.startswith(self.path_prefix):
+            path = '/'.join((self.path_prefix, path))
+            # Check if path is ascii and uses appropriate characters, else convert to binary or unicode as necessary.
+        try:
+            path = urllib.quote(str(path))
+        except UnicodeEncodeError:
+            path = urllib.quote(path.encode('utf-8'))
+        except UnicodeDecodeError:
+            path = urllib.quote(path.decode('utf-8'))
+        queries = urllib.urlencode(queries)
+        if queries:
+            path = '?'.join((path, queries))
+        return path
+
 # -- wrapper classes ----------------------------------------------------------
 
-class ServerWrapper(object):
+class HTTPSServerWrapper(object):
     """
     Used by the PulpConnection class to make an invocation against the server.
     This abstraction is used to simplify mocking. In this implementation, the
@@ -211,19 +171,44 @@ class ServerWrapper(object):
     the HTTPConnection class are hidden in favor of a simpler API to mock.
     """
 
-    def __init__(self, connection):
-        self.connection = connection
+    def __init__(self, pulp_connection):
+        self.pulp_connection = pulp_connection
 
-    def request(self, method, url, body, headers):
-        self.connection.request(method, url, body=body, headers=headers)
+    def request(self, method, url, body):
+
+        headers = dict(self.pulp_connection.headers) # copy so we don't affect the calling method
+
+        # Create a new connection each time since HTTPSConnection has problems
+        # reusing a connection for multiple calls (lame).
+        ssl_context = None
+        if self.pulp_connection.username and self.pulp_connection.password:
+            raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
+            encoded = base64.encodestring(raw)[:-1]
+            headers['Authorization'] = 'Basic ' + encoded
+        elif self.pulp_connection.cert_filename:
+            ssl_context = SSL.Context('sslv3')
+            ssl_context.set_session_timeout(self.pulp_connection.timeout)
+            ssl_context.load_cert(self.pulp_connection.cert_filename)
+
+        # Can't pass in None, so need to decide between two signatures (also lame)
+        if ssl_context is not None:
+            connection = httpslib.HTTPSConnection(self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
+        else:
+            connection = httpslib.HTTPSConnection(self.pulp_connection.host, self.pulp_connection.port)
+
+        # Request against the server
+        connection.request(method, url, body=body, headers=headers)
+
         try:
-            response = self.connection.getresponse()
+            response = connection.getresponse()
         except SSL.SSLError, err:
             raise exceptions.ConnectionException(None, str(err), None)
+
+        # Attempt to deserialize the body (should pass unless the server is busted)
         response_body = response.read()
+
         try:
             response_body = json.loads(response_body)
         except:
             pass
         return response.status, response_body
-

@@ -112,7 +112,6 @@ class RepoSection(PulpCliSection):
         self.prompt.render_title('Repositories')
 
         repo_list = self.context.server.repo.repositories()
-        repo_list = self.context.server.repo.repositories()
 
         # Default flags to render_document_list
         filters = None

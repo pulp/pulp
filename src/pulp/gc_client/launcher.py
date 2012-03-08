@@ -111,7 +111,7 @@ def _create_bindings(config, logger, username, password):
         call_log.setLevel(logging.INFO)
 
     # Create the connection and bindings
-    conn = PulpConnection(hostname, port, username=username, password=password, certfile=cert_filename, logger=logger, api_responses_logger=call_log)
+    conn = PulpConnection(hostname, port, username=username, password=password, cert_filename=cert_filename, logger=logger, api_responses_logger=call_log)
     bindings = Bindings(conn)
 
     return bindings
