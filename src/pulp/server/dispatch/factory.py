@@ -31,6 +31,7 @@ def _initialize_coordinator():
     assert isinstance(_TASK_QUEUE, TaskQueue)
     task_wait_sleep_interval = 0.5
     _COORDINATOR = Coordinator(_TASK_QUEUE, task_wait_sleep_interval)
+    _COORDINATOR.start()
 
 
 def _initialize_scheduler():
