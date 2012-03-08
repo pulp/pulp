@@ -122,7 +122,7 @@ class RepoResource(JSONController):
         coordinator = dispatch_factory.coordinator()
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: [dispatch_constants.RESOURCE_DELETE_OPERATION]}}
-        call_request = CallRequest(repo_manager.delete_repo, [id], resources=resources)
+        call_request = CallRequest(repo_manager.delete_repo, [id], resources=resources, archive=True)
         call_report = coordinator.execute_call_asynchronously(call_request)
 
         serialized_call_report = call_report.serialize()
