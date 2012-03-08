@@ -35,16 +35,16 @@ class Coordinator(object):
     @type task_queue: L{TaskQueue} instance
     @ivar task_resource_collection: mongodb collection for task resources
     @type task_resource_collection: L{pymongo.Collection} instance
-    @ivar task_wait_sleep_interval: sleep interval to use while polling a "synchronous" task
-    @type task_wait_sleep_interval: float
+    @ivar task_state_poll_interval: sleep interval to use while polling a "synchronous" task
+    @type task_state_poll_interval: float
     """
 
-    def __init__(self, task_queue, task_wait_sleep_interval=0.5):
+    def __init__(self, task_queue, task_state_poll_interval=0.5):
         assert isinstance(task_queue, TaskQueue)
 
         self.task_queue = task_queue
         self.task_resource_collection = TaskResource.get_collection()
-        self.task_wait_sleep_interval = task_wait_sleep_interval
+        self.task_state_poll_interval = task_state_poll_interval
 
     # explicit initialization --------------------------------------------------
 
@@ -191,12 +191,14 @@ class Coordinator(object):
         # synchronously executed, do so
         if synchronous or (synchronous is None and response is dispatch_constants.CALL_ACCEPTED_RESPONSE):
             try:
-                wait_for_task(task, [dispatch_constants.CALL_RUNNING_STATE], timeout=timeout)
+                wait_for_task(task, [dispatch_constants.CALL_RUNNING_STATE],
+                              poll_interval=self.task_state_poll_interval, timeout=timeout)
             except dispatch_exceptions.SynchronousCallTimeoutError:
                 self.task_queue.dequeue(task)
                 raise
             else:
-                wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES)
+                wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES,
+                              poll_interval=self.task_state_poll_interval)
 
     def _generate_job_id(self):
         """
@@ -426,26 +428,26 @@ def set_task_id_on_task_resources(task_id, task_resources):
         task_resource['task_id'] = task_id
 
 
-def wait_for_task(task, states, sleep_interval=0.5, timeout=None):
+def wait_for_task(task, states, poll_interval=0.5, timeout=None):
     """
     Wait for a task to be in a certain set of states
     @param task: task to wait for
     @type  task: L{Task}
     @param states: set of valid states
     @type  states: list, set, or tuple
-    @param sleep_interval: time, in seconds, to wait in between polling the task
-    @type  sleep_interval: float or int
+    @param poll_interval: time, in seconds, to wait in between polling the task
+    @type  poll_interval: float or int
     @param timeout: maximum amount of time to poll task, None means indefinitely
     @type  timeout: None or datetime.timedelta
     """
     assert isinstance(task, Task)
     assert isinstance(states, (list, set, tuple))
-    assert isinstance(sleep_interval, (float, int))
+    assert isinstance(poll_interval, (float, int))
     assert isinstance(timeout, (datetime.timedelta, types.NoneType))
 
     start = datetime.datetime.now()
     while task.call_report.state not in states:
-        time.sleep(sleep_interval)
+        time.sleep(poll_interval)
         if timeout is None:
             continue
         now = datetime.datetime.now()
