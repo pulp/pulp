@@ -81,6 +81,7 @@ LINKS = (
     ('extensions/pulp_server_info', '/var/lib/pulp_client/admin/extensions/pulp_server_info'),
     ('extensions/rpm_repo', '/var/lib/pulp_client/admin/extensions/rpm_repo'),
     ('plugins/types/rpm.json', '/var/lib/pulp/plugins/types/rpm.json'),
+    ('plugins/types/erratum.json', '/var/lib/pulp/plugins/types/erratum.json'),
     ('plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
 )
 
