@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import logging
 import re
 import sys
@@ -138,8 +139,12 @@ class RepoDistributorManager(object):
 
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
 
+        # Convention is that a value of None means unset. Remove any keys that
+        # are explicitly set to None so the plugin will default them.
+        clean_config = dict([(k, v) for k, v in repo_plugin_config.items() if v is not None])
+
         # Let the distributor plugin verify the configuration
-        call_config = PluginCallConfiguration(plugin_config, repo_plugin_config)
+        call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
@@ -173,7 +178,7 @@ class RepoDistributorManager(object):
             raise OperationFailed(), None, sys.exc_info()[2]
 
         # Database Update
-        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, repo_plugin_config, auto_publish)
+        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, clean_config, auto_publish)
         distributor_coll.save(distributor, safe=True)
 
         return distributor
@@ -257,8 +262,24 @@ class RepoDistributorManager(object):
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
 
+        # The supplied config is a delta of changes to make to the existing config.
+        # The plugin expects a full configuration, so we apply those changes to
+        # the original config and pass that to the plugin's validate method.
+        merged_config = copy.copy(repo_distributor['config'])
+
+        # The convention is that None in an update is removing the value and
+        # setting it to the default. Find all such properties in this delta and
+        # remove them from the existing config if they are there.
+        unset_property_names = [k for k in distributor_config if distributor_config[k] is None]
+        for key in unset_property_names:
+            merged_config.pop(key, None)
+            distributor_config.pop(key, None)
+
+        # Whatever is left over are the changed/added values, so merge them in.
+        merged_config.update(distributor_config)
+
         # Let the distributor plugin verify the configuration
-        call_config = PluginCallConfiguration(plugin_config, distributor_config)
+        call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
@@ -279,7 +300,7 @@ class RepoDistributorManager(object):
             raise InvalidConfiguration(message)
 
         # If we got this far, the new config is valid, so update the database
-        repo_distributor['config'] = distributor_config
+        repo_distributor['config'] = merged_config
         distributor_coll.save(repo_distributor, safe=True)
 
         return repo_distributor
