@@ -92,18 +92,50 @@ def create_repo_options(command, is_update):
 def args_to_importer_config(kwargs):
     """
     Takes the arguments read from the CLI and converts the client-side input
-    to the server-side expectations. The dict will be edited in place.
+    to the server-side expectations. The supplied dict will not be modified.
+
+    @return: config to pass into the add/update importer calls
     """
+
+    importer_config = dict(kwargs)
 
     # Simple name translations
     translations = [
-        ('sslcacert', 'feed_ca_cert'),
-        ('sslclientcert', 'feed_cert'),
-        ('sslclientkey', 'feed_key'),
-        ('sslverify', 'verify_feed_ssl'),
+        ('ssl_ca_cert', 'feed_ca_cert'),
+        ('ssl_client_cert', 'feed_cert'),
+        ('ssl_client_key', 'feed_key'),
+        ('ssl_verify', 'verify_feed_ssl'),
     ]
     for t, o in translations:
-        kwargs[t] = kwargs.pop(o, None)
+        importer_config[t] = importer_config.pop(o, None)
+
+    # Verify options is expected as a dict, so repackage those now
+    importer_config['verify_options'] = {
+        'size' : importer_config.pop('verify_size', None),
+        'checksum' : importer_config.pop('verify_checksum', None),
+    }
+
+    # Strip out anything with a None value. The importer won't barf at this,
+    # but Pulp will store them in the config as key : None. This tends to
+    # make the output of viewing the importer config kinda ugly, so let's try
+    # this approach and see how it turns out.
+
+    importer_config = dict([(k, v) for k, v in importer_config.items() if v is not None])
+
+    # Special None stripping for verify_options since it's a dict
+    popped = 0
+    if importer_config['verify_options']['size'] is None:
+        importer_config['verify_options'].pop('size')
+        popped += 1
+
+    if importer_config['verify_options']['checksum'] is None:
+        importer_config['verify_options'].pop('checksum')
+        popped += 1
+
+    if popped == 2:
+        importer_config.pop('verify_options') # Nothing in here, so remove it too
+
+    return importer_config
 
 # -- command implementations --------------------------------------------------
 
@@ -157,3 +189,5 @@ class YumRepoCreateCommand(PulpCliCommand):
             self.context.logger.exception('Error adding importer')
             self.context.prompt.render_failure_message('Error configuring importer for repository [%s]' % repo_id)
             raise e, None, sys.exc_info()[2]
+
+        self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
