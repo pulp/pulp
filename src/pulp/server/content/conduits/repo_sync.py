@@ -50,6 +50,7 @@ from pulp.server.content.plugins.model import Unit, SyncReport
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
+from pulp.server.managers.repo.unit_association_query import Criteria # shadow for importing by plugins
 
 # -- constants ---------------------------------------------------------------
 
@@ -138,7 +139,8 @@ class RepoSyncConduit(BaseImporterConduit):
         Units returned from this call will have the id field populated and are
         useable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within
+        @param criteria: used to scope the returned results or the data within;
+               the Criteria class can be imported from this module
         @type  criteria: L{Criteria}
 
         @return: list of unit instances
