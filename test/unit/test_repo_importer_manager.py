@@ -205,6 +205,24 @@ class RepoManagerTests(testutil.PulpTest):
         """
 
         # Setup
+        mock_plugins.MOCK_IMPORTER.validate_config.return_value = (False, 'Invalid stuff')
+        self.repo_manager.create_repo('bad_config')
+
+        # Test
+        config = {'elf' : 'legolas'}
+        try:
+            self.importer_manager.set_importer('bad_config', 'mock-importer', config)
+            self.fail('Exception expected for bad config')
+        except exceptions.InvalidConfiguration, e:
+            self.assertEqual(e[0], 'Invalid stuff')
+
+    def test_set_importer_invalid_config_backward_compatibility(self):
+        """
+        Tests the set_importer call properly errors when the config is invalid
+        and the importer still returns a single boolean.
+        """
+
+        # Setup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = False
         self.repo_manager.create_repo('bad_config')
 
@@ -340,6 +358,27 @@ class RepoManagerTests(testutil.PulpTest):
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = None
 
     def test_update_importer_invalid_config(self):
+        """
+        Tests the appropriate exception is raised when the plugin indicates the config is invalid.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('restoration')
+        self.importer_manager.set_importer('restoration', 'mock-importer', None)
+
+        mock_plugins.MOCK_IMPORTER.validate_config.return_value = (False, 'Invalid stuff')
+
+        # Test
+        try:
+            self.importer_manager.update_importer_config('restoration', {})
+            self.fail('Exception expected')
+        except exceptions.InvalidConfiguration, e:
+            self.assertEqual('Invalid stuff', e[0])
+
+        # Cleanup
+        mock_plugins.MOCK_IMPORTER.validate_config.return_value = True
+
+    def test_update_importer_invalid_config_backward_compatibility(self):
         """
         Tests the appropriate exception is raised when the plugin indicates the config is invalid.
         """

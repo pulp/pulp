@@ -108,13 +108,21 @@ class RepoImporterManager(object):
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
         try:
-            valid_config = importer_instance.validate_config(transfer_repo, call_config)
-        except Exception:
+            result = importer_instance.validate_config(transfer_repo, call_config)
+
+            # For backward compatibility with plugins that don't yet return the tuple
+            if isinstance(result, bool):
+                valid_config = result
+                message = None
+            else:
+                valid_config, message = result
+
+        except Exception, e:
             _LOG.exception('Exception received from importer [%s] while validating config' % importer_type_id)
-            raise InvalidConfiguration, None, sys.exc_info()[2]
+            raise InvalidConfiguration(e), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidConfiguration()
+            raise InvalidConfiguration(message)
 
         # Remove old importer if one exists
         try:
@@ -215,13 +223,20 @@ class RepoImporterManager(object):
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
         try:
-            valid_config = importer_instance.validate_config(transfer_repo, call_config)
-        except Exception:
+            result = importer_instance.validate_config(transfer_repo, call_config)
+
+            # For backward compatibility with plugins that don't yet return the tuple
+            if isinstance(result, bool):
+                valid_config = result
+                message = None
+            else:
+                valid_config, message = result
+        except Exception, e:
             _LOG.exception('Exception received from importer [%s] while validating config for repo [%s]' % (importer_type_id, repo_id))
-            raise InvalidConfiguration, None, sys.exc_info()[2]
+            raise InvalidConfiguration(e), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidConfiguration()
+            raise InvalidConfiguration(message)
 
         # If we got this far, the new config is valid, so update the database
         repo_importer['config'] = importer_config
