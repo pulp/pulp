@@ -16,6 +16,7 @@ Classes used in the writing of Pulp client extensions.
 """
 
 from okaara.cli import Section, Command, Option, Flag, OptionGroup
+from okaara.cli import UnknownArgsParser # shadow here so extensions can import it from this module
 
 # -- cli components -----------------------------------------------------------
 
