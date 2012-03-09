@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import logging
 import sys
 
@@ -18,8 +19,7 @@ from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import MissingRepo, MissingImporter, InvalidImporterType, InvalidImporterConfiguration, ImporterInitializationException
-from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, InvalidConfiguration, OperationFailed
+from pulp.server.exceptions import MissingResource, InvalidType, InvalidConfiguration, OperationFailed
 
 # -- constants ----------------------------------------------------------------
 
@@ -102,8 +102,12 @@ class RepoImporterManager(object):
 
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
 
+        # Convention is that a value of None means unset. Remove any keys that
+        # are explicitly set to None so the plugin will default them.
+        clean_config = dict([(k, v) for k, v in repo_plugin_config.items() if v is not None])
+
         # Let the importer plugin verify the configuration
-        call_config = PluginCallConfiguration(plugin_config, repo_plugin_config)
+        call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
@@ -140,7 +144,7 @@ class RepoImporterManager(object):
         # Database Update
         importer_id = importer_type_id # use the importer name as its repo ID
 
-        importer = RepoImporter(repo_id, importer_id, importer_type_id, repo_plugin_config)
+        importer = RepoImporter(repo_id, importer_id, importer_type_id, clean_config)
         importer_coll.save(importer, safe=True)
 
         return importer
@@ -217,8 +221,24 @@ class RepoImporterManager(object):
         importer_type_id = repo_importer['importer_type_id']
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
 
+        # The supplied config is a delta of changes to make to the existing config.
+        # The plugin expects a full configuration, so we apply those changes to
+        # the original config and pass that to the plugin's validate method.
+        merged_config = copy.copy(repo_importer['config'])
+
+        # The convention is that None in an update is removing the value and
+        # setting it to the default. Find all such properties in this delta and
+        # remove them from the existing config if they are there.
+        unset_property_names = [k for k in importer_config if importer_config[k] is None]
+        for key in unset_property_names:
+            merged_config.pop(key, None)
+            importer_config.pop(key, None)
+
+        # Whatever is left over are the changed/added values, so merge them in.
+        merged_config.update(importer_config)
+
         # Let the importer plugin verify the configuration
-        call_config = PluginCallConfiguration(plugin_config, importer_config)
+        call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
@@ -239,7 +259,7 @@ class RepoImporterManager(object):
             raise InvalidConfiguration(message)
 
         # If we got this far, the new config is valid, so update the database
-        repo_importer['config'] = importer_config
+        repo_importer['config'] = merged_config
         importer_coll.save(repo_importer, safe=True)
 
         return repo_importer
