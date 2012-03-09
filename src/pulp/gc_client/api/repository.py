@@ -44,7 +44,8 @@ class RepositoryAPI(PulpAPI):
 
     def update(self, id, delta):
         path = self.base_path + "%s/" % id
-        return self.server.PUT(path, delta)
+        body = {'delta' : delta}
+        return self.server.PUT(path, body)
 
 
 class RepositoryImporterAPI(PulpAPI):
@@ -75,7 +76,8 @@ class RepositoryImporterAPI(PulpAPI):
 
     def update(self, repo_id, importer_id, importer_config):
         path = self.base_path % repo_id + "/%s/" % importer_id
-        return self.server.PUT(path, importer_config)
+        data = {"importer_config": importer_config}
+        return self.server.PUT(path, data)
     
 
 class RepositoryDistributorAPI(PulpAPI):

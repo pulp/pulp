@@ -31,6 +31,7 @@ def initialize(context):
 
     # Add in overridden yum functionality
     repo_section.add_command(YumRepoCreateCommand(context))
+    repo_section.add_command(YumRepoUpdateCommand(context))
 
 def create_repo_options(command, is_update):
     """
@@ -41,21 +42,31 @@ def create_repo_options(command, is_update):
     @param command: command to add options to
     """
 
+    def munge_description(d):
+        if is_update: d += '; specify "" to remove any of these values'
+        return d
+
     # Groups
     required_group = PulpCliOptionGroup('Required')
-    d = '(optional) user-readable information about the repository'
-    if is_update: d += '; specify "" to remove any of these values'
-    metadata_group = PulpCliOptionGroup('Metadata', d)
 
-    throttling_group = PulpCliOptionGroup('Throttling', '(optional) controls the bandwidth and CPU usage when synchronizing this repo')
-    ssl_group = PulpCliOptionGroup('Security', '(optional) credentials and configuration for synchronizing secured external repositories')
+    d = munge_description('(optional) basic information about the repository')
+    basic_group = PulpCliOptionGroup('Basic', d)
+
+    d = munge_description('(optional) controls the bandwidth and CPU usage when synchronizing this repo')
+    throttling_group = PulpCliOptionGroup('Throttling', d)
+
+    d = munge_description('(optional) credentials and configuration for synchronizing secured external repositories')
+    ssl_group = PulpCliOptionGroup('Security', d)
+
     verify_group = PulpCliOptionGroup('Verification', '(optional) controls the amount of verification on synchronized data')
-    proxy_group = PulpCliOptionGroup('Proxy', '(optional) configures synchronization to go through a proxy server')
+
+    d = munge_description('(optional) configures synchronization to go through a proxy server')
+    proxy_group = PulpCliOptionGroup('Proxy', d)
 
     # Order added indicates order in usage, so pay attention to this order when
     # dorking with it to make sure it makes sense
     command.add_option_group(required_group)
-    command.add_option_group(metadata_group)
+    command.add_option_group(basic_group)
     command.add_option_group(verify_group)
     command.add_option_group(ssl_group)
     command.add_option_group(proxy_group)
@@ -63,11 +74,19 @@ def create_repo_options(command, is_update):
 
     # Required Options
     required_group.add_option(PulpCliOption('--id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
-    required_group.add_option(PulpCliOption('--feed_url', 'URL of the external source repository to sync', required=True))
+
+    # Feed URL is special: required for create, optional for update
+
+    if not is_update:
+        feed_url_dest = required_group
+    else:
+        feed_url_dest = basic_group
+
+    feed_url_dest.add_option(PulpCliOption('--feed_url', 'URL of the external source repository to sync', required=not is_update))
 
     # Metadata Options
-    metadata_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
-    metadata_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
+    basic_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
+    basic_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
 
     # Verify Options
     verify_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
@@ -154,11 +173,11 @@ class YumRepoCreateCommand(PulpCliCommand):
         # them. Their values will be None, which the yum importer is set up
         # to handle.
 
-        repo_id = kwargs.pop('id') # pop it out so it's not part of importer config
+        # Gather data
+        repo_id = kwargs.pop('id')
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display_name', None)
 
-        # TODO: split apart the remaining arguments between importer and distributor config
         importer_config = args_to_importer_config(kwargs)
 
         # TODO: This whole mess of exception stuff is gonna be handled by the exception handler
@@ -191,3 +210,42 @@ class YumRepoCreateCommand(PulpCliCommand):
             raise e, None, sys.exc_info()[2]
 
         self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
+
+class YumRepoUpdateCommand(PulpCliCommand):
+    def __init__(self, context):
+        desc = 'updates an existing repository\'s configuration'
+        PulpCliCommand.__init__(self, 'update', desc, self.update)
+
+        self.context = context
+
+        create_repo_options(self, True)
+
+    def update(self, **kwargs):
+
+        # Gather data
+        repo_id = kwargs.pop('id')
+        description = kwargs.pop('description', None)
+        display_name = kwargs.pop('display_name', None)
+
+        importer_config = args_to_importer_config(kwargs)
+
+        something_changed = False
+
+        # Update the repo itself if necessary
+        if description is not None or display_name is not None:
+            delta = {}
+            if description is not None: delta['description'] = description
+            if display_name is not None: delta['display_name'] = display_name
+
+            self.context.server.repo.update(repo_id, delta)
+            something_changed = True
+
+        # Update the importer config if necessary
+        if len(importer_config) > 0:
+            self.context.server.repo_importer.update(repo_id, IMPORTER_TYPE_ID, importer_config)
+            something_changed = True
+
+        if something_changed:
+            self.context.prompt.render_success_message('Repository [%s] successfully updated' % repo_id)
+        else:
+            self.context.prompt.write('No changes specified for repository [%s]' % repo_id)
