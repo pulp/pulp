@@ -53,6 +53,12 @@ class Distributor(object):
         should use the given repository data to ensure that updating the
         configuration does not put the repository into an inconsistent state.
 
+        The return is a tuple of the result of the validation (True for success,
+        False for failure) and a message. The message may be None and is unused
+        in the success case. For a failed validation, the message will be
+        communicated to the caller so the plugin should take i18n into
+        consideration when generating the message.
+
         @param repo: metadata describing the repository to which the
                      configuration applies
         @type  repo: L{pulp.server.content.plugins.data.Repository}
@@ -61,8 +67,8 @@ class Distributor(object):
                        configuration is found within
         @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
 
-        @return: True if the configuration is valid; False otherwise
-        @rtype:  bool
+        @return: tuple of (bool, str) to describe the result
+        @rtype:  tuple
         """
         raise NotImplementedError()
 

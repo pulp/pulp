@@ -24,7 +24,6 @@ import mock_plugins
 from pulp.server.content.plugins.model import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
-#import pulp.server.managers.repo._exceptions as errors
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
@@ -252,6 +251,25 @@ class RepoManagerTests(testutil.PulpTest):
         """
 
         # Setup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = (False, 'Invalid config')
+        self.repo_manager.create_repo('error_repo')
+
+        # Test
+        try:
+            self.distributor_manager.add_distributor('error_repo', 'mock-distributor', None, True)
+            self.fail('Exception expected for invalid configuration')
+        except exceptions.InvalidConfiguration, e:
+            self.assertEqual(e[0], 'Invalid config')
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    def test_add_distributor_invalid_config_backward_compatibility(self):
+        """
+        Tests the correct error is raised when the distributor is handed an invalid configuration.
+        """
+
+        # Setup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = False
         self.repo_manager.create_repo('error_repo')
 
@@ -387,6 +405,28 @@ class RepoManagerTests(testutil.PulpTest):
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
 
     def test_update_invalid_config(self):
+        """
+        Tests updating a config when the plugin indicates the config is invalid.
+        """
+
+        # Setup
+        self.repo_manager.create_repo('dwarf')
+        distributor = self.distributor_manager.add_distributor('dwarf', 'mock-distributor', {}, True)
+        dist_id = distributor['id']
+
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = (False, 'Invalid config')
+
+        # Test
+        try:
+            self.distributor_manager.update_distributor_config('dwarf', dist_id, {})
+            self.fail('Exception expected')
+        except exceptions.InvalidConfiguration, e:
+            self.assertEqual(e[0], 'Invalid config')
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    def test_update_invalid_config_backward_compatibility(self):
         """
         Tests updating a config when the plugin indicates the config is invalid.
         """

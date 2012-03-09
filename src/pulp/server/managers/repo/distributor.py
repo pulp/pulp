@@ -19,10 +19,9 @@ import uuid
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
-import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import (MissingRepo, MissingDistributor,
-    InvalidDistributorId, InvalidDistributorType, InvalidDistributorConfiguration, DistributorInitializationException)
 from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, InvalidConfiguration, OperationFailed
+import pulp.server.managers.repo._common as common_utils
+
 # -- constants ----------------------------------------------------------------
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -145,13 +144,20 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
         try:
-            valid_config = distributor_instance.validate_config(transfer_repo, call_config)
-        except Exception:
+            result = distributor_instance.validate_config(transfer_repo, call_config)
+
+            # For backward compatibility with plugins that don't yet return the tuple
+            if isinstance(result, bool):
+                valid_config = result
+                message = None
+            else:
+                valid_config, message = result
+        except Exception, e:
             _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
-            raise InvalidConfiguration()
+            raise InvalidConfiguration(e), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidConfiguration()
+            raise InvalidConfiguration(message)
 
         # Remove the old distributor if it exists
         try:
@@ -257,13 +263,20 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
         try:
-            valid_config = distributor_instance.validate_config(transfer_repo, call_config)
-        except Exception:
+            result = distributor_instance.validate_config(transfer_repo, call_config)
+
+            # For backward compatibility with plugins that don't yet return the tuple
+            if isinstance(result, bool):
+                valid_config = result
+                message = None
+            else:
+                valid_config, message = result
+        except Exception, e:
             _LOG.exception('Exception raised from distributor [%s] while validating config for repo [%s]' % (distributor_type_id, repo_id))
-            raise InvalidConfiguration, None, sys.exc_info()[2]
+            raise InvalidConfiguration(e), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidConfiguration()
+            raise InvalidConfiguration(message)
 
         # If we got this far, the new config is valid, so update the database
         repo_distributor['config'] = distributor_config
