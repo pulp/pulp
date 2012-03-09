@@ -9,6 +9,11 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_client_framework_core.py \
        test/unit/test_content_managers.py \
        test/unit/test_content_plugin_loader.py \
+       test/unit/test_dispatch_call.py \
+       test/unit/test_dispatch_coordinator.py \
+       test/unit/test_dispatch_scheduler.py \
+       test/unit/test_dispatch_task.py \
+       test/unit/test_dispatch_taskqueue.py \
        test/unit/test_extensions_loader.py \
        test/unit/test_repo_controller.py \
        test/unit/test_repo_importer_manager.py \
