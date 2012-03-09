@@ -34,6 +34,7 @@ def migrate():
     for r in all_repos:
         try:
             modified = False
+            old_repo_cert_dir = None
             for cf in ["feed_cert", "feed_ca", "consumer_ca", "consumer_cert"]:
                 if not r.has_key(cf) or not r[cf]:
                     continue
@@ -47,15 +48,19 @@ def migrate():
                 _LOG.info("Moving %s to %s" % (old_path, updated_path))
                 if not os.path.exists(expected_repo_cert_dir):
                     os.makedirs(expected_repo_cert_dir)
-                shutil.move(old_path, updated_path)
+                    os.chown(expected_repo_cert_dir, apache_uid, apache_gid)
+                shutil.copy(old_path, updated_path)
                 os.chown(updated_path, apache_uid, apache_gid)
                 r[cf] = updated_path
                 modified = True
+                old_repo_cert_dir = os.path.dirname(old_path)
+            if old_repo_cert_dir is not None:
+                shutil.rmtree(old_repo_cert_dir)
             if modified:
                 collection.save(r, safe=True)
         except Exception, e:
             _LOG.critical(e)
-            return False
+            raise e
     return True
 
 
