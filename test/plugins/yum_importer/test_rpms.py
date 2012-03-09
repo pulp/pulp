@@ -12,16 +12,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import glob
+import mock
 import os
-import unittest
 import shutil
 import sys
 import tempfile
 import time
+import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-import mock
 import importer_mocks
 from importer import YumImporter
 from importer import YUM_IMPORTER_TYPE_ID
@@ -41,6 +42,12 @@ class TestRPMs(unittest.TestCase):
     def tearDown(self):
         super(TestRPMs, self).tearDown()
         shutil.rmtree(self.temp_dir)
+
+    def get_files_in_dir(self, pattern, path):
+        files = []
+        for d,_,_ in os.walk(path):
+            files.extend(glob.glob(os.path.join(d,pattern))) 
+        return files
 
     def test_metadata(self):
         metadata = YumImporter.metadata()
@@ -256,4 +263,55 @@ class TestRPMs(unittest.TestCase):
         self.assertTrue(rpm_lookup_key_b in missing_rpms)
         self.assertTrue(rpm_lookup_key_b in missing_units)
         self.assertEquals(missing_rpms[rpm_lookup_key_b], rpm_b)
+
+    def test_remove_old_packages(self):
+        feed_url = "http://jmatthews.fedorapeople.org/repo_multiple_versions/"
+        importer = YumImporter()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_remove_old_packages"
+        sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
+        ###
+        # Test that old packages are not in rpmList and are never intended to be downloaded
+        # Additionallity verify that already existing packages which are NOT orphaned are also
+        # removed with remove_old functionality
+        ###
+        config = importer_mocks.get_basic_config(feed_url, remove_old=False, num_old_packages=0)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertEquals(summary["num_synced_new_rpms"], 12)
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 12)
+
+        yumRepoGrinder = importer_rpm.get_yumRepoGrinder(repo.id, repo.working_dir, config)
+        yumRepoGrinder.setup(basepath=repo.working_dir)
+        rpm_items = yumRepoGrinder.getRPMItems()
+        yumRepoGrinder.stop()
+        del yumRepoGrinder
+        self.assertEquals(len(rpm_items), 12)
+
+        existing_units = []
+        for rpm in rpm_items:
+            u = Unit(RPM_TYPE_ID, 
+                    importer_rpm.form_rpm_unit_key(rpm), 
+                    importer_rpm.form_rpm_metadata(rpm),
+                    os.path.join(self.pkg_dir, rpm["pkgpath"], rpm["fileName"]))
+            existing_units.append(u)
+        config = importer_mocks.get_basic_config(feed_url, remove_old=True, num_old_packages=6)
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertEquals(summary["num_rpms"], 7)
+        self.assertEquals(summary["num_orphaned_rpms"], 5)
+        self.assertEquals(summary["num_synced_new_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 7)
+
+        config = importer_mocks.get_basic_config(feed_url, remove_old=True, num_old_packages=0)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertEquals(summary["num_rpms"], 1)
+        self.assertEquals(summary["num_orphaned_rpms"], 11)
+        self.assertEquals(summary["num_synced_new_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 1)
 

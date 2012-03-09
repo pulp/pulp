@@ -32,7 +32,7 @@ YUM_IMPORTER_TYPE_ID="yum_importer"
 REQUIRED_CONFIG_KEYS = ['feed_url']
 OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
                         'proxy_url', 'proxy_port', 'proxy_pass', 'proxy_user',
-                        'max_speed', 'verify_options', 'num_threads', 'remove_old',
+                        'max_speed', 'verify_options', 'num_threads',
                         'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip']
 ###
 # Config Options Explained

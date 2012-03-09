@@ -17,8 +17,10 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import Unit
 
 
-def get_sync_conduit(type_id=None, existing_units=None):
+def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
     def side_effect(type_id, key, metadata, rel_path):
+        if rel_path and pkg_dir:
+            rel_path = os.path.join(pkg_dir, rel_path)
         unit = Unit(type_id, key, metadata, rel_path)
         return unit
 
@@ -37,11 +39,15 @@ def get_sync_conduit(type_id=None, existing_units=None):
     sync_conduit.get_units.side_effect = get_units
     return sync_conduit
 
-def get_basic_config(feed_url, num_threads=1):
+def get_basic_config(feed_url, num_threads=1,
+        remove_old=False, num_old_packages=0, newest=False):
     def side_effect(arg):
         result = {
             "feed_url":feed_url,
             "num_threads":num_threads,
+            "remove_old":remove_old,
+            "num_old_packages":num_old_packages,
+            "newest":newest
            }
         if result.has_key(arg):
             return result[arg]

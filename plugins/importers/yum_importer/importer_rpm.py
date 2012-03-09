@@ -236,6 +236,17 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
         purge_orphaned=purge_orphaned, distro_location=None, tmp_path=tmp_path)
     return yumRepoGrinder
 
+
+def remove_unit(sync_conduit, unit):
+    _LOG.info("Removing unit <%s>" % (unit))
+    sync_conduit.remove_unit(unit)
+    try:
+        os.unlink(unit.storage_path)
+    except Exception:
+        _LOG.exception("Unable to delete: %s" % (unit.storage_path))
+        return False
+    return True
+
 def _sync(repo, sync_conduit, config, progress_callback=None):
     ####
         # Syncs operate on 2 types of data structures
@@ -284,10 +295,11 @@ def _sync(repo, sync_conduit, config, progress_callback=None):
     for u in new_units.values():
         sync_conduit.save_unit(u)
     for u in orphaned_units.values():
-        sync_conduit.remove_unit(u)
+        remove_unit(sync_conduit, u)
 
     end = time.time()
     summary = {}
+    summary["num_rpms"] = len(available_rpms)
     summary["num_synced_new_rpms"] = len(new_rpms)
     summary["num_resynced_rpms"] = len(missing_rpms)
     summary["num_not_synced_rpms"] = len(not_synced)
