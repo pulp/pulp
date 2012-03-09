@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        17%{?dist}
+Release:        18%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,6 +500,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Mar 09 2012 James Slagle <jslagle@redhat.com> 0.0.263-18
+- 801174 Fix several issues in migration. (jslagle@redhat.com)
+
 * Wed Mar 07 2012 James Slagle <jslagle@redhat.com> 0.0.263-17
 - 801174 Preserve permissions during migration (jslagle@redhat.com)
 
