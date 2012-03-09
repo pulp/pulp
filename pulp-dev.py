@@ -76,9 +76,10 @@ LINKS = (
     ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
     ('src/pulp/client/consumer/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('etc/pulp/logging', '/etc/pulp/logging'),
-    ('extensions/admin_auth', '/var/lib/pulp_client/admin/extensions/admin_auth'),
-    ('extensions/repo', '/var/lib/pulp_client/admin/extensions/repo'),
-    ('extensions/server_info', '/var/lib/pulp_client/admin/extensions/server_info'),
+    ('extensions/pulp_admin_auth', '/var/lib/pulp_client/admin/extensions/pulp_admin_auth'),
+    ('extensions/pulp_repo', '/var/lib/pulp_client/admin/extensions/pulp_repo'),
+    ('extensions/pulp_server_info', '/var/lib/pulp_client/admin/extensions/pulp_server_info'),
+    ('extensions/rpm_repo', '/var/lib/pulp_client/admin/extensions/rpm_repo'),
     ('plugins/types/rpm.json', '/var/lib/pulp/plugins/types/rpm.json'),
     ('plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
 )
