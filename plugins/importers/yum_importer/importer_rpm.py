@@ -21,6 +21,7 @@ _LOG = logging.getLogger(__name__)
 #_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
 
 RPM_TYPE_ID="rpm"
+SRPM_TYPE_ID="srpm"
 RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "fileName", "checksum", "checksumtype")
 
 def get_existing_units(sync_conduit, criteria=None):
@@ -92,7 +93,11 @@ def get_new_rpms_and_units(available_rpms, existing_units, sync_conduit):
             new_rpms[key] = rpm
             unit_key = form_rpm_unit_key(rpm)
             metadata = form_rpm_metadata(rpm)
-            new_units[key] = sync_conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
+            if rpm['arch'] == 'src':
+                # initialize unit as a src rpm
+                new_units[key] = sync_conduit.init_unit(SRPM_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
+            else:
+                new_units[key] = sync_conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
             # We need to determine where the unit should be stored and update
             # rpm["pkgpath"] so Grinder will store the rpm to the correct location
             rpm["pkgpath"] = new_units[key].storage_path
@@ -269,7 +274,7 @@ def _sync(repo, sync_conduit, config, progress_callback=None):
                 (len(available_rpms), feed_url, repo.id, (end_metadata-start_metadata)))
 
     # Determine what exists and what has been orphaned, or exists in Pulp but has been removed from the source repo
-    criteria = Criteria(type_ids=RPM_TYPE_ID)
+    criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
     existing_units = get_existing_units(sync_conduit, criteria)
     orphaned_units = get_orphaned_units(available_rpms, existing_units)
 
