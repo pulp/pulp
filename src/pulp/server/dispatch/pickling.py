@@ -31,6 +31,9 @@ class PicklingError(PulpExecutionException):
 class UnpicklingError(PulpExecutionException):
     pass
 
+class InstanceMethodPicklingError(PicklingError):
+    pass
+
 class InstanceMethodUnpicklingError(UnpicklingError):
     pass
 
@@ -50,6 +53,8 @@ def pickle_instance_method(method):
     method_name = method.im_func.__name__
     obj = method.im_self
     cls = method.im_class
+    if not issubclass(cls, object):
+        raise InstanceMethodPicklingError(cls.__name__, method_name)
     return unpickle_instance_method, (method_name, obj, cls)
 
 
