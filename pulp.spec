@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.272
+Version:        0.0.273
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -501,6 +501,81 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Mar 09 2012 Jeff Ortel <jortel@redhat.com> 0.0.273-1
+- adding srpm json to pulp-dev (pkilambi@redhat.com)
+- Adding srpms to yumimporter (pkilambi@redhat.com)
+- YumImporter test for remove old packages (jmatthews@redhat.com)
+- Moved UnknownArgsParser to okaara, import it from there
+  (jason.dobies@redhat.com)
+- Added RPM units search extension (jason.dobies@redhat.com)
+- Made semantics around distributor configs and updating them cleaner
+  (jason.dobies@redhat.com)
+- Added erratum type definition to pulp-dev (jason.dobies@redhat.com)
+- Added stricter rules around importer configs and updating them
+  (jason.dobies@redhat.com)
+- Import Criteria so it's easier to access by plugins (jason.dobies@redhat.com)
+- Changed return type on distributor's validate_config
+  (jason.dobies@redhat.com)
+- 801174 Fix several issues in migration. (jslagle@redhat.com)
+- 801174 Preserve permissions during migration (jslagle@redhat.com)
+- 801161 Add missing db migration (jslagle@redhat.com)
+- Fixed names of extensions (jason.dobies@redhat.com)
+- Missed some changed from pulp/client to pulp_client (jason.dobies@redhat.com)
+- Changed return type for validate_config for importers
+  (jason.dobies@redhat.com)
+- Renamed rpm repo extension to make it a smaller set of changes from generic
+  (jason.dobies@redhat.com)
+- Implemented repo update (still needs server-side tweaks to work)
+  (jason.dobies@redhat.com)
+- Initial (working) implementation of yum repo create (jason.dobies@redhat.com)
+- Fixed issue in server.py where multiple calls can't be made to a single
+  connection (jason.dobies@redhat.com)
+- fixed unittests for call that are now async (jconnor@redhat.com)
+- added archive for delete call for testing purposes (jconnor@redhat.com)
+- made all managers inherit from object (jconnor@redhat.com)
+- fixed typo (jconnor@redhat.com)
+- added new intermediate sub-class PulpCoordinatorTest (jconnor@redhat.com)
+- added clear queued calls option to stop (jconnor@redhat.com)
+- made exception handler debug flag configurable (jconnor@redhat.com)
+- renamed error middleware to exception (jconnor@redhat.com)
+- made dispatch parameters cofigurable (jconnor@redhat.com)
+- renamed to from wait interval to poll interval (jconnor@redhat.com)
+- added timestamp to queued calls so that restart can properly order call
+  requests (jconnor@redhat.com)
+- added start call to factory initialization (jconnor@redhat.com)
+- added interrupted task restart and conflict metadata clearing on startup
+  (jconnor@redhat.com)
+- added more comments to run task (jconnor@redhat.com)
+- removed misplaced comment (jconnor@redhat.com)
+- comment on external locking of task queue (jconnor@redhat.com)
+- /var/lib/pulp/client -> /var/lib/pulp_client (jconnor@redhat.com)
+- moved plugins to plugins/ in script (jconnor@redhat.com)
+- added start calls for both the task queue and the scheduler
+  (jconnor@redhat.com)
+- added call rejected exception (jconnor@redhat.com)
+- added importer and distributor types (jconnor@redhat.com)
+- made publish async (jconnor@redhat.com)
+- fixed location of v2 plugins (jconnor@redhat.com)
+- removed get_ prefix from dispatch factory functions (jconnor@redhat.com)
+- added v2 admin to installation (jconnor@redhat.com)
+- remove superfluous )( (jconnor@redhat.com)
+- needed parent dirs (jconnor@redhat.com)
+- changes to pulp-dev for installing what is need for v2 development
+  (jconnor@redhat.com)
+- tied repo delete in to coordinator (jconnor@redhat.com)
+- converted repo sync into async :) (jconnor@redhat.com)
+- Adding unit tests for errata support (pkilambi@redhat.com)
+- Work towards the yum support extension (jason.dobies@redhat.com)
+- 799120 - Added package filtering at package import stage as well as it is
+  processing packages from source dir and not destination dir
+  (skarmark@redhat.com)
+- Update YumImporter config values and provide descriptions
+  (jmatthews@redhat.com)
+- Adding some util methods for yum importer (pkilambi@redhat.com)
+- Comment out errata logging so we can run unit tests as non-root
+  (jmatthews@redhat.com)
+- Initial work towards the yum extensions (jason.dobies@redhat.com)
+
 * Thu Mar 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.272-1
 - Adding errata detail info (pkilambi@redhat.com)
 - Added v2 client/extensions and plugins to RPM build (jason.dobies@redhat.com)
