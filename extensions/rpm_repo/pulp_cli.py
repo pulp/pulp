@@ -174,7 +174,9 @@ class YumRepoListCommand(PulpCliCommand):
 
         # Summary mode is default
         filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
-        order = filters
+
+        if show_details:
+            filters += ['sync_config', 'publish_config']
 
         # Process each repository to clean up/restructure various data
         for r in repo_list:
@@ -186,9 +188,9 @@ class YumRepoListCommand(PulpCliCommand):
             distributors = r.pop('distributors', None)
             if show_details:
 
+                # Extract the importer config
                 if importers is not None and len(importers) > 0:
                     r['sync_config'] = importers[0]['config']
-                    filters += ['sync_config']
 
                     # Translate the importer config keys to cli counterparts
                     for importer_key, cli_key in IMPORTER_KEY_TRANSLATIONS:
@@ -201,19 +203,18 @@ class YumRepoListCommand(PulpCliCommand):
                         if key in r['sync_config']:
                             r['sync_config'][key] = _('Yes')
 
+                    # We don't want to display the proxy password in plain text, so
+                    # if it's present swap it out with astericks
+                    if 'proxy_pass' in r['sync_config']:
+                        r['sync_config']['proxy_pass'] = '*' * len(r['sync_config']['proxy_pass'])
+
+                # Extract the distributor config
                 if distributors is not None and len(distributors) > 0:
                     r['publish_config'] = distributors[0]['config']
-                    filters += ['publish_config']
 
-            # We don't want to display the proxy password in plain text, so
-            # if it's present swap it out with astericks
-            if 'proxy_pass' in r:
-                r['proxy_pass'] = '*' * len(r['proxy_pass'])
+        self.prompt.render_document_list(repo_list, filters=filters, order=filters)
 
-
-        self.prompt.render_document_list(repo_list, filters=filters, order=order)
-
-# -- parsing utilities --------------------------------------------------------
+# -- utilities ----------------------------------------------------------------
 
 def create_repo_options(command, is_update):
     """
@@ -298,6 +299,7 @@ def args_to_importer_config(kwargs):
     to the server-side expectations. The supplied dict will not be modified.
 
     @return: config to pass into the add/update importer calls
+    @raises InvalidConfig: if one or more arguments is not valid for the importer
     """
 
     importer_config = dict(kwargs)
@@ -331,7 +333,7 @@ def args_to_importer_config(kwargs):
             if v.strip().lower() == 'false':
                 importer_config[f] = False
                 continue
-            raise InvalidConfig('Value for %s must be either true or false' % f)
+            raise InvalidConfig(_('Value for %(f)s must be either true or false' % {'f' : f}))
 
     # Read in the contents of any files that were specified
     file_arguments = ('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key')
@@ -360,4 +362,4 @@ def read_file(filename):
 
         return contents
     except:
-        raise InvalidConfig('File [%s] cannot be read' % filename)
+        raise InvalidConfig(_('File [%(f)s] cannot be read' % {'f' : filename}))

@@ -316,6 +316,12 @@ class PulpPrompt(Prompt):
                 self.write(h)
 
             for k, formatted_k in ordered_formatted_keys:
+
+                # If a filter was specified for a value that's not there, that's
+                # ok, just skip it
+                if k not in i:
+                    continue
+
                 v = i[k]
 
                 if isinstance(v, dict):
