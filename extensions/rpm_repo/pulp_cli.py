@@ -18,20 +18,27 @@ from pulp.gc_client.api.exceptions import RequestException, DuplicateResourceExc
 
 IMPORTER_TYPE_ID = 'yum_importer'
 
+LOG = None # set by context
+
 def initialize(context):
 
     if not context.extension_config.getboolean('main', 'enabled'):
         return
 
+    global LOG
+    LOG = context.logger
+
     # Remove generic commands/sections that we want to override
     repo_section = context.cli.find_section('repo')
     repo_section.remove_command('create')
     repo_section.remove_command('update')
+    repo_section.remove_command('list')
     repo_section.remove_subsection('importer')
 
     # Add in overridden yum functionality
     repo_section.add_command(YumRepoCreateCommand(context))
     repo_section.add_command(YumRepoUpdateCommand(context))
+    repo_section.add_command(YumRepoListCommand(context))
 
 def create_repo_options(command, is_update):
     """
@@ -130,7 +137,11 @@ class YumRepoCreateCommand(PulpCliCommand):
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display_name', None)
 
-        importer_config = args_to_importer_config(kwargs)
+        try:
+            importer_config = args_to_importer_config(kwargs)
+        except InvalidConfig, e:
+            self.context.prompt.render_failure_message(e[0])
+            return
 
         # TODO: This whole mess of exception stuff is gonna be handled by the exception handler
 
@@ -180,7 +191,11 @@ class YumRepoUpdateCommand(PulpCliCommand):
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display_name', None)
 
-        importer_config = args_to_importer_config(kwargs)
+        try:
+            importer_config = args_to_importer_config(kwargs)
+        except InvalidConfig, e:
+            self.context.prompt.render_failure_message(e[0])
+            return
 
         something_changed = False
 
@@ -203,10 +218,47 @@ class YumRepoUpdateCommand(PulpCliCommand):
         else:
             self.context.prompt.write('No changes specified for repository [%s]' % repo_id)
 
+class YumRepoListCommand(PulpCliCommand):
+
+    def __init__(self, context):
+        PulpCliCommand.__init__(self, 'list', 'lists repositories on the server', self.list)
+        self.context = context
+        self.prompt = context.prompt
+
+        self.add_option(PulpCliFlag('--details', 'if specified, extra information on the repository will be displayed'))
+
+    def list(self, **kwargs):
+        self.prompt.render_title('Repositories')
+
+        show_details = kwargs['details']
+
+        repo_list = self.context.server.repo.repositories().response_body
+
+        # Summary mode is default
+        filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
+        order = filters
+
+        # Pull the importer/distributor configs into the repo itself. For now
+        # assume one of each since in the RPM commands we lock the user into
+        # that. We may have to revisit the distributor part in the future.
+        for r in repo_list:
+            importers = r.pop('importers', None)
+            distributors = r.pop('distributors', None)
+            if show_details:
+
+                if importers is not None and len(importers) > 0:
+                    r['sync_config'] = importers[0]['config']
+                    filters += ['sync_config']
+
+                if distributors is not None and len(distributors) > 0:
+                    r['publish_config'] = distributors[0]['config']
+                    filters += ['publish_config']
+
+        self.prompt.render_document_list(repo_list, filters=filters, order=order)
+
 # -- parsing utilities --------------------------------------------------------
 
 class InvalidConfig(Exception): pass
-
 
 def args_to_importer_config(kwargs):
     """
@@ -228,51 +280,32 @@ def args_to_importer_config(kwargs):
     for t, o in translations:
         importer_config[t] = importer_config.pop(o, None)
 
-    # Verify options is expected as a dict, so repackage those now
-    def parse_verify(key):
-        v = importer_config.pop(key, None)
-        if v is None or v == '': return None
-        if v.strip().lower() == 'true': return True
-        if v.strip().lower() == 'false': return False
-        raise InvalidConfig('Value for %s must be either true or false')
+    # Strip out anything with a None value. The way the parser works, all of
+    # the possible options will be present with None as the value. Strip out
+    # everything with a None value now as it means it hasn't been specified
+    # by the user (removals are done by specifying ''.
+    importer_config = dict([(k, v) for k, v in importer_config.items() if v is not None])
 
-    importer_config['verify_options'] = {
-        'size': parse_verify('verify_size'),
-        'checksum': parse_verify('verify_checksum'),
-        }
-
-    # Strip out anything with a None value. The importer won't barf at this,
-    # but Pulp will store them in the config as key : None. This tends to
-    # make the output of viewing the importer config kinda ugly, so let's try
-    # this approach and see how it turns out.
-
-    importer_config = dict(
-        [(k, v) for k, v in importer_config.items() if v is not None])
-
-    # Special None stripping for verify_options since it's a dict
-    popped = 0
-    if importer_config['verify_options']['size'] is None:
-        importer_config['verify_options'].pop('size')
-        popped += 1
-
-    if importer_config['verify_options']['checksum'] is None:
-        importer_config['verify_options'].pop('checksum')
-        popped += 1
-
-    if popped == 2:
-        importer_config.pop(
-            'verify_options') # Nothing in here, so remove it too
-
-    # This happens after the none removal above since it's possible this will
-    # want to introduce None into the config
-    if 'ssl_verify' in importer_config:
-        importer_config['ssl_verify'] = parse_verify('ssl_verify')
-
-    # Convert any "" strings into None. This should be safe in all cases and
+    # Now convert any "" strings into None. This should be safe in all cases and
     # is the mechanic used to get "remove config option" semantics.
     convert_keys = [k for k in importer_config if importer_config[k] == '']
     for k in convert_keys:
         importer_config[k] = None
+
+    # Parsing of true/false
+    flag_arguments = ('ssl_verify', 'verify_size', 'verify_checksum')
+    for f in flag_arguments:
+        if f in importer_config:
+            if f not in importer_config or importer_config[f] is None:
+                continue
+            v = importer_config.pop(f)
+            if v.strip().lower() == 'true':
+                importer_config[f] = True
+                continue
+            if v.strip().lower() == 'false':
+                importer_config[f] = False
+                continue
+            raise InvalidConfig('Value for %s must be either true or false' % f)
 
     # Read in the contents of any files that were specified
     file_arguments = ('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key')
@@ -281,8 +314,10 @@ def args_to_importer_config(kwargs):
             contents = read_file(importer_config[arg])
             importer_config[arg] = contents
 
-    return importer_config
+    LOG.debug('Importer configuration options')
+    LOG.debug(importer_config)
 
+    return importer_config
 
 def read_file(filename):
     """

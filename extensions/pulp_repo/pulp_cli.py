@@ -106,6 +106,12 @@ class RepoSection(PulpCliSection):
             self.prompt.write('Repository [%s] does not exist on the server' % id, tag='not-found')
 
     def list(self, **kwargs):
+
+        # This needs to be revisited. For the sake of time, the repo list in
+        # rpm_repo will be hacked up for yum repositories specifically. Later
+        # we can revisit this output for the generic case.
+        # jdob, March 12, 2012
+
         self.prompt.render_title('Repositories')
 
         repo_list = self.context.server.repo.repositories().response_body

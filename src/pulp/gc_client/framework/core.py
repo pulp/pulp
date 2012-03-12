@@ -181,13 +181,14 @@ class PulpPrompt(Prompt):
             self.write(' - %s' % reason)
         self.render_spacer()
 
-    def render_document(self, document, filters=None, spaces_between_cols=2, indent=0):
+    def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0, step=2, omit_hidden=True):
         """
         Syntactic sugar method for rendering a single document. This call
         behaves in the same way as render_document_list() but the primary
         argument is a single document (or dict).
         """
-        self.render_document_list([document], filters=filters, spaces_between_cols=spaces_between_cols, indent=indent)
+        self.render_document_list([document], filters=filters, order=order, spaces_between_cols=spaces_between_cols,
+                                            indent=indent, step=step, omit_hidden=omit_hidden)
 
     def render_document_list(self, items, filters=None, order=None,
                              spaces_between_cols=1, indent=0, step=2,
