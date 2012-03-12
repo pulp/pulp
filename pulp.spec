@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.0.1
+Version:        1.0.2
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -504,6 +504,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Mar 12 2012 Jeff Ortel <jortel@redhat.com> 1.0.2-1
+- 800468 Use collection.update instead of collection.save to avoid race
+  condition (jslagle@redhat.com)
+- 801161 Add missing db migration (jslagle@redhat.com)
+- pulp migrate to add task weight to snapshots (jconnor@redhat.com)
+- 799120 - Added package filtering at package import stage as well as it is
+  processing packages from source dir and not destination dir
+  (skarmark@redhat.com)
+
 * Thu Mar 08 2012 Jeff Ortel <jortel@redhat.com> 1.0.1-1
 - Reset version = 1.0.1-1 for v1 (testing). (jortel@redhat.com)
 - 797929 add requirement on semanage command (jslagle@redhat.com)
