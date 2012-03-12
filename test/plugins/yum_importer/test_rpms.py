@@ -71,7 +71,7 @@ class TestRPMs(unittest.TestCase):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
-        sync_conduit = importer_mocks.get_sync_conduit()
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
@@ -81,6 +81,16 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_not_synced_rpms"], 0)
         self.assertEquals(summary["num_orphaned_rpms"], 0)
         self.assertEquals(details["size_total"], 6791)
+        # Confirm regular RPM files exist under self.pkg_dir
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 3)
+        for p in pkgs:
+            self.assertTrue(os.path.isfile(p))
+        # Confirm symlinks to RPMs exist under repo.working_dir
+        sym_links = self.get_files_in_dir("*.rpm", repo.working_dir)
+        self.assertEquals(len(pkgs), 3)
+        for link in sym_links:
+            self.assertTrue(os.path.islink(link))
 
     def test_basic_orphaned_sync(self):
         importer = YumImporter()
@@ -91,7 +101,7 @@ class TestRPMs(unittest.TestCase):
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
         existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
-        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         config = importer_mocks.get_basic_config(feed_url)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
@@ -111,11 +121,6 @@ class TestRPMs(unittest.TestCase):
         # Verify a re-sync brings package back to packages dir
         pass
 
-    def test_remove_old_packages(self):
-        # Sent remove_old
-        # Sync a repo that has 2 repos of same name, one new, one old
-        # Verify that only new rpm was synced
-        pass
 
     def test_skip_packages(self):
         # Set skip packages
@@ -135,7 +140,7 @@ class TestRPMs(unittest.TestCase):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_progress_sync"
-        sync_conduit = importer_mocks.get_sync_conduit()
+        sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
         sync_conduit.set_progress = mock.Mock()
         sync_conduit.set_progress.side_effect = set_progress
         config = importer_mocks.get_basic_config(feed_url)
@@ -150,7 +155,7 @@ class TestRPMs(unittest.TestCase):
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
         existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
-        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         actual_existing_units = importer_rpm.get_existing_units(sync_conduit)
         self.assertEquals(len(actual_existing_units), 1)
         self.assertEquals(len(existing_units), len(actual_existing_units))
@@ -201,7 +206,7 @@ class TestRPMs(unittest.TestCase):
         unit_a = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
-        sync_conduit = importer_mocks.get_sync_conduit()
+        sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
         new_rpms, new_units = importer_rpm.get_new_rpms_and_units(available_rpms, 
                 existing_units, sync_conduit)
         self.assertEquals(len(new_rpms), 1)
