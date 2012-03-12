@@ -14,9 +14,13 @@
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
 
 TYPE_RPM = 'rpm'
+TYPE_SRPMS = 'srpm'
 TYPE_ERRATUM = 'erratum'
 
 def initialize(context):
+
+    if not context.extension_config.getboolean('main', 'enabled'):
+        return
 
     repo_section = context.cli.find_section('repo')
     old_units_command = repo_section.remove_command('units')
