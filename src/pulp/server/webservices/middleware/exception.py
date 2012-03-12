@@ -58,6 +58,7 @@ class ExceptionHandlerMiddleware(object):
                     # un-derived exceptions earn you a traceback
                     record_exception_and_traceback = True
                 error_obj = serialization.error.http_error_obj(status, str(e))
+                error_obj.update(e.data_dict())
                 if record_exception_and_traceback:
                     error_obj['exception'] = traceback.format_exception_only(t, e)
                     error_obj['traceback'] = traceback.format_tb(tb)
