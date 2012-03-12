@@ -193,7 +193,7 @@ def _load_pack(extensions_dir, pack_module, context):
     # UI style and a failure to load the init module.
     init_mod_filename = os.path.join(extensions_dir, pack_module.__name__, init_mod_name + '.py')
     if not os.path.exists(init_mod_filename):
-        _LOG.info(_('No plugin initialization module [%(m)s] found, skipping initialization' % {'m' : init_mod_filename}))
+        _LOG.debug(_('No plugin initialization module [%(m)s] found, skipping initialization' % {'m' : init_mod_filename}))
         return
 
     # Figure out the full package name for the module and import it.
