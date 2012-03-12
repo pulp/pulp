@@ -1,7 +1,7 @@
 #!/bin/sh
 
 NAME="pulp-server"
-SELINUX_VARIANTS="mls strict targeted"
+SELINUX_VARIANTS="targeted"
 MODULE_TYPE="apps"
 INSTALL_DIR="/usr/share"
 

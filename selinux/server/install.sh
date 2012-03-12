@@ -2,7 +2,7 @@
 
 NAME="pulp-server"
 MODULE_TYPE="apps"
-SELINUX_VARIANTS="mls strict targeted"
+SELINUX_VARIANTS="targeted"
 #This script will be called from pulp RPM and needs the ability to install
 # into a temporary buildroot
 if [ $# -lt 1 ]; then
