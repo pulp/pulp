@@ -57,6 +57,8 @@ class RepoSection(PulpCliSection):
         list_command = PulpCliCommand('list', 'lists repositories on the Pulp server', self.list)
         list_command.add_option(PulpCliFlag('--summary', 'if specified, only a minimal amount of repository information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of repository fields; if specified, only the given fields will displayed', required=False))
+        list_command.add_option(PulpCliFlag('--importers', 'if specified, importer configuration is displayed'))
+        list_command.add_option(PulpCliFlag('--distributors', 'if specified, the list of distributors and their configuration is displayed'))
         self.add_command(list_command)
 
         # List Units Command
@@ -106,7 +108,7 @@ class RepoSection(PulpCliSection):
     def list(self, **kwargs):
         self.prompt.render_title('Repositories')
 
-        repo_list = self.context.server.repo.repositories()
+        repo_list = self.context.server.repo.repositories().response_body
 
         # Default flags to render_document_list
         filters = None
@@ -121,8 +123,36 @@ class RepoSection(PulpCliSection):
                 filters.append('id')
             order = ['id']
 
-        def header_func(i) : return '-- ' + i['display_name'] + ' ' + ('-' * (20 - len(i['display_name'])))
-        self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order)
+        # Split apart the plugins so they can be either omitted or rendered
+        # separately. If omitted, add in the count as quick info.
+        repo_to_importer_list = {}
+        repo_to_distributor_list = {}
+        for r in repo_list:
+            if kwargs['importers']:
+                repo_to_importer_list[r['id']] = r.pop('importers', None)
+            else:
+                importer_list = r.pop('importers', [])
+                r['importer_count'] = len(importer_list)
+
+            if kwargs['distributors']:
+                repo_to_distributor_list[r['id']] = r.pop('distributors', None)
+            else:
+                distributor_list = r.pop('distributors', [])
+                r['distributor_count'] = len(distributor_list)
+
+        # Manually loop over the repositories so we can interject the plugins
+        # manually based on the CLI flags.
+        for r in repo_list:
+            self.prompt.render_document(r, filters=filters, order=order)
+            if kwargs['importers']:
+                i = repo_to_importer_list[r['id']]
+                if i is not None:
+                    self.prompt.render_document_list(i)
+
+            if kwargs['distributors']:
+                d = repo_to_distributor_list[r['id']]
+                if d is not None:
+                    self.prompt.render_document_list(d)
 
     def units(self, **kwargs):
         repo_id = kwargs['id']
