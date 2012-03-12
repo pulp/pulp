@@ -227,7 +227,9 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
     clicert = config.get("ssl_client_cert")
     clikey = config.get("ssl_client_key")
     max_speed = config.get("max_speed")
-    verify_options = config.get("verify_options")
+    verify_checksum = config.get("verify_checksum") or False
+    verify_size = config.get("verify_size") or False
+    verify_options = {"checksum":verify_checksum, "size":verify_size}
     newest = config.get("newest") or False
     remove_old = config.get("remove_old") or False
     purge_orphaned = config.get("purge_orphaned") or True

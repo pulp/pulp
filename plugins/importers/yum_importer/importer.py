@@ -32,7 +32,7 @@ YUM_IMPORTER_TYPE_ID="yum_importer"
 REQUIRED_CONFIG_KEYS = ['feed_url']
 OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
                         'proxy_url', 'proxy_port', 'proxy_pass', 'proxy_user',
-                        'max_speed', 'verify_options', 'num_threads',
+                        'max_speed', 'verify_size', 'verify_checksum', 'num_threads',
                         'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip']
 ###
 # Config Options Explained
@@ -47,7 +47,8 @@ OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_cli
 # proxy_user: Username for Proxy
 # proxy_pass: Password for Proxy
 # max_speed: Limit the Max speed in KB/sec per thread during package downloads
-# verify_options: Dictionary of {'checksum':Boolean, 'size':Boolean} to control verify operations on existing items
+# verify_checksum: if True will verify the checksum for each existing package repo metadata
+# verify_size: if True will verify the size for each existing package against repo metadata
 # num_threads: Controls number of threads to use for package download (technically number of processes spawned)
 # newest: Boolean option, if True only download the latest packages
 # remove_old: Boolean option, if True remove old packages
