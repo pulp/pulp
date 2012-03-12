@@ -131,7 +131,7 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
         new_units[key] = sync_conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
     return new_errata, new_units, sync_conduit
 
-def _sync(repo, sync_conduit,  config, progress_callback=None):
+def _sync(repo, sync_conduit,  config):
     """
       Invokes errata sync sequence
 
@@ -151,13 +151,13 @@ def _sync(repo, sync_conduit,  config, progress_callback=None):
     repo_dir = "%s/%s" % (repo.working_dir, repo.id)
     available_errata = get_available_errata(repo_dir)
     _LOG.info("Available Errata %s" % len(available_errata))
-
+    progress = ErrataProgress().__dict__
+    sync_conduit.set_progress(progress)
     criteria = Criteria(type_ids=ERRATA_TYPE_ID)
     existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
     _LOG.info("Existing Errata %s" % len(existing_errata))
     orphaned_units = get_orphaned_errata(available_errata, existing_errata)
     new_errata, new_units, sync_conduit = get_new_errata_units(available_errata, existing_errata, sync_conduit)
-
     # Save the new units
     for u in new_units.values():
         sync_conduit.save_unit(u)
@@ -205,3 +205,8 @@ def errata_sync_details(errata_list):
         elif erratum['type'] == 'enhancement':
             errata_details['types']["enhancement"].append(erratum)
     return errata_details
+
+class ErrataProgress(object):
+    def __init__(self, step="Importing Errata"):
+        self.step = step
+        self.details = {}
