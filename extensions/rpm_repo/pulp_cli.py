@@ -11,14 +11,27 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
 import sys
 
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
 from pulp.gc_client.api.exceptions import RequestException, DuplicateResourceException, BadRequestException
 
+# -- constants ----------------------------------------------------------------
+
 IMPORTER_TYPE_ID = 'yum_importer'
 
+# Tuples of importer key name to more user-friendly CLI name
+IMPORTER_KEY_TRANSLATIONS = [
+    ('ssl_ca_cert', 'feed_ca_cert'),
+    ('ssl_client_cert', 'feed_cert'),
+    ('ssl_client_key', 'feed_key'),
+    ('ssl_verify', 'verify_feed_ssl'),
+]
+
 LOG = None # set by context
+
+# -- plugin hook --------------------------------------------------------------
 
 def initialize(context):
 
@@ -39,81 +52,6 @@ def initialize(context):
     repo_section.add_command(YumRepoCreateCommand(context))
     repo_section.add_command(YumRepoUpdateCommand(context))
     repo_section.add_command(YumRepoListCommand(context))
-
-def create_repo_options(command, is_update):
-    """
-    Adds options/flags for all repo configuration values (repo, importer, and
-    distributor). This is meant to be called for both create and update commands
-    to simplify consistency
-
-    @param command: command to add options to
-    """
-
-    def munge_description(d):
-        if is_update: d += '; specify "" to remove any of these values'
-        return d
-
-    # Groups
-    required_group = PulpCliOptionGroup('Required')
-
-    d = munge_description('(optional) basic information about the repository')
-    basic_group = PulpCliOptionGroup('Basic', d)
-
-    d = munge_description('(optional) controls the bandwidth and CPU usage when synchronizing this repo')
-    throttling_group = PulpCliOptionGroup('Throttling', d)
-
-    d = munge_description('(optional) credentials and configuration for synchronizing secured external repositories')
-    ssl_group = PulpCliOptionGroup('Security', d)
-
-    verify_group = PulpCliOptionGroup('Verification', '(optional) controls the amount of verification on synchronized data')
-
-    d = munge_description('(optional) configures synchronization to go through a proxy server')
-    proxy_group = PulpCliOptionGroup('Proxy', d)
-
-    # Order added indicates order in usage, so pay attention to this order when
-    # dorking with it to make sure it makes sense
-    command.add_option_group(required_group)
-    command.add_option_group(basic_group)
-    command.add_option_group(verify_group)
-    command.add_option_group(ssl_group)
-    command.add_option_group(proxy_group)
-    command.add_option_group(throttling_group)
-
-    # Required Options
-    required_group.add_option(PulpCliOption('--id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
-
-    # Feed URL is special: required for create, optional for update
-
-    if not is_update:
-        feed_url_dest = required_group
-    else:
-        feed_url_dest = basic_group
-
-    feed_url_dest.add_option(PulpCliOption('--feed_url', 'URL of the external source repository to sync', required=not is_update))
-
-    # Metadata Options
-    basic_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
-    basic_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
-
-    # Verify Options
-    verify_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
-    verify_group.add_option(PulpCliOption('--verify_checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
-
-    # Proxy Options
-    proxy_group.add_option(PulpCliOption('--proxy_url', 'URL to the proxy server to use', required=False))
-    proxy_group.add_option(PulpCliOption('--proxy_port', 'port on the proxy server to make requests', required=False))
-    proxy_group.add_option(PulpCliOption('--proxy_user', 'username used to authenticate with the proxy server', required=False))
-    proxy_group.add_option(PulpCliOption('--proxy_pass', 'password used to authenticate with the proxy server', required=False))
-
-    # Throttling Options
-    throttling_group.add_option(PulpCliOption('--max_speed', 'maximum bandwidth used per download thread, in KB/sec, when synchronizing the repo', required=False))
-    throttling_group.add_option(PulpCliOption('--num_threads', 'number of threads that will be used to synchronize the repo', required=False))
-
-    # SSL Options
-    ssl_group.add_option(PulpCliOption('--feed_ca_cert', 'full path to the CA certificate that should be used to verify the external repo server\'s SSL certificate', required=False))
-    ssl_group.add_option(PulpCliOption('--verify_feed_ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert', required=False))
-    ssl_group.add_option(PulpCliOption('--feed_cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
-    ssl_group.add_option(PulpCliOption('--feed_key', 'full path to the private key for feed_cert', required=False))
 
 # -- command implementations --------------------------------------------------
 
@@ -238,10 +176,12 @@ class YumRepoListCommand(PulpCliCommand):
         filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
         order = filters
 
-        # Pull the importer/distributor configs into the repo itself. For now
-        # assume one of each since in the RPM commands we lock the user into
-        # that. We may have to revisit the distributor part in the future.
+        # Process each repository to clean up/restructure various data
         for r in repo_list:
+
+            # Pull the importer/distributor configs into the repo itself. For now
+            # assume one of each since in the RPM commands we lock the user into
+            # that. We may have to revisit the distributor part in the future.
             importers = r.pop('importers', None)
             distributors = r.pop('distributors', None)
             if show_details:
@@ -250,13 +190,105 @@ class YumRepoListCommand(PulpCliCommand):
                     r['sync_config'] = importers[0]['config']
                     filters += ['sync_config']
 
+                    # Translate the importer config keys to cli counterparts
+                    for importer_key, cli_key in IMPORTER_KEY_TRANSLATIONS:
+                        if importer_key in r['sync_config']:
+                            r['sync_config'][cli_key] = r['sync_config'].pop(importer_key)
+
+                    # Certificates are too long to display, so simply indicate if they
+                    # are present. Eventually we can add a flag that will show them.
+                    for key in ('feed_ca_cert', 'feed_cert', 'feed_key'):
+                        if key in r['sync_config']:
+                            r['sync_config'][key] = _('Yes')
+
                 if distributors is not None and len(distributors) > 0:
                     r['publish_config'] = distributors[0]['config']
                     filters += ['publish_config']
 
+            # We don't want to display the proxy password in plain text, so
+            # if it's present swap it out with astericks
+            if 'proxy_pass' in r:
+                r['proxy_pass'] = '*' * len(r['proxy_pass'])
+
+
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
 
 # -- parsing utilities --------------------------------------------------------
+
+def create_repo_options(command, is_update):
+    """
+    Adds options/flags for all repo configuration values (repo, importer, and
+    distributor). This is meant to be called for both create and update commands
+    to simplify consistency
+
+    @param command: command to add options to
+    """
+
+    def munge_description(d):
+        if is_update: d += '; specify "" to remove any of these values'
+        return d
+
+    # Groups
+    required_group = PulpCliOptionGroup('Required')
+
+    d = munge_description('(optional) basic information about the repository')
+    basic_group = PulpCliOptionGroup('Basic', d)
+
+    d = munge_description('(optional) controls the bandwidth and CPU usage when synchronizing this repo')
+    throttling_group = PulpCliOptionGroup('Throttling', d)
+
+    d = munge_description('(optional) credentials and configuration for synchronizing secured external repositories')
+    ssl_group = PulpCliOptionGroup('Security', d)
+
+    verify_group = PulpCliOptionGroup('Verification', '(optional) controls the amount of verification on synchronized data')
+
+    d = munge_description('(optional) configures synchronization to go through a proxy server')
+    proxy_group = PulpCliOptionGroup('Proxy', d)
+
+    # Order added indicates order in usage, so pay attention to this order when
+    # dorking with it to make sure it makes sense
+    command.add_option_group(required_group)
+    command.add_option_group(basic_group)
+    command.add_option_group(verify_group)
+    command.add_option_group(ssl_group)
+    command.add_option_group(proxy_group)
+    command.add_option_group(throttling_group)
+
+    # Required Options
+    required_group.add_option(PulpCliOption('--id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
+
+    # Feed URL is special: required for create, optional for update
+
+    if not is_update:
+        feed_url_dest = required_group
+    else:
+        feed_url_dest = basic_group
+
+    feed_url_dest.add_option(PulpCliOption('--feed_url', 'URL of the external source repository to sync', required=not is_update))
+
+    # Metadata Options
+    basic_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
+    basic_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
+
+    # Verify Options
+    verify_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    verify_group.add_option(PulpCliOption('--verify_checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+
+    # Proxy Options
+    proxy_group.add_option(PulpCliOption('--proxy_url', 'URL to the proxy server to use', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy_port', 'port on the proxy server to make requests', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy_user', 'username used to authenticate with the proxy server', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy_pass', 'password used to authenticate with the proxy server', required=False))
+
+    # Throttling Options
+    throttling_group.add_option(PulpCliOption('--max_speed', 'maximum bandwidth used per download thread, in KB/sec, when synchronizing the repo', required=False))
+    throttling_group.add_option(PulpCliOption('--num_threads', 'number of threads that will be used to synchronize the repo', required=False))
+
+    # SSL Options
+    ssl_group.add_option(PulpCliOption('--feed_ca_cert', 'full path to the CA certificate that should be used to verify the external repo server\'s SSL certificate', required=False))
+    ssl_group.add_option(PulpCliOption('--verify_feed_ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert', required=False))
+    ssl_group.add_option(PulpCliOption('--feed_cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
+    ssl_group.add_option(PulpCliOption('--feed_key', 'full path to the private key for feed_cert', required=False))
 
 class InvalidConfig(Exception): pass
 
@@ -271,14 +303,8 @@ def args_to_importer_config(kwargs):
     importer_config = dict(kwargs)
 
     # Simple name translations
-    translations = [
-        ('ssl_ca_cert', 'feed_ca_cert'),
-        ('ssl_client_cert', 'feed_cert'),
-        ('ssl_client_key', 'feed_key'),
-        ('ssl_verify', 'verify_feed_ssl'),
-    ]
-    for t, o in translations:
-        importer_config[t] = importer_config.pop(o, None)
+    for importer_key, cli_key in IMPORTER_KEY_TRANSLATIONS:
+        importer_config[importer_key] = importer_config.pop(cli_key, None)
 
     # Strip out anything with a None value. The way the parser works, all of
     # the possible options will be present with None as the value. Strip out
