@@ -54,6 +54,15 @@ COLOR_COMPLETED = okaara.prompt.COLOR_LIGHT_GREEN
 TITLE_PERCENTAGE = .75
 BAR_PERCENTAGE = .66
 
+# Individual words that's don't look right when title-cased, so after splitting
+# the keys in a document in the render_document_* methods check here for a last
+# ditch effort to look right.
+CAPITALIZE_WORD_EXCEPTIONS = {
+    'Ca' : 'CA',
+    'Ssl' : 'SSL',
+    'Url' : 'URL',
+}
+
 # Shadow here so callers don't need to import okaara directly
 ABORT = okaara.prompt.ABORT
 
@@ -282,10 +291,17 @@ class PulpPrompt(Prompt):
                 for part in k.split('_'):
                     part = str(part)
                     if formatted_key is None:
-                        formatted_key = part.capitalize()
+                        formatted_part = part.capitalize()
+                        if formatted_part in CAPITALIZE_WORD_EXCEPTIONS:
+                            formatted_part = CAPITALIZE_WORD_EXCEPTIONS[formatted_part]
+                        formatted_key = formatted_part
                     else:
+                        formatted_part = part.capitalize()
+                        if formatted_part in CAPITALIZE_WORD_EXCEPTIONS:
+                            formatted_part = CAPITALIZE_WORD_EXCEPTIONS[formatted_part]
                         formatted_key += ' '
-                        formatted_key += part.capitalize()
+                        formatted_key += formatted_part
+
             ordered_formatted_keys.append((k, formatted_key))
 
         # Generate template using the formatted key values for proper length checking
