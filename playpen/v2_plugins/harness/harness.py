@@ -155,7 +155,6 @@ class Harness:
             'importer_config'  : importer_config,
         }
 
-        self.prompt.write("importer_config_type = %s" % (importer_config_type))
         self.prompt.write('Adding the harness importer to repository [%s]' % repo_id)
         self.prompt.write('Importer configuration:')
         for k, v in importer_config.items():
