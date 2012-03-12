@@ -224,7 +224,7 @@ class RepoImporterManager(object):
         # The supplied config is a delta of changes to make to the existing config.
         # The plugin expects a full configuration, so we apply those changes to
         # the original config and pass that to the plugin's validate method.
-        merged_config = copy.copy(repo_importer['config'])
+        merged_config = dict(repo_importer['config'])
 
         # The convention is that None in an update is removing the value and
         # setting it to the default. Find all such properties in this delta and

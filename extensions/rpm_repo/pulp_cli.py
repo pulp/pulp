@@ -108,54 +108,6 @@ def create_repo_options(command, is_update):
     ssl_group.add_option(PulpCliOption('--feed_cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
     ssl_group.add_option(PulpCliOption('--feed_key', 'full path to the private key for feed_cert', required=False))
 
-def args_to_importer_config(kwargs):
-    """
-    Takes the arguments read from the CLI and converts the client-side input
-    to the server-side expectations. The supplied dict will not be modified.
-
-    @return: config to pass into the add/update importer calls
-    """
-
-    importer_config = dict(kwargs)
-
-    # Simple name translations
-    translations = [
-        ('ssl_ca_cert', 'feed_ca_cert'),
-        ('ssl_client_cert', 'feed_cert'),
-        ('ssl_client_key', 'feed_key'),
-        ('ssl_verify', 'verify_feed_ssl'),
-    ]
-    for t, o in translations:
-        importer_config[t] = importer_config.pop(o, None)
-
-    # Verify options is expected as a dict, so repackage those now
-    importer_config['verify_options'] = {
-        'size' : importer_config.pop('verify_size', None),
-        'checksum' : importer_config.pop('verify_checksum', None),
-    }
-
-    # Strip out anything with a None value. The importer won't barf at this,
-    # but Pulp will store them in the config as key : None. This tends to
-    # make the output of viewing the importer config kinda ugly, so let's try
-    # this approach and see how it turns out.
-
-    importer_config = dict([(k, v) for k, v in importer_config.items() if v is not None])
-
-    # Special None stripping for verify_options since it's a dict
-    popped = 0
-    if importer_config['verify_options']['size'] is None:
-        importer_config['verify_options'].pop('size')
-        popped += 1
-
-    if importer_config['verify_options']['checksum'] is None:
-        importer_config['verify_options'].pop('checksum')
-        popped += 1
-
-    if popped == 2:
-        importer_config.pop('verify_options') # Nothing in here, so remove it too
-
-    return importer_config
-
 # -- command implementations --------------------------------------------------
 
 class YumRepoCreateCommand(PulpCliCommand):
@@ -211,6 +163,7 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
 
+
 class YumRepoUpdateCommand(PulpCliCommand):
     def __init__(self, context):
         desc = 'updates an existing repository\'s configuration'
@@ -249,3 +202,101 @@ class YumRepoUpdateCommand(PulpCliCommand):
             self.context.prompt.render_success_message('Repository [%s] successfully updated' % repo_id)
         else:
             self.context.prompt.write('No changes specified for repository [%s]' % repo_id)
+
+# -- parsing utilities --------------------------------------------------------
+
+class InvalidConfig(Exception): pass
+
+
+def args_to_importer_config(kwargs):
+    """
+    Takes the arguments read from the CLI and converts the client-side input
+    to the server-side expectations. The supplied dict will not be modified.
+
+    @return: config to pass into the add/update importer calls
+    """
+
+    importer_config = dict(kwargs)
+
+    # Simple name translations
+    translations = [
+        ('ssl_ca_cert', 'feed_ca_cert'),
+        ('ssl_client_cert', 'feed_cert'),
+        ('ssl_client_key', 'feed_key'),
+        ('ssl_verify', 'verify_feed_ssl'),
+    ]
+    for t, o in translations:
+        importer_config[t] = importer_config.pop(o, None)
+
+    # Verify options is expected as a dict, so repackage those now
+    def parse_verify(key):
+        v = importer_config.pop(key, None)
+        if v is None or v == '': return None
+        if v.strip().lower() == 'true': return True
+        if v.strip().lower() == 'false': return False
+        raise InvalidConfig('Value for %s must be either true or false')
+
+    importer_config['verify_options'] = {
+        'size': parse_verify('verify_size'),
+        'checksum': parse_verify('verify_checksum'),
+        }
+
+    # Strip out anything with a None value. The importer won't barf at this,
+    # but Pulp will store them in the config as key : None. This tends to
+    # make the output of viewing the importer config kinda ugly, so let's try
+    # this approach and see how it turns out.
+
+    importer_config = dict(
+        [(k, v) for k, v in importer_config.items() if v is not None])
+
+    # Special None stripping for verify_options since it's a dict
+    popped = 0
+    if importer_config['verify_options']['size'] is None:
+        importer_config['verify_options'].pop('size')
+        popped += 1
+
+    if importer_config['verify_options']['checksum'] is None:
+        importer_config['verify_options'].pop('checksum')
+        popped += 1
+
+    if popped == 2:
+        importer_config.pop(
+            'verify_options') # Nothing in here, so remove it too
+
+    # This happens after the none removal above since it's possible this will
+    # want to introduce None into the config
+    if 'ssl_verify' in importer_config:
+        importer_config['ssl_verify'] = parse_verify('ssl_verify')
+
+    # Convert any "" strings into None. This should be safe in all cases and
+    # is the mechanic used to get "remove config option" semantics.
+    convert_keys = [k for k in importer_config if importer_config[k] == '']
+    for k in convert_keys:
+        importer_config[k] = None
+
+    # Read in the contents of any files that were specified
+    file_arguments = ('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key')
+    for arg in file_arguments:
+        if arg in importer_config and importer_config[arg] is not None:
+            contents = read_file(importer_config[arg])
+            importer_config[arg] = contents
+
+    return importer_config
+
+
+def read_file(filename):
+    """
+    Utility for reading a file specified as a command argument, raising
+    InvalidConfiguration if the file cannot be read.
+
+    @return: contents of the file
+    """
+
+    try:
+        f = open(filename)
+        contents = f.read()
+        f.close()
+
+        return contents
+    except:
+        raise InvalidConfig('File [%s] cannot be read' % filename)
