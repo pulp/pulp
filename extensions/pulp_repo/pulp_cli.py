@@ -100,7 +100,6 @@ class RepoSection(PulpCliSection):
         try:
             self.context.server.repo.delete(id)
             self.prompt.render_success_message('Repository [%s] successfully deleted' % id)
-            self.prompt.render_spacer()
         except NotFoundException:
             self.prompt.write('Repository [%s] does not exist on the server' % id, tag='not-found')
 
@@ -123,7 +122,7 @@ class RepoSection(PulpCliSection):
             order = ['id']
 
         def header_func(i) : return '-- ' + i['display_name'] + ' ' + ('-' * (20 - len(i['display_name'])))
-        self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order, header_func=header_func)
+        self.prompt.render_document_list(repo_list.response_body, filters=filters, order=order)
 
     def units(self, **kwargs):
         repo_id = kwargs['id']
