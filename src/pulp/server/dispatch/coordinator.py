@@ -58,7 +58,7 @@ class Coordinator(object):
         # re-start interrupted tasks
         queued_call_collection = QueuedCall.get_collection()
         queued_call_list = list(queued_call_collection.find().sort('timestamp'))
-        queued_call_collection.drop() # there are no indices, so this is safe
+        queued_call_collection.remove(safe=True)
         for queued_call in queued_call_list:
             call_request = CallRequest.deserialize(queued_call['serialized_call_request'])
             call_report = self.execute_call_asynchronously(call_request)
