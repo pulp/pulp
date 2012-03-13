@@ -21,7 +21,7 @@ from pulp.server.db.model.dispatch import QueuedCall, TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import history as dispatch_history
-from pulp.server.dispatch.call import CallReport, CallRequest
+from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
