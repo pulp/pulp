@@ -27,6 +27,7 @@ do so may indirectly break other tests.
 
 # Keys used to look up a specific builtin manager (please alphabetize)
 TYPE_CDS                    = 'cds-manager'
+TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONTENT                = 'content-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
@@ -148,7 +149,12 @@ def plugin_manager():
     @rtype: L{pulp.server.managers.plugin.PluginManager}
     """
     return get_manager(TYPE_PLUGIN_MANAGER)
-    
+
+def consumer_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.cud.ConsumerManager}
+    """
+    return get_manager(TYPE_CONSUMER)
 # -- other --------------------------------------------------------------------
 
 def initialize():
@@ -157,6 +163,7 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
+    from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.content.cud import ContentManager
     from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
@@ -173,6 +180,7 @@ def initialize():
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {
+        TYPE_CONSUMER: ConsumerManager,
         TYPE_CONTENT: ContentManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
