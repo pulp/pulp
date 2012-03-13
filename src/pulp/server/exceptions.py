@@ -26,7 +26,7 @@ class PulpException(Exception):
     http_status_code = httplib.INTERNAL_SERVER_ERROR
 
     def __init__(self, *args):
-        super(PulpException, self).__init__(*args)
+        Exception.__init__(self, *args)
         self.message = None
 
     def __str__(self):
