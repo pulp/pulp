@@ -22,6 +22,7 @@ import testutil
 import mock_plugins
 
 from pulp.common import dateutils
+from pulp.server.content.plugins.model import PublishReport
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
@@ -99,6 +100,38 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
 
+    def test_publish_failure_report(self):
+        """
+        Tests a publish call that indicates a graceful failure.
+        """
+        # Setup
+        publish_config = {'foo' : 'bar'}
+        self.repo_manager.create_repo('repo-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config, False, distributor_id='dist-1')
+
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(False, 'Summary of the publish', 'Details of the publish')
+
+        # Test
+        self.publish_manager.publish('repo-1', 'dist-1', None)
+
+        # Verify
+        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(1, len(entries))
+        self.assertEqual('repo-1', entries[0]['repo_id'])
+        self.assertEqual('dist-1', entries[0]['distributor_id'])
+        self.assertEqual('mock-distributor', entries[0]['distributor_type_id'])
+        self.assertTrue(entries[0]['started'] is not None)
+        self.assertTrue(entries[0]['completed'] is not None)
+        self.assertEqual(RepoPublishResult.RESULT_FAILED, entries[0]['result'])
+        self.assertTrue(entries[0]['summary'] is not None)
+        self.assertTrue(entries[0]['details'] is not None)
+        self.assertTrue(entries[0]['error_message'] is None)
+        self.assertTrue(entries[0]['exception'] is None)
+        self.assertTrue(entries[0]['traceback'] is None)
+
+        # Cleanup
+        mock_plugins.reset()
+
     def test_publish_with_config_override(self):
         """
         Tests a publish when passing in override values.
@@ -159,7 +192,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.distributor_manager.add_distributor('repo', 'mock-distributor', None, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, False, distributor_id='dist-1')
 
         #   Simulate bouncing the server and removing the distributor plugin
         mock_plugins.DISTRIBUTOR_MAPPINGS.pop('mock-distributor')
@@ -180,7 +213,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.distributor_manager.add_distributor('repo', 'mock-distributor', None, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, False, distributor_id='dist-1')
 
         RepoDistributor.get_collection().remove()
 
@@ -201,7 +234,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = Exception()
 
         self.repo_manager.create_repo('gonna-bail')
-        self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', None, False, distributor_id='bad-dist')
+        self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', {}, False, distributor_id='bad-dist')
 
         # Test
         try:
@@ -425,11 +458,11 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Setup
         dist_coll = RepoDistributor.get_collection()
 
-        dist_coll.save(RepoDistributor('repo-1', 'dist-1', 'type', None, True))
-        dist_coll.save(RepoDistributor('repo-1', 'dist-2', 'type', None, True))
-        dist_coll.save(RepoDistributor('repo-1', 'dist-3', 'type', None, False))
-        dist_coll.save(RepoDistributor('repo-2', 'dist-1', 'type', None, True))
-        dist_coll.save(RepoDistributor('repo-2', 'dist-2', 'type', None, False))
+        dist_coll.save(RepoDistributor('repo-1', 'dist-1', 'type', {}, True))
+        dist_coll.save(RepoDistributor('repo-1', 'dist-2', 'type', {}, True))
+        dist_coll.save(RepoDistributor('repo-1', 'dist-3', 'type', {}, False))
+        dist_coll.save(RepoDistributor('repo-2', 'dist-1', 'type', {}, True))
+        dist_coll.save(RepoDistributor('repo-2', 'dist-2', 'type', {}, False))
 
         # Test
         repo1_dists = publish_manager._auto_distributors('repo-1')
@@ -461,5 +494,5 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, dist_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoPublishResult.success_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details')
+    r = RepoPublishResult.expected_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
     RepoPublishResult.get_collection().insert(r, safe=True)

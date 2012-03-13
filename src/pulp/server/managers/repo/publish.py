@@ -128,13 +128,18 @@ class RepoPublishManager(object):
         if publish_report is not None and isinstance(publish_report, PublishReport):
             summary = publish_report.summary
             details = publish_report.details
+            if publish_report.success_flag:
+                result_code = RepoPublishResult.RESULT_SUCCESS
+            else:
+                result_code = RepoPublishResult.RESULT_FAILED
         else:
             _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid publish report' % (repo_distributor['distributor_type_id'], repo_id))
 
             summary = details = _('Unknown')
+            result_code = RepoPublishResult.RESULT_SUCCESS
 
-        result = RepoPublishResult.success_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
-                                                  publish_start_timestamp, publish_end_timestamp, summary, details)
+        result = RepoPublishResult.expected_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
+                                                  publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
         publish_result_coll.save(result, safe=True)
 
     def auto_publish_for_repo(self, repo_id):

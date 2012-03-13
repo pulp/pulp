@@ -105,6 +105,10 @@ class SyncReport:
     Returned to the Pulp server at the end of a sync call. This is used by the
     plugin to describe what took place during the sync.
 
+    @ivar success_flag: if true, the sync was successful; false indicates a
+          gracefully handled failure
+    @type success_flag: bool
+
     @ivar added_count: number of new units added during the sync
     @type added_count: int
 
@@ -123,7 +127,8 @@ class SyncReport:
     @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, added_count, updated_count, removed_count, summary, details):
+    def __init__(self, success_flag, added_count, updated_count, removed_count, summary, details):
+        self.success_flag = success_flag
         self.added_count = added_count
         self.updated_count = updated_count
         self.removed_count = removed_count
@@ -135,6 +140,10 @@ class PublishReport:
     Returned to the Pulp server at the end of a publish call. This is used by the
     plugin to decrive what took place during the publish run.
 
+    @ivar success_flag: if true, the sync was successful; false indicates a
+          gracefully handled failure
+    @type success_flag: bool
+
     @ivar summary: arbitrary value that will be returned by default as the log
                    for the call (should be short)
     @type summary: just about any serializable object (likely str or dict)
@@ -144,6 +153,7 @@ class PublishReport:
     @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, summary, details):
+    def __init__(self, success_flag, summary, details):
+        self.success_flag = success_flag
         self.summary = summary
         self.details = details

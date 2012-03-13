@@ -318,10 +318,10 @@ class RepoSyncConduit(BaseImporterConduit):
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
             raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
-    def build_report(self, summary, details):
+    def build_success_report(self, summary, details):
         """
         Creates the SyncReport instance that needs to be returned to the Pulp
-        server at the end of the sync_repo call.
+        server at the end of a successful sync_repo call.
 
         The added, updated, and removed unit count fields will be populated with
         the tracking counters maintained by the conduit based on calls into it.
@@ -334,6 +334,31 @@ class RepoSyncConduit(BaseImporterConduit):
         @param details: potentially longer log of the sync; may be None
         @type  details: any serializable
         """
-        r = SyncReport(self._added_count, self._updated_count, self._removed_count,
-                       summary, details)
+        r = SyncReport(True, self._added_count, self._updated_count,
+                       self._removed_count, summary, details)
+        return r
+
+    def build_failure_report(self, summary, details):
+        """
+        Creates the SyncReport instance that needs to be returned to the Pulp
+        server at the end of a sync_repo call. The report built in this fashion
+        will indicate the sync has gracefully failed (as compared to an
+        unexpected exception bubbling up).
+
+        The added, updated, and removed unit count fields will be populated with
+        the tracking counters maintained by the conduit based on calls into it.
+        If these are inaccurate for a given plugin's implementation, the counts
+        can be changed in the returned report before returning it to Pulp. This
+        data will capture how far it got before building the report and should
+        be overridden if the plugin attempts to do some form of rollback due to
+        the encountered error.
+
+        @param summary: short log of the sync; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the sync; may be None
+        @type  details: any serializable
+        """
+        r = SyncReport(False, self._added_count, self._updated_count,
+                       self._removed_count, summary, details)
         return r

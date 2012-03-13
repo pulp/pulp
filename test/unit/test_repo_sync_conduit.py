@@ -226,7 +226,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.assertTrue('_type_2_references' in parent)
         self.assertTrue(unit_2.id in parent['_type_2_references'])
 
-    def test_build_report(self):
+    def test_build_reports(self):
         """
         Tests that the conduit correctly inserts the count values into the report.
         """
@@ -248,15 +248,20 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.conduit.save_unit(update_me)
 
         # Test
-        report = self.conduit.build_report('summary', 'details')
+        success_report = self.conduit.build_success_report('summary', 'details')
+        failure_report = self.conduit.build_failure_report('summary', 'details')
 
         # Verify
-        self.assertTrue(isinstance(report, SyncReport))
-        self.assertEqual(10, report.added_count)
-        self.assertEqual(1, report.removed_count)
-        self.assertEqual(1, report.updated_count)
-        self.assertEqual('summary', report.summary)
-        self.assertEqual('details', report.details)
+        self.assertEqual(success_report.success_flag, True)
+        self.assertEqual(failure_report.success_flag, False)
+
+        for r in (success_report, failure_report):
+            self.assertTrue(isinstance(r, SyncReport))
+            self.assertEqual(10, r.added_count)
+            self.assertEqual(1, r.removed_count)
+            self.assertEqual(1, r.updated_count)
+            self.assertEqual('summary', r.summary)
+            self.assertEqual('details', r.details)
 
     # -- error tests ----------------------------------------------------------
 

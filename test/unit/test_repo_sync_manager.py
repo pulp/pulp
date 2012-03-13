@@ -24,6 +24,7 @@ import testutil
 import mock_plugins
 
 from pulp.common import dateutils
+from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
@@ -134,6 +135,30 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.assertTrue(history[0]['error_message'] is None)
         self.assertTrue(history[0]['exception'] is None)
         self.assertTrue(history[0]['traceback'] is None)
+
+    def test_sync_with_graceful_fail(self):
+        # Setup
+        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        self.repo_manager.create_repo('repo-1')
+        self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
+
+        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = SyncReport(False, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
+
+        # Test
+        self.sync_manager.sync('repo-1')
+
+        # Verify
+        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
+        self.assertEqual(1, len(history))
+        self.assertEqual('repo-1', history[0]['repo_id'])
+        self.assertEqual(RepoSyncResult.RESULT_FAILED, history[0]['result'])
+        self.assertEqual('mock-importer', history[0]['importer_id'])
+        self.assertEqual('mock-importer', history[0]['importer_type_id'])
+        self.assertTrue(history[0]['started'] is not None)
+        self.assertTrue(history[0]['completed'] is not None)
+
+        # Cleanup
+        mock_plugins.reset()
 
     def test_sync_with_sync_config_override(self):
         """
@@ -469,5 +494,5 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '')
+    r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '', RepoSyncResult.RESULT_SUCCESS)
     RepoSyncResult.get_collection().save(r, safe=True)

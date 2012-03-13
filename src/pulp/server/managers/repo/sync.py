@@ -146,15 +146,20 @@ class RepoSyncManager(object):
             removed_count = sync_report.removed_count
             summary = sync_report.summary
             details = sync_report.details
+            if sync_report.success_flag:
+                result_code = RepoSyncResult.RESULT_SUCCESS
+            else:
+                result_code = RepoSyncResult.RESULT_FAILED
         else:
             _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
 
             added_count = updated_count = removed_count = -1
             summary = details = _('Unknown')
+            result_code = RepoSyncResult.RESULT_SUCCESS
 
-        result = RepoSyncResult.success_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+        result = RepoSyncResult.expected_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
                                                sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
-                                               removed_count, summary, details)
+                                               removed_count, summary, details, result_code)
         sync_result_coll.save(result, safe=True)
 
         # Request any auto-distributors publish (if we're here, the sync was successful)

@@ -135,7 +135,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         """
 
         # Test
-        report = self.conduit.build_report('summary', 'details')
+        report = self.conduit.build_success_report('summary', 'details')
 
         # Verify
         self.assertTrue(isinstance(report, PublishReport))

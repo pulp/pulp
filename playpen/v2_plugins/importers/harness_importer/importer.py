@@ -153,7 +153,7 @@ class HarnessImporter(Importer):
         details += 'Files written:            %s\n' % str(write_files)
         details += 'Global sync count:        %d' % all_sync_count
 
-        return sync_conduit.build_report(summary, details)
+        return sync_conduit.build_success_report(summary, details)
 
     def import_units(self, repo, units, import_conduit, config):
         _LOG.info('Import units called for repository [%s]' % repo)

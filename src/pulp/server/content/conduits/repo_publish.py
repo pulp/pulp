@@ -152,7 +152,7 @@ class RepoPublishConduit(BaseDistributorConduit):
             _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
             raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
-    def build_report(self, summary, details):
+    def build_success_report(self, summary, details):
         """
         Creates the PublishReport instance that needs to be returned to the Pulp
         server at the end of the publish_repo call.
@@ -163,5 +163,21 @@ class RepoPublishConduit(BaseDistributorConduit):
         @param details: potentially longer log of the publish; may be None
         @type  details: any serializable
         """
-        r = PublishReport(summary, details)
+        r = PublishReport(True, summary, details)
+        return r
+
+    def build_failure_report(self, summary, details):
+        """
+        Creates the PublishReport instance that needs to be returned to the Pulp
+        server at the end of the publish_repo call. The report built in this
+        fashion will indicate the publish operation has gracefully failed
+        (as compared to an unexpected exception bubbling up).
+
+        @param summary: short log of the publish; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the publish; may be None
+        @type  details: any serializable
+        """
+        r = PublishReport(False, summary, details)
         return r

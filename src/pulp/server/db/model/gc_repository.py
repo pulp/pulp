@@ -226,7 +226,7 @@ class RepoContentUnit(Model):
     # modifying the following index
     unique_indices = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
     search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'),
-                       ('unit_type_id', 'created') # default sort order on get_units query
+                       ('unit_type_id', 'created') # default sort order on get_units query, do not remove
                      )
 
     OWNER_TYPE_IMPORTER = 'importer'
@@ -256,6 +256,7 @@ class RepoSyncResult(Model):
     collection_name = 'gc_repo_sync_result'
 
     RESULT_SUCCESS = 'success'
+    RESULT_FAILED = 'failed'
     RESULT_ERROR = 'error'
 
     @classmethod
@@ -294,7 +295,8 @@ class RepoSyncResult(Model):
         return r
 
     @classmethod
-    def success_result(cls, repo_id, importer_id, importer_type_id, started, completed, added_count, updated_count, removed_count, summary, details):
+    def expected_result(cls, repo_id, importer_id, importer_type_id, started, completed,
+                        added_count, updated_count, removed_count, summary, details, result_code):
         """
         Creates a new history entry for a successful sync.
 
@@ -327,9 +329,12 @@ class RepoSyncResult(Model):
 
         @param details: long log output from the plugin of the sync
         @type  details: any serializable
+
+        @param result_code: one of the RESULT_* constants in this class
+        @type  result_code: str
         """
 
-        r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed, RepoSyncResult.RESULT_SUCCESS)
+        r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed, result_code)
         r.added_count = added_count
         r.updated_count = updated_count
         r.removed_count = removed_count
@@ -373,6 +378,7 @@ class RepoPublishResult(Model):
     collection_name = 'gc_repo_publish_result'
 
     RESULT_SUCCESS = 'success'
+    RESULT_FAILED = 'failed'
     RESULT_ERROR = 'error'
 
     @classmethod
@@ -411,7 +417,8 @@ class RepoPublishResult(Model):
         return r
 
     @classmethod
-    def success_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, summary, details):
+    def expected_result(cls, repo_id, distributor_id, distributor_type_id, started,
+                        completed, summary, details, result_code):
         """
         Creates a new history entry for a successful publish.
 
@@ -435,9 +442,45 @@ class RepoPublishResult(Model):
 
         @param details: long log output from the plugin of the publish
         @type  details: any serializable
+
+        @param result_code: one of the RESULT_* constants in this class
+        @type  result_code: str
         """
 
-        r = cls(repo_id, distributor_id, distributor_type_id, started, completed, cls.RESULT_SUCCESS)
+        r = cls(repo_id, distributor_id, distributor_type_id, started, completed, result_code)
+        r.summary = summary
+        r.details = details
+
+        return r
+
+    @classmethod
+    def failed_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, summary, details):
+        """
+        Creates a new history entry for a gracefully failed publish.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the repo's distributor
+        @type  distributor_id: str
+
+        @param distributor_type_id: identifies the type of distributor that did the publish
+        @type  distributor_type_id: str
+
+        @param started: iso8601 formatted timestamp when the publish was begun
+        @type  started: str
+
+        @param completed: iso8601 formatted timestamp when the publish completed
+        @type  completed: str
+
+        @param summary: short log output from the plugin of the publish
+        @type  summary: any serializable
+
+        @param details: long log output from the plugin of the publish
+        @type  details: any serializable
+        """
+
+        r = cls(repo_id, distributor_id, distributor_type_id, started, completed, cls.RESULT_FAILED)
         r.summary = summary
         r.details = details
 

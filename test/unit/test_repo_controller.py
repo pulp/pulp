@@ -877,7 +877,7 @@ class RepoSyncHistoryTest(testutil.PulpWebserviceTest):
     def add_success_result(self, repo_id, offset):
         started = datetime.datetime.now(dateutils.local_tz())
         completed = started + datetime.timedelta(days=offset)
-        r = RepoSyncResult.success_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '')
+        r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '', RepoSyncResult.RESULT_SUCCESS)
         RepoSyncResult.get_collection().save(r, safe=True)
 
 class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
@@ -976,7 +976,7 @@ class RepoPublishHistoryTest(testutil.PulpWebserviceTest):
     def _add_success_result(self, repo_id, distributor_id, offset):
         started = datetime.datetime.now(dateutils.local_tz())
         completed = started + datetime.timedelta(days=offset)
-        r = RepoPublishResult.success_result(repo_id, distributor_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), '', '')
+        r = RepoPublishResult.expected_result(repo_id, distributor_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), '', '', RepoPublishResult.RESULT_SUCCESS)
         RepoPublishResult.get_collection().save(r, safe=True)
 
 class RepoUnitAssociationQueryTest(testutil.PulpWebserviceTest):

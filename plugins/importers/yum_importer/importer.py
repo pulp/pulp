@@ -128,7 +128,7 @@ class YumImporter(Importer):
 
     def sync_repo(self, repo, sync_conduit, config):
         summary, details = self._sync_repo(repo, sync_conduit, config)
-        return sync_conduit.build_report(summary, details)
+        return sync_conduit.build_success_report(summary, details)
 
     def _sync_repo(self, repo, sync_conduit, config):
         def progress_callback(report):

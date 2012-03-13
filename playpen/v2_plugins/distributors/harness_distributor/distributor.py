@@ -112,5 +112,5 @@ class HarnessDistributor(Distributor):
             details += 'Publish directory:         %s\n' % publish_dir
         details += 'Global publish count:      %d' % all_publish_count
 
-        return publish_conduit.build_report(summary, details)
+        return publish_conduit.build_success_report(summary, details)
     
