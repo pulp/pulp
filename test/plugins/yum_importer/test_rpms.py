@@ -320,3 +320,19 @@ class TestRPMs(unittest.TestCase):
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 1)
 
+    def test_srpm_sync(self):
+        feed_url = "http://pkilambi.fedorapeople.org/test_srpm_repo/"
+        importer = YumImporter()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_srpm_sync"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(summary is not None)
+        self.assertTrue(details is not None)
+        self.assertEquals(summary["num_rpms"], 3)
+        self.assertEquals(summary["num_synced_new_srpms"], 3)
+        self.assertEquals(summary["num_synced_new_rpms"], 0)
+
+

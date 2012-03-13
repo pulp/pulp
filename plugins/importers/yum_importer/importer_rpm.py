@@ -234,7 +234,7 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
     remove_old = config.get("remove_old") or False
     purge_orphaned = config.get("purge_orphaned") or True
     num_old_packages = config.get("num_old_packages") or 0
-    skip = config.get("skip") 
+    skip = config.get("skip")
     yumRepoGrinder = YumRepoGrinder(repo_label=repo_label, repo_url=repo_url, parallel=num_threads,\
         mirrors=None, newest=newest, cacert=cacert, clicert=clicert, clikey=clikey,\
         proxy_url=proxy_url, proxy_port=proxy_port, proxy_user=proxy_user,\
@@ -305,12 +305,31 @@ def _sync(repo, sync_conduit, config, progress_callback=None):
         remove_unit(sync_conduit, u)
 
     end = time.time()
+
+    # filter out rpm specific data if any
+    new_rpms = filter(lambda u: u.type_id == 'rpm', new_units.values())
+    missing_rpms = filter(lambda u: u.type_id == 'rpm', missing_units.values())
+    orphaned_rpms = filter(lambda u: u.type_id == 'rpm', orphaned_units.values())
+    not_synced_rpms = filter(lambda u: u.type_id == 'rpm', not_synced.values())
+
     summary = {}
     summary["num_rpms"] = len(available_rpms)
     summary["num_synced_new_rpms"] = len(new_rpms)
     summary["num_resynced_rpms"] = len(missing_rpms)
-    summary["num_not_synced_rpms"] = len(not_synced)
-    summary["num_orphaned_rpms"] = len(orphaned_units)
+    summary["num_not_synced_rpms"] = len(not_synced_rpms)
+    summary["num_orphaned_rpms"] = len(orphaned_rpms)
+
+    # filter out srpm specific data if any
+    new_srpms = filter(lambda u: u.type_id == 'srpm', new_units.values())
+    missing_srpms = filter(lambda u: u.type_id == 'srpm', missing_units.values())
+    orphaned_srpms = filter(lambda u: u.type_id == 'srpm', orphaned_units.values())
+    not_synced_srpms = filter(lambda u: u.type_id == 'srpm', not_synced.values())
+
+    summary["num_synced_new_srpms"] = len(new_srpms)
+    summary["num_resynced_srpms"] = len(missing_srpms)
+    summary["num_not_synced_srpms"] = len(not_synced_srpms)
+    summary["num_orphaned_srpms"] = len(orphaned_srpms)
+
     summary["time_total_sec"] = end - start
 
     details = {}
