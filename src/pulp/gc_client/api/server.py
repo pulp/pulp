@@ -36,13 +36,38 @@ class Response(object):
         self.response_body = response_body
         
     def __str__(self):
-        return _("Response: code - %(c)s, body - %(b)s" % {'c' : self.response_code, 'b' : self.response_body})
+        return _("Response: code [%(c)s] body [%(b)s]" % {'c' : self.response_code, 'b' : self.response_body})
 
-class AsyncResponse(Response):
+class AsyncResponse(object):
     """
-    TODO: Implement this with the fields that come back from an Accepted response.
+    Contains the data received from a call to the server that indicates an
+    asynchronous task was kicked off.
     """
-    pass
+    def __init__(self, response_code, response_body):
+        self.response_code = response_code
+
+        # Tasking identity information
+        if '_href' in response_body:
+            self.href = response_body['_href']
+        else:
+            self.href = None
+
+        self.task_id = response_body['task_id']
+        self.job_id = response_body['job_id']
+
+        # Task acceptance data
+        self.response = response_body['response']
+        self.reasons = response_body['reasons']
+
+        # Related to the callable being executed
+        self.state = response_body['state']
+        self.progress = response_body['progress']
+        self.result = response_body['result']
+        self.exception = response_body['exception']
+        self.traceback = response_body['traceback']
+
+    def __str__(self):
+        return _('AsyncResponse: task_id [%(i)s] state [%(s)s]' % {'i' : self.task_id, 's' : self.state})
 
 # pulp server class -----------------------------------------------------------
 
@@ -130,7 +155,7 @@ class PulpConnection(object):
             self._handle_exceptions(response_code, response_body)
         elif response_code == 200:
             return Response(response_code, response_body)
-        elif response_code == 201:
+        elif response_code == 202:
             return AsyncResponse(response_code, response_body)
 
     def _handle_exceptions(self, response_code, response_body):

@@ -80,6 +80,7 @@ LINKS = (
     ('extensions/pulp_repo', '/var/lib/pulp_client/admin/extensions/pulp_repo'),
     ('extensions/pulp_server_info', '/var/lib/pulp_client/admin/extensions/pulp_server_info'),
     ('extensions/rpm_repo', '/var/lib/pulp_client/admin/extensions/rpm_repo'),
+    ('extensions/rpm_sync', '/var/lib/pulp_client/admin/extensions/rpm_sync'),
     ('extensions/rpm_units_search', '/var/lib/pulp_client/admin/extensions/rpm_units_search'),
     ('plugins/types/rpm.json', '/var/lib/pulp/plugins/types/rpm.json'),
     ('plugins/types/srpm.json', '/var/lib/pulp/plugins/types/srpm.json'),

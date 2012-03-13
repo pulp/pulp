@@ -115,7 +115,8 @@ class PulpPrompt(Prompt):
         title = self.center(title, width=width)
 
         self.write(divider)
-        self.write(title, color=COLOR_HEADER, tag=TAG_TITLE)
+        # self.write(title, color=COLOR_HEADER, tag=TAG_TITLE) # removing color for now
+        self.write(title, tag=TAG_TITLE)
         self.write(divider)
         self.render_spacer()
 

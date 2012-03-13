@@ -13,6 +13,7 @@
 
 from pulp.gc_client.api.repository import *
 from pulp.gc_client.api.server_info import ServerInfoAPI
+from pulp.gc_client.api.tasks import TasksAPI
 
 class Bindings(object):
     def __init__(self, pulp_connection):
@@ -27,3 +28,5 @@ class Bindings(object):
         self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
 
         self.server_info = ServerInfoAPI(pulp_connection)
+
+        self.tasks = TasksAPI(pulp_connection)

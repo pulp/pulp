@@ -112,7 +112,6 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
 
-
 class YumRepoUpdateCommand(PulpCliCommand):
     def __init__(self, context):
         desc = 'updates an existing repository\'s configuration'
