@@ -248,18 +248,31 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
         purge_orphaned=purge_orphaned, distro_location=None, tmp_path=tmp_path)
     return yumRepoGrinder
 
+def remove_unit(sync_conduit, repo, unit):
+    """
+    @param sync_conduit
+    @type sync_conduit L{pulp.server.content.conduits.repo_sync.RepoSyncConduit}
 
-def remove_unit(sync_conduit, unit):
+    @param repo
+    @type repo  L{pulp.server.content.plugins.data.Repository}
+
+    @param unit
+    @type unit L{pulp.server.content.plugins.model.Unit}
+    
+    Goals:
+     1) Remove the unit from the database
+     2) Remove the unit from the file system
+     3) Remove the symlink stored under the repo.workingdir
+    """
     _LOG.info("Removing unit <%s>" % (unit))
     sync_conduit.remove_unit(unit)
-    try:
-        os.unlink(unit.storage_path)
-    except Exception:
-        _LOG.exception("Unable to delete: %s" % (unit.storage_path))
-        return False
-    return True
-
-
+    error = False
+    sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["fileName"])
+    paths = [unit.storage_path, sym_link]
+    for f in paths:
+        if os.path.lexists(f):
+            _LOG.debug("Delete: %s" % (f))
+            os.unlink(f)
 
 def _sync(repo, sync_conduit, config):
     def progress_callback(report):
@@ -302,7 +315,6 @@ def _sync(repo, sync_conduit, config):
     missing_rpms, missing_units = get_missing_rpms_and_units(available_rpms, existing_units)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
                 (repo.id, len(existing_units), len(orphaned_units), len(new_rpms), len(missing_rpms)))
-
     # Sync the new and missing rpms
     yumRepoGrinder.addItems(new_rpms.values())
     yumRepoGrinder.addItems(missing_rpms.values())
@@ -318,9 +330,14 @@ def _sync(repo, sync_conduit, config):
     # Save the new units and remove the orphaned units
     for u in new_units.values():
         sync_conduit.save_unit(u)
-    for u in orphaned_units.values():
-        remove_unit(sync_conduit, u)
 
+    removal_errors = []
+    for u in orphaned_units.values():
+        try:
+            remove_unit(sync_conduit, repo, u)
+        except Exception, e:
+            _LOG.exception("Unable to remove: %s" % (u))
+            removal_errors.append((u, e))
     end = time.time()
 
     # filter out rpm specific data if any
@@ -335,6 +352,7 @@ def _sync(repo, sync_conduit, config):
     summary["num_resynced_rpms"] = len(missing_rpms)
     summary["num_not_synced_rpms"] = len(not_synced_rpms)
     summary["num_orphaned_rpms"] = len(orphaned_rpms)
+    summary["rpm_removal_errors"] = removal_errors
 
     # filter out srpm specific data if any
     new_srpms = filter(lambda u: u.type_id == 'srpm', new_units.values())
@@ -354,5 +372,5 @@ def _sync(repo, sync_conduit, config):
     details["time_metadata_sec"] = end_metadata - start_metadata
     details["time_download_sec"] = end_download - start_download
     details["not_synced"] = not_synced
-    details["report"] = form_report(report)
+    details["sync_report"] = form_report(report)
     return summary, details

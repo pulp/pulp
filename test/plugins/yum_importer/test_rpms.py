@@ -41,7 +41,7 @@ class TestRPMs(unittest.TestCase):
 
     def tearDown(self):
         super(TestRPMs, self).tearDown()
-        #shutil.rmtree(self.temp_dir)
+        shutil.rmtree(self.temp_dir)
 
     def get_files_in_dir(self, pattern, path):
         files = []
@@ -49,10 +49,103 @@ class TestRPMs(unittest.TestCase):
             files.extend(glob.glob(os.path.join(d,pattern))) 
         return files
 
-    def test_metadata(self):
-        metadata = YumImporter.metadata()
-        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
-        self.assertTrue(RPM_TYPE_ID in metadata["types"])
+    def get_expected_rpms_from_pulp_unittest(self, repo_label, pkg_dir=None, repo_working_dir=None):
+        """
+        @param repo_label label of repo, typically repo.id
+        @type repo_label str
+
+        @param pkg_dir: path of where packages are stored
+        @type pkg_dir: str
+
+        @param repo_working_dir: path of where symlinks to RPMs are stored
+        @type repo_working_dir: str
+        """
+        if not pkg_dir:
+            pkg_dir = self.pkg_dir
+        if not repo_working_dir:
+            repo_working_dir = self.working_dir
+        rpms = {
+                ('pulp-test-package', '0', '0.2.1', 'x86_64', 'pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 'sha256', '4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7'):{
+                    'size': 2216, 
+                    'vendor': '', 
+                    'checksumtype': 'sha256', 
+                    'license': 'MIT', 
+                    'checksum': '4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7', 
+                    'description': 'Test package.  Nothing to see here.', 
+                    'pkgpath': '%s/.//pulp-test-package/0.2.1/1.fc11/x86_64/4db' % (pkg_dir), 
+                    'savepath': '%s/%s/' % (repo_working_dir, repo_label), 
+                    'fileName': 'pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 
+                    'downloadurl': 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 
+                    'item_type': 'rpm', 
+                    'epoch': '0', 
+                    'version': '0.2.1', 
+                    'arch': 'x86_64', 
+                    'provides': [
+                            ('pulp-test-package(x86-64)', 'EQ', ('0', '0.2.1', '1.fc11')), 
+                            ('pulp-test-package', 'EQ', ('0', '0.2.1', '1.fc11')), 
+                            ('config(pulp-test-package)', 'EQ', ('0', '0.2.1', '1.fc11'))
+                            ], 
+                    'relativepath': 'pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 
+                    'release': '1.fc11', 
+                    'buildhost': 'gibson', 
+                    'requires': [], 
+                    'name': 'pulp-test-package'
+                }, 
+                ('pulp-dot-2.0-test', '0', '0.1.2', 'x86_64', 'pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 'sha256', '435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979'):{
+                    'size': 2359, 
+                    'vendor': '', 
+                    'checksumtype': 'sha256', 
+                    'license': 'MIT', 
+                    'checksum': '435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979', 
+                    'description': 'Test package to see how we deal with packages with dots in the name', 
+                    'pkgpath': '%s/.//pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435' % (pkg_dir), 
+                    'savepath': '%s/%s/' % (repo_working_dir, repo_label), 
+                    'fileName': 'pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 
+                    'downloadurl': 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 
+                    'item_type': 'rpm', 
+                    'epoch': '0', 
+                    'version': '0.1.2', 
+                    'arch': 'x86_64', 
+                    'provides': [
+                        ('pulp-dot-2.0-test(x86-64)', 'EQ', ('0', '0.1.2', '1.fc11')), 
+                        ('pulp-dot-2.0-test', 'EQ', ('0', '0.1.2', '1.fc11')), 
+                        ('config(pulp-dot-2.0-test)', 'EQ', ('0', '0.1.2', '1.fc11'))
+                        ], 
+                    'relativepath': 'pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 
+                    'release': '1.fc11', 
+                    'buildhost': 'gibson', 
+                    'requires': [], 
+                    'name': 'pulp-dot-2.0-test'
+                }, 
+                ('pulp-test-package', '0', '0.3.1', 'x86_64', 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 'sha256', '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f'): {
+                    'size': 2216, 
+                    'vendor': '', 
+                    'checksumtype': 'sha256', 
+                    'license': 'MIT', 
+                    'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f', 
+                    'description': 'Test package.  Nothing to see here.', 
+                    'pkgpath': '%s/.//pulp-test-package/0.3.1/1.fc11/x86_64/6bc' % (pkg_dir), 
+                    'savepath': '%s/%s/' % (repo_working_dir, repo_label), 
+                    'fileName': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
+                    'downloadurl': 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
+                    'item_type': 'rpm', 
+                    'epoch': '0', 
+                    'version': '0.3.1', 
+                    'arch': 'x86_64', 
+                    'provides': [
+                        ('pulp-test-package(x86-64)', 'EQ', ('0', '0.3.1', '1.fc11')), 
+                        ('pulp-test-package', 'EQ', ('0', '0.3.1', '1.fc11')), 
+                        ('config(pulp-test-package)', 'EQ', ('0', '0.3.1', '1.fc11'))
+                    ], 
+                    'relativepath': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
+                    'release': '1.fc11', 
+                    'buildhost': 'gibson', 
+                    'requires': [], 
+                    'name': 'pulp-test-package'
+                    }
+                }
+        return rpms
+
 
     def get_simple_rpm(self, value=None):
         if not value:
@@ -64,6 +157,11 @@ class TestRPMs(unittest.TestCase):
                 "vendor", "requires", "provides", "pkgpath"):
             rpm[k] = value
         return rpm
+    
+    def test_metadata(self):
+        metadata = YumImporter.metadata()
+        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
+        self.assertTrue(RPM_TYPE_ID in metadata["types"])
 
     def test_basic_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
@@ -113,21 +211,6 @@ class TestRPMs(unittest.TestCase):
         state, msg = importer.validate_config(repo, config)
         self.assertFalse(state)
         self.assertTrue("bad_unknown_arg" in msg)
-
-    def test_remove_packages(self):
-        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
-        importer = YumImporter()
-        repo = mock.Mock(spec=Repository)
-        repo.working_dir = self.working_dir
-        repo.id = "test_remove_packages"
-        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
-        config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
-        self.assertEquals(summary["num_synced_new_rpms"], 3)
-        self.assertEquals(len(self.get_files_in_dir("*.rpm", self.pkg_dir)), 3)
-        self.assertEquals(len(self.get_files_in_dir("*.rpm", repo.working_dir)), 3)
-        #print "RPMs should be at: %s" % (self.pkg_dir)
-        #print "SymLinks should be at: %s" % (repo.working_dir)
 
     def test_basic_orphaned_sync(self):
         importer = YumImporter()
@@ -309,6 +392,39 @@ class TestRPMs(unittest.TestCase):
         self.assertTrue(rpm_lookup_key_b in missing_rpms)
         self.assertTrue(rpm_lookup_key_b in missing_units)
         self.assertEquals(missing_rpms[rpm_lookup_key_b], rpm_b)
+
+    def test_remove_packages(self):
+        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
+        importer = YumImporter()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_remove_packages"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(len(self.get_files_in_dir("*.rpm", self.pkg_dir)), 3)
+        self.assertEquals(len(self.get_files_in_dir("*.rpm", repo.working_dir)), 3)
+        expected_rpms = self.get_expected_rpms_from_pulp_unittest(repo.id)
+        # Confirm that both the RPM and the Symlink for each expected rpm does exist
+        #  Then run remove_unit
+        # Confirm that both the RPM and the Symlink have been deleted from the file system
+        for rpm in expected_rpms.values():
+            rpm_save_path = os.path.join(rpm["pkgpath"], rpm["fileName"])
+            self.assertTrue(os.path.exists(rpm_save_path))
+
+            symlink_save_path = os.path.join(rpm["savepath"], rpm["fileName"])
+            self.assertTrue(os.path.lexists(symlink_save_path))
+
+            unit = Unit(RPM_TYPE_ID, 
+                    importer_rpm.form_rpm_unit_key(rpm), 
+                    importer_rpm.form_rpm_metadata(rpm),
+                    rpm_save_path)
+            importer_rpm.remove_unit(sync_conduit, repo, unit)
+            self.assertFalse(os.path.exists(rpm_save_path))
+            self.assertFalse(os.path.exists(symlink_save_path))
+        self.assertEquals(len(self.get_files_in_dir("*.rpm", self.pkg_dir)), 0)
+        self.assertEquals(len(self.get_files_in_dir("*.rpm", repo.working_dir)), 0)
 
     def test_remove_old_packages(self):
         feed_url = "http://jmatthews.fedorapeople.org/repo_multiple_versions/"
