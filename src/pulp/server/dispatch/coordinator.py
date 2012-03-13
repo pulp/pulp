@@ -176,7 +176,7 @@ class Coordinator(object):
             task.call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
-            task.call_report.reason = reasons
+            task.call_report.reasons = reasons
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
                 return
             task.blocking_tasks = blocking
