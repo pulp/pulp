@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.10
+Version:        1.0.11
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,14 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Wed Mar 07 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.10-1
-- Upgraded version of okaara (jason.dobies@redhat.com)
+* Tue Mar 13 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.11-1
+- Required check needs to run across all options, even those in groups
+  (jason.dobies@redhat.com)
+- Made option group output closer to OptionParser (jason.dobies@redhat.com)
+- Added support for option groups (jason.dobies@redhat.com)
+- Added in required/optional argument separation (totally gonna rip this out in
+  a few minutes, but committing for archive purposes) (jason.dobies@redhat.com)
+- This isn't the right place for that annotation (jason.dobies@redhat.com)
 
 * Wed Mar 07 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.10-1
 - Added parser implementation for common scenarios (jason.dobies@redhat.com)
