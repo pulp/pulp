@@ -63,9 +63,9 @@ def call_control_hook_to_string(hook_number):
 
 # execution responses ----------------------------------------------------------
 
-CALL_ACCEPTED_RESPONSE = 'call request accepted'
-CALL_POSTPONED_RESPONSE = 'call request postponed'
-CALL_REJECTED_RESPONSE = 'call request rejected'
+CALL_ACCEPTED_RESPONSE = 'accepted'
+CALL_POSTPONED_RESPONSE = 'postponed'
+CALL_REJECTED_RESPONSE = 'rejected'
 
 CALL_RESPONSES = (CALL_ACCEPTED_RESPONSE,
                   CALL_POSTPONED_RESPONSE,
@@ -73,12 +73,12 @@ CALL_RESPONSES = (CALL_ACCEPTED_RESPONSE,
 
 # call states ------------------------------------------------------------------
 
-CALL_WAITING_STATE = 'call waiting'
-CALL_RUNNING_STATE = 'call running'
-CALL_SUSPENDED_STATE = 'call suspended'
-CALL_FINISHED_STATE = 'call finished'
-CALL_ERROR_STATE = 'call error'
-CALL_CANCELED_STATE = 'call canceled'
+CALL_WAITING_STATE = 'waiting'
+CALL_RUNNING_STATE = 'running'
+CALL_SUSPENDED_STATE = 'suspended'
+CALL_FINISHED_STATE = 'finished'
+CALL_ERROR_STATE = 'error'
+CALL_CANCELED_STATE = 'canceled'
 
 CALL_STATES = (CALL_WAITING_STATE,
                CALL_RUNNING_STATE,
