@@ -58,10 +58,13 @@ class UnrecognizedSearchCriteria(SuperfluousData):
 class CallRejectedException(ConflictingOperation):
 
     def __init__(self, serialized_call_report):
-        super(CallRejectedException, self).__init__(serialized_call_report)
+        ConflictingOperation.__init__(self, serialized_call_report)
+        self.serialized_call_report = serialized_call_report
 
     def __str__(self):
-        serialized_call_report = self.args[0]
-        reasons = serialized_call_report['reasons']
-        msg = _('Call rejected due to the following conflicting operation(s): %[r]s') % {'r': pformat(reasons)}
+        reasons = self.serialized_call_report['reasons']
+        msg = _('Call rejected due to the following conflicting operation(s): %(r)s') % {'r': pformat(reasons)}
         return msg
+
+    def data_dict(self):
+        return {'call_report': self.serialized_call_report}
