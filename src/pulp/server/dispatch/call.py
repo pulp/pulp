@@ -74,6 +74,7 @@ class CallRequest(object):
         assert isinstance(success_failure_callback_kwargs, (NoneType, tuple, list))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
+        assert weight > -1
         assert isinstance(tags, (NoneType, list))
         assert isinstance(archive, bool)
 
