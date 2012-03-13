@@ -63,6 +63,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Mar 13 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.11-1
+- Upgraded okaara to 1.0.11 (jason.dobies@redhat.com)
+
+* Tue Mar 13 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.11-1
 - Required check needs to run across all options, even those in groups
   (jason.dobies@redhat.com)
 - Made option group output closer to OptionParser (jason.dobies@redhat.com)
