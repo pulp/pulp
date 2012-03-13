@@ -14,7 +14,7 @@
 """
 Importer plugin for Yum functionality
 """
-
+import gettext
 import logging
 import os
 import time
@@ -23,6 +23,7 @@ import errata
 import importer_rpm
 from pulp.server.content.plugins.importer import Importer
 
+_ = gettext.gettext
 _LOG = logging.getLogger(__name__)
 #TODO Fix up logging so we log to a separate file to aid debugging
 #_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
@@ -57,10 +58,6 @@ OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_cli
 # skip: Dictionary of what content types to skip during sync, options: {"packages", "distribution"}
 
 class YumImporter(Importer):
-    PROGRESS_REPORT_FIELDS = ["items_total", "items_left", "size_total", "size_left", 
-                        "item_name", "status", "item_type", "num_error", "num_success", 
-                        "num_download", "details", "error_details", "step"]
-
     @classmethod
     def metadata(cls):
         return {
@@ -73,13 +70,15 @@ class YumImporter(Importer):
         _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
         for key in REQUIRED_CONFIG_KEYS:
             if key not in config.repo_plugin_config:
-                _LOG.error("Missing required configuration key: %s" % (key))
-                return False
+                msg = _("Missing required configuration key: %(key)s" % {"key":key})
+                _LOG.error(msg)
+                return False, msg
         for key in config.repo_plugin_config:
             if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
-                _LOG.error("Configuration key '%s' is not supported" % (key))
-                return False
-        return True
+                msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
+                _LOG.error(msg)
+                return False, msg
+        return True, None
 
     def importer_added(self, repo, config):
         _LOG.info("importer_added invoked")
@@ -131,18 +130,8 @@ class YumImporter(Importer):
         return sync_conduit.build_success_report(summary, details)
 
     def _sync_repo(self, repo, sync_conduit, config):
-        def progress_callback(report):
-            """
-            Translates grinders progress report to a dict Pulp can use
-            @param report progress report
-            @type report: grinder.GrinderCallback.ProgressReport
-            """
-            status = {}
-            for f in self.PROGRESS_REPORT_FIELDS:
-                status[f] = getattr(report, f)
-            sync_conduit.set_progress(status)
         # sync rpms
-        rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config, progress_callback)
+        rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config)
         # sync errata
         errata_summary, errata_details = errata._sync(repo, sync_conduit, config)
         summary = dict(rpm_summary.items() + errata_summary.items())

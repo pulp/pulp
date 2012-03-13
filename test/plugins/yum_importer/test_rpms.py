@@ -41,7 +41,7 @@ class TestRPMs(unittest.TestCase):
 
     def tearDown(self):
         super(TestRPMs, self).tearDown()
-        shutil.rmtree(self.temp_dir)
+        #shutil.rmtree(self.temp_dir)
 
     def get_files_in_dir(self, pattern, path):
         files = []
@@ -72,7 +72,7 @@ class TestRPMs(unittest.TestCase):
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
-        config = importer_mocks.get_basic_config(feed_url)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
@@ -92,6 +92,43 @@ class TestRPMs(unittest.TestCase):
         for link in sym_links:
             self.assertTrue(os.path.islink(link))
 
+    def test_validate_config(self):
+        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
+        importer = YumImporter()
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        repo = mock.Mock(spec=Repository)
+        state, msg = importer.validate_config(repo, config)
+        self.assertTrue(state)
+
+        # Ensure if we are missing a required argument validate fails and the missing 
+        # config parameter is mentioned in the message
+        config = importer_mocks.get_basic_config()
+        state, msg = importer.validate_config(repo, config)
+        self.assertFalse(state)
+        self.assertTrue("feed_url" in msg)
+
+        # Test that an unknown argument in the config throws an error 
+        # and the unknown arg is identified in the message
+        config = importer_mocks.get_basic_config(feed_url=feed_url, bad_unknown_arg="blah")
+        state, msg = importer.validate_config(repo, config)
+        self.assertFalse(state)
+        self.assertTrue("bad_unknown_arg" in msg)
+
+    def test_remove_packages(self):
+        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
+        importer = YumImporter()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_remove_packages"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(len(self.get_files_in_dir("*.rpm", self.pkg_dir)), 3)
+        self.assertEquals(len(self.get_files_in_dir("*.rpm", repo.working_dir)), 3)
+        #print "RPMs should be at: %s" % (self.pkg_dir)
+        #print "SymLinks should be at: %s" % (repo.working_dir)
+
     def test_basic_orphaned_sync(self):
         importer = YumImporter()
         repo = mock.Mock(spec=Repository)
@@ -103,7 +140,7 @@ class TestRPMs(unittest.TestCase):
         existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
-        config = importer_mocks.get_basic_config(feed_url)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
@@ -134,6 +171,10 @@ class TestRPMs(unittest.TestCase):
         def set_progress(progress):
             global updated_progress
             updated_progress = progress
+            if "Errata" not in progress["step"]:
+                # We want to skip checking the fields for Errata steps
+                for key in importer_rpm.PROGRESS_REPORT_FIELDS:
+                    self.assertTrue(key in updated_progress)
 
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         importer = YumImporter()
@@ -143,12 +184,12 @@ class TestRPMs(unittest.TestCase):
         sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
         sync_conduit.set_progress = mock.Mock()
         sync_conduit.set_progress.side_effect = set_progress
-        config = importer_mocks.get_basic_config(feed_url)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
         summary, details = importer._sync_repo(repo, sync_conduit, config)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertTrue(updated_progress is not None)
-        for key in YumImporter.PROGRESS_REPORT_FIELDS:
-            self.assertTrue(key in updated_progress)
+        self.assertTrue(updated_progress.has_key("step"))
+        self.assertTrue(updated_progress["step"])
 
     def test_get_existing_units(self):
         unit_key = {}
@@ -281,7 +322,7 @@ class TestRPMs(unittest.TestCase):
         # Additionallity verify that already existing packages which are NOT orphaned are also
         # removed with remove_old functionality
         ###
-        config = importer_mocks.get_basic_config(feed_url, remove_old=False, num_old_packages=0)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=False, num_old_packages=0)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertEquals(summary["num_synced_new_rpms"], 12)
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
@@ -301,7 +342,7 @@ class TestRPMs(unittest.TestCase):
                     importer_rpm.form_rpm_metadata(rpm),
                     os.path.join(self.pkg_dir, rpm["pkgpath"], rpm["fileName"]))
             existing_units.append(u)
-        config = importer_mocks.get_basic_config(feed_url, remove_old=True, num_old_packages=6)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=6)
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertEquals(summary["num_rpms"], 7)
@@ -311,7 +352,7 @@ class TestRPMs(unittest.TestCase):
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 7)
 
-        config = importer_mocks.get_basic_config(feed_url, remove_old=True, num_old_packages=0)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=0)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertEquals(summary["num_rpms"], 1)
         self.assertEquals(summary["num_orphaned_rpms"], 11)
@@ -327,7 +368,7 @@ class TestRPMs(unittest.TestCase):
         repo.working_dir = self.working_dir
         repo.id = "test_srpm_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
-        config = importer_mocks.get_basic_config(feed_url)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
         summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)

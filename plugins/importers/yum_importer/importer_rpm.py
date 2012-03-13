@@ -24,6 +24,11 @@ RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
 RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "fileName", "checksum", "checksumtype")
 
+
+PROGRESS_REPORT_FIELDS = ["items_total", "items_left", "size_total", "size_left", 
+    "item_name", "status", "item_type", "num_error", "num_success", 
+    "num_download", "details", "error_details", "step"]
+
 def get_existing_units(sync_conduit, criteria=None):
    """
    @param sync_conduit
@@ -254,7 +259,19 @@ def remove_unit(sync_conduit, unit):
         return False
     return True
 
-def _sync(repo, sync_conduit, config, progress_callback=None):
+
+
+def _sync(repo, sync_conduit, config):
+    def progress_callback(report):
+        """
+        @param report progress report from Grinder
+        @type report: grinder.GrinderCallback.ProgressReport 
+        """
+        status = {}
+        for f in PROGRESS_REPORT_FIELDS:
+            status[f] = getattr(report, f)
+        sync_conduit.set_progress(status)
+
     ####
         # Syncs operate on 2 types of data structures
         # 1) RPM info, each 'rpm' is a single dictionary of key/value pairs created in grinder.YumInfo.__getRPMs()

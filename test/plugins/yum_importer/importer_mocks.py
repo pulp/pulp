@@ -39,7 +39,7 @@ def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
     sync_conduit.get_units.side_effect = get_units
     return sync_conduit
 
-def get_basic_config(feed_url, num_threads=1,
+def get_basic_config_del(feed_url, num_threads=1,
         remove_old=False, num_old_packages=0, newest=False):
     def side_effect(arg):
         result = {
@@ -52,6 +52,14 @@ def get_basic_config(feed_url, num_threads=1,
         if result.has_key(arg):
             return result[arg]
         return None
-    config = mock.Mock(spec=PluginCallConfiguration)
-    config.get.side_effect = side_effect
+    # config = mock.Mock(spec=PluginCallConfiguration)
+    # config.get.side_effect = side_effect
+
+def get_basic_config(*arg, **kwargs):
+    plugin_config = {}
+    repo_plugin_config = {}
+    for key in kwargs:
+        repo_plugin_config[key] = kwargs[key]
+    config = PluginCallConfiguration(plugin_config, 
+            repo_plugin_config=repo_plugin_config)
     return config
