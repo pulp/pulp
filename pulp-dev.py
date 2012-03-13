@@ -79,6 +79,7 @@ LINKS = (
     ('extensions/pulp_admin_auth', '/var/lib/pulp_client/admin/extensions/pulp_admin_auth'),
     ('extensions/pulp_repo', '/var/lib/pulp_client/admin/extensions/pulp_repo'),
     ('extensions/pulp_server_info', '/var/lib/pulp_client/admin/extensions/pulp_server_info'),
+    ('extensions/pulp_tasks', '/var/lib/pulp_client/admin/extensions/pulp_tasks'),
     ('extensions/rpm_repo', '/var/lib/pulp_client/admin/extensions/rpm_repo'),
     ('extensions/rpm_sync', '/var/lib/pulp_client/admin/extensions/rpm_sync'),
     ('extensions/rpm_units_search', '/var/lib/pulp_client/admin/extensions/rpm_units_search'),
@@ -86,7 +87,7 @@ LINKS = (
     ('plugins/types/srpm.json', '/var/lib/pulp/plugins/types/srpm.json'),
     ('plugins/types/erratum.json', '/var/lib/pulp/plugins/types/erratum.json'),
     ('plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
-)
+    )
 
 def parse_cmdline():
     """
