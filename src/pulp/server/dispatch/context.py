@@ -29,8 +29,8 @@ class Context(local):
     @type task_id: str or None
     @ivar job_id: unique id of the job the task is part of
     @type job_id: str or None
-    @ivar set_progress: callback to pass progress information into
-    @type set_progress: callable
+    @ivar report_progress: callback to pass progress information into
+    @type report_progress: callable
     @ivar succeeded: callback to report success from an asynchronous call
     @type succeeded: callable
     @ivar failed: callback to report failure from an asynchronous call
@@ -44,7 +44,7 @@ class Context(local):
     def set_task_attributes(self, task):
         self.task_id = task.id
         self.job_id = task.call_report.job_id
-        self.set_progress = task._set_progress
+        self.report_progress = task._report_progress
         if task.call_request.asynchronous:
             self.succeeded = task._succeeded
             self.failed = task._failed
@@ -52,12 +52,12 @@ class Context(local):
     def clear_task_attributes(self):
         self.task_id = None
         self.job_id = None
-        self.set_progress = self._set_progress
+        self.report_progress = self._report_progress
         self.succeeded = self._succeeded
         self.failed = self._failed
 
-    def _set_progress(self, progress):
-        msg = _('set_progress called on cleared dispatch context: %(p)s')
+    def _report_progress(self, progress):
+        msg = _('report_progress called on cleared dispatch context: %(p)s')
         _LOG.error(msg % {'p': pformat(progress)})
 
     def _succeeded(self, result=None):
