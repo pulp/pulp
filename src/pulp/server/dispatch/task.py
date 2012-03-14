@@ -126,7 +126,7 @@ class Task(object):
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.result = result
         _LOG.info(_('%s SUCCEEDED') % str(self))
-        self.call_execution_hooks(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK)
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_FINISHED_STATE)
 
     def _failed(self, exception=None, traceback=None):
@@ -141,7 +141,7 @@ class Task(object):
         self.call_report.exception = exception
         self.call_report.traceback = traceback
         _LOG.info(_('%s FAILED') % str(self))
-        self.call_execution_hooks(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK)
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_ERROR_STATE)
 
     def _complete(self, state=dispatch_constants.CALL_FINISHED_STATE):
@@ -150,7 +150,7 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        self.call_execution_hooks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
@@ -172,7 +172,7 @@ class Task(object):
 
     # hook execution -----------------------------------------------------------
 
-    def call_execution_hooks(self, key):
+    def call_life_cycle_callbacks(self, key):
         """
         Execute all the execution hooks for the given key.
         Key must be a member of dispatch_constants.CALL_EXECUTION_HOOKS
@@ -192,7 +192,7 @@ class Task(object):
         if cancel_hook is None:
             raise dispatch_exceptions.MissingCancelControlHook(str(self))
         cancel_hook(self.call_request, self.call_report)
-        self.call_execution_hooks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
 
 # asynchronous task ------------------------------------------------------------
