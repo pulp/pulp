@@ -19,6 +19,7 @@ from threading import local
 
 _LOG = logging.getLogger(__name__)
 
+# context class ----------------------------------------------------------------
 
 class Context(local):
     """
@@ -66,3 +67,19 @@ class Context(local):
     def _failed(self, exception=None, traceback=None):
         msg = _('failed called on cleared dispatch context: %(e)s, %(t)s')
         _LOG.critical(msg % {'e': pformat(exception), 't': pformat(traceback)})
+
+# context factory --------------------------------------------------------------
+# NOTE this is here and not in the factory module to prevent circular imports
+
+_CONTEXT = None
+
+
+def initialize():
+    global _CONTEXT
+    assert _CONTEXT is None
+    _CONTEXT = Context()
+
+
+def context():
+    assert isinstance(_CONTEXT, Context)
+    return _CONTEXT
