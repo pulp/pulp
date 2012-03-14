@@ -499,6 +499,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 14 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-5
+- bump release for build. (jortel@redhat.com)
+- 801184 - Error messages when installing selinux RPM after its already been
+  installed (jmatthews@redhat.com)
+- 799120 - Added package filtering at package import stage as well as it is
+  processing packages from source dir and not destination dir
+  (skarmark@redhat.com)
+- 797929 add requirement on semanage command (jslagle@redhat.com)
+
 * Tue Feb 28 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-4
 - bump release for build. (jortel@redhat.com)
 - Automatic commit of package [okaara-lib] minor release [1.0.5-1].
