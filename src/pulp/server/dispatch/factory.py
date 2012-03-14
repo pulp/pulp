@@ -63,14 +63,30 @@ def initialize():
 # factory functions ------------------------------------------------------------
 
 def context():
+    """
+    Dispatch context factory. Returns thread-local storage holding pertinent
+    information and operations for the dispatch environment.
+    @return: thread-local storage
+    @rtype:  context.Context
+    """
     return context.context()
 
 
 def coordinator():
+    """
+    Dispatch coordinator factory. Returns the current coordinator instance.
+    @return: coordinator for conflicting operation detection and asynchronous execution of calls
+    @rtype:  Coordinator
+    """
     assert isinstance(_COORDINATOR, Coordinator)
     return _COORDINATOR
 
 
 def scheduler():
+    """
+    Dispatch scheduler factory. Returns the current scheduler instance.
+    @return: scheduler for delayed and/or repeating calls at regular intervals
+    @rtype:  Scheduler
+    """
     assert isinstance(_SCHEDULER, Scheduler)
     return _SCHEDULER
