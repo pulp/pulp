@@ -144,7 +144,7 @@ class Coordinator(object):
         @return: task that encapsulates the call request
         @rtype:  L{Task} instance
         """
-        if call_request.success_failure_callback_kwargs is None:
+        if not call_request.asynchronous:
             task = Task(call_request)
         else:
             task = AsyncTask(call_request)

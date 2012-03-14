@@ -40,8 +40,6 @@ class CallRequest(object):
     @type kwargs: dict
     @ivar progress_callback_kwarg: name of keyword argument for progress callback
     @type progress_callback_kwarg: None or str
-    @ivar success_failure_callback_kwargs: name of keyword arguments for success and failure callbacks
-    @type success_failure_callback_kwargs: None or str
     @ivar resources: dictionary of resources and operations used by the request
     @type resources: dict
     @ivar weight: weight of callable in relation concurrency resources
@@ -52,6 +50,8 @@ class CallRequest(object):
     @type control_hooks: dict
     @ivar tags: list of arbitrary tags
     @type tags: list
+    @ivar asynchronous: toggle asynchronous execution of call
+    @type asynchronous: bool
     @ivar archive: toggle archival of call request on completion
     @type archive: bool
     """
@@ -61,31 +61,31 @@ class CallRequest(object):
                  args=None,
                  kwargs=None,
                  progress_callback_kwarg=None,
-                 success_failure_callback_kwargs=None,
                  resources=None,
                  weight=1,
                  tags=None,
+                 asynchronous=False,
                  archive=False):
 
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
         assert isinstance(kwargs, (NoneType, dict))
         assert isinstance(progress_callback_kwarg, (NoneType, basestring))
-        assert isinstance(success_failure_callback_kwargs, (NoneType, tuple, list))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
         assert weight > -1
         assert isinstance(tags, (NoneType, list))
+        assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
 
         self.call = call
         self.args = args or []
         self.kwargs = kwargs or {}
         self.progress_callback_kwarg = progress_callback_kwarg
-        self.success_failure_callback_kwargs = success_failure_callback_kwargs
         self.resources = resources or {}
         self.weight = weight
         self.tags = tags or []
+        self.asynchronous = asynchronous
         self.archive = archive
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
@@ -98,10 +98,6 @@ class CallRequest(object):
             return
         if self.progress_callback_kwarg is not None and self.progress_callback_kwarg not in spec[0]:
             raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(self.call.__name__, self.progress_callback_kwarg)
-        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[0] not in spec[0]:
-            raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(self.call.__name__, self.success_failure_callback_kwargs[0])
-        if self.success_failure_callback_kwargs is not None and self.success_failure_callback_kwargs[1] not in spec[0]:
-            raise dispatch_exceptions.MissingFailureCallbackKeywordArgument(self.call.__name__, self.success_failure_callback_kwargs[1])
 
     def callable_name(self):
         name = self.call.__name__
@@ -135,7 +131,7 @@ class CallRequest(object):
 
     # call request serialization/deserialization -------------------------------
 
-    copied_fields = ('resources', 'weight', 'tags')
+    copied_fields = ('resources', 'weight', 'tags', 'asynchronous', 'archive')
     pickled_fields = ('call', 'args', 'kwargs', 'execution_hooks', 'control_hooks')
     all_fields = itertools.chain(copied_fields, pickled_fields)
 
