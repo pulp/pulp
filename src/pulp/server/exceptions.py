@@ -31,8 +31,7 @@ class PulpException(Exception):
 
     def __str__(self):
         class_name = self.__class__.__name__
-        str_args = [str(a).encode('utf-8') for a in self.args]
-        msg = '%s: %s' % (class_name, ', '.join(str_args))
+        msg = _('%(c)s: NO OVERRIDE FOR __str__') % {'c': class_name}
         return msg.encode('utf-8')
 
     def data_dict(self):
