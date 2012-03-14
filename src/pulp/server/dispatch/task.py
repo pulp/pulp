@@ -24,6 +24,7 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import context as dispatch_context
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import history as dispatch_history
 
@@ -105,6 +106,7 @@ class Task(object):
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
+        dispatch_context.context().set_task_attributes(self)
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
@@ -113,7 +115,10 @@ class Task(object):
         except:
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
+            # to bad 2.4 doesn't support try/except/finally blocks
+            dispatch_context.context().clear_task_attributes()
             return self._failed(e, tb)
+        dispatch_context.context().clear_task_attributes()
         return self._succeeded(result)
 
     def _succeeded(self, result=None):
@@ -228,17 +233,21 @@ class AsyncTask(Task):
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
+        dispatch_context.context().set_task_attributes(self)
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
-        # TODO check to see that the _succeeded and _failed callbacks were set
         try:
-            return call(*args, **kwargs)
+            result = call(*args, **kwargs)
         except:
             # NOTE: this is making an assumption here that the call failed to
             # execute, if this isn't the case, or it got far enough, we may be
             # faced with _succeeded or _failed being called again
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
+            # too bad 2.4 doesn't support try/except/finally blocks
+            dispatch_context.context().clear_task_attributes()
             return self._failed(e, tb)
+        dispatch_context.context().clear_task_attributes()
+        return result
 
