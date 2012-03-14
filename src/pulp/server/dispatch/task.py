@@ -22,7 +22,6 @@ import uuid
 from gettext import gettext as _
 
 from pulp.common import dateutils
-from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
