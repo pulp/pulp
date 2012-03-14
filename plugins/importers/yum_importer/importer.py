@@ -126,15 +126,19 @@ class YumImporter(Importer):
     # -- actions --------------------------------------------------------------
 
     def sync_repo(self, repo, sync_conduit, config):
-        summary, details = self._sync_repo(repo, sync_conduit, config)
-        return sync_conduit.build_success_report(summary, details)
+        status, summary, details = self._sync_repo(repo, sync_conduit, config)
+        if status:
+            report = sync_conduit.build_success_report(summary, details)
+        else:
+            report = sync_conduit.build_failure_report(summary, details)
+        return report
 
     def _sync_repo(self, repo, sync_conduit, config):
         # sync rpms
-        rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config)
+        rpm_status, rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config)
         # sync errata
-        errata_summary, errata_details = errata._sync(repo, sync_conduit, config)
+        errata_status, errata_summary, errata_details = errata._sync(repo, sync_conduit, config)
         summary = dict(rpm_summary.items() + errata_summary.items())
         details = dict(rpm_details.items() + errata_details.items())
-        return summary, details
+        return (rpm_status or errata_status), summary, details
 

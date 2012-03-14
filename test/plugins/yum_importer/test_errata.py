@@ -47,7 +47,8 @@ class TestErrata(unittest.TestCase):
         repo.id = "test_repo"
         sync_conduit = importer_mocks.get_sync_conduit()
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = errata._sync(repo, sync_conduit, config)
+        status, summary, details = errata._sync(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
 

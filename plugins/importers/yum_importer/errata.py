@@ -144,8 +144,8 @@ def _sync(repo, sync_conduit,  config):
       @param config: plugin configuration
       @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-      @return a two dictionaries.  First dict is of sync summary, second dict is of sync details
-      @rtype ({}, {})
+      @return a tuple of state, dict of sync summary and dict of sync details
+      @rtype (bool, {}, {})
     """
     start = time.time()
     repo_dir = "%s/%s" % (repo.working_dir, repo.id)
@@ -173,14 +173,14 @@ def _sync(repo, sync_conduit,  config):
     summary["num_new_errata"] = len(new_errata)
     summary["num_existing_errata"] = len(existing_errata)
     summary["num_orphaned_errata"] = len(orphaned_units)
-    summary["time_total_sec"] = end - start
+    summary["errata_time_total_sec"] = end - start
 
     details = dict()
     details["num_bugfix_errata"] = len(errata_details['types']['bugfix'])
     details["num_security_errata"] = len(errata_details['types']['security'])
     details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
     _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
-    return summary, details
+    return True, summary, details
 
 def form_errata_unit_key(erratum):
     unit_key = {}

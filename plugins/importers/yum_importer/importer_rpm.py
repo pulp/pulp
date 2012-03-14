@@ -275,6 +275,21 @@ def remove_unit(sync_conduit, repo, unit):
             os.unlink(f)
 
 def _sync(repo, sync_conduit, config):
+    """
+      Invokes RPM sync sequence
+
+      @param repo: metadata describing the repository
+      @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+      @param sync_conduit
+      @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
+
+      @param config: plugin configuration
+      @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+      @return a tuple of state, dict of sync summary and dict of sync details
+      @rtype (bool, {}, {})
+    """
     def progress_callback(report):
         """
         @param report progress report from Grinder
@@ -373,4 +388,8 @@ def _sync(repo, sync_conduit, config):
     details["time_download_sec"] = end_download - start_download
     details["not_synced"] = not_synced
     details["sync_report"] = form_report(report)
-    return summary, details
+
+    status = True
+    if removal_errors or details["sync_report"]["errors"]:
+        status = False
+    return status, summary, details

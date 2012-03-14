@@ -35,12 +35,18 @@ class TestRPMs(unittest.TestCase):
 
     def setUp(self):
         super(TestRPMs, self).setUp()
+        self.init()
+
+    def tearDown(self):
+        super(TestRPMs, self).tearDown()
+        self.clean()
+
+    def init(self):
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
 
-    def tearDown(self):
-        super(TestRPMs, self).tearDown()
+    def clean(self):
         shutil.rmtree(self.temp_dir)
 
     def get_files_in_dir(self, pattern, path):
@@ -165,15 +171,15 @@ class TestRPMs(unittest.TestCase):
 
     def test_basic_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
+        self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertEquals(summary["num_resynced_rpms"], 0)
         self.assertEquals(summary["num_not_synced_rpms"], 0)
@@ -213,7 +219,6 @@ class TestRPMs(unittest.TestCase):
         self.assertTrue("bad_unknown_arg" in msg)
 
     def test_basic_orphaned_sync(self):
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
@@ -224,9 +229,10 @@ class TestRPMs(unittest.TestCase):
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
+        self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertEquals(summary["num_resynced_rpms"], 0)
         self.assertEquals(summary["num_not_synced_rpms"], 0)
@@ -268,7 +274,8 @@ class TestRPMs(unittest.TestCase):
         sync_conduit.set_progress = mock.Mock()
         sync_conduit.set_progress.side_effect = set_progress
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = importer._sync_repo(repo, sync_conduit, config)
+        status, summary, details = importer._sync_repo(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertTrue(updated_progress is not None)
         self.assertTrue(updated_progress.has_key("step"))
@@ -395,13 +402,13 @@ class TestRPMs(unittest.TestCase):
 
     def test_remove_packages(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_remove_packages"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertEquals(len(self.get_files_in_dir("*.rpm", self.pkg_dir)), 3)
         self.assertEquals(len(self.get_files_in_dir("*.rpm", repo.working_dir)), 3)
@@ -428,7 +435,6 @@ class TestRPMs(unittest.TestCase):
 
     def test_remove_old_packages(self):
         feed_url = "http://jmatthews.fedorapeople.org/repo_multiple_versions/"
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_remove_old_packages"
@@ -439,7 +445,8 @@ class TestRPMs(unittest.TestCase):
         # removed with remove_old functionality
         ###
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=False, num_old_packages=0)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 12)
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 12)
@@ -460,7 +467,8 @@ class TestRPMs(unittest.TestCase):
             existing_units.append(u)
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=6)
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertEquals(summary["num_rpms"], 7)
         self.assertEquals(summary["num_orphaned_rpms"], 5)
         self.assertEquals(summary["num_synced_new_rpms"], 0)
@@ -469,7 +477,8 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(len(pkgs), 7)
 
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=0)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertEquals(summary["num_rpms"], 1)
         self.assertEquals(summary["num_orphaned_rpms"], 11)
         self.assertEquals(summary["num_synced_new_rpms"], 0)
@@ -479,13 +488,13 @@ class TestRPMs(unittest.TestCase):
 
     def test_srpm_sync(self):
         feed_url = "http://pkilambi.fedorapeople.org/test_srpm_repo/"
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_srpm_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(status)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertEquals(summary["num_rpms"], 3)
@@ -493,3 +502,97 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_synced_new_rpms"], 0)
 
 
+    def test_grinder_config(self):
+        repo_label = "test_grinder_config"
+        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
+        num_threads = 25
+        max_speed = 1
+        proxy_url = "http://example.com"
+        proxy_port = "3128"
+        proxy_user = "username"
+        proxy_pass = "password"
+        ssl_verify = True
+        ssl_ca_cert = "path_ca_cert"
+        ssl_client_cert = "path_client_cert"
+        ssl_client_key = "path_client_key"
+        newest = True
+        remove_old = True
+        num_old_packages = 99
+        tmp_path = "/tmp"
+
+        config = importer_mocks.get_basic_config(feed_url=feed_url, num_threads=num_threads, max_speed=max_speed,
+                proxy_url=proxy_url, proxy_port=proxy_port, proxy_user=proxy_user, proxy_pass=proxy_pass,
+                ssl_verify=ssl_verify, 
+                ssl_ca_cert=ssl_ca_cert, ssl_client_cert=ssl_client_cert, ssl_client_key=ssl_client_key,
+                newest=newest, remove_old=remove_old, num_old_packages=num_old_packages)
+
+        yumRepoGrinder = importer_rpm.get_yumRepoGrinder(repo_label, tmp_path, config)
+        self.assertEquals(yumRepoGrinder.repo_label, repo_label)
+        self.assertEquals(yumRepoGrinder.repo_url, feed_url)
+        self.assertEquals(yumRepoGrinder.numThreads, num_threads)
+        self.assertEquals(yumRepoGrinder.max_speed, max_speed)
+        self.assertEquals(yumRepoGrinder.proxy_url, proxy_url)
+        self.assertEquals(yumRepoGrinder.proxy_port, proxy_port)
+        self.assertEquals(yumRepoGrinder.proxy_user, proxy_user)
+        self.assertEquals(yumRepoGrinder.proxy_pass, proxy_pass)
+        self.assertEquals(yumRepoGrinder.sslverify, ssl_verify)
+        self.assertEquals(yumRepoGrinder.sslcacert, ssl_ca_cert)
+        self.assertEquals(yumRepoGrinder.sslclientcert, ssl_client_cert)
+        self.assertEquals(yumRepoGrinder.sslclientkey, ssl_client_key)
+        self.assertEquals(yumRepoGrinder.newest, newest)
+        self.assertEquals(yumRepoGrinder.remove_old, remove_old)
+        self.assertEquals(yumRepoGrinder.numOldPackages, num_old_packages)
+        self.assertEquals(yumRepoGrinder.tmp_path, tmp_path)
+        # Verify that the pkgpath is set to "./", hardcoded in importer_rpm to 
+        # force the package dir to be a relative path with the checksum components in the path
+        self.assertEquals(yumRepoGrinder.pkgpath, "./")
+
+    def test_bandwidth_limit(self):
+        # This test assumes an available bandwidth of more than 100KB for 2 threads
+        feed_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/'
+        expected_size_bytes = 209888 # 5 1MB RPMs are in this repo
+        expected_num_packages = 2
+        num_threads = 2
+        max_speed = 100 # KB/sec
+
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_bandwidth_limit"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, num_threads=num_threads, max_speed=max_speed)
+
+        start = time.time()
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        end = time.time()
+        self.assertTrue(status)
+        self.assertEquals(summary["num_synced_new_rpms"], expected_num_packages)
+        self.assertEquals(summary["num_resynced_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        self.assertEquals(summary["num_orphaned_rpms"], 0)
+        self.assertEquals(details["size_total"], expected_size_bytes)
+
+        expected = (float(expected_size_bytes)/(num_threads*max_speed*1000))
+        actual_A = end - start
+        self.assertTrue(actual_A > expected)
+        #
+        # Clean up and resync with no bandwidth limit
+        # Ensure result is quicker than above
+        #
+        max_speed = 0
+        self.clean()
+        self.init()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_bandwidth_limit"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, num_threads=num_threads, max_speed=max_speed)
+        start = time.time()
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        end = time.time()
+        self.assertTrue(status)
+        self.assertEquals(summary["num_synced_new_rpms"], expected_num_packages)
+        self.assertEquals(summary["num_resynced_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        self.assertEquals(summary["num_orphaned_rpms"], 0)
+        self.assertEquals(details["size_total"], expected_size_bytes)
+        self.assertTrue(end-start < actual_A)
