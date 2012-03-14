@@ -81,7 +81,7 @@ class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
-        link = serialization.link.current_link_obj()
+        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(task_id=task_id)
         if call_reports:
