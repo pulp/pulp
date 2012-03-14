@@ -13,17 +13,25 @@
 
 from pulp.server import config as pulp_config
 from pulp.server.dispatch import pickling
+from pulp.server.dispatch.context import Context
 from pulp.server.dispatch.coordinator import Coordinator
 from pulp.server.dispatch.scheduler import Scheduler
 from pulp.server.dispatch.taskqueue import TaskQueue
 
 # globals ----------------------------------------------------------------------
 
+_CONTEXT = None
 _COORDINATOR = None
 _SCHEDULER = None
 _TASK_QUEUE = None
 
 # initialization ---------------------------------------------------------------
+
+def _initialize_context():
+    global _CONTEXT
+    assert _CONTEXT is None
+    _CONTEXT = Context()
+
 
 def _initialize_coordinator():
     global _COORDINATOR
@@ -55,11 +63,17 @@ def _initialize_task_queue():
 def initialize():
     # order sensitive
     pickling.initialize()
+    _initialize_context()
     _initialize_task_queue()
     _initialize_coordinator()
     _initialize_scheduler()
 
 # factory functions ------------------------------------------------------------
+
+def context():
+    assert isinstance(_CONTEXT, Context)
+    return _CONTEXT
+
 
 def coordinator():
     assert isinstance(_COORDINATOR, Coordinator)
