@@ -12,7 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.server import config as pulp_config
-from pulp.server.dispatch import context, pickling
+from pulp.server.dispatch import context as dispatch_context
+from pulp.server.dispatch import pickling
 from pulp.server.dispatch.coordinator import Coordinator
 from pulp.server.dispatch.scheduler import Scheduler
 from pulp.server.dispatch.taskqueue import TaskQueue
@@ -54,7 +55,6 @@ def _initialize_task_queue():
 
 def initialize():
     # order sensitive
-    context.initialize()
     pickling.initialize()
     _initialize_task_queue()
     _initialize_coordinator()
@@ -69,7 +69,7 @@ def context():
     @return: thread-local storage
     @rtype:  context.Context
     """
-    return context.context()
+    return dispatch_context.CONTEXT
 
 
 def coordinator():

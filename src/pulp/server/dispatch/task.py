@@ -106,7 +106,7 @@ class Task(object):
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
-        dispatch_context.context().set_task_attributes(self)
+        dispatch_context.CONTEXT.set_task_attributes(self)
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
@@ -116,9 +116,9 @@ class Task(object):
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
             # to bad 2.4 doesn't support try/except/finally blocks
-            dispatch_context.context().clear_task_attributes()
+            dispatch_context.CONTEXT.clear_task_attributes()
             return self._failed(e, tb)
-        dispatch_context.context().clear_task_attributes()
+        dispatch_context.CONTEXT.clear_task_attributes()
         return self._succeeded(result)
 
     def _succeeded(self, result=None):
@@ -233,7 +233,7 @@ class AsyncTask(Task):
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
-        dispatch_context.context().set_task_attributes(self)
+        dispatch_context.CONTEXT.set_task_attributes(self)
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
@@ -246,8 +246,8 @@ class AsyncTask(Task):
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
             # too bad 2.4 doesn't support try/except/finally blocks
-            dispatch_context.context().clear_task_attributes()
+            dispatch_context.CONTEXT.clear_task_attributes()
             return self._failed(e, tb)
-        dispatch_context.context().clear_task_attributes()
+        dispatch_context.CONTEXT.clear_task_attributes()
         return result
 

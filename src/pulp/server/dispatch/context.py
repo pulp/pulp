@@ -68,18 +68,8 @@ class Context(local):
         msg = _('failed called on cleared dispatch context: %(e)s, %(t)s')
         _LOG.critical(msg % {'e': pformat(exception), 't': pformat(traceback)})
 
-# context factory --------------------------------------------------------------
+# context global ---------------------------------------------------------------
 # NOTE this is here and not in the factory module to prevent circular imports
 
-_CONTEXT = None
-
-
-def initialize():
-    global _CONTEXT
-    assert _CONTEXT is None
-    _CONTEXT = Context()
-
-
-def context():
-    assert isinstance(_CONTEXT, Context)
-    return _CONTEXT
+# NOTE this is not initialized by a method as each thread needs to call __init__
+CONTEXT = Context()
