@@ -50,7 +50,7 @@ class ConsumerContentManager(object):
     
     def update(self, id, units, options={}):
         """
-        Install content on a consumer.
+        Update content on a consumer.
         @param id: A consumer id.
         @type id: str
         @param units: A list of content units to be updated.
@@ -69,7 +69,7 @@ class ConsumerContentManager(object):
     
     def uninstall(self, id, units, options={}):
         """
-        Install content on a consumer.
+        Uninstall content on a consumer.
         @param id: A consumer id.
         @type id: str
         @param units: A list of content units to be uninstalled.

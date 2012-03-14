@@ -83,6 +83,14 @@ class PulpAgent(Agent):
         pass
         
     def install_units(self, units, options):
+        """
+        Install content on a consumer.
+        @param units: A list of content units to be installed.
+        @type units: list of:
+            { type_id:<str>, metadata:<dict> }
+        @param options: Install options; based on unit type.
+        @type options: dict
+        """
         taskid = options.get('taskid')
         if not taskid:
             raise PulpDataException('taskid required')
@@ -98,6 +106,14 @@ class PulpAgent(Agent):
         # TODO: process 
     
     def update_units(self, units, options):
+        """
+        Update content on a consumer.
+        @param units: A list of content units to be updated.
+        @type units: list of:
+            { type_id:<str>, metadata:<dict> }
+        @param options: Update options; based on unit type.
+        @type options: dict
+        """
         taskid = options.get('taskid')
         if not taskid:
             raise PulpDataException('taskid required')
@@ -113,6 +129,14 @@ class PulpAgent(Agent):
         # TODO: process 
     
     def uninstall_units(self, units, options):
+        """
+        Uninstall content on a consumer.
+        @param units: A list of content units to be uninstalled.
+        @type units: list of:
+            { type_id:<str>, metadata:<dict> }
+        @param options: Uninstall options; based on unit type.
+        @type options: dict
+        """
         taskid = options.get('taskid')
         if not taskid:
             raise PulpDataException('taskid required')
