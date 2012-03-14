@@ -13,24 +13,24 @@
 
 # execution hooks --------------------------------------------------------------
 
-CALL_ENQUEUE_EXECUTION_HOOK = 0
-CALL_DEQUEUE_EXECUTION_HOOK = 1
-CALL_RUN_EXECUTION_HOOK = 2
-CALL_SUCCESS_EXECUTION_HOOK = 3
-CALL_FAILURE_EXECUTION_HOOK = 4
-CALL_CANCEL_EXECUTION_HOOK = 5
-CALL_COMPLETE_EXECUTION_HOOK = 6
+CALL_ENQUEUE_LIFE_CYCLE_CALLBACK = 0
+CALL_DEQUEUE_LIFE_CYCLE_CALLBACK = 1
+CALL_RUN_LIFE_CYCLE_CALLBACK = 2
+CALL_SUCCESS_LIFE_CYCLE_CALLBACK = 3
+CALL_FAILURE_LIFE_CYCLE_CALLBACK = 4
+CALL_CANCEL_LIFE_CYCLE_CALLBACK = 5
+CALL_COMPLETE_LIFE_CYCLE_CALLBACK = 6
 
-CALL_EXECUTION_HOOKS = (CALL_ENQUEUE_EXECUTION_HOOK,
-                        CALL_DEQUEUE_EXECUTION_HOOK,
-                        CALL_RUN_EXECUTION_HOOK,
-                        CALL_SUCCESS_EXECUTION_HOOK,
-                        CALL_FAILURE_EXECUTION_HOOK,
-                        CALL_CANCEL_EXECUTION_HOOK,
-                        CALL_COMPLETE_EXECUTION_HOOK)
+CALL_LIFE_CYCLE_CALLBACKS = (CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
+                             CALL_DEQUEUE_LIFE_CYCLE_CALLBACK,
+                             CALL_RUN_LIFE_CYCLE_CALLBACK,
+                             CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
+                             CALL_FAILURE_LIFE_CYCLE_CALLBACK,
+                             CALL_CANCEL_LIFE_CYCLE_CALLBACK,
+                             CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
 
 
-_CALL_EXECUTION_HOOK_STRINGS = (
+_CALL_LIFE_CYCLE_CALLBACK_STRINGS = (
     'enqueue',
     'dequeue',
     'run',
@@ -40,10 +40,10 @@ _CALL_EXECUTION_HOOK_STRINGS = (
     'complete'
 )
 
-def call_execution_hook_to_string(hook_number):
-    assert isinstance(hook_number, int)
-    assert hook_number >= 0 and hook_number < len(_CALL_EXECUTION_HOOK_STRINGS)
-    return _CALL_EXECUTION_HOOK_STRINGS[hook_number]
+def call_life_cycle_callback_to_string(callback_number):
+    assert isinstance(callback_number, int)
+    assert callback_number >= 0 and callback_number < len(_CALL_LIFE_CYCLE_CALLBACK_STRINGS)
+    return _CALL_LIFE_CYCLE_CALLBACK_STRINGS[callback_number]
 
 # control hooks ----------------------------------------------------------------
 

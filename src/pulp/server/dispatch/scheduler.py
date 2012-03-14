@@ -87,7 +87,7 @@ class Scheduler(object):
                 continue
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, self.call_finished_callback)
+            call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, self.call_finished_callback)
             call_report = self.coordinator.execute_call_asynchronously(call_request)
             log_msg = _('Scheduled %s: %s [reasons: %s]') % \
                       (str(call_request), call_report.response, pformat(call_report.reasons))

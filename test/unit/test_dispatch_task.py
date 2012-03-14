@@ -139,7 +139,7 @@ class TaskTests(testutil.PulpTest):
     def test_finish_execution_hook(self):
         hooks = [mock.Mock(), mock.Mock()]
         for h in hooks:
-            self.call_request.add_execution_hook(dispatch_constants.CALL_SUCCESS_EXECUTION_HOOK, h)
+            self.call_request.add_life_cycle_callback(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK, h)
         self.task.run()
         for h in hooks:
             self.assertTrue(h.call_count == 1)
@@ -149,7 +149,7 @@ class TaskTests(testutil.PulpTest):
     def test_complete_execution_hook(self):
         hooks = [mock.Mock(), mock.Mock()]
         for h in hooks:
-            self.call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, h)
+            self.call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, h)
         self.task.run()
         for h in hooks:
             self.assertTrue(h.call_count == 1)
@@ -178,7 +178,7 @@ class FailTests(testutil.PulpTest):
 
     def test_error_execution_hook(self):
         hook = mock.Mock()
-        self.call_request.add_execution_hook(dispatch_constants.CALL_FAILURE_EXECUTION_HOOK, hook)
+        self.call_request.add_life_cycle_callback(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK, hook)
         self.task.run()
         self.assertTrue(hook.call_count == 1)
         self.assertTrue(hook.call_args[0][0] is self.call_request)

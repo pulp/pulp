@@ -99,10 +99,10 @@ class CallRequestTests(testutil.PulpTest):
 
     def test_execution_hooks(self):
         call_request = CallRequest(function)
-        for key in dispatch_constants.CALL_EXECUTION_HOOKS:
+        for key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS:
             self.assertTrue(isinstance(call_request.execution_hooks[key], list))
             self.assertTrue(len(call_request.execution_hooks[key]) == 0)
-            call_request.add_execution_hook(key, function)
+            call_request.add_life_cycle_callback(key, function)
             self.assertTrue(isinstance(call_request.execution_hooks[key], list))
             self.assertTrue(len(call_request.execution_hooks[key]) == 1)
 
@@ -126,9 +126,9 @@ class CallRequestTests(testutil.PulpTest):
         self.assertTrue(call_request_2.control_hooks[key] == function)
 
     def test_serialize_deserialize_with_execution_hook(self):
-        key = dispatch_constants.CALL_CANCEL_EXECUTION_HOOK
+        key = dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK
         call_request = CallRequest(function)
-        call_request.add_execution_hook(key, function)
+        call_request.add_life_cycle_callback(key, function)
         data = call_request.serialize()
         self.assertTrue(isinstance(data, dict))
         call_request_2 = CallRequest.deserialize(data)

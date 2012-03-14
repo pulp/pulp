@@ -173,7 +173,7 @@ class Coordinator(object):
         # interdependencies
         self.task_queue.lock()
         try:
-            task.call_request.add_execution_hook(dispatch_constants.CALL_COMPLETE_EXECUTION_HOOK, coordinator_complete_callback)
+            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, coordinator_complete_callback)
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
             task.call_report.reasons = reasons

@@ -98,7 +98,7 @@ class TaskQueue(object):
             self.__running_weight += task.call_request.weight
             task_thread = threading.Thread(target=task.run)
             task_thread.start()
-            task.call_execution_hooks(dispatch_constants.CALL_RUN_EXECUTION_HOOK)
+            task.call_execution_hooks(dispatch_constants.CALL_RUN_LIFE_CYCLE_CALLBACK)
         finally:
             self.__lock.release()
 
@@ -172,7 +172,7 @@ class TaskQueue(object):
             task.complete_callback = self._complete
             self._validate_blocking_tasks(task)
             self.__waiting_tasks.append(task)
-            task.call_execution_hooks(dispatch_constants.CALL_ENQUEUE_EXECUTION_HOOK)
+            task.call_execution_hooks(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK)
             self.__condition.notify()
         finally:
             self.__lock.release()
@@ -213,7 +213,7 @@ class TaskQueue(object):
             if task in self.__running_tasks:
                 self.__running_tasks.remove(task)
             self._unblock_tasks(task)
-            task.call_execution_hooks(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK)
+            task.call_execution_hooks(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK)
         finally:
             self.__lock.release()
 

@@ -87,7 +87,7 @@ class CallRequest(object):
         self.weight = weight
         self.tags = tags or []
         self.archive = archive
-        self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_EXECUTION_HOOKS))]
+        self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
         # XXX doesn't work for callable instances and mock objects
         #self._validate_callbacks()
@@ -125,9 +125,9 @@ class CallRequest(object):
 
     # hooks management ---------------------------------------------------------
 
-    def add_execution_hook(self, key, hook):
-        assert key in dispatch_constants.CALL_EXECUTION_HOOKS
-        self.execution_hooks[key].append(hook)
+    def add_life_cycle_callback(self, key, callback):
+        assert key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS
+        self.execution_hooks[key].append(callback)
 
     def add_control_hook(self, key, hook):
         assert key in dispatch_constants.CALL_CONTROL_HOOKS
@@ -191,11 +191,11 @@ class CallRequest(object):
 
         instance = cls(**constructor_kwargs)
 
-        for key in dispatch_constants.CALL_EXECUTION_HOOKS:
+        for key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS:
             if not execution_hooks[key]:
                 continue
             for hook in execution_hooks[key]:
-                instance.add_execution_hook(key, hook)
+                instance.add_life_cycle_callback(key, hook)
 
         for key in dispatch_constants.CALL_CONTROL_HOOKS:
             if control_hooks[key] is None:

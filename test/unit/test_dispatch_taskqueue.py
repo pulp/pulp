@@ -136,7 +136,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_task_enqueue_execution_hook(self):
         task = self.gen_task()
         hook = NamedMock()
-        task.call_request.add_execution_hook(dispatch_constants.CALL_ENQUEUE_EXECUTION_HOOK, hook)
+        task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, hook)
         self.queue.enqueue(task)
         self.assertTrue(hook.call_count == 1)
         self.assertTrue(task.call_request in hook.call_args[0])
@@ -256,7 +256,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_task_dequeue_execution_hook(self):
         task = self.gen_task()
         hook = NamedMock()
-        task.call_request.add_execution_hook(dispatch_constants.CALL_DEQUEUE_EXECUTION_HOOK, hook)
+        task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, hook)
         self.queue.enqueue(task)
         self.queue.dequeue(task)
         self.assertTrue(hook.call_count == 1)
