@@ -81,14 +81,17 @@ class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
+        link = serialization.link.current_link_obj()
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(task_id=task_id)
         if call_reports:
             serialized_call_report = call_reports[0].serialize()
+            serialized_call_report.update(link)
             return self.ok(serialized_call_report)
         archived_calls = dispatch_history.find_archived_calls(task_id=task_id)
         if archived_calls.count() > 0:
             serialized_call_report = archived_calls[0]['serialized_call_report']
+            serialized_call_report.update(link)
             return self.ok(serialized_call_report)
         raise TaskNotFound(task_id)
 
