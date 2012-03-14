@@ -318,6 +318,22 @@ class Coordinator(object):
 
     # control methods ----------------------------------------------------------
 
+    def complete_call_success(self, task_id, result=None):
+        task_list = self.find_tasks(task_id=task_id)
+        if not task_list:
+            # XXX raise an error
+            return None
+        task = task_list[0]
+        task._succeeded(result)
+
+    def complete_call_failure(self, task_id, exception=None, traceback=None):
+        task_list = self.find_tasks(task_id=task_id)
+        if not task_list:
+            # XXX raise an error
+            return None
+        task = task_list[0]
+        task._failed(exception, traceback)
+
     def cancel_call(self, task_id):
         """
         Cancel a call request using the task id.
