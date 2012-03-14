@@ -177,7 +177,7 @@ class RepoResourceTests(testutil.PulpV2WebServicesTest):
             href = body['_href'][9:]
             status, body = self.get(href)
             if status != 200:
-                self.fail('%d\n%s' % (status, pformat(body)))
+                self.fail('%s\n%d\n%s' % (href, status, pformat(body)))
 
         repo = Repo.get_collection().find_one({'id' : 'doomed'})
         self.assertTrue(repo is None)
@@ -197,7 +197,7 @@ class RepoResourceTests(testutil.PulpV2WebServicesTest):
             href = body['_href'][9:]
             status, body = self.get(href)
             if status != 200:
-                self.fail('%d\n%s' % (status, pformat(body)))
+                self.fail('%s\n%d\n%s' % (href, status, pformat(body)))
 
         self.assertTrue(body['state'] == dispatch_constants.CALL_ERROR_STATE)
 
