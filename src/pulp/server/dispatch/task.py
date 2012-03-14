@@ -192,6 +192,7 @@ class Task(object):
         if cancel_hook is None:
             raise dispatch_exceptions.MissingCancelControlHook(str(self))
         cancel_hook(self.call_request, self.call_report)
+        self.call_execution_hooks(dispatch_constants.CALL_CANCEL_EXECUTION_HOOK)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
 
 # asynchronous task ------------------------------------------------------------
