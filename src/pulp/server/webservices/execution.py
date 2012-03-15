@@ -13,7 +13,6 @@
 
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.exceptions import CallRejectedException
 from pulp.server.webservices import serialization
 
@@ -34,7 +33,7 @@ def execute_sync(controller, call_request):
     return _execute_single(controller, coordinator.execute_call_synchronously, call_request)
 
 
-# execuction utilities ---------------------------------------------------------
+# execution utilities ----------------------------------------------------------
 
 def _execute_single(controller, execute_method, call_request):
     call_report = execute_method(call_request)
@@ -48,7 +47,7 @@ def _execute_single(controller, execute_method, call_request):
         return controller.accepted(serialized_call_report)
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
-    # only remaining states are 'cancelled' and 'finished'
+    # only remaining states are 'cancelled' and 'finished';
     # I don't believe we can get 'cancelled' here
     # XXX this can also be 'created' instead of 'ok'!
     return controller.ok(call_report.result)
