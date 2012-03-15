@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.274
+Version:        0.0.275
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -500,6 +500,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 15 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.275-1
+- Added RPM extensions to the build (jason.dobies@redhat.com)
+- script to migrate package content to new path format (pkilambi@redhat.com)
+- Added conduit access to repo-level scratchpad (jason.dobies@redhat.com)
+- Added repo-level scratchpad support (jason.dobies@redhat.com)
+
 * Thu Mar 15 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.274-1
 - Initial coordinator implementation and usage
 - Initial implementation of RPM extensions
