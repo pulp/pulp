@@ -11,11 +11,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption, PulpCliFlag
+
+# -- constants ----------------------------------------------------------------
 
 TYPE_RPM = 'rpm'
 TYPE_SRPMS = 'srpm'
 TYPE_ERRATUM = 'erratum'
+
+# -- plugin hook --------------------------------------------------------------
 
 def initialize(context):
 
@@ -67,10 +73,29 @@ class RpmsCommand(PulpCliCommand):
         display_group.add_option(PulpCliOption('--skip', 'number of results to skip', aliases=['-s'], required=False))
 
     def search(self, **kwargs):
-        repo_id = kwargs['id']
+        # Data collection
+        repo_id = kwargs.pop('id')
 
         self.context.prompt.render_title('Repository RPMs')
 
+        try:
+            criteria = args_to_criteria_doc(kwargs)
+        except InvalidCriteria, e:
+            self.context.prompt.render_failure_message(e[0])
+            return
+
+        # Query the server
+        print(criteria)
+        all_units = self.context.server.repo_search.search(repo_id, criteria).response_body
+
+        # We only care about the unit metadata, not the association stuff, so
+        # strip out all the fluff and reduce the list to just the metadata entries
+        units = [u['metadata'] for u in all_units]
+
+        if len(units) > 0:
+            self.context.prompt.render_document_list(units)
+        else:
+            self.context.prompt.render_paragraph(_('No RPMs found'))
 
 # -- utilities ----------------------------------------------------------------
 
@@ -89,9 +114,9 @@ def args_to_criteria_doc(kwargs):
     # Type IDs
     type_ids = ['rpm']
     if kwargs['srpms']:
-        type_ids.append('srpms')
+        type_ids.append('srpm')
     if kwargs['drpms']:
-        type_ids.append('drpms')
+        type_ids.append('drpm')
     criteria['type_ids'] = type_ids
 
     # Field Limits
@@ -112,10 +137,14 @@ def args_to_criteria_doc(kwargs):
 
     # Limit & Skip
     if kwargs['limit'] is not None:
-        limit = int(kwargs['limit'])
+        try:
+            limit = int(kwargs['limit'])
+        except:
+            raise InvalidCriteria(_('Value for limit must be an integer'))
         criteria['limit'] = limit
 
     if kwargs['skip'] is not None:
         skip = int(kwargs['skip'])
         criteria['skip'] = skip
 
+    return criteria
