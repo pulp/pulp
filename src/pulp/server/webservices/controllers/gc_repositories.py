@@ -121,7 +121,7 @@ class RepoResource(JSONController):
     def DELETE(self, id):
         coordinator = dispatch_factory.coordinator()
         repo_manager = manager_factory.repo_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: [dispatch_constants.RESOURCE_DELETE_OPERATION]}}
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         call_request = CallRequest(repo_manager.delete_repo, [id], resources=resources, archive=True)
         call_report = coordinator.execute_call_asynchronously(call_request)
 
@@ -430,7 +430,7 @@ class RepoSync(JSONController):
         # Execute the sync asynchronously
         coordinator = dispatch_factory.coordinator()
         repo_sync_manager = manager_factory.repo_sync_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]}}
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         call_request = CallRequest(repo_sync_manager.sync, [repo_id, overrides], resources=resources, archive=True)
         call_report = coordinator.execute_call_asynchronously(call_request)
 
@@ -460,7 +460,7 @@ class RepoPublish(JSONController):
         # Execute the publish asynchronously
         coordinator = dispatch_factory.coordinator()
         repo_publish_manager = manager_factory.repo_publish_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]}}
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         call_request = CallRequest(repo_publish_manager.publish, [repo_id, distributor_id, overrides], archive=True)
         call_report = coordinator.execute_call_asynchronously(call_request)
 
