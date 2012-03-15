@@ -31,7 +31,9 @@ class PulpException(Exception):
 
     def __str__(self):
         class_name = self.__class__.__name__
-        msg = _('%(c)s: NO OVERRIDE FOR __str__') % {'c': class_name}
+        msg = _('Pulp exception occurred: %(c)s') % {'c': class_name}
+        if self.args and isinstance(self.args[0], basestring):
+            msg = self.args[0]
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -47,6 +49,7 @@ class PulpExecutionException(PulpException):
     failures (due to networking or tasking issues), or failure to find resources
     based on the input given
     """
+    # NOTE intermediate exception class, no overrides will be provided
     pass
 
 
@@ -55,7 +58,17 @@ class InvalidConfiguration(PulpExecutionException):
     Base class for exceptions raised with invalid or unsupported configuration
     values are encountered.
     """
-    pass
+
+    def __init__(self, config):
+        PulpExecutionException.__init__(self, config)
+        self.config = config
+
+    def __str__(self):
+        msg = _('Invalid configuration: %(c)s') % {'c': pformat(self.config)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'configuration': self.config}
 
 
 class MissingResource(PulpExecutionException):
@@ -65,6 +78,17 @@ class MissingResource(PulpExecutionException):
     """
     http_status_code = httplib.NOT_FOUND
 
+    def __init__(self, resource_id):
+        PulpExecutionException.__init__(self, resource_id)
+        self.resource_id = resource_id
+
+    def __str__(self):
+        msg = _('Missing resource: %(r)s') % {'r': self.resource_id}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'resource_id': self.resource_id}
+
 
 class ConflictingOperation(PulpExecutionException):
     """
@@ -73,12 +97,34 @@ class ConflictingOperation(PulpExecutionException):
     """
     http_status_code = httplib.CONFLICT
 
+    def __init__(self, operation):
+        PulpExecutionException.__init__(self, operation)
+        self.operation = operation
+
+    def __str__(self):
+        msg = _('Conflicting operation: %(o)s') % {'o': self.operation}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'operation': self.operation}
+
 
 class OperationFailed(PulpExecutionException):
     """
     Base class for exceptions raise when an operation fails at runtime.
     """
-    pass
+
+    def __init__(self, operation):
+        PulpExecutionException.__init__(self, operation)
+        self.operation = operation
+
+    def __str__(self):
+        msg = _('Operation failed: %(o)s') % {'o': self.operation}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'operation': self.operation}
+
 
 # data exceptions --------------------------------------------------------------
 
@@ -88,6 +134,7 @@ class PulpDataException(PulpException):
 
     This should include things like invalid, missing or superfluous data.
     """
+    # NOTE intermediate exception class, no overrides will be provided
     http_status_code = httplib.BAD_REQUEST
 
 
@@ -95,28 +142,68 @@ class InvalidType(PulpDataException):
     """
     Base class of exceptions raised due to an unknown or malformed type.
     """
-    pass
+
+    def __init__(self, invalid_type):
+        PulpDataException.__init__(self, invalid_type)
+        self.invalid_type = invalid_type
+
+    def __str__(self):
+        msg = _('Invalid type: %(t)s') % {'t': str(self.invalid_type)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'invalid_type': self.invalid_type}
 
 
 class InvalidValue(PulpDataException):
     """
     Base class of exceptions raised due invalid data values.
     """
-    pass
+
+    def __init__(self, invalid_value):
+        PulpDataException.__init__(self, invalid_value)
+        self.invalid_value = invalid_value
+
+    def __str__(self):
+        msg = _('Invalid value: %(v)s') % {'v': pformat(self.invalid_value)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'invalid_value': self.invalid_value}
 
 
 class MissingData(PulpDataException):
     """
     Base class of exceptions raised due to missing required data.
     """
-    pass
+
+    def __init__(self, data):
+        PulpDataException.__init__(self, data)
+        self.data = data
+
+    def __str__(self):
+        msg = _('Missing data: %(d)s') % {'d': pformat(self.data)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'missing_data': self.data}
 
 
 class SuperfluousData(PulpDataException):
     """
     Base class of exceptions raised due to extra unknown data.
     """
-    pass
+
+    def __init__(self, data):
+        PulpDataException.__init__(self, data)
+        self.data = data
+
+    def __str__(self):
+        msg = _('Superfluous data: %(d)s') % {'d': pformat(self.data)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'superfluous_data': self.data}
 
 
 class DuplicateResource(PulpDataException):
@@ -124,3 +211,15 @@ class DuplicateResource(PulpDataException):
     Bass class of exceptions raised due to duplicate resource ids.
     """
     http_status_code = httplib.CONFLICT
+
+    def __init__(self, resource_id):
+        PulpDataException.__init__(self, resource_id)
+        self.resource_id = resource_id
+
+    def __str__(self):
+        msg = _('Duplicate resource: %(r)s') % {'r': self.resource_id}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'resource_id': self.resource_id}
+
