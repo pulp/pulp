@@ -24,6 +24,7 @@ from pulp.server.content.conduits._base import BaseDistributorConduit, Distribut
 import pulp.server.content.conduits._common as common_utils
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import PublishReport
+import pulp.server.dispatch.factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
@@ -100,6 +101,8 @@ class RepoPublishConduit(BaseDistributorConduit):
         """
 
         _LOG.info('Set progress for repo [%s]' % self.repo_id)
+        context = dispatch_factory.context()
+        context.report_progress(status)
 
     def last_publish(self):
         """

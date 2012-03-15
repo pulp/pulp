@@ -47,9 +47,11 @@ import pulp.server.content.conduits._common as common_utils
 from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
 import pulp.server.content.types.database as types_db
 from pulp.server.content.plugins.model import Unit, SyncReport
+import pulp.server.dispatch.factory as dispatch_factory
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
+
 from pulp.server.managers.repo.unit_association_query import Criteria # shadow for importing by plugins
 
 # -- constants ---------------------------------------------------------------
@@ -128,6 +130,8 @@ class RepoSyncConduit(BaseImporterConduit):
         """
 
         _LOG.info('Set progress for repo [%s]' % self.repo_id)
+        context = dispatch_factory.context()
+        context.report_progress(status)
 
     # -- unit lifecycle -------------------------------------------------------
 
