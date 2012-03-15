@@ -65,7 +65,7 @@ class RunSyncCommand(PulpCliCommand):
             spinner.next(message=message)
             time.sleep(.25)
 
-            response = self.context.server.tasks.lookup_async_task(response.task_id)
+            response = self.context.server.tasks.get_task(response.task_id)
 
         if response.state == 'finished':
             self.context.prompt.render_success_message('Successfully synchronized repository [%s]' % repo_id)

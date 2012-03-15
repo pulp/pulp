@@ -12,14 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.gc_client.api.base import PulpAPI
-from pulp.gc_client.api.server import AsyncResponse
+from pulp.gc_client.api.responses import AsyncResponse
 
 class TasksAPI(PulpAPI):
 
     def __init__(self, pulp_connection):
         super(TasksAPI, self).__init__(pulp_connection)
 
-    def lookup_async_task(self, task_id):
+    def get_task(self, task_id):
         """
         Unlike other retrieval calls, instead of returning a Response object,
         an AsyncResponse object is returned instead. This is to facilitate
@@ -33,3 +33,8 @@ class TasksAPI(PulpAPI):
         normal_response = self.server.GET(path)
         async_response = AsyncResponse(normal_response.response_code, normal_response.response_body)
         return async_response
+
+    def get_all_tasks(self):
+        path = '/v2/tasks/'
+        normal_response = self.server.GET(path)
+

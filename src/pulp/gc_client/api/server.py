@@ -12,11 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
-from gettext import gettext as _
 import locale
 import logging
 from M2Crypto import SSL, httpslib
 import urllib
+from pulp.gc_client.api.responses import Response, AsyncResponse
 
 try:
     import json
@@ -25,51 +25,7 @@ except ImportError:
 
 import pulp.gc_client.api.exceptions as exceptions 
 
-# -- response classes ---------------------------------------------------------
-
-class Response(object):
-    """
-    Contains the data received from the server on a successful request.
-    """
-    def __init__(self, response_code, response_body):
-        self.response_code = response_code
-        self.response_body = response_body
-        
-    def __str__(self):
-        return _("Response: code [%(c)s] body [%(b)s]" % {'c' : self.response_code, 'b' : self.response_body})
-
-class AsyncResponse(object):
-    """
-    Contains the data received from a call to the server that indicates an
-    asynchronous task was kicked off.
-    """
-    def __init__(self, response_code, response_body):
-        self.response_code = response_code
-
-        # Tasking identity information
-        if '_href' in response_body:
-            self.href = response_body['_href']
-        else:
-            self.href = None
-
-        self.task_id = response_body['task_id']
-        self.job_id = response_body['job_id']
-
-        # Task acceptance data
-        self.response = response_body['response']
-        self.reasons = response_body['reasons']
-
-        # Related to the callable being executed
-        self.state = response_body['state']
-        self.progress = response_body['progress']
-        self.result = response_body['result']
-        self.exception = response_body['exception']
-        self.traceback = response_body['traceback']
-
-    def __str__(self):
-        return _('AsyncResponse: task_id [%(i)s] state [%(s)s]' % {'i' : self.task_id, 's' : self.state})
-
-# pulp server class -----------------------------------------------------------
+# -- server connection --------------------------------------------------------
 
 class PulpConnection(object):
     """
