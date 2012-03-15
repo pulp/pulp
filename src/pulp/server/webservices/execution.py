@@ -18,28 +18,28 @@ from pulp.server.webservices import serialization
 
 # execution wrapper api --------------------------------------------------------
 
-def execute(controller, call_request, expexted_response='ok'):
+def execute(controller, call_request, expected_response='ok'):
     coordinator = dispatch_factory.coordinator()
     return _execute_single(controller,
                            coordinator.execute_call,
                            call_request,
-                           expexted_response)
+                           expected_response)
 
 
-def execute_async(controller, call_request, expexted_response='ok'):
+def execute_async(controller, call_request, expected_response='ok'):
     coordinator = dispatch_factory.coordinator()
     return _execute_single(controller,
                            coordinator.execute_call_asynchronously,
                            call_request,
-                           expexted_response)
+                           expected_response)
 
 
-def execute_sync(controller, call_request, expexted_response='ok'):
+def execute_sync(controller, call_request, expected_response='ok'):
     coordinator = dispatch_factory.coordinator()
     return _execute_single(controller,
                            coordinator.execute_call_synchronously,
                            call_request,
-                           expexted_response)
+                           expected_response)
 
 
 # execution utilities ----------------------------------------------------------
