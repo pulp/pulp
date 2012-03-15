@@ -49,5 +49,16 @@ def _execute_single(controller, execute_method, call_request):
         raise call_report.exception, None, call_report.traceback
     # only remaining states are 'cancelled' and 'finished';
     # I don't believe we can get 'cancelled' here
-    # XXX this can also be 'created' instead of 'ok'!
+    # we can also return either a created or an ok response;
+    # do a little introspection to figure out which
+    if _is_created(call_request.resources):
+        return controller.created(call_report.result)
     return controller.ok(call_report.result)
+
+
+def _is_created(resources):
+    for resource_type, resource_operations in resources.items():
+        for resource_id, operation in resource_operations.items():
+            if operation is dispatch_constants.RESOURCE_CREATE_OPERATION:
+                return True
+    return False
