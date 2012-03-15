@@ -18,6 +18,7 @@ Contains content management classes
 from pulp.server.db.model.gc_consumer import Consumer
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.gc_agent import PulpAgent
+from pulp.server.dispatch import factory
 from logging import getLogger
 
 
@@ -44,7 +45,7 @@ class ConsumerContentManager(object):
         consumer = collection.find_one({'id':id})
         if consumer is None:
             raise MissingResource(id)
-        options['taskid'] = None # TODO
+        options['taskid'] = factory.context().task_id
         agent = PulpAgent(consumer)
         agent.install_units(units, options)
     
@@ -63,7 +64,7 @@ class ConsumerContentManager(object):
         consumer = collection.find_one({'id':id})
         if consumer is None:
             raise MissingResource(id)
-        options['taskid'] = None # TODO
+        options['taskid'] = factory.context().task_id
         agent = PulpAgent(consumer)
         agent.update_units(units, options)
     
@@ -82,6 +83,6 @@ class ConsumerContentManager(object):
         consumer = collection.find_one({'id':id})
         if consumer is None:
             raise MissingResource(id)
-        options['taskid'] = None # TODO
+        options['taskid'] = factory.context().task_id
         agent = PulpAgent(consumer)
         agent.uninstall_units(units, options)
