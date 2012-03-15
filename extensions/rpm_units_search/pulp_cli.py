@@ -18,8 +18,13 @@ from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGro
 # -- constants ----------------------------------------------------------------
 
 TYPE_RPM = 'rpm'
-TYPE_SRPMS = 'srpm'
+TYPE_SRPM = 'srpm'
+TYPE_DRPM = 'drpm'
 TYPE_ERRATUM = 'erratum'
+
+ALL_TYPES = (TYPE_RPM, TYPE_SRPM, TYPE_DRPM, TYPE_ERRATUM)
+
+LOG = None # set by the context
 
 # -- plugin hook --------------------------------------------------------------
 
@@ -27,6 +32,9 @@ def initialize(context):
 
     if not context.extension_config.getboolean('main', 'enabled'):
         return
+
+    global LOG
+    LOG = context.logger
 
     repo_section = context.cli.find_section('repo')
     old_units_command = repo_section.remove_command('units')
@@ -36,56 +44,72 @@ def initialize(context):
     repo_section.add_command(old_units_command)
 
     units_section = repo_section.create_subsection('units', 'list/search for RPM-related content in a repository')
-    units_section.add_command(RpmsCommand(context))
+
+    # Search Commands
+    all_command = SingleUnitSearchCommand(context, 'all', _('search for all content in a repository'), _('Repository Units'), ALL_TYPES)
+    rpm_command = SingleUnitSearchCommand(context, 'rpm', _('search for RPMs in a repository'), _('Repository RPMs'), [TYPE_RPM])
+    srpm_command = SingleUnitSearchCommand(context, 'srpm', _('search for SRPMs in a repository'), _('Repository SRPMs'), [TYPE_SRPM])
+    drpm_command = SingleUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
+    errata_command = SingleUnitSearchCommand(context, 'errata', _('search errata in a repository'), _('Repository Errata'), [TYPE_ERRATUM])
+
+    units_section.add_command(all_command)
+    units_section.add_command(rpm_command)
+    units_section.add_command(srpm_command)
+    units_section.add_command(drpm_command)
+    units_section.add_command(errata_command)
 
 # -- commands -----------------------------------------------------------------
 
-class RpmsCommand(PulpCliCommand):
-    def __init__(self, context):
-        PulpCliCommand.__init__(self, 'rpm', 'list/search RPMs. SRPMs, and DRPMs', self.search)
+class SingleUnitSearchCommand(PulpCliCommand):
+
+    def __init__(self, context, name, description, title, type_ids):
+        PulpCliCommand.__init__(self, name, description, self.search)
+
         self.context = context
+        self.title = title
+
+        if not isinstance(type_ids, (list, tuple)):
+            type_ids = [type_ids]
+        self.type_ids = type_ids
 
         # Groups
         required_group = PulpCliOptionGroup('Required')
-        query_group = PulpCliOptionGroup('Query')
         display_group = PulpCliOptionGroup('Display')
         pagination_group = PulpCliOptionGroup('Pagination')
 
-        self.add_option_group(required_group)
-        self.add_option_group(query_group)
-        self.add_option_group(display_group)
-        self.add_option_group(pagination_group)
-
         # Required Group
         required_group.add_option(PulpCliOption('--id', 'identifies the repository to search within', required=True))
-
-        # Query Group
-        query_group.add_option(PulpCliFlag('--srpms', 'if specified, SRPMs are included in the results'))
-        query_group.add_option(PulpCliFlag('--drpms', 'if specified, DRPMs are included in the results'))
+        self.add_option_group(required_group)
 
         # Display Group
-        display_group.add_option(PulpCliOption('--fields', 'comma-separated list of fields to include for each RPM; if unspecified all fields will be displayed', aliases=['-f'], required=False))
-        display_group.add_option(PulpCliOption('--ascending', 'comma-separated list of fields to sort ascending; the order of the fields determines the order priority', aliases=['-a'], required=False))
-        display_group.add_option(PulpCliOption('--descending', 'comma-separated list of fields to sort descending; ignored if --ascending is specified', aliases=['-d'], required=False))
 
-        # Pagination
-        display_group.add_option(PulpCliOption('--limit', 'maximum number of results to display', aliases=['-l'], required=False))
-        display_group.add_option(PulpCliOption('--skip', 'number of results to skip', aliases=['-s'], required=False))
+        #   Cannot scope these fields when searching for more than one type
+        if len(self.type_ids) == 1:
+            display_group.add_option(PulpCliOption('--fields', 'comma-separated list of fields to include for each RPM; if unspecified all fields will be displayed', aliases=['-f'], required=False))
+            display_group.add_option(PulpCliOption('--ascending', 'comma-separated list of fields to sort ascending; the order of the fields determines the order priority', aliases=['-a'], required=False))
+            display_group.add_option(PulpCliOption('--descending', 'comma-separated list of fields to sort descending; ignored if --ascending is specified', aliases=['-d'], required=False))
+            self.add_option_group(display_group)
+
+        # Pagination Group
+        pagination_group.add_option(PulpCliOption('--limit', 'maximum number of results to display', aliases=['-l'], required=False))
+        pagination_group.add_option(PulpCliOption('--skip', 'number of results to skip', aliases=['-s'], required=False))
+        self.add_option_group(pagination_group)
 
     def search(self, **kwargs):
         # Data collection
         repo_id = kwargs.pop('id')
 
-        self.context.prompt.render_title('Repository RPMs')
+        self.context.prompt.render_title(self.title)
 
         try:
-            criteria = args_to_criteria_doc(kwargs)
+            criteria = args_to_criteria_doc(kwargs, self.type_ids)
+            LOG.debug('Criteria for unit search')
+            LOG.debug(criteria)
         except InvalidCriteria, e:
             self.context.prompt.render_failure_message(e[0])
             return
 
         # Query the server
-        print(criteria)
         all_units = self.context.server.repo_search.search(repo_id, criteria).response_body
 
         # We only care about the unit metadata, not the association stuff, so
@@ -95,13 +119,13 @@ class RpmsCommand(PulpCliCommand):
         if len(units) > 0:
             self.context.prompt.render_document_list(units)
         else:
-            self.context.prompt.render_paragraph(_('No RPMs found'))
+            self.context.prompt.render_paragraph(_('No units found'))
 
 # -- utilities ----------------------------------------------------------------
 
 class InvalidCriteria(Exception) : pass
 
-def args_to_criteria_doc(kwargs):
+def args_to_criteria_doc(kwargs, type_ids):
     """
     Converts the arguments retrieved from the user into a criteria document
     for the associated units call.
@@ -112,28 +136,23 @@ def args_to_criteria_doc(kwargs):
     criteria = {}
 
     # Type IDs
-    type_ids = ['rpm']
-    if kwargs['srpms']:
-        type_ids.append('srpm')
-    if kwargs['drpms']:
-        type_ids.append('drpm')
     criteria['type_ids'] = type_ids
 
     # Field Limits
-    if kwargs['fields'] is not None:
+    if 'fields' in kwargs and kwargs['fields'] is not None:
         field_names = kwargs['fields'].split(',')
         criteria['fields'] = {}
-        criteria['fields']['units'] = field_names
+        criteria['fields']['unit'] = field_names
 
     # Sorting
-    if kwargs['ascending'] is not None:
+    if 'ascending' in kwargs and kwargs['ascending'] is not None:
         field_names = kwargs['ascending'].split(',')
         criteria['sort'] = {}
-        criteria['sort']['units'] = [[f, 'ascending'] for f in field_names]
-    elif kwargs['descending'] is not None:
+        criteria['sort']['unit'] = [[f, 'ascending'] for f in field_names]
+    elif 'descending' in kwargs and kwargs['descending'] is not None:
         field_names = kwargs['descending'].split(',')
         criteria['sort'] = {}
-        criteria['sort']['units'] = [[f, 'descending'] for f in field_names]
+        criteria['sort']['unit'] = [[f, 'descending'] for f in field_names]
 
     # Limit & Skip
     if kwargs['limit'] is not None:
