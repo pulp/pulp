@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption, PulpCliFlag
+from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
 
 # -- constants ----------------------------------------------------------------
 
@@ -60,6 +60,14 @@ def initialize(context):
 
 # -- commands -----------------------------------------------------------------
 
+class InvalidCriteria(Exception):
+    """
+    During parsing of the user supplied arguments, this will indicate a
+    malformed set of values. The message in the exception (e[0]) is formatted
+    and i18n'ed to be displayed directly to the user.
+    """
+    pass
+
 class SingleUnitSearchCommand(PulpCliCommand):
 
     def __init__(self, context, name, description, title, type_ids):
@@ -102,7 +110,7 @@ class SingleUnitSearchCommand(PulpCliCommand):
         self.context.prompt.render_title(self.title)
 
         try:
-            criteria = args_to_criteria_doc(kwargs, self.type_ids)
+            criteria = self._args_to_criteria_doc(kwargs, self.type_ids)
             LOG.debug('Criteria for unit search')
             LOG.debug(criteria)
         except InvalidCriteria, e:
@@ -121,49 +129,46 @@ class SingleUnitSearchCommand(PulpCliCommand):
         else:
             self.context.prompt.render_paragraph(_('No units found'))
 
-# -- utilities ----------------------------------------------------------------
+    def _args_to_criteria_doc(self, kwargs, type_ids):
+        """
+        Converts the arguments retrieved from the user into a criteria document
+        for the associated units call.
 
-class InvalidCriteria(Exception) : pass
+        @rtype: dict
+        """
 
-def args_to_criteria_doc(kwargs, type_ids):
-    """
-    Converts the arguments retrieved from the user into a criteria document
-    for the associated units call.
+        criteria = {}
 
-    @rtype: dict
-    """
+        # Type IDs
+        criteria['type_ids'] = type_ids
 
-    criteria = {}
+        # Field Limits
+        if 'fields' in kwargs and kwargs['fields'] is not None:
+            field_names = kwargs['fields'].split(',')
+            criteria['fields'] = {}
+            criteria['fields']['unit'] = field_names
 
-    # Type IDs
-    criteria['type_ids'] = type_ids
+        # Sorting
+        if 'ascending' in kwargs and kwargs['ascending'] is not None:
+            field_names = kwargs['ascending'].split(',')
+            criteria['sort'] = {}
+            criteria['sort']['unit'] = [[f, 'ascending'] for f in field_names]
+        elif 'descending' in kwargs and kwargs['descending'] is not None:
+            field_names = kwargs['descending'].split(',')
+            criteria['sort'] = {}
+            criteria['sort']['unit'] = [[f, 'descending'] for f in field_names]
 
-    # Field Limits
-    if 'fields' in kwargs and kwargs['fields'] is not None:
-        field_names = kwargs['fields'].split(',')
-        criteria['fields'] = {}
-        criteria['fields']['unit'] = field_names
+        # Limit & Skip
+        if kwargs['limit'] is not None:
+            try:
+                limit = int(kwargs['limit'])
+            except:
+                raise InvalidCriteria(_('Value for limit must be an integer'))
+            criteria['limit'] = limit
 
-    # Sorting
-    if 'ascending' in kwargs and kwargs['ascending'] is not None:
-        field_names = kwargs['ascending'].split(',')
-        criteria['sort'] = {}
-        criteria['sort']['unit'] = [[f, 'ascending'] for f in field_names]
-    elif 'descending' in kwargs and kwargs['descending'] is not None:
-        field_names = kwargs['descending'].split(',')
-        criteria['sort'] = {}
-        criteria['sort']['unit'] = [[f, 'descending'] for f in field_names]
+        if kwargs['skip'] is not None:
+            skip = int(kwargs['skip'])
+            criteria['skip'] = skip
 
-    # Limit & Skip
-    if kwargs['limit'] is not None:
-        try:
-            limit = int(kwargs['limit'])
-        except:
-            raise InvalidCriteria(_('Value for limit must be an integer'))
-        criteria['limit'] = limit
+        return criteria
 
-    if kwargs['skip'] is not None:
-        skip = int(kwargs['skip'])
-        criteria['skip'] = skip
-
-    return criteria
