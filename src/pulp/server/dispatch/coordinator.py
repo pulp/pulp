@@ -148,11 +148,8 @@ class Coordinator(object):
             task = Task(call_request)
         else:
             task = AsyncTask(call_request)
-            task.set_success_failure_callback_kwargs(*call_request.success_failure_callback_kwargs)
         task.call_report.task_id = task.id
         task.call_report.job_id = job_id
-        if call_request.progress_callback_kwarg is not None:
-            task.set_progress_callback(call_request.progress_callback_kwarg)
         return task
 
     def _run_task(self, task, synchronous=None, timeout=None):

@@ -214,48 +214,6 @@ class AsyncTaskTests(testutil.PulpTest):
         self.task._failed()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_ERROR_STATE)
 
-# dynamic task callback testing ------------------------------------------------
-
-class TaskCallbackTests(testutil.PulpTest):
-
-    def test_progress_callback(self):
-        task = Task(CallRequest(call_with_progress_callback))
-        callback = mock.Mock()
-        try:
-            task.set_progress_callback('progress_callback')
-        except:
-            self.fail(traceback.format_exc())
-        self.assertTrue('progress_callback' in task.call_request.kwargs)
-        self.assertTrue(task.call_request.kwargs['progress_callback'] == task._report_progress)
-
-    def test_progress_callback_failure(self):
-        task = Task(CallRequest(call_without_callbacks))
-        self.assertRaises(dispatch_exceptions.MissingProgressCallbackKeywordArgument,
-                          task.set_progress_callback, 'progress_callback')
-
-    def test_success_callback_failure(self):
-        task = AsyncTask(CallRequest(call_with_success_callback))
-        self.assertRaises(dispatch_exceptions.MissingFailureCallbackKeywordArgument,
-                          task.set_success_failure_callback_kwargs,
-                          'success_callback', 'failure_callback')
-
-    def test_failure_callback_failure(self):
-        task = AsyncTask(CallRequest(call_with_failure_callback))
-        self.assertRaises(dispatch_exceptions.MissingSuccessCallbackKeywordArgument,
-                          task.set_success_failure_callback_kwargs,
-                          'success_callback', 'failure_callback')
-
-    def test_success_failure_callbacks(self):
-        task = AsyncTask(CallRequest(call_with_success_and_failure_callbacks))
-        try:
-            task.set_success_failure_callback_kwargs('success_callback', 'failure_callback')
-        except:
-            self.fail(traceback.format_exc())
-        self.assertTrue('success_callback' in task.call_request.kwargs)
-        self.assertTrue(task.call_request.kwargs['success_callback'] == task._succeeded)
-        self.assertTrue('failure_callback' in task.call_request.kwargs)
-        self.assertTrue(task.call_request.kwargs['failure_callback'] == task._failed)
-
 # task archival tests ----------------------------------------------------------
 
 class TaskArchivalTests(testutil.PulpTest):

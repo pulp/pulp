@@ -80,17 +80,6 @@ class Task(object):
 
     # progress information -----------------------------------------------------
 
-    def set_progress_callback(self, kwarg_name):
-        """
-        Set the call request progress callback as the given key word argument.
-        @param kwarg_name: name of the key word argument
-        @type  kwarg_name: str
-        """
-        spec = inspect.getargspec(self.call_request.call)
-        if kwarg_name not in spec[0]:
-            raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(kwarg_name)
-        self.call_request.kwargs[kwarg_name] = self._report_progress
-
     def _report_progress(self, progress):
         """
         Progress report callback
@@ -210,21 +199,6 @@ class AsyncTask(Task):
     NOTE: failing to call one of these methods will result in the task failing
     to complete.
     """
-
-    def set_success_failure_callback_kwargs(self,
-                                            success_callback_kwarg_name,
-                                            failure_callback_kwarg_name):
-        """
-        Set the success and failure callback keyword arguments to the task's
-        _succeeded and _failed methods.
-        """
-        spec = inspect.getargspec(self.call_request.call)
-        if success_callback_kwarg_name not in spec[0]:
-            raise dispatch_exceptions.MissingSuccessCallbackKeywordArgument(success_callback_kwarg_name)
-        if failure_callback_kwarg_name not in spec[0]:
-            raise dispatch_exceptions.MissingFailureCallbackKeywordArgument(failure_callback_kwarg_name)
-        self.call_request.kwargs[success_callback_kwarg_name] = self._succeeded
-        self.call_request.kwargs[failure_callback_kwarg_name] = self._failed
 
     def run(self):
         """

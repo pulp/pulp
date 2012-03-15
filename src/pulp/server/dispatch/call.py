@@ -38,8 +38,6 @@ class CallRequest(object):
     @type args: list
     @ivar kwargs: dictionary of keyword arguments for the callable
     @type kwargs: dict
-    @ivar progress_callback_kwarg: name of keyword argument for progress callback
-    @type progress_callback_kwarg: None or str
     @ivar resources: dictionary of resources and operations used by the request
     @type resources: dict
     @ivar weight: weight of callable in relation concurrency resources
@@ -60,7 +58,6 @@ class CallRequest(object):
                  call,
                  args=None,
                  kwargs=None,
-                 progress_callback_kwarg=None,
                  resources=None,
                  weight=1,
                  tags=None,
@@ -70,7 +67,6 @@ class CallRequest(object):
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
         assert isinstance(kwargs, (NoneType, dict))
-        assert isinstance(progress_callback_kwarg, (NoneType, basestring))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(weight, int)
         assert weight > -1
@@ -81,7 +77,6 @@ class CallRequest(object):
         self.call = call
         self.args = args or []
         self.kwargs = kwargs or {}
-        self.progress_callback_kwarg = progress_callback_kwarg
         self.resources = resources or {}
         self.weight = weight
         self.tags = tags or []
@@ -89,15 +84,6 @@ class CallRequest(object):
         self.archive = archive
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
-        # XXX doesn't work for callable instances and mock objects
-        #self._validate_callbacks()
-
-    def _validate_callbacks(self):
-        spec = inspect.getargspec(self.call)
-        if spec[2]: # **kwargs magic, can't be verified any further
-            return
-        if self.progress_callback_kwarg is not None and self.progress_callback_kwarg not in spec[0]:
-            raise dispatch_exceptions.MissingProgressCallbackKeywordArgument(self.call.__name__, self.progress_callback_kwarg)
 
     def callable_name(self):
         name = self.call.__name__
