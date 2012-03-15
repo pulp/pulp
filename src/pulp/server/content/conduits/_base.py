@@ -37,14 +37,14 @@ class BaseImporterConduit:
 
     def get_scratchpad(self):
         """
-        Returns the value set in the scratchpad for this repository. If no
-        value has been set, None is returned.
+        Returns the value set for the importer's private scratchpad for this
+        repository. If no value has been set, None is returned.
 
         @return: value saved for the repository and this importer
         @rtype:  <serializable>
 
-        @raises ImporterConduitException: wraps any exception that may occur
-                in the Pulp server
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
         """
 
         try:
@@ -52,27 +52,66 @@ class BaseImporterConduit:
             value = importer_manager.get_importer_scratchpad(self.repo_id)
             return value
         except Exception, e:
-            _LOG.exception(_('Error getting scratchpad for repo [%s]' % self.repo_id))
+            _LOG.exception(_('Error getting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
         """
-        Saves the given value to the scratchpad for this repository. It can later
-        be retrieved in subsequent syncs through get_scratchpad. The type for
-        the given value is anything that can be stored in the database (string,
-        list, dict, etc.).
+        Saves the given value to the importer's private scratchpad for this
+        repository. It can later be retrieved in subsequent importer operations
+        through get_scratchpad. The type for the given value is anything that
+        can be stored in the database (string, list, dict, etc.).
 
         @param value: will overwrite the existing scratchpad
         @type  value: <serializable>
 
-        @raises ImporterConduitException: wraps any exception that may occur
-                in the Pulp server
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
         """
         try:
             importer_manager = manager_factory.repo_importer_manager()
             importer_manager.set_importer_scratchpad(self.repo_id, value)
         except Exception, e:
-            _LOG.exception(_('Error setting scratchpad for repo [%s]' % self.repo_id))
+            _LOG.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+    def get_repo_scratchpad(self):
+        """
+        Returns the repository-level scratchpad for this repository. The
+        repository-level scratchpad can be seen and edited by all importers
+        and distributors on the repository. Care should be taken to not destroy
+        any data set by another plugin. This may be used to communicate between
+        importers and distributors relevant data for the repository.
+
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
+        """
+        try:
+            repo_manager = manager_factory.repo_manager()
+            value = repo_manager.get_repo_scratchpad(self.repo_id)
+            return value
+        except Exception, e:
+            _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+    def set_repo_scratchpad(self, value):
+        """
+        Saves the given value to the repository-level scratchpad for this
+        repository. It can be retrieved in subsequent importer operations
+        through get_repo_scratchpad. The type for the given value is anything
+        that can be stored in the database (string, list, dict, etc.).
+
+        @param value: will overwrite the existing scratchpad
+        @type  value: <serializable>
+
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
+        """
+        try:
+            repo_manager = manager_factory.repo_manager()
+            repo_manager.set_repo_scratchpad(self.repo_id, value)
+        except Exception, e:
+            _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
 # -- distributor --------------------------------------------------------------
@@ -127,3 +166,42 @@ class BaseDistributorConduit:
         except Exception, e:
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
+
+    def get_repo_scratchpad(self):
+        """
+        Returns the repository-level scratchpad for this repository. The
+        repository-level scratchpad can be seen and edited by all importers
+        and distributors on the repository. Care should be taken to not destroy
+        any data set by another plugin. This may be used to communicate between
+        importers and distributors relevant data for the repository.
+
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
+        """
+        try:
+            repo_manager = manager_factory.repo_manager()
+            value = repo_manager.get_repo_scratchpad(self.repo_id)
+            return value
+        except Exception, e:
+            _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+    def set_repo_scratchpad(self, value):
+        """
+        Saves the given value to the repository-level scratchpad for this
+        repository. It can be retrieved in subsequent distributor operations
+        through get_repo_scratchpad. The type for the given value is anything
+        that can be stored in the database (string, list, dict, etc.).
+
+        @param value: will overwrite the existing scratchpad
+        @type  value: <serializable>
+
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
+        """
+        try:
+            repo_manager = manager_factory.repo_manager()
+            repo_manager.set_repo_scratchpad(self.repo_id, value)
+        except Exception, e:
+            _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            raise ImporterConduitException(e), None, sys.exc_info()[2]
