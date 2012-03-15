@@ -18,24 +18,33 @@ from pulp.server.webservices import serialization
 
 # execution wrapper api --------------------------------------------------------
 
-def execute(controller, call_request):
+def execute(controller, call_request, expexted_response='ok'):
     coordinator = dispatch_factory.coordinator()
-    return _execute_single(controller, coordinator.execute_call, call_request)
+    return _execute_single(controller,
+                           coordinator.execute_call,
+                           call_request,
+                           expexted_response)
 
 
-def execute_async(controller, call_request):
+def execute_async(controller, call_request, expexted_response='ok'):
     coordinator = dispatch_factory.coordinator()
-    return _execute_single(controller, coordinator.execute_call_asynchronously, call_request)
+    return _execute_single(controller,
+                           coordinator.execute_call_asynchronously,
+                           call_request,
+                           expexted_response)
 
 
-def execute_sync(controller, call_request):
+def execute_sync(controller, call_request, expexted_response='ok'):
     coordinator = dispatch_factory.coordinator()
-    return _execute_single(controller, coordinator.execute_call_synchronously, call_request)
+    return _execute_single(controller,
+                           coordinator.execute_call_synchronously,
+                           call_request,
+                           expexted_response)
 
 
 # execution utilities ----------------------------------------------------------
 
-def _execute_single(controller, execute_method, call_request):
+def _execute_single(controller, execute_method, call_request, expected_response):
     call_report = execute_method(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise CallRejectedException(call_report.serialize)
@@ -49,16 +58,5 @@ def _execute_single(controller, execute_method, call_request):
         raise call_report.exception, None, call_report.traceback
     # only remaining states are 'cancelled' and 'finished';
     # I don't believe we can get 'cancelled' here
-    # we can also return either a created or an ok response;
-    # do a little introspection to figure out which
-    if _is_created(call_request.resources):
-        return controller.created(call_report.result)
-    return controller.ok(call_report.result)
-
-
-def _is_created(resources):
-    for resource_type, resource_operations in resources.items():
-        for resource_id, operation in resource_operations.items():
-            if operation is dispatch_constants.RESOURCE_CREATE_OPERATION:
-                return True
-    return False
+    response_method = getattr(controller, expected_response)
+    return expected_response(call_report.result)
