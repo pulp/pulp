@@ -28,8 +28,9 @@ repo_repr = serialization.repo.serialize(repo)
 """
 
 import content
+import dispatch
 import error
 import link
 import repo
 
-__all__ = ['content', 'error', 'link', 'repo']
+__all__ = ['content', 'dispatch', 'error', 'link', 'repo']
