@@ -62,9 +62,8 @@ class CallRejectedException(ConflictingOperation):
         self.serialized_call_report = serialized_call_report
 
     def __str__(self):
-        reasons = self.serialized_call_report['reasons']
-        msg = _('Call rejected due to the following conflicting operation(s): %(r)s') % {'r': pformat(reasons)}
-        return msg
+        msg = _('Call rejected due to conflicting operations')
+        return msg.encode('utf-8')
 
     def data_dict(self):
         return {'call_report': self.serialized_call_report}
