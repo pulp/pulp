@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.273
+Version:        0.0.274
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -496,6 +496,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 15 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.274-1
+- Initial coordinator implementation and usage
+- Initial implementation of RPM extensions
 * Fri Mar 09 2012 Jeff Ortel <jortel@redhat.com> 0.0.273-1
 - adding srpm json to pulp-dev (pkilambi@redhat.com)
 - Adding srpms to yumimporter (pkilambi@redhat.com)
