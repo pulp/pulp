@@ -59,4 +59,4 @@ def _execute_single(controller, execute_method, call_request, expected_response)
     # only remaining states are 'cancelled' and 'finished';
     # I don't believe we can get 'cancelled' here
     response_method = getattr(controller, expected_response)
-    return expected_response(call_report.result)
+    return response_method(call_report.result)
