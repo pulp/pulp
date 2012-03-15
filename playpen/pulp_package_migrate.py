@@ -171,9 +171,6 @@ def do_migrate(top_level_content_dir):
             return migrate_summary
     return migrate_summary
 
-def do_validation():
-    pass
-
 def log_print_msg(log_fn, msg):
     global VERBOSE
     log_fn(msg)
@@ -186,14 +183,15 @@ def parse_args():
                     help="Top level content directory where repos and packages exist. " \
                          "On a pulp server this is /var/lib/pulp/. On a CDS, please check /etc/pulp/cds.conf")
     parser.add_option("--migrate", dest="migrate", action="store_true", help="Perform migration on specified directory")
-    parser.add_option("--test", dest="test", action="store_true", help="Test run the migration on specified directory without committing")
-
-    parser.add_option("--validate", dest="validate", action="store_true", help="validate the migration")
+    parser.add_option("--dryrun", dest="dryrun", action="store_true", help="Test run the migration on specified directory without committing")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="Verbose output to the console")
 
     (options, args) = parser.parse_args()
-    if not options.migrate and not options.validate:
-        print("Error: migrate or validate options required; see --help")
+    if not options.migrate and not options.dryrun:
+        print("Error: migrate or dryrun options required; see --help")
+        sys.exit(-1)
+    if options.migrate and options.dryrun:
+        print("Error: Cannot use migrate and dryrun options together; see --help")
         sys.exit(-1)
 
     if not options.top_level_content_dir:
@@ -203,6 +201,9 @@ def parse_args():
     return options
 
 def prompt_warning():
+    if TEST_RUN:
+        print("\n NOTE: This is only a test run; migration will not be commited to file system.\n")
+        return
     print("\nWARNING: To avoid data corruption, please make sure pulp server or cds server is offline before running this script.")
     while 1:
         pulp_check = raw_input("\nContinue?(Y/N/Q):" )
@@ -222,23 +223,19 @@ def main():
     options = parse_args()
     top_level_content_dir = options.top_level_content_dir
     VERBOSE = options.verbose
-    TEST_RUN = options.test
-    if options.migrate:
+    TEST_RUN = options.dryrun
+    if options.migrate or options.dryrun:
         prompt_warning()
         migrate_summary = do_migrate(top_level_content_dir)
         print("Migrate Summary: \n")
         for repodir, summary in migrate_summary.items():
             print "Repo Directory: %s \n Migrated: %s, Skipped: %s\n" % (repodir, summary['migrated'], summary['skipped'])
 
+
+
 if __name__=='__main__':
     try:
         main()
     except KeyboardInterrupt:
         sys.exit(0)
-
-
-## TODO:
-# - Add a check to see if pulp-server status and warn user or output a scary warning when script is invoked.
-# - validation
-
 
