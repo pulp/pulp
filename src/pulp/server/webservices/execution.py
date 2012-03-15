@@ -50,4 +50,5 @@ def _execute_single(controller, execute_method, call_request):
         raise call_report.exception, None, call_report.traceback
     # only remaining states are 'cancelled' and 'finished'
     # I don't believe we can get 'cancelled' here
+    # XXX this can also be 'created' instead of 'ok'!
     return controller.ok(call_report.result)
