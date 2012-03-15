@@ -240,21 +240,20 @@ class Coordinator(object):
         cursor = self.task_resource_collection.find({'$or': or_query})
 
         for task_resource in cursor:
-            proposed_operations = resources[task_resource['resource_type']][task_resource['resource_id']]
-            for operation in proposed_operations:
-                postponing_operations = get_postponing_operations(operation)
-                rejecting_operations = get_rejecting_operations(operation)
-                for current_operation in task_resource['operations']:
-                    if current_operation in postponing_operations:
-                        postponing_tasks.add(task_resource['task_id'])
-                        reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
-                        reason['operation'] = current_operation
-                        postponing_reasons.append(reason)
-                    if current_operation in rejecting_operations:
-                        rejecting_tasks.add(task_resource['task_id'])
-                        reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
-                        reason['operation'] = current_operation
-                        rejecting_reasons.append(reason)
+            proposed_operation = resources[task_resource['resource_type']][task_resource['resource_id']]
+            postponing_operations = get_postponing_operations(proposed_operation)
+            rejecting_operations = get_rejecting_operations(proposed_operation)
+            current_operation = task_resource['operation']
+            if current_operation in postponing_operations:
+                postponing_tasks.add(task_resource['task_id'])
+                reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
+                reason['operation'] = current_operation
+                postponing_reasons.append(reason)
+            if current_operation in rejecting_operations:
+                rejecting_tasks.add(task_resource['task_id'])
+                reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
+                reason['operation'] = current_operation
+                rejecting_reasons.append(reason)
 
         if rejecting_tasks:
             return dispatch_constants.CALL_REJECTED_RESPONSE, rejecting_tasks, rejecting_reasons, task_resources
@@ -423,8 +422,8 @@ def resource_dict_to_task_resources(resource_dict):
     """
     task_resources = []
     for resource_type, resource_operations in resource_dict.items():
-        for resource_id, operations in resource_operations.items():
-            task_resource = TaskResource(None, resource_type, resource_id, operations)
+        for resource_id, operation in resource_operations.items():
+            task_resource = TaskResource(None, resource_type, resource_id, operation)
             task_resources.append(task_resource)
     return task_resources
 

@@ -69,7 +69,7 @@ class OrQueryTests(CoordinatorTests):
         content_unit_id = 'my_content_unit'
         resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION],
+                repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION,
             },
             dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
                 content_unit_id: [dispatch_constants.RESOURCE_READ_OPERATION],
@@ -86,7 +86,7 @@ class OrQueryTests(CoordinatorTests):
         repo_id = 'my_repo'
         resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+                repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
         task_resources = coordinator.resource_dict_to_task_resources(resources)
@@ -101,8 +101,8 @@ class OrQueryTests(CoordinatorTests):
         repo_2_id = 'clone'
         resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_1_id: [dispatch_constants.RESOURCE_READ_OPERATION],
-                repo_2_id: [dispatch_constants.RESOURCE_CREATE_OPERATION],
+                repo_1_id: dispatch_constants.RESOURCE_READ_OPERATION,
+                repo_2_id: dispatch_constants.RESOURCE_CREATE_OPERATION,
             }
         }
         task_resources = coordinator.resource_dict_to_task_resources(resources)
@@ -117,8 +117,8 @@ class OrQueryTests(CoordinatorTests):
         repo_2_id = 'clone'
         resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_1_id: [dispatch_constants.RESOURCE_READ_OPERATION],
-                repo_2_id: [dispatch_constants.RESOURCE_CREATE_OPERATION],
+                repo_1_id: dispatch_constants.RESOURCE_READ_OPERATION,
+                repo_2_id: dispatch_constants.RESOURCE_CREATE_OPERATION,
                 }
         }
         task_resources = coordinator.resource_dict_to_task_resources(resources)
@@ -197,7 +197,7 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         cds_id = 'my_cds'
         resources = {
             dispatch_constants.RESOURCE_CDS_TYPE: {
-                cds_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+                cds_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
 
@@ -220,10 +220,10 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         content_unit_id = 'my_content_unit'
         existing_resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+                repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION
             },
             dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-                content_unit_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+                content_unit_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
         existing_task_resources = coordinator.resource_dict_to_task_resources(existing_resources)
@@ -234,7 +234,7 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
         resources = {
             dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-                content_unit_id: [dispatch_constants.RESOURCE_DELETE_OPERATION]
+                content_unit_id: dispatch_constants.RESOURCE_DELETE_OPERATION
             }
         }
         response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
@@ -253,15 +253,15 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         consumer_2 = 'my_less_awesome_consumer'
         bind_1_resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+                repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             },
             dispatch_constants.RESOURCE_CONSUMER_TYPE: {
-                consumer_1: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+                consumer_1: dispatch_constants.RESOURCE_UPDATE_OPERATION
             }
         }
         bind_2_resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: [dispatch_constants.RESOURCE_READ_OPERATION]
+                repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             },
             dispatch_constants.RESOURCE_CONSUMER_TYPE: {
                 consumer_2: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
@@ -278,13 +278,13 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
         resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: [dispatch_constants.RESOURCE_DELETE_OPERATION]
+                repo_id: dispatch_constants.RESOURCE_DELETE_OPERATION
             }
         }
 
         response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
 
-        self.assertTrue(response is dispatch_constants.CALL_POSTPONED_RESPONSE)
+        self.assertTrue(response is dispatch_constants.CALL_POSTPONED_RESPONSE, response)
         self.assertTrue(task_1 in blockers)
         self.assertTrue(task_2 in blockers)
         self.assertTrue(reasons)
@@ -295,7 +295,7 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         cds_id = 'less_than_awesome_cds'
         deletion_resources = {
             dispatch_constants.RESOURCE_CDS_TYPE: {
-                cds_id: [dispatch_constants.RESOURCE_DELETE_OPERATION]
+                cds_id: dispatch_constants.RESOURCE_DELETE_OPERATION
             }
         }
         deletion_task_resources = coordinator.resource_dict_to_task_resources(deletion_resources)
@@ -306,10 +306,10 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
         resources = {
             dispatch_constants.RESOURCE_CDS_TYPE: {
-                cds_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+                cds_id: dispatch_constants.RESOURCE_UPDATE_OPERATION
             },
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                'some_repo': [dispatch_constants.RESOURCE_READ_OPERATION]
+                'some_repo': dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
 
