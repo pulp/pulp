@@ -45,28 +45,15 @@ class Context(local):
         self.task_id = task.id
         self.job_id = task.call_report.job_id
         self.report_progress = task._report_progress
-        if task.call_request.asynchronous:
-            self.succeeded = task._succeeded
-            self.failed = task._failed
 
     def clear_task_attributes(self):
         self.task_id = None
         self.job_id = None
         self.report_progress = self._report_progress
-        self.succeeded = self._succeeded
-        self.failed = self._failed
 
     def _report_progress(self, progress):
         msg = _('report_progress called on cleared dispatch context: %(p)s')
         _LOG.error(msg % {'p': pformat(progress)})
-
-    def _succeeded(self, result=None):
-        msg = _('succeeded called on cleared dispatch context: %(r)s')
-        _LOG.critical(msg % {'r': pformat(result)})
-
-    def _failed(self, exception=None, traceback=None):
-        msg = _('failed called on cleared dispatch context: %(e)s, %(t)s')
-        _LOG.critical(msg % {'e': pformat(exception), 't': pformat(traceback)})
 
 # context global ---------------------------------------------------------------
 # NOTE this is here and not in the factory module to prevent circular imports
