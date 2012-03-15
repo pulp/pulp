@@ -62,7 +62,7 @@ class Repo(Model):
         self.scratchpad = {} # default to dict in hopes the plugins will just add/remove from it
 
         # Content
-        self.content_unit_count = 0
+        self.content_unit_count = 0 # not maintained in the database, set by the controller on repo retrieval
 
         # Timeline
         # TODO: figure out how to track repo modified states

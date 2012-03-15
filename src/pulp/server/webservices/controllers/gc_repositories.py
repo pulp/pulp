@@ -19,12 +19,12 @@ import web
 
 # Pulp
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._exceptions as errors
 import pulp.server.exceptions as exceptions
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -51,6 +51,7 @@ class RepoCollection(JSONController):
         # Load the importer/distributor information into each repository
         importer_manager = manager_factory.repo_importer_manager()
         distributor_manager = manager_factory.repo_distributor_manager()
+        unit_query_manager = manager_factory.repo_unit_association_query_manager()
 
         for r in all_repos:
             importers = importer_manager.get_importers(r['id'])
@@ -58,6 +59,10 @@ class RepoCollection(JSONController):
 
             distributors = distributor_manager.get_distributors(r['id'])
             r['distributors'] = distributors
+
+            criteria = Criteria(unit_fields=[], association_fields=[], remove_duplicates=True)
+            units = unit_query_manager.get_units_across_types(r['id'], criteria)
+            r['content_unit_count'] = len(units)
 
         # Return the repos or an empty list; either way it's a 200
         return self.ok(all_repos)
@@ -114,6 +119,12 @@ class RepoResource(JSONController):
 
         distributors = distributor_manager.get_distributors(id)
         repo['distributors'] = distributors
+
+        # Load the unit count into the repo
+        unit_query_manager = manager_factory.repo_unit_association_query_manager()
+        criteria = Criteria(unit_fields=[], association_fields=[], remove_duplicates=True)
+        units = unit_query_manager.get_units_across_types(id, criteria)
+        repo['content_unit_count'] = len(units)
 
         return self.ok(repo)
 
