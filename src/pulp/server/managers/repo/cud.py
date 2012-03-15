@@ -198,6 +198,48 @@ class RepoManager(object):
 
         return repo
 
+    def get_repo_scratchpad(self, repo_id):
+        """
+        Retrieves the contents of the given repository's scratchpad.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @raise MissingResource: if there is no repo with repo_id
+        """
+
+        repo_coll = Repo.get_collection()
+        repo = repo_coll.find_one({'id' : repo_id})
+
+        if repo is None:
+            raise MissingResource(repo_id)
+
+        return dict(repo['scratchpad'])
+
+    def set_repo_scratchpad(self, repo_id, contents):
+        """
+        Saves the given contents to the repository's scratchpad. There is no
+        attempt to merge in the provided with the current scratchpad, it is
+        simply overridden.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param contents: new value to save in the scratchpad; must be anything
+               serializable to the database
+
+        @raise MissingResource: if there is no repo with repo_id
+        """
+
+        repo_coll = Repo.get_collection()
+        repo = repo_coll.find_one({'id' : repo_id})
+
+        if repo is None:
+            raise MissingResource(repo_id)
+
+        repo['scratchpad'] = contents
+        repo_coll.save(repo, safe=True)
+
 # -- functions ----------------------------------------------------------------
 
 def is_repo_id_valid(repo_id):

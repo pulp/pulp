@@ -276,6 +276,26 @@ class RepoManagerTests(testutil.PulpTest):
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' in e)
 
+    def test_get_set_scratchpad(self):
+        """
+        Tests retrieving and setting a repository's scratchpad.
+        """
+
+        # Setup
+        repo_id = 'scratch-test'
+        self.manager.create_repo(repo_id)
+
+        # Test - get default
+        value = self.manager.get_repo_scratchpad(repo_id)
+        self.assertEqual({}, value)
+
+        # Test - set
+        new_value = {'i' : 'importer', 'd' : 'distributor'}
+        self.manager.set_repo_scratchpad(repo_id, new_value)
+
+        value = self.manager.get_repo_scratchpad(repo_id)
+        self.assertEqual(new_value, value)
+
 class UtilityMethodsTests(testutil.PulpTest):
 
     def test_is_repo_id_valid(self):

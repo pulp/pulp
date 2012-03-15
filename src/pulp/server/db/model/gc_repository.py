@@ -59,6 +59,7 @@ class Repo(Model):
         self.display_name = display_name
         self.description = description
         self.notes = notes or {}
+        self.scratchpad = {} # default to dict in hopes the plugins will just add/remove from it
 
         # Content
         self.content_unit_count = 0
