@@ -263,6 +263,7 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 # Pulp Plugins
 cp -R plugins/types/* %{buildroot}/var/lib/pulp/plugins/types
 cp -R plugins/importers/* %{buildroot}/var/lib/pulp/plugins/importers
+cp -R plugins/distributors/* %{buildroot}/var/lib/pulp/plugins/distributors
 
 # Enable when there's at least one distributor
 # cp -R plugins/distributors/* %{buildroot}/var/lib/pulp/plugins/distributors
