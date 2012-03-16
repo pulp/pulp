@@ -175,7 +175,7 @@ class RepoDistributorManager(object):
             distributor_instance.distributor_added(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
-            raise OperationFailed(), None, sys.exc_info()[2]
+            raise OperationFailed('add_distributor'), None, sys.exc_info()[2]
 
         # Database Update
         distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, clean_config, auto_publish)

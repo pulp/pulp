@@ -41,7 +41,7 @@ class RepoImporterManager(object):
 
         importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
         if importer is None:
-            raise MissingResource()
+            raise MissingResource(repo_id)
 
         return importer
 
@@ -142,7 +142,7 @@ class RepoImporterManager(object):
             importer_instance.importer_added(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo_id))
-            raise OperationFailed(), None, sys.exc_info()[2]
+            raise OperationFailed('set_importer'), None, sys.exc_info()[2]
 
         # Database Update
         importer_id = importer_type_id # use the importer name as its repo ID
@@ -174,7 +174,7 @@ class RepoImporterManager(object):
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
 
         if repo_importer is None:
-            raise MissingResource()
+            raise MissingResource(repo_id)
 
         # Call the importer's cleanup method
         importer_type_id = repo_importer['importer_type_id']
@@ -219,7 +219,7 @@ class RepoImporterManager(object):
 
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
         if repo_importer is None:
-            raise MissingResource()
+            raise MissingResource(repo_id)
 
         importer_type_id = repo_importer['importer_type_id']
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)

@@ -183,7 +183,9 @@ class RepoPublishManager(object):
                 error_runs.append( (dist_id, error_string) )
 
         if len(error_runs) > 0:
-            raise OperationFailed(repo_id, error_runs)
+            raise OperationFailed('auto_publish_for_repo')
+            # FIXME define custom exception for batch operations
+            #raise OperationFailed(repo_id, error_runs)
 
     def last_publish(self, repo_id, distributor_id):
         """

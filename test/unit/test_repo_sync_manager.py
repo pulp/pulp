@@ -49,7 +49,7 @@ class MockRepoPublishManager:
         MockRepoPublishManager.repo_id = repo_id
 
         if MockRepoPublishManager.raise_error:
-            raise repo_publish_manager.OperationFailed(repo_id, [])
+            raise repo_publish_manager.OperationFailed(repo_id)
 
     @classmethod
     def reset(cls):

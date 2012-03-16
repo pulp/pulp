@@ -98,7 +98,7 @@ class RepoUnitAssociationManager(object):
         """
 
         if owner_type not in _OWNER_TYPES:
-            raise exceptions.InvalidType()
+            raise exceptions.InvalidType(owner_type)
 
         # If the association already exists, no need to do anything else
         spec = {'repo_id' : repo_id,
@@ -220,7 +220,9 @@ class RepoUnitAssociationManager(object):
         unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
 
         if len(unsupported_types) > 0:
-            raise exceptions.InvalidType(dest_repo_id, unsupported_types)
+            raise exceptions.InvalidType(unsupported_types)
+            # FIXME define custom exception for batch operations
+            #raise exceptions.InvalidType(dest_repo_id, unsupported_types)
 
         # Convert all of the units into the plugin standard representation
         type_defs = {}
@@ -247,7 +249,7 @@ class RepoUnitAssociationManager(object):
             importer_instance.import_units(transfer_repo, transfer_units, conduit, call_config)
         except Exception:
             _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (repo_importer['importer_type_id'], dest_repo_id))
-            raise exceptions.OperationFailed(), None, sys.exc_info()[2]
+            raise exceptions.OperationFailed('associate_from_repos'), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
         """
