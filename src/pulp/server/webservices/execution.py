@@ -35,8 +35,8 @@ def execute(controller, call_request, expected_response='ok'):
     call_report = coordinator.execute_call(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise CallRejectedException(call_report.serialize)
-    if call_report.response is dispatch_constants.CALL_POSTPONED_RESPONSE or\
-       call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
+    # covers postponed and accepted
+    if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
         serialized_call_report = call_report.serialize()
         link = serialization.dispatch.task_href(call_report)
         serialized_call_report.update(link)
