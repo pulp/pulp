@@ -11,8 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import httplib
 from gettext import gettext as _
-from pprint import pformat
 
 from pulp.server.exceptions import (
     ConflictingOperation, PulpExecutionException, PulpDataException,
@@ -23,17 +23,22 @@ from pulp.server.exceptions import (
 class CallRuntimeError(PulpExecutionException):
     pass
 
+
 class MissingControlHook(CallRuntimeError):
     pass
+
 
 class MissingCancelControlHook(MissingControlHook):
     pass
 
+
 class CallValidationError(PulpDataException):
     pass
 
+
 class InvalidCallKeywordArgument(CallValidationError):
     pass
+
 
 class MissingProgressCallbackKeywordArgument(InvalidCallKeywordArgument):
     pass
@@ -41,14 +46,29 @@ class MissingProgressCallbackKeywordArgument(InvalidCallKeywordArgument):
 class MissingSuccessCallbackKeywordArgument(InvalidCallKeywordArgument):
     pass
 
+
 class MissingFailureCallbackKeywordArgument(InvalidCallKeywordArgument):
     pass
 
+
 class SynchronousCallTimeoutError(CallRuntimeError):
-    pass
+    http_status_code = httplib.SERVICE_UNAVAILABLE
+
+    def __init__(self, timeout):
+        CallRuntimeError.__init__(self, timeout)
+        self.timeout = timeout
+
+    def __str__(self):
+        msg = _('Call could not be executed withing timeout: %(t)s') % {'t': str(self.timeout)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'timeout': self.timeout}
+
 
 class AsynchronousExecutionError(CallRuntimeError):
     pass
+
 
 class UnrecognizedSearchCriteria(SuperfluousData):
     pass
