@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.11
+Version:        1.0.12
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,8 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Tue Mar 13 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.11-1
-- Upgraded okaara to 1.0.11 (jason.dobies@redhat.com)
+* Fri Mar 16 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.12-1
+- Added support for default values on options (jason.dobies@redhat.com)
 
 * Tue Mar 13 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.11-1
 - Required check needs to run across all options, even those in groups
