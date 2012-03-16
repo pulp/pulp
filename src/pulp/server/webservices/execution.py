@@ -19,6 +19,16 @@ from pulp.server.webservices import serialization
 # execution wrapper api --------------------------------------------------------
 
 def execute(controller, call_request, expected_response='ok'):
+    """
+    Execute a call request via the coordinator.
+    @param controller: web services rest controller
+    @type  controller: pulp.server.webservices.controller.base.JSONController
+    @param call_request: call request to execute
+    @type  call_request: pulp.server.dispatch.call.CallRequest
+    @param expected_response: response type to return if all goes well: 'ok' or 'created'
+    @type  expected_response: str
+    @return: http server response
+    """
     coordinator = dispatch_factory.coordinator()
     return _execute_single(controller,
                            coordinator.execute_call,
@@ -27,6 +37,16 @@ def execute(controller, call_request, expected_response='ok'):
 
 
 def execute_async(controller, call_request, expected_response='ok'):
+    """
+    Execute a call request asynchronously via the coordinator.
+    @param controller: web services rest controller
+    @type  controller: pulp.server.webservices.controller.base.JSONController
+    @param call_request: call request to execute
+    @type  call_request: pulp.server.dispatch.call.CallRequest
+    @param expected_response: response type to return if all goes well: 'ok' or 'created'
+    @type  expected_response: str
+    @return: http server response
+    """
     coordinator = dispatch_factory.coordinator()
     return _execute_single(controller,
                            coordinator.execute_call_asynchronously,
@@ -35,6 +55,16 @@ def execute_async(controller, call_request, expected_response='ok'):
 
 
 def execute_sync(controller, call_request, expected_response='ok'):
+    """
+    Execute a call request synchronously via the coordinator.
+    @param controller: web services rest controller
+    @type  controller: pulp.server.webservices.controller.base.JSONController
+    @param call_request: call request to execute
+    @type  call_request: pulp.server.dispatch.call.CallRequest
+    @param expected_response: response type to return if all goes well: 'ok' or 'created'
+    @type  expected_response: str
+    @return: http server response
+    """
     coordinator = dispatch_factory.coordinator()
     return _execute_single(controller,
                            coordinator.execute_call_synchronously,
@@ -45,6 +75,7 @@ def execute_sync(controller, call_request, expected_response='ok'):
 # execution utilities ----------------------------------------------------------
 
 def _execute_single(controller, execute_method, call_request, expected_response):
+    # execute a single call request via the coordinator
     call_report = execute_method(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise CallRejectedException(call_report.serialize)
