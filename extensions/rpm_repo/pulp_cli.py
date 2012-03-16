@@ -23,6 +23,7 @@ IMPORTER_TYPE_ID = 'yum_importer'
 
 # Tuples of importer key name to more user-friendly CLI name
 IMPORTER_KEY_TRANSLATIONS = [
+    ('feed_url', 'feed'),
     ('ssl_ca_cert', 'feed_ca_cert'),
     ('ssl_client_cert', 'feed_cert'),
     ('ssl_client_key', 'feed_key'),
@@ -264,7 +265,7 @@ def create_repo_options(command, is_update):
     else:
         feed_url_dest = basic_group
 
-    feed_url_dest.add_option(PulpCliOption('--feed_url', 'URL of the external source repository to sync', required=not is_update))
+    feed_url_dest.add_option(PulpCliOption('--feed', 'URL of the external source repository to sync', required=not is_update))
 
     # Metadata Options
     basic_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
