@@ -243,6 +243,10 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.67-1
+- Automatic commit of package [gofer] minor release [0.66-1].
+  (jortel@redhat.com)
+
+* Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.67-1
 - Add (trace) attribute to propagated exceptions. (jortel@redhat.com)
 - Add traceback info to propagated exceptions as: Exception.trace.
   (jortel@redhat.com)
