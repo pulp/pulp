@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.275
+Version:        0.0.276
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -501,6 +501,57 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.276-1
+- 802447 - Fixing unicode handling bug on the client side while binding a i18n
+- Docs and i18n for units search (jason.dobies@redhat.com)
+- Cleanup of errata list and details handling (jason.dobies@redhat.com)
+- Tweaking the title width percentage a bit (jason.dobies@redhat.com)
+- Upgraded version of okaara to 1.0.12 (jason.dobies@redhat.com)
+- Changed repo ID flag to --repo_id (jason.dobies@redhat.com)
+- Renamed feed_url to feed as it is in v1 (jason.dobies@redhat.com)
+- lowered logging level to debug (jconnor@redhat.com)
+- simplified logic in execute_call accepted conditional (jconnor@redhat.com)
+- changed synchronous call timeout to generate a 509 service unavailable error
+  along with __str__ and data_dict implementations (jconnor@redhat.com)
+- defactored? execute calls into more specific implementations to accomodte
+  timeouts on sync calls (jconnor@redhat.com)
+- including reboot_suggested field for errata (pkilambi@redhat.com)
+- pulp.spec now copies plugins/distributors (jmatthews@redhat.com)
+- forgot to commit actual distributor code on prior commits
+  (jmatthews@redhat.com)
+- YumDistributor introduced validate_config (jmatthews@redhat.com)
+- Additions to unit search; going to refactor out errata but wanted to commit
+  this first (jason.dobies@redhat.com)
+- adding missing count to migrate summary (pkilambi@redhat.com)
+- changed exception instances to pass (now) required constructor arguments
+  (jconnor@redhat.com)
+- re-implementation of __init__, __str__, and data_dict for derived exceptions
+  (jconnor@redhat.com)
+- removed success/failure callbacks from context (jconnor@redhat.com)
+- fixed return for _execute_single (jconnor@redhat.com)
+- Minor refactoring of unit search extension (jason.dobies@redhat.com)
+- Added units search for rpm, srpm, drpm, errata, and all
+  (jason.dobies@redhat.com)
+- adding support for dryrun (pkilambi@redhat.com)
+- Wired up set_progress in the conduits to the tasking subsystem
+  (jason.dobies@redhat.com)
+- Get taskid from dispatch context. (jortel@redhat.com)
+- Initial working version of rpm units list (jason.dobies@redhat.com)
+- Load the current unit count into the repo before returning
+  (jason.dobies@redhat.com)
+- instead of guessing using introspection, now making caller pass in the
+  exepected response if all goes well (jconnor@redhat.com)
+- added introspection to figure out if we need to return created or ok
+  (jconnor@redhat.com)
+- changed repos to use new single operation syntax (jconnor@redhat.com)
+- got rid of the notion that operations is a list in resources, we only perform
+  one operation on a resource at time (jconnor@redhat.com)
+- added reminder comment (jconnor@redhat.com)
+- abstracted out coordinator execution as its the same in almost every case
+  (jconnor@redhat.com)
+- simplified call rejected exception (jconnor@redhat.com)
+- adding relevant serialization fields for dispatch (jconnor@redhat.com)
+
 * Thu Mar 15 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.275-1
 - Added RPM extensions to the build (jason.dobies@redhat.com)
 - script to migrate package content to new path format (pkilambi@redhat.com)
