@@ -24,6 +24,7 @@ import os
 from pulp.client.lib.lock import Lock
 from pulp.client.lib.logutil import getLogger
 from pulp.client.lib.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp.common.util import encode_unicode, decode_unicode
 
 log = getLogger(__name__)
 
@@ -222,7 +223,7 @@ def _convert_repo(repo_id, repo_data):
     @return: repo instance in the repo file format
     @rtype:  L{Repo}
     '''
-    repo = Repo(str(repo_id))
+    repo = Repo(encode_unicode(repo_id))
     repo['name'] = repo_data['name']
 
     # This probably won't be an issue; you shouldn't be able to bind to an unpublished repo
@@ -308,4 +309,4 @@ def _handle_host_urls(repo, url_list, mirror_list_filename):
         repo['baseurl'] = url_list[0]
         repo['mirrorlist'] = None # make sure to zero this out in case of an update
 
-        log.info('Configuring repo [%s] to use baseurl [%s]' % (repo.id, url_list[0]))
+        log.info('Configuring repo [%s] to use baseurl [%s]' % (decode_unicode(repo.id), url_list[0]))
