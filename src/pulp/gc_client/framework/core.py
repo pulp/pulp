@@ -51,7 +51,7 @@ COLOR_FAILURE = okaara.prompt.COLOR_LIGHT_RED
 COLOR_IN_PROGRESS = okaara.prompt.COLOR_LIGHT_YELLOW
 COLOR_COMPLETED = okaara.prompt.COLOR_LIGHT_GREEN
 
-TITLE_PERCENTAGE = .75
+TITLE_PERCENTAGE = .90
 BAR_PERCENTAGE = .66
 
 # Individual words that's don't look right when title-cased, so after splitting
