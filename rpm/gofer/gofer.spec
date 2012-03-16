@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.66
+Version: 0.67
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -242,8 +242,24 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Mon Feb 27 2012 Jeff Ortel <jortel@redhat.com> 0.66-1
-- new package built with tito
+* Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.67-1
+- Add (trace) attribute to propagated exceptions. (jortel@redhat.com)
+- Add traceback info to propagated exceptions as: Exception.trace.
+  (jortel@redhat.com)
+- Add support for __getitem__ in container and stub. (jortel@redhat.com)
+- Refactor to crypto (delegate) interface. (jortel@redhat.com)
+- Support multiple security decorators. (jortel@redhat.com)
+- perf: asynchronous ack(); tcp_nodelay. (jortel@redhat.com)
+- Rename 'delayed/trigger' policy property to match option. (jortel@redhat.com)
+- Rename 'delayed' option to: 'trigger'. (jortel@redhat.com)
+- option 'delayed' implies asynchronous RMI. (jortel@redhat.com)
+- fix for tito compat. (jortel@redhat.com)
+- bridge: clean debug prints; make gateway a thread. (jortel@redhat.com)
+- Add tcp bridge (experimental). (jortel@redhat.com)
+- Add support for delayed trigger asynchronous RMI. (jortel@redhat.com)
+- Add fedora releaser. (jortel@redhat.com)
+- support setting producer uuid; HMAC enhancements. (jortel@redhat.com)
+- rel-eng: rename redhat releaser. (jortel@redhat.com)
 
 * Tue Feb 21 2012 Jeff Ortel <jortel@redhat.com> 0.66-1
 - Add DistGit releaser. (jortel@redhat.com)
