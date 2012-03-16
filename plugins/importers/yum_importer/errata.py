@@ -32,7 +32,7 @@ ERRATA_UNIT_KEY = ("id",)
 
 ERRATA_METADATA = ("title", "description", "version", "release", "type", "status", "updated",
                 "issued", "severity", "references", "pkglist", "rights",  "summary",
-                "solution", "from_str", "pushcount" )
+                "solution", "from_str", "pushcount", "reboot_suggested" )
 
 def get_available_errata(repo_dir):
     """
