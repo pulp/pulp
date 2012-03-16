@@ -53,7 +53,7 @@ class Context(local):
 
     def _report_progress(self, progress):
         msg = _('report_progress called on cleared dispatch context: %(p)s')
-        _LOG.error(msg % {'p': pformat(progress)})
+        _LOG.debug(msg % {'p': pformat(progress)})
 
 # context global ---------------------------------------------------------------
 # NOTE this is here and not in the factory module to prevent circular imports
