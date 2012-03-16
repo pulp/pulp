@@ -20,7 +20,8 @@ import shutil
 import tempfile
 
 from logging import INFO, basicConfig, getLogger
-basicConfig(filename='/tmp/pulp_package_migrate.log', level=INFO)
+LOG_FILE='/tmp/pulp_package_migrate.log'
+basicConfig(filename=LOG_FILE, level=INFO)
 log = getLogger("pulp_package_migrate")
 VERBOSE = False
 TEST_RUN = False
@@ -79,9 +80,10 @@ def _migrate_repo_packages(repo_dir, top_package_location):
     """
     global TEST_RUN
     repo_packages = get_repo_packages(repo_dir)
-    log.info("* Processing %s packages in repo dir %s" % (len(repo_packages), repo_dir))
+    log.info("* Migrating %s packages in repo dir %s" % (len(repo_packages), repo_dir))
     migrated = []
     skipped = []
+    missing = []
     for package in repo_packages:
         repo_pkg_path  = os.path.join(repo_dir, package.relativepath)
         pkg_real_path = os.path.realpath(repo_pkg_path)
@@ -107,7 +109,7 @@ def _migrate_repo_packages(repo_dir, top_package_location):
             else:
                 # package doesnt exist on filesystem, skip
                 log.info("package %s doesnt exist on the file system; skip" % repo_pkg_path)
-                skipped.append(package)
+                missing.append(package)
                 continue
         # remove the old symlink from repo location
         if not TEST_RUN:
@@ -119,7 +121,7 @@ def _migrate_repo_packages(repo_dir, top_package_location):
                 (os.path.basename(package.relativepath), pkg_real_path, new_pkg_path, repo_pkg_path)
         log.info(msg)
     log.info("Finished migrating packages from repo %s" % repo_dir)
-    return migrated, skipped
+    return migrated, skipped, missing
 
 def _discover_yum_repodirs(top_repo_location):
     """
@@ -164,8 +166,8 @@ def do_migrate(top_level_content_dir):
     log_print_msg(log.info, "* Number of repo directories discovered for migration: %s\n" % len(repodirs))
     for repodir in repodirs:
         try:
-            migrated, skipped = _migrate_repo_packages(repodir, top_packages_location)
-            migrate_summary[repodir] = dict(migrated=len(migrated), skipped=len(skipped))
+            migrated, skipped, missing = _migrate_repo_packages(repodir, top_packages_location)
+            migrate_summary[repodir] = dict(migrated=len(migrated), skipped=len(skipped), missing=len(missing))
         except Exception,e:
             log.error("Error: %s" % str(e))
             return migrate_summary
@@ -227,12 +229,10 @@ def main():
     if options.migrate or options.dryrun:
         prompt_warning()
         migrate_summary = do_migrate(top_level_content_dir)
-        print("Migrate Summary: \n")
+        log_print_msg(log.info, "Migrate Summary: \n")
         for repodir, summary in migrate_summary.items():
-            print "Repo Directory: %s \n Migrated: %s, Skipped: %s\n" % (repodir, summary['migrated'], summary['skipped'])
-
-
-
+            log_print_msg(log.info, "Repo Directory: %s \n Migrated: %s, Skipped: %s, Missing: %s\n" % (repodir, summary['migrated'], summary['skipped'], summary['missing']))
+    print('Migration successfully completed; see %s for more info' % LOG_FILE )
 if __name__=='__main__':
     try:
         main()
