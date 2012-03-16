@@ -24,6 +24,29 @@ TYPE_ERRATUM = 'erratum'
 
 ALL_TYPES = (TYPE_RPM, TYPE_SRPM, TYPE_DRPM, TYPE_ERRATUM)
 
+# List of all fields that the user can elect to display for each supported type
+FIELDS_RPM = ('arch', 'buildhost', 'checksum', 'checksumtype', 'description',
+              'epoch', 'filename', 'license', 'name', 'provides', 'release',
+              'requires', 'vendor', 'version')
+FIELDS_ERRATA = ('id', 'tite', 'summary', 'severity', 'type', 'description')
+
+# Used when generating the --fields help text so it can be customized by type
+FIELDS_BY_TYPE = {
+    TYPE_RPM : FIELDS_RPM,
+    TYPE_SRPM : FIELDS_RPM,
+    TYPE_DRPM : FIELDS_RPM,
+    TYPE_ERRATUM : FIELDS_ERRATA,
+}
+
+# Ordering of metadata fields in each type
+ORDER_RPM = ['name', 'epoch', 'version', 'release', 'arch']
+ORDER_ERRATA = ['id', 'tite', 'summary', 'severity', 'type', 'description']
+
+# Used to lookup the right order list based on type
+ORDER_BY_TYPE = {
+
+}
+
 LOG = None # set by the context
 
 # -- plugin hook --------------------------------------------------------------
@@ -36,21 +59,18 @@ def initialize(context):
     global LOG
     LOG = context.logger
 
+    # Replace the generic units command with a full section of commands
     repo_section = context.cli.find_section('repo')
-    old_units_command = repo_section.remove_command('units')
-
-    # This is temporary for debugging purposes so I can get access to it
-    old_units_command.name = 'gc-units'
-    repo_section.add_command(old_units_command)
+    repo_section.remove_command('units')
 
     units_section = repo_section.create_subsection('units', 'list/search for RPM-related content in a repository')
 
     # Search Commands
-    all_command = SingleUnitSearchCommand(context, 'all', _('search for all content in a repository'), _('Repository Units'), ALL_TYPES)
-    rpm_command = SingleUnitSearchCommand(context, 'rpm', _('search for RPMs in a repository'), _('Repository RPMs'), [TYPE_RPM])
-    srpm_command = SingleUnitSearchCommand(context, 'srpm', _('search for SRPMs in a repository'), _('Repository SRPMs'), [TYPE_SRPM])
-    drpm_command = SingleUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
-    errata_command = SingleUnitSearchCommand(context, 'errata', _('search errata in a repository'), _('Repository Errata'), [TYPE_ERRATUM])
+    all_command = GeneralUnitSearchCommand(context, 'all', _('search for all content in a repository'), _('Repository Units'), ALL_TYPES)
+    rpm_command = GeneralUnitSearchCommand(context, 'rpm', _('search for RPMs in a repository'), _('Repository RPMs'), [TYPE_RPM])
+    srpm_command = GeneralUnitSearchCommand(context, 'srpm', _('search for SRPMs in a repository'), _('Repository SRPMs'), [TYPE_SRPM])
+    drpm_command = GeneralUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
+    errata_command = GeneralUnitSearchCommand(context, 'errata', _('search errata in a repository'), _('Repository Errata'), [TYPE_ERRATUM])
 
     units_section.add_command(all_command)
     units_section.add_command(rpm_command)
@@ -68,7 +88,7 @@ class InvalidCriteria(Exception):
     """
     pass
 
-class SingleUnitSearchCommand(PulpCliCommand):
+class GeneralUnitSearchCommand(PulpCliCommand):
 
     def __init__(self, context, name, description, title, type_ids):
         PulpCliCommand.__init__(self, name, description, self.search)
@@ -93,7 +113,11 @@ class SingleUnitSearchCommand(PulpCliCommand):
 
         #   Cannot scope these fields when searching for more than one type
         if len(self.type_ids) == 1:
-            display_group.add_option(PulpCliOption('--fields', 'comma-separated list of fields to include for each RPM; if unspecified all fields will be displayed', aliases=['-f'], required=False))
+            d  = 'comma-separated list of fields to include for each RPM; if unspecified all fields will be displayed; '
+            d += 'valid fields: %(f)s'
+            description = _(d) % {'f' : ', '.join(FIELDS_BY_TYPE[self.type_ids[0]])}
+
+            display_group.add_option(PulpCliOption('--fields', description, aliases=['-f'], required=False))
             display_group.add_option(PulpCliOption('--ascending', 'comma-separated list of fields to sort ascending; the order of the fields determines the order priority', aliases=['-a'], required=False))
             display_group.add_option(PulpCliOption('--descending', 'comma-separated list of fields to sort descending; ignored if --ascending is specified', aliases=['-d'], required=False))
             self.add_option_group(display_group)
