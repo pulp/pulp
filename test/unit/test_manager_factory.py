@@ -21,6 +21,7 @@ import testutil
 
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.cud import ConsumerManager
+from pulp.server.managers.consumer.notes import ConsumerNotesManager
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 from pulp.server.managers.content.upload import ContentUploadManager
@@ -56,6 +57,7 @@ class FactoryTests(testutil.PulpTest):
         self.assertTrue(isinstance(factory.content_query_manager(), ContentQueryManager))
         self.assertTrue(isinstance(factory.content_upload_manager(), ContentUploadManager))
         self.assertTrue(isinstance(factory.consumer_manager(), ConsumerManager))
+        self.assertTrue(isinstance(factory.consumer_notes_manager(), ConsumerNotesManager))
 
     def test_get_manager(self):
         """

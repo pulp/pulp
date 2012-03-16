@@ -12,21 +12,18 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains the manager class and exceptions for operations surrounding the creation,
+Contains manager class and exceptions for operations surrounding the creation,
 removal, and update on a consumer.
 """
 
 import logging
-import os
 import re
-import shutil
 
 from pulp.server import config
 from pulp.common.bundle import Bundle
 import pulp.server.auth.cert_generator as cert_generator
 
 from pulp.server.db.model.gc_consumer import Consumer
-import pulp.server.managers.factory as manager_factory
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, OperationFailed
 # -- constants ----------------------------------------------------------------
 
@@ -87,8 +84,6 @@ class ConsumerManager(object):
         create_me = Consumer(id, display_name, description, notes, capabilities, certificate=crt.strip())
         Consumer.get_collection().save(create_me, safe=True)
 
-#        for key, value in notes.items():
-#            add_notes(create_me.id, key, value)
 #        self.consumer_history_api.consumer_registered(c.id)
 
         create_me.certificate = Bundle.join(key, crt)
@@ -113,19 +108,9 @@ class ConsumerManager(object):
         if consumer is None:
             raise MissingResource(id)
 
-#        # Update consumergroups
-#        consumergroup_db = self._get_consumergroup_collection()
-#        consumergroups = list(consumergroup_db.find({'consumerids' : consumer['id']}))
-#        for consumergroup in consumergroups:
-#            consumerids = consumergroup['consumerids']
-#            consumerids.remove(consumer['id'])
-#            consumergroup['consumerids'] = consumerids
-#            consumergroup_db.save(consumergroup, safe=True)
-#
-#        # notify agent
-#        agent = PulpAgent(consumer, async=True)
-#        agent_consumer = agent.Consumer()
-#        agent_consumer.unregistered()
+        # To do - Update consumergroups after we add consumergroup support in V2
+
+        # To do - notify agent
 
         # Database Updates
         try:
