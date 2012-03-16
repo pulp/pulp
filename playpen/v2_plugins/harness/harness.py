@@ -177,17 +177,19 @@ class Harness:
 
         repo_id = self.script.get('general', 'repo_id')
 
-        distributor_config = dict(self.script.items('distributor'))
+        distributor_config_type = self.script.get('general', 'distributor_config_type')
+        distributor_config = dict(self.script.items(distributor_config_type))
+        distributor_type_id = self.script.get('general', 'distributor_type_id')
 
         url = '/v2/repositories/%s/distributors/' % repo_id
         body = {
-            'distributor_type_id' : 'harness_distributor',
+            'distributor_type_id' : distributor_type_id,
             'distributor_config'  : distributor_config,
             'auto_publish'        : False,
             'distributor_id'      : 'dist_1',
         }
 
-        self.prompt.write('Adding the harness distributor to repository [%s]' % repo_id)
+        self.prompt.write('Adding the %s distributor to repository [%s]' % (distributor_type_id, repo_id))
         self.prompt.write('Distributor configuration:')
         for k, v in distributor_config.items():
             self.prompt.write('    %-15s : %s' % (k, v))

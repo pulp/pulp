@@ -87,6 +87,7 @@ LINKS = (
     ('plugins/types/srpm.json', '/var/lib/pulp/plugins/types/srpm.json'),
     ('plugins/types/erratum.json', '/var/lib/pulp/plugins/types/erratum.json'),
     ('plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
+    ('plugins/distributors/yum_distributor', '/var/lib/pulp/plugins/distributors/yum_distributor'),
     )
 
 def parse_cmdline():
