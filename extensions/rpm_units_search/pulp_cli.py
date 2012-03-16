@@ -17,6 +17,7 @@ from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGro
 
 # -- constants ----------------------------------------------------------------
 
+# Must correspond to the IDs in the type definitions
 TYPE_RPM = 'rpm'
 TYPE_SRPM = 'srpm'
 TYPE_DRPM = 'drpm'
@@ -52,7 +53,8 @@ ORDER_BY_TYPE = {
     TYPE_ERRATUM : ORDER_ERRATA,
 }
 
-SINGLE_ERRATUM_TEMPLATE = '''Id:                %(id)s
+# Format to use when displaying the details of a single erratum
+SINGLE_ERRATUM_TEMPLATE = _('''Id:                %(id)s
 Title:             %(title)s
 Summary:           %(summary)s
 Description:
@@ -72,13 +74,15 @@ Packages Affected:
 
 References:
 %(refs)s
-'''
+''')
 
-REFERENCES_TEMPLATE = '''  ID:   %(i)s
+# Renders the references section of an erratum. The spacing within matters so
+# be careful when changing it.
+REFERENCES_TEMPLATE = _('''  ID:   %(i)s
   Type: %(t)s
   Link: %(h)s
 
-'''
+''')
 
 LOG = None # set by the context
 
@@ -98,12 +102,12 @@ def initialize(context):
 
     units_section = repo_section.create_subsection('units', 'list/search for RPM-related content in a repository')
 
-    # Search Commands
+    # Unit Commands
     all_command = GeneralUnitSearchCommand(context, 'all', _('search for all content in a repository'), _('Repository Units'), ALL_TYPES)
     rpm_command = GeneralUnitSearchCommand(context, 'rpm', _('search for RPMs in a repository'), _('Repository RPMs'), [TYPE_RPM])
     srpm_command = GeneralUnitSearchCommand(context, 'srpm', _('search for SRPMs in a repository'), _('Repository SRPMs'), [TYPE_SRPM])
     drpm_command = GeneralUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
-    errata_command = ErrataCommand(context)
+    errata_command = ErrataCommand(context, 'errata', _('search errata in a repository'))
 
     units_section.add_command(all_command)
     units_section.add_command(rpm_command)
@@ -122,6 +126,15 @@ class InvalidCriteria(Exception):
     pass
 
 class GeneralUnitSearchCommand(PulpCliCommand):
+    """
+    Each instance of this command is scoped to a particular unit type during
+    instantiation. The title and type_ids will be used in the usage and output
+    to customize this command for that type.
+
+    Multiple types may be specified as well if aggregate searching is desired.
+    In that case, this implementation will not configure itself with options
+    that are incompatible with searching across types.
+    """
 
     def __init__(self, context, name, description, title, type_ids):
         PulpCliCommand.__init__(self, name, description, self.search)
@@ -133,38 +146,25 @@ class GeneralUnitSearchCommand(PulpCliCommand):
             type_ids = [type_ids]
         self.type_ids = type_ids
 
-        # Groups
-        required_group = PulpCliOptionGroup('Required')
-        display_group = PulpCliOptionGroup('Display')
-        pagination_group = PulpCliOptionGroup('Pagination')
+        # Groups and options
+        add_required_group(self)
 
-        # Required Group
-        required_group.add_option(PulpCliOption('--repo_id', 'identifies the repository to search within', required=True))
-        self.add_option_group(required_group)
-
-        # Display Group
-
-        #   Cannot scope these fields when searching for more than one type
         if len(self.type_ids) == 1:
-            d  = 'comma-separated list of fields to include for each RPM; if unspecified all fields will be displayed; '
-            d += 'valid fields: %(f)s'
-            description = _(d) % {'f' : ', '.join(FIELDS_BY_TYPE[self.type_ids[0]])}
+            # The display group options only apply when dealing with a single
+            # type, so don't even add them if we know otherwise
+            default_fields = FIELDS_BY_TYPE[self.type_ids[0]]
+            add_display_group(self, default_fields)
 
-            display_group.add_option(PulpCliOption('--fields', description, aliases=['-f'], required=False))
-            display_group.add_option(PulpCliOption('--ascending', 'comma-separated list of fields to sort ascending; the order of the fields determines the order priority', aliases=['-a'], required=False))
-            display_group.add_option(PulpCliOption('--descending', 'comma-separated list of fields to sort descending; ignored if --ascending is specified', aliases=['-d'], required=False))
-            self.add_option_group(display_group)
-
-        # Pagination Group
-        pagination_group.add_option(PulpCliOption('--limit', 'maximum number of results to display', aliases=['-l'], required=False))
-        pagination_group.add_option(PulpCliOption('--skip', 'number of results to skip', aliases=['-s'], required=False))
-        self.add_option_group(pagination_group)
+        add_pagination_group(self)
 
     def search(self, **kwargs):
+        """
+        Parses the user arguments and assemble the proper query against the
+        requested repo.
+        """
+
         # Data collection
         repo_id = kwargs.pop('repo_id')
-
-        self.context.prompt.render_title(self.title)
 
         try:
             criteria = args_to_criteria_doc(kwargs, self.type_ids)
@@ -174,6 +174,10 @@ class GeneralUnitSearchCommand(PulpCliCommand):
             self.context.prompt.render_failure_message(e[0])
             return
 
+        # Title is i18n translated when it's passed in so don't do it here.
+        # Put this after the criteria parse in case there's an error in the args.
+        self.context.prompt.render_title(self.title)
+
         # Query the server
         all_units = self.context.server.repo_search.search(repo_id, criteria).response_body
 
@@ -181,6 +185,7 @@ class GeneralUnitSearchCommand(PulpCliCommand):
         # strip out all the fluff and reduce the list to just the metadata entries
         units = [u['metadata'] for u in all_units]
 
+        # Render the results
         if len(units) > 0:
             order = None
             if len(self.type_ids) == 1:
@@ -196,40 +201,15 @@ class ErrataCommand(PulpCliCommand):
     as the details of an individual erratum.
     """
 
-    def __init__(self, context):
-        PulpCliCommand.__init__(self, 'errata', _('search errata in a repository'), self.run)
+    def __init__(self, context, name, description):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
 
-        # Groups
-        required_group = PulpCliOptionGroup('Required')
-        erratum_group = PulpCliOptionGroup('Erratum')
-        display_group = PulpCliOptionGroup('Display')
-        pagination_group = PulpCliOptionGroup('Pagination')
-
-        # Required Group
-        required_group.add_option(PulpCliOption('--repo_id', 'identifies the repository to search within', required=True))
-        self.add_option_group(required_group)
-
-        # Erratum Group
-        erratum_group.add_option(PulpCliOption('--erratum_id', 'if specified, the full details of an individual erratum are displayed', required=False))
-        self.add_option_group(erratum_group)
-
-        # Display Group
-
-        #   Cannot scope these fields when searching for more than one type
-        d  = 'comma-separated list of fields to include for each erratum; if unspecified all of the following will be displayed; '
-        d += 'valid fields: %(f)s'
-        description = _(d) % {'f' : ', '.join(FIELDS_ERRATA)}
-
-        display_group.add_option(PulpCliOption('--fields', description, aliases=['-f'], required=False, default=','.join(FIELDS_ERRATA)))
-        display_group.add_option(PulpCliOption('--ascending', 'comma-separated list of fields to sort ascending; the order of the fields determines the order priority', aliases=['-a'], required=False))
-        display_group.add_option(PulpCliOption('--descending', 'comma-separated list of fields to sort descending; ignored if --ascending is specified', aliases=['-d'], required=False))
-        self.add_option_group(display_group)
-
-        # Pagination Group
-        pagination_group.add_option(PulpCliOption('--limit', 'maximum number of results to display', aliases=['-l'], required=False))
-        pagination_group.add_option(PulpCliOption('--skip', 'number of results to skip', aliases=['-s'], required=False))
-        self.add_option_group(pagination_group)
+        # Add options and groups
+        add_required_group(self)
+        add_erratum_group(self)
+        add_display_group(self, FIELDS_ERRATA)
+        add_pagination_group(self)
 
     def run(self, **kwargs):
         """
@@ -247,10 +227,10 @@ class ErrataCommand(PulpCliCommand):
         """
         Lists all errata in the repository, applying the necessary criteria.
         """
-        repo_id = kwargs.pop('repo_id')
-
         self.context.prompt.render_title(_('Repository Errata'))
 
+        # Collect data
+        repo_id = kwargs.pop('repo_id')
         try:
             criteria = args_to_criteria_doc(kwargs, [TYPE_ERRATUM])
             LOG.debug('Criteria for unit search')
@@ -271,11 +251,11 @@ class ErrataCommand(PulpCliCommand):
         else:
             self.context.prompt.render_paragraph(_('No units found'))
 
-
     def details(self, **kwargs):
         """
         Displays the details of an individual erratum.
         """
+        # Collect data
         repo_id = kwargs.pop('repo_id')
         erratum_id = kwargs.pop('erratum_id')
 
@@ -286,8 +266,10 @@ class ErrataCommand(PulpCliCommand):
             }
         }
 
+        # Query the server
         errata = self.context.server.repo_search.search(repo_id, criteria).response_body
 
+        # Render the results
         if len(errata) is 0:
             self.context.prompt.render_paragraph(_('No erratum with ID [%(e)s] found') % {'e' : erratum_id})
         else:
@@ -327,7 +309,7 @@ class ErrataCommand(PulpCliCommand):
                 data = {'i' : r['id'],
                         't' : r['type'],
                         'h' : r['href']}
-                line = _(REFERENCES_TEMPLATE) % data
+                line = REFERENCES_TEMPLATE % data
                 references += line
 
             template_data = {
@@ -349,7 +331,6 @@ class ErrataCommand(PulpCliCommand):
 
             display = SINGLE_ERRATUM_TEMPLATE % template_data
             self.context.prompt.write(display, skip_wrap=True)
-
 
 
 # -- utility ------------------------------------------------------------------
@@ -384,16 +365,62 @@ def args_to_criteria_doc(kwargs, type_ids):
         criteria['sort']['unit'] = [[f, 'descending'] for f in field_names]
 
     # Limit & Skip
-    if kwargs['limit'] is not None:
+    def num_parse(key, gt_limit):
         try:
-            limit = int(kwargs['limit'])
+            num = int(kwargs[key])
         except:
-            raise InvalidCriteria(_('Value for limit must be an integer'))
+            raise InvalidCriteria(_('Value for %(k)s must be an integer') % {'k' : key})
+
+        if num < gt_limit:
+            raise InvalidCriteria(_('Value for %(k)s must be greater than or equal to %(g)s') % {'k' : key, 'g' : gt_limit})
+
+        return num
+
+    if kwargs['limit'] is not None:
+        limit = num_parse('limit', 1)
         criteria['limit'] = limit
 
     if kwargs['skip'] is not None:
-        skip = int(kwargs['skip'])
+        skip = num_parse('skip', 0)
         criteria['skip'] = skip
 
     return criteria
 
+def add_required_group(command):
+    """
+    Adds the required group and all of its options to the given command.
+    """
+    required_group = PulpCliOptionGroup(_('Required'))
+    required_group.add_option(PulpCliOption('--repo_id', _('identifies the repository to search within'), required=True))
+    command.add_option_group(required_group)
+
+def add_erratum_group(command):
+    """
+    Adds the erratum group and all of its options to the given command.
+    """
+    erratum_group = PulpCliOptionGroup(_('Erratum'))
+    erratum_group.add_option(PulpCliOption('--erratum_id', _('if specified, the full details of an individual erratum are displayed'), required=False))
+    command.add_option_group(erratum_group)
+
+def add_display_group(command, default_fields):
+    """
+    Adds the display group and all of its options to the given command.
+    """
+    d  = 'comma-separated list of fields to include for each erratum; if unspecified all of the following will be displayed; '
+    d += 'valid fields: %(f)s'
+    description = _(d) % {'f' : ', '.join(FIELDS_ERRATA)}
+
+    display_group = PulpCliOptionGroup(_('Display'))
+    display_group.add_option(PulpCliOption('--fields', description, aliases=['-f'], required=False, default=','.join(default_fields)))
+    display_group.add_option(PulpCliOption('--ascending', _('comma-separated list of fields to sort ascending; the order of the fields determines the order priority'), aliases=['-a'], required=False))
+    display_group.add_option(PulpCliOption('--descending', _('comma-separated list of fields to sort descending; ignored if --ascending is specified'), aliases=['-d'], required=False))
+    command.add_option_group(display_group)
+
+def add_pagination_group(command):
+    """
+    Adds the pagination group and all of its options to the given command.
+    """
+    pagination_group = PulpCliOptionGroup(_('Pagination'))
+    pagination_group.add_option(PulpCliOption('--limit', _('maximum number of results to display'), aliases=['-l'], required=False))
+    pagination_group.add_option(PulpCliOption('--skip', _('number of results to skip'), aliases=['-s'], required=False))
+    command.add_option_group(pagination_group)
