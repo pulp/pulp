@@ -15,6 +15,7 @@
 import os
 import sys
 import yum
+import pwd
 import time
 import shutil
 import tempfile
@@ -25,6 +26,9 @@ basicConfig(filename=LOG_FILE, level=INFO)
 log = getLogger("pulp_package_migrate")
 VERBOSE = False
 TEST_RUN = False
+
+UID = pwd.getpwnam("apache").pw_uid
+GID = pwd.getpwnam("apache").pw_gid
 
 def get_repo_packages(path):
     """
@@ -73,6 +77,27 @@ def get_repo_packages(path):
         except Exception, e:
             log.error("Unable to remove temporary directory: %s" % (temp_path))
 
+def set_permissions(path):
+    os.chown(path, UID, GID)
+
+def delete_empty_directories(dirname):
+    if not os.path.isdir(dirname):
+        log.error("%s is not a directory" % dirname)
+        return
+    empty = True
+    try:
+        while empty:
+            if os.listdir(dirname) == []:
+                os.rmdir(dirname)
+                log.debug("Successfully cleaned up %s" % dirname)
+                dirname = os.path.dirname(dirname)
+                log.debug("Processing %s" % dirname)
+            else:
+                log.debug("Not an empty dir %s" % dirname)
+                empty = False
+    except Exception,e:
+        # we can hit multiple conditions during remove
+        log.error("Unable to delete empty directories due to the following error: %s" % e)
 def _migrate_repo_packages(repo_dir, top_package_location):
     """
     * Lookup packages in a given repo dir by parsing primary xml data
@@ -102,9 +127,11 @@ def _migrate_repo_packages(repo_dir, top_package_location):
                 if not TEST_RUN:
                     if not os.path.isdir(os.path.dirname(new_pkg_path)):
                         os.makedirs(os.path.dirname(new_pkg_path))
-                    shutil.copy(pkg_real_path, new_pkg_path)
+                    shutil.copy2(pkg_real_path, new_pkg_path)
+                    os.chown(new_pkg_path, UID, GID)
                     # remove old package path
                     os.remove(pkg_real_path)
+                    delete_empty_directories(os.path.dirname(pkg_real_path))
                     log.debug("successfully copied package to new location @ %s" % new_pkg_path)
             else:
                 # package doesnt exist on filesystem, skip
@@ -116,6 +143,7 @@ def _migrate_repo_packages(repo_dir, top_package_location):
             os.unlink(repo_pkg_path)
             # create the new symlink
             os.symlink(new_pkg_path, repo_pkg_path)
+            os.chown(repo_pkg_path, UID, GID)
         migrated.append(package)
         msg = "migrated package [%s] from old location [%s] to new location [%s] and created a symlink [%s]" %\
                 (os.path.basename(package.relativepath), pkg_real_path, new_pkg_path, repo_pkg_path)
@@ -160,10 +188,9 @@ def do_migrate(top_level_content_dir):
         msg = "Unable to find top level packages directory @ %s; Cannot continue migrate" % top_packages_location
         log_print_msg(log.error, msg)
         return migrate_summary
-    log_print_msg(log.info,
-        "* Starting Migration; this process can take some time depending on the number of repos and packages")
+    print("\n* Starting Migration; this process can take some time depending on the number of repos and packages")
     repodirs = _discover_yum_repodirs(top_repos_location)
-    log_print_msg(log.info, "* Number of repo directories discovered for migration: %s\n" % len(repodirs))
+    print("\n* Number of repo directories discovered for migration: %s\n" % len(repodirs))
     for repodir in repodirs:
         try:
             migrated, skipped, missing = _migrate_repo_packages(repodir, top_packages_location)
@@ -208,11 +235,8 @@ def prompt_warning():
         return
     print("\nWARNING: To avoid data corruption, please make sure pulp server or cds server is offline before running this script.")
     while 1:
-        pulp_check = raw_input("\nContinue?(Y/N/Q):" )
+        pulp_check = raw_input("\nContinue?(Y/N):" )
         if pulp_check.strip().lower() == 'n':
-            print("Pulp or CDS server is running, abort migration.")
-            sys.exit(0)
-        elif pulp_check.strip().lower() == 'q':
             print("Operation aborted upon user request.")
             sys.exit(0)
         elif pulp_check.strip().lower() == 'y':
@@ -232,7 +256,7 @@ def main():
         log_print_msg(log.info, "Migrate Summary: \n")
         for repodir, summary in migrate_summary.items():
             log_print_msg(log.info, "Repo Directory: %s \n Migrated: %s, Skipped: %s, Missing: %s\n" % (repodir, summary['migrated'], summary['skipped'], summary['missing']))
-    print('Migration successfully completed; see %s for more info' % LOG_FILE )
+    print('Migration completed; see %s for more details' % LOG_FILE )
 if __name__=='__main__':
     try:
         main()
