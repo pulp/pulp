@@ -40,10 +40,10 @@ class RunSyncCommand(PulpCliCommand):
         PulpCliCommand.__init__(self, 'run', 'triggers an immediate sync of a repository', self.sync)
         self.context = context
 
-        self.create_option('--id', 'identifies the repository to sync', required=True)
+        self.create_option('--repo_id', 'identifies the repository to sync', required=True)
 
     def sync(self, **kwargs):
-        repo_id = kwargs['id']
+        repo_id = kwargs['repo_id']
         self.context.prompt.render_title('Synchronizing Repository [%s]' % repo_id)
 
         response = self.context.server.repo_actions.sync(repo_id, None)
