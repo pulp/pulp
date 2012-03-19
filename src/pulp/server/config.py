@@ -69,6 +69,7 @@ _default_values = {
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'true',
+        'post_sync_url': '',
     },
     'tasking': {
         'concurrency_threshold': '4',

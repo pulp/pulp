@@ -10,13 +10,13 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from datetime import datetime
 
-import os
+import httplib
 import logging
-import sys
+import os
 import time
 import traceback
+from datetime import datetime
 from gettext import gettext as _
 from StringIO import StringIO
 
@@ -31,12 +31,14 @@ from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.api.repo_clone_task import RepoCloneTask
 from pulp.server.auditing import audit
-from pulp.server.async import run_async
+from pulp.server.compat import json
 from pulp.server.event.handler.task import TaskDequeued
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.exception import CancelException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import top_repos_location, top_gpg_location, encode_unicode
+
+
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
@@ -214,6 +216,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
         if content_type == 'yum':
             task.weight = config.config.getint('yum', 'task_weight')
     task.add_dequeue_hook(TaskDequeued())
+    task.add_dequeue_hook(post_sync)
     task = async.enqueue(task)
     if task is None:
         log.error("Unable to create repo._sync task for [%s]" % (repo_id))
@@ -401,3 +404,34 @@ def export_comps(repoid):
     xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
     return xml
+
+
+def post_sync(task):
+    """
+    Post sync dequeue hook to push repo and task ids to a configured url
+    @param task: sync task
+    """
+    url = config.config.get('sync', 'post_sync_url')
+    if not url:
+        return
+    try:
+        scheme, empty, server, path = url.split('/', 3)
+    except ValueError:
+        msg = _('Improperly configured post_sync_url: %(u)s') % {'u': url}
+        log.warn(msg)
+        return
+    path = '/' + path
+    data = {'task_id': task.id, 'repo_id': task.repo_id}
+    body = json.dumps(data)
+    if scheme.startswith('https'):
+        connection = httplib.HTTPSConnection(server)
+    else:
+        connection = httplib.HTTPConnection(server)
+    connection.request('POST', path, body=body)
+    response = connection.getresponse()
+    if response.status != httplib.OK:
+        error_msg = response.read()
+        msg = _('Error response from post_sync_url: %(e)') % {'e': error_msg}
+        log.warn(msg)
+    connection.close()
+
