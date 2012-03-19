@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.139
+Version: 0.0.141
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -17,7 +17,7 @@ Requires:       createrepo, python >= 2.4
 Requires:       PyYAML
 Requires:       python-pycurl
 %if 0%{?rhel} == 6
-# RHEL-6,
+# RHEL-6, 
 # Require updated nss/curl for BZ: https://bugzilla.redhat.com/show_bug.cgi?id=710455
 Requires:       nss >= 3.12.9
 Requires:       curl => 7.19.7
@@ -26,11 +26,11 @@ Requires:       python-hashlib
 
 
 %description
-A tool for synchronizing content such as packages, distributions, and
+A tool for synchronizing content such as packages, distributions, and 
 errata from yum repositories.
 
 %prep
-%setup -q
+%setup -q 
 
 
 %build
@@ -59,15 +59,26 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Mon Feb 27 2012 Jeff Ortel <jortel@redhat.com> 0.0.139-1
-- rel-eng: add grinder under rpm/. (jortel@redhat.com)
+* Mon Mar 19 2012 John Matthews <jmatthews@redhat.com> 0.0.141-1
+- Fix unit tests to reflect full checksum being used (jmatthews@redhat.com)
+- Unit tests for local sync (jmatthews@redhat.com)
+
+* Mon Mar 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.140-1
+- Include the full checksum when creating package paths (pkilambi@redhat.com)
+- Added support for local syncs, URLs using file:///  - Refactored Distribution
+  Sync to reduce error messages logged to console on routine operations
+  (jmatthews@redhat.com)
+- Add filename to rpm data structure for Pulp v2 work (jmatthews@redhat.com)
+- Update progress to reflect when we begin downloading packages, need to re-
+  examine remove_old logic (jmatthews@redhat.com)
+- setup tito releasers. (jortel@redhat.com)
 
 * Mon Feb 27 2012 John Matthews <jmatthews@redhat.com> 0.0.139-1
 - 797195 - Syncing multiple repos concurrently could cause missing symlinks
   (jmatthews@redhat.com)
 
 * Thu Feb 23 2012 John Matthews <jmatthews@redhat.com> 0.0.138-1
--
+- 
 
 * Thu Feb 23 2012 John Matthews <jmatthews@redhat.com> 0.0.137-1
 - Refactor grinder to support integration with Pulp's generic content approach
@@ -259,7 +270,7 @@ rm -rf $RPM_BUILD_ROOT
   separate certs (jmatthews@redhat.com)
 
 * Tue Jun 07 2011 John Matthews <jmatthew@redhat.com> 0.0.103-1
--
+- 
 
 * Tue Jun 07 2011 John Matthews <jmatthews@redhat.com> 0.0.102-1
 - 710455 - Grinder cannot sync a Pulp protected repo (jmatthews@redhat.com)
@@ -315,14 +326,14 @@ rm -rf $RPM_BUILD_ROOT
 - Added ability to limit download bandwidth per thread (jmatthew@redhat.com)
 
 * Fri Mar 25 2011 John Matthews <jmatthew@redhat.com> 0.0.90-1
--
+- 
 
 * Fri Mar 25 2011 John Matthews <jmatthews@redhat.com> 0.0.89-1
 - 690157 - Sync'd Repository Structure does not match Feed Repo
   (jmatthews@redhat.com)
 
 * Fri Mar 18 2011 John Matthews <jmatthew@redhat.com> 0.0.88-1
--
+- 
 
 * Fri Mar 18 2011 John Matthews <jmatthew@redhat.com> 0.0.87-1
 - build in brew RHEL-6-CLOUDE (jmatthew@redhat.com)
@@ -379,7 +390,7 @@ rm -rf $RPM_BUILD_ROOT
 - 670526 - Add more information to progress reporting (jmatthews@redhat.com)
 
 * Thu Jan 20 2011 John Matthews <jmatthews@redhat.com> 0.0.73-1
--
+- 
 
 * Mon Jan 17 2011 John Matthews <jmatthew@redhat.com> 0.0.72-1
 - 670283 - Yum Repo sync failing for fedora channels (jmatthew@redhat.com)
@@ -462,7 +473,7 @@ rm -rf $RPM_BUILD_ROOT
   (jmatthew@redhat.com)
 
 * Fri Jul 30 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.54-1
--
+- 
 
 * Fri Jul 30 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.53-1
 - Adding http proxy support to grinder's yum repo fetches - user/password auth
@@ -521,7 +532,7 @@ rm -rf $RPM_BUILD_ROOT
 - 593074 - set the relative path based on primary xml (pkilambi@redhat.com)
 
 * Mon May 17 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.43-1
--
+- 
 
 * Fri May 14 2010 John Matthews <jwmatthews@gmail.com> 0.0.42-1
 - Updates for Package/Kickstart fetch to work with changes in BaseFetch Note:
@@ -657,4 +668,5 @@ rm -rf $RPM_BUILD_ROOT
   (skarmark@redhat.com)
 
 * Fri Feb 26 2010 Mike McCune <mmccune@redhat.com> 0.0.11-1
-- Initial creation of RPM/specfile
+- Initial creation of RPM/specfile 
+
