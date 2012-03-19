@@ -530,6 +530,12 @@ class RepoUnitAdvancedSearch(JSONController):
         params = self.params()
         query = params.get('query', None)
 
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo = repo_query_manager.find_by_id(repo_id)
+        if repo is None:
+            serialized = http_error_obj(404)
+            return self.not_found(serialized)
+
         if query is None:
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
