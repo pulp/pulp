@@ -22,6 +22,7 @@ version = 35
 def _migrate_packages():
     pkg_collection = Package.get_collection()
     repo_collection = Repo.get_collection()
+    repo_collection.ensure_index("errata")
     all_packages = list(pkg_collection.find())
     _LOG.info('migrating %s packages' % len(all_packages))
     for pkg in all_packages:
@@ -62,13 +63,14 @@ def find_errata_repos(errata_id):
     Return repos that contain passed in errata_id
     """
     repos = []
+    e_types = ["enhancement", "security", "bugfix"]
     collection = Repo.get_collection()
-    all_repos = list(collection.find())
-    for r in all_repos:
-        for e_type in r["errata"]:
-            if errata_id in r["errata"][e_type]:
-                repos.append(r["id"])
-                break
+
+    for e_type in e_types:
+        key = "errata.%s" % (e_type)
+        for r in collection.find({key:errata_id}):
+            if r["id"] not in repos:
+                repos += r
     return repos
 
 def migrate():
