@@ -141,7 +141,10 @@ class RepoDistributorManager(object):
 
         # Convention is that a value of None means unset. Remove any keys that
         # are explicitly set to None so the plugin will default them.
-        clean_config = dict([(k, v) for k, v in repo_plugin_config.items() if v is not None])
+        if repo_plugin_config is not None:
+            clean_config = dict([(k, v) for k, v in repo_plugin_config.items() if v is not None])
+        else:
+            clean_config = None
 
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
