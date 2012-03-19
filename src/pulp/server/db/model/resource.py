@@ -259,7 +259,7 @@ class Repo(Model):
     SUPPORTED_CONTENT_TYPES = ['yum', 'file']
 
     collection_name = 'repos'
-    search_indices = ('packages', 'packagegroups', 'packagegroupcategories')
+    search_indices = ('packages', 'packagegroups', 'packagegroupcategories', 'errata')
     unique_indices = ('relative_path',)
 
     def __init__(self, id, name, arch, relative_path, source=None, notes=None, content_types=None):
