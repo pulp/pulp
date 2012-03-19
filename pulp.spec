@@ -43,7 +43,7 @@ Requires: python-oauth2 >= 1.5.170-2.pulp%{?dist}
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp%{?dist}
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.139
+Requires: grinder >= 0.0.140
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
