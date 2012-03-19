@@ -407,7 +407,7 @@ def post_sync(task):
     Post sync dequeue hook to push repo and task ids to a configured url
     @param task: sync task
     """
-    url = config.config.get('sync', 'post_sync_url')
+    url = config.config.get('server', 'post_sync_url')
     if not url:
         return
     try:
