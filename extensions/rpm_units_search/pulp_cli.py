@@ -29,7 +29,7 @@ ALL_TYPES = (TYPE_RPM, TYPE_SRPM, TYPE_DRPM, TYPE_ERRATUM)
 FIELDS_RPM = ('arch', 'buildhost', 'checksum', 'checksumtype', 'description',
               'epoch', 'filename', 'license', 'name', 'provides', 'release',
               'requires', 'vendor', 'version')
-FIELDS_ERRATA = ('id', 'tite', 'summary', 'severity', 'type', 'description')
+FIELDS_ERRATA = ('id', 'title', 'summary', 'severity', 'type', 'description')
 
 # Used when generating the --fields help text so it can be customized by type
 FIELDS_BY_TYPE = {
@@ -351,6 +351,12 @@ def args_to_criteria_doc(kwargs, type_ids):
     # Field Limits
     if 'fields' in kwargs and kwargs['fields'] is not None:
         field_names = [f.strip() for f in kwargs['fields'].split(',')] # .strip handles "id, name" case
+
+        valid_fields = FIELDS_BY_TYPE[type_ids[0]]
+        invalid_fields = [f for f in field_names if f not in valid_fields]
+        if len(invalid_fields) > 0:
+            raise InvalidCriteria(_('Fields must be chosen from the following list: %(l)s') % {'l' : ', '.join(valid_fields)})
+
         criteria['fields'] = {}
         criteria['fields']['unit'] = field_names
 
