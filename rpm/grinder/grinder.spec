@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Mar 19 2012 John Matthews <jmatthews@redhat.com> 0.0.141-1
+- Added grinder 0.0.141 to rpms dir (jmatthews@redhat.com)
+
+* Mon Mar 19 2012 John Matthews <jmatthews@redhat.com> 0.0.141-1
 - Fix unit tests to reflect full checksum being used (jmatthews@redhat.com)
 - Unit tests for local sync (jmatthews@redhat.com)
 
