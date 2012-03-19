@@ -71,4 +71,4 @@ class ExceptionHandlerMiddleware(object):
             self.headers['Content-Length'] = str(len(serialized_error))
             status_str = '%d %s' % (status, http_responses[status])
             start_response(status_str, [(k, v) for k, v in self.headers.items()])
-            return serialized_error
+            return [serialized_error]
