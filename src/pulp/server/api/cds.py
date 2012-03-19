@@ -410,15 +410,13 @@ class CdsApi(BaseApi):
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
-        # v2 hack (begin)
+        #repo = self._repocollection().find_one({'id' : repo_id})
+        #if repo is None:
+        #    raise PulpException('Repository with ID [%s] could not be found' % repo_id)
         manager = manager_factory.repo_query_manager()
         repo = manager.find_by_id(repo_id)
         if repo is None:
             raise MissingResource(repo_id)
-        #repo = self._repocollection().find_one({'id' : repo_id})
-        #if repo is None:
-        #    raise PulpException('Repository with ID [%s] could not be found' % repo_id)
-        # v2 hack (end)
 
         # If the repo isn't already associated with the CDS, process it
         if repo_id not in cds['repo_ids']:
@@ -535,11 +533,18 @@ class CdsApi(BaseApi):
         repo_cert_bundles = {}
 
         for repo_id in cds['repo_ids']:
-            repo = self._repocollection().find_one({'id' : repo_id}, fields=REPO_FIELDS)
+            #repo = self._repocollection().find_one({'id' : repo_id}, fields=REPO_FIELDS)
+            manager = manager_factory.repo_query_manager()
+            repo = manager.find_by_id(repo_id)
+            if repo is None:
+                raise MissingResource(repo_id)
+            manager = manager_factory.repo_distributor_manager()
+            distributor = manager.get_distributors(repo_id)[0]
 
             # Load the repo cert bundle
-            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
-            repo_cert_bundles[repo['id']] = bundle
+            repo_cert_bundles[repo['id']] = distributor.config.get('auth_cert')
+
+            repo['relative_path'] = distributor.config['relative_url']
 
             repos.append(repo)
 
