@@ -136,6 +136,7 @@ registration, and repository binding.
 Summary:        Admin tool to administer the pulp server
 Group:          Development/Languages
 Requires:       %{name}-client-lib = %{version}
+Requires:       python-okaara >= 1.0.12
 Obsoletes:      pulp-client <= 0.218
 
 %description admin
