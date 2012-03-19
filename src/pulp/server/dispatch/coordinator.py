@@ -491,8 +491,8 @@ def task_matches_criteria(task, criteria):
         if a not in task.call_request.args:
             return False
     for k, v in criteria.get('kwargs', {}):
-       if k not in task.call_request.kwargs or v != task.call_request.kwargs[k]:
-           return False
+        if k not in task.call_request.kwargs or v != task.call_request.kwargs[k]:
+            return False
     for t in criteria.get('tags', []):
         if t not in task.call_request.tags:
             return False
