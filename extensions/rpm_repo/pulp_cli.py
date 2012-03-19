@@ -117,9 +117,10 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         # During create (but not update), if the relative path isn't specified
         # it is derived from the feed_url
-        url_parse = urlparse(encode_unicode(importer_config['feed_url']))
-        relative_path = url_parse[2] or repo_id
-        distributor_config['relative_url'] = relative_path
+        if 'relative_url' not in distributor_config:
+            url_parse = urlparse(encode_unicode(importer_config['feed_url']))
+            relative_path = url_parse[2] or repo_id
+            distributor_config['relative_url'] = relative_path
 
         # TODO: This whole mess of exception stuff is gonna be handled by the exception handler
 
