@@ -85,7 +85,7 @@ _default_values = {
         'failure_threshold': '-1',
     },
     'task_queue': {
-        'concurrency_threshold': '4',
+        'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
     },
     'yum': {
