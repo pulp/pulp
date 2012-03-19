@@ -330,8 +330,12 @@ class Task(object):
             pass
         task = cls(_dummy_callable)
         for field in task._copy_fields:
+            if field not in snapshot:
+                continue
             setattr(task, field, snapshot[field])
         for field in task._pickle_fields:
+            if field not in snapshot:
+                continue
             setattr(task, field, pickle.loads(snapshot[field]))
         # NOTE: Ok, so this is tricky, but we no longer pickle the scheduler
         # field. This is because tasks are only snapshot-ed when they are
