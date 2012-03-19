@@ -500,6 +500,19 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Mar 19 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-6
+- fixed server config error (jconnor@redhat.com)
+- 802454 - added post_sync_url and post_sync dequeue hook for POSTing task and
+  repo id back to a configured url (jconnor@redhat.com)
+- Grinder 0.141 (jmatthews@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.141-1].
+  (jmatthews@redhat.com)
+- Bump to grinder 0.141 (jmatthews@redhat.com)
+- updating spec file to include migrate script and bump grinder version
+  (pkilambi@redhat.com)
+- 798656 - include full checksum when constructing package paths. Including
+  migration script to migrate existing content (pkilambi@redhat.com)
+
 * Wed Mar 14 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-5
 - bump release for build. (jortel@redhat.com)
 - 801184 - Error messages when installing selinux RPM after its already been
