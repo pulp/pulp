@@ -23,10 +23,9 @@ import pulp.server.managers.repo._exceptions as repo_exceptions
 import pulp.server.managers.factory as manager_factory
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.managers.repo.unit_association_query import Criteria
-from pulp.server.webservices import serialization
+from pulp.server.webservices import execution
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.queries.repo import unit_association_criteria
@@ -81,18 +80,14 @@ class RepoCollection(JSONController):
 
         # Creation
         repo_manager = manager_factory.repo_manager()
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        call_request = CallRequest(repo_manager.create_repo,
+                                   [id, display_name, description, notes],
+                                   resources=resources,
+                                   weight=0,
+                                   archive=True)
+        return execution.execute_sync(self, call_request, expected_response='created')
 
-        try:
-            repo = repo_manager.create_repo(id, display_name, description, notes)
-            return self.created(None, repo)
-        except exceptions.DuplicateResource:
-            _LOG.exception('Duplicate repo ID [%s]' % id)
-            serialized = http_error_obj(409)
-            return self.conflict(serialized)
-        except exceptions.InvalidValue:
-            _LOG.exception('Bad request data for repository [%s]' % id)
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
 
 class RepoResource(JSONController):
 
@@ -108,8 +103,7 @@ class RepoResource(JSONController):
         repo = query_manager.find_by_id(id)
 
         if repo is None:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+            raise exceptions.MissingResource(id)
 
         # Load the importer/distributor information into the repository
         importer_manager = manager_factory.repo_importer_manager()
@@ -131,18 +125,13 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-        coordinator = dispatch_factory.coordinator()
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        call_request = CallRequest(repo_manager.delete_repo, [id], resources=resources, archive=True)
-        call_report = coordinator.execute_call_asynchronously(call_request)
-
-        serialized_call_report = call_report.serialize()
-        if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
-            raise exceptions.ConflictingOperation(serialized_call_report['reasons'])
-        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
-        serialized_call_report.update(link)
-        return self.accepted(serialized_call_report)
+        call_request = CallRequest(repo_manager.delete_repo,
+                                   [id],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request)
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -151,17 +140,15 @@ class RepoResource(JSONController):
 
         if delta is None:
             _LOG.exception('Missing delta when updating repository [%s]' % id)
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise exceptions.MissingData('delta')
 
         repo_manager = manager_factory.repo_manager()
-
-        try:
-            repo = repo_manager.update_repo(id, delta)
-            return self.ok(repo)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(repo_manager.update_repo,
+                                   [id, delta],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request)
 
 # -- importer controllers -----------------------------------------------------
 
@@ -175,13 +162,9 @@ class RepoImporters(JSONController):
     def GET(self, repo_id):
         importer_manager = manager_factory.repo_importer_manager()
 
-        try:
-            importers = importer_manager.get_importers(repo_id)
-            # TODO: serialize properly
-            return self.ok(importers)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        importers = importer_manager.get_importers(repo_id)
+        # TODO: serialize properly
+        return self.ok(importers)
 
     @auth_required(CREATE)
     def POST(self, repo_id):
@@ -193,26 +176,20 @@ class RepoImporters(JSONController):
 
         if importer_type is None:
             _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise exceptions.MissingData('importer_type')
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
         # Note: If the plugin raises an exception during initialization, let it
         #  bubble up and be handled like any other 500.
 
         importer_manager = manager_factory.repo_importer_manager()
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
+        call_request = CallRequest(importer_manager.set_importer,
+                                   [repo_id, importer_type, importer_config],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request, expected_response='created')
 
-        try:
-            importer = importer_manager.set_importer(repo_id, importer_type, importer_config)
-            # TODO: serialize importer
-            return self.created(None, importer)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
-        except (exceptions.InvalidValue, repo_exceptions.InvalidImporterConfiguration):
-            _LOG.exception('Bad request data adding importer of type [%s] to repository [%s]' % (importer_type, repo_id))
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
 
 class RepoImporter(JSONController):
 
@@ -226,25 +203,21 @@ class RepoImporter(JSONController):
 
         importer_manager = manager_factory.repo_importer_manager()
 
-        try:
-            importer = importer_manager.get_importer(repo_id)
-            # TODO: serialize properly
-            return self.ok(importer)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        importer = importer_manager.get_importer(repo_id)
+        # TODO: serialize properly
+        return self.ok(importer)
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, importer_id):
 
         importer_manager = manager_factory.repo_importer_manager()
-
-        try:
-            importer_manager.remove_importer(repo_id)
-            return self.ok(None)
-        except (exceptions.MissingResource, exceptions.MissingResource):
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        call_request = CallRequest(importer_manager.remove_importer,
+                                   [repo_id],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -255,17 +228,16 @@ class RepoImporter(JSONController):
 
         if importer_config is None:
             _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise exceptions.MissingData('importer_config')
 
         importer_manager = manager_factory.repo_importer_manager()
-
-        try:
-            importer = importer_manager.update_importer_config(repo_id, importer_config)
-            return self.ok(importer)
-        except (exceptions.MissingResource, exceptions.MissingResource):
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(importer_manager.update_importer_config,
+                                   [repo_id, importer_config],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request)
 
 # -- distributor controllers --------------------------------------------------
 
@@ -279,13 +251,9 @@ class RepoDistributors(JSONController):
     def GET(self, repo_id):
         distributor_manager = manager_factory.repo_distributor_manager()
 
-        try:
-            distributor_list = distributor_manager.get_distributors(repo_id)
-            # TODO: serialize each distributor before returning
-            return self.ok(distributor_list)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        distributor_list = distributor_manager.get_distributors(repo_id)
+        # TODO: serialize each distributor before returning
+        return self.ok(distributor_list)
 
     @auth_required(CREATE)
     def POST(self, repo_id):
@@ -305,16 +273,14 @@ class RepoDistributors(JSONController):
         # Note: The manager will automatically replace a distributor with the
         # same ID, so there is no need to return a 409.
 
-        try:
-            added = distributor_manager.add_distributor(repo_id, distributor_type, distributor_config, auto_publish, distributor_id)
-            return self.created(None, added)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
-        except (exceptions.InvalidValue, repo_exceptions.InvalidDistributorConfiguration):
-            _LOG.exception('Bad request adding distributor of type [%s] to repo [%s]' % (distributor_type, repo_id))
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        call_request = CallRequest(distributor_manager.add_distributor,
+                                   [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request, expected_response='created')
+
 
 class RepoDistributor(JSONController):
 
@@ -327,24 +293,20 @@ class RepoDistributor(JSONController):
     def GET(self, repo_id, distributor_id):
         distributor_manager = manager_factory.repo_distributor_manager()
 
-        try:
-            distributor = distributor_manager.get_distributor(repo_id, distributor_id)
-            # TODO: serialize properly
-            return self.ok(distributor)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        distributor = distributor_manager.get_distributor(repo_id, distributor_id)
+        # TODO: serialize properly
+        return self.ok(distributor)
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
         distributor_manager = manager_factory.repo_distributor_manager()
-
-        try:
-            distributor_manager.remove_distributor(repo_id, distributor_id)
-            return self.ok(None)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        call_request = CallRequest(distributor_manager.remove_distributor,
+                                   [repo_id, distributor_id],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
@@ -355,17 +317,16 @@ class RepoDistributor(JSONController):
 
         if distributor_config is None:
             _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise exceptions.MissingData('distributor_config')
 
         distributor_manager = manager_factory.repo_distributor_manager()
-
-        try:
-            updated = distributor_manager.update_distributor_config(repo_id, distributor_id, distributor_config)
-            return self.ok(updated)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(distributor_manager.update_distributor_config,
+                                   [repo_id, distributor_id, distributor_config],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute(self, call_request)
 
 # -- history controllers ------------------------------------------------------
 
@@ -385,16 +346,12 @@ class RepoSyncHistory(JSONController):
                 limit = int(limit[0])
             except ValueError:
                 _LOG.exception('Invalid limit specified [%s]' % limit)
-                serialized = http_error_obj(400)
-                return self.bad_request(serialized)
+                raise exceptions.InvalidValue(limit[0])
 
         sync_manager = manager_factory.repo_sync_manager()
-        try:
-            entries = sync_manager.sync_history(repo_id, limit=limit)
-            return self.ok(entries)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        entries = sync_manager.sync_history(repo_id, limit=limit)
+        return self.ok(entries)
+
 
 class RepoPublishHistory(JSONController):
 
@@ -412,16 +369,11 @@ class RepoPublishHistory(JSONController):
                 limit = int(limit[0])
             except ValueError:
                 _LOG.exception('Invalid limit specified [%s]' % limit)
-                serialized = http_error_obj(400)
-                return self.bad_request(serialized)
+                raise exceptions.InvalidValue(limit[0])
 
         publish_manager = manager_factory.repo_publish_manager()
-        try:
-            entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
-            return self.ok(entries)
-        except exceptions.MissingResource:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+        entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
+        return self.ok(entries)
 
 # -- action controllers -------------------------------------------------------
 
@@ -440,19 +392,15 @@ class RepoSync(JSONController):
         overrides = params.get('override_config', None)
 
         # Execute the sync asynchronously
-        coordinator = dispatch_factory.coordinator()
         repo_sync_manager = manager_factory.repo_sync_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        call_request = CallRequest(repo_sync_manager.sync, [repo_id, overrides], resources=resources, archive=True)
-        call_report = coordinator.execute_call_asynchronously(call_request)
+        call_request = CallRequest(repo_sync_manager.sync,
+                                   [repo_id, overrides],
+                                   resources=resources,
+                                   weight=2, # needs to be configurable!
+                                   archive=True)
+        return execution.execute_async(self, call_request)
 
-        # Report the results
-        serialized_call_report = call_report.serialize()
-        if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
-            raise exceptions.ConflictingOperation(serialized_call_report['reasons'])
-        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
-        serialized_call_report.update(link)
-        return self.accepted(serialized_call_report)
 
 class RepoPublish(JSONController):
 
@@ -470,19 +418,14 @@ class RepoPublish(JSONController):
         overrides = params.get('override_config', None)
 
         # Execute the publish asynchronously
-        coordinator = dispatch_factory.coordinator()
         repo_publish_manager = manager_factory.repo_publish_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        call_request = CallRequest(repo_publish_manager.publish, [repo_id, distributor_id, overrides], archive=True)
-        call_report = coordinator.execute_call_asynchronously(call_request)
+        call_request = CallRequest(repo_publish_manager.publish,
+                                   [repo_id, distributor_id, overrides],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute_async(self, call_request)
 
-        # Report the results
-        serialized_call_report = call_report.serialize()
-        if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
-            raise exceptions.ConflictingOperation(serialized_call_report['reasons'])
-        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
-        serialized_call_report.update(link)
-        return self.accepted(serialized_call_report)
 
 class RepoAssociate(JSONController):
 
@@ -497,28 +440,30 @@ class RepoAssociate(JSONController):
         source_repo_id = params.get('source_repo_id', None)
 
         if source_repo_id is None:
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise exceptions.MissingData('source_repo_id')
 
         criteria = params.get('criteria', None)
         if criteria is not None:
             try:
                 criteria = unit_association_criteria(criteria)
-            except Exception:
+            except:
                 _LOG.exception('Error parsing association criteria [%s]' % criteria)
-                serialized = http_error_obj(400)
-                return self.bad_request(serialized)
-
-        # TODO: Make this run asynchronously
+                raise
 
         # This should probably handle the exceptions and convert them to HTTP
         # status codes, but I'm still unsure of how we're going to handle these
         # in the async world, so for now a 500 is fine.
 
         association_manager = manager_factory.repo_unit_association_manager()
-        association_manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {source_repo_id: dispatch_constants.RESOURCE_READ_OPERATION,
+                                                                   dest_repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(association_manager.associate_from_repo,
+                                   [source_repo_id, dest_repo_id],
+                                   {'criteria': criteria},
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute_async(self, call_request)
 
-        return self.ok({})
 
 class RepoUnitAdvancedSearch(JSONController):
 
@@ -538,15 +483,13 @@ class RepoUnitAdvancedSearch(JSONController):
             return self.not_found(serialized)
 
         if query is None:
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise exceptions.MissingData('query')
 
         try:
             criteria = unit_association_criteria(query)
-        except Exception:
+        except:
             _LOG.exception('Error parsing association criteria [%s]' % query)
-            serialized = http_error_obj(400)
-            return self.bad_request(serialized)
+            raise
 
         # Data lookup
         manager = manager_factory.repo_unit_association_query_manager()
