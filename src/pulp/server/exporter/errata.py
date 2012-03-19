@@ -96,7 +96,8 @@ class ErrataExporter(BaseExporter):
                 for pkg in pkgobj['packages']:
                     checksum_type, checksum = pkg['sum']
                     name, version, release, arch = pkg['name'], pkg['version'], pkg['release'], pkg['arch']
-                    src_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), name, version, release, arch, checksum[:3], pkg['filename'])
+                    src_pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), name, version,
+                                                             release, arch, checksum, pkg['filename'])
                     if not os.path.exists(src_pkg_path):
                         # pkg not found
                         log.info("errata package %s missing on pulp server" % src_pkg_path)

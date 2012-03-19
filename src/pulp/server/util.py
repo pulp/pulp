@@ -426,7 +426,7 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
         hash = checksum.values()[0]
 
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
-        name, version, release, arch, hash[:3], filename)
+        name, version, release, arch, hash, filename)
     return pkg_location
 
 def get_relative_path(source_path, dest_path):
