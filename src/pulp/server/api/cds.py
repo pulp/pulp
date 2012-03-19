@@ -540,11 +540,12 @@ class CdsApi(BaseApi):
                 raise MissingResource(repo_id)
             manager = manager_factory.repo_distributor_manager()
             distributor = manager.get_distributors(repo_id)[0]
+            distconfig = distributor['config']
 
             # Load the repo cert bundle
-            repo_cert_bundles[repo['id']] = distributor.config.get('auth_cert')
-
-            repo['relative_path'] = distributor.config['relative_url']
+            repo_cert_bundles[repo['id']] = distconfig.get('auth_cert')
+            repo['name'] = repo['display_name']
+            repo['relative_path'] = distconfig['relative_url']
 
             repos.append(repo)
 
