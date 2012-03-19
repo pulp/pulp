@@ -35,6 +35,10 @@ from pulp.server.cds.dispatcher import (
 from pulp.server.db.model import CDS, Repo
 from pulp.server.exceptions import PulpException
 
+# v2 hack
+import pulp.server.managers.factory as manager_factory
+from pulp.server.exceptions import MissingResource
+
 # -- constants ----------------------------------------------------------------
 
 log = logging.getLogger(__name__)
@@ -406,9 +410,15 @@ class CdsApi(BaseApi):
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
-        repo = self._repocollection().find_one({'id' : repo_id})
+        # v2 hack (begin)
+        manager = manager_factory.repo_query_manager()
+        repo = manager.find_by_id(repo_id)
         if repo is None:
-            raise PulpException('Repository with ID [%s] could not be found' % repo_id)
+            raise MissingResource(repo_id)
+        #repo = self._repocollection().find_one({'id' : repo_id})
+        #if repo is None:
+        #    raise PulpException('Repository with ID [%s] could not be found' % repo_id)
+        # v2 hack (end)
 
         # If the repo isn't already associated with the CDS, process it
         if repo_id not in cds['repo_ids']:
