@@ -45,6 +45,7 @@ class TestRPMs(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
+        self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
 
     def clean(self):
         shutil.rmtree(self.temp_dir)
@@ -78,9 +79,9 @@ class TestRPMs(unittest.TestCase):
                     'license': 'MIT', 
                     'checksum': '4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7', 
                     'description': 'Test package.  Nothing to see here.', 
-                    'pkgpath': '%s/.//pulp-test-package/0.2.1/1.fc11/x86_64/4db' % (pkg_dir), 
+                    'pkgpath': '%s/.//pulp-test-package/0.2.1/1.fc11/x86_64/4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7' % (pkg_dir), 
                     'savepath': '%s/%s/' % (repo_working_dir, repo_label), 
-                    'fileName': 'pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 
+                    'filename': 'pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 
                     'downloadurl': 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/pulp-test-package-0.2.1-1.fc11.x86_64.rpm', 
                     'item_type': 'rpm', 
                     'epoch': '0', 
@@ -104,9 +105,9 @@ class TestRPMs(unittest.TestCase):
                     'license': 'MIT', 
                     'checksum': '435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979', 
                     'description': 'Test package to see how we deal with packages with dots in the name', 
-                    'pkgpath': '%s/.//pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435' % (pkg_dir), 
+                    'pkgpath': '%s/.//pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979' % (pkg_dir), 
                     'savepath': '%s/%s/' % (repo_working_dir, repo_label), 
-                    'fileName': 'pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 
+                    'filename': 'pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 
                     'downloadurl': 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm', 
                     'item_type': 'rpm', 
                     'epoch': '0', 
@@ -130,9 +131,9 @@ class TestRPMs(unittest.TestCase):
                     'license': 'MIT', 
                     'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f', 
                     'description': 'Test package.  Nothing to see here.', 
-                    'pkgpath': '%s/.//pulp-test-package/0.3.1/1.fc11/x86_64/6bc' % (pkg_dir), 
+                    'pkgpath': '%s/.//pulp-test-package/0.3.1/1.fc11/x86_64/6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f' % (pkg_dir), 
                     'savepath': '%s/%s/' % (repo_working_dir, repo_label), 
-                    'fileName': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
+                    'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
                     'downloadurl': 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
                     'item_type': 'rpm', 
                     'epoch': '0', 
@@ -174,6 +175,33 @@ class TestRPMs(unittest.TestCase):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(summary is not None)
+        self.assertTrue(details is not None)
+        self.assertTrue(status)
+        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(summary["num_resynced_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        self.assertEquals(summary["num_orphaned_rpms"], 0)
+        self.assertEquals(details["size_total"], 6791)
+        # Confirm regular RPM files exist under self.pkg_dir
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 3)
+        for p in pkgs:
+            self.assertTrue(os.path.isfile(p))
+        # Confirm symlinks to RPMs exist under repo.working_dir
+        sym_links = self.get_files_in_dir("*.rpm", repo.working_dir)
+        self.assertEquals(len(pkgs), 3)
+        for link in sym_links:
+            self.assertTrue(os.path.islink(link))
+    
+    def test_basic_local_sync(self):
+        feed_url = "file://%s/pulp_unittest/" % (self.data_dir)
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_basic_local_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
@@ -417,10 +445,10 @@ class TestRPMs(unittest.TestCase):
         #  Then run remove_unit
         # Confirm that both the RPM and the Symlink have been deleted from the file system
         for rpm in expected_rpms.values():
-            rpm_save_path = os.path.join(rpm["pkgpath"], rpm["fileName"])
+            rpm_save_path = os.path.join(rpm["pkgpath"], rpm["filename"])
             self.assertTrue(os.path.exists(rpm_save_path))
 
-            symlink_save_path = os.path.join(rpm["savepath"], rpm["fileName"])
+            symlink_save_path = os.path.join(rpm["savepath"], rpm["filename"])
             self.assertTrue(os.path.lexists(symlink_save_path))
 
             unit = Unit(RPM_TYPE_ID, 
@@ -463,7 +491,7 @@ class TestRPMs(unittest.TestCase):
             u = Unit(RPM_TYPE_ID, 
                     importer_rpm.form_rpm_unit_key(rpm), 
                     importer_rpm.form_rpm_metadata(rpm),
-                    os.path.join(self.pkg_dir, rpm["pkgpath"], rpm["fileName"]))
+                    os.path.join(self.pkg_dir, rpm["pkgpath"], rpm["filename"]))
             existing_units.append(u)
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=6)
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)

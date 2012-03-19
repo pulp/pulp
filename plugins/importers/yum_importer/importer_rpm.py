@@ -22,7 +22,7 @@ _LOG = logging.getLogger(__name__)
 
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
-RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "fileName", "checksum", "checksumtype")
+RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype")
 
 
 PROGRESS_REPORT_FIELDS = ["items_total", "items_left", "size_total", "size_left", 
@@ -147,7 +147,7 @@ def form_rpm_metadata(rpm):
 
 def form_lookup_key(rpm):
     rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm["arch"],
-        rpm["fileName"], rpm["checksumtype"], rpm["checksum"])
+        rpm["filename"], rpm["checksumtype"], rpm["checksum"])
     return rpm_key
 
 def form_report(report):
@@ -267,7 +267,7 @@ def remove_unit(sync_conduit, repo, unit):
     _LOG.info("Removing unit <%s>" % (unit))
     sync_conduit.remove_unit(unit)
     error = False
-    sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["fileName"])
+    sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["filename"])
     paths = [unit.storage_path, sym_link]
     for f in paths:
         if os.path.lexists(f):

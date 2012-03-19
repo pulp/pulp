@@ -4,9 +4,9 @@
         "display_name" : "SRPM",
         "description" : "SRPM",
         "unit_key" :
-            ["name", "epoch", "version", "release", "arch", "fileName", "checksumtype", "checksum"],
+            ["name", "epoch", "version", "release", "arch", "filename", "checksumtype", "checksum"],
         "search_indexes" : 
-            ["name", "epoch", "version", "release", "arch", "fileName", "checksum", "checksumtype"]
+            ["name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype"]
     }
 ]}
 
