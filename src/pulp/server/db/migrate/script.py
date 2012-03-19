@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010-2011 Red Hat, Inc.
+# Copyright © 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -18,7 +18,6 @@ import sys
 from optparse import OptionParser, SUPPRESS_HELP
 
 from pulp.server import auditing
-from pulp.server.config import config
 from pulp.server.db import connection
 
 # the db connection and auditing need to be initialied before any further
@@ -30,6 +29,7 @@ _log = logging.getLogger('pulp')
 
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.migrate.versions import get_migration_modules
+from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.db.version import (
     VERSION, get_version_in_use, set_version, is_validated, set_validated, 
     revert_to_version, clean_db)
@@ -62,6 +62,11 @@ def start_logging(options):
     logger.addHandler(handler)
 
 
+def drop_snapshots():
+    collection = TaskSnapshot.get_collection()
+    collection.remove(safe=True)
+
+
 def datamodel_migration(options):
     version = get_version_in_use()
     assert version <= VERSION, \
@@ -78,7 +83,7 @@ def datamodel_migration(options):
             continue
         if mod.version > VERSION:
             print >> sys.stderr, \
-                    'migration provided for higer version than is expected'
+                    'migration provided for higher version than is expected'
             return os.EX_OK
         try:
             mod.migrate()
@@ -122,6 +127,8 @@ def main():
         last = int(options.start) - 1
         print 'reverting db to version %d' % last
         revert_to_version(last)
+    print 'removing persisted tasks'
+    drop_snapshots()
     ret = datamodel_migration(options)
     if ret != os.EX_OK:
         return ret
