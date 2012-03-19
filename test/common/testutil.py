@@ -73,6 +73,7 @@ from pulp.server import constants
 
 from pulp.server.auth import authorization
 from pulp.server.webservices import http
+from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 
 # test configuration -----------------------------------------------------------
 
@@ -311,8 +312,10 @@ class PulpWebserviceTest(PulpAsyncTest):
         load_test_config()
         from pulp.server.webservices import application
 
-        PulpWebserviceTest.WEB_APP = web.subdir_application(application.URLS)
-        PulpWebserviceTest.TEST_APP = TestApp(PulpWebserviceTest.WEB_APP.wsgifunc())
+        #PulpWebserviceTest.WEB_APP = web.subdir_application(application.URLS)
+        pulp_app = web.subdir_application(application.URLS)
+        pulp_stack = ExceptionHandlerMiddleware(pulp_app.wsgifunc())
+        PulpWebserviceTest.TEST_APP = TestApp(pulp_stack)
 
         def request_info(key):
             if key == "REQUEST_URI":
@@ -384,6 +387,6 @@ class PulpWebserviceTest(PulpAsyncTest):
         return status, body
 
 
-class PulpV2WebServicesTest(PulpCoordinatorTest, PulpWebserviceTest):
+class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
     # utilize multiple inheritance to override setup_async and teardown_async
     pass
