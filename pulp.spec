@@ -43,7 +43,7 @@ Requires: python-oauth2 >= 1.5.170-2.pulp%{?dist}
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp%{?dist}
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.139
+Requires: grinder >= 0.0.140
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -160,7 +160,7 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.66
-Requires:       grinder >= 0.0.139
+Requires:       grinder >= 0.0.140
 Requires:       httpd
 Requires:       mod_wsgi >= 3.3-3.pulp%{?dist}
 Requires:       mod_ssl
@@ -423,6 +423,7 @@ fi
 %doc
 %{python_sitelib}/pulp/__init__.*
 %{python_sitelib}/pulp/common/
+%{_bindir}/pulp-package-migrate
 
 # -- files - pulp client lib -----------------------------------------------------
 
