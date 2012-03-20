@@ -405,7 +405,7 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
                 return status, body['exception']
             return status, body['result']
 
-        status, body = PulpWebserviceTest._do_request(request_type, uri, params, additional_headers)
+        status, body = PulpWebserviceTest._do_request(self, request_type, uri, params, additional_headers)
         if status == httplib.ACCEPTED:
             return _poll_async_request(status, body)
         return status, body
