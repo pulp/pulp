@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright © 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -19,7 +21,7 @@ version = 41
 
 def _drop_errata_index():
     errata_coln = Errata.get_collection()
-    for idx, idx_info in errata_coln.index_information()
+    for idx, idx_info in errata_coln.index_information().items():
         for key in idx_info["key"]:
             if key[0] == "description":
                 _log.info("Dropping index %s from errata collection." % idx)
@@ -28,7 +30,7 @@ def _drop_errata_index():
 
 def _drop_package_index():
     pkg_coln = Package.get_collection()
-    for idx, idx_info in pkg_coln.index_information()
+    for idx, idx_info in pkg_coln.index_information().items():
         for key in idx_info["key"]:
             if key[0] == "description":
                 _log.info("Dropping index %s from package collection." % idx)
