@@ -15,8 +15,7 @@ import httplib
 from gettext import gettext as _
 
 from pulp.server.exceptions import (
-    ConflictingOperation, PulpExecutionException, PulpDataException,
-    SuperfluousData)
+    ConflictingOperation, PulpExecutionException, PulpDataException, InvalidValue)
 
 # call exceptions --------------------------------------------------------------
 
@@ -70,7 +69,7 @@ class AsynchronousExecutionError(CallRuntimeError):
     pass
 
 
-class UnrecognizedSearchCriteria(SuperfluousData):
+class UnrecognizedSearchCriteria(InvalidValue):
     pass
 
 # call rejected exception ------------------------------------------------------

@@ -137,38 +137,29 @@ class InvalidValue(PulpDataException):
         return {'property_names': self.property_names}
 
 
-class MissingData(PulpDataException):
+class MissingValue(PulpDataException):
     """
-    Base class of exceptions raised due to missing required data.
+    Base class of exceptions raised due to missing required data. The names of
+    all properties that are missing are specified in the constructor.
     """
 
-    def __init__(self, data):
-        PulpDataException.__init__(self, data)
-        self.data = data
+    def __init__(self, property_names):
+        """
+        @param property_names: list of all properties that were missing
+        @type  property_names: list
+        """
+        PulpDataException.__init__(self, property_names)
+
+        if not isinstance(property_names, (list, tuple)):
+            property_names = [property_names]
+        self.property_names = property_names
 
     def __str__(self):
-        msg = _('Missing data: %(d)s') % {'d': pformat(self.data)}
+        msg = _('Missing values for: %(v)s') % {'v': pformat(self.property_names)}
         return msg.encode('utf-8')
 
     def data_dict(self):
-        return {'missing_data': self.data}
-
-
-class SuperfluousData(PulpDataException):
-    """
-    Base class of exceptions raised due to extra unknown data.
-    """
-
-    def __init__(self, data):
-        PulpDataException.__init__(self, data)
-        self.data = data
-
-    def __str__(self):
-        msg = _('Superfluous data: %(d)s') % {'d': pformat(self.data)}
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'superfluous_data': self.data}
+        return {'missing_property_names': self.property_names}
 
 
 class DuplicateResource(PulpDataException):
@@ -178,6 +169,10 @@ class DuplicateResource(PulpDataException):
     http_status_code = httplib.CONFLICT
 
     def __init__(self, resource_id):
+        """
+        @param resource_id: ID of the resource that was duplicated
+        @type  resource_id: str
+        """
         PulpDataException.__init__(self, resource_id)
         self.resource_id = resource_id
 
