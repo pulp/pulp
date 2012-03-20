@@ -109,7 +109,6 @@ def _serialize_repo(repo):
         'display_name' : repo['display_name'],
         'description' : repo['description'],
         'notes' : repo['notes'],
-        'content_unit_count' : repo['content_unit_count']
     }
 
     return summary
