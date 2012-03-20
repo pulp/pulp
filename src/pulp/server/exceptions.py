@@ -63,6 +63,10 @@ class MissingResource(PulpExecutionException):
     http_status_code = httplib.NOT_FOUND
 
     def __init__(self, resource_id):
+        """
+        @param resource_id: ID of the requested resource that was missing
+        @type  resource_id: str
+        """
         PulpExecutionException.__init__(self, resource_id)
         self.resource_id = resource_id
 
@@ -83,7 +87,9 @@ class ConflictingOperation(PulpExecutionException):
 
     def __init__(self, reasons):
         """
-        @param reasons: list of dicts describing why the requested operation was denied
+        @param reasons: list of dicts describing why the requested operation was denied;
+               this is retrieved from the call report instance that indicated the conflict
+        @type  reasons: list
         """
         PulpExecutionException.__init__(self, reasons)
         self.reasons = reasons
@@ -94,27 +100,6 @@ class ConflictingOperation(PulpExecutionException):
 
     def data_dict(self):
         return {'reasons': self.reasons}
-
-
-class _OperationFailed(PulpExecutionException):
-    """
-    Base class for exceptions raise when an operation fails at runtime.
-    """
-
-    def __init__(self, operation):
-        """
-        @param operation: name of the operation being invoked
-        @type  operation: str
-        """
-        PulpExecutionException.__init__(self, operation)
-        self.operation = operation
-
-    def __str__(self):
-        msg = _('Operation failed: %(o)s') % {'o': self.operation}
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'operation': self.operation}
 
 
 # data exceptions --------------------------------------------------------------
