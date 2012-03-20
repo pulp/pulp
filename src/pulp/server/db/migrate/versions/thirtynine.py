@@ -13,7 +13,7 @@
 
 import logging
 
-from pulp.server.db.model.resource import Errata, Package
+from pulp.server.db.model.resource import Errata, Package, Repo
 
 _log = logging.getLogger('pulp')
 
@@ -38,8 +38,14 @@ def _drop_package_index():
                 pkg_coln.drop_index(idx)
                 return
 
+def _add_repo_index():
+    repo_coln = Repo.get_collection()
+    _log.info("Adding index on errata to Repo collection.")
+    repo_coln.ensure_index("errata")
+
 def migrate():
     _log.info('migration to data model version %d started' % version)
     _drop_errata_index()
     _drop_package_index()
+    _add_repo_index()
     _log.info('migration to data model version %d complete' % version)
