@@ -58,7 +58,7 @@ class SynchronousCallTimeoutError(CallRuntimeError):
         self.timeout = timeout
 
     def __str__(self):
-        msg = _('Call could not be executed withing timeout: %(t)s') % {'t': str(self.timeout)}
+        msg = _('Call could not be executed within timeout: %(t)s') % {'t': str(self.timeout)}
         return msg.encode('utf-8')
 
     def data_dict(self):
