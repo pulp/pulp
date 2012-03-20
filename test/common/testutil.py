@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
+import httplib
 import os
 import random
 import sys
@@ -387,4 +388,24 @@ class PulpWebserviceTest(PulpAsyncTest):
 
 class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
     # utilize multiple inheritance to override setup_async and teardown_async
-    pass
+
+    def _do_request(self, request_type, uri, params, additional_headers):
+        """
+        Override the base class controller to allow for less deterministic
+        responses due to integration with the dispatch package.
+        """
+        def _poll_async_request(status, body):
+            while status in (httplib.ACCEPTED, httplib.OK) and \
+                  body['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+                uri = body['_href'][9:]
+                status, body = self.get(uri) # cool recursive call
+            if status != httplib.OK:
+                return status, None
+            if body['state'] == dispatch_constants.CALL_ERROR_STATE:
+                return status, body['exception']
+            return status, body['result']
+
+        status, body = PulpWebserviceTest._do_request(request_type, uri, params, additional_headers)
+        if status == httplib.ACCEPTED:
+            return _poll_async_request(status, body)
+        return status, body
