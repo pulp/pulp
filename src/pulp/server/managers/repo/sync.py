@@ -35,8 +35,7 @@ from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import MissingRepo, RepoSyncException, NoImporter, MissingImporterPlugin, SyncInProgress
-from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, InvalidConfiguration, OperationFailed, ConflictingOperation
+from pulp.server.exceptions import MissingResource,  OperationFailed, ConflictingOperation
 
 # -- constants ----------------------------------------------------------------
 

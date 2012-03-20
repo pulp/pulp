@@ -25,6 +25,7 @@ from pulp.server.content.plugins.model import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.exceptions as exceptions
+import pulp.server.managers.repo._exceptions as repo_exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 
@@ -240,7 +241,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('rohan', 'mock-distributor', {}, True)
             self.fail('Exception expected')
-        except exceptions.InvalidConfiguration:
+        except repo_exceptions.InvalidDistributorConfiguration:
             pass
 
         # Cleanup
@@ -259,7 +260,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('error_repo', 'mock-distributor', {}, True)
             self.fail('Exception expected for invalid configuration')
-        except exceptions.InvalidConfiguration, e:
+        except repo_exceptions.InvalidDistributorConfiguration, e:
             self.assertEqual(e[0], 'Invalid config')
 
         # Cleanup
@@ -278,7 +279,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('error_repo', 'mock-distributor', {}, True)
             self.fail('Exception expected for invalid configuration')
-        except exceptions.InvalidConfiguration:
+        except repo_exceptions.InvalidDistributorConfiguration:
             pass
 
         # Cleanup
@@ -404,7 +405,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.update_distributor_config('elf', dist_id, {})
             self.fail('Exception expected')
-        except exceptions.InvalidConfiguration:
+        except repo_exceptions.InvalidDistributorConfiguration:
             pass
 
         # Cleanup
@@ -426,7 +427,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.update_distributor_config('dwarf', dist_id, {})
             self.fail('Exception expected')
-        except exceptions.InvalidConfiguration, e:
+        except repo_exceptions.InvalidDistributorConfiguration, e:
             self.assertEqual(e[0], 'Invalid config')
 
         # Cleanup
@@ -448,7 +449,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.update_distributor_config('dwarf', dist_id, {})
             self.fail('Exception expected')
-        except exceptions.InvalidConfiguration:
+        except repo_exceptions.InvalidDistributorConfiguration:
             pass
 
         # Cleanup

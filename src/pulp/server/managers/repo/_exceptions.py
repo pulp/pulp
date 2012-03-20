@@ -17,6 +17,8 @@ Contains exceptions raised by repository-related managers.
 
 from gettext import gettext as _
 
+from pulp.server.exceptions import PulpDataException
+
 # -- not found ----------------------------------------------------------------
 
 class MissingRepo(Exception):
@@ -119,14 +121,14 @@ class InvalidDistributorId(Exception):
     def __str__(self):
         return _('Invalid distributor ID [%(id)s]' % {'id' : self.invalid_distributor_id})
 
-class InvalidDistributorConfiguration(Exception):
+class InvalidDistributorConfiguration(PulpDataException):
     """
     Indicates a distributor configuration was specified (either at add_distributor
     time or later updated) but the distributor plugin indicated it was invalid.
     """
     pass
 
-class InvalidImporterConfiguration(Exception):
+class InvalidImporterConfiguration(PulpDataException):
     """
     Indicates an importer configuration was specified (either at set_importer
     time or later updated) but the importer plugin indicated it is invalid.

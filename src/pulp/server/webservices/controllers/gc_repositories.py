@@ -18,8 +18,9 @@ import logging
 import web
 
 # Pulp
-import pulp.server.managers.factory as manager_factory
 import pulp.server.exceptions as exceptions
+import pulp.server.managers.repo._exceptions as repo_exceptions
+import pulp.server.managers.factory as manager_factory
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -208,7 +209,7 @@ class RepoImporters(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (exceptions.InvalidType, exceptions.InvalidConfiguration):
+        except (exceptions.InvalidType, repo_exceptions.InvalidImporterConfiguration):
             _LOG.exception('Bad request data adding importer of type [%s] to repository [%s]' % (importer_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
@@ -310,7 +311,7 @@ class RepoDistributors(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (exceptions.InvalidValue, exceptions.InvalidType, exceptions.InvalidConfiguration):
+        except (exceptions.InvalidValue, exceptions.InvalidType, repo_exceptions.InvalidDistributorConfiguration):
             _LOG.exception('Bad request adding distributor of type [%s] to repo [%s]' % (distributor_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)

@@ -53,24 +53,6 @@ class PulpExecutionException(PulpException):
     pass
 
 
-class InvalidConfiguration(PulpExecutionException):
-    """
-    Base class for exceptions raised with invalid or unsupported configuration
-    values are encountered.
-    """
-
-    def __init__(self, config):
-        PulpExecutionException.__init__(self, config)
-        self.config = config
-
-    def __str__(self):
-        msg = _('Invalid configuration: %(c)s') % {'c': pformat(self.config)}
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'configuration': self.config}
-
-
 class MissingResource(PulpExecutionException):
     """"
     Base class for exceptions raised due to requesting a resource that does not
@@ -97,16 +79,19 @@ class ConflictingOperation(PulpExecutionException):
     """
     http_status_code = httplib.CONFLICT
 
-    def __init__(self, operation):
-        PulpExecutionException.__init__(self, operation)
-        self.operation = operation
+    def __init__(self, reasons):
+        """
+        @param reasons: list of dicts describing why the requested operation was denied
+        """
+        PulpExecutionException.__init__(self, reasons)
+        self.reasons = reasons
 
     def __str__(self):
-        msg = _('Conflicting operation: %(o)s') % {'o': self.operation}
+        msg = _('Conflicting operation reasons: %(r)s') % {'r': self.reasons}
         return msg.encode('utf-8')
 
     def data_dict(self):
-        return {'operation': self.operation}
+        return {'reasons': self.reasons}
 
 
 class OperationFailed(PulpExecutionException):
@@ -115,6 +100,10 @@ class OperationFailed(PulpExecutionException):
     """
 
     def __init__(self, operation):
+        """
+        @param operation: name of the operation being invoked
+        @type  operation: str
+        """
         PulpExecutionException.__init__(self, operation)
         self.operation = operation
 
@@ -144,6 +133,10 @@ class InvalidType(PulpDataException):
     """
 
     def __init__(self, invalid_type):
+        """
+        @param invalid_type: name of the requested but unfound type
+        @type  invalid_type: str
+        """
         PulpDataException.__init__(self, invalid_type)
         self.invalid_type = invalid_type
 
@@ -161,6 +154,9 @@ class InvalidValue(PulpDataException):
     """
 
     def __init__(self, invalid_value):
+        """
+        @param invalid_value: user
+        """
         PulpDataException.__init__(self, invalid_value)
         self.invalid_value = invalid_value
 
