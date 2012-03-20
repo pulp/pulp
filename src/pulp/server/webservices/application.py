@@ -62,7 +62,7 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,
     filters, histories, jobs, orphaned, packages, permissions, statuses,
-    repositories, roles, services, tasks, users)
+    repositories, roles, services, tasks, users, agent,)
 from pulp.server.webservices.controllers import (
     dispatch, gc_contents, gc_plugins, gc_repositories)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
@@ -121,6 +121,7 @@ URLS = (
     '/v2/queued_calls', dispatch.queued_call_application,
     '/v2/repositories', gc_repositories.application,
     '/v2/tasks', dispatch.task_application,
+    '/v2/agent', agent.application,
 )
 
 _LOG = logging.getLogger(__name__)

@@ -16,7 +16,7 @@ Contains (proxy) classes that represent the pulp agent.
 """
 
 import hashlib
-from agenthub.rest import Rest
+from agenthub.rest import Rest as RestImpl
 from agenthub.client import Agent
 from pulp.server.exceptions import PulpDataException
 from logging import getLogger
@@ -25,11 +25,10 @@ from logging import getLogger
 log = getLogger(__name__)
 
 #
-# Constants
+# REST factory
 #
-
-HOST = 'localhost'
-PORT = 443
+def Rest():
+    return RestImpl()
 
 
 #
@@ -43,7 +42,7 @@ class PulpAgent(Agent):
     
     @classmethod
     def status(cls, uuids=[]):
-        rest = Rest(HOST, PORT)
+        rest = Rest()
         path = '/agenthub/agent/%s/' % uuids[0]
         reply = rest.get(path)
         return reply[1]
@@ -66,10 +65,11 @@ class PulpAgent(Agent):
         return dict(
             systemid='pulp',
             method='POST',
-            path='/agent/%s/reply/' % self.uuid)
+            path='/v2/agent/%s/reply/' % self.uuid)
         
     def unregistered(self):
-        agent = Agent(self.uuid, Rest(HOST, PORT), secret=self.secret)
+        rest = Rest()
+        agent = Agent(self.uuid, rest, secret=self.secret)
         consumer = agent.Consumer()
         consumer.unregistered()
     
@@ -96,7 +96,7 @@ class PulpAgent(Agent):
             raise PulpDataException('taskid required')
         agent = Agent(
             self.uuid,
-            Rest(HOST, PORT),
+            Rest(),
             timeout=(10, 90),
             secret=self.secret,
             replyto=self.replyto(),
@@ -119,7 +119,7 @@ class PulpAgent(Agent):
             raise PulpDataException('taskid required')
         agent = Agent(
             self.uuid,
-            Rest(HOST, PORT),
+            Rest(),
             timeout=(10, 90),
             secret=self.secret,
             replyto=self.replyto(),
@@ -142,7 +142,7 @@ class PulpAgent(Agent):
             raise PulpDataException('taskid required')
         agent = Agent(
             self.uuid,
-            Rest(HOST, PORT),
+            Rest(),
             timeout=(10, 90),
             secret=self.secret,
             replyto=self.replyto(),
