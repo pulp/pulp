@@ -25,7 +25,8 @@ import shutil
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, OperationFailed
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException
+
 # -- constants ----------------------------------------------------------------
 
 _REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -155,7 +156,7 @@ class RepoManager(object):
             error_codes.append("database-error")
 
         if len(error_codes) > 0:
-            raise OperationFailed(error_codes)
+            raise PulpExecutionException(error_codes)
 
     def update_repo(self, repo_id, delta):
         """

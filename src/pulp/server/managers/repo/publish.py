@@ -32,7 +32,7 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import MissingResource, OperationFailed
+from pulp.server.exceptions import MissingResource, PulpExecutionException
 
 # -- constants ----------------------------------------------------------------
 
@@ -110,7 +110,7 @@ class RepoPublishManager(object):
             publish_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
-            raise OperationFailed(repo_id), None, sys.exc_info()[2]
+            raise PulpExecutionException(), None, sys.exc_info()[2]
 
         publish_end_timestamp = _now_timestamp()
 
@@ -179,9 +179,7 @@ class RepoPublishManager(object):
                 error_runs.append( (dist_id, error_string) )
 
         if len(error_runs) > 0:
-            raise OperationFailed('auto_publish_for_repo')
-            # FIXME define custom exception for batch operations
-            #raise OperationFailed(repo_id, error_runs)
+            raise PulpExecutionException()
 
     def last_publish(self, repo_id, distributor_id):
         """

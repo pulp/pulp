@@ -240,8 +240,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.publish('gonna-bail', 'bad-dist')
             self.fail('Expected exception was not raised')
-        except publish_manager.OperationFailed, e:
-            self.assertTrue('gonna-bail' in e)
+        except publish_manager.PulpExecutionException, e:
             print(e) # for coverage
 
         # Verify
@@ -312,7 +311,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.publish_manager.auto_publish_for_repo('publish-me')
             self.fail('Expected exception was not raised')
-        except publish_manager.OperationFailed, e:
+        except publish_manager.PulpExecutionException, e:
             pass
             # FIXME needs custom exception
             #self.assertTrue('publish-me' in e)

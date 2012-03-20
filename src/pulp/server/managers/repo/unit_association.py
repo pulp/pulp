@@ -249,7 +249,7 @@ class RepoUnitAssociationManager(object):
             importer_instance.import_units(transfer_repo, transfer_units, conduit, call_config)
         except Exception:
             _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (repo_importer['importer_type_id'], dest_repo_id))
-            raise exceptions.OperationFailed('associate_from_repos'), None, sys.exc_info()[2]
+            raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
         """

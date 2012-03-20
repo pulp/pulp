@@ -18,7 +18,7 @@ Contains manager class and exceptions for operations surrounding consumer notes.
 import logging
 
 from pulp.server.db.model.gc_consumer import Consumer
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, OperationFailed
+from pulp.server.exceptions import InvalidValue, MissingResource
 
 # -- constants ----------------------------------------------------------------
 

@@ -96,7 +96,7 @@ class ConflictingOperation(PulpExecutionException):
         return {'reasons': self.reasons}
 
 
-class OperationFailed(PulpExecutionException):
+class _OperationFailed(PulpExecutionException):
     """
     Base class for exceptions raise when an operation fails at runtime.
     """

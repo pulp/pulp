@@ -328,7 +328,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo(source_repo_id, dest_repo_id)
             self.fail('Exception expected')
-        except exceptions.OperationFailed:
+        except exceptions.PulpExecutionException:
             pass
 
         # Cleanup

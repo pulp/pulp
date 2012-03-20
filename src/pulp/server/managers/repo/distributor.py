@@ -19,7 +19,7 @@ import uuid
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, OperationFailed
+from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, PulpExecutionException
 from pulp.server.managers.repo._exceptions import InvalidDistributorConfiguration
 import pulp.server.managers.repo._common as common_utils
 
@@ -178,7 +178,7 @@ class RepoDistributorManager(object):
             distributor_instance.distributor_added(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
-            raise OperationFailed('add_distributor'), None, sys.exc_info()[2]
+            raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Database Update
         distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, clean_config, auto_publish)

@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
 import logging
 import sys
 
@@ -20,7 +19,7 @@ import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import InvalidImporterConfiguration
-from pulp.server.exceptions import MissingResource, InvalidType, OperationFailed
+from pulp.server.exceptions import MissingResource, InvalidType, PulpExecutionException
 
 # -- constants ----------------------------------------------------------------
 
@@ -143,7 +142,7 @@ class RepoImporterManager(object):
             importer_instance.importer_added(transfer_repo, call_config)
         except Exception:
             _LOG.exception('Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo_id))
-            raise OperationFailed('set_importer'), None, sys.exc_info()[2]
+            raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Database Update
         importer_id = importer_type_id # use the importer name as its repo ID

@@ -49,7 +49,7 @@ class MockRepoPublishManager:
         MockRepoPublishManager.repo_id = repo_id
 
         if MockRepoPublishManager.raise_error:
-            raise repo_publish_manager.OperationFailed(repo_id)
+            raise repo_publish_manager.PulpExecutionException(repo_id)
 
     @classmethod
     def reset(cls):
@@ -215,8 +215,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.sync_manager.sync('importer-less')
-        except repo_sync_manager.OperationFailed, e:
-            self.assertTrue('importer-less' in e)
+        except repo_sync_manager.PulpExecutionException, e:
             print(e) # for coverage
 
     def test_sync_bad_importer(self):
@@ -257,8 +256,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.sync_manager.sync('good-repo')
-        except repo_sync_manager.OperationFailed, e:
-            self.assertTrue('good-repo' in e)
+        except repo_sync_manager.PulpExecutionException, e:
             print(e) # for coverage
 
     def test_sync_with_error(self):
@@ -278,8 +276,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Test
         try:
             self.sync_manager.sync('gonna-bail')
-        except repo_sync_manager.OperationFailed, e:
-            self.assertTrue('gonna-bail' in e)
+        except repo_sync_manager.PulpExecutionException, e:
             print(e) # for coverage
 
         # Verify
@@ -348,7 +345,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.sync_manager.sync('doa')
             self.fail('Expected exception not thrown')
-        except repo_publish_manager.OperationFailed, e:
+        except repo_publish_manager.PulpExecutionException, e:
             #self.assertTrue('doa' in e)
             pass
 

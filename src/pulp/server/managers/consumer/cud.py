@@ -18,13 +18,15 @@ removal, and update on a consumer.
 
 import logging
 import re
+import sys
 
 from pulp.server import config
 from pulp.common.bundle import Bundle
 import pulp.server.auth.cert_generator as cert_generator
 
 from pulp.server.db.model.gc_consumer import Consumer
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, OperationFailed
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException
+
 # -- constants ----------------------------------------------------------------
 
 _CONSUMER_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -117,7 +119,7 @@ class ConsumerManager(object):
             Consumer.get_collection().remove({'id' : id}, safe=True)
         except Exception:
             _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
-            raise OperationFailed("database-error")
+            raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
 
 #        self.consumer_history_api.consumer_unregistered(id)
 

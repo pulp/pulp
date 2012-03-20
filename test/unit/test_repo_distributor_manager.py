@@ -222,7 +222,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, True)
             self.fail('Exception expected for error during validate')
-        except exceptions.OperationFailed:
+        except exceptions.PulpExecutionException:
             pass
 
         # Cleanup

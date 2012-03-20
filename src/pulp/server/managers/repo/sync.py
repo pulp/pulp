@@ -35,7 +35,7 @@ from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import MissingResource,  OperationFailed
+from pulp.server.exceptions import MissingResource, PulpExecutionException
 
 # -- constants ----------------------------------------------------------------
 
@@ -87,7 +87,7 @@ class RepoSyncManager(object):
         repo_importers = list(importer_coll.find({'repo_id' : repo_id}))
 
         if len(repo_importers) is 0:
-            raise OperationFailed(repo_id)
+            raise PulpExecutionException()
         repo_importer = repo_importers[0]
 
         try:
@@ -124,7 +124,7 @@ class RepoSyncManager(object):
             sync_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
-            raise OperationFailed(repo_id), None, sys.exc_info()[2]
+            raise PulpExecutionException(), None, sys.exc_info()[2]
 
         sync_end_timestamp = _now_timestamp()
 

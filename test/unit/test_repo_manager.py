@@ -229,7 +229,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.manager.delete_repo('doomed')
             self.fail('No exception raised during repo delete')
-        except exceptions.OperationFailed, e:
+        except exceptions.PulpExecutionException, e:
             pass
 
         # Cleanup - need to manually clear the side effects

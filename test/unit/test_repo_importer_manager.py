@@ -174,7 +174,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('repo-1', 'mock-importer', config)
             self.fail('Exception expected for importer plugin exception')
-        except exceptions.OperationFailed:
+        except exceptions.PulpExecutionException:
             pass
 
         # Cleanup
