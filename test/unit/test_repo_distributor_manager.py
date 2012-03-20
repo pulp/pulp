@@ -188,8 +188,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.distributor_manager.add_distributor('real-repo', 'fake-distributor', {}, True)
             self.fail('No exception thrown for an invalid distributor type')
-        except exceptions.InvalidType, e:
-            self.assertTrue('fake-distributor' in e)
+        except exceptions.InvalidValue, e:
             print(e) # for coverage
 
     def test_add_distributor_invalid_id(self):

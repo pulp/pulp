@@ -98,7 +98,7 @@ class RepoUnitAssociationManager(object):
         """
 
         if owner_type not in _OWNER_TYPES:
-            raise exceptions.InvalidType(owner_type)
+            raise exceptions.InvalidValue(['owner_type'])
 
         # If the association already exists, no need to do anything else
         spec = {'repo_id' : repo_id,
@@ -176,8 +176,6 @@ class RepoUnitAssociationManager(object):
         @raises MissingResource: if either of the specified repositories don't exist
         @raises MissingImporter: if the destination repository does not have
                 a configured importer
-        @raises InvalidType: if one or more units that would be associated
-                are of types not supported by the destination repository's importer
         """
 
         # Validation
@@ -220,8 +218,8 @@ class RepoUnitAssociationManager(object):
         unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
 
         if len(unsupported_types) > 0:
-            raise exceptions.InvalidType(unsupported_types)
-            # FIXME define custom exception for batch operations
+            raise exceptions.InvalidValue(['types'])
+            # TODO: define different exception; this isn't bad data at the type level
             #raise exceptions.InvalidType(dest_repo_id, unsupported_types)
 
         # Convert all of the units into the plugin standard representation

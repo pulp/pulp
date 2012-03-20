@@ -107,52 +107,34 @@ class ConflictingOperation(PulpExecutionException):
 class PulpDataException(PulpException):
     """
     Base class of exceptions raised due to data validation errors.
-
-    This should include things like invalid, missing or superfluous data.
     """
     # NOTE intermediate exception class, no overrides will be provided
     http_status_code = httplib.BAD_REQUEST
 
 
-class InvalidType(PulpDataException):
-    """
-    Base class of exceptions raised due to an unknown or malformed type.
-    """
-
-    def __init__(self, invalid_type):
-        """
-        @param invalid_type: name of the requested but unfound type
-        @type  invalid_type: str
-        """
-        PulpDataException.__init__(self, invalid_type)
-        self.invalid_type = invalid_type
-
-    def __str__(self):
-        msg = _('Invalid type: %(t)s') % {'t': str(self.invalid_type)}
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'invalid_type': self.invalid_type}
-
-
 class InvalidValue(PulpDataException):
     """
-    Base class of exceptions raised due invalid data values.
+    Base class of exceptions raised due invalid data values. The names of all
+    properties that were invalid are specified in the constructor.
     """
 
-    def __init__(self, invalid_value):
+    def __init__(self, property_names):
         """
-        @param invalid_value: user
+        @param property_names: list of all properties that were invalid
+        @type  property_names: list
         """
-        PulpDataException.__init__(self, invalid_value)
-        self.invalid_value = invalid_value
+        PulpDataException.__init__(self, property_names)
+
+        if not isinstance(property_names, (list, tuple)):
+            property_names = [property_names]
+        self.property_names = property_names
 
     def __str__(self):
-        msg = _('Invalid value: %(v)s') % {'v': pformat(self.invalid_value)}
+        msg = _('Invalid properties: %(p)s') % {'p': pformat(self.property_names)}
         return msg.encode('utf-8')
 
     def data_dict(self):
-        return {'invalid_value': self.invalid_value}
+        return {'property_names': self.property_names}
 
 
 class MissingData(PulpDataException):

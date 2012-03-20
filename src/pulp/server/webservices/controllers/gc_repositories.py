@@ -209,7 +209,7 @@ class RepoImporters(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (exceptions.InvalidType, repo_exceptions.InvalidImporterConfiguration):
+        except (exceptions.InvalidValue, repo_exceptions.InvalidImporterConfiguration):
             _LOG.exception('Bad request data adding importer of type [%s] to repository [%s]' % (importer_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)
@@ -311,7 +311,7 @@ class RepoDistributors(JSONController):
         except exceptions.MissingResource:
             serialized = http_error_obj(404)
             return self.not_found(serialized)
-        except (exceptions.InvalidValue, exceptions.InvalidType, repo_exceptions.InvalidDistributorConfiguration):
+        except (exceptions.InvalidValue, repo_exceptions.InvalidDistributorConfiguration):
             _LOG.exception('Bad request adding distributor of type [%s] to repo [%s]' % (distributor_type, repo_id))
             serialized = http_error_obj(400)
             return self.bad_request(serialized)

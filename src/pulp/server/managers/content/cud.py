@@ -15,7 +15,7 @@ import uuid
 from gettext import gettext as _
 
 from pulp.server.content.types import database as content_types_db
-from pulp.server.exceptions import InvalidType
+from pulp.server.exceptions import InvalidValue
 
 class ContentManager(object):
     """
@@ -83,8 +83,7 @@ class ContentManager(object):
         collection = content_types_db.type_units_collection(from_type)
         parent = collection.find_one({'_id': from_id})
         if parent is None:
-            msg = _('%(t)s content unit with id %(p) not found')
-            raise InvalidType(msg % {'t': from_type, 'p': from_id})
+            raise InvalidValue(['from_type'])
         parent_type_def = content_types_db.type_definition(from_type)
         if to_type not in parent_type_def['referenced_types']:
             raise Exception()
@@ -110,8 +109,7 @@ class ContentManager(object):
         collection = content_types_db.type_units_collection(from_type)
         parent = collection.find_one({'_id': from_id})
         if parent is None:
-            msg = _('%(t)s content unit with id %(p) not found')
-            raise InvalidType(msg % {'t': from_type, 'p': from_id})
+            raise InvalidValue(['from_type'])
         key = '_%s_references' % to_type
         children = set(parent.get(key, []))
         parent[key] = list(children.difference(to_ids))

@@ -17,7 +17,7 @@ from pprint import pformat
 
 from pulp.server.constants import LOCAL_STORAGE
 from pulp.server.content.types import database as content_types_db
-from pulp.server.exceptions import InvalidType, MissingResource
+from pulp.server.exceptions import InvalidValue, MissingResource
 
 class ContentQueryManager(object):
     """
@@ -180,8 +180,7 @@ class ContentQueryManager(object):
         """
         key_fields = content_types_db.type_units_unit_key(content_type)
         if key_fields is None:
-            raise InvalidType(_('No content type found: %(c)') %
-                                      {'c': content_type})
+            raise InvalidValue(['content_type'])
         all_fields = ['_id']
         _flatten_keys(all_fields, key_fields)
         collection = content_types_db.type_units_collection(content_type)

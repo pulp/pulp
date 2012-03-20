@@ -126,8 +126,7 @@ class RepoManagerTests(testutil.PulpTest):
         # Test
         try:
             self.importer_manager.set_importer('real-repo', 'fake-importer', None)
-        except exceptions.InvalidType, e:
-            self.assertTrue('fake-importer' in e)
+        except exceptions.InvalidValue, e:
             print(e) # for coverage
 
     def test_set_importer_with_existing(self):

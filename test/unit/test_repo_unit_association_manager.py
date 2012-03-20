@@ -119,7 +119,7 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
 
     def test_associate_invalid_owner_type(self):
         # Test
-        self.assertRaises(exceptions.InvalidType, self.manager.associate_unit_by_id, 'repo-1', 'type-1', 'unit-1', 'bad-owner', 'irrelevant')
+        self.assertRaises(exceptions.InvalidValue, self.manager.associate_unit_by_id, 'repo-1', 'type-1', 'unit-1', 'bad-owner', 'irrelevant')
 
     def test_associate_all(self):
         """
@@ -282,13 +282,8 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         try:
             self.manager.associate_from_repo(source_repo_id, dest_repo_id)
             self.fail('Exception expected')
-        except exceptions.InvalidType, e:
+        except exceptions.InvalidValue, e:
             pass
-            # FIXME needs custom exception
-            #self.assertTrue(dest_repo_id in e)
-#            self.assertEqual(1, len(e.type_ids))
-#            self.assertEqual('bad-type', e.type_ids[0])
-#            print(e) # for coverage
 
     def test_associate_from_repo_dest_unsupported_types(self):
         # Setup

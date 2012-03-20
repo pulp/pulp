@@ -19,7 +19,7 @@ import uuid
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.exceptions import MissingResource, InvalidType, InvalidValue, PulpExecutionException
+from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException
 from pulp.server.managers.repo._exceptions import InvalidDistributorConfiguration
 import pulp.server.managers.repo._common as common_utils
 
@@ -108,13 +108,9 @@ class RepoDistributorManager(object):
         @return: ID assigned to the distributor (only valid in conjunction with the repo)
 
         @raise MissingResource: if the given repo_id does not refer to a valid repo
-        @raise InvalidType: if the given distributor type ID does not
-                                        refer to a valid distributor
         @raise InvalidValue: if the distributor ID is provided and unacceptable
         @raise InvalidDistributorConfiguration: if the distributor plugin does not
                accept the given configuration
-        @raise OperationFailed: if the distributor fails
-               while initializing itself to handle the repo
         """
 
         repo_coll = Repo.get_collection()
@@ -126,7 +122,7 @@ class RepoDistributorManager(object):
             raise MissingResource(repo_id)
 
         if not plugin_loader.is_valid_distributor(distributor_type_id):
-            raise InvalidType(distributor_type_id)
+            raise InvalidValue(['distributor_type_id'])
 
         # Determine the ID for this distributor on this repo; will be
         # unique for all distributors on this repository but not globally
@@ -135,7 +131,7 @@ class RepoDistributorManager(object):
         else:
             # Validate if one was passed in
             if not is_distributor_id_valid(distributor_id):
-                raise InvalidValue(distributor_id)
+                raise InvalidValue(['distributor_id'])
 
         distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
 

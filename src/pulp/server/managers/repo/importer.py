@@ -19,7 +19,7 @@ import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.repo._exceptions import InvalidImporterConfiguration
-from pulp.server.exceptions import MissingResource, InvalidType, PulpExecutionException
+from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException
 
 # -- constants ----------------------------------------------------------------
 
@@ -82,11 +82,8 @@ class RepoImporterManager(object):
         @type  repo_plugin_config: dict
 
         @raise MissingResource: if repo_id does not represent a valid repo
-        @raise InvalidType: if there is no importer with importer_type_id
         @raise InvalidImporterConfiguration: if the importer cannot be
                initialized for the given repo
-        @raise OperationFailed: if the plugin raises an error
-                during initialization
         """
 
         repo_coll = Repo.get_collection()
@@ -98,7 +95,7 @@ class RepoImporterManager(object):
             raise MissingResource(repo_id)
 
         if not plugin_loader.is_valid_importer(importer_type_id):
-            raise InvalidType(importer_type_id)
+            raise InvalidValue(['importer_type_id'])
 
         importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
 
