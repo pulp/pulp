@@ -12,16 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
-from datetime import timedelta
-from paste.fixture import TestApp
 import os
 import random
-import unittest
 import sys
 import time
 import web
+import unittest
+from datetime import timedelta
 
 import mock
+from paste.fixture import TestApp
 
 try:
     import mocks
@@ -39,39 +39,37 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.server import async
 from pulp.repo_auth import repo_cert_utils
+from pulp.server import async
+from pulp.server import constants
 from pulp.server import auditing
 from pulp.server import config
+from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.distribution import DistributionApi
-from pulp.server.api.repo import RepoApi
-from pulp.server.api.auth import AuthApi
-from pulp.server.api.user import UserApi
-from pulp.server.api.permission import PermissionAPI
-from pulp.server.api.role import RoleAPI
+from pulp.server.api.errata import ErrataApi
+from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.package import PackageApi
-from pulp.server.api.file import FileApi
-from pulp.server.api.errata import ErrataApi
+from pulp.server.api.permission import PermissionAPI
+from pulp.server.api.repo import RepoApi
 from pulp.server.api.role import RoleAPI
+from pulp.server.api.user import UserApi
+from pulp.server.auth import authorization
+from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.content.types import database as types_database
 from pulp.server.db import connection
 from pulp.server.db.model import Delta, TaskHistory
 from pulp.server.db.model.cds import CDSRepoRoundRobin
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
-import pulp.server.managers.factory as manager_factory
+from pulp.server.managers import factory as manager_factory
 from pulp.server.util import random_string
-from pulp.server.auth.cert_generator import SerialNumber
-from pulp.server.tasking.taskqueue import queue
-from pulp.server import constants
-
-from pulp.server.auth import authorization
 from pulp.server.webservices import http
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 
@@ -294,7 +292,7 @@ class PulpCoordinatorTest(PulpTest): # V2 asynchronous sub-system
 
 class PulpWebserviceTest(PulpAsyncTest):
 
-    WEB_APP = None
+    #WEB_APP = None
     TEST_APP = None
     ORIG_HTTP_REQUEST_INFO = None
     HEADERS = None
