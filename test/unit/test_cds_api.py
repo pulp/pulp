@@ -28,6 +28,25 @@ from pulp.server.db.model.persistence import TaskHistory, TaskSnapshot
 from pulp.server.exceptions import PulpException
 from pulp.server.agent import Agent, CdsAgent
 
+from pulp.server.db.model.gc_repository import Repo
+from pulp.server.db.model.gc_repository import RepoDistributor
+from pulp.server.managers.repo.cud import RepoManager
+from pulp.server.managers.repo.distributor import RepoDistributorManager
+
+
+repo_manager = RepoManager()
+
+FakeDistributor = {
+    'config':{
+        'http':0,
+        'https':1,
+        'relative_url':'foo/bar',
+    }
+}
+
+RepoDistributorManager.get_distributors = \
+    lambda self,repoid:[FakeDistributor,]
+
 
 class CdsApiTests(testutil.PulpAsyncTest):
 
@@ -39,6 +58,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         TaskSnapshot.get_collection().remove(safe=True)
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove()
+        Repo.get_collection().remove()
 
     # -- general cds test cases ----------------------------------------------
 
@@ -498,7 +518,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
         time.sleep(1) # make sure the timestamps will be different
 
@@ -524,7 +544,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
         time.sleep(1) # make sure the timestamps will be different
 
@@ -555,7 +575,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
 
         # Test
         self.assertRaises(PulpException, self.cds_api.associate_repo, 'foo.example.com', 'cds-test-repo')
@@ -586,7 +606,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
         time.sleep(1) # make sure the timestamps will be different
 
@@ -618,7 +638,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
 
         # Test
@@ -639,7 +659,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
 
         # Test
         self.assertRaises(PulpException, self.cds_api.unassociate_repo, 'foo.example.com', 'cds-test-repo')
@@ -681,7 +701,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
 
         time.sleep(1) # make sure the timestamps will be different
 
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
 
         self.cds_api.associate_repo('cds-01.example.com', 'cds-test-repo')
         self.cds_api.associate_repo('cds-02.example.com', 'cds-test-repo')
@@ -715,7 +735,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
 
         # Test
         self.cds_api.unassociate_all_from_repo('cds-test-repo')
@@ -731,7 +751,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         # Setup
         self.config.remove_option('security', 'ssl_ca_certificate')
 
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo = repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
         cds = self.cds_api.cds('cds.example.com')
         self.cds_api.associate_repo('cds.example.com', repo['id'])
@@ -789,7 +809,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo = repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
         cds = self.cds_api.cds('cds.example.com')
         self.cds_api.associate_repo('cds.example.com', repo['id'])
@@ -819,7 +839,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo = repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds1.example.com')
         self.cds_api.register('cds2.example.com')
         self.cds_api.register('cds3.example.com')
@@ -841,7 +861,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        repo = repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds1.example.com')
         self.cds_api.register('cds2.example.com')
         self.cds_api.register('cds3.example.com')
@@ -880,7 +900,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         REPOID = 'cds-test-repo'
 
         # Setup
-        self.repo_api.create(REPOID, 'CDS Test Repo', 'noarch')
+        repo_manager.create_repo(REPOID, 'CDS Test Repo', 'noarch')
 
         # Create the CDS(s) and assocate with repo
         for hostname in CDS_HOSTNAMES:
@@ -919,7 +939,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'noarch')
+        repo = repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'noarch')
 
         # Test
         self.cds_api.redistribute(repo['id'])
@@ -935,7 +955,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'noarch')
+        repo = repo_manager.create_repo('cds-test-repo', 'CDS Test Repo', 'noarch')
 
         self.cds_api.register('cds1')
         self.cds_api.register('cds2')
@@ -963,8 +983,8 @@ class CdsApiTests(testutil.PulpAsyncTest):
         """
 
         # Setup
-        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
-        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        repo_manager.create_repo('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
+        repo_manager.create_repo('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
         self.cds_api.register('cds-existing', cluster_id='test-group')
         self.cds_api.associate_repo('cds-existing', 'test-repo-1')
@@ -984,7 +1004,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         """
 
         # Setup
-        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        repo_manager.create_repo('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
         self.cds_api.register('cds-existing', cluster_id='test-group')
 
         # Test
@@ -1003,9 +1023,9 @@ class CdsApiTests(testutil.PulpAsyncTest):
         """
 
         # Setup
-        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
-        self.repo_api.create('test-repo-2', 'CDS Test Repo 2', 'noarch') # on the CDS before group membership
-        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        repo_manager.create_repo('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
+        repo_manager.create_repo('test-repo-2', 'CDS Test Repo 2', 'noarch') # on the CDS before group membership
+        repo_manager.create_repo('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
         self.cds_api.register('cds-existing', cluster_id='test-group')
         self.cds_api.associate_repo('cds-existing', 'test-repo-1')
@@ -1028,8 +1048,8 @@ class CdsApiTests(testutil.PulpAsyncTest):
         """
 
         # Setup
-        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
-        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        repo_manager.create_repo('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
+        repo_manager.create_repo('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
         self.cds_api.register('cds-1', cluster_id='test-group')
         self.cds_api.register('cds-2', cluster_id='test-group')
@@ -1050,8 +1070,8 @@ class CdsApiTests(testutil.PulpAsyncTest):
         """
 
         # Setup
-        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
-        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        repo_manager.create_repo('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
+        repo_manager.create_repo('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
         self.cds_api.register('cds-1', cluster_id='test-group')
         self.cds_api.register('cds-2', cluster_id='test-group')
