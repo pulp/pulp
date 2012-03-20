@@ -188,8 +188,10 @@ class Coordinator(object):
         # synchronously executed, do so
         if synchronous or (synchronous is None and response is dispatch_constants.CALL_ACCEPTED_RESPONSE):
             try:
-                wait_for_task(task, [dispatch_constants.CALL_RUNNING_STATE],
-                              poll_interval=self.task_state_poll_interval, timeout=timeout)
+                # it's perfectly legitimate for the call to complete before the fist poll
+                running_states = [dispatch_constants.CALL_RUNNING_STATE]
+                running_states.extend(dispatch_constants.CALL_COMPLETE_STATES)
+                wait_for_task(task, running_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
             except dispatch_exceptions.SynchronousCallTimeoutError:
                 self.task_queue.dequeue(task)
                 raise
@@ -465,7 +467,7 @@ def wait_for_task(task, states, poll_interval=0.5, timeout=None):
         now = datetime.datetime.now()
         if now - start < timeout:
             continue
-        raise dispatch_exceptions.SynchronousCallTimeoutError(str(task))
+        raise dispatch_exceptions.SynchronousCallTimeoutError(timeout)
 
 # query utility functions ------------------------------------------------------
 
