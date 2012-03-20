@@ -44,9 +44,6 @@ class Repo(Model):
                     the values may change as the contents of the repo change,
                     either set by the user or by an importer or distributor
     @type metadata: dict
-
-    @ivar content_unit_count: number of content units in the repo
-    @type content_unit_count: int
     """
 
     collection_name = 'gc_repositories'
