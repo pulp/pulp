@@ -86,10 +86,10 @@ class CallRequest(object):
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
 
     def callable_name(self):
-        name = self.call.__name__
+        name = getattr(self.call, '__name__', 'UNKNOWN_CALL')
         cls = getattr(self.call, 'im_class', None)
         if cls is not None:
-            class_name = cls.__name__
+            class_name = getattr(cls, '__name__', 'UNKNOWN_CLASS')
             return '.'.join((class_name, name))
         return name
 
