@@ -143,10 +143,10 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
         if not self.call_request.archive:
             return
         # archive the completed call
