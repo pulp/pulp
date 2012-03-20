@@ -62,7 +62,7 @@ class SynchronousCallTimeoutError(CallRuntimeError):
         return msg.encode('utf-8')
 
     def data_dict(self):
-        return {'timeout': self.timeout}
+        return {'timeout': str(self.timeout)}
 
 
 class AsynchronousExecutionError(CallRuntimeError):
