@@ -13,7 +13,10 @@
 
 import itertools
 import logging
+import sys
 import threading
+import traceback
+from gettext import gettext as _
 
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
@@ -57,20 +60,25 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         while True:
-            self.__condition.wait(timeout=self.dispatch_interval)
-            if self.__exit:
-                if self.__lock is not None:
-                    self.__lock.release()
-                return
-            for task in self._get_ready_tasks():
-                self._run_ready_task(task)
-            self._cancel_tasks()
+            try:
+                self.__condition.wait(timeout=self.dispatch_interval)
+                if self.__exit:
+                    if self.__lock is not None:
+                        self.__lock.release()
+                    return
+                for task in self._get_ready_tasks():
+                    self._run_ready_task(task)
+                self._cancel_tasks()
+            except Exception, e:
+                msg = _('Exception in task queue dispatcher thread:\n%(e)s')
+                _LOG.critical(msg % {'e': traceback.format_exception(*sys.exc_info())})
 
     def _get_ready_tasks(self):
         """
         Algorithm at the heart of the task scheduler. Gets the tasks that are
         ready to run (i.e. not blocked) within the limits of the available
-        concurrency threshold and returns them.
+        concurrency threshold and returns them. Note that this algorithm checks
+        all the tasks as some may have a weight of 0.
         """
         self.__lock.acquire()
         try:
