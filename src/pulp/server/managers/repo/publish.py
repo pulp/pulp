@@ -32,8 +32,7 @@ from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import MissingRepo, RepoPublishException, MissingDistributorPlugin, PublishInProgress, AutoPublishException, MissingDistributor
-from pulp.server.exceptions import MissingResource, ConflictingOperation, OperationFailed
+from pulp.server.exceptions import MissingResource, OperationFailed
 
 # -- constants ----------------------------------------------------------------
 
@@ -75,9 +74,6 @@ class RepoPublishManager(object):
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
             raise MissingResource(repo_id)
-
-        if repo_distributor['publish_in_progress']:
-            raise ConflictingOperation(repo_id)
 
         try:
             distributor_instance, plugin_config = \

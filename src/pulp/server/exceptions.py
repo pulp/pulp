@@ -45,9 +45,11 @@ class PulpExecutionException(PulpException):
     """
     Base class of exceptions raised during the execution of Pulp.
 
-    This should include things like bad configuration values, operation
-    failures (due to networking or tasking issues), or failure to find resources
-    based on the input given
+    This class should be used as a graceful server-side error while running
+    an operation. It is acceptable to instantiate and use this class directly.
+
+    Subclasses to this exception can be used to further describe any problems
+    encountered by the server.
     """
     # NOTE intermediate exception class, no overrides will be provided
     pass

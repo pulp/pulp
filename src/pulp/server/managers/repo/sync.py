@@ -35,7 +35,7 @@ from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import MissingResource,  OperationFailed, ConflictingOperation
+from pulp.server.exceptions import MissingResource,  OperationFailed
 
 # -- constants ----------------------------------------------------------------
 
@@ -89,9 +89,6 @@ class RepoSyncManager(object):
         if len(repo_importers) is 0:
             raise OperationFailed(repo_id)
         repo_importer = repo_importers[0]
-
-        if repo_importer['sync_in_progress']:
-            raise ConflictingOperation(repo_id)
 
         try:
             importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])

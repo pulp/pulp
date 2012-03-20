@@ -314,28 +314,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = None
 
-    def test_sync_in_progress(self):
-        """
-        Tests that trying to sync while one is in progress raises the correct
-        error.
-        """
-
-        # Setup
-        self.repo_manager.create_repo('busy')
-        self.importer_manager.set_importer('busy', 'mock-importer', {})
-
-        #   Trick the database into thinking it's synccing
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'busy'})
-        repo_importer['sync_in_progress'] = True
-        RepoImporter.get_collection().save(repo_importer)
-
-        # Test
-        try:
-            self.sync_manager.sync('busy')
-        except repo_sync_manager.ConflictingOperation, e:
-            self.assertTrue('busy' in e)
-            print(e) # for coverage
-
     def test_sync_with_auto_publish(self):
         """
         Tests that the autodistribute call is properly called at the tail end

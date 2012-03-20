@@ -139,7 +139,7 @@ class RepoResource(JSONController):
 
         serialized_call_report = call_report.serialize()
         if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
-            raise exceptions.ConflictingOperation(serialized_call_report)
+            raise exceptions.ConflictingOperation(serialized_call_report['reasons'])
         link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
         serialized_call_report.update(link)
         return self.accepted(serialized_call_report)
@@ -449,7 +449,7 @@ class RepoSync(JSONController):
         # Report the results
         serialized_call_report = call_report.serialize()
         if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
-            raise exceptions.ConflictingOperation(serialized_call_report)
+            raise exceptions.ConflictingOperation(serialized_call_report['reasons'])
         link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
         serialized_call_report.update(link)
         return self.accepted(serialized_call_report)
@@ -479,7 +479,7 @@ class RepoPublish(JSONController):
         # Report the results
         serialized_call_report = call_report.serialize()
         if call_report.response == dispatch_constants.CALL_REJECTED_RESPONSE:
-            raise exceptions.ConflictingOperation(serialized_call_report)
+            raise exceptions.ConflictingOperation(serialized_call_report['reasons'])
         link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_report.task_id)
         serialized_call_report.update(link)
         return self.accepted(serialized_call_report)

@@ -34,7 +34,7 @@ def execute(controller, call_request, expected_response='ok'):
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize)
+        raise CallRejectedException(call_report.serialize())
     # covers postponed and accepted
     if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
         serialized_call_report = call_report.serialize()
@@ -59,7 +59,7 @@ def execute_async(controller, call_request):
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call_asynchronously(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize)
+        raise CallRejectedException(call_report.serialize())
     serialized_call_report = call_report.serialize()
     link = serialization.dispatch.task_href(call_report)
     serialized_call_report.update(link)
@@ -82,7 +82,7 @@ def execute_sync(controller, call_request, timeout=timedelta(seconds=20), expect
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call_synchronously(call_request, timeout=timeout)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize)
+        raise CallRejectedException(call_report.serialize())
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
     response_method = getattr(controller, expected_response)

@@ -268,28 +268,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
 
-    def test_publish_in_progress(self):
-        """
-        Tests trying to publish while one is in progress raises the correct error.
-        """
-
-        # Setup
-        self.repo_manager.create_repo('busy')
-        self.distributor_manager.add_distributor('busy', 'mock-distributor', {}, False, 'dist-1')
-
-        #   Trick the database into thinking it's publishing
-        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'busy'})
-        repo_distributor['publish_in_progress'] = True
-        RepoDistributor.get_collection().save(repo_distributor)
-
-        # Test
-        try:
-            self.publish_manager.publish('busy', 'dist-1')
-            self.fail('Expected exception was not raised')
-        except publish_manager.ConflictingOperation, e:
-            self.assertTrue('busy' in e)
-            print(e) # for coverage
-
     def test_auto_publish_for_repo(self):
         """
         Tests automatically publishing for a repo that has both auto and non-auto

@@ -78,7 +78,7 @@ class UnrecognizedSearchCriteria(SuperfluousData):
 class CallRejectedException(ConflictingOperation):
 
     def __init__(self, serialized_call_report):
-        ConflictingOperation.__init__(self, serialized_call_report)
+        ConflictingOperation.__init__(self, serialized_call_report['reasons'])
         self.serialized_call_report = serialized_call_report
 
     def __str__(self):
@@ -86,4 +86,6 @@ class CallRejectedException(ConflictingOperation):
         return msg.encode('utf-8')
 
     def data_dict(self):
-        return {'call_report': self.serialized_call_report}
+        super_report = ConflictingOperation.data_dict(self)
+        super_report['call_report'] = self.serialized_call_report
+        return super_report
