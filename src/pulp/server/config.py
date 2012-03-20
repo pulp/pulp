@@ -32,7 +32,7 @@ _default_values = {
         'lifetime': '180', # in days
     },
     'coordinator': {
-        'task_state_poll_interval': '0.5',
+        'task_state_poll_interval': '0.1',
     },
     'database': {
         'auto_migrate': 'true',
