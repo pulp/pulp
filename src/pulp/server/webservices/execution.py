@@ -20,15 +20,13 @@ from pulp.server.webservices import serialization
 
 # execution wrapper api --------------------------------------------------------
 
-def execute(controller, call_request, expected_response='ok'):
+def execute_ok(controller, call_request):
     """
     Execute a call request via the coordinator.
     @param controller: web services rest controller
     @type  controller: pulp.server.webservices.controller.base.JSONController
     @param call_request: call request to execute
     @type  call_request: pulp.server.dispatch.call.CallRequest
-    @param expected_response: response type to return if all goes well: 'ok' or 'created'
-    @type  expected_response: str
     @return: http server response
     """
     coordinator = dispatch_factory.coordinator()
@@ -43,8 +41,34 @@ def execute(controller, call_request, expected_response='ok'):
         return controller.accepted(serialized_call_report)
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
-    response_method = getattr(controller, expected_response)
-    return response_method(call_report.result)
+    return controller.ok(call_report.result)
+
+
+def execute_created(controller, call_request, location):
+    """
+    Execute a call request via the coordinator.
+    @param controller: web services rest controller
+    @type  controller: pulp.server.webservices.controller.base.JSONController
+    @param call_request: call request to execute
+    @type  call_request: pulp.server.dispatch.call.CallRequest
+    @param location: the location of the created resource
+    @type  location: str
+    @return: http server response
+    """
+    coordinator = dispatch_factory.coordinator()
+    call_report = coordinator.execute_call(call_request)
+    if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
+        raise CallRejectedException(call_report.serialize)
+    # covers postponed and accepted
+    if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
+        serialized_call_report = call_report.serialize()
+        link = serialization.dispatch.task_href(call_report)
+        serialized_call_report.update(link)
+        return controller.accepted(serialized_call_report)
+    if call_report.state is dispatch_constants.CALL_ERROR_STATE:
+        raise call_report.exception, None, call_report.traceback
+    return controller.created(location, call_report.result)
+
 
 
 def execute_async(controller, call_request):
@@ -66,7 +90,7 @@ def execute_async(controller, call_request):
     return controller.accepted(serialized_call_report)
 
 
-def execute_sync(controller, call_request, timeout=timedelta(seconds=20), expected_response='ok'):
+def execute_sync_ok(controller, call_request, timeout=timedelta(seconds=20)):
     """
     Execute a call request synchronously via the coordinator.
     @param controller: web services rest controller
@@ -75,8 +99,6 @@ def execute_sync(controller, call_request, timeout=timedelta(seconds=20), expect
     @type  call_request: pulp.server.dispatch.call.CallRequest
     @param timeout: time to wait for task to start before raising and exception
     @type  timeout: datetime.timedelta
-    @param expected_response: response type to return if all goes well: 'ok' or 'created'
-    @type  expected_response: str
     @return: http server response
     """
     coordinator = dispatch_factory.coordinator()
@@ -85,7 +107,28 @@ def execute_sync(controller, call_request, timeout=timedelta(seconds=20), expect
         raise CallRejectedException(call_report.serialize())
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
-    response_method = getattr(controller, expected_response)
-    return response_method(call_report.result)
+    return controller.ok(call_report.result)
 
+
+
+def execute_sync_created(controller, call_request, location, timeout=timedelta(seconds=20)):
+    """
+    Execute a call request synchronously via the coordinator.
+    @param controller: web services rest controller
+    @type  controller: pulp.server.webservices.controller.base.JSONController
+    @param call_request: call request to execute
+    @type  call_request: pulp.server.dispatch.call.CallRequest
+    @param location: the location of the created resource
+    @type  location: str
+    @param timeout: time to wait for task to start before raising and exception
+    @type  timeout: datetime.timedelta
+    @return: http server response
+    """
+    coordinator = dispatch_factory.coordinator()
+    call_report = coordinator.execute_call_synchronously(call_request, timeout=timeout)
+    if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
+        raise CallRejectedException(call_report.serialize)
+    if call_report.state is dispatch_constants.CALL_ERROR_STATE:
+        raise call_report.exception, None, call_report.traceback
+    return controller.created(location, call_report.result)
 

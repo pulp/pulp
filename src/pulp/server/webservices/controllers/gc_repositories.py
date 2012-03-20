@@ -86,7 +86,7 @@ class RepoCollection(JSONController):
                                    resources=resources,
                                    weight=0,
                                    archive=True)
-        return execution.execute_sync(self, call_request, expected_response='created')
+        return execution.execute_sync_created(self, call_request, id)
 
 
 class RepoResource(JSONController):
@@ -131,7 +131,7 @@ class RepoResource(JSONController):
                                    [id],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request)
+        return execution.execute_ok(self, call_request)
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -148,7 +148,7 @@ class RepoResource(JSONController):
                                    [id, delta],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request)
+        return execution.execute_ok(self, call_request)
 
 # -- importer controllers -----------------------------------------------------
 
@@ -188,7 +188,7 @@ class RepoImporters(JSONController):
                                    [repo_id, importer_type, importer_config],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request, expected_response='created')
+        return execution.execute_created(self, call_request, 'importer')
 
 
 class RepoImporter(JSONController):
@@ -217,7 +217,7 @@ class RepoImporter(JSONController):
                                    [repo_id],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request)
+        return execution.execute_ok(self, call_request)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -237,7 +237,7 @@ class RepoImporter(JSONController):
                                    [repo_id, importer_config],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request)
+        return execution.execute_ok(self, call_request)
 
 # -- distributor controllers --------------------------------------------------
 
@@ -279,7 +279,7 @@ class RepoDistributors(JSONController):
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request, expected_response='created')
+        return execution.execute_created(self, call_request, distributor_id)
 
 
 class RepoDistributor(JSONController):
@@ -306,7 +306,7 @@ class RepoDistributor(JSONController):
                                    [repo_id, distributor_id],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request)
+        return execution.execute_ok(self, call_request)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
@@ -326,7 +326,7 @@ class RepoDistributor(JSONController):
                                    [repo_id, distributor_id, distributor_config],
                                    resources=resources,
                                    archive=True)
-        return execution.execute(self, call_request)
+        return execution.execute_ok(self, call_request)
 
 # -- history controllers ------------------------------------------------------
 
