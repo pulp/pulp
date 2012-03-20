@@ -101,7 +101,7 @@ class Errata(Model):
     """
 
     collection_name = 'errata'
-    search_indices = ('title', 'description', 'version', 'release', 'type',
+    search_indices = ('title', 'version', 'release', 'type',
                       'status', 'updated', 'issued', 'pushcount', 'from_str',
                       'reboot_suggested')
 
@@ -143,7 +143,7 @@ class Package(Model):
     unique_indices = (('name', 'epoch', 'version', 'release', 'arch',
                         'filename', 'checksum'),)
     search_indices = ('name', 'filename', 'checksum', 'epoch', 'version',
-                      'release', 'arch', 'description', 'repoids')
+                      'release', 'arch', 'repoids')
 
     def __init__(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, vendor=None, size=None,

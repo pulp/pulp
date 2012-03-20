@@ -19,6 +19,24 @@ _LOG = logging.getLogger('pulp')
 
 version = 35
 
+def _drop_errata_index():
+    errata_coln = Errata.get_collection()
+    for idx, idx_info in errata_coln.index_information()
+        for key in idx_info["key"]:
+            if key[0] == "description":
+                _LOG.info("Dropping index %s from errata collection." % idx)
+                errata_coln.drop_index(idx)
+                return
+
+def _drop_package_index():
+    pkg_coln = Package.get_collection()
+    for idx, idx_info in pkg_coln.index_information()
+        for key in idx_info["key"]:
+            if key[0] == "description":
+                _LOG.info("Dropping index %s from package collection." % idx)
+                pkg_coln.drop_index(idx)
+                return
+
 def _migrate_packages():
     pkg_collection = Package.get_collection()
     repo_collection = Repo.get_collection()
@@ -74,6 +92,8 @@ def find_errata_repos(errata_id):
     return repos
 
 def migrate():
+    _drop_errata_index()
+    _drop_package_index()
     _LOG.info('migrating packages to include repoids field')
     _migrate_packages()
     _LOG.info('migrating errata to include repoids field')
