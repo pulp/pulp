@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
+- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+
+* Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
 - 805543 - adding an optional arg to force fetch files; this is useful for
   files like treeinfo that dont have checksum/size info for validation
   (pkilambi@redhat.com)
