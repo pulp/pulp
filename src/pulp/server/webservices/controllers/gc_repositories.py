@@ -85,8 +85,7 @@ class RepoCollection(JSONController):
         call_request = CallRequest(repo_manager.create_repo,
                                    [id, display_name, description, notes],
                                    resources=resources,
-                                   weight=0,
-                                   archive=True)
+                                   weight=0)
         return execution.execute_sync_created(self, call_request, id)
 
 
@@ -188,7 +187,7 @@ class RepoImporters(JSONController):
         call_request = CallRequest(importer_manager.set_importer,
                                    [repo_id, importer_type, importer_config],
                                    resources=resources,
-                                   archive=True)
+                                   weight=0)
         return execution.execute_sync_created(self, call_request, 'importer')
 
 
@@ -280,7 +279,7 @@ class RepoDistributors(JSONController):
         call_request = CallRequest(distributor_manager.add_distributor,
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,
-                                   archive=True)
+                                   weight=0)
         return execution.execute_sync_created(self, call_request, distributor_id)
 
 
