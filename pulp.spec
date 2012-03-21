@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.276
+Version:        0.0.277
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -503,6 +503,118 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.277-1
+- YumImporter: Add num_errata to progress info (jmatthews@redhat.com)
+- YumImporter:  Updated sync progress status, reworked how we handle an
+  exception occuring to generate a failure report (jmatthews@redhat.com)
+- Added client-side exception handler to consistently format and resolve both
+  server-side and client-side exceptions that can occur
+  (jason.dobies@redhat.com)
+- 805196 drop indexes from repo.packagegroups and repo.packagegroupcategories
+  to avoid index on description field (jslagle@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.142-1].
+  (pkilambi@redhat.com)
+- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+- changed sync create calls to have weights of 0 and to not archive the calls
+  (jconnor@redhat.com)
+- changed create importer and distributor to sync (jconnor@redhat.com)
+- Fixing CDS to check repos from 'gc_repositories' collection in pulp_database
+  instead of 'repos' collection (skarmark@redhat.com)
+- Fixing consumer and consumer group api tests to work with V2 repos and mocked
+  distributor (skarmark@redhat.com)
+- Consumer api, utils and controller changes to make v1 consumers work with v2
+  repositories (skarmark@redhat.com)
+- changed MissingData -> MissingValue missed in the merge (jconnor@redhat.com)
+- updated repo controllers unittests (jconnor@redhat.com)
+- changed pass through to converto to data exception (jconnor@redhat.com)
+- changed resources dict to only include distributor_id if it is not None
+  (jconnor@redhat.com)
+- fixed dummy plugin classes to *not* use mock-isms (jconnor@redhat.com)
+- refactored execution module to separate ok and created calls
+  (jconnor@redhat.com)
+- cannot json serialize timedelta (jconnor@redhat.com)
+- added complete states to waiting for running state as task usually completes
+  before first poll (jconnor@redhat.com)
+- reverted string change (jconnor@redhat.com)
+- shortened default coordinator poll interval (jconnor@redhat.com)
+- little cleaner formatting of call request __str__ (jconnor@redhat.com)
+- fixed typo (jconnor@redhat.com)
+- missing self as first arg to super call (jconnor@redhat.com)
+- added overridden _do_request to v2 webservice test class (jconnor@redhat.com)
+- clean up and import organization (jconnor@redhat.com)
+- pickle friendly dummy plugins (jconnor@redhat.com)
+- added try/except and logging around dispatch loop (jconnor@redhat.com)
+- added support for objects without __name__ attribute, thank you very much
+  mock... (jconnor@redhat.com)
+- moved complete life cyclce callback execution to after the task is actually
+  complete (jconnor@redhat.com)
+- fixed indentation (jconnor@redhat.com)
+- added exception handling middleware to webservice test class
+  (jconnor@redhat.com)
+- changed middleware to return list of str instead of str directly to keep it
+  from pissing off paste in the unittests (jconnor@redhat.com)
+- added conditional loading of snapshotted fields to accomodate future change
+  (jconnor@redhat.com)
+- 804188 - added removal of persisted tasks as part of regular migration
+  (jconnor@redhat.com)
+- raise default concurrency from 4 to 9 as syncs are weighted at 2
+  (jconnor@redhat.com)
+- converted rest api to utilize execution via the coordinator and the new
+  exception handling middleware (jconnor@redhat.com)
+- Add v2 agent call back controller. (jortel@redhat.com)
+- Removed extra unused data exceptions (jason.dobies@redhat.com)
+- Removed InvalidType exception; just use InvalidValue instead
+  (jason.dobies@redhat.com)
+- Minor docs and actually deleted the OperationFailed exception
+  (jason.dobies@redhat.com)
+- Removed OperationFailed exception; it's redundant with PulpExecutionException
+  (jason.dobies@redhat.com)
+- Changed signature of ConflictingOperation exception (jason.dobies@redhat.com)
+- Removed InvalidConfiguration exception (jason.dobies@redhat.com)
+- Fix bug in migrations (jslagle@redhat.com)
+- 805195, 805196 new migration v 41 (jslagle@redhat.com)
+- Improve performance of migration 35 and add missing index
+  (jslagle@redhat.com)
+- Fix CDS unit tests. (jortel@redhat.com)
+- Hardened the logic in case the feed URL has no relative path that we can
+  extract (jason.dobies@redhat.com)
+- Missed a few references to content_unit_count (jason.dobies@redhat.com)
+- Fix manager to match removed Repo.content_unit_count in model object.
+  (jortel@redhat.com)
+- hack display_name into repo object for cds sync. (jortel@redhat.com)
+- patch v1 api/cds for cds sync in v2 entironment. (jortel@redhat.com)
+- hack api/cds to work in v2 world to associate repo. (jortel@redhat.com)
+- Removed content_unit_count from repo model (jason.dobies@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.141-1].
+  (jmatthews@redhat.com)
+- Added grinder 0.0.141 to rpms dir (jmatthews@redhat.com)
+- Bump grinder to .141 (jmatthews@redhat.com)
+- YumImporter: Updates for 'filename' and tests with local_sync
+  (jmatthews@redhat.com)
+- bump grinder version (pkilambi@redhat.com)
+- spec file changes to include migration script and bump grinder
+  (pkilambi@redhat.com)
+- Merge branch 'master' of git+ssh://git.fedorahosted.org/git/pulp
+  (pkilambi@redhat.com)
+- 798656 - include full checksum when constructing package paths. Including
+  migration script to migrate existing content (pkilambi@redhat.com)
+- Added validation on selected fields for filter (jason.dobies@redhat.com)
+- Added 404 support to repo unit association query (jason.dobies@redhat.com)
+- Only generate the relative path if it's not specified
+  (jason.dobies@redhat.com)
+- Initial implementation of adding the yum distributor when creating a repo
+  (jason.dobies@redhat.com)
+- Added okaara as a requirement for pulp-admin (jason.dobies@redhat.com)
+- "Temporarily reverting previous commit to figure out unit test failure"
+  (skarmark@redhat.com)
+- 802447 - encoding i18n repoid in repo file before installing on the consumer
+  (skarmark@redhat.com)
+- Automatic commit of package [gofer] minor release [0.67-1].
+  (jortel@redhat.com)
+- gofer 0.67. (jortel@redhat.com)
+- fix permissions issue, remove empty dirs from migrate script
+  (pkilambi@redhat.com)
+
 * Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.276-1
 - 802447 - Fixing unicode handling bug on the client side while binding a i18n
 - Docs and i18n for units search (jason.dobies@redhat.com)
