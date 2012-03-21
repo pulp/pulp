@@ -17,7 +17,7 @@ from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
-from pulp.gc_client.api.exceptions import RequestException, DuplicateResourceException, BadRequestException
+from pulp.gc_client.api.exceptions import RequestException, ConflictException, BadRequestException
 
 # -- constants ----------------------------------------------------------------
 
@@ -126,46 +126,16 @@ class YumRepoCreateCommand(PulpCliCommand):
                 relative_path = url_parse[2]
             distributor_config['relative_url'] = relative_path
 
-        # TODO: This whole mess of exception stuff is gonna be handled by the exception handler
+        # TODO: Revisit when server-side aggregate method exists
 
         # Create the repository
-        try:
-            self.context.server.repo.create(repo_id, display_name, description, None)
-        except DuplicateResourceException:
-            self.context.prompt.render_failure_message('Repository already exists with ID [%s]' % repo_id)
-            return
-        except BadRequestException:
-            self.context.logger.exception('Invalid data during repository [%s] creation' % repo_id)
-            self.context.prompt.render_failure_message('Repository metadata (id, display_name, description) was invalid')
-            return
-        except RequestException, e:
-            self.context.logger.exception('Error creating repository [%s]' % repo_id)
-            self.context.prompt.render_failure_message('Error creating repository [%s]' % repo_id)
-            raise e, None, sys.exc_info()[2]
+        self.context.server.repo.create(repo_id, display_name, description, None)
 
         # Add the importer
-        try:
-            self.context.server.repo_importer.create(repo_id, IMPORTER_TYPE_ID, importer_config)
-        except BadRequestException:
-            self.context.logger.exception('Invalid data during importer addition to repository [%s]' % repo_id)
-            self.context.prompt.render_failure_message('Error during importer configuration of repository [%s]' % repo_id)
-            return
-        except RequestException, e:
-            self.context.logger.exception('Error adding importer')
-            self.context.prompt.render_failure_message('Error configuring importer for repository [%s]' % repo_id)
-            raise e, None, sys.exc_info()[2]
+        self.context.server.repo_importer.create(repo_id, IMPORTER_TYPE_ID, importer_config)
 
         # Add the distributor
-        try:
-            self.context.server.repo_distributor.create(repo_id, DISTRIBUTOR_TYPE_ID, distributor_config, True, 'yum_distributor')
-        except BadRequestException:
-            self.context.logger.exception('Invalid data during distributor addition to repository [%s]' % repo_id)
-            self.context.prompt.render_failure_message('Error during distributor configuration of repository [%s]' % repo_id)
-            return
-        except RequestException, e:
-            self.context.logger.exception('Error adding distributor')
-            self.context.prompt.render_failure_message('Error configuring distributor for repository [%s]' % repo_id)
-            raise e, None, sys.exc_info()[2]
+        self.context.server.repo_distributor.create(repo_id, DISTRIBUTOR_TYPE_ID, distributor_config, True, 'yum_distributor')
 
         self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
 

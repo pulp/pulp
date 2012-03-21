@@ -433,10 +433,8 @@ class PulpCli(Cli):
             Cli.run(self, args)
             return os.EX_OK
         except Exception, e:
-            self.context.logger.exception('An error occurred during CLI execution')
-            log_file = self.context.client_config.get('logging', 'filename')
-            self.prompt.render_failure_message('An unexpected error has occurred. More information can be found in %s' % log_file)
-            return os.EX_SOFTWARE
+            code = self.context.exception_handler.handle_exception(e)
+            return code
 
     def create_section(self, name, description):
         """
@@ -463,10 +461,11 @@ class PulpCli(Cli):
 
 class ClientContext:
 
-    def __init__(self, server, client_config, logger, prompt, cli=None, shell=None, extension_config=None):
+    def __init__(self, server, client_config, logger, prompt, exception_handler, cli=None, shell=None, extension_config=None):
         self.server = server
         self.logger = logger
         self.prompt = prompt
+        self.exception_handler = exception_handler
 
         self.cli = cli
         self.shell = shell

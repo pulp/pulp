@@ -31,7 +31,11 @@ class RequestException(Exception):
         self.error_message = response_body.pop('error_message', None)
         self.exception = response_body.pop('exception', None)
         self.traceback = response_body.pop('traceback', None)
-        
+
+        # Anything not explciitly removed above represents extra data to further
+        # classify the exception.
+        self.extra_data = response_body
+
     def __str__(self):
         message_data = {'m' : self.http_request_method,
                         'h' : self.href,
@@ -50,7 +54,7 @@ class BadRequestException(RequestException): pass
 class NotFoundException(RequestException): pass
 
 # Response code = 409
-class DuplicateResourceException(RequestException): pass
+class ConflictException(RequestException): pass
 
 # Response code >= 500
 class PulpServerException(RequestException): pass

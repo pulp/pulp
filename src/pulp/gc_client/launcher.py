@@ -26,6 +26,7 @@ import os
 from   okaara.prompt import COLOR_CYAN, COLOR_LIGHT_CYAN
 
 from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, ClientContext, WIDTH_TERMINAL
+from   pulp.gc_client.framework.exceptions import ExceptionHandler
 import pulp.gc_client.framework.loader as extensions_loader
 from   pulp.gc_client.api.bindings import Bindings
 from   pulp.gc_client.api.server import PulpConnection
@@ -134,18 +135,6 @@ def _create_prompt(config):
     prompt = PulpPrompt(enable_color=enable_color, wrap_width=wrap)
     return prompt
 
-def _create_cli(context):
-    """
-    @return: cli instance used to drive the UI
-    @rtype:  PulpCli
-    """
-    cli = PulpCli(context)
-    return cli
-
-def _create_shell(context):
-    # Stub, will implement when we support a shell
-    pass
-
 # -- main execution -----------------------------------------------------------
 
 def main(config_filename, override_config_filename=None):
@@ -187,8 +176,9 @@ def main(config_filename, override_config_filename=None):
 
     # Client context
     prompt = _create_prompt(config)
-    context = ClientContext(server, config, logger, prompt)
-    cli = _create_cli(context)
+    exception_handler = ExceptionHandler(prompt, config)
+    context = ClientContext(server, config, logger, prompt, exception_handler)
+    cli = PulpCli(context)
     context.cli = cli
 
     # Load extensions into the UI in the context

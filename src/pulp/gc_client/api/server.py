@@ -119,7 +119,7 @@ class PulpConnection(object):
         code_class_mappings = {400 : exceptions.BadRequestException,
                                401 : exceptions.PermissionsException,
                                404 : exceptions.NotFoundException,
-                               409 : exceptions.DuplicateResourceException}
+                               409 : exceptions.ConflictException}
 
         if response_code not in code_class_mappings:
             raise exceptions.PulpServerException(response_body)

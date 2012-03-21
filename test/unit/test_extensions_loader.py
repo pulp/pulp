@@ -47,7 +47,7 @@ class ExtensionLoaderTests(testutil.PulpTest):
 
         self.prompt = PulpPrompt()
         self.cli = PulpCli(self.prompt)
-        self.context = ClientContext(None, None, None, self.prompt, cli=self.cli)
+        self.context = ClientContext(None, None, None, self.prompt, None, cli=self.cli)
 
     def test_load_valid_set_cli(self):
         """
