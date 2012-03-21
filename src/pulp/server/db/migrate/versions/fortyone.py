@@ -37,6 +37,14 @@ def _drop_package_index():
                 pkg_coln.drop_index(idx)
                 return
 
+def _drop_repo_index():
+    repo_coln = Repo.get_collection()
+    for idx, idx_info in repo_coln.index_information().items():
+       	for key in idx_info["key"]:
+            if key[0] in ("packagegroups", "packagegroupcategories"):
+               	_log.info("Dropping index %s from package collection." % idx)
+               	repo_coln.drop_index(idx)
+
 def _add_repo_index():
     repo_coln = Repo.get_collection()
     _log.info("Adding index on errata to Repo collection.")
@@ -46,5 +54,6 @@ def migrate():
     _log.info('migration to data model version %d started' % version)
     _drop_errata_index()
     _drop_package_index()
+    _drop_repo_index()
     _add_repo_index()
     _log.info('migration to data model version %d complete' % version)
