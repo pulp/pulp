@@ -19,11 +19,17 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+import mock_plugins
 
 from pulp.server.agent import Agent
 from pulp.common.bundle import Bundle
 from pulp.server.exceptions import PulpException
 from pulp.server.auth.certificate import Certificate
+
+# Hack to use V2 repositories with V1 consumers.
+import pulp.server.managers.factory as manager_factory
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor
+
 
 # default capabilities
 CAPABILITIES = dict(heartbeat=True, bind=True)
@@ -32,6 +38,26 @@ CAPABILITIES = dict(heartbeat=True, bind=True)
 
 class TestConsumerApi(testutil.PulpAsyncTest):
     
+    def setUp(self):
+        super(testutil.PulpAsyncTest, self).setUp()
+        mock_plugins.install()
+
+        self.gc_repo_manager = manager_factory.repo_manager()
+        self.gc_distributor_manager = manager_factory.repo_distributor_manager()
+        self.dist_config = {'http': False,
+                            'https': True,
+                            'relative_url': 'test-repo'}
+
+    def tearDown(self):
+        testutil.PulpTest.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        super(testutil.PulpAsyncTest, self).clean()
+
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+
     # -- create test cases ---------------------------------------------------------------
     
     def test_registrations(self):
@@ -82,7 +108,10 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        self.gc_distributor_manager.add_distributor('test-repo', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
+        
         self.consumer_api.create('test-consumer', None, CAPABILITIES)
 
         # Test
@@ -103,7 +132,7 @@ class TestConsumerApi(testutil.PulpAsyncTest):
             data_repo = bind_data['repo']
             self.assertTrue(data_repo is not None)
             self.assertEqual(data_repo['id'], 'test-repo')
-            self.assertEqual(data_repo['name'], 'Test Repo')
+            self.assertEqual(data_repo['display_name'], 'Test Repo')
 
             # Verify repo URLs
             host_urls = bind_data['host_urls']
@@ -138,11 +167,12 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         #
 
         # Setup
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-        keyA = ('key-1', 'key-1-content')
-        keyB = ('key-2', 'key-2-content')
-        keylist = [keyA, keyB]
-        self.repo_api.addkeys('test-repo', keylist)
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        #keyA = ('key-1', 'key-1-content')
+        #keyB = ('key-2', 'key-2-content')
+        #keylist = [keyA, keyB]
+        #self.repo_api.addkeys('test-repo', keylist)
 
         self.consumer_api.create('test-consumer', None)
 
@@ -178,8 +208,9 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        
         # Test
         self.assertRaises(PulpException, self.consumer_api.bind, 'fake-consumer', 'test-repo')
 
@@ -215,7 +246,9 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.consumer_api.create('test-consumer', None)
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        self.gc_distributor_manager.add_distributor('test-repo', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
 
         self.cds_api.register('cds1')
         self.cds_api.register('cds2')
@@ -242,7 +275,9 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.consumer_api.create('test-consumer', None, CAPABILITIES)
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        self.gc_distributor_manager.add_distributor('test-repo', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
 
         self.consumer_api.bind('test-consumer', 'test-repo')
 
@@ -273,9 +308,14 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.consumer_api.create('test-consumer', None, CAPABILITIES)
-        self.repo_api.create('test-repo-1', 'Test Repo', 'noarch')
-        self.repo_api.create('test-repo-2', 'Test Repo', 'noarch')
+        #self.repo_api.create('test-repo-1', 'Test Repo', 'noarch')
+        #self.repo_api.create('test-repo-2', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo-1', 'Test Repo')
+        self.gc_repo_manager.create_repo('test-repo-2', 'Test Repo')
 
+        self.gc_distributor_manager.add_distributor('test-repo-1', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
+        self.gc_distributor_manager.add_distributor('test-repo-2', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
+        
         self.consumer_api.bind('test-consumer', 'test-repo-1')
         self.consumer_api.bind('test-consumer', 'test-repo-2')
 
@@ -307,7 +347,8 @@ class TestConsumerApi(testutil.PulpAsyncTest):
 
         # Setup
         self.consumer_api.create('test-consumer', None)
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
 
         # Test
         self.consumer_api.unbind('test-consumer', 'test-repo') # should not error
@@ -326,8 +367,9 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
-
+        #self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        
         # Test
         self.assertRaises(PulpException, self.consumer_api.unbind, 'fake-consumer', 'test-repo')
 

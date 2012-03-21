@@ -19,19 +19,39 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+import mock_plugins
 
 from pulp.server.exceptions import PulpException
 from pulp.server.agent import Agent
 
+# Hack to use V2 repositories with V1 consumers.
+import pulp.server.managers.factory as manager_factory
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 
 # -- test cases ---------------------------------------------------------------------------
 
 class TestConsumerApi(testutil.PulpAsyncTest):
+    
+    def setUp(self):
+        super(testutil.PulpAsyncTest, self).setUp()
+        mock_plugins.install()
+
+        self.gc_repo_manager = manager_factory.repo_manager()
+        self.gc_distributor_manager = manager_factory.repo_distributor_manager()
+        self.dist_config = {'http': False,
+                            'https': True,
+                            'relative_url': 'test-repo'}
+        
+    def tearDown(self):
+        testutil.PulpTest.tearDown(self)
+        mock_plugins.reset()
 
     def clean(self):
         self.consumer_group_api.clean()
         self.consumer_api.clean()
         self.repo_api.clean()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
 
     def test_create_consumergroup(self, id = 'some-id'):
         cg = self.consumer_group_api.create(id, 'some description')
@@ -137,7 +157,9 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         except:
             pass
         
-        self.repo_api.create(id='test-repo', name='test-repo', arch='i386')
+        #self.repo_api.create(id='test-repo', name='test-repo', arch='i386')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        self.gc_distributor_manager.add_distributor('test-repo', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
         
         self.consumer_group_api.bind(id, 'test-repo')
         c1 = self.consumer_api.consumer('consumerid1')
@@ -162,7 +184,9 @@ class TestConsumerApi(testutil.PulpAsyncTest):
         except:
             pass
         
-        self.repo_api.create(id='test-repo', name='test-repo', arch='i386')
+        #self.repo_api.create(id='test-repo', name='test-repo', arch='i386')
+        self.gc_repo_manager.create_repo('test-repo', 'Test Repo')
+        self.gc_distributor_manager.add_distributor('test-repo', 'mock-distributor', self.dist_config, True, distributor_id='my_dist')
         
         self.consumer_group_api.bind(id, 'test-repo')
         self.consumer_group_api.unbind(id, 'test-repo')
