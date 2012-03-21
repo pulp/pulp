@@ -141,7 +141,7 @@ class RepoResource(JSONController):
 
         if delta is None:
             _LOG.exception('Missing delta when updating repository [%s]' % id)
-            raise exceptions.MissingData('delta')
+            raise exceptions.MissingValue('delta')
 
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
@@ -177,7 +177,7 @@ class RepoImporters(JSONController):
 
         if importer_type is None:
             _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
-            raise exceptions.MissingData('importer_type')
+            raise exceptions.MissingValue('importer_type')
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
         # Note: If the plugin raises an exception during initialization, let it
@@ -229,7 +229,7 @@ class RepoImporter(JSONController):
 
         if importer_config is None:
             _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
-            raise exceptions.MissingData('importer_config')
+            raise exceptions.MissingValue('importer_config')
 
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
@@ -319,7 +319,7 @@ class RepoDistributor(JSONController):
 
         if distributor_config is None:
             _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
-            raise exceptions.MissingData('distributor_config')
+            raise exceptions.MissingValue('distributor_config')
 
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
@@ -442,7 +442,7 @@ class RepoAssociate(JSONController):
         source_repo_id = params.get('source_repo_id', None)
 
         if source_repo_id is None:
-            raise exceptions.MissingData('source_repo_id')
+            raise exceptions.MissingValue('source_repo_id')
 
         criteria = params.get('criteria', None)
         if criteria is not None:
@@ -485,7 +485,7 @@ class RepoUnitAdvancedSearch(JSONController):
             return self.not_found(serialized)
 
         if query is None:
-            raise exceptions.MissingData('query')
+            raise exceptions.MissingValue('query')
 
         try:
             criteria = unit_association_criteria(query)
