@@ -36,6 +36,14 @@ def _drop_package_index():
                 pkg_coln.drop_index(idx)
                 return
 
+def _drop_repo_index():
+    repo_coln = Repo.get_collection()
+    for idx, idx_info in repo_coln.index_information().items():
+        for key in idx_info["key"]:
+            if key[0] in ("packagegroups", "packagegroupcategories"):
+                _LOG.info("Dropping index %s from package collection." % idx)
+                repo_coln.drop_index(idx)
+
 def _migrate_packages():
     pkg_collection = Package.get_collection()
     repo_collection = Repo.get_collection()
@@ -93,6 +101,7 @@ def find_errata_repos(errata_id):
 def migrate():
     _drop_errata_index()
     _drop_package_index()
+    _drop_repo_index()
     _LOG.info('migrating packages to include repoids field')
     _migrate_packages()
     _LOG.info('migrating errata to include repoids field')
