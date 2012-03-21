@@ -32,12 +32,13 @@ from pulp.server.cds import round_robin
 from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
     CdsAuthException, CdsMethodException,)
-from pulp.server.db.model import CDS, Repo
+from pulp.server.db.model import CDS
 from pulp.server.exceptions import PulpException
 
 # v2 hack
 import pulp.server.managers.factory as manager_factory
 from pulp.server.exceptions import MissingResource
+from pulp.server.db.model.gc_repository import Repo
 
 # -- constants ----------------------------------------------------------------
 
