@@ -189,7 +189,7 @@ class RepoImporters(JSONController):
                                    [repo_id, importer_type, importer_config],
                                    resources=resources,
                                    archive=True)
-        return execution.execute_created(self, call_request, 'importer')
+        return execution.execute_sync_created(self, call_request, 'importer')
 
 
 class RepoImporter(JSONController):
@@ -281,7 +281,7 @@ class RepoDistributors(JSONController):
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,
                                    archive=True)
-        return execution.execute_created(self, call_request, distributor_id)
+        return execution.execute_sync_created(self, call_request, distributor_id)
 
 
 class RepoDistributor(JSONController):
