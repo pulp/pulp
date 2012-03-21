@@ -126,18 +126,43 @@ class YumImporter(Importer):
     # -- actions --------------------------------------------------------------
 
     def sync_repo(self, repo, sync_conduit, config):
-        status, summary, details = self._sync_repo(repo, sync_conduit, config)
-        if status:
-            report = sync_conduit.build_success_report(summary, details)
-        else:
-            report = sync_conduit.build_failure_report(summary, details)
+        try:
+            status, summary, details = self._sync_repo(repo, sync_conduit, config)
+            if status:
+                report = sync_conduit.build_success_report(summary, details)
+            else:
+                report = sync_conduit.build_failure_report(summary, details)
+        except Exception, e:
+            _LOG.error("Caught Exception: %s" % (e))
+            summary = {}
+            summary["error"] = str(e)
+            summary["exception"] = e
+            report = sync_conduit.build_failure_report(summary, None)
         return report
 
     def _sync_repo(self, repo, sync_conduit, config):
+        progress_status = {
+                "metadata": {"state": "NOT_STARTED"},
+                "content": {"state": "NOT_STARTED"},
+                "errata": {"state": "NOT_STARTED"}
+                }
+        def progress_callback(type_id, status):
+            if type_id == "content":
+                progress_status["metadata"]["state"] = "FINISHED"
+                
+            progress_status[type_id] = status
+            sync_conduit.set_progress(status)
+
         # sync rpms
-        rpm_status, rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config)
+        rpm_status, rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config, progress_callback)
+        progress_status["content"]["state"] = "FINISHED"
+        sync_conduit.set_progress(progress_status)
+
         # sync errata
-        errata_status, errata_summary, errata_details = errata._sync(repo, sync_conduit, config)
+        errata_status, errata_summary, errata_details = errata._sync(repo, sync_conduit, config, progress_callback)
+        progress_status["errata"]["state"] = "FINISHED"
+        sync_conduit.set_progress(progress_status)
+
         summary = dict(rpm_summary.items() + errata_summary.items())
         details = dict(rpm_details.items() + errata_details.items())
         return (rpm_status or errata_status), summary, details

@@ -288,10 +288,6 @@ class TestRPMs(unittest.TestCase):
         def set_progress(progress):
             global updated_progress
             updated_progress = progress
-            if "Errata" not in progress["step"]:
-                # We want to skip checking the fields for Errata steps
-                for key in importer_rpm.PROGRESS_REPORT_FIELDS:
-                    self.assertTrue(key in updated_progress)
 
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         importer = YumImporter()
@@ -306,8 +302,15 @@ class TestRPMs(unittest.TestCase):
         self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertTrue(updated_progress is not None)
-        self.assertTrue(updated_progress.has_key("step"))
-        self.assertTrue(updated_progress["step"])
+        self.assertTrue("metadata" in updated_progress)
+        self.assertTrue(updated_progress["metadata"].has_key("state"))
+        self.assertTrue("errata" in updated_progress)
+        self.assertTrue(updated_progress["errata"].has_key("state"))
+        self.assertTrue("content" in updated_progress)
+        self.assertTrue(updated_progress["content"].has_key("state"))
+        self.assertEquals(updated_progress["content"]["state"], "FINISHED")
+        for key in importer_rpm.PROGRESS_REPORT_FIELDS:
+            self.assertTrue(key in updated_progress["content"])
 
     def test_get_existing_units(self):
         unit_key = {}
@@ -624,3 +627,48 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_orphaned_rpms"], 0)
         self.assertEquals(details["size_total"], expected_size_bytes)
         self.assertTrue(end-start < actual_A)
+
+    def test_remote_sync_with_bad_url(self):
+        feed_url = "http://repos.fedorapeople.org/INTENTIONAL_BAD_URL/demo_repos/pulp_unittest/"
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_remote_sync_with_bad_url"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        caught_exception = False
+        try:
+            status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        except:
+            caught_exception = True
+        self.assertTrue(caught_exception)
+
+        importer = YumImporter()
+        caught_exception = False
+        try:
+            report = importer.sync_repo(repo, sync_conduit, config)
+        except:
+            caught_exception = True
+        self.assertFalse(caught_exception)
+
+    def test_local_sync_with_bad_url(self):
+        feed_url = "file:///INTENTIONAL_BAD_URL/demo_repos/pulp_unittest/"
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_local_sync_with_bad_url"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        caught_exception = False
+        try:
+            status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        except:
+            caught_exception = True
+        self.assertTrue(caught_exception)
+
+        importer = YumImporter()
+        caught_exception = False
+        try:
+            report = importer.sync_repo(repo, sync_conduit, config)
+        except:
+            caught_exception = True
+        self.assertFalse(caught_exception)
+

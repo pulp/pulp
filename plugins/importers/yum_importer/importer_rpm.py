@@ -15,6 +15,8 @@ import logging
 import os
 import time
 
+from grinder.BaseFetch import BaseFetch
+from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
 from pulp.server.managers.repo.unit_association_query import Criteria
 _LOG = logging.getLogger(__name__)
@@ -25,9 +27,8 @@ SRPM_TYPE_ID="srpm"
 RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype")
 
 
-PROGRESS_REPORT_FIELDS = ["items_total", "items_left", "size_total", "size_left", 
-    "item_name", "status", "item_type", "num_error", "num_success", 
-    "num_download", "details", "error_details", "step"]
+PROGRESS_REPORT_FIELDS = ["state", "items_total", "items_left", "size_total", "size_left", 
+    "num_error", "num_success", "details", "error_details"]
 
 def get_existing_units(sync_conduit, criteria=None):
    """
@@ -274,7 +275,7 @@ def remove_unit(sync_conduit, repo, unit):
             _LOG.debug("Delete: %s" % (f))
             os.unlink(f)
 
-def _sync(repo, sync_conduit, config):
+def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     """
       Invokes RPM sync sequence
 
@@ -287,18 +288,59 @@ def _sync(repo, sync_conduit, config):
       @param config: plugin configuration
       @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
+      @param importer_progress_callback callback to report progress info to sync_conduit
+      @type importer_progress_callback function
+
       @return a tuple of state, dict of sync summary and dict of sync details
       @rtype (bool, {}, {})
     """
+
+    def set_progress(type_id, status):
+        if importer_progress_callback:
+            importer_progress_callback(type_id, status)
+
     def progress_callback(report):
         """
         @param report progress report from Grinder
         @type report: grinder.GrinderCallback.ProgressReport 
         """
         status = {}
-        for f in PROGRESS_REPORT_FIELDS:
-            status[f] = getattr(report, f)
-        sync_conduit.set_progress(status)
+        if ProgressReport.DownloadItems in report.step:
+            status = {}
+            if report.status == "FINISHED":
+                status["state"] = "FINISHED"
+            else:
+                status["state"] = "IN_PROGRESS"
+            status["num_success"] = report.num_success 
+            status["num_error"] = report.num_error
+            status["size_left"] = report.size_left
+            status["size_total"] = report.size_total
+            status["items_left"] = report.items_left
+            status["items_total"] = report.items_total
+            status["error_details"] = report.error_details
+            status["details"] = {}
+            if report.details:
+                for key in report.details.keys():
+                    print "report.details = %s" % (report.details)
+                    status["details"][key] = {}
+                    status["details"][key]["num_success"] = report.details[key]["num_success"]
+                    status["details"][key]["num_error"] = report.details[key]["num_error"]
+                    status["details"][key]["size_left"] = report.details[key]["size_left"]
+                    status["details"][key]["size_total"] = report.details[key]["total_size_bytes"]
+                    status["details"][key]["items_left"] = report.details[key]["items_left"]
+                    status["details"][key]["items_total"] = report.details[key]["total_count"]
+            expected_details = (BaseFetch.RPM, BaseFetch.DELTA_RPM, BaseFetch.TREE_FILE, BaseFetch.FILE)
+            for key in expected_details:
+                if key not in status["details"].keys():
+                    status["details"][key] = {}
+                    status["details"][key]["num_success"] = 0
+                    status["details"][key]["num_error"] = 0
+                    status["details"][key]["size_left"] = 0
+                    status["details"][key]["size_total"] = 0
+                    status["details"][key]["items_left"] = 0
+                    status["details"][key]["items_total"] = 0
+
+            set_progress("content", status)
 
     ####
         # Syncs operate on 2 types of data structures
@@ -313,7 +355,14 @@ def _sync(repo, sync_conduit, config):
     _LOG.info("Begin sync of repo <%s> from feed_url <%s>" % (repo.id, feed_url))
     start_metadata = time.time()
     yumRepoGrinder = get_yumRepoGrinder(repo.id, repo.working_dir, config)
-    yumRepoGrinder.setup(basepath=repo.working_dir, callback=progress_callback)
+    set_progress("metadata", {"state": "IN_PROGRESS"})
+    try:
+        yumRepoGrinder.setup(basepath=repo.working_dir, callback=progress_callback)
+    except Exception, e:
+        set_progress("metadata", {"state": "FAILED"})
+        _LOG.error("Failed to fetch metadata on: %s" % (feed_url))
+        raise
+    set_progress("metadata", {"state": "FINISHED"})
     rpm_items = yumRepoGrinder.getRPMItems()
     available_rpms = get_available_rpms(rpm_items)
     end_metadata = time.time()

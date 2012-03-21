@@ -131,7 +131,7 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
         new_units[key] = sync_conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
     return new_errata, new_units, sync_conduit
 
-def _sync(repo, sync_conduit,  config):
+def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     """
       Invokes errata sync sequence
 
@@ -144,15 +144,23 @@ def _sync(repo, sync_conduit,  config):
       @param config: plugin configuration
       @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
+      @param importer_progress_callback callback to report progress info to sync_conduit
+      @type importer_progress_callback function
+
       @return a tuple of state, dict of sync summary and dict of sync details
       @rtype (bool, {}, {})
     """
+    def set_progress(status):
+        if importer_progress_callback:
+            importer_progress_callback("errata", status)
+
     start = time.time()
     repo_dir = "%s/%s" % (repo.working_dir, repo.id)
     available_errata = get_available_errata(repo_dir)
     _LOG.info("Available Errata %s" % len(available_errata))
-    progress = ErrataProgress().__dict__
-    sync_conduit.set_progress(progress)
+    progress = {"state":"IN_PROGRESS"}
+    set_progress(progress)
+
     criteria = Criteria(type_ids=ERRATA_TYPE_ID)
     existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
     _LOG.info("Existing Errata %s" % len(existing_errata))
@@ -180,6 +188,8 @@ def _sync(repo, sync_conduit,  config):
     details["num_security_errata"] = len(errata_details['types']['security'])
     details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
     _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
+    progress = {"state":"FINISHED"}
+    set_progress(progress)
     return True, summary, details
 
 def form_errata_unit_key(erratum):
