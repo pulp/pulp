@@ -23,6 +23,7 @@ from pulp.server import async
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
+
 from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (
     revoke_all_permissions_from_user, add_user_to_role, consumer_users_role,
@@ -36,6 +37,10 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
 from pulp.server.agent import PulpAgent
+
+# Temporary hack to use V2 repositories with V1 consumers. This will be removed once consumers are migrated to V2.
+from pulp.server.db.model.gc_repository import Repo
+from pulp.server.exceptions import MissingResource
 
 # globals ---------------------------------------------------------------------
 
@@ -328,8 +333,15 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        if not repo_api.repository(data):
-            return self.not_found('Repo [%s] does not exist' % data)
+
+# <V2 Repo changes>
+        repo = Repo.get_collection().find_one({'id' : data})
+        if repo is None:
+            raise MissingResource(data)
+#        if not repo_api.repository(data):
+#            return self.not_found('Repo [%s] does not exist' % data)
+# </V2 Repo changes>
+
         bind_data = consumer_api.bind(id, data)
         return self.ok(bind_data)
 

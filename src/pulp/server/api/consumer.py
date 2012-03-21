@@ -38,6 +38,10 @@ from pulp.server.agent import PulpAgent
 from pulp.common.bundle import Bundle
 from pulp.common.capabilities import AgentCapabilities
 
+# Temporary hack to use V2 repositories with V1 consumers. This will be removed once consumers are migrated to V2.
+from pulp.server.exceptions import MissingResource
+import pulp.server.managers.factory as manager_factory
+
 
 log = logging.getLogger(__name__)
 
@@ -325,9 +329,16 @@ class ConsumerApi(BaseApi):
         if consumer is None:
             raise PulpException('Consumer [%s] not found' % id)
 
-        repo = self.repoapi.repository(repoid)
+# <V2 Repo changes>
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo = repo_query_manager.find_by_id(repoid)
         if repo is None:
-            raise PulpException('Repo [%s] does not exist' % repoid)
+            raise MissingResource(repoid)
+
+#        repo = self.repoapi.repository(repoid)
+#        if repo is None:
+#            raise PulpException('Repo [%s] does not exist' % repoid)
+# </V2 Repo changes>
 
         # Short circuit if the repo is already bound
         repoids = consumer.setdefault('repoids', [])
@@ -341,13 +352,16 @@ class ConsumerApi(BaseApi):
         self.collection.save(consumer, safe=True)
         self.consumer_history_api.repo_bound(id, repoid)
 
+# <V2 Repo changes>
         # Collect the necessary information to return to the caller (see __doc__ above)
         host_list = round_robin.generate_cds_urls(repoid)
-
-        # Retrieve the latest set of key names and contents and send to consumers
-        ks = KeyStore(repo['relative_path'])
-        gpg_keys = ks.keys_and_contents()
-        bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
+#
+#        # Retrieve the latest set of key names and contents and send to consumers
+#        ks = KeyStore(repo['relative_path'])
+#        gpg_keys = ks.keys_and_contents()
+#        bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
+        bind_data = consumer_utils.build_bind_data(repo, hostnames=host_list, key_list=None)
+# </V2 Repo changes>
 
         # Send the bind request over to the consumer only if bind()
         # is supported in capabilities
@@ -359,6 +373,7 @@ class ConsumerApi(BaseApi):
 
         # Return the bind data to the caller
         return bind_data
+
 
     @audit()
     def unbind(self, id, repo_id):

@@ -19,6 +19,10 @@ import pulp.server.config
 from pulp.server.db.model.resource import Consumer
 from logging import getLogger
 
+
+# Temporary hack to use V2 repositories with V1 consumers. This will be removed once consumers are migrated to V2.
+import pulp.server.managers.factory as manager_factory
+
 log = getLogger(__name__)
 
 
@@ -73,7 +77,16 @@ def build_bind_data(repo, hostnames, key_list):
     hostnames.append(server_name)
 
     repo_hosted_url = pulp.server.config.config.get('server', 'relative_url')
-    repo_relative_path = repo['relative_path']
+
+# <V2 Repo changes>
+
+    #repo_relative_path = repo['relative_path']
+    repo_distributor_manager = manager_factory.repo_distributor_manager()
+    distributor = repo_distributor_manager.get_distributors(repo['id'])[0]
+    repo_relative_path = distributor['config'].get('relative_url')
+    
+# </V2 Repo changes>
+
     repo_urls = []
     for host in hostnames:
         repo_url = 'https://%s%s/%s' % (host, repo_hosted_url, repo_relative_path)
@@ -82,7 +95,12 @@ def build_bind_data(repo, hostnames, key_list):
     # add certificates
     ssl_ca_cert = None
     client_cert = None
-    consumer_cert_path = repo.get('consumer_cert')
+    
+# <V2 Repo changes>
+    #consumer_cert_path = repo.get('consumer_cert')
+    consumer_cert_path = distributor['config'].get('auth_cert')
+# </V2 Repo changes>
+
     if consumer_cert_path:
         f = open(consumer_cert_path)
         client_cert = f.read()
@@ -97,7 +115,10 @@ def build_bind_data(repo, hostnames, key_list):
             f.close()
 
     bind_data = {
-        'repo' : prune(repo),
+# <V2 Repo changes>
+        'repo' : repo,
+        #'repo' : prune(repo),
+# </V2 Repo changes>
         'host_urls' : repo_urls,
         'gpg_keys' : key_list,
         'cacert' : ssl_ca_cert,
