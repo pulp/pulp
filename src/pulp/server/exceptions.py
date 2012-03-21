@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import httplib
+from datetime import timedelta
 from gettext import gettext as _
 from pprint import pformat
 
@@ -101,6 +102,26 @@ class ConflictingOperation(PulpExecutionException):
     def data_dict(self):
         return {'reasons': self.reasons}
 
+
+class OperationTimedOut(PulpExecutionException):
+    """
+    Base class for exceptions raised whtn an operation cannot be completed
+    because it failed to start before a predetermined amount of time had passed.
+    """
+    http_status_code = httplib.SERVICE_UNAVAILABLE
+
+    def __init__(self, timeout):
+        if isinstance(timeout, timedelta):
+            timeout = str(timeout)
+        PulpExecutionException.__init__(self, timeout)
+        self.timeout = timeout
+
+    def __str__(self):
+        msg = _('Operation timed out after: %(t)s') % {'t': self.timeout}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'timeout': self.timeout}
 
 # data exceptions --------------------------------------------------------------
 

@@ -14,77 +14,18 @@
 import httplib
 from gettext import gettext as _
 
-from pulp.server.exceptions import (
-    ConflictingOperation, PulpExecutionException, PulpDataException, InvalidValue)
+from pulp.server.exceptions import InvalidValue, MissingValue
 
-# call exceptions --------------------------------------------------------------
+# call execution exceptions ----------------------------------------------------
 
-class CallRuntimeError(PulpExecutionException):
+class MissingCancelControlHook(MissingValue):
     pass
 
 
-class MissingControlHook(CallRuntimeError):
+class AsynchronousExecutionError(InvalidValue):
     pass
 
-
-class MissingCancelControlHook(MissingControlHook):
-    pass
-
-
-class CallValidationError(PulpDataException):
-    pass
-
-
-class InvalidCallKeywordArgument(CallValidationError):
-    pass
-
-
-class MissingProgressCallbackKeywordArgument(InvalidCallKeywordArgument):
-    pass
-
-class MissingSuccessCallbackKeywordArgument(InvalidCallKeywordArgument):
-    pass
-
-
-class MissingFailureCallbackKeywordArgument(InvalidCallKeywordArgument):
-    pass
-
-
-class SynchronousCallTimeoutError(CallRuntimeError):
-    http_status_code = httplib.SERVICE_UNAVAILABLE
-
-    def __init__(self, timeout):
-        CallRuntimeError.__init__(self, timeout)
-        self.timeout = timeout
-
-    def __str__(self):
-        msg = _('Call could not be executed within timeout: %(t)s') % {'t': str(self.timeout)}
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'timeout': str(self.timeout)}
-
-
-class AsynchronousExecutionError(CallRuntimeError):
-    pass
-
+# call validation exceptions ---------------------------------------------------
 
 class UnrecognizedSearchCriteria(InvalidValue):
     pass
-
-# call rejected exception ------------------------------------------------------
-
-class CallRejectedException(ConflictingOperation):
-
-    def __init__(self, serialized_call_report):
-        ConflictingOperation.__init__(self, serialized_call_report['reasons'])
-        self.serialized_call_report = serialized_call_report
-
-    def __str__(self):
-        msg = _('Call rejected due to conflicting operations')
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        super_report = ConflictingOperation.data_dict(self)
-        super_report['call_report'] = self.serialized_call_report
-        return super_report

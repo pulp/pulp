@@ -24,6 +24,7 @@ from pulp.server.dispatch import history as dispatch_history
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
+from pulp.server.exceptions import OperationTimedOut
 
 # coordinator class ------------------------------------------------------------
 
@@ -98,7 +99,7 @@ class Coordinator(object):
         assert isinstance(timeout, (datetime.timedelta, types.NoneType))
         task = self._create_task(call_request)
         if isinstance(task, AsyncTask):
-            raise dispatch_exceptions.AsynchronousExecutionError(call_request)
+            raise dispatch_exceptions.AsynchronousExecutionError('asynchronous')
         self._run_task(task, True, timeout)
         return copy.copy(task.call_report)
 
@@ -192,7 +193,7 @@ class Coordinator(object):
                 running_states = [dispatch_constants.CALL_RUNNING_STATE]
                 running_states.extend(dispatch_constants.CALL_COMPLETE_STATES)
                 wait_for_task(task, running_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
-            except dispatch_exceptions.SynchronousCallTimeoutError:
+            except OperationTimedOut:
                 self.task_queue.dequeue(task)
                 raise
             else:
@@ -467,7 +468,7 @@ def wait_for_task(task, states, poll_interval=0.5, timeout=None):
         now = datetime.datetime.now()
         if now - start < timeout:
             continue
-        raise dispatch_exceptions.SynchronousCallTimeoutError(timeout)
+        raise OperationTimedOut(timeout)
 
 # query utility functions ------------------------------------------------------
 

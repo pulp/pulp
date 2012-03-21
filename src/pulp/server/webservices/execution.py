@@ -15,7 +15,7 @@ from datetime import  timedelta
 
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch.exceptions import CallRejectedException
+from pulp.server.exceptions import ConflictingOperation
 from pulp.server.webservices import serialization
 
 # execution wrapper api --------------------------------------------------------
@@ -32,7 +32,7 @@ def execute_ok(controller, call_request):
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize())
+        raise ConflictingOperation(call_report.reasons)
     # covers postponed and accepted
     if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
         serialized_call_report = call_report.serialize()
@@ -58,7 +58,7 @@ def execute_created(controller, call_request, location):
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize)
+        raise ConflictingOperation(call_report.reasons)
     # covers postponed and accepted
     if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
         serialized_call_report = call_report.serialize()
@@ -83,7 +83,7 @@ def execute_async(controller, call_request):
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call_asynchronously(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize())
+        raise ConflictingOperation(call_report.reasons)
     serialized_call_report = call_report.serialize()
     link = serialization.dispatch.task_href(call_report)
     serialized_call_report.update(link)
@@ -104,7 +104,7 @@ def execute_sync_ok(controller, call_request, timeout=timedelta(seconds=20)):
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call_synchronously(call_request, timeout=timeout)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize())
+        raise ConflictingOperation(call_report.reasons)
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
     return controller.ok(call_report.result)
@@ -127,7 +127,7 @@ def execute_sync_created(controller, call_request, location, timeout=timedelta(s
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call_synchronously(call_request, timeout=timeout)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise CallRejectedException(call_report.serialize)
+        raise ConflictingOperation(call_report.reasons)
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
     return controller.created(location, call_report.result)

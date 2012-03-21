@@ -183,7 +183,8 @@ class Task(object):
             return
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
         if cancel_hook is None:
-            raise dispatch_exceptions.MissingCancelControlHook(str(self))
+            field = dispatch_constants.call_control_hook_to_string(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
+            raise dispatch_exceptions.MissingCancelControlHook(field)
         cancel_hook(self.call_request, self.call_report)
         self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)

@@ -26,9 +26,9 @@ from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
-from pulp.server.dispatch.exceptions import SynchronousCallTimeoutError
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
+from pulp.server.exceptions import OperationTimedOut
 
 # coordinator instantiation tests ----------------------------------------------
 
@@ -353,7 +353,7 @@ class CoordinatorWaitForTaskTests(CoordinatorTests):
     def test_run_task_sync_timeout(self):
         task = Task(call.CallRequest(dummy_call))
         timeout = datetime.timedelta(seconds=0.001)
-        self.assertRaises(SynchronousCallTimeoutError,
+        self.assertRaises(OperationTimedOut,
                           self.coordinator._run_task,
                           task, True, timeout)
         self.assertTrue(self.coordinator.task_queue.dequeue.call_count == 1)
