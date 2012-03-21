@@ -49,18 +49,26 @@ class DummyObject(object):
 
 # dummy plugins ----------------------------------------------------------------
 
-class DummyImporter(DummyObject):
+class DummyPlugin(DummyObject):
 
     @classmethod
     def metadata(cls):
         return {'types': ['dummy-type']}
 
+    def validate_config(self, *args, **kwargs):
+        return True
 
-class DummyDistributor(DummyObject):
 
-    @classmethod
-    def metadata(cls):
-        return {'types': ['dummy-type']}
+class DummyImporter(DummyPlugin):
+
+    def sync_repo(self, *args, **kwargs):
+        return SyncReport(True, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
+
+
+class DummyDistributor(DummyPlugin):
+
+    def publish_repo(self, *args, **kwargs):
+        return PublishReport(True, 'Summary of the publish', 'Details of the publish')
 
 # dummy instances --------------------------------------------------------------
 
@@ -99,18 +107,6 @@ def install():
     DISTRIBUTOR_MAPPINGS = {'dummy-distributor': DUMMY_DISTRIBUTOR,
                             'dummy-distributor-2': DUMMY_DISTRIBUTOR_2}
 
-    # configure the dummy instances
-
-    # by default, have the plugins indicate configurations are valid
-    DUMMY_IMPORTER.validate_config.return_value = True
-    DUMMY_IMPORTER.sync_repo.return_value = SyncReport(True, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
-
-    DUMMY_DISTRIBUTOR.validate_config.return_value = True
-    DUMMY_DISTRIBUTOR.publish_repo.return_value = PublishReport(True, 'Summary of the publish', 'Details of the publish')
-
-    DUMMY_DISTRIBUTOR_2.validate_config.return_value = True
-    DUMMY_DISTRIBUTOR_2.publish_repo.return_value = PublishReport(True, 'Summary of the publish', 'Details of the publish')
-
     # save state of original plugin so it can be reverted
 
     _ORIG_GET_IMPORTER_BY_ID = plugin_loader.get_importer_by_id
@@ -121,12 +117,12 @@ def install():
     def dummy_get_importer_by_id(id):
         if id not in IMPORTER_MAPPINGS:
             raise plugin_loader.PluginNotFound()
-        return IMPORTER_MAPPINGS[id]
+        return IMPORTER_MAPPINGS[id], {}
 
     def dummy_get_distributor_by_id(id):
         if id not in DISTRIBUTOR_MAPPINGS:
             raise plugin_loader.PluginNotFound()
-        return DISTRIBUTOR_MAPPINGS[id]
+        return DISTRIBUTOR_MAPPINGS[id], {}
 
     # monkey-patch in the dummy methods
 
