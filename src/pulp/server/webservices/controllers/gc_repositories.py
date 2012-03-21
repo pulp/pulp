@@ -13,6 +13,7 @@
 
 # Python
 import logging
+import sys
 
 # 3rd Party
 import web
@@ -449,7 +450,7 @@ class RepoAssociate(JSONController):
                 criteria = unit_association_criteria(criteria)
             except:
                 _LOG.exception('Error parsing association criteria [%s]' % criteria)
-                raise
+                raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # This should probably handle the exceptions and convert them to HTTP
         # status codes, but I'm still unsure of how we're going to handle these
@@ -490,7 +491,7 @@ class RepoUnitAdvancedSearch(JSONController):
             criteria = unit_association_criteria(query)
         except:
             _LOG.exception('Error parsing association criteria [%s]' % query)
-            raise
+            raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # Data lookup
         manager = manager_factory.repo_unit_association_query_manager()
