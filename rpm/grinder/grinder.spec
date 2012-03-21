@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.141
+Version: 0.0.142
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -59,8 +59,13 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Mon Mar 19 2012 John Matthews <jmatthews@redhat.com> 0.0.141-1
-- Added grinder 0.0.141 to rpms dir (jmatthews@redhat.com)
+* Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
+- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+
+* Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
+- 805543 - adding an optional arg to force fetch files; this is useful for
+  files like treeinfo that dont have checksum/size info for validation
+  (pkilambi@redhat.com)
 
 * Mon Mar 19 2012 John Matthews <jmatthews@redhat.com> 0.0.141-1
 - Fix unit tests to reflect full checksum being used (jmatthews@redhat.com)
