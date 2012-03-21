@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        18%{?dist}
+Release:        19%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,6 +500,23 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 21 2012 James Slagle <jslagle@redhat.com> 0.0.263-19
+- 805616 drop indexes from repo.packagegroups and repo.packagegroupcategories
+  to avoid index on description field (jslagle@redhat.com)
+- 805046 set correct db version (jslagle@redhat.com)
+- 805046 Skip distribution sync on all existing repos (jslagle@redhat.com)
+- Fix bug in migrations (jslagle@redhat.com)
+- 805616 Do not index description fields. Add a new migration to drop these
+  indexes, and also drop them as part of migration 35 as it will greatly speed
+  up performance for anyone not this far migrated yet. (jslagle@redhat.com)
+- 805192 Add index on errata to repo model (jslagle@redhat.com)
+- 805192 Improve performance of migration 35 and add missing index
+  (jslagle@redhat.com)
+- 804188 added conditional loading of snapshotted fields to accomodate future
+  change (jconnor@redhat.com)
+- 804188 - added removal of persisted tasks as part of regular migration
+  (jconnor@redhat.com)
+
 * Fri Mar 09 2012 James Slagle <jslagle@redhat.com> 0.0.263-18
 - 801174 Fix several issues in migration. (jslagle@redhat.com)
 
