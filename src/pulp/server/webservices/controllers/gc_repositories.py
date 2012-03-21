@@ -273,8 +273,9 @@ class RepoDistributors(JSONController):
         # Note: The manager will automatically replace a distributor with the
         # same ID, so there is no need to return a 409.
 
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
+        if distributor_id is not None:
+            resources.update({dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}})
         call_request = CallRequest(distributor_manager.add_distributor,
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,
