@@ -158,7 +158,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     repo_dir = "%s/%s" % (repo.working_dir, repo.id)
     available_errata = get_available_errata(repo_dir)
     _LOG.info("Available Errata %s" % len(available_errata))
-    progress = {"state":"IN_PROGRESS"}
+    progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
     set_progress(progress)
 
     criteria = Criteria(type_ids=ERRATA_TYPE_ID)
@@ -188,7 +188,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     details["num_security_errata"] = len(errata_details['types']['security'])
     details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
     _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
-    progress = {"state":"FINISHED"}
+    progress = {"state":"FINISHED", "num_errata":len(available_errata)}
     set_progress(progress)
     return True, summary, details
 

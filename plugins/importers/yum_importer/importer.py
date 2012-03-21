@@ -144,7 +144,7 @@ class YumImporter(Importer):
         progress_status = {
                 "metadata": {"state": "NOT_STARTED"},
                 "content": {"state": "NOT_STARTED"},
-                "errata": {"state": "NOT_STARTED"}
+                "errata": {"state": "NOT_STARTED", "num_errata":0}
                 }
         def progress_callback(type_id, status):
             if type_id == "content":
