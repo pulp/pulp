@@ -321,7 +321,6 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
             status["details"] = {}
             if report.details:
                 for key in report.details.keys():
-                    print "report.details = %s" % (report.details)
                     status["details"][key] = {}
                     status["details"][key]["num_success"] = report.details[key]["num_success"]
                     status["details"][key]["num_error"] = report.details[key]["num_error"]
