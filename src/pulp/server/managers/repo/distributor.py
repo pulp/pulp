@@ -21,6 +21,7 @@ import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException
 from pulp.server.managers.repo._exceptions import InvalidDistributorConfiguration
+from pulp.server.managers import factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
@@ -218,6 +219,10 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
         distributor_instance.distributor_removed(transfer_repo, call_config)
+        
+        # clean up binds
+        bind_manager = manager_factory.consumer_bind_manager()
+        bind_manager.distributor_deleted(distributor_id)
 
         # Update the database to reflect the removal
         distributor_coll.remove(repo_distributor, safe=True)

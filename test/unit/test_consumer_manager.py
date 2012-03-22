@@ -387,3 +387,50 @@ class BindManagerTests(testutil.PulpTest):
         binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
         
+    def test_consumer_unregister_cleanup(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        binds = [b for b in binds]
+        self.assertEquals(len(binds), 1)
+        # Test
+        manager = factory.consumer_manager()
+        manager.unregister(self.CONSUMER_ID)
+        # Verify
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        binds = [b for b in binds]
+        self.assertEquals(len(binds), 0)
+        
+    def test_remove_repo_cleanup(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_repo(self.REPO_ID)
+        binds = [b for b in binds]
+        self.assertEquals(len(binds), 1)
+        # Test
+        manager = factory.repo_manager()
+        manager.delete_repo(self.REPO_ID)
+        # Verify
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_repo(self.REPO_ID)
+        binds = [b for b in binds]
+        self.assertEquals(len(binds), 0)
+        
+    def test_remove_distributor_cleanup(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_distributor(self.DISTRIBUTOR_ID)
+        binds = [b for b in binds]
+        self.assertEquals(len(binds), 1)
+        # Test
+        manager = factory.repo_distributor_manager()
+        manager.remove_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Verify
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_distributor(self.DISTRIBUTOR_ID)
+        binds = [b for b in binds]
+        self.assertEquals(len(binds), 0)

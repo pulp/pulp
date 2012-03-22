@@ -202,6 +202,10 @@ class RepoManager(object):
             except Exception:
                 _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
                 error_codes.append("distributor-error")
+                
+        # Clean up binds
+        bind_manager = manager_factory.consumer_bind_manager()
+        bind_manager.repo_deleted(repo_id)
 
         # Delete the repository working directory
         repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)

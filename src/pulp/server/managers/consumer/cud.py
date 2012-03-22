@@ -25,7 +25,9 @@ from pulp.common.bundle import Bundle
 import pulp.server.auth.cert_generator as cert_generator
 
 from pulp.server.db.model.gc_consumer import Consumer
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException
+from pulp.server.managers import factory
+from pulp.server.exceptions import DuplicateResource, InvalidValue, \
+    MissingResource, PulpExecutionException
 
 # -- constants ----------------------------------------------------------------
 
@@ -109,6 +111,9 @@ class ConsumerManager(object):
         consumer = consumer_coll.find_one({'id' : id})
         if consumer is None:
             raise MissingResource(id)
+        
+        manager = factory.consumer_bind_manager()
+        manager.consumer_deleted(id)
 
         # To do - Update consumergroups after we add consumergroup support in V2
 
