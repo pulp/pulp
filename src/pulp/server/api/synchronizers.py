@@ -702,7 +702,7 @@ class BaseSynchronizer(object):
             repo_file_path = "%s/%s" % (dst_repo_dir, filename) #os.path.basename(pkg))
             if not os.path.islink(repo_file_path):
                 pulp.server.util.create_rel_symlink(real_src_file_path, repo_file_path)
-            self.progress['num_download'] += 1
+        #    self.progress['num_download'] += 1
 
 class YumSynchronizer(BaseSynchronizer):
     """
@@ -897,9 +897,9 @@ class YumSynchronizer(BaseSynchronizer):
             if not os.path.exists(pkg_dirname):
                 os.makedirs(pkg_dirname)
             src_pkg_path = "%s/%s" % (src_repo_dir, pkg.relativepath)
+ 
             log.debug(" source path %s ; dst path %s" % (src_pkg_path, dst_pkg_path))
             shutil.copy(src_pkg_path, dst_pkg_path)
-
             self.progress['num_download'] += 1
         repo_pkg_path = os.path.join(dst_repo_dir, pkg.relativepath)
         if not os.path.islink(repo_pkg_path):
@@ -1035,6 +1035,7 @@ class YumSynchronizer(BaseSynchronizer):
             try:
                 rpm_name = os.path.basename(pkg_relativepath)
                 self._create_clone(pkg_relativepath, src_repo_dir, dst_repo_dir)
+                self.progress['num_download'] += 1
                 self.progress['details']["rpm"]["num_success"] += 1
                 self.progress["num_success"] += 1
                 self.progress["item_type"] = BaseFetch.RPM
@@ -1217,6 +1218,54 @@ class YumSynchronizer(BaseSynchronizer):
             return []
         return pulp.server.util.listdir(src_repodata_dir)
 
+    def list_serverdir_files(self, src_repo_dir):
+        # this is for RHEL5 trees
+        src_server_dir = os.path.join(src_repo_dir, "Server")
+        if not os.path.exists(src_server_dir):
+            return []
+        return pulp.server.util.listdir(src_server_dir)
+
+    def _sync_server_dir(self, dst_repo_dir, src_repo_dir, progress_callback=None):
+        sfiles = self.list_serverdir_files(src_repo_dir)
+        if not sfiles:
+            return
+        # process server directory
+        for count, pkg in enumerate(sfiles):
+            if self.stopped:
+                raise CancelException()
+            skip_copy = False
+            pkg_relativepath = pkg.split(os.path.normpath(src_repo_dir + '/'))[-1]
+            dst_file_path = "%s/%s" % (dst_repo_dir, pkg_relativepath)
+            try:
+                if self.is_clone:
+                    self._create_clone(pkg_relativepath, src_repo_dir, dst_repo_dir)
+                else:
+                    if os.path.exists(dst_file_path):
+                        if os.path.realpath(dst_file_path) == os.path.realpath(pkg):
+                            log.debug("%s and %s are the same file; skip" % (dst_file_path, pkg))
+                            skip_copy = True 
+                    if not skip_copy:
+                        real_pkg_path = os.path.realpath(pkg)
+                        file_dir = os.path.dirname(dst_file_path)
+                        if not os.path.exists(file_dir):
+                            os.makedirs(file_dir)
+                        if os.path.islink(dst_file_path):
+                            os.unlink(dst_file_path)
+                        pulp.server.util.create_rel_symlink(real_pkg_path, dst_file_path)
+                        log.debug("Imported file %s " % dst_file_path)
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
+
+            if progress_callback is not None:
+                progress_callback(self.progress)
+        log.info("Finished cloning %s files in server dir" % (len(sfiles)))
+
+
     def local(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
@@ -1271,6 +1320,13 @@ class YumSynchronizer(BaseSynchronizer):
             else:
                 log.info("Skipping distribution imports from sync process")
 
+            if self.is_clone or self.repo_api.has_parent(repo_id):
+                # RHEL-5 repos could have Server directory in them
+                log.debug("Starting _sync_server_dir(%s, %s)" % (dst_repo_dir, src_repo_dir))
+                self._sync_server_dir(dst_repo_dir, src_repo_dir, progress_callback)
+                log.debug("Completed _sync_server_dir(%s,%s)" % (dst_repo_dir, src_repo_dir))
+            else:
+                log.info("No server dir to import")
             if progress_callback is not None:
                 self.progress['step'] = "Exporting repo metadata"
                 progress_callback(self.progress)
