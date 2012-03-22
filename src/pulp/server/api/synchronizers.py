@@ -214,7 +214,7 @@ class BaseSynchronizer(object):
             # Usual sync, Process Packages
             added_packages = self.add_packages_from_dir(dir, repo_id, skip_dict)
             # check if the repo has a parent
-            if not self.repo_api.has_parent(repo_id):
+            if self.do_update_metadata or not self.repo_api.has_parent(repo_id):
                 # updating Metadata
                 self.update_metadata(dir, repo_id, progress_callback)
             else:
