@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import shutil
+import sys
 
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
@@ -60,7 +61,7 @@ class RepoManager(object):
         @type  notes: dict
 
         @raises DuplicateResource: if there is already a repo with the requested ID
-        @raises InvalidValue: if any of the non-ID fields is unacceptable
+        @raises InvalidValue: if any of the fields are unacceptable
         """
 
         existing_repo = Repo.get_collection().find_one({'id' : repo_id})
@@ -81,6 +82,76 @@ class RepoManager(object):
         Repo.get_collection().save(create_me, safe=True)
 
         return create_me
+
+    def create_and_configure_repo(self, repo_id, display_name=None, description=None,
+                                  notes=None, importer_type_id=None,
+                                  importer_repo_plugin_config=None, distributor_list=()):
+        """
+        Aggregate method that will create a repository and add importers and
+        distributors in a single call. If there is an issue adding any of
+        the importers or distributors,
+
+        This call will aggregate calls to RepoImporterManager.set_importer
+        and RepoDistributorManager.add_distributor. Documentation for those
+        methods should be consulted for more information on the parameters to
+        this method that correspond to those calls.
+
+        @param repo_id: unique identifier for the repo
+        @type  repo_id: str
+
+        @param display_name: user-friendly name for the repo
+        @type  display_name: str
+
+        @param description: user-friendly text describing the repo's contents
+        @type  description: str
+
+        @param notes: key-value pairs to programmatically tag the repo
+        @type  notes: dict
+
+        @param importer_type_id: if specified, an importer with this type ID will
+               be added to the repo
+        @type  importer_type_id: str
+
+        @param distributor_list: list of tuples containing distributor_type_id,
+               repo_plugin_config, auto_publish, and distributor_id (the same
+               that would be passed to the RepoDistributorManager.add_distributor call).
+        @type  distributor_list: list
+
+        @raises DuplicateResource: if there is already a repo with the requested ID
+        @raises InvalidValue: if any of the non-ID fields is unacceptable
+        """
+
+        # Let any exceptions out of this call simply bubble up, there's nothing
+        # special about this step.
+        self.create_repo(repo_id, display_name=display_name, description=description, notes=notes)
+
+        # Add the importer if it's specified. If that fails, delete the repository
+        # before re-raising the exception.
+        if importer_type_id is not None:
+            importer_manager = manager_factory.repo_importer_manager()
+            try:
+                importer_manager.set_importer(repo_id, importer_type_id, importer_repo_plugin_config)
+            except Exception, e:
+                _LOG.exception('Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
+                self.delete_repo(repo_id)
+                raise e, None, sys.exc_info()[2]
+
+        # Regardless of how many distributors are successfully added, or if an
+        # importer was added, we only need a single call to delete_repo in the
+        # error block. That call will take care of all of the cleanup.
+        distributor_manager = manager_factory.repo_distributor_manager()
+        for distributor in distributor_list:
+            type_id = distributor[0]
+            plugin_config = distributor[1]
+            auto_publish = distributor[2]
+            distributor_id = distributor[3]
+
+            try:
+                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
+            except Exception, e:
+                _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
+                self.delete_repo(repo_id)
+                raise e, None, sys.exc_info()[2]
 
     def delete_repo(self, repo_id):
         """

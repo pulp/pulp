@@ -23,6 +23,7 @@ import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
+from pulp.server.managers.repo._exceptions import InvalidImporterConfiguration, InvalidDistributorConfiguration
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -145,6 +146,83 @@ class RepoManagerTests(testutil.PulpTest):
         except exceptions.InvalidValue, e:
             self.assertTrue('notes' in e.data_dict()['property_names'])
             print(e) # for coverage
+
+    def test_create_and_configure_repo(self):
+        """
+        Tests the successful creation of a repo + plugins.
+        """
+
+        # Setup
+        repo_id = 'full'
+        display_name = 'Full'
+        description = 'Full Test'
+        notes = {'n' : 'n'}
+        importer_type_id = 'mock-importer'
+        importer_repo_plugin_config = {'i' : 'i'}
+        distributors = [
+            ('mock-distributor', {'d' : 'd'}, True, 'dist1'),
+            ('mock-distributor', {'d' : 'd'}, True, 'dist2')
+        ]
+
+        # Test
+        self.manager.create_and_configure_repo(repo_id, display_name, description,
+                                               notes, importer_type_id, importer_repo_plugin_config,
+                                               distributors)
+
+        # Verify
+        repo = Repo.get_collection().find_one({'id' : repo_id})
+        self.assertEqual(repo['id'], repo_id)
+        self.assertEqual(repo['display_name'], display_name)
+        self.assertEqual(repo['description'], description)
+        self.assertEqual(repo['notes'], notes)
+
+        importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
+        self.assertEqual(importer['importer_type_id'], importer_type_id)
+        self.assertEqual(importer['config'], importer_repo_plugin_config)
+
+        for distributor_type, config, auto_publish, distributor_id in distributors:
+            distributor = RepoDistributor.get_collection().find_one({'id' : distributor_id})
+            self.assertEqual(distributor['repo_id'], repo_id)
+            self.assertEqual(distributor['distributor_type_id'], distributor_type)
+            self.assertEqual(distributor['auto_publish'], auto_publish)
+            self.assertEqual(distributor['config'], config)
+
+    def test_create_and_configure_repo_bad_importer(self):
+        """
+        Tests cleanup is successful when the add importer step fails.
+        """
+
+        # Setup
+        mock_plugins.MOCK_IMPORTER.validate_config.return_value = False, ''
+
+        # Test
+        self.assertRaises(InvalidImporterConfiguration, self.manager.create_and_configure_repo, 'repo-1', importer_type_id='mock-importer')
+
+        # Verify the repo was deleted
+        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        self.assertTrue(repo is None)
+
+        # Cleanup
+        mock_plugins.MOCK_IMPORTER.validate_config.return_value = True
+
+    def test_create_and_configure_repo_bad_distributor(self):
+        """
+        Tests cleanup is successful when the add distributor step fails.
+        """
+
+        # Setup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = False, ''
+
+        # Test
+        distributors = [('mock-distributor', {}, True, None)]
+        self.assertRaises(InvalidDistributorConfiguration, self.manager.create_and_configure_repo, 'repo-1', distributor_list=distributors)
+
+        # Verify the repo was deleted
+        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        self.assertTrue(repo is None)
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
     def test_delete_repo(self):
         """
@@ -295,6 +373,13 @@ class RepoManagerTests(testutil.PulpTest):
 
         value = self.manager.get_repo_scratchpad(repo_id)
         self.assertEqual(new_value, value)
+
+    def test_get_set_scratchpad_missing_repo(self):
+        """
+        Tests scratchpad calls for a repo that doesn't exist.
+        """
+        self.assertRaises(exceptions.MissingResource, self.manager.get_repo_scratchpad, 'foo')
+        self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', 'bar')
 
 class UtilityMethodsTests(testutil.PulpTest):
 
