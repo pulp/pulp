@@ -500,6 +500,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 22 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-7
+- bump release for build. (jortel@redhat.com)
+- 805740 - generate metadata on repromotion with filters (pkilambi@redhat.com)
+- 805922 - adding sync logic to look for server directory during clone/local
+  syncs (pkilambi@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.142-1].
+  (pkilambi@redhat.com)
+- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+
 * Mon Mar 19 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-6
 - fixed server config error (jconnor@redhat.com)
 - 802454 - added post_sync_url and post_sync dequeue hook for POSTing task and
