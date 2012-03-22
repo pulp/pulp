@@ -82,7 +82,7 @@ class PulpAgent(Agent):
     def send_profile(self):
         pass
         
-    def install_units(self, units, options):
+    def install_content(self, units, options):
         """
         Install content on a consumer.
         @param units: A list of content units to be installed.
@@ -105,7 +105,7 @@ class PulpAgent(Agent):
         result = content.install(units, options)
         # TODO: process 
     
-    def update_units(self, units, options):
+    def update_content(self, units, options):
         """
         Update content on a consumer.
         @param units: A list of content units to be updated.
@@ -128,7 +128,7 @@ class PulpAgent(Agent):
         result = content.update(units, options)
         # TODO: process 
     
-    def uninstall_units(self, units, options):
+    def uninstall_content(self, units, options):
         """
         Uninstall content on a consumer.
         @param units: A list of content units to be uninstalled.
