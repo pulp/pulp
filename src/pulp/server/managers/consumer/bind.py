@@ -49,7 +49,8 @@ class BindManager(object):
             collection.save(bind, safe=True)
         except DuplicateKeyError:
             # idempotent
-            pass
+            return
+        # TODO: update consumer
 
 
     def unbind(self, consumer_id, repo_id, distributor_id):
@@ -72,6 +73,47 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
+        # TODO: update consumer
+        
+    def consumer_deleted(self, id):
+        """
+        Notification that a consumer has been deleted.
+        Associated binds are removed.
+        @param id: A consumer ID.
+        @type id: str
+        """
+        collection = Bind.get_collection()
+        for bind in self.find_by_consumer(id):
+            collection.remove(bind, safe=True)
+    
+    def repo_deleted(self, id):
+        """
+        Notification that a repository has been deleted.
+        Associated binds are removed.
+        @param id: A repo ID.
+        @type id: str
+        """
+        deleted = []
+        collection = Bind.get_collection()
+        for bind in self.find_by_repo(id):
+            deleted.append(bind)
+            collection.remove(bind, safe=True)
+        # TODO: update consumer
+            
+    
+    def distributor_deleted(self, id):
+        """
+        Notification that a distributor has been deleted.
+        Associated binds are removed.
+        @param id: A distributor ID.
+        @type id: str
+        """
+        deleted = []
+        collection = Bind.get_collection()
+        for bind in self.find_by_distributor(id):
+            deleted.append(bind)
+            collection.remove(bind, safe=True)
+        # TODO: update consumer
 
     def find_by_consumer(self, id):
         """
