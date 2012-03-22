@@ -256,6 +256,11 @@ class PulpTest(unittest.TestCase):
     def setup_async(self):
         async._queue = mock.Mock()
         async._queue.find.return_value = []
+        async._queue.waiting_tasks.return_value = []
+        async._queue.running_tasks.return_value = []
+        async._queue.incomplete_tasks.return_value = []
+        async._queue.complete_tasks.return_value = []
+        async._queue.all_tasks.return_value = []
 
     def teardown_async(self):
         async._queue = None
