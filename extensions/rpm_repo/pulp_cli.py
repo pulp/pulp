@@ -24,6 +24,9 @@ from pulp.gc_client.api.exceptions import RequestException, ConflictException, B
 IMPORTER_TYPE_ID = 'yum_importer'
 DISTRIBUTOR_TYPE_ID = 'yum_distributor'
 
+# ID the repo will use to refer to the automatically added yum distributor
+DISTRIBUTOR_ID = DISTRIBUTOR_TYPE_ID
+
 # Tuples of importer key name to more user-friendly CLI name. This must be a
 # list of _all_ importer config values as the process of building up the
 # importer config starts by extracting all of these values from the user args.
@@ -126,16 +129,11 @@ class YumRepoCreateCommand(PulpCliCommand):
                 relative_path = url_parse[2]
             distributor_config['relative_url'] = relative_path
 
-        # TODO: Revisit when server-side aggregate method exists
+        # Package distributors for the call
+        distributors = [(DISTRIBUTOR_TYPE_ID, distributor_config, True, DISTRIBUTOR_ID)]
 
-        # Create the repository
-        self.context.server.repo.create(repo_id, display_name, description, None)
-
-        # Add the importer
-        self.context.server.repo_importer.create(repo_id, IMPORTER_TYPE_ID, importer_config)
-
-        # Add the distributor
-        self.context.server.repo_distributor.create(repo_id, DISTRIBUTOR_TYPE_ID, distributor_config, True, 'yum_distributor')
+        # Create the repository; let exceptions bubble up to the framework exception handler
+        self.context.server.repo.create_and_configure(repo_id, display_name, description, None, IMPORTER_TYPE_ID, importer_config, distributors)
 
         self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
 

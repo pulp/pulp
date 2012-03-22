@@ -34,6 +34,44 @@ class RepositoryAPI(PulpAPI):
                     "notes": notes,}
         return self.server.POST(path, repodata)
 
+    def create_and_configure(self, id, display_name, description, notes,
+                             importer_type_id=None, importer_config=None, distributors=None):
+        """
+        Calls the server-side aggregate method for creating a repository and
+        adding importers/distributors in a single transaction. If an error
+        occurs during the importers/distributors step, all effects on the server
+        from this call will be deleted.
+
+        This call has the same effect as calling:
+        * RepositoryAPI.create
+        * RepositoryImporterAPI.create
+        * RepositoryDistributorAPI.create (for each distributor passed in)
+
+        Both importer and distributors are optional in this call.
+
+        @param importer_type_id: type of importer to add
+        @type  importer_type_id: str
+
+        @param importer_config: configuration to pass the importer for this repo
+        @type  importer_config: dict
+
+        @param distributors: list of tuples containing distributor_type_id,
+               repo_plugin_config, auto_publish, and distributor_id (the same
+               that would be passed to the RepoDistributorAPI.create call).
+        @type  distributors: list
+        """
+        path = self.base_path
+        repo_data = {
+            'id' : id,
+            'display_name' : display_name,
+            'description' : description,
+            'notes' : notes,
+            'importer_type_id' : importer_type_id,
+            'importer_config' : importer_config,
+            'distributors' : distributors,
+        }
+        return self.server.POST(path, repo_data)
+
     def repository(self, id):
         path = self.base_path + ("%s/" % id)
         return self.server.GET(path)
