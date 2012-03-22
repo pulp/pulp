@@ -19,7 +19,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.errata import ErrataApi
-from pulp.server.api.repo import RepoApi
+#from pulp.server.api.repo import RepoApi
 from pulp.server.async import AsyncTask
 from pulp.server.auditing import audit
 from pulp.server.db import model
@@ -30,6 +30,10 @@ from pulp.server.async import AsyncAgent
 from pulp.server.agent import PulpAgent
 from pulp.server.util import encode_unicode
 
+# Temporary hack to use V2 repositories with V1 consumers. This will be removed once consumers are migrated to V2.
+from pulp.server.exceptions import MissingResource
+import pulp.server.managers.factory as manager_factory
+
 log = logging.getLogger(__name__)
 
 
@@ -37,7 +41,9 @@ class ConsumerGroupApi(BaseApi):
 
     def __init__(self):
         self.consumerApi = ConsumerApi()
-        self.repoApi = RepoApi()
+# <V2 Repo changes>
+        #self.repoApi = RepoApi()
+# </V2 Repo changes>
         self.errataApi = ErrataApi()
 
     def _getcollection(self):
@@ -164,9 +170,13 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
-        repo = self.repoApi.repository(repoid)
+
+# <V2 Repo changes>
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo = repo_query_manager.find_by_id(repoid)
         if repo is None:
-            raise PulpException("No Repository with id: %s found" % repoid)
+            raise MissingResource(repoid)
+# </V2 Repo changes>
 
         consumerids = consumergroup['consumerids']
         for consumerid in consumerids:
@@ -185,9 +195,13 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
-        repo = self.repoApi.repository(repoid)
-        if (repo is None):
-            raise PulpException("No Repository with id: %s found" % repoid)
+
+# <V2 Repo changes>
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo = repo_query_manager.find_by_id(repoid)
+        if repo is None:
+            raise MissingResource(repoid)
+# </V2 Repo changes>
 
         consumerids = consumergroup['consumerids']
         for consumerid in consumerids:

@@ -352,8 +352,13 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        if not repo_api.repository(data):
-            return self.not_found('Repo [%s] does not exist' % data)
+# <V2 Repo changes>
+        repo = Repo.get_collection().find_one({'id' : data})
+        if repo is None:
+            raise MissingResource(data)
+#        if not repo_api.repository(data):
+#            return self.not_found('Repo [%s] does not exist' % data)
+# </V2 Repo changes>
         consumer_api.unbind(id, data)
         return self.ok(True)
 
