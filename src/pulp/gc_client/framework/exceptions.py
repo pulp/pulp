@@ -151,8 +151,14 @@ class ExceptionHandler:
             msg = _(msg) % {'i' : e.extra_data['resource_id']}
         elif 'reasons' in e.extra_data:
             msg = 'The requested operation conflicts with one or more operations ' \
-                  'already queued for the resource.'
+                  'already queued for the resource. The following operations on the ' \
+                  'specified resources caused the request to be rejected:\n'
             msg = _(msg)
+
+            for r in e.extra_data['reasons']:
+                msg += _('Resource:  %(t)s - %(i)s\n') % {'t' : r['resource_type'],
+                                                       'i' : r['resource_id']}
+                msg += _('Operation: %(o)s') % {'o' : r['operation']}
         else:
             msg = 'The requested operation could not execute due to an unexpected ' \
                   'conflict on the server. More information can be found in the ' \

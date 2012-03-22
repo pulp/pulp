@@ -12,7 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
+from ConfigParser import SafeConfigParser
 import httplib
+import logging
 import os
 import random
 import sys
@@ -39,6 +41,10 @@ sys.path.insert(0, srcdir)
 
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
+
+from pulp.gc_client.framework.core import ClientContext, PulpPrompt, PulpCli
+from pulp.gc_client.framework.exceptions import ExceptionHandler
+from okaara.prompt import Recorder
 
 from pulp.repo_auth import repo_cert_utils
 from pulp.server import async
@@ -409,3 +415,25 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
         if status == httplib.ACCEPTED:
             return _poll_async_request(status, body)
         return status, body
+
+class PulpV2ClientTest(unittest.TestCase):
+    def setUp(self):
+        super(PulpV2ClientTest, self).setUp()
+
+        self.client_config = SafeConfigParser()
+        config_filename = os.path.abspath(os.path.dirname(__file__)) + '/test-override-v2-admin.conf'
+        self.client_config.read(config_filename)
+
+        self.server = None # TODO: replace with PulpConnection with mocked out ServerWrapper
+
+        # Disabling color makes it easier to grep results since the character codes aren't there
+        self.recorder = Recorder()
+        self.prompt = PulpPrompt(enable_color=False, output=self.recorder, record_tags=True)
+
+        self.logger = logging.getLogger('pulp')
+        self.exception_handler = ExceptionHandler(self.prompt, self.client_config)
+
+        self.context = ClientContext(self.server, self.client_config, self.logger, self.prompt, self.exception_handler)
+
+        self.cli = PulpCli(self.context)
+        self.context.cli = self.cli

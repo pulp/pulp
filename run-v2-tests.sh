@@ -3,7 +3,7 @@
 # Please keep the following in alphabetical order so it's easier to determine
 # if something is in the list
 
-PACKAGES="pulp.gc_client.framework.loader,pulp.gc_client.framework.core,pulp.server.managers,pulp.server.content,pulp.server.db.model.gc_repository,pulp.server.db.model.gc_content,pulp.server.webservices.controllers.gc_contents,pulp.server.webservices.controllers.gc_plugins,pulp.server.webservices.controllers.gc_repositories,pulp.server.dispatch.call,pulp.server.dispatch.coordinator,pulp.server.dispatch.factory,pulp.server.dispatch.history,pulp.server.dispatch.scheduler,pulp.server.dispatch.task,pulp.server.dispatch.taskqueue"
+PACKAGES="pulp.gc_client.framework.loader,pulp.gc_client.framework.core,pulp.gc_client.framework.exceptions,pulp.server.managers,pulp.server.content,pulp.server.db.model.gc_repository,pulp.server.db.model.gc_content,pulp.server.webservices.controllers.gc_contents,pulp.server.webservices.controllers.gc_plugins,pulp.server.webservices.controllers.gc_repositories,pulp.server.dispatch.call,pulp.server.dispatch.coordinator,pulp.server.dispatch.factory,pulp.server.dispatch.history,pulp.server.dispatch.scheduler,pulp.server.dispatch.task,pulp.server.dispatch.taskqueue"
 TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_base_importer_conduit.py \
        test/unit/test_client_framework_core.py \
@@ -14,6 +14,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_dispatch_scheduler.py \
        test/unit/test_dispatch_task.py \
        test/unit/test_dispatch_taskqueue.py \
+       test/unit/test_gc_client_exception_handler.py \
        test/unit/test_extensions_loader.py \
        test/unit/test_repo_controller.py \
        test/unit/test_repo_importer_manager.py \
