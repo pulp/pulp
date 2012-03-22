@@ -79,11 +79,17 @@ class RepoCollection(JSONController):
         description = repo_data.get('description', None)
         notes = repo_data.get('notes', None)
 
+        importer_type_id = repo_data.get('importer_type_id', None)
+        importer_repo_plugin_config = repo_data.get('importer_config', None)
+
+        distributors = repo_data.get('distributors', None)
+
         # Creation
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        call_request = CallRequest(repo_manager.create_repo,
-                                   [id, display_name, description, notes],
+        args = [id, display_name, description, notes, importer_type_id, importer_repo_plugin_config, distributors]
+        call_request = CallRequest(repo_manager.create_and_configure_repo,
+                                   args,
                                    resources=resources,
                                    weight=0)
         return execution.execute_sync_created(self, call_request, id)

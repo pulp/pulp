@@ -123,7 +123,7 @@ class RepoManager(object):
 
         # Let any exceptions out of this call simply bubble up, there's nothing
         # special about this step.
-        self.create_repo(repo_id, display_name=display_name, description=description, notes=notes)
+        repo = self.create_repo(repo_id, display_name=display_name, description=description, notes=notes)
 
         # Add the importer if it's specified. If that fails, delete the repository
         # before re-raising the exception.
@@ -140,18 +140,21 @@ class RepoManager(object):
         # importer was added, we only need a single call to delete_repo in the
         # error block. That call will take care of all of the cleanup.
         distributor_manager = manager_factory.repo_distributor_manager()
-        for distributor in distributor_list:
-            type_id = distributor[0]
-            plugin_config = distributor[1]
-            auto_publish = distributor[2]
-            distributor_id = distributor[3]
+        if distributor_list is not None:
+            for distributor in distributor_list:
+                type_id = distributor[0]
+                plugin_config = distributor[1]
+                auto_publish = distributor[2]
+                distributor_id = distributor[3]
 
-            try:
-                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
-            except Exception, e:
-                _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
-                self.delete_repo(repo_id)
-                raise e, None, sys.exc_info()[2]
+                try:
+                    distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
+                except Exception, e:
+                    _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
+                    self.delete_repo(repo_id)
+                    raise e, None, sys.exc_info()[2]
+
+        return repo
 
     def delete_repo(self, repo_id):
         """

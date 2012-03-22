@@ -165,11 +165,12 @@ class RepoManagerTests(testutil.PulpTest):
         ]
 
         # Test
-        self.manager.create_and_configure_repo(repo_id, display_name, description,
-                                               notes, importer_type_id, importer_repo_plugin_config,
-                                               distributors)
+        created = self.manager.create_and_configure_repo(repo_id, display_name, description,
+                  notes, importer_type_id, importer_repo_plugin_config, distributors)
 
         # Verify
+        self.assertEqual(created['id'], repo_id)
+
         repo = Repo.get_collection().find_one({'id' : repo_id})
         self.assertEqual(repo['id'], repo_id)
         self.assertEqual(repo['display_name'], display_name)

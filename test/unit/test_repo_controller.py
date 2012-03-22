@@ -38,11 +38,11 @@ class RepoControllersTests(testutil.PulpV2WebserviceTest):
     def setUp(self):
         super(RepoControllersTests, self).setUp()
         self.repo_manager = manager_factory.repo_manager()
+        Repo.get_collection().remove(safe=True)
 
     def clean(self):
         super(RepoControllersTests, self).clean()
         Repo.get_collection().remove(safe=True)
-
 
 class RepoCollectionTests(RepoControllersTests):
 
@@ -109,8 +109,7 @@ class RepoCollectionTests(RepoControllersTests):
         status, body = self.post('/v2/repositories/', params=body)
 
         # Verify
-        self.assertEqual(201, status)
-        self.assertEqual(body['id'], 'HA! This looks so totally invalid, but we do allow this ID now :)')
+        self.assertEqual(400, status)
 
     def test_post_conflict(self):
         """
