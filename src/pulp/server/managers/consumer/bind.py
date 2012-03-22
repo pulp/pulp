@@ -50,7 +50,7 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             return
-        # TODO: update consumer
+        # TODO: update consumer (agent)
 
 
     def unbind(self, consumer_id, repo_id, distributor_id):
@@ -73,7 +73,7 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        # TODO: update consumer
+        # TODO: update consumer (agent)
         
     def consumer_deleted(self, id):
         """
@@ -98,7 +98,9 @@ class BindManager(object):
         for bind in self.find_by_repo(id):
             deleted.append(bind)
             collection.remove(bind, safe=True)
-        # TODO: update consumer
+        for consumer_id,repos in BindCollection(deleted):
+            # TODO: update consumer (agent)
+            pass
             
     
     def distributor_deleted(self, id):
@@ -113,7 +115,9 @@ class BindManager(object):
         for bind in self.find_by_distributor(id):
             deleted.append(bind)
             collection.remove(bind, safe=True)
-        # TODO: update consumer
+        for consumer_id,repos in BindCollection(deleted):
+            # TODO: update consumer (agent)
+            pass
 
     def find_by_consumer(self, id):
         """
@@ -181,3 +185,28 @@ class BindManager(object):
         if dist is None:
             raise MissingResource('/'.join((repo_id, distributor_id)))
         return dist
+
+
+class BindCollection:
+    """
+    Normalized collection of bind/unbind.
+    When iterated, renders a list of tuples of:
+    (consumer_id, [repo_id,..])
+    Used to effectiently perform bind/unbind on the
+    consumer agent.
+    """
+    
+    def __init__(self, binds):
+        self.binds = binds
+    
+    def __iter__(self):
+        consumers = {}
+        for bind in self.binds:
+            cid = bind['consumer_id']
+            rid = bind['repo_id']
+            repos = consumers.get(cid)
+            if repos is None:
+                repos = set()
+                consumers[cid] = repos
+            repos.add(rid)
+        return iter(consumers.items())
