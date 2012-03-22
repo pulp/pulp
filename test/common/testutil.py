@@ -204,6 +204,7 @@ class PulpTest(unittest.TestCase):
         unittest.TestCase.tearDown(self)
         self.unmock_all()
         self.clean()
+        self.teardown_async()
 
     def clean(self):
         '''
@@ -240,6 +241,10 @@ class PulpTest(unittest.TestCase):
 
     def setup_async(self):
         async._queue = mock.Mock()
+        async._queue.find.return_value = []
+
+    def teardown_async(self):
+        async._queue = None
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
