@@ -47,3 +47,32 @@ class Consumer(Model):
         self.certificate = certificate or None
         self.unit_profile = []
         self.repo_ids = []
+
+
+class Bind(Model):
+    """
+    Represents consumer binding to a repo/distributor.
+    @ivar consumer_id: uniquely identifies the consumer.
+    @type consumer_id: str
+    @ivar repo_id: uniquely identifies the repository.
+    @type repo_id: str
+    @ivar distributor_id: uniquely identifies a distributor.
+    @type distributor_id: str
+    """
+
+    collection_name = 'gc_bind'
+    unique_indices = ('id', 'repo_id', 'distributor_id')
+
+    def __init__(self, consumer_id, repo_id, distributor_id):
+        """
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        """
+        super(Bind, self).__init__()
+        self.consumer_id = consumer_id
+        self.repo_id = repo_id
+        self.distributor_id = distributor_id
