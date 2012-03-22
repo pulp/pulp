@@ -22,9 +22,10 @@ import testutil
 import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
-from pulp.server.db.model.gc_consumer import Consumer
+from pulp.server.db.model.gc_consumer import Consumer, Bind
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.managers.consumer.cud as consumer_manager
-import pulp.server.managers.factory as manager_factory
+import pulp.server.managers.factory as factory
 import pulp.server.exceptions as exceptions
 
 # -- test cases ---------------------------------------------------------------
@@ -226,3 +227,120 @@ class UtilityMethodsTests(testutil.PulpTest):
         self.assertTrue(not consumer_manager.is_consumer_id_valid('consumer 1'))
         self.assertTrue(not consumer_manager.is_consumer_id_valid('consumer#1'))
         self.assertTrue(not consumer_manager.is_consumer_id_valid('consumer!'))
+
+
+class BindManagerTests(testutil.PulpTest):
+
+    CONSUMER_ID = 'mycon'
+    REPO_ID = 'myrepo'
+    DISTRIBUTOR_ID = 'mydist'
+    QUERY = dict(
+        consumer_id=CONSUMER_ID,
+        repo_id=REPO_ID,
+        distributor_id=DISTRIBUTOR_ID,
+    )
+
+    def setUp(self):
+        testutil.PulpTest.setUp(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+    def tearDown(self):
+        testutil.PulpTest.tearDown(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpTest.clean(self)
+
+    def populate(self):
+        config = {'key1' : 'value1', 'key2' : None}
+        manager = factory.repo_manager()
+        repo = manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            'mock-distributor',
+            config,
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+
+    def test_bind(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        manager.bind(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID)
+        # Verify
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind is not None)
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    def test_unbind(self):
+        # Setup
+        self.test_bind()
+        # Test
+        manager = factory.consumer_bind_manager()
+        manager.unbind(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID)
+        # Verify
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind is None)
+
+    def test_query_by_consumer(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        # Test
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        binds = [b for b in binds]
+        # Verify
+        self.assertEquals(len(binds), 1)
+        bind = binds[0]
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    def test_query_by_repo(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        # Test
+        binds = manager.find_by_repo(self.REPO_ID)
+        binds = [b for b in binds]
+        # Verify
+        self.assertEquals(len(binds), 1)
+        bind = binds[0]
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    def test_query_by_distributor(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        # Test
+        binds = manager.find_by_distributor(self.DISTRIBUTOR_ID)
+        binds = [b for b in binds]
+        # Verify
+        self.assertEquals(len(binds), 1)
+        bind = binds[0]
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
