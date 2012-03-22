@@ -143,7 +143,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.manager.create_repo(id, notes=notes)
             self.fail('Invalid notes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
-            self.assertTrue(notes in e)
+            self.assertTrue('notes' in e.data_dict()['property_names'])
             print(e) # for coverage
 
     def test_delete_repo(self):
