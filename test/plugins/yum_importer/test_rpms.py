@@ -21,6 +21,8 @@ import tempfile
 import time
 import unittest
 
+from grinder.BaseFetch import BaseFetch
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
 import importer_mocks
@@ -48,7 +50,8 @@ class TestRPMs(unittest.TestCase):
         self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
 
     def clean(self):
-        shutil.rmtree(self.temp_dir)
+        #shutil.rmtree(self.temp_dir)
+        pass
 
     def get_files_in_dir(self, pattern, path):
         files = []
@@ -671,4 +674,108 @@ class TestRPMs(unittest.TestCase):
         except:
             caught_exception = True
         self.assertFalse(caught_exception)
+
+
+    def test_errors_with_local_sync(self):
+        global updated_progress
+        updated_progress = None
+
+        def set_progress(progress):
+            global updated_progress
+            updated_progress = progress
+
+        importer = YumImporter()
+        feed_url = "file://%s/local_errors/" % (self.data_dir)
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_errors_with_local_sync"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        sync_conduit.set_progress = mock.Mock()
+        sync_conduit.set_progress.side_effect = set_progress
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+
+        test_rpm_with_error = os.path.join(self.data_dir, "local_errors", "pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+        orig_stat = os.stat(test_rpm_with_error)
+        try:
+            os.chmod(test_rpm_with_error, 0000)
+            self.assertFalse(os.access(test_rpm_with_error, os.R_OK))
+            status, summary, details = importer._sync_repo(repo, sync_conduit, config)
+        finally:
+            os.chmod(test_rpm_with_error, orig_stat.st_mode)
+
+        self.assertFalse(status)
+        self.assertTrue(summary is not None)
+        self.assertTrue(details is not None)
+        self.assertEquals(summary["num_not_synced_rpms"], 1)
+        self.assertEquals(details["size_total"], 6791)
+        # Confirm regular RPM files exist under self.pkg_dir
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 2)
+        sym_links = self.get_files_in_dir("*.rpm", repo.working_dir)
+        self.assertEquals(len(pkgs), 2)
+
+        expected_details = {
+                'rpm': 
+                    {
+                        'num_success': 2, 'total_count': 3, 'items_left': 0, 
+                        'size_left': 0.0, 'total_size_bytes': 6791, 'num_error': 1
+                    }
+                }
+        #print "updated_progress = %s" % (updated_progress)
+        # TODO:  Add tests for verifying returned report info 
+        # EXAMPLE
+        #{'content': {'num_success': 2, 'size_total': 6791, 'items_left': 0, 'items_total': 3, 'state': 'FINISHED', 'size_left': 0.0, 'details': {'tree_file': {'num_success': 0, 'size_total': 0, 'items_left': 0, 'items_total': 0, 'size_left': 0, 'num_error': 0}, 
+        # 'rpm': {'num_success': 2, 'size_total': 6791, 'items_left': 0, 'items_total': 3, 'size_left': 0.0, 'num_error': 1}, 'delta_rpm': 
+        #    {'num_success': 0, 'size_total': 0, 'items_left': 0, 'items_total': 0, 'size_left': 0, 'num_error': 0}, 
+        # 'file': {'num_success': 0, 'size_total': 0, 'items_left': 0, 'items_total': 0, 'size_left': 0, 'num_error': 0}}, 
+        # 'error_details': [
+        # {'buildhost': 'gibson', 'size': 2216, 'arch': 'x86_64', 'error_type': 'error', 'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 'epoch': '0', 'version': '0.3.1', 'provides': [('pulp-test-package(x86-64)', 'EQ', ('0', '0.3.1', '1.fc11')), ('pulp-test-package', 'EQ', ('0', '0.3.1', '1.fc11')), ('config(pulp-test-package)', 'EQ', ('0', '0.3.1', '1.fc11'))], 'vendor': '', 'description': 'Test package.  Nothing to see here.', 'error': {'error_type': "<type 'exceptions.Exception'>",
+        #        'traceback': ['Traceback (most recent call last):', '  File "/shared/repo/grinder/src/grinder/ParallelFetch.py", line 299, in run', '    result = self.fetcher.fetchItem(itemInfo)', '  File "/shared/repo/grinder/src/grinder/activeobject.py", line 82, in __call__', '    return self.object(self, *args, **kwargs)', '  File "/shared/repo/grinder/src/grinder/activeobject.py", line 267, in __call__', '    return self.__call(method, args, kwargs)', '  File "/shared/repo/grinder/src/grinder/activeobject.py", line 243, in __call', '    return self.__rmi(method.name, args, kwargs)', '  File "/shared/repo/grinder/src/grinder/activeobject.py", line 136, in __rmi', '    raise Exception(ex)', 'Exception: Traceback (most recent call last):', '', '  File "/shared/repo/grinder/src/grinder/activeobject.py", line 429, in process', '    retval = method(*args, **kwargs)', '', '  File "/shared/repo/grinder/src/grinder/RepoFetch.py", line 51, in fetchItem', '    verify_options=self.verify_options, probing=probing, force=force)', '', '  File "/shared/repo/grinder/src/grinder/BaseFetch.py", line 344, in fetch', '    checksum, headers, retryTimes, packages_location)', '', '  File "/shared/repo/grinder/src/grinder/BaseFetch.py", line 344, in fetch', '    checksum, headers, retryTimes, packages_location)', '', '  File "/shared/repo/grinder/src/grinder/BaseFetch.py", line 279, in fetch', '    curl.perform()', '', 
+        #            'error: (37, "Couldn\'t open file /shared/repo/pulp/test/plugins/data/local_errors/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")', ''], 'error': 'Traceback (most recent call last):\n\n  File "/shared/repo/grinder/src/grinder/activeobject.py", line 429, in process\n    retval = method(*args, **kwargs)\n\n  File "/shared/repo/grinder/src/grinder/RepoFetch.py", line 51, in fetchItem\n    verify_options=self.verify_options, probing=probing, force=force)\n\n  File "/shared/repo/grinder/src/grinder/BaseFetch.py", line 344, in fetch\n    checksum, headers, retryTimes, packages_location)\n\n  File "/shared/repo/grinder/src/grinder/BaseFetch.py", line 344, in fetch\n    checksum, headers, retryTimes, packages_location)\n\n  File "/shared/repo/grinder/src/grinder/BaseFetch.py", line 279, in fetch\n    curl.perform()\n\nerror: (37, "Couldn\'t open file /shared/repo/pulp/test/plugins/data/local_errors/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")\n'},
+                
+        #        'fileName': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 'downloadurl': 'file:///shared/repo/pulp/test/plugins/data/local_errors/pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 'savepath': '/tmp/tmpgunG3e/working/test_errors_with_local_sync/', 'pkgpath': '/tmp/tmpgunG3e/packages/.//pulp-test-package/0.3.1/1.fc11/x86_64/6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f', 'name': 'pulp-test-package', 
+        #        'checksumtype': 'sha256', 'license': 'MIT', 'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f', 'item_type': 'rpm', 'relativepath': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 'release': '1.fc11', 'requires': []}], 'num_error': 1}, 'errata': {'state': 'FINISHED', 'num_errata': 52}, 'metadata': {'state': 'FINISHED'}}
+
+        
+        self.assertTrue(updated_progress.has_key("metadata"))
+        self.assertEqual(updated_progress["metadata"]["state"], "FINISHED")
+        self.assertTrue(updated_progress.has_key("errata"))
+        self.assertEqual(updated_progress["errata"]["state"], "FINISHED")
+        self.assertEqual(updated_progress["errata"]["num_errata"], 52)
+        self.assertTrue(updated_progress.has_key("content"))
+        self.assertEqual(updated_progress["content"]["state"], "FINISHED")
+        self.assertEqual(updated_progress["content"]["items_total"], 3)
+        self.assertEqual(updated_progress["content"]["items_left"], 0)
+        self.assertEqual(updated_progress["content"]["num_success"], 2)
+        self.assertEqual(updated_progress["content"]["num_error"], 1)
+        self.assertEqual(updated_progress["content"]["size_total"], 6791)
+        self.assertEqual(updated_progress["content"]["size_left"], 0)
+        for type_id in (BaseFetch.FILE, BaseFetch.TREE_FILE, BaseFetch.DELTA_RPM):
+            self.assertTrue(updated_progress["content"]["details"].has_key(type_id))
+            self.assertEqual(updated_progress["content"]["details"][type_id]["num_success"], 0)
+            self.assertEqual(updated_progress["content"]["details"][type_id]["num_error"], 0)
+            self.assertEqual(updated_progress["content"]["details"][type_id]["size_total"], 0)
+            self.assertEqual(updated_progress["content"]["details"][type_id]["size_left"], 0)
+            self.assertEqual(updated_progress["content"]["details"][type_id]["items_total"], 0)
+            self.assertEqual(updated_progress["content"]["details"][type_id]["items_left"], 0)
+        # 'rpm': {'num_success': 2, 'size_total': 6791, 'items_left': 0, 
+        #    'items_total': 3, 'size_left': 0.0, 'num_error': 1}
+        self.assertTrue(updated_progress["content"]["details"].has_key("rpm"))
+        self.assertEqual(updated_progress["content"]["details"]["rpm"]["num_success"], 2)
+        self.assertEqual(updated_progress["content"]["details"]["rpm"]["num_error"], 1)
+        self.assertEqual(updated_progress["content"]["details"]["rpm"]["size_total"], 6791)
+        self.assertEqual(updated_progress["content"]["details"]["rpm"]["size_left"], 0)
+        self.assertEqual(updated_progress["content"]["details"]["rpm"]["items_total"], 3)
+        self.assertEqual(updated_progress["content"]["details"]["rpm"]["items_left"], 0)
+        #
+        # Check error_details
+        #
+        #
+        self.assertEqual(len(updated_progress["content"]["error_details"]), 1)
+        self.assertEqual(updated_progress["content"]["error_details"][0]["filename"], "pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+
+        #print "error_details = %s" % (updated_progress["content"]["error_details"])
+        #print "error_details[0] = %s" % (updated_progress["content"]["error_details"][0])
+        #print "error_details[0].keys() = %s" % (updated_progress["content"]["error_details"][0].keys())
+        #print "error_details[0]['filename'] = %s" % (updated_progress["content"]["error_details"][0]['filename'])
 

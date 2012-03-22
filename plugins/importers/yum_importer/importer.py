@@ -165,5 +165,5 @@ class YumImporter(Importer):
 
         summary = dict(rpm_summary.items() + errata_summary.items())
         details = dict(rpm_details.items() + errata_details.items())
-        return (rpm_status or errata_status), summary, details
+        return (rpm_status and errata_status), summary, details
 

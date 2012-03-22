@@ -191,12 +191,14 @@ def verify_download(missing_rpms, new_rpms, new_units):
     not_synced = {}
     for key in new_rpms.keys():
         rpm = new_rpms[key]
-        if not verify_exists(rpm["pkgpath"]):
+        rpm_path = os.path.join(rpm["pkgpath"], rpm["relativepath"])
+        if not verify_exists(rpm_path):
             not_synced[key] = rpm
             del new_rpms[key]
     for key in missing_rpms.keys():
         rpm = missing_rpms[key]
-        if not verify_exists(rpm["pkgpath"]):
+        rpm_path = os.path.join(rpm["pkgpath"], rpm["relativepath"])
+        if not verify_exists(rpm_path):
             not_synced[key] = rpm
             del missing_rpms[key]
     for key in not_synced:
@@ -248,6 +250,20 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
         remove_old=remove_old, numOldPackages=num_old_packages, skip=skip, max_speed=max_speed,\
         purge_orphaned=purge_orphaned, distro_location=None, tmp_path=tmp_path)
     return yumRepoGrinder
+
+def _search_for_error(rpm_dict):
+    errors = {}
+    for key in rpm_dict:
+        if rpm_dict[key].has_key("error"):
+            _LOG.debug("Saw an error with: %s" % (rpm_dict[key]))
+            errors[key] = rpm_dict[key]
+    return errors
+
+def search_for_errors(new_rpms, missing_rpms):
+    errors = {}
+    errors.update(_search_for_error(new_rpms))
+    errors.update(_search_for_error(missing_rpms))
+    return errors
 
 def remove_unit(sync_conduit, repo, unit):
     """
@@ -385,14 +401,21 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     report = yumRepoGrinder.download()
     end_download = time.time()
     _LOG.info("Finished download of %s in % seconds.  %s" % (repo.id, end_download-start_download, report))
+    rpms_with_errors = search_for_errors(new_rpms, missing_rpms)
+
+    # TODO: Re-examine verify_download(), most likely remove and keep this functionality in grinder
     # Verify we synced what we expected, update the passed in dicts to remove non-downloaded items
     not_synced = verify_download(missing_rpms, new_rpms, new_units)
     if not_synced:
         _LOG.warning("%s rpms were not downloaded" % (len(not_synced)))
 
     # Save the new units and remove the orphaned units
-    for u in new_units.values():
-        sync_conduit.save_unit(u)
+    saved_new_unit_keys = []
+    for key in new_units:
+        if key not in rpms_with_errors:
+            u = new_units[key]
+            sync_conduit.save_unit(u)
+            saved_new_unit_keys.append(key)
 
     removal_errors = []
     for u in orphaned_units.values():
@@ -407,8 +430,9 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     new_rpms = filter(lambda u: u.type_id == 'rpm', new_units.values())
     missing_rpms = filter(lambda u: u.type_id == 'rpm', missing_units.values())
     orphaned_rpms = filter(lambda u: u.type_id == 'rpm', orphaned_units.values())
-    not_synced_rpms = filter(lambda u: u.type_id == 'rpm', not_synced.values())
+    not_synced_rpms = filter(lambda r: r["arch"] != 'srpm', not_synced.values())
 
+    # TODO: Need to revisit what we report in Summary and Details
     summary = {}
     summary["num_rpms"] = len(available_rpms)
     summary["num_synced_new_rpms"] = len(new_rpms)
@@ -421,7 +445,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     new_srpms = filter(lambda u: u.type_id == 'srpm', new_units.values())
     missing_srpms = filter(lambda u: u.type_id == 'srpm', missing_units.values())
     orphaned_srpms = filter(lambda u: u.type_id == 'srpm', orphaned_units.values())
-    not_synced_srpms = filter(lambda u: u.type_id == 'srpm', not_synced.values())
+    not_synced_srpms = filter(lambda r: r["arch"] == 'srpm', not_synced.values())
 
     summary["num_synced_new_srpms"] = len(new_srpms)
     summary["num_resynced_srpms"] = len(missing_srpms)
