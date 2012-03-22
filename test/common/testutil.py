@@ -255,9 +255,10 @@ class PulpTest(unittest.TestCase):
 
     def setup_async(self):
         async._queue = mock.Mock()
+        async._queue.find.return_value = []
 
     def teardown_async(self):
-        pass
+        async._queue = None
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
