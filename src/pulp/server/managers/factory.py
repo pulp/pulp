@@ -28,6 +28,7 @@ do so may indirectly break other tests.
 # Keys used to look up a specific builtin manager (please alphabetize)
 TYPE_CDS                    = 'cds-manager'
 TYPE_CONSUMER               = 'consumer-manager'
+TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
 TYPE_CONSUMER_NOTES         = 'consumer-notes-manager'
 TYPE_CONTENT                = 'content-manager'
@@ -158,6 +159,12 @@ def consumer_manager():
     """
     return get_manager(TYPE_CONSUMER)
 
+def consumer_agent_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.agent.AgentManager}
+    """
+    return get_manager(TYPE_CONSUMER_AGENT)
+
 def consumer_bind_manager():
     """
     @rtype: L{pulp.server.managers.consumer.bind.BindManager}
@@ -180,6 +187,7 @@ def initialize():
     """
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.consumer.cud import ConsumerManager
+    from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
     from pulp.server.managers.consumer.notes import ConsumerNotesManager
     from pulp.server.managers.content.cud import ContentManager
@@ -199,6 +207,7 @@ def initialize():
     # factory between runs)
     builtins = {
         TYPE_CONSUMER: ConsumerManager,
+        TYPE_CONSUMER_AGENT: AgentManager,
         TYPE_CONSUMER_BIND: BindManager,
         TYPE_CONSUMER_NOTES: ConsumerNotesManager,
         TYPE_CONTENT: ContentManager,

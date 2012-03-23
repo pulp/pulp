@@ -64,7 +64,7 @@ from pulp.server.webservices.controllers import (
     filters, histories, jobs, orphaned, packages, permissions, statuses,
     repositories, roles, services, tasks, users, agent,)
 from pulp.server.webservices.controllers import (
-    dispatch, gc_contents, gc_plugins, gc_repositories)
+    dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers,)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 
 from gofer.messaging.broker import Broker
@@ -116,6 +116,7 @@ URLS = (
     '/v1/users', users.application,
     # version 2 api
     '/v2/content', gc_contents.application,
+    '/v2/consumers', gc_consumers.application,
     '/v2/jobs', dispatch.job_application,
     '/v2/plugins', gc_plugins.application,
     '/v2/queued_calls', dispatch.queued_call_application,

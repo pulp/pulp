@@ -50,8 +50,6 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             return
-        # TODO: update consumer (agent)
-
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
@@ -73,7 +71,6 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        # TODO: update consumer (agent)
         
     def consumer_deleted(self, id):
         """
@@ -98,10 +95,6 @@ class BindManager(object):
         for bind in self.find_by_repo(id):
             deleted.append(bind)
             collection.remove(bind, safe=True)
-        for consumer_id,repos in BindCollection(deleted):
-            # TODO: update consumer (agent)
-            pass
-            
     
     def distributor_deleted(self, repo_id, distributor_id):
         """
@@ -117,9 +110,6 @@ class BindManager(object):
         for bind in self.find_by_distributor(repo_id, distributor_id):
             deleted.append(bind)
             collection.remove(bind, safe=True)
-        for consumer_id,repos in BindCollection(deleted):
-            # TODO: update consumer (agent)
-            pass
 
     def find_by_consumer(self, id):
         """
