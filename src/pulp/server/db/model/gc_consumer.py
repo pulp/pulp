@@ -62,12 +62,10 @@ class Bind(Model):
 
     collection_name = 'gc_bind'
     unique_indices = (
-        ('consumer_id', 'repo_id', 'distributor_id'),
+        ('repo_id', 'distributor_id', 'consumer_id'),
     )
     search_indices = (
         ('consumer_id',),
-        ('repo_id',),
-        ('distributor_id',),
     )
 
     def __init__(self, consumer_id, repo_id, distributor_id):

@@ -222,7 +222,7 @@ class RepoDistributorManager(object):
         
         # clean up binds
         bind_manager = manager_factory.consumer_bind_manager()
-        bind_manager.distributor_deleted(distributor_id)
+        bind_manager.distributor_deleted(repo_id, distributor_id)
 
         # Update the database to reflect the removal
         distributor_coll.remove(repo_distributor, safe=True)

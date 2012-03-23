@@ -103,16 +103,18 @@ class BindManager(object):
             pass
             
     
-    def distributor_deleted(self, id):
+    def distributor_deleted(self, repo_id, distributor_id):
         """
         Notification that a distributor has been deleted.
         Associated binds are removed.
-        @param id: A distributor ID.
-        @type id: str
+        @param repo_id: A Repo ID.
+        @type repo_id: str
+        @param distributor_id: A Distributor ID.
+        @type distributor_id: str
         """
         deleted = []
         collection = Bind.get_collection()
-        for bind in self.find_by_distributor(id):
+        for bind in self.find_by_distributor(repo_id, distributor_id):
             deleted.append(bind)
             collection.remove(bind, safe=True)
         for consumer_id,repos in BindCollection(deleted):
@@ -143,16 +145,20 @@ class BindManager(object):
         query = dict(repo_id=id)
         return collection.find(query)
 
-    def find_by_distributor(self, id):
+    def find_by_distributor(self, repo_id, distributor_id):
         """
         Find all binds by Distributor ID.
-        @param id: A Distributor ID.
-        @type id: str
+        @param repo_id: A Repo ID.
+        @type repo_id: str
+        @param distributor_id: A Distributor ID.
+        @type distributor_id: str
         @return: A list of Bind.
         @rtype: list
         """
         collection = Bind.get_collection()
-        query = dict(distributor_id=id)
+        query = dict(
+            repo_id=repo_id,
+            distributor_id=distributor_id)
         return collection.find(query)
 
     def __consumer(self, id):
