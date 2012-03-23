@@ -151,7 +151,7 @@ class YumImporter(Importer):
                 progress_status["metadata"]["state"] = "FINISHED"
                 
             progress_status[type_id] = status
-            sync_conduit.set_progress(status)
+            sync_conduit.set_progress(progress_status)
 
         # sync rpms
         rpm_status, rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config, progress_callback)
