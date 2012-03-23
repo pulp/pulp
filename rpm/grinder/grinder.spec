@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.142
+Version: 0.0.144
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -59,8 +59,15 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
-- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+* Fri Mar 23 2012 John Matthews <jmatthews@redhat.com> 0.0.144-1
+- Fix for cleanup of temp .part file when pycurl throws an exception  - Also
+  fix md5/size mismatch to have same format of error info reported.
+  (jmatthews@redhat.com)
+
+* Fri Mar 23 2012 John Matthews <jmatthews@redhat.com> 0.0.143-1
+- Updating activeobject to raise the original exception (jmatthews@redhat.com)
+- Reduce the output when an error occurs with activeobject
+  (jmatthews@redhat.com)
 
 * Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
 - 805543 - adding an optional arg to force fetch files; this is useful for
