@@ -117,6 +117,30 @@ class BindManager(object):
             deleted.append(bind)
             collection.remove(bind, safe=True)
 
+    def find(self, consumer_id, repo_id, distributor_id):
+        """
+        Find a specific bind.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        @return: A specific bind.
+        @rtype: L{Bind}
+        @raise MissingResource: When not found
+        """
+        collection = Bind.get_collection()
+        query = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id)
+        bind = collection.find_one(query)
+        if bind is None:
+            key = '.'.join((consumer_id, repo_id, distributor_id))
+            raise MissingResource(key)
+        return Dict(bind)
+
     def find_all(self):
         """
         Find all binds

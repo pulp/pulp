@@ -21,6 +21,7 @@ import web
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.webservices import execution
+from pulp.server.exceptions import MissingResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
@@ -103,7 +104,9 @@ class Binding(JSONController):
 
     @auth_required(READ)
     def GET(self, consumer_id, repo_id, distributor_id):
-        return self.ok({})
+        manager = managers.consumer_bind_manager()
+        bind = manager.find(consumer_id, repo_id, distributor_id)
+        return self.ok(bind)
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, repo_id, distributor_id):
@@ -111,10 +114,13 @@ class Binding(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, repo_id, distributor_id):
-        return self.ok()
+        manager = managers.consumer_bind_manager()
+        bind = manager.unbind(consumer_id, repo_id, distributor_id)
+        return self.ok(bind)
 
 
 # -- web.py application -------------------------------------------------------
+
 
 urls = (
     '/$', 'Consumers',
