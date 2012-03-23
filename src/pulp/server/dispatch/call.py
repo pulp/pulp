@@ -221,7 +221,8 @@ class CallReport(object):
                  progress=None,
                  result=None,
                  exception=None,
-                 traceback=None):
+                 traceback=None,
+                 tags=None):
 
         assert isinstance(response, (NoneType, basestring))
         assert isinstance(reasons, (NoneType, list))
@@ -243,11 +244,12 @@ class CallReport(object):
         self.traceback = traceback
         self.start_time = None
         self.finish_time = None
+        self.tags = tags or []
 
     def serialize(self):
         data = {}
         for field in ('response', 'reasons', 'state', 'task_id', 'job_id',
-                      'progress', 'result',):
+                      'progress', 'result', 'tags'):
             data[field] = getattr(self, field)
         ex = getattr(self, 'exception')
         if ex is not None:
