@@ -435,7 +435,7 @@ class RepoSync(JSONController):
         # Execute the sync asynchronously
         repo_sync_manager = manager_factory.repo_sync_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        weight = pulp_config.config.getint('task', 'sync_weight')
+        weight = pulp_config.config.getint('tasks', 'sync_weight')
         tags = [repo_id, 'sync']
         call_request = CallRequest(repo_sync_manager.sync,
                                    [repo_id, overrides],
