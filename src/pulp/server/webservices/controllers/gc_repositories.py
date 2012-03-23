@@ -20,8 +20,8 @@ import web
 
 # Pulp
 import pulp.server.exceptions as exceptions
-import pulp.server.managers.repo._exceptions as repo_exceptions
 import pulp.server.managers.factory as manager_factory
+from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
@@ -87,11 +87,12 @@ class RepoCollection(JSONController):
         # Creation
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'create_weight')
         args = [id, display_name, description, notes, importer_type_id, importer_repo_plugin_config, distributors]
         call_request = CallRequest(repo_manager.create_and_configure_repo,
                                    args,
                                    resources=resources,
-                                   weight=0)
+                                   weight=weight)
         return execution.execute_sync_created(self, call_request, id)
 
 
@@ -133,9 +134,11 @@ class RepoResource(JSONController):
     def DELETE(self, id):
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(repo_manager.delete_repo,
                                    [id],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -150,9 +153,11 @@ class RepoResource(JSONController):
 
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(repo_manager.update_repo,
                                    [id, delta],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -190,10 +195,11 @@ class RepoImporters(JSONController):
 
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'create_weight')
         call_request = CallRequest(importer_manager.set_importer,
                                    [repo_id, importer_type, importer_config],
                                    resources=resources,
-                                   weight=0)
+                                   weight=weight)
         return execution.execute_sync_created(self, call_request, 'importer')
 
 
@@ -219,9 +225,11 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(importer_manager.remove_importer,
                                    [repo_id],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -239,9 +247,11 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(importer_manager.update_importer_config,
                                    [repo_id, importer_config],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -282,10 +292,11 @@ class RepoDistributors(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         if distributor_id is not None:
             resources.update({dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}})
+        weight = pulp_config.config.getint('tasks', 'create_weight')
         call_request = CallRequest(distributor_manager.add_distributor,
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,
-                                   weight=0)
+                                   weight=weight)
         return execution.execute_sync_created(self, call_request, distributor_id)
 
 
@@ -309,9 +320,11 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(distributor_manager.remove_distributor,
                                    [repo_id, distributor_id],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -329,9 +342,11 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(distributor_manager.update_distributor_config,
                                    [repo_id, distributor_id, distributor_config],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -401,10 +416,11 @@ class RepoSync(JSONController):
         # Execute the sync asynchronously
         repo_sync_manager = manager_factory.repo_sync_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('task', 'sync_weight')
         call_request = CallRequest(repo_sync_manager.sync,
                                    [repo_id, overrides],
                                    resources=resources,
-                                   weight=2, # needs to be configurable!
+                                   weight=weight,
                                    archive=True)
         return execution.execute_async(self, call_request)
 
@@ -427,9 +443,11 @@ class RepoPublish(JSONController):
         # Execute the publish asynchronously
         repo_publish_manager = manager_factory.repo_publish_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(repo_publish_manager.publish,
                                    [repo_id, distributor_id, overrides],
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_async(self, call_request)
 
@@ -464,10 +482,12 @@ class RepoAssociate(JSONController):
         association_manager = manager_factory.repo_unit_association_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {source_repo_id: dispatch_constants.RESOURCE_READ_OPERATION,
                                                                    dest_repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'default_weight')
         call_request = CallRequest(association_manager.associate_from_repo,
                                    [source_repo_id, dest_repo_id],
                                    {'criteria': criteria},
                                    resources=resources,
+                                   weight=weight,
                                    archive=True)
         return execution.execute_async(self, call_request)
 
