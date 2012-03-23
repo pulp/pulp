@@ -48,7 +48,7 @@ class TestRPMs(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
-        self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
 
     def clean(self):
         shutil.rmtree(self.temp_dir)
@@ -675,7 +675,6 @@ class TestRPMs(unittest.TestCase):
             caught_exception = True
         self.assertFalse(caught_exception)
 
-
     def test_errors_with_local_sync(self):
         global updated_progress
         updated_progress = None
@@ -753,12 +752,13 @@ class TestRPMs(unittest.TestCase):
         self.assertEqual(updated_progress["content"]["details"]["rpm"]["items_left"], 0)
         #
         # Check error_details
+        # error has keys of: {"error_type", "traceback", "value", "exception"}
         #
         self.assertEqual(len(updated_progress["content"]["error_details"]), 1)
         error = updated_progress["content"]["error_details"][0]
         self.assertEqual(error["filename"], "pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
         self.assertEqual(error["error"]["value"], 
-            '(37, "Couldn\'t open file /shared/repo/pulp/test/plugins/data/local_errors/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")')
+            '(37, "Couldn\'t open file %s")' % (test_rpm_with_error))
         self.assertEqual(error["error_type"], "error")
         self.assertEqual(error["error"]["error_type"], "<class 'pycurl.error'>")
         self.assertTrue(isinstance(error["error"]["exception"], pycurl.error)) 
