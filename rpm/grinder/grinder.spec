@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Mar 23 2012 John Matthews <jmatthews@redhat.com> 0.0.144-1
+- Bump grinder to 0.144 (jmatthews@redhat.com)
+
+* Fri Mar 23 2012 John Matthews <jmatthews@redhat.com> 0.0.144-1
 - Fix for cleanup of temp .part file when pycurl throws an exception  - Also
   fix md5/size mismatch to have same format of error info reported.
   (jmatthews@redhat.com)
