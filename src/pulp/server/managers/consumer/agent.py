@@ -76,3 +76,28 @@ class AgentManager(object):
         @type options: dict
         """
         _LOG.info('units:%s, options:%s', units, options)
+
+
+class BindCollection:
+    """
+    Normalized collection of bind/unbind.
+    When iterated, renders a list of tuples of:
+    (consumer_id, [repo_id,..])
+    Used to effectiently perform bind/unbind on the
+    consumer agent.
+    """
+    
+    def __init__(self, binds):
+        self.binds = binds
+    
+    def __iter__(self):
+        consumers = {}
+        for bind in self.binds:
+            cid = bind['consumer_id']
+            rid = bind['repo_id']
+            repos = consumers.get(cid)
+            if repos is None:
+                repos = set()
+                consumers[cid] = repos
+            repos.add(rid)
+        return iter(consumers.items())

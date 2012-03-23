@@ -84,14 +84,19 @@ class Bindings(JSONController):
             repo_id,
             distributor_id,
         ]
+        # apply to model
         manager = managers.consumer_bind_manager()
         call_request = CallRequest(
-            manger.bind,
+            manager.bind,
             args,
             resources=resources,
             weight=0)
-        return execution.execute_sync_created(self, call_request, id)
-        return self.ok()
+        result = execution.execute_sync_ok(self, call_request)
+        # notify agent
+        if result[0] == 200:
+            manager = managers.consumer_agent_manager()
+            manager.bind(result[1])
+        return result
 
 
 class Binding(JSONController):

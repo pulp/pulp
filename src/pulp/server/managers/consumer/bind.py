@@ -39,6 +39,8 @@ class BindManager(object):
         @type repo_id: str
         @param distributor_id: uniquely identifies a distributor.
         @type distributor_id: str
+        @return: The Bind object
+        @rtype: L{Bind}
         @raise MissingResource: when any resource found.
         """
         self.__consumer(consumer_id)
@@ -49,7 +51,8 @@ class BindManager(object):
             collection.save(bind, safe=True)
         except DuplicateKeyError:
             # idempotent
-            return
+            pass
+        return bind
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
@@ -60,6 +63,8 @@ class BindManager(object):
         @type repo_id: str
         @param distributor_id: uniquely identifies a distributor.
         @type distributor_id: str
+        @return: The Bind object
+        @rtype: L{Bind}
         """
         query = dict(
             consumer_id=consumer_id,
@@ -71,6 +76,7 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
+        return bind
         
     def consumer_deleted(self, id):
         """
@@ -181,28 +187,3 @@ class BindManager(object):
         if dist is None:
             raise MissingResource('/'.join((repo_id, distributor_id)))
         return dist
-
-
-class BindCollection:
-    """
-    Normalized collection of bind/unbind.
-    When iterated, renders a list of tuples of:
-    (consumer_id, [repo_id,..])
-    Used to effectiently perform bind/unbind on the
-    consumer agent.
-    """
-    
-    def __init__(self, binds):
-        self.binds = binds
-    
-    def __iter__(self):
-        consumers = {}
-        for bind in self.binds:
-            cid = bind['consumer_id']
-            rid = bind['repo_id']
-            repos = consumers.get(cid)
-            if repos is None:
-                repos = set()
-                consumers[cid] = repos
-            repos.add(rid)
-        return iter(consumers.items())
