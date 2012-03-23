@@ -47,8 +47,8 @@ def _initialize_scheduler():
 def _initialize_task_queue():
     global _TASK_QUEUE
     assert _TASK_QUEUE is None
-    concurrency_threshold = pulp_config.config.getint('task_queue', 'concurrency_threshold')
-    dispatch_interval = pulp_config.config.getfloat('task_queue', 'dispatch_interval')
+    concurrency_threshold = pulp_config.config.getint('tasks', 'concurrency_threshold')
+    dispatch_interval = pulp_config.config.getfloat('tasks', 'dispatch_interval')
     _TASK_QUEUE = TaskQueue(concurrency_threshold, dispatch_interval)
     _TASK_QUEUE.start()
 

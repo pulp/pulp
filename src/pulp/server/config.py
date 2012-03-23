@@ -84,9 +84,13 @@ _default_values = {
         'schedule_threshold': '5 minutes',
         'failure_threshold': '-1',
     },
-    'task_queue': {
+    'tasks': {
         'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
+        # task weights
+        'create_weight': '0',
+        'default_weight': '1',
+        'sync_weight': '2',
     },
     'yum': {
         'task_weight': '1',
