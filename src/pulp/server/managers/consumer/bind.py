@@ -52,7 +52,7 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             pass
-        return bind
+        return Dict(bind)
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
@@ -76,7 +76,7 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        return bind
+        return Dict(bind)
         
     def consumer_deleted(self, id):
         """
@@ -117,6 +117,16 @@ class BindManager(object):
             deleted.append(bind)
             collection.remove(bind, safe=True)
 
+    def find_all(self):
+        """
+        Find all binds
+        @return: A list of all bind
+        @rtype: list
+        """
+        collection = Bind.get_collection()
+        cursor = collection.find({})
+        return [Dict(b) for b in cursor]
+
     def find_by_consumer(self, id):
         """
         Find all binds by Consumer ID.
@@ -127,7 +137,8 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         query = dict(consumer_id=id)
-        return collection.find(query)
+        cursor = collection.find(query)
+        return [Dict(b) for b in cursor]
 
     def find_by_repo(self, id):
         """
@@ -139,7 +150,8 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         query = dict(repo_id=id)
-        return collection.find(query)
+        cursor = collection.find(query)
+        return [Dict(b) for b in cursor]
 
     def find_by_distributor(self, repo_id, distributor_id):
         """
@@ -155,7 +167,8 @@ class BindManager(object):
         query = dict(
             repo_id=repo_id,
             distributor_id=distributor_id)
-        return collection.find(query)
+        cursor = collection.find(query)
+        return [Dict(b) for b in cursor]
 
     def __consumer(self, id):
         """
@@ -187,3 +200,13 @@ class BindManager(object):
         if dist is None:
             raise MissingResource('/'.join((repo_id, distributor_id)))
         return dist
+
+
+class Dict(dict):
+    """
+    Bind dictionary
+    """
+    def __init__(self, bind):
+        dict.__init__(self)
+        for k in ('consumer_id', 'repo_id', 'distributor_id'):
+            self[k] = bind[k]

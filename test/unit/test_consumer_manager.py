@@ -303,13 +303,25 @@ class BindManagerTests(testutil.PulpTest):
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is None)
 
-    def test_query_by_consumer(self):
+    def test_find_all(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        # Test
+        binds = manager.find_all()
+        # Verify
+        self.assertEquals(len(binds), 1)
+        bind = binds[0]
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    def test_find_by_consumer(self):
         # Setup
         self.test_bind()
         manager = factory.consumer_bind_manager()
         # Test
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        binds = [b for b in binds]
         # Verify
         self.assertEquals(len(binds), 1)
         bind = binds[0]
@@ -317,13 +329,12 @@ class BindManagerTests(testutil.PulpTest):
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
 
-    def test_query_by_repo(self):
+    def test_find_by_repo(self):
         # Setup
         self.test_bind()
         manager = factory.consumer_bind_manager()
         # Test
         binds = manager.find_by_repo(self.REPO_ID)
-        binds = [b for b in binds]
         # Verify
         self.assertEquals(len(binds), 1)
         bind = binds[0]
@@ -331,13 +342,12 @@ class BindManagerTests(testutil.PulpTest):
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
 
-    def test_query_by_distributor(self):
+    def test_find_by_distributor(self):
         # Setup
         self.test_bind()
         manager = factory.consumer_bind_manager()
         # Test
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        binds = [b for b in binds]
         # Verify
         self.assertEquals(len(binds), 1)
         bind = binds[0]
@@ -350,13 +360,11 @@ class BindManagerTests(testutil.PulpTest):
         self.test_bind()
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         # Test
         manager.consumer_deleted(self.CONSUMER_ID)
         # Verify
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
         
     def test_repo_deleted(self):
@@ -364,13 +372,11 @@ class BindManagerTests(testutil.PulpTest):
         self.test_bind()
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_repo(self.REPO_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         # Test
         manager.repo_deleted(self.REPO_ID)
         # Verify
         binds = manager.find_by_repo(self.REPO_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
         
     def test_distributor_deleted(self):
@@ -378,13 +384,11 @@ class BindManagerTests(testutil.PulpTest):
         self.test_bind()
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         # Test
         manager.distributor_deleted(self.REPO_ID, self.DISTRIBUTOR_ID)
         # Verify
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
         
     def test_consumer_unregister_cleanup(self):
@@ -392,7 +396,6 @@ class BindManagerTests(testutil.PulpTest):
         self.test_bind()
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         # Test
         manager = factory.consumer_manager()
@@ -400,7 +403,6 @@ class BindManagerTests(testutil.PulpTest):
         # Verify
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
         
     def test_remove_repo_cleanup(self):
@@ -408,7 +410,6 @@ class BindManagerTests(testutil.PulpTest):
         self.test_bind()
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_repo(self.REPO_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         # Test
         manager = factory.repo_manager()
@@ -416,7 +417,6 @@ class BindManagerTests(testutil.PulpTest):
         # Verify
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_repo(self.REPO_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
         
     def test_remove_distributor_cleanup(self):
@@ -424,7 +424,6 @@ class BindManagerTests(testutil.PulpTest):
         self.test_bind()
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         # Test
         manager = factory.repo_distributor_manager()
@@ -432,5 +431,4 @@ class BindManagerTests(testutil.PulpTest):
         # Verify
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 0)

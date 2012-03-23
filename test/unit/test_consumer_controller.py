@@ -67,6 +67,22 @@ class BindTest(testutil.PulpV2WebserviceTest):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         
+    def test_get_bind(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
+        status, body = self.get(path)
+        self.assertEquals(status, 200)
+        self.assertEquals(len(body), 1)
+        bind = body[0]
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
     def test_bind(self):
         # Setup
         self.populate()
@@ -80,7 +96,6 @@ class BindTest(testutil.PulpV2WebserviceTest):
         manager = factory.consumer_bind_manager()
         self.assertEquals(status, 200)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        binds = [b for b in binds]
         self.assertEquals(len(binds), 1)
         bind = binds[0]
         for k in ('consumer_id', 'repo_id', 'distributor_id'):
