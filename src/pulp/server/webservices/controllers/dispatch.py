@@ -71,9 +71,12 @@ class TaskCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
+        valid_filters = ['tag']
+        filters = self.filters(valid_filters)
+        criteria = {'tags': filters.get('tags', [])}
         coordinator = dispatch_factory.coordinator()
-        tasks = coordinator.task_queue.all_tasks()
-        serialized_call_reports = [t.call_report.serialize() for t in tasks]
+        call_reports = coordinator.find_call_reports(**criteria)
+        serialized_call_reports = [c.serialize() for c in call_reports]
         return self.ok(serialized_call_reports)
 
 
