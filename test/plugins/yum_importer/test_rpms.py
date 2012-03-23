@@ -587,7 +587,7 @@ class TestRPMs(unittest.TestCase):
         expected_size_bytes = 209888 # 5 1MB RPMs are in this repo
         expected_num_packages = 2
         num_threads = 2
-        max_speed = 100 # KB/sec
+        max_speed = 25 # KB/sec
 
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
