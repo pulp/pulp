@@ -28,6 +28,9 @@ _default_values = {
         'lifetime': '90',
         'backups': '4',
     },
+    'cds': {
+        'sync_timeout': '10:7200',
+    },
     'consumer_history': {
         'lifetime': '180', # in days
     },
@@ -35,15 +38,22 @@ _default_values = {
         'task_state_poll_interval': '0.1',
     },
     'database': {
-        'auto_migrate': 'true',
+        'auto_migrate': 'false',
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
         'operation_retries': '2',
     },
+    'events': {
+        'send_enabled': 'false',
+        'recv_enabled': 'false',
+    },
     'exception_handler': {
         'debug': 'false',
     },
+    # XXX should 'ldap' be in here or not?
     'logs': {
+        'config': '/etc/pulp/logging/basic.cfg',
+        # XXX are the rest of these even used?
         'qpid_log_level': 'info',
         'level': 'info',
         'max_size': '1048576',
@@ -69,6 +79,11 @@ _default_values = {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
         'ssl_ca_certificate' : '/etc/pki/pulp/ssl_ca.crt',
+        # XXX should these be in here?
+        #'oauth_key': '',
+        #'oauth_secret': '',
+        'user_cert_expiration': '7',
+        'consumer_cert_expiration': '3650',
     },
     'server': {
         'server_name': 'localhost',
@@ -77,7 +92,7 @@ _default_values = {
         'ks_url' : '/pulp/ks',
         'default_login': 'admin',
         'default_password': 'admin',
-        'debugging_mode': 'true',
+        'debugging_mode': 'false',
     },
     'tasking': {
         'concurrency_threshold': '4',
@@ -92,11 +107,14 @@ _default_values = {
         'sync_weight': '2',
     },
     'yum': {
-        'task_weight': '1',
+        'task_weight': '2',
         'threads': '5',
         'limit_in_KB': '0',
         'verify_size': 'true',
         'verify_checksum': 'true',
+        'remove_old_versions': 'false',
+        'num_old_pkgs_keep': '2',
+        # XXX does proxy_url, proxy_port, proxy_user, proxy_pass belong here?
     },
 }
 
