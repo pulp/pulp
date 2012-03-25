@@ -136,12 +136,10 @@ class RepoResource(JSONController):
     def DELETE(self, id):
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [id]
         call_request = CallRequest(repo_manager.delete_repo,
                                    [id],
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
@@ -157,12 +155,10 @@ class RepoResource(JSONController):
 
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [id]
         call_request = CallRequest(repo_manager.update_repo,
                                    [id, delta],
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
@@ -233,12 +229,10 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [repo_id, importer_id]
         call_request = CallRequest(importer_manager.remove_importer,
                                    [repo_id],
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
@@ -257,12 +251,10 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [repo_id, importer_id]
         call_request = CallRequest(importer_manager.update_importer_config,
                                    [repo_id, importer_config],
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
@@ -335,12 +327,10 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [repo_id, distributor_id]
         call_request = CallRequest(distributor_manager.remove_distributor,
                                    [repo_id, distributor_id],
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
@@ -359,12 +349,10 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [repo_id, distributor_id]
         call_request = CallRequest(distributor_manager.update_distributor_config,
                                    [repo_id, distributor_id, distributor_config],
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
@@ -465,7 +453,7 @@ class RepoPublish(JSONController):
         repo_publish_manager = manager_factory.repo_publish_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         # XXX should there be a publish_weight?
-        weight = pulp_config.config.getint('tasks', 'default_weight')
+        weight = pulp_config.config.getint('tasks', 'publish_weight')
         tags = [repo_id, 'publish']
         call_request = CallRequest(repo_publish_manager.publish,
                                    [repo_id, distributor_id, overrides],
@@ -506,13 +494,11 @@ class RepoAssociate(JSONController):
         association_manager = manager_factory.repo_unit_association_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {source_repo_id: dispatch_constants.RESOURCE_READ_OPERATION,
                                                                    dest_repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        weight = pulp_config.config.getint('tasks', 'default_weight')
         tags = [dest_repo_id, source_repo_id, 'associate']
         call_request = CallRequest(association_manager.associate_from_repo,
                                    [source_repo_id, dest_repo_id],
                                    {'criteria': criteria},
                                    resources=resources,
-                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         return execution.execute_async(self, call_request)

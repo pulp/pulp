@@ -87,9 +87,8 @@ _default_values = {
     'tasks': {
         'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
-        # task weights
         'create_weight': '0',
-        'default_weight': '1',
+        'publish_weight': '1',
         'sync_weight': '2',
     },
     'yum': {
