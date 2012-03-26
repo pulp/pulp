@@ -128,8 +128,6 @@ class RepoSyncConduit(BaseImporterConduit):
                to the importer implementation so long as it is serializable
         @type  status: dict
         """
-
-        _LOG.info('Set progress for repo [%s]' % self.repo_id)
         context = dispatch_factory.context()
         context.report_progress(status)
 
