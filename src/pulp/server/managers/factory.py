@@ -44,6 +44,7 @@ TYPE_REPO_CLONE             = 'repo-clone-manager'
 TYPE_REPO_PUBLISH           = 'repo-publish-manager'
 TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
+TYPE_USER                   = 'user-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
@@ -74,6 +75,54 @@ class InvalidType(Exception):
 
 # Be sure to add an entry to test_syntactic_sugar_methods in test_manager_factory.py
 # to verify the correct type of manager is returned.
+
+def consumer_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.cud.ConsumerManager}
+    """
+    return get_manager(TYPE_CONSUMER)
+
+def consumer_agent_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.agent.AgentManager}
+    """
+    return get_manager(TYPE_CONSUMER_AGENT)
+
+def consumer_bind_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.bind.BindManager}
+    """
+    return get_manager(TYPE_CONSUMER_BIND)
+
+def consumer_notes_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.notes.ConsumerNotesManager}
+    """
+    return get_manager(TYPE_CONSUMER_NOTES)
+
+def content_manager():
+    """
+    @rtype: L{pulp.server.managers.content.cud.ContentManager}
+    """
+    return get_manager(TYPE_CONTENT)
+
+def content_query_manager():
+    """
+    @rtype: L{pulp.server.managers.content.query.ContentQueryManager}
+    """
+    return get_manager(TYPE_CONTENT_QUERY)
+
+def content_upload_manager():
+    """
+    @rtype: L{pulp.server.managers.content.upload.ContentUploadManager}
+    """
+    return get_manager(TYPE_CONTENT_UPLOAD)
+
+def plugin_manager():
+    """
+    @rtype: L{pulp.server.managers.plugin.PluginManager}
+    """
+    return get_manager(TYPE_PLUGIN_MANAGER)
 
 def repo_manager():
     """
@@ -129,54 +178,11 @@ def repo_sync_manager():
     """
     return get_manager(TYPE_REPO_SYNC)
 
-def content_manager():
+def user_manager():
     """
-    @rtype: L{pulp.server.managers.content.cud.ContentManager}
+    @rtype: L{pulp.server.managers.user.UserManager}
     """
-    return get_manager(TYPE_CONTENT)
-
-def content_query_manager():
-    """
-    @rtype: L{pulp.server.managers.content.query.ContentQueryManager}
-    """
-    return get_manager(TYPE_CONTENT_QUERY)
-
-def content_upload_manager():
-    """
-    @rtype: L{pulp.server.managers.content.upload.ContentUploadManager}
-    """
-    return get_manager(TYPE_CONTENT_UPLOAD)
-
-def plugin_manager():
-    """
-    @rtype: L{pulp.server.managers.plugin.PluginManager}
-    """
-    return get_manager(TYPE_PLUGIN_MANAGER)
-
-def consumer_manager():
-    """
-    @rtype: L{pulp.server.managers.consumer.cud.ConsumerManager}
-    """
-    return get_manager(TYPE_CONSUMER)
-
-def consumer_agent_manager():
-    """
-    @rtype: L{pulp.server.managers.consumer.agent.AgentManager}
-    """
-    return get_manager(TYPE_CONSUMER_AGENT)
-
-def consumer_bind_manager():
-    """
-    @rtype: L{pulp.server.managers.consumer.bind.BindManager}
-    """
-    return get_manager(TYPE_CONSUMER_BIND)
-
-def consumer_notes_manager():
-    """
-    @rtype: L{pulp.server.managers.consumer.notes.ConsumerNotesManager}
-    """
-    return get_manager(TYPE_CONSUMER_NOTES)
-
+    return get_manager(TYPE_USER)
 
 # -- other --------------------------------------------------------------------
 
@@ -203,6 +209,8 @@ def initialize():
     from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
+    from pulp.server.managers.user import UserManager
+
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {
@@ -223,6 +231,7 @@ def initialize():
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
+        TYPE_USER : UserManager,
     }
     _CLASSES.update(builtins)
 

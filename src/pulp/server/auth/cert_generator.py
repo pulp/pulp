@@ -75,8 +75,8 @@ def make_admin_user_cert(user):
     @param user: identification the certificate will be created for; may not be None
     @type  user: pulp.server.db.model.User
 
-    @return: PEM encoded string
-    @rtype:  string
+    @return: tuple of PEM encoded private key and certificate
+    @rtype:  (str, str)
     '''
     expiration = config.config.getint('security', 'user_cert_expiration')
     return make_cert(encode_admin_user(user), expiration)
@@ -89,8 +89,8 @@ def make_cert(uid, expiration):
     @param uid: ID to be embedded in the certificate
     @type  uid: string
 
-    @return: X509 PEM encoded certificate string
-    @rtype:  string
+    @return: tuple of PEM encoded private key and certificate
+    @rtype:  (str, str)
     """
     # Ensure we are dealing with a string and not unicode
     try:
