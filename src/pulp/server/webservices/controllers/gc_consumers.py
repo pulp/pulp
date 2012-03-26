@@ -60,15 +60,50 @@ class Consumer(JSONController):
 
 
 class Bindings(JSONController):
+    """
+    Consumer I{bindings} represents the collection of
+    objects used to associate a consumer and a repo-distributor
+    association.  Users wanting to create this association will
+    create an object in this collection.  Both bind and unbind
+    is idempotent.
+    """
 
     @auth_required(READ)
     def GET(self, consumer_id):
+        """
+        Fetch all bind objects referencing the
+        specified I{consumer_id}.
+        @param consumer_id: The specified consumer.
+        @type consumer_id: str
+        @return: A list of bind dict:
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @rtype: dict
+        """
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id)
         return self.ok(bindings)
 
     @auth_required(CREATE)
     def POST(self, consumer_id):
+        """
+        Create a bind association between the specified
+        consumer by id included in the URL path and a repo-distributor
+        specified in the POST body: {repo_id:<str>, distributor_id:<str>}.
+        Designed to be itempotent so only MissingResource is expected to
+        be raised by manager.  Once the model is updated, an attempt is made
+        to notify the consumer (agent).  Since the agent call can be long in
+        duration, the agent is notified separately so we don't lock up the
+        consumer, repo or distributor any longer than we have to.  The agent
+        notification is "best effort" and should not affect updating the model.
+        Reliability in having the consumer reflect the bind is achieved with a
+        combination of this notification and periodic agent initiated attempts
+        to ensure it reflects the model.
+        @param consumer_id: The consumer to bind.
+        @type consumer_id: str
+        @return: The created bind model object:
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @rtype: dict
+        """
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
@@ -85,7 +120,7 @@ class Bindings(JSONController):
             repo_id,
             distributor_id,
         ]
-        # apply to model
+        # update model
         manager = managers.consumer_bind_manager()
         call_request = CallRequest(
             manager.bind,
@@ -101,21 +136,72 @@ class Bindings(JSONController):
 
 
 class Binding(JSONController):
+    """
+    Represents a specific bind object.
+    """
 
     @auth_required(READ)
     def GET(self, consumer_id, repo_id, distributor_id):
+        """
+        Fetch a specific bind object which represents a specific association
+        between a consumer and repo-distributor.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @param repo_id: A repo ID.
+        @type repo_id: str
+        @param distributor_id: A distributor ID.
+        @type distributor_id: str
+        @return: A specific bind object:
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @rtype: dict
+        """
         manager = managers.consumer_bind_manager()
         bind = manager.find(consumer_id, repo_id, distributor_id)
         return self.ok(bind)
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, repo_id, distributor_id):
+        """
+        Update a bind.
+            **TBD
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @param repo_id: A repo ID.
+        @type repo_id: str
+        @param distributor_id: A distributor ID.
+        @type distributor_id: str
+        """
         return self.ok()
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, repo_id, distributor_id):
+        """
+        Delete a bind association between the specified
+        consumer and repo-distributor.  Designed to be itempotent.
+        Once the model is updated, an attempt is made to notify the
+        consumer (agent).  The agent notification is "best effort" and
+        should not affect updating the model.  Reliability in having the
+        consumer reflect the deletion of the bind is achieved with a
+        combination of this notification and periodic agent initiated
+        attempts to ensure it reflects the model.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @param repo_id: A repo ID.
+        @type repo_id: str
+        @param distributor_id: A distributor ID.
+        @type distributor_id: str
+        @return: The deleted bind model object:
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+            Or, None if bind does not exist.
+        @rtype: dict
+        """
+        # update model
         manager = managers.consumer_bind_manager()
         bind = manager.unbind(consumer_id, repo_id, distributor_id)
+        # notify agent
+        if bind is not None:
+            manager = managers.consumer_agent_manager()
+            manager.unbind(bind)
         return self.ok(bind)
 
 
