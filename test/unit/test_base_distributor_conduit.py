@@ -45,8 +45,8 @@ class BaseDistributorConduitTests(testutil.PulpTest):
         self.repo_manager = RepoManager()
         self.distributor_manager = RepoDistributorManager()
 
-        #repo_id = 'repo-1'
-        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
+        repo_id = 'repo-1'
+#        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
         self.repo_manager.create_repo(repo_id)
         self.distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True, distributor_id='test-distributor')
 
