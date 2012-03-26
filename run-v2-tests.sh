@@ -3,7 +3,25 @@
 # Please keep the following in alphabetical order so it's easier to determine
 # if something is in the list
 
-PACKAGES="pulp.gc_client.framework.loader,pulp.gc_client.framework.core,pulp.gc_client.framework.exceptions,pulp.server.managers,pulp.server.content,pulp.server.db.model.gc_repository,pulp.server.db.model.gc_content,pulp.server.webservices.controllers.gc_contents,pulp.server.webservices.controllers.gc_plugins,pulp.server.webservices.controllers.gc_repositories,pulp.server.dispatch.call,pulp.server.dispatch.coordinator,pulp.server.dispatch.factory,pulp.server.dispatch.history,pulp.server.dispatch.scheduler,pulp.server.dispatch.task,pulp.server.dispatch.taskqueue,pulp.server.managers.user"
+PACKAGES="pulp.gc_client.framework.core"
+PACKAGES="$PACKAGES,pulp.gc_client.framework.exceptions"
+PACKAGES="$PACKAGES,pulp.gc_client.framework.loader"
+PACKAGES="$PACKAGES,pulp.server.content"
+PACKAGES="$PACKAGES,pulp.server.db.model.gc_content"
+PACKAGES="$PACKAGES,pulp.server.db.model.gc_repository"
+PACKAGES="$PACKAGES,pulp.server.dispatch.call"
+PACKAGES="$PACKAGES,pulp.server.dispatch.coordinator"
+PACKAGES="$PACKAGES,pulp.server.dispatch.factory"
+PACKAGES="$PACKAGES,pulp.server.dispatch.history"
+PACKAGES="$PACKAGES,pulp.server.dispatch.scheduler"
+PACKAGES="$PACKAGES,pulp.server.dispatch.task"
+PACKAGES="$PACKAGES,pulp.server.dispatch.taskqueue"
+PACKAGES="$PACKAGES,pulp.server.managers"
+PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_contents"
+PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_plugins"
+PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_repositories"
+PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_root_actions"
+
 TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_base_importer_conduit.py \
        test/unit/test_client_framework_core.py \
@@ -26,6 +44,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_repo_sync_manager.py \
        test/unit/test_repo_unit_association_manager.py \
        test/unit/test_repo_unit_association_query_manager.py \
+       test/unit/test_root_actions_controller.py \
        test/unit/test_types_database.py \
        test/unit/test_types_parser.py \
        test/unit/test_unit_import_conduit.py \
