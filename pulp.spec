@@ -406,7 +406,9 @@ fi
 %attr(-, root, root) %{python_sitelib}/pulp/server/
 %attr(-, root, root) %{python_sitelib}/pulp/repo_auth/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
-%config(noreplace) %{_sysconfdir}/pulp
+%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+%config(noreplace) %{_sysconfdir}/pulp/logging/*
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(-, apache, apache) /srv/pulp/webservices.wsgi
 %attr(-, apache, apache) /srv/pulp/repo_auth.wsgi
