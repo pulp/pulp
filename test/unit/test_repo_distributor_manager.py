@@ -173,7 +173,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.distributor_manager.add_distributor('fake', 'mock-distributor', {}, True)
             self.fail('No exception thrown for an invalid repo ID')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake' in e)
+            self.assertTrue('fake' in e.resource_id)
             print(e) # for coverage
 
     def test_add_distributor_no_distributor(self):
@@ -205,7 +205,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, True, bad_id)
             self.fail('No exception thrown for an invalid distributor ID')
         except exceptions.InvalidValue, e:
-            self.assertTrue(bad_id in e)
+            self.assertTrue('distributor_id' in e.property_names)
             print(e) # for coverage
 
     def test_add_distributor_initialize_raises_error(self):
