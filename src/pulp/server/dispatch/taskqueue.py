@@ -151,7 +151,7 @@ class TaskQueue(object):
         self.__dispatcher.join()
         self.__dispatcher = None
         if clear_queued_calls:
-            self.queued_call_collection.drop()
+            self.queued_call_collection.remove(safe=True)
 
     def lock(self):
         """
