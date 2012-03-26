@@ -66,7 +66,8 @@ class TaskQueue(object):
                     if self.__lock is not None:
                         self.__lock.release()
                     return
-                for task in self._get_ready_tasks():
+                ready_tasks = self._get_ready_tasks()
+                for task in ready_tasks:
                     self._run_ready_task(task)
                 self._cancel_tasks()
             except Exception, e:
