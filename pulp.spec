@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.277
+Version:        0.0.278
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -503,6 +503,71 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Mar 26 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.278-1
+- removed default_weigh and replaced it with publish_weight this keeps the base
+  weight of 1 unconfigurable, giving users a stable baseline with which to
+  calculate configuration values for specific types of tasks
+  (jconnor@redhat.com)
+- YumImporter: fix for updated progress (jmatthews@redhat.com)
+- added gc unbind and rest of bind related happy path unit tests.
+  (jortel@redhat.com)
+- fixed typo in weight for sync (jconnor@redhat.com)
+- More gc consumer unit tests. (jortel@redhat.com)
+- Update YumImporter test to reduce speed when bandwidth limitation is tested
+  (jmatthews@redhat.com)
+- Added YumImporter tests (jmatthews@redhat.com)
+- Adding test dir for YumImporter tests (jmatthews@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.144-1].
+  (jmatthews@redhat.com)
+- Bump grinder to 0.144 (jmatthews@redhat.com)
+- YumImporter: unit test update to fix hard coded path (jmatthews@redhat.com)
+- Initial add of consumer controller unit tests. (jortel@redhat.com)
+- Initial add of gc_consumer controller; split agent actions into separate
+  consumer manager. (jortel@redhat.com)
+- YumImporter: Updated test for errors in sync progress (jmatthews@redhat.com)
+- added tags for repo call requests (jconnor@redhat.com)
+- added tags field to call report, including automatic adding of corresponding
+  call requests tags (jconnor@redhat.com)
+- added "tag" filter to tasks collection (jconnor@redhat.com)
+- converted v2 repo rest controllers to use new configurable weights
+  (jconnor@redhat.com)
+- changed task_queue config section to tasks added task weights to said section
+  (jconnor@redhat.com)
+- bind opts need to qualify distributer by repo_id AND distributor_id.
+  (jortel@redhat.com)
+- Add bind clean up to consumer, repo and distributer managers and add
+  associated unit tests. (jortel@redhat.com)
+- Add bindcollection and placeholders for updating the agent.
+  (jortel@redhat.com)
+- Rename _units to: _content in agent proxy. (jortel@redhat.com)
+- Update consumer bind manager unit tests. (jortel@redhat.com)
+- Add unit tests for consumer bind manager. (jortel@redhat.com)
+- Initial add of GC bind manager. (jortel@redhat.com)
+- Changed CLI to use server-side aggregate create method
+  (jason.dobies@redhat.com)
+- Added create_and_configure_repo call (jason.dobies@redhat.com)
+- YumImporter: Testing local_syncs & progress reporting with errors, needs some
+  more work (jmatthews@redhat.com)
+- YumImporter: cleanup debug print statement from progress
+  (jmatthews@redhat.com)
+- 805740 - generate metadata on repromotion with filters (pkilambi@redhat.com)
+- 805922 - adding sync logic to look for server directory during clone/local
+  syncs (pkilambi@redhat.com)
+- Manager level operation for single call create/configure repo
+  (jason.dobies@redhat.com)
+- added return value for all async look up calls (jconnor@redhat.com)
+- adding empty list return value for async._queue.find restting the queue to
+  None in teardown (jconnor@redhat.com)
+- Fixed unit test (jason.dobies@redhat.com)
+- Added back repo ID checking in the manager (jason.dobies@redhat.com)
+- Added client base test class and exception handler unit tests
+  (jason.dobies@redhat.com)
+- consumergroup changes for repo bind and unbind with V2 repos
+  (skarmark@redhat.com)
+- added OperationTimedOut to base exceptions and converted coordinater et al to
+  use base exceptions instead of derived exceptions, except where they still
+  made some sense (jconnor@redhat.com)
+
 * Wed Mar 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.277-1
 - YumImporter: Add num_errata to progress info (jmatthews@redhat.com)
 - YumImporter:  Updated sync progress status, reworked how we handle an
