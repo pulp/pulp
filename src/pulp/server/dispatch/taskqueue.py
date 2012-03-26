@@ -125,6 +125,8 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
+    # queue control methods ----------------------------------------------------
+
     def start(self):
         """
         Start the task queue
