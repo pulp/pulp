@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Mar 26 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-8
+- 806976 - fix overlap in /etc/pulp files between main and sub-packages.
+  (jortel@redhat.com)
+
 * Thu Mar 22 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-7
 - bump release for build. (jortel@redhat.com)
 - 805740 - generate metadata on repromotion with filters (pkilambi@redhat.com)
