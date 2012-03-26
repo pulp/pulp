@@ -171,7 +171,7 @@ class Coordinator(object):
         # interdependencies
         self.task_queue.lock()
         try:
-            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, coordinator_complete_callback)
+            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
             task.call_report.reasons = reasons
@@ -503,7 +503,7 @@ def task_matches_criteria(task, criteria):
 
 # coordinator callbacks --------------------------------------------------------
 
-def coordinator_complete_callback(call_request, call_report):
+def coordinator_dequeue_callback(call_request, call_report):
     """
     Callback to be executed upon call completion that will clean up the
     coordinator's accounting data pertaining to the call.
