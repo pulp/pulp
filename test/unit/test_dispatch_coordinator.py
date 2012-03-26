@@ -339,6 +339,8 @@ class CoordinatorRunTaskTests(CoordinatorTests):
     def test_run_task_async(self):
         task = Task(call.CallRequest(dummy_call))
         self.coordinator._run_task(task, False)
+        self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK]) == 1)
+        self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK]) == 2)
         self.assertTrue(coordinator.coordinator_dequeue_callback in task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK])
         self.assertTrue(self.coordinator.task_queue.enqueue.call_count == 1)
 
