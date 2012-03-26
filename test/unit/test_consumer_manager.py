@@ -460,7 +460,7 @@ class BindManagerTests(testutil.PulpTest):
         collection = Bind.get_collection()
         binds = collection.find({})
         binds = [b for b in binds]
-        self.assertTrue(len(binds), 0)
+        self.assertEquals(len(binds), 0)
         
     def test_bind_missing_distributor(self):
         # Setup
@@ -482,4 +482,4 @@ class BindManagerTests(testutil.PulpTest):
         collection = Bind.get_collection()
         binds = collection.find({})
         binds = [b for b in binds]
-        self.assertTrue(len(binds), 0)
+        self.assertEquals(len(binds), 0)
