@@ -385,6 +385,26 @@ class RevokePermissionsForTask(object):
         operations = ['READ', 'DELETE']
         revoke_permission_from_user(resource, self.user_name, operations)
 
+
+class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
+
+    def __call__(self, call_request, call_report):
+        if self.user_name == SystemPrincipal.LOGIN:
+            return
+        resource = '/v2/tasks/%s/' % call_report.task_id
+        operations = ['READ', 'DELETE']
+        grant_permission_to_user(resource, self.user_name, operations)
+
+
+class RevokePermissionsForTaskV2(RevokePermissionsForTask):
+
+    def __call__(self, call_request, call_report):
+        if self.user_name == SystemPrincipal.LOGIN:
+            return
+        resource = '/v2/tasks/%s/' % call_report.task_id
+        operations = ['READ', 'DELETE']
+        revoke_permission_from_user(resource, self.user_name, operations)
+
 # role api --------------------------------------------------------------------
 
 def create_role(role_name):

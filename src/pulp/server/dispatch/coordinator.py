@@ -17,6 +17,8 @@ import time
 import types
 import uuid
 
+from pulp.server.auth.authorization import (
+    GrantPermmissionsForTaskV2, RevokePermissionsForTaskV2)
 from pulp.server.db.model.dispatch import QueuedCall, TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
@@ -171,13 +173,15 @@ class Coordinator(object):
         # interdependencies
         self.task_queue.lock()
         try:
-            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
             task.call_report.reasons = reasons
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
                 return
             task.blocking_tasks = blocking
+            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, GrantPermmissionsForTaskV2())
+            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, RevokePermissionsForTaskV2())
+            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
             if task_resources:
                 set_task_id_on_task_resources(task.id, task_resources)
                 self.task_resource_collection.insert(task_resources, safe=True)
