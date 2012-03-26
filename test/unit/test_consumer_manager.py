@@ -24,6 +24,7 @@ import mock_plugins
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_consumer import Consumer, Bind
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
+from pulp.server.exceptions import MissingResource
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.factory as factory
 import pulp.server.exceptions as exceptions
@@ -245,6 +246,7 @@ class BindManagerTests(testutil.PulpTest):
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
 
@@ -253,6 +255,7 @@ class BindManagerTests(testutil.PulpTest):
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
         mock_plugins.reset()
 
     def clean(self):
@@ -432,3 +435,51 @@ class BindManagerTests(testutil.PulpTest):
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertEquals(len(binds), 0)
+        
+    #
+    # Error Cases
+    #
+
+    def test_bind_missing_consumer(self):
+        # Setup
+        self.populate()
+        collection = Consumer.get_collection()
+        collection.remove({})
+        # Test
+        manager = factory.consumer_bind_manager()
+        try:
+            manager.bind(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+            raise Exception('MissingResource <Consumer>, expected')
+        except MissingResource:
+            # expected
+            pass
+        # Verify
+        collection = Bind.get_collection()
+        binds = collection.find({})
+        binds = [b for b in binds]
+        self.assertTrue(len(binds), 0)
+        
+    def test_bind_missing_distributor(self):
+        # Setup
+        self.populate()
+        collection = RepoDistributor.get_collection()
+        collection.remove({})
+        # Test
+        manager = factory.consumer_bind_manager()
+        try:
+            manager.bind(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+            raise Exception('MissingResource <RepoDistributor>, expected')
+        except MissingResource:
+            # expected
+            pass
+        # Verify
+        collection = Bind.get_collection()
+        binds = collection.find({})
+        binds = [b for b in binds]
+        self.assertTrue(len(binds), 0)

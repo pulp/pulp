@@ -43,6 +43,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
         
@@ -51,6 +52,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
         mock_plugins.reset()
     
     def populate(self):
@@ -132,5 +134,44 @@ class BindTest(testutil.PulpV2WebserviceTest):
         status, body = self.delete(path)
         # Verify
         self.assertEquals(status, 200)
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        self.assertEquals(len(binds), 0)
+
+    #
+    # Failure Cases
+    #
+
+    def test_bind_missing_consumer(self):
+        # Setup
+        self.populate()
+        collection = Consumer.get_collection()
+        collection.remove({})
+        # Test
+        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
+        body = dict(
+            repo_id=self.REPO_ID,
+            distributor_id=self.DISTRIBUTOR_ID,)
+        status, body = self.post(path, body)
+        # Verify
+        manager = factory.consumer_bind_manager()
+        self.assertEquals(status, 404)
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        print binds
+        self.assertEquals(len(binds), 0)
+        
+    def test_bind_missing_distributor(self):
+        # Setup
+        self.populate()
+        collection = RepoDistributor.get_collection()
+        collection.remove({})
+        # Test
+        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
+        body = dict(
+            repo_id=self.REPO_ID,
+            distributor_id=self.DISTRIBUTOR_ID,)
+        status, body = self.post(path, body)
+        # Verify
+        manager = factory.consumer_bind_manager()
+        self.assertEquals(status, 404)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
