@@ -100,11 +100,15 @@ class Bindings(JSONController):
         @param consumer_id: The specified consumer.
         @type consumer_id: str
         @return: A list of bind dict:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>,
+             distributor:<RepoDistributor>}
         @rtype: dict
         """
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id)
+        bindings = [Binding.serialized(b) for b in bindings]
         return self.ok(bindings)
 
     @auth_required(CREATE)
@@ -152,6 +156,17 @@ class Binding(JSONController):
     Represents a specific bind object.
     """
 
+    @classmethod
+    def serialized(cls, bind):
+        manager = managers.repo_distributor_manager()
+        distributor = manager.get_distributor(
+            bind['repo_id'],
+            bind['distributor_id'])
+        expanded = dict(bind)
+        expanded['distributor'] = distributor
+        return expanded
+
+
     @auth_required(READ)
     def GET(self, consumer_id, repo_id, distributor_id):
         """
@@ -164,12 +179,15 @@ class Binding(JSONController):
         @param distributor_id: A distributor ID.
         @type distributor_id: str
         @return: A specific bind object:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>,
+             distributor:<RepoDistributor>}
         @rtype: dict
         """
         manager = managers.consumer_bind_manager()
         bind = manager.find(consumer_id, repo_id, distributor_id)
-        return self.ok(bind)
+        return self.ok(self.serialized(bind))
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, repo_id, distributor_id):

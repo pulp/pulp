@@ -102,6 +102,12 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        manager = factory.repo_distributor_manager()
+        distributor = manager.get_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
+        for k in ('distributor_type_id', 'config'):
+            self.assertEquals(
+                bind['distributor'][k],
+                distributor[k])
 
     def test_bind(self):
         # Setup
