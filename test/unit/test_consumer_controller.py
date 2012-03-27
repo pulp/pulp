@@ -120,7 +120,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         status, body = self.post(path, body)
         # Verify
         manager = factory.consumer_bind_manager()
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 201)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
         bind = binds[0]

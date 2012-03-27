@@ -26,6 +26,7 @@ from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices import serialization
 
 # -- constants ----------------------------------------------------------------
 
@@ -147,7 +148,11 @@ class Bindings(JSONController):
             args,
             resources=resources,
             weight=0)
-        result = execution.execute_sync_ok(self, call_request)
+        link = serialization.link.child_link_obj(
+            consumer_id,
+            repo_id,
+            distributor_id)
+        result = execution.execute_sync_created(self, call_request, link)
         return result
 
 
@@ -201,7 +206,7 @@ class Binding(JSONController):
         @param distributor_id: A distributor ID.
         @type distributor_id: str
         """
-        return self.ok()
+        return self.not_implemented()
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, repo_id, distributor_id):
