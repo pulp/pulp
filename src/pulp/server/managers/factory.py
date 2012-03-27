@@ -30,6 +30,7 @@ TYPE_CDS                    = 'cds-manager'
 TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
+TYPE_CONSUMER_QUERY         = 'consumer-query-manager'
 TYPE_CONTENT                = 'content-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
@@ -92,6 +93,12 @@ def consumer_bind_manager():
     @rtype: L{pulp.server.managers.consumer.bind.BindManager}
     """
     return get_manager(TYPE_CONSUMER_BIND)
+
+def consumer_query_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.query.ConsumerQueryManager}
+    """
+    return get_manager(TYPE_CONSUMER_QUERY)
 
 def content_manager():
     """
@@ -188,6 +195,7 @@ def initialize():
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
+    from pulp.server.managers.consumer.query import ConsumerQueryManager
     from pulp.server.managers.content.cud import ContentManager
     from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
@@ -209,6 +217,7 @@ def initialize():
         TYPE_CONSUMER: ConsumerManager,
         TYPE_CONSUMER_AGENT: AgentManager,
         TYPE_CONSUMER_BIND: BindManager,
+        TYPE_CONSUMER_QUERY: ConsumerQueryManager,
         TYPE_CONTENT: ContentManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,

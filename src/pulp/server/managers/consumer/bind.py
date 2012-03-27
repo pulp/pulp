@@ -28,11 +28,16 @@ _LOG = getLogger(__name__)
 class BindManager(object):
     """
     Manage consumer repo/distributor bind.
+    Both bind/unbind collaboration with the agent is done
+    as "best effort".  Reliability is achieved though a
+    combination of notifications originated here and agent
+    initiated efforts to ensure accurate reflection of binds.
     """
 
     def bind(self, consumer_id, repo_id, distributor_id):
         """
-        Bind consumer to a specifiec distirbutor associated with a repository.
+        Bind consumer to a specifiec distirbutor associated with
+        a repository.  This call is idempotent.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.
@@ -40,11 +45,13 @@ class BindManager(object):
         @param distributor_id: uniquely identifies a distributor.
         @type distributor_id: str
         @return: The Bind object
-        @rtype: L{Bind}
-        @raise MissingResource: when any resource found.
+        @rtype: SON
+        @raise MissingResource: when resource found.
         """
-        self.__consumer(consumer_id)
-        distributor = self.__distributor(repo_id, distributor_id)
+        manager = factory.consumer_query_manager()
+        manager.find_by_id(consumer_id)
+        manager = factory.repo_distributor_manager()
+        distributor = manager.get_distributor(repo_id, distributor_id)
         bind = Bind(consumer_id, repo_id, distributor_id)
         collection = Bind.get_collection()
         try:
@@ -52,11 +59,14 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             pass
-        return Dict(bind)
+        agent = factory.consumer_agent_manager()
+        agent.bind(bind)
+        return bind
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
-        Unbind consumer to a specifiec distirbutor associated with a repository.
+        Unbind consumer to a specifiec distirbutor associated with
+        a repository.  This call is idempotent.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.
@@ -64,7 +74,7 @@ class BindManager(object):
         @param distributor_id: uniquely identifies a distributor.
         @type distributor_id: str
         @return: The Bind object
-        @rtype: L{Bind}
+        @rtype: SON
         """
         query = dict(
             consumer_id=consumer_id,
@@ -76,7 +86,9 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        return Dict(bind)
+        agent = factory.consumer_agent_manager()
+        agent.unbind(bind)
+        return bind
         
     def consumer_deleted(self, id):
         """
@@ -88,6 +100,8 @@ class BindManager(object):
         collection = Bind.get_collection()
         for bind in self.find_by_consumer(id):
             collection.remove(bind, safe=True)
+            agent = factory.consumer_agent_manager()
+            agent.unbind(bind)
     
     def repo_deleted(self, id):
         """
@@ -96,12 +110,12 @@ class BindManager(object):
         @param id: A repo ID.
         @type id: str
         """
-        deleted = []
         collection = Bind.get_collection()
         for bind in self.find_by_repo(id):
-            deleted.append(bind)
             collection.remove(bind, safe=True)
-    
+            agent = factory.consumer_agent_manager()
+            agent.unbind(bind)
+
     def distributor_deleted(self, repo_id, distributor_id):
         """
         Notification that a distributor has been deleted.
@@ -111,11 +125,11 @@ class BindManager(object):
         @param distributor_id: A Distributor ID.
         @type distributor_id: str
         """
-        deleted = []
         collection = Bind.get_collection()
         for bind in self.find_by_distributor(repo_id, distributor_id):
-            deleted.append(bind)
             collection.remove(bind, safe=True)
+            agent = factory.consumer_agent_manager()
+            agent.unbind(bind)
 
     def find(self, consumer_id, repo_id, distributor_id):
         """
@@ -127,7 +141,7 @@ class BindManager(object):
         @param distributor_id: uniquely identifies a distributor.
         @type distributor_id: str
         @return: A specific bind.
-        @rtype: L{Bind}
+        @rtype: SON
         @raise MissingResource: When not found
         """
         collection = Bind.get_collection()
@@ -139,7 +153,7 @@ class BindManager(object):
         if bind is None:
             key = '.'.join((consumer_id, repo_id, distributor_id))
             raise MissingResource(key)
-        return Dict(bind)
+        return bind
 
     def find_all(self):
         """
@@ -149,7 +163,7 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         cursor = collection.find({})
-        return [Dict(b) for b in cursor]
+        return list(cursor)
 
     def find_by_consumer(self, id):
         """
@@ -162,7 +176,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = dict(consumer_id=id)
         cursor = collection.find(query)
-        return [Dict(b) for b in cursor]
+        return list(cursor)
 
     def find_by_repo(self, id):
         """
@@ -175,7 +189,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = dict(repo_id=id)
         cursor = collection.find(query)
-        return [Dict(b) for b in cursor]
+        return list(cursor)
 
     def find_by_distributor(self, repo_id, distributor_id):
         """
@@ -192,45 +206,4 @@ class BindManager(object):
             repo_id=repo_id,
             distributor_id=distributor_id)
         cursor = collection.find(query)
-        return [Dict(b) for b in cursor]
-
-    def __consumer(self, id):
-        """
-        Find the consumer by id.
-        @param id: A consumer id.
-        @type id: str
-        @return: The found model object.
-        @raise MissingResource: when not found.
-        """
-        collection = Consumer.get_collection()
-        consumer = collection.find_one({'id':id})
-        if consumer is None:
-            raise MissingResource(id)
-        return consumer
-
-
-    def __distributor(self, repo_id, distributor_id):
-        """
-        Find the distributor by id.
-        @param repo_id: A repo id.
-        @type repo_id: str
-        @param distributor_id: A distributor id.
-        @type distributor_id: str
-        @return: The found model object.
-        @raise MissingResource: when not found.
-        """
-        mgr = factory.repo_distributor_manager()
-        dist = mgr.get_distributor(repo_id, distributor_id)
-        if dist is None:
-            raise MissingResource('/'.join((repo_id, distributor_id)))
-        return dist
-
-
-class Dict(dict):
-    """
-    Bind dictionary
-    """
-    def __init__(self, bind):
-        dict.__init__(self)
-        for k in ('consumer_id', 'repo_id', 'distributor_id'):
-            self[k] = bind[k]
+        return list(cursor)

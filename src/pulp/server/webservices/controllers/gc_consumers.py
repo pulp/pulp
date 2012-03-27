@@ -114,14 +114,7 @@ class Bindings(JSONController):
         consumer by id included in the URL path and a repo-distributor
         specified in the POST body: {repo_id:<str>, distributor_id:<str>}.
         Designed to be itempotent so only MissingResource is expected to
-        be raised by manager.  Once the model is updated, an attempt is made
-        to notify the consumer (agent).  Since the agent call can be long in
-        duration, the agent is notified separately so we don't lock up the
-        consumer, repo or distributor any longer than we have to.  The agent
-        notification is "best effort" and should not affect updating the model.
-        Reliability in having the consumer reflect the bind is achieved with a
-        combination of this notification and periodic agent initiated attempts
-        to ensure it reflects the model.
+        be raised by manager.
         @param consumer_id: The consumer to bind.
         @type consumer_id: str
         @return: The created bind model object:
@@ -144,7 +137,6 @@ class Bindings(JSONController):
             repo_id,
             distributor_id,
         ]
-        # update model
         manager = managers.consumer_bind_manager()
         call_request = CallRequest(
             manager.bind,
@@ -152,10 +144,6 @@ class Bindings(JSONController):
             resources=resources,
             weight=0)
         result = execution.execute_sync_ok(self, call_request)
-        # notify agent
-        if result[0] == 200:
-            manager = managers.consumer_agent_manager()
-            manager.bind(result[1])
         return result
 
 
@@ -202,12 +190,6 @@ class Binding(JSONController):
         """
         Delete a bind association between the specified
         consumer and repo-distributor.  Designed to be itempotent.
-        Once the model is updated, an attempt is made to notify the
-        consumer (agent).  The agent notification is "best effort" and
-        should not affect updating the model.  Reliability in having the
-        consumer reflect the deletion of the bind is achieved with a
-        combination of this notification and periodic agent initiated
-        attempts to ensure it reflects the model.
         @param consumer_id: A consumer ID.
         @type consumer_id: str
         @param repo_id: A repo ID.
@@ -222,10 +204,6 @@ class Binding(JSONController):
         # update model
         manager = managers.consumer_bind_manager()
         bind = manager.unbind(consumer_id, repo_id, distributor_id)
-        # notify agent
-        if bind is not None:
-            manager = managers.consumer_agent_manager()
-            manager.unbind(bind)
         return self.ok(bind)
 
 
