@@ -22,7 +22,7 @@ import logging
 # 3rd Party
 import web
 
-# Pu
+# Pulp
 from pulp.server.auth.authorization import READ
 from pulp.server.managers import factory
 from pulp.server.webservices.controllers.base import JSONController

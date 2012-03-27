@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.gc_client.api.actions import ActionsAPI
 from pulp.gc_client.api.repository import *
 from pulp.gc_client.api.server_info import ServerInfoAPI
 from pulp.gc_client.api.tasks import TasksAPI
@@ -19,6 +20,8 @@ class Bindings(object):
     def __init__(self, pulp_connection):
 
         # Please keep the following in alphabetical order to ease reading
+
+        self.actions = ActionsAPI(pulp_connection)
 
         self.repo = RepositoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
