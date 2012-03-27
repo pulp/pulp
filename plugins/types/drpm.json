@@ -1,0 +1,11 @@
+{"types": [
+            {
+            "id" : "drpm",
+            "display_name" : "DRPM",
+            "description" : "DRPM",
+            "unit_key" :
+                ["epoch",  "version", "release", "fileName", "checksumtype", "checksum"],
+            "search_indexes" :
+                ["epoch",  "version", "release", "checksum", "fileName"]
+        }
+    ]}

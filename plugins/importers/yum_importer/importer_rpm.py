@@ -19,6 +19,7 @@ from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
 from pulp.server.managers.repo.unit_association_query import Criteria
+import drpm
 _LOG = logging.getLogger(__name__)
 #_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
 
@@ -385,7 +386,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
                 (len(available_rpms), feed_url, repo.id, (end_metadata-start_metadata)))
 
     # Determine what exists and what has been orphaned, or exists in Pulp but has been removed from the source repo
-    criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
+    criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID, drpm.DRPM_TYPE_ID])
     existing_units = get_existing_units(sync_conduit, criteria)
     orphaned_units = get_orphaned_units(available_rpms, existing_units)
 
@@ -394,15 +395,38 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     missing_rpms, missing_units = get_missing_rpms_and_units(available_rpms, existing_units)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
                 (repo.id, len(existing_units), len(orphaned_units), len(new_rpms), len(missing_rpms)))
-    # Sync the new and missing rpms
+
+
+    # process deltarpms
+    drpm_items = yumRepoGrinder.getDeltaRPMItems()
+    _LOG.info("Delta RPMs to sync %s" % len(drpm_items))
+    available_drpms =  drpm.get_available_drpms(drpm_items)
+    orphaned_drpm_units = get_orphaned_units(available_drpms, existing_units)
+    end_metadata = time.time()
+    _LOG.info("%s drpms are available in the source repo <%s> for %s, calculated in %s seconds" % \
+                (len(available_drpms), feed_url, repo.id, (end_metadata-start_metadata)))
+
+    # Determine new and missing items
+    new_drpms, new_drpm_units = drpm.get_new_drpms_and_units(available_drpms, existing_units, sync_conduit)
+    missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_units)
+    _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." % \
+                (repo.id, len(existing_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
+    # include new drpm units 
+    new_units.update(new_drpm_units)
+    # include any orphaned drpm units
+    orphaned_units.update(orphaned_drpm_units)
+    # Sync the new and missing rpms, drpms
     yumRepoGrinder.addItems(new_rpms.values())
     yumRepoGrinder.addItems(missing_rpms.values())
+    yumRepoGrinder.addItems(new_drpms.values())
+    yumRepoGrinder.addItems(missing_drpms.values())
     start_download = time.time()
     report = yumRepoGrinder.download()
     end_download = time.time()
     _LOG.info("Finished download of %s in % seconds.  %s" % (repo.id, end_download-start_download, report))
     rpms_with_errors = search_for_errors(new_rpms, missing_rpms)
-
+    drpms_with_errors = search_for_errors(new_drpms, missing_drpms)
+    rpms_with_errors.update(drpms_with_errors)
     # TODO: Re-examine verify_download(), most likely remove and keep this functionality in grinder
     # Verify we synced what we expected, update the passed in dicts to remove non-downloaded items
     not_synced = verify_download(missing_rpms, new_rpms, new_units)
@@ -424,6 +448,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
         except Exception, e:
             _LOG.exception("Unable to remove: %s" % (u))
             removal_errors.append((u, e))
+
     end = time.time()
 
     # filter out rpm specific data if any
@@ -452,6 +477,15 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     summary["num_not_synced_srpms"] = len(not_synced_srpms)
     summary["num_orphaned_srpms"] = len(orphaned_srpms)
 
+    # filter out drpm specific data if any
+    new_drpms = filter(lambda u: u.type_id == 'drpm', new_units.values())
+    missing_drpms = filter(lambda u: u.type_id == 'drpm', missing_units.values())
+    orphaned_drpms = filter(lambda u: u.type_id == 'drpm', orphaned_units.values())
+
+    summary["num_synced_new_drpms"] = len(new_drpms)
+    summary["num_resynced_drpms"] = len(missing_drpms)
+    summary["num_orphaned_drpms"] = len(orphaned_drpms)
+
     summary["time_total_sec"] = end - start
 
     details = {}
@@ -464,4 +498,5 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     status = True
     if removal_errors or details["sync_report"]["errors"]:
         status = False
+    _LOG.info("STATUS: %s; SUMMARY: %s; DETAILS: %s" % (status, summary, details))
     return status, summary, details

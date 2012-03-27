@@ -19,6 +19,7 @@ import logging
 import os
 import time
 
+import drpm
 import errata
 import importer_rpm
 from pulp.server.content.plugins.importer import Importer
@@ -63,7 +64,7 @@ class YumImporter(Importer):
         return {
             'id'           : YUM_IMPORTER_TYPE_ID,
             'display_name' : 'Yum Importer',
-            'types'        : [importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID, errata.ERRATA_TYPE_ID]
+            'types'        : [importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID, errata.ERRATA_TYPE_ID, drpm.DRPM_TYPE_ID]
         }
 
     def validate_config(self, repo, config):
