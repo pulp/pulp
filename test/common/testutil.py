@@ -263,7 +263,8 @@ class PulpTest(unittest.TestCase):
         async._queue.all_tasks.return_value = []
 
     def teardown_async(self):
-        async._queue = None
+        # I can't set this to None as clean requires something here
+        async._queue.reset_mock()
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
