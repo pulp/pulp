@@ -13,15 +13,19 @@ in the server.
 * **path:** /v2/repositories/
 * **parameters:** The body of the request is a JSON document that contains the
   following parameters:
+
  * **id** *(str)* - unique identifier for the repository
  * **display_name** *(str)* - optional; user-friendly name for the repository
  * **description** *(str)* - optional; user-friendly text describing the repository's contents
  * **notes** *(dict)* - optional; key-value pairs to programmatically tag the repository
+
 * **permission:** create
 * **success response:** 201
 * **failure responses:**
+
  * 409 - If there is already a repository with the given ID
  * 400 - If one or more of the parameters is invalid
+
 * **return:** database representation of the created repository
 
 Sample request body::
@@ -59,14 +63,18 @@ is centered around updating only that metadata.
   parameters need be specified. The following keys are allowed in the delta
   dictionary. Descriptions for each parameter can be found under the create
   repository API:
+
  * **display_name**
  * **description**
  * **notes**
+
 * **permission:** update
 * **success response:** 200
 * **failure responses:**
+
  * 404 - If there is no repository with the give ID
  * 400 - If one or more of the parameters is invalid
+
 * **return:** database representation of the repository (after changes made by the update)
 
 Sample request body::
@@ -117,15 +125,19 @@ The details of the added importer are returned from the call.
 * **method:** POST
 * **path:** /v2/repositories/<repo_id>/importers/
 * **parameters:** The body of the request is a JSON document that contains the following parameters:
+
  * **importer_type_id** *(str)* - Indicates the type of importer being associated with the repository. There must be an importer installed in the Pulp server with this ID.
  * **importer_config** *(dict)* - Configuration the repository will use to drive the behavior of the importer.
+
 * **permission:** create
 * **success response:** 201
 * **failure responses:**
+
  * 404 - If there is no repository with the given ID.
  * 400 - If one or more of the required parameters is missing, the importer type ID refers to a
    non-existent importer, or the importer indicates the supplied configuration is invalid.
  * 500 - If the importer raises an error during initialization.
+
 * **return:** database representation of the importer (not the full repository
   details, just the importer)
 
@@ -180,13 +192,14 @@ Adding a distributor performs the following validation steps before confirming t
   to do any initialization required for that repository. If the plugin raises an
   exception during this call, the distributor is not added to the repository.
 * The Pulp database is updated to store the distributor's configuration and the
-knowledge that the repository is associated with the distributor.
+  knowledge that the repository is associated with the distributor.
 
 The details of the added distributor are returned from the call.
 
 * **method:** POST
 * **path:** /v2/repositories/<repo_id>/distributors/
 * **parameters:** The body of the request is a JSON document that contains the following parameters:
+
  * **distributor_type_id** *(str)* - Indicates the type of distributor being associated with the
    repository. There must be a distributor installed in the Pulp server with this ID.
  * **distributor_config** *(dict)* - Configuration the repository will use to drive the
@@ -195,9 +208,11 @@ The details of the added distributor are returned from the call.
    to the distributor. If not specified, one will be randomly assigned to the distributor.
  * **auto_publish** *(bool)* - optional; If true, this distributor will automatically have
    its publish operation invoked after a successful repository sync. Defaults to false if unspecified.
+
 * **permission:** create
 * **success response:** 201
 * **failure responses:**
+
  * 404 - If there is no repository with the given ID.
  * 400 - If one or more of the required parameters is missing, the distributor
    type ID refers to a non-existent distributor, or the distributor indicates

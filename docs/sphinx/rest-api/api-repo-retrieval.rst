@@ -15,7 +15,9 @@ and :term:`distributors <distributor>` associated with it.
 * **permission:** read
 * **success response:** 200
 * **failure responses:**
+
  * 404 - If no repository exists with the given ID
+
 * **return:** database representation of the matching repository
 
 Sample response body::
@@ -76,7 +78,9 @@ in the case where there are no repositories.
 * **permission:** read
 * **success response:** 200
 * **failure responses:**
+
  * None
+
 * **return:** the same format as retrieving a single repository, except the base of the return value is a list of them
 
 Sample response body::
@@ -136,7 +140,9 @@ will either be empty (no importer configured) or contain a single entry.
 * **permission:** read
 * **success response:** 200
 * **failure responses:**
+
  * 404 - If there is no repository with the given ID; this will not occur if the repository exists but has no associated importers.
+
 * **return:** database representation of the repository's importer or an empty list
 
 Sample response body::
@@ -170,7 +176,9 @@ If the repository has no associated distributors, an empty list is returned.
 * **permission:** read
 * **success response:** 200
 * **failure responses:**
+
  * 404 - If there is no repository with the given ID; this will not occur if the repository exists but has no associated distributors.
+
 * **return:** database representations of all distributors on the repository.
 
 Sample response body::
