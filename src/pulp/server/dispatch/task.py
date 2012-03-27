@@ -177,8 +177,8 @@ class Task(object):
 
     def cancel(self):
         """
-        Call the cancel control hook if available, otherwise rains a
-        NotImplemented exception.
+        Call the cancel control hook if available, otherwise raises a
+        MissingCancelControlHook exception.
         """
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return
