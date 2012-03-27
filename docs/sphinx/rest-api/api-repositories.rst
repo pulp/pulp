@@ -1,10 +1,8 @@
 Repository APIs
 ===============
 
-Creation and Configuration
---------------------------
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    api-repo-create-and-configure
+   api-repo-retrieval

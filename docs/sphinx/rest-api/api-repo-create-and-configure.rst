@@ -1,5 +1,8 @@
+Creation and Configuration
+==========================
+
 Create a Repository
-===================
+-------------------
 
 Creates a new repository in Pulp. This call only creates the repository in Pulp;
 the real functionality of a repository isn't defined until importers and
@@ -43,7 +46,7 @@ Sample response body::
 
 
 Update a Repository
-===================
+-------------------
 
 Much like create repository is simply related to the repository metadata (as
 compared to the associated importers/distributors), the update repository call
@@ -86,7 +89,7 @@ Sample response body::
 
 
 Associate an Importer to a Repository
-=====================================
+-------------------------------------
 
 Configures an :term:`importer` for a previously created Pulp repository. Each
 repository maintains its own configuration for the importer which is used to
@@ -154,7 +157,7 @@ Sample response body::
  }
 
 Associate a Distributor with a Repository
-=========================================
+-----------------------------------------
 
 Configures a :term:`distributor` for a previously created Pulp repository. Each
 repository maintains its own configuration for the distributor which is used to

@@ -1,5 +1,5 @@
 Pulp v2 REST API
-=============================================
+================
 
 APIs
 ----
@@ -19,3 +19,4 @@ Documentation
    authentication
    conventions
    glossary
+   sync-v-async

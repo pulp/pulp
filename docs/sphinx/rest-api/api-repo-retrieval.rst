@@ -1,0 +1,194 @@
+Retrieval
+=========
+
+Retrieve a Single Repository
+----------------------------
+
+Retrieves information on a single Pulp repository. The returned data includes
+general repository metadata and metadata describing any :term:`importers <importer>`
+and :term:`distributors <distributor>` associated with it.
+
+* **method:** GET
+* **path:** /v2/repositories/<repo_id>/
+* **parameters:** None; the repository ID is included in the URL itself. There are
+  no supported query parameters.
+* **permission:** read
+* **success response:** 200
+* **failure responses:**
+ * 404 - If no repository exists with the given ID
+* **return:** database representation of the matching repository
+
+Sample response body::
+
+ {
+  "display_name": "Harness Repository: harness_repo_1",
+  "description": null,
+  "distributors": [
+    {
+      "scratchpad": 1,
+      "_ns": "gc_repo_distributors",
+      "last_publish": "2012-01-25T15:26:32-05:00",
+      "auto_publish": false,
+      "distributor_type_id": "harness_distributor",
+      "repo_id": "harness_repo_1",
+      "publish_in_progress": false,
+      "_id": "addf9261-345e-4ce3-ad1e-436ba005287f",
+      "config": {
+        "publish_dir": "/tmp/harness-publish",
+        "write_files": "true"
+      },
+      "id": "dist_1"
+    }
+  ],
+  "notes": {},
+  "content_unit_count": 0,
+  "importers": [
+    {
+      "scratchpad": 1,
+      "_ns": "gc_repo_importers",
+      "importer_type_id": "harness_importer",
+      "last_sync": "2012-01-25T15:26:32-05:00",
+      "repo_id": "harness_repo_1",
+      "sync_in_progress": false,
+      "_id": "bbe81308-ef7c-4c0c-b684-385fd627d99e",
+      "config": {
+        "num_units": "5",
+        "write_files": "true"
+      },
+      "id": "harness_importer"
+    }
+  ],
+  "id": "harness_repo_1"
+ }
+
+
+Retrieve all Repositories
+-------------------------
+
+Returns information on all repositories in the Pulp server. Eventually this call
+will support query parameters to limit the results and provide searching capabilities.
+It is worth noting that this call will never return a 404; an empty list is returned
+in the case where there are no repositories.
+
+* **method:** GET
+* **path:** /v2/repositories/
+* **parameters:** Currently none, all repositories are returned.
+* **permission:** read
+* **success response:** 200
+* **failure responses:**
+ * None
+* **return:** the same format as retrieving a single repository, except the base of the return value is a list of them
+
+Sample response body::
+
+ [
+  {
+    "display_name": "Harness Repository: harness_repo_1",
+    "description": null,
+    "distributors": [
+      {
+        "scratchpad": 1,
+        "_ns": "gc_repo_distributors",
+        "last_publish": "2012-01-25T15:26:32-05:00",
+        "auto_publish": false,
+        "distributor_type_id": "harness_distributor",
+        "repo_id": "harness_repo_1",
+        "publish_in_progress": false,
+        "_id": "addf9261-345e-4ce3-ad1e-436ba005287f",
+        "config": {
+          "publish_dir": "/tmp/harness-publish",
+          "write_files": "true"
+        },
+        "id": "dist_1"
+      }
+    ],
+    "notes": {},
+    "content_unit_count": 0,
+    "importers": [
+      {
+        "scratchpad": 1,
+        "_ns": "gc_repo_importers",
+        "importer_type_id": "harness_importer",
+        "last_sync": "2012-01-25T15:26:32-05:00",
+        "repo_id": "harness_repo_1",
+        "sync_in_progress": false,
+        "_id": "bbe81308-ef7c-4c0c-b684-385fd627d99e",
+        "config": {
+          "num_units": "5",
+          "write_files": "true"
+        },
+        "id": "harness_importer"
+      }
+    ],
+    "id": "harness_repo_1"
+  }
+ ]
+
+Retrieve Importers Associated with a Repository
+-----------------------------------------------
+
+Retrieves the :term:`importer` (if any) associated with a repository. The list
+will either be empty (no importer configured) or contain a single entry.
+
+* **method:** GET
+* **path:** /v2/repositories/<repo_id>/importers/
+* **parameters:** None
+* **permission:** read
+* **success response:** 200
+* **failure responses:**
+ * 404 - If there is no repository with the given ID; this will not occur if the repository exists but has no associated importers.
+* **return:** database representation of the repository's importer or an empty list
+
+Sample response body::
+
+ [
+  {
+    "scratchpad": 1,
+    "_ns": "gc_repo_importers",
+    "importer_type_id": "harness_importer",
+    "last_sync": "2012-01-25T15:26:32-05:00",
+    "repo_id": "harness_repo_1",
+    "sync_in_progress": false,
+    "_id": "bbe81308-ef7c-4c0c-b684-385fd627d99e",
+    "config": {
+      "num_units": "5",
+      "write_files": "true"
+    },
+    "id": "harness_importer"
+  }
+ ]
+
+Retrieve Distributors Associated with a Repository
+--------------------------------------------------
+
+Retrieves all :term:`distributors <distributor>` associated with a repository.
+If the repository has no associated distributors, an empty list is returned.
+
+* **method:** GET
+* **path:** /v2/repositories/<repo_id>/distributors/
+* **parameters:** None
+* **permission:** read
+* **success response:** 200
+* **failure responses:**
+ * 404 - If there is no repository with the given ID; this will not occur if the repository exists but has no associated distributors.
+* **return:** database representations of all distributors on the repository.
+
+Sample response body::
+
+ [
+  {
+    "scratchpad": 1,
+    "_ns": "gc_repo_distributors",
+    "last_publish": "2012-01-25T15:26:32-05:00",
+    "auto_publish": false,
+    "distributor_type_id": "harness_distributor",
+    "repo_id": "harness_repo_1",
+    "publish_in_progress": false,
+    "_id": "addf9261-345e-4ce3-ad1e-436ba005287f",
+    "config": {
+      "publish_dir": "/tmp/harness-publish",
+      "write_files": "true"
+    },
+    "id": "dist_1"
+  }
+ ]
