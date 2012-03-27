@@ -134,11 +134,12 @@ class ConsumerManager(object):
         fields may be updated through this call:
         * display_name
         * description
+        * notes
 
         Other fields found in delta will be ignored.
 
-        @param repo_id: identifies the consumer
-        @type  repo_id: str
+        @param id: identifies the consumer
+        @type  id: str
 
         @param delta: list of attributes and their new values to change
         @type  delta: dict
@@ -151,6 +152,12 @@ class ConsumerManager(object):
         if consumer is None:
             raise MissingResource(id)
 
+        if 'notes' in delta:
+            if delta['notes'] is not None and not isinstance(delta['notes'], dict):
+                raise InvalidValue(delta['notes'])
+            else:
+                consumer['notes'] = self.update_notes(consumer['notes'], delta['notes'])
+
         if 'display_name' in delta:
             consumer['display_name'] = delta['display_name']
 
@@ -160,6 +167,18 @@ class ConsumerManager(object):
         consumer_coll.save(consumer, safe=True)
 
         return consumer
+
+    def update_notes(self, notes, delta_notes):
+        for key, value in delta_notes.items():
+            if value is None:
+                # try deleting a note if it exists
+                try:
+                    del notes[key]
+                except:
+                    pass
+            else:
+                notes[key] = value
+        return notes
 
 # -- functions ----------------------------------------------------------------
 

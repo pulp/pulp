@@ -37,11 +37,23 @@ class Consumers(JSONController):
 
     @auth_required(READ)
     def GET(self):
+        manager = managers.consumer_manager()
         return self.ok([])
 
     @auth_required(CREATE)
     def POST(self):
-        return self.ok()
+
+        # Pull all the consumer data
+        consumer_data = self.params()
+        id = consumer_data.get('id', None)
+        display_name = consumer_data.get('display_name', None)
+        description = consumer_data.get('description', None)
+        notes = consumer_data.get('notes', None)
+
+        # Creation
+        manager = managers.consumer_manager()
+        consumer = manager.register(id, display_name, description, notes)
+        return self.ok(consumer)
 
 
 class Consumer(JSONController):
@@ -52,10 +64,22 @@ class Consumer(JSONController):
 
     @auth_required(UPDATE)
     def PUT(self, id):
-        return self.ok()
+
+        # Pull all the consumer update data
+        consumer_data = self.params()
+        delta = consumer_data.get('delta', None)
+
+        # Perform update
+        manager = managers.consumer_manager()
+        consumer = manager.update(id, delta)
+        return self.ok(consumer)
 
     @auth_required(DELETE)
     def DELETE(self, id):
+
+        # Perform deletion
+        manager = managers.consumer_manager()
+        manager.unregister(id)
         return self.ok()
 
 

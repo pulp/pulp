@@ -211,6 +211,112 @@ class ConsumerManagerTests(testutil.PulpTest):
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' in e)
 
+    def test_add_notes(self):
+        """
+        Tests adding notes to a consumer.
+        """
+
+        # Setup
+        id = 'consumer_1'
+        name = 'Consumer 1'
+        description = 'Test Consumer 1'
+        created = self.manager.register(id, name, description)
+
+        consumers = list(Consumer.get_collection().find())
+        self.assertEqual(1, len(consumers))
+
+        # Test
+        consumer = consumers[0]
+        self.assertEqual(consumer['notes'], {})
+
+        notes = {'note1' : 'value1', 'note2' : 'value2'}
+        self.manager.update(id, delta={'notes':notes})
+
+        # Verify
+        consumers = list(Consumer.get_collection().find())
+        consumer = consumers[0]
+        self.assertEqual(consumer['notes'], notes)
+
+
+    def test_update_notes(self):
+        """
+        Tests updating notes of a consumer
+        """
+
+        # Setup
+        id = 'consumer_1'
+        name = 'Consumer 1'
+        description = 'Test Consumer 1'
+        notes = {'note1' : 'value1', 'note2' : 'value2'}
+        created = self.manager.register(id, name, description, notes)
+
+        consumers = list(Consumer.get_collection().find())
+        self.assertEqual(1, len(consumers))
+        consumer = consumers[0]
+        self.assertEqual(consumer['notes'], notes)
+
+        # Test
+        updated_notes = {'note1' : 'new-value1', 'note2' : 'new-value2'}
+        self.manager.update(id, delta={'notes':updated_notes})
+
+        # Verify
+        consumers = list(Consumer.get_collection().find())
+        consumer = consumers[0]
+        self.assertEqual(consumer['notes'], updated_notes)
+
+    def test_delete_notes(self):
+        """
+        Tests removing notes from a consumer
+        """
+
+        # Setup
+        id = 'consumer_1'
+        name = 'Consumer 1'
+        description = 'Test Consumer 1'
+        notes = {'note1' : 'value1', 'note2' : 'value2'}
+        created = self.manager.register(id, name, description, notes)
+
+        # Test
+        removed_notes = {'note1' : None}
+        self.manager.update(id, delta={'notes':removed_notes})
+
+        # Verify
+        consumers = list(Consumer.get_collection().find())
+        consumer = consumers[0]
+        self.assertEqual(consumer['notes'], {'note2' : 'value2'})
+
+    def test_add_update_remove_notes_with_nonexisting_consumer(self):
+        # Setup
+        id = 'non_existing_consumer'
+
+        # Try adding and deleting notes from a non-existing consumer
+        notes = {'note1' : 'value1', 'note2' : None}
+        try:
+            self.manager.update(id, delta={'notes':notes})
+            self.fail('Missing Consumer did not raise an exception')
+        except exceptions.MissingResource, e:
+            self.assertTrue(id in e)
+            print(e)
+
+
+    def test_add_update_remove_notes_with_invalid_notes(self):
+        # Setup
+        id = 'consumer_1'
+        name = 'Consumer 1'
+        description = 'Test Consumer 1'
+        created = self.manager.register(id, name, description)
+
+        notes = "invalid_string_format_notes"
+
+        # Test add_notes
+        try:
+            self.manager.update(id, delta={'notes':notes})
+            self.fail('Invalid notes did not raise an exception')
+        except exceptions.InvalidValue, e:
+            self.assertTrue(notes in e)
+            print(e)
+
+
 class UtilityMethodsTests(testutil.PulpTest):
 
     def test_is_consumer_id_valid(self):
