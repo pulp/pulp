@@ -1646,3 +1646,90 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.test_empty_repo(get_random_unicode())
         self.deleteRepos()
 
+    def test_repo_delete_updates_repoids_under_objects(self):
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = my_dir + "/data/zoo"
+        repo_id_a = 'test_repo_delete_updates_repoids_under_package_object_a'
+        repo_id_b = 'test_repo_delete_updates_repoids_under_package_object_b'
+        repo_a = self.repo_api.create(repo_id_a, "test_name", 'i386', 'file://%s' % datadir)
+        repo_b = self.repo_api.create(repo_id_b, "test_name", 'i386', 'file://%s' % datadir)
+        repo_sync._sync(repo_id_a)
+        repo_sync._sync(repo_id_b)
+        #
+        # Sync 2 Repos and verify they have the same exact packages
+        #
+        repo_a = self.repo_api.repository(repo_id_a)
+        packages_a = repo_a['packages']
+        errata_a = repo_a['errata']
+        distroids_a = repo_a['distributionid']
+
+        repo_b = self.repo_api.repository(repo_id_b)
+        packages_b = repo_b['packages']
+        errata_b = repo_b['errata']
+        distroids_b = repo_b['distributionid']
+
+        self.assertTrue(len(packages_a) > 0)
+        self.assertEqual(len(packages_a), len(packages_b))
+        for pkgid in packages_a:
+            self.assertTrue(pkgid in packages_b)
+
+        self.assertTrue(len(errata_a) > 0)
+        self.assertEqual(len(errata_a), len(errata_b))
+        for key in errata_a:
+            for eid in errata_a[key]:
+                self.assertTrue(eid in errata_b[key])
+
+        self.assertEqual(len(distroids_a), len(distroids_b))
+        for d_id in distroids_a:
+            self.assertTrue(d_id in distroids_b)
+        #
+        # Verify package has both repoids associated to it
+        #
+        pkgid = packages_a[0]
+        pkg = self.package_api.package(pkgid)
+
+        self.assertEquals(len(pkg["repoids"]), 2)
+        self.assertTrue(repo_a["id"] in pkg["repoids"])
+        self.assertTrue(repo_b["id"] in pkg["repoids"])
+        #
+        # Verify errata has both repoids associated to it
+        #
+        self.assertTrue("security" in errata_a)
+        self.assertTrue(len(errata_a["security"]) > 0)
+        eid = errata_a["security"][0]
+
+        e = self.errata_api.errata(eid)
+        self.assertEqual(len(e), 1)
+        e = e[0]
+        self.assertEquals(len(e["repoids"]), 2)
+        self.assertTrue(repo_a["id"] in e["repoids"])
+        self.assertTrue(repo_b["id"] in e["repoids"])
+
+        #
+        # Verify distro has repoids associted to it
+        #
+        distro_id = distroids_a[0]
+        distro = self.distribution_api.distribution(distro_id)
+        self.assertTrue(distro)
+        self.assertTrue(repo_a["id"] in distro["repoids"])
+        self.assertTrue(repo_b["id"] in distro["repoids"])
+
+        #
+        # Delete one repo and verify that the repoids under the objects reflects this
+        #
+        self.repo_api.delete(repo_a["id"])
+
+        pkg = self.package_api.package(pkgid)
+        self.assertEquals(len(pkg["repoids"]), 1)
+        self.assertTrue(repo_b["id"] in pkg["repoids"])
+
+        e = self.errata_api.errata(eid)
+        self.assertEqual(len(e), 1)
+        e = e[0]
+        self.assertEquals(len(e["repoids"]), 1)
+        self.assertTrue(repo_b["id"] in e["repoids"])
+
+        distro = self.distribution_api.distribution(distro_id)
+        self.assertEquals(len(distro["repoids"]), 1)
+        self.assertTrue(repo_b["id"] in distro["repoids"])
+

@@ -593,24 +593,34 @@ class RepoApi(BaseApi):
                 log.debug(
                     'package "%s" has references, not deleted',
                     pkgid)
+                # Remove the repoid from the package since 
+                # we are not deleting the package
+                package = self.packageapi.package(pkgid)
+                repoids = [rid for rid in package["repoids"] if rid != id]
+                self.packageapi.update(pkgid, {'repoids': repoids})
             except Exception, ex:
                 log.exception(ex)
-
-        errata = repo["errata"]
+        orig_repo_errata = repo["errata"]
         repo["errata"] = []
         self.collection.save(repo, safe=True)
-        for eid in errata:
-            try:
-                self.errataapi.delete(eid)
-            except ErrataHasReferences:
-                log.debug(
-                    'errata "%s" has references, not deleted',
-                    eid)
-            except Exception, ex:
-                log.exception(ex)
-
+        for errata_type in orig_repo_errata:
+            for eid in orig_repo_errata[errata_type]:
+                try:
+                    self.errataapi.delete(eid)
+                except ErrataHasReferences:
+                    log.debug(
+                        'errata "%s" has references, not deleted',
+                        eid)
+                    errata = self.errataapi.errata(eid)
+                    if len(errata) > 0:
+                        errata = errata[0]
+                        repoids = [rid for rid in errata["repoids"] if rid != id]
+                        self.errataapi.update(eid, {'repoids': repoids})
+                except Exception, ex:
+                    log.exception(ex)
         #remove any distributions
         for distroid in repo['distributionid']:
+            distro = self.distroapi.distribution(distroid)
             self.remove_distribution(repo['id'], distroid)
             try:
                 self.distroapi.delete(distroid, keep_files)

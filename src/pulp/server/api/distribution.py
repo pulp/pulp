@@ -48,7 +48,11 @@ class DistributionApi(BaseApi):
         d = self.distribution(id)
         if d:
             log.info("Distribution with id %s already exists" % id)
-            return d
+            repoids = [r_id for r_id in repoids if r_id not in d["repoids"]]
+            d["repoids"].extend(repoids)
+            self.update(d["id"], {"repoids":d["repoids"]})
+            return self.distribution(id)
+
         d = model.Distribution(id, description, relativepath, family=family, \
                                variant=variant, version=version, timestamp=timestamp, \
                                files=files, arch=arch, repoids=repoids)
@@ -100,7 +104,7 @@ class DistributionApi(BaseApi):
             raise PulpException('Distributon [%s] does not exist', id)
         for key, value in delta.items():
             # simple changes
-            if key in ('description', 'relativepath', 'files', 'family', 'variant', 'version', 'arch'):
+            if key in ('description', 'relativepath', 'files', 'family', 'variant', 'version', 'arch', 'repoids'):
                 dist[key] = value
                 continue
             # unsupported
