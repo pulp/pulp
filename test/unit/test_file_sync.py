@@ -30,7 +30,6 @@ class TestFileSync(testutil.PulpAsyncTest):
 
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
-        self.mock(repo_sync, "run_async")
         self.mock(async, 'enqueue')
 
     def tearDown(self):
@@ -51,7 +50,7 @@ class TestFileSync(testutil.PulpAsyncTest):
         dirList = os.listdir(d)
         # should be empty and no repodata created
         assert(len(dirList) == 0)
-        
+
     def test_file_sync_remote(self):
         # create a remote repo
         remote_repo = self.repo_api.create("test_file_repo_id", "test_file_repo_id", "noarch",
