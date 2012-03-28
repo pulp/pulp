@@ -64,6 +64,7 @@ class ConsumerManagerTests(testutil.PulpTest):
 
         # Test
         created = self.manager.register(id, name, description, notes)
+        print created
 
         # Verify
         consumers = list(Consumer.get_collection().find())
