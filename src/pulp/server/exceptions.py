@@ -123,6 +123,25 @@ class OperationTimedOut(PulpExecutionException):
     def data_dict(self):
         return {'timeout': self.timeout}
 
+
+class NotImplemented(PulpExecutionException):
+    """
+    Base class for exceptions raised in place-holders for future functionality
+    or for missing control hooks in asynchronous operations, like 'cancel'.
+    """
+    http_status_code = httplib.NOT_IMPLEMENTED
+
+    def __init__(self, operation_name):
+        PulpExecutionException.__init__(self, operation_name)
+        self.operation_name = operation_name
+
+    def __str__(self):
+        msg = _('Operation not implemented: %(o)s') % self.operation_name
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'operation_name': self.operation_name}
+
 # data exceptions --------------------------------------------------------------
 
 class PulpDataException(PulpException):
