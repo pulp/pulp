@@ -1,0 +1,12 @@
+[general]
+family = TestFamily
+timestamp = 1323112153.09
+variant = TestVariant
+version = 16
+packagedir = 
+arch = x86_64
+
+[checksums]
+images/fileA.txt = sha256:22603a94360ee24b7034c74fa13d70dd122aa8c4be2010fc1361e1e6b0b410ab
+images/fileB.txt = sha256:8dc89e9883c098443f6616e60a8e489254bf239eeade6e4b4943b7c8c0c345a4 
+images/fileC.iso = sha256:099f2bafd533e97dcfee778bc24138c40f114323785ac1987a0db66e07086f74 
