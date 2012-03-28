@@ -144,7 +144,7 @@ class NotImplemented(PulpExecutionException):
         self.operation_name = operation_name
 
     def __str__(self):
-        msg = _('Operation not implemented: %(o)s') % self.operation_name
+        msg = _('Operation not implemented: %(o)s') % {'o': self.operation_name}
         return msg.encode('utf-8')
 
     def data_dict(self):
