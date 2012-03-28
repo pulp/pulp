@@ -3,7 +3,7 @@
 # -- header -----------------------------------------------------------------------
 
 Name:		    python-okaara
-Version:        1.0.12
+Version:        1.0.13
 Release:	    1%{?dist}
 Summary:	    Python command line utilities
 
@@ -62,8 +62,12 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
-* Fri Mar 16 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.12-1
-- Upgraded version of okaara to 1.0.12 (jason.dobies@redhat.com)
+* Wed Mar 28 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.13-1
+- Added add/find command to root of the CLI (jason.dobies@redhat.com)
+- Fixed bar rendering when prompt auto_wrap is enabled and the user supplies a
+  multi-line message (jason.dobies@redhat.com)
+- Refactoring to support better OO principles and make usage more flexible in
+  subclasses (jason.dobies@redhat.com)
 
 * Fri Mar 16 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.12-1
 - Added support for default values on options (jason.dobies@redhat.com)
