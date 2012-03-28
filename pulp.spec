@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.278
+Version:        0.0.279
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -505,6 +505,51 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 28 2012 Jeff Ortel <jortel@redhat.com> 0.0.279-1
+- determine the checksum type from the repodata and set on repo level
+  scratchpad for distributor access. Default to sha256 if type cannot be
+  determined (pkilambi@redhat.com)
+- Upgraded okaara to 1.0.13 (jason.dobies@redhat.com)
+- Removing repoids from consumer db model and moving update_notes to a
+  different manager function (skarmark@redhat.com)
+- Correct bind POST to use execute_sync_created() and return 201.
+  (jortel@redhat.com)
+- Fixed reST warnings coming out of sphinx (jason.dobies@redhat.com)
+- Updates to rest API docs (jason.dobies@redhat.com)
+- Include dereferenced distributor in bind GET result. (jortel@redhat.com)
+- Initial pass at setting up sphinx for our REST APIs (mostly for backup
+  purposes) (jason.dobies@redhat.com)
+- add consumer query manager; apply deep dive comments to consumer
+  manager/controller. (jortel@redhat.com)
+- Revert "change the drpm info to return new package keys"
+  (pkilambi@redhat.com)
+- change the drpm info to return new package keys (pkilambi@redhat.com)
+- adding delta rpm support to yum importer (pkilambi@redhat.com)
+- Removing unused consumer notes manager (skarmark@redhat.com)
+- Removing separate CRUD api calls for consumer notes and making it a part of
+  single consumer update call (skarmark@redhat.com)
+- removed resetting of _queue to None as base class clean still needs there to
+  be something there (jconnor@redhat.com)
+- added comment to cancel (jconnor@redhat.com)
+- Added v2 client support for login/logout using the new v2 API calls.
+  (jason.dobies@redhat.com)
+- added dynamic permissions for tasks (jconnor@redhat.com)
+- added sectional comment (jconnor@redhat.com)
+- changed drop to safe remove to guarantee the queued call collection is
+  cleared (jconnor@redhat.com)
+- added intermediate variable for better debugging/introspection
+  (jconnor@redhat.com)
+- 806976 - fix overlapping references to /etc/pulp/*. (jortel@redhat.com)
+- Ported user certificate generation to v2 codebase (jason.dobies@redhat.com)
+- Add epydocs; notify agent on unbind. (jortel@redhat.com)
+- First steps towards port of user APIs to managers (this contains certificate
+  generation) (jason.dobies@redhat.com)
+- Updated sync progress output to use new sync report format
+  (jason.dobies@redhat.com)
+- moved the clearing of task_resources from the complete life cycle transistion
+  to the dequeue life cycle transition to make sure it is synchronized by the
+  task_queue (jconnor@redhat.com)
+
 * Mon Mar 26 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.278-1
 - removed default_weigh and replaced it with publish_weight this keeps the base
   weight of 1 unconfigurable, giving users a stable baseline with which to
