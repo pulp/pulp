@@ -22,7 +22,7 @@ import mock
 
 from pulp.server import async
 from pulp.server.api import repo_sync, repo_clone_task
-from pulp.server.api.synchronizers import (YumSynchronizer, 
+from pulp.server.api.synchronizers import (YumSynchronizer,
     yum_rhn_progress_callback, local_progress_callback)
 
 
@@ -30,7 +30,6 @@ class TestRepoSync(testutil.PulpAsyncTest):
 
     def setUp(self):
         testutil.PulpAsyncTest.setUp(self)
-        self.mock(repo_sync, "run_async")
         self.mock(async, 'enqueue')
         self.test_data_dir = os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
