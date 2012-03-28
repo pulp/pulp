@@ -24,15 +24,33 @@ _LOG = getLogger(__name__)
 
 
 class AgentManager(object):
+    """
+    The main agent manager.
+    @ivar content: The content sub-manager.
+    @type content: L{ContentManager}
+    """
 
-    def unregistered(self):
-        pass
+    def __init__(self):
+        self.content = ContentManager()
+
+    def unregistered(self, id):
+        """
+        Notification that a consumer (agent) has
+        been unregistered.  This ensure that all registration
+        artifacts have been cleaned up.
+        @param id: The consumer ID.
+        @type id: str
+        """
+        _LOG.info(id)
 
     def bind(self, bind):
         """
         Apply a bind to the agent.
         @param bind: The bind added.
-        @type bind: Bind
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>}
+        @type bind: dict
         """
         _LOG.info(bind)
 
@@ -40,35 +58,51 @@ class AgentManager(object):
         """
         Apply a unbind to the agent.
         @param bind: The bind removed.
-        @type bind: Bind
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>}
+        @type bind: dict
         """
         _LOG.info(bind)
 
-    def install_content(self, units, options):
+
+
+class ContentManager(object):
+    """
+    The agent content manager.
+    """
+
+    def install(self, id, units, options):
         """
         Install content on a consumer.
+        @param id: The consumer ID.
+        @type id: str
         @param units: A list of content units to be installed.
         @type units: list of:
             { type_id:<str>, metadata:<dict> }
         @param options: Install options; based on unit type.
         @type options: dict
         """
-        _LOG.info('units:%s, options:%s', units, options)
+        _LOG.info('id:%s units:%s, options:%s', id, units, options)
 
-    def update_content(self, units, options):
+    def update(self, id, units, options):
         """
         Update content on a consumer.
+        @param id: The consumer ID.
+        @type id: str
         @param units: A list of content units to be updated.
         @type units: list of:
             { type_id:<str>, metadata:<dict> }
         @param options: Update options; based on unit type.
         @type options: dict
         """
-        _LOG.info('units:%s, options:%s', units, options)
+        _LOG.info('id:%s units:%s, options:%s', id, units, options)
 
-    def uninstall_content(self, units, options):
+    def uninstall(self, units, options):
         """
         Uninstall content on a consumer.
+        @param id: The consumer ID.
+        @type id: str
         @param units: A list of content units to be uninstalled.
         @type units: list of:
             { type_id:<str>, metadata:<dict> }
@@ -76,28 +110,3 @@ class AgentManager(object):
         @type options: dict
         """
         _LOG.info('units:%s, options:%s', units, options)
-
-
-class BindCollection:
-    """
-    Normalized collection of bind/unbind.
-    When iterated, renders a list of tuples of:
-    (consumer_id, [repo_id,..])
-    Used to effectiently perform bind/unbind on the
-    consumer agent.
-    """
-    
-    def __init__(self, binds):
-        self.binds = binds
-    
-    def __iter__(self):
-        consumers = {}
-        for bind in self.binds:
-            cid = bind['consumer_id']
-            rid = bind['repo_id']
-            repos = consumers.get(cid)
-            if repos is None:
-                repos = set()
-                consumers[cid] = repos
-            repos.add(rid)
-        return iter(consumers.items())
