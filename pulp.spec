@@ -502,6 +502,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 28 2012 Jeff Ortel <jortel@redhat.com> 1.0.1-1
+- 807516 - Deleting a repository does not affect repoids associated with a
+  package (jmatthews@redhat.com)
 * Mon Mar 26 2012 Jeff Ortel <jortel@redhat.com> 1.0.0-8
 - 806976 - fix overlap in /etc/pulp files between main and sub-packages.
   (jortel@redhat.com)
