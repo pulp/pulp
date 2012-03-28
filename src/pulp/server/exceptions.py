@@ -111,6 +111,10 @@ class OperationTimedOut(PulpExecutionException):
     http_status_code = httplib.SERVICE_UNAVAILABLE
 
     def __init__(self, timeout):
+        """
+        @param timeout: the timeout that expired
+        @type  timeout: datetime.timedelta or str
+        """
         if isinstance(timeout, timedelta):
             timeout = str(timeout)
         PulpExecutionException.__init__(self, timeout)
@@ -132,6 +136,10 @@ class NotImplemented(PulpExecutionException):
     http_status_code = httplib.NOT_IMPLEMENTED
 
     def __init__(self, operation_name):
+        """
+        @param operation_name: the name of the operation that is not implemented
+        @type  operation_name: str
+        """
         PulpExecutionException.__init__(self, operation_name)
         self.operation_name = operation_name
 
