@@ -14,6 +14,7 @@
 import logging
 import os
 import time
+import util
 
 from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
@@ -292,6 +293,41 @@ def remove_unit(sync_conduit, repo, unit):
             _LOG.debug("Delete: %s" % (f))
             os.unlink(f)
 
+
+def set_repo_checksum_type(repo, sync_conduit, config):
+    """
+      At this point we have downloaded the source metadata from a remote or local feed
+      lets lookup the checksum type for primary xml in repomd.xml and use that for createrepo
+
+      @param repo: metadata describing the repository
+      @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+      @param sync_conduit
+      @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
+
+      @param config: plugin configuration
+      @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+    """
+    _LOG.debug('Determining checksum type for repo %s' % repo.id)
+    checksum_type = config.get('checksum_type')
+    if checksum_type:
+        if not util.is_valid_checksum_type(checksum_type):
+            _LOG.error("Invalid checksum type [%s]" % checksum_type)
+            raise
+    else:
+        repo_metadata = os.path.join(repo.working_dir, repo.id, "repodata/repomd.xml")
+        if os.path.exists(repo_metadata):
+            checksum_type = util.get_repomd_filetype_dump(repo_metadata)['primary']['checksum'][0]
+            _LOG.debug("got checksum type from repo %s " % checksum_type)
+        else:
+            # default to sha256 if nothing is found
+            checksum_type = "sha256"
+            _LOG.debug("got checksum type default %s " % checksum_type)
+
+    # set repo checksum type on the scratchpad for distributor to lookup
+    sync_conduit.set_repo_scratchpad(dict(checksum_type=checksum_type))
+    _LOG.info("checksum type info [%s] set to repo scratchpad" % sync_conduit.get_repo_scratchpad())
+
 def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     """
       Invokes RPM sync sequence
@@ -424,6 +460,8 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     report = yumRepoGrinder.download()
     end_download = time.time()
     _LOG.info("Finished download of %s in % seconds.  %s" % (repo.id, end_download-start_download, report))
+    # determine the checksum type from downloaded metadata
+    set_repo_checksum_type(repo, sync_conduit, config)
     rpms_with_errors = search_for_errors(new_rpms, missing_rpms)
     drpms_with_errors = search_for_errors(new_drpms, missing_drpms)
     rpms_with_errors.update(drpms_with_errors)
@@ -448,7 +486,6 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
         except Exception, e:
             _LOG.exception("Unable to remove: %s" % (u))
             removal_errors.append((u, e))
-
     end = time.time()
 
     # filter out rpm specific data if any

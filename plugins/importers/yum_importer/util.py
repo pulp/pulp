@@ -80,3 +80,10 @@ def get_repomd_filetype_path(path, filetype):
             return None
     return None
 
+def is_valid_checksum_type(checksum_type):
+    VALID_TYPES = ['sha256', 'sha', 'sha1', 'md5', 'sha512']
+    if checksum_type not in VALID_TYPES:
+        return False
+    return True
+
+
