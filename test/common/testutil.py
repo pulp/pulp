@@ -257,7 +257,8 @@ class PulpAsyncTest(PulpTest):
 
     def tearDown(self):
         PulpTest.tearDown(self)
-        async._queue._cancel_dispatcher()
+        if async._queue:
+            async._queue._cancel_dispatcher()
         async._queue = None
 
     def setup_async(self):
