@@ -29,13 +29,12 @@ class ConsumerQueryManager(object):
     
     """
     Manager used to process queries on consumers. Consumers returned from
-    these calls will be serialized to a specific format instead of simply being
-    returned SON objects from the database.
+    these calls are consumer SON objects from the database.
     """
 
     def find_all(self):
         """
-        Returns serialized versions of all consumers in the database.
+        Returns all consumers in the database.
         If there are no consumers defined, an empty list is returned.
 
         @return: list of serialized consumers
@@ -47,15 +46,14 @@ class ConsumerQueryManager(object):
 
     def find_by_id(self, id):
         """
-        Find a consumer by ID.
+        Find a consumer by ID. 
         
         @param id: The consumer ID.
         @type id: str
         
-        @return: The consumer model object.
+        @return: The consumer model object. None if no consumer exists with given ID.
         @rtype: L{Consumer}
         
-        @raise MissingResource: When not found.
         """
         collection = Consumer.get_collection()
         consumer = collection.find_one({'id':id})
@@ -63,9 +61,8 @@ class ConsumerQueryManager(object):
     
     def find_by_id_list(self, consumer_id_list):
         """
-        Returns serialized versions of details of all of the given consumers. Any
-        IDs that do not refer to valid consumer are ignored and will not
-        raise an error.
+        Returns details of all of the given consumers. Any IDs that do not refer to a valid consumer 
+        are ignored and will not raise an error.
 
         @param consumer_id_list: list of consumer IDs to fetch
         @type  consumer_id_list: list of str

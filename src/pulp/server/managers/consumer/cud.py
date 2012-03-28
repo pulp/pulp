@@ -171,6 +171,22 @@ class ConsumerManager(object):
         consumer_coll.save(consumer, safe=True)
 
         return consumer
+    
+    
+    def get_consumer(self, id):
+        """
+        Returns a consumer with given ID.
+
+        @param id: consumer ID
+        @type  id: str
+
+        @raises MissingResource: if a consumer with given id does not exist
+        """
+        consumer_coll = Consumer.get_collection()
+        consumer = consumer_coll.find_one({'id' : id})
+        if not consumer:
+            raise MissingResource(id)
+        return consumer
 
 
 # -- functions ----------------------------------------------------------------

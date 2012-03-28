@@ -36,7 +36,7 @@ class BindManager(object):
 
     def bind(self, consumer_id, repo_id, distributor_id):
         """
-        Bind consumer to a specifiec distirbutor associated with
+        Bind consumer to a specific distributor associated with
         a repository.  This call is idempotent.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
@@ -46,10 +46,10 @@ class BindManager(object):
         @type distributor_id: str
         @return: The Bind object
         @rtype: SON
-        @raise MissingResource: when resource found.
+        @raise MissingResource: when given consumer does not exist.
         """
-        manager = factory.consumer_query_manager()
-        manager.find_by_id(consumer_id)
+        manager = factory.consumer_manager()
+        manager.get_consumer(consumer_id)
         manager = factory.repo_distributor_manager()
         distributor = manager.get_distributor(repo_id, distributor_id)
         bind = Bind(consumer_id, repo_id, distributor_id)
