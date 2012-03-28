@@ -502,6 +502,48 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Mar 28 2012 Jeff Ortel <jortel@redhat.com> 1.1.0-1
+- Reset verion to 1.1.0. (jortel@redhat.com)
+- 806976 - fix overlapping references to /etc/pulp/*. (jortel@redhat.com)
+- 807720 - removed the wait for response from the post_sync callback so that
+  pulp does not deadlock if the same katello process sends a GET request that
+  uses the tasking sub-system (jconnor@redhat.com)
+- 807516 - Deleting a repository does not affect repoids associated with a
+  package (jmatthews@redhat.com)
+- 807516 - Deleting a repository does not affect repoids associated with a
+  package (jmatthews@redhat.com)
+- 805740 - generate metadata on repromotion with filters (pkilambi@redhat.com)
+- 805922 - adding sync logic to look for server directory during clone/local
+  syncs (pkilambi@redhat.com)
+- 805616 drop indexes from repo.packagegroups and repo.packagegroupcategories
+  to avoid index on description field (jslagle@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.142-1].
+  (pkilambi@redhat.com)
+- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+- Fix bug in migrations (jslagle@redhat.com)
+- added conditional loading of snapshotted fields to accomodate future change
+  (jconnor@redhat.com)
+- 804188 - added removal of persisted tasks as part of regular migration
+  (jconnor@redhat.com)
+- 805192 Add index on errata to repo model (jslagle@redhat.com)
+- 795435 Do not index description fields. Add a new migration to drop these
+  indexes, and also drop them as part of migration 35 as it will greatly speed
+  up performance for anyone not this far migrated yet. (jslagle@redhat.com)
+- Improve performance of migration 35 and add missing index
+  (jslagle@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.141-1].
+  (jmatthews@redhat.com)
+- Bump grinder to 0.141 (jmatthews@redhat.com)
+- updating spec file to include migrate script and bump grinder version
+  (pkilambi@redhat.com)
+- 798656 - include full checksum when constructing package paths. Including
+  migration script to migrate existing content (pkilambi@redhat.com)
+- fixed server config error (jconnor@redhat.com)
+- 802454 - added post_sync_url and post_sync dequeue hook for POSTing task and
+  repo id back to a configured url (jconnor@redhat.com)
+- 801184 - Error messages when installing selinux RPM after its already been
+  installed (jmatthews@redhat.com)
+
 * Mon Mar 12 2012 Jeff Ortel <jortel@redhat.com> 1.0.2-1
 - 800468 Use collection.update instead of collection.save to avoid race
   condition (jslagle@redhat.com)
