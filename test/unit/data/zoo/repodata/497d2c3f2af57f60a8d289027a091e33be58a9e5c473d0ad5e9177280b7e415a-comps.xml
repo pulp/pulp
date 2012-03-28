@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE comps PUBLIC "-//Red Hat, Inc.//DTD Comps info//EN" "comps.dtd">
+<comps>
+        
+  <group>
+   <id>birds</id>
+   <default>true</default>
+   <uservisible>true</uservisible>
+   <display_order>1024</display_order>
+   <name>birds</name>
+   <description></description>
+    <packagelist>
+      <packagereq type="mandatory">cockateel</packagereq>
+      <packagereq type="mandatory">duck</packagereq>
+      <packagereq type="mandatory">penguin</packagereq>
+      <packagereq type="mandatory">stork</packagereq>
+    </packagelist>
+  </group>        
+  <group>
+   <id>mammals</id>
+   <default>true</default>
+   <uservisible>true</uservisible>
+   <display_order>1024</display_order>
+   <name>mammals</name>
+   <description></description>
+    <packagelist>
+      <packagereq type="mandatory">bear</packagereq>
+      <packagereq type="mandatory">camel</packagereq>
+      <packagereq type="mandatory">cat</packagereq>
+      <packagereq type="mandatory">cheetah</packagereq>
+      <packagereq type="mandatory">chimpanzee</packagereq>
+      <packagereq type="mandatory">cow</packagereq>
+      <packagereq type="mandatory">dog</packagereq>
+      <packagereq type="mandatory">dolphin</packagereq>
+      <packagereq type="mandatory">elephant</packagereq>
+      <packagereq type="mandatory">fox</packagereq>
+      <packagereq type="mandatory">giraffe</packagereq>
+      <packagereq type="mandatory">gorilla</packagereq>
+      <packagereq type="mandatory">horse</packagereq>
+      <packagereq type="mandatory">kangaroo</packagereq>
+      <packagereq type="mandatory">lion</packagereq>
+      <packagereq type="mandatory">mouse</packagereq>
+      <packagereq type="mandatory">squirrel</packagereq>
+      <packagereq type="mandatory">tiger</packagereq>
+      <packagereq type="mandatory">walrus</packagereq>
+      <packagereq type="mandatory">whale</packagereq>
+      <packagereq type="mandatory">wolf</packagereq>
+      <packagereq type="mandatory">zebra</packagereq>
+    </packagelist>
+  </group>        
+  <category>
+   <id>all</id>
+   <display_order>99</display_order>
+   <name>all</name>
+   <description></description>
+    <grouplist>
+     <groupid>mammals</groupid>
+     <groupid>birds</groupid>
+    </grouplist>
+  </category>
+
+</comps>
