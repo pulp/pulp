@@ -26,6 +26,7 @@ import pulp.server.auth.cert_generator as cert_generator
 
 from pulp.server.db.model.gc_consumer import Consumer
 from pulp.server.managers import factory
+#from pulp.server.gc_agent import PulpAgent
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException
 
@@ -118,13 +119,15 @@ class ConsumerManager(object):
         # To do - Update consumergroups after we add consumergroup support in V2
 
         # To do - notify agent
+        # agent_consumer = PulpAgent(consumer)
+        # agent_consumer.unregistered()
 
         # Database Updates
         try:
             Consumer.get_collection().remove({'id' : id}, safe=True)
         except Exception:
             _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
-            raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
+            raise PulpExecutionException("database-error")
 
 #        self.consumer_history_api.consumer_unregistered(id)
 
@@ -145,6 +148,7 @@ class ConsumerManager(object):
         @type  delta: dict
 
         @raises MissingResource: if there is no consumer with given id
+        @raises InvalidValue: if notes are provided in unacceptable (non-dict) form
         """
         consumer_coll = Consumer.get_collection()
 
@@ -156,7 +160,7 @@ class ConsumerManager(object):
             if delta['notes'] is not None and not isinstance(delta['notes'], dict):
                 raise InvalidValue(delta['notes'])
             else:
-                consumer['notes'] = self.update_notes(consumer['notes'], delta['notes'])
+                consumer['notes'] = update_notes(consumer['notes'], delta['notes'])
 
         if 'display_name' in delta:
             consumer['display_name'] = delta['display_name']
@@ -168,19 +172,26 @@ class ConsumerManager(object):
 
         return consumer
 
-    def update_notes(self, notes, delta_notes):
-        for key, value in delta_notes.items():
-            if value is None:
-                # try deleting a note if it exists
-                try:
-                    del notes[key]
-                except:
-                    pass
-            else:
-                notes[key] = value
-        return notes
 
 # -- functions ----------------------------------------------------------------
+
+def update_notes(notes, delta_notes):
+    """
+    Accepts original notes and delta and returns updated notes
+    @return: updated notes
+    @rtype:  dict
+    """
+    for key, value in delta_notes.items():
+        if value is None:
+            # try deleting a note if it exists
+            try:
+                del notes[key]
+            except:
+                pass
+        else:
+            notes[key] = value
+    return notes
+
 
 def is_consumer_id_valid(id):
     """
