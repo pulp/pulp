@@ -620,7 +620,6 @@ class RepoApi(BaseApi):
                     log.exception(ex)
         #remove any distributions
         for distroid in repo['distributionid']:
-            distro = self.distroapi.distribution(distroid)
             self.remove_distribution(repo['id'], distroid)
             try:
                 self.distroapi.delete(distroid, keep_files)
