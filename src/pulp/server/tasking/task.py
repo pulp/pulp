@@ -27,7 +27,7 @@ from pulp.server.tasking.exception import (
     TimeoutException, CancelException, UnscheduledTaskException,
     SnapshotFailure)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.common.util import encode_unicode
+from pulp.common.util import encode_unicode, decode_unicode
 
 _log = logging.getLogger(__name__)
 
@@ -467,6 +467,8 @@ class Task(object):
             self.exception = str(exception)
         except UnicodeEncodeError:
             self.exception = encode_unicode(exception)
+        except UnicodeDecodeError:
+            self.exception = decode_unicode(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
         self.consecutive_failures += 1
         _log.error(_('Task failed: %s\n%s') % (str(self), ''.join(self.traceback)))
