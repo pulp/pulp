@@ -18,7 +18,6 @@ removal, and update on a consumer.
 
 import logging
 import re
-import sys
 
 from pulp.server import config
 from pulp.common.bundle import Bundle
@@ -26,9 +25,8 @@ import pulp.server.auth.cert_generator as cert_generator
 
 from pulp.server.db.model.gc_consumer import Consumer
 from pulp.server.managers import factory
-#from pulp.server.gc_agent import PulpAgent
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
-    MissingResource, PulpExecutionException
+    MissingResource, PulpExecutionException, MissingValue
 
 # -- constants ----------------------------------------------------------------
 
@@ -105,6 +103,7 @@ class ConsumerManager(object):
         @raises MissingResource: if the given consumer does not exist
         @raises OperationFailed: if any part of the unregister process fails;
                 the exception will contain information on which sections failed
+        @raises PulpExecutionException: if error during updating database collection
         """
 
         consumer_coll = Consumer.get_collection()
@@ -118,9 +117,9 @@ class ConsumerManager(object):
 
         # To do - Update consumergroups after we add consumergroup support in V2
 
-        # To do - notify agent
-        # agent_consumer = PulpAgent(consumer)
-        # agent_consumer.unregistered()
+        # Notify agent
+        agent_consumer = factory.consumer_agent_manager()
+        agent_consumer.unregistered()
 
         # Database Updates
         try:
@@ -149,12 +148,17 @@ class ConsumerManager(object):
 
         @raises MissingResource: if there is no consumer with given id
         @raises InvalidValue: if notes are provided in unacceptable (non-dict) form
+        @raises MissingValue: if delta provided is empty
         """
         consumer_coll = Consumer.get_collection()
 
         consumer = consumer_coll.find_one({'id' : id})
         if consumer is None:
             raise MissingResource(id)
+        
+        if delta is None:
+            _LOG.exception('Missing delta when updating consumer [%s]' % id)
+            raise MissingValue('delta')
 
         if 'notes' in delta:
             if delta['notes'] is not None and not isinstance(delta['notes'], dict):

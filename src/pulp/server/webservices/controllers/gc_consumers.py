@@ -21,7 +21,7 @@ import web
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.webservices import execution
-from pulp.server.exceptions import MissingResource
+from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
@@ -34,12 +34,23 @@ _LOG = logging.getLogger(__name__)
 
 # -- controllers --------------------------------------------------------------
 
-class Consumers(JSONController):
+class ConsumersCollection(JSONController):
+    
+    # Scope: Collection
+    # GET:   Retrieves all consumers registered to the Pulp Server
+    # POST:  Register a consumer
 
     @auth_required(READ)
     def GET(self):
-        manager = managers.consumer_manager()
-        return self.ok([])
+        query_manager = managers.consumer_query_manager()
+        consumers = query_manager.find_all()
+        
+        bind_manager = managers.consumer_bind_manager()
+        for consumer in consumers:
+            bindings = bind_manager.find_by_consumer(consumer['id'])
+            consumer['bindings'] = bindings
+            
+        return self.ok(consumers)
 
     @auth_required(CREATE)
     def POST(self):
@@ -53,15 +64,46 @@ class Consumers(JSONController):
 
         # Creation
         manager = managers.consumer_manager()
-        consumer = manager.register(id, display_name, description, notes)
-        return self.ok(consumer)
+        resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        args = [id, display_name, description, notes]
+        tags = [id]
+        call_request = CallRequest(manager.register,
+                                   args,
+                                   resources=resources,
+                                   tags=tags)
+        return execution.execute_created(self, call_request, id)
 
 
-class Consumer(JSONController):
+class ConsumerResource(JSONController):
+
+    # Scope:   Resource
+    # GET:     Get Consumer details
+    # DELETE:  Unregister a consumer
+    # PUT:     Consumer update
 
     @auth_required(READ)
     def GET(self, id):
-        return self.ok({})
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        
+        bind_manager = managers.consumer_bind_manager()
+        consumer['bindings'] = bind_manager.find_by_consumer(consumer['id'])
+           
+        return self.ok(consumer)
+
+
+    @auth_required(DELETE)
+    def DELETE(self, id):
+        manager = managers.consumer_manager()
+        
+        resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        tags = [id]
+        call_request = CallRequest(manager.unregister,
+                                   [id],
+                                   resources=resources,
+                                   tags=tags)
+        return execution.execute_ok(self, call_request)
+
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -70,18 +112,17 @@ class Consumer(JSONController):
         consumer_data = self.params()
         delta = consumer_data.get('delta', None)
 
-        # Perform update
+        # Perform update        
         manager = managers.consumer_manager()
-        consumer = manager.update(id, delta)
-        return self.ok(consumer)
+        resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [id]
+        call_request = CallRequest(manager.update,
+                                   [id, delta],
+                                   resources=resources,
+                                   tags=tags)
+        return execution.execute_ok(self, call_request)
+  
 
-    @auth_required(DELETE)
-    def DELETE(self, id):
-
-        # Perform deletion
-        manager = managers.consumer_manager()
-        manager.unregister(id)
-        return self.ok()
 
 
 class Bindings(JSONController):
@@ -234,8 +275,8 @@ class Binding(JSONController):
 
 
 urls = (
-    '/$', 'Consumers',
-    '/([^/]+)/$', 'Consumer',
+    '/$', 'ConsumersCollection',
+    '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
 )
