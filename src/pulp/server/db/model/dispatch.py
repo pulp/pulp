@@ -42,7 +42,7 @@ class ScheduledCall(Model):
 
     def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
-
+        # tag the call request with the schedule id
         call_request.tags.append(str(self._id))
 
         self.serialized_call_request = call_request.serialize()
