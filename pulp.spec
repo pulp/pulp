@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.279
+Version:        0.0.280
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -505,6 +505,18 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.280-1
+- Added files used in the creation of updated certs (jason.dobies@redhat.com)
+- Webservices controller for consumer crud operations (skarmark@redhat.com)
+- Fixing tasking unicode error in unit tests (skarmark@redhat.com)
+- Fixing consumer_manager unit tests, adding get_consumer call to
+  consumer_manager which raises MissingResource exception, fixing a bunch of
+  docstrings (skarmark@redhat.com)
+- Updated test certificates to expire in 2016 (jason.dobies@redhat.com)
+- Adding missing resource exception in bind (skarmark@redhat.com)
+- Generated new test certs that don't expire until 2016
+  (jason.dobies@redhat.com)
+
 * Wed Mar 28 2012 Jeff Ortel <jortel@redhat.com> 0.0.279-1
 - determine the checksum type from the repodata and set on repo level
   scratchpad for distributor access. Default to sha256 if type cannot be
