@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.0
+Version:        1.1.1
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Mar 29 2012 Mike McCune <mmccune@redhat.com> 1.1.1-1
+- 807516 - Deleting a repository does not affect repoids associated with a
+  package  - Update for cloned issue with repoids being appended twice in
+  distributions (jmatthews@redhat.com)
+- Updated test certificates to expire in 2016 (jason.dobies@redhat.com)
+- fixed mock malfunction in async tests (jconnor@redhat.com)
+- Generated new test certs that don't expire until 2016
+  (jason.dobies@redhat.com)
+
 * Wed Mar 28 2012 Jeff Ortel <jortel@redhat.com> 1.1.0-1
 - Reset verion to 1.1.0. (jortel@redhat.com)
 - 806976 - fix overlapping references to /etc/pulp/*. (jortel@redhat.com)
