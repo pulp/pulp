@@ -17,6 +17,8 @@ import threading
 from gettext import gettext as _
 from pprint import pformat
 
+from bson.objectid import ObjectId
+
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
@@ -228,7 +230,7 @@ class Scheduler(object):
             return None
         scheduled_call['next_run'] = next_run
         self.scheduled_call_collection.insert(scheduled_call, safe=True)
-        return scheduled_call['_id']
+        return str(scheduled_call['_id'])
 
     def remove(self, schedule_id):
         """
@@ -236,6 +238,8 @@ class Scheduler(object):
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
+        if isinstance(schedule_id, basestring):
+            schedule_id = ObjectId(schedule_id)
         self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
     def enable(self, schedule_id):
@@ -244,6 +248,8 @@ class Scheduler(object):
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
+        if isinstance(schedule_id, basestring):
+            schedule_id = ObjectId(schedule_id)
         update = {'$set': {'enabled': True}}
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
@@ -253,6 +259,8 @@ class Scheduler(object):
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
+        if isinstance(schedule_id, basestring):
+            schedule_id = ObjectId(schedule_id)
         update = {'$set': {'enabled': False}}
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
@@ -266,6 +274,8 @@ class Scheduler(object):
         @return: tuple of (call request, schedule) if found, (None, None) otherwise
         @rtype:  tuple (CallRequest, str) or tupe(None, None)
         """
+        if isinstance(schedule_id, basestring):
+            schedule_id = ObjectId(schedule_id)
         scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
         if scheduled_call is None:
             return (None, None)
