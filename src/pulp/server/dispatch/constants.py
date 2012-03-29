@@ -101,6 +101,7 @@ RESOURCE_REPOSITORY_TYPE = 'repository'
 RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE = 'repository distributor'
 RESOURCE_REPOSITORY_IMPORTER_TYPE = 'repository importer'
 RESOURCE_ROLE_TYPE = 'role'
+RESOURCE_SCHEDULE_TYPE = 'schedule'
 RESOURCE_USER_TYPE = 'user'
 
 RESOURCE_TYPES = (RESOURCE_CDS_TYPE,
@@ -111,6 +112,7 @@ RESOURCE_TYPES = (RESOURCE_CDS_TYPE,
                   RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
                   RESOURCE_REPOSITORY_IMPORTER_TYPE,
                   RESOURCE_ROLE_TYPE,
+                  RESOURCE_SCHEDULE_TYPE,
                   RESOURCE_USER_TYPE)
 
 # resource operations  ---------------------------------------------------------
