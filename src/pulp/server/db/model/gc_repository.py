@@ -110,6 +110,7 @@ class RepoImporter(Model):
         self.config = config
         self.scratchpad = None
         self.last_sync = None
+        self.scheduled_syncs = []
 
 
 class RepoDistributor(Model):
@@ -160,6 +161,7 @@ class RepoDistributor(Model):
         self.auto_publish = auto_publish
         self.scratchpad = None
         self.last_publish = None
+        self.scheduled_publishes = []
 
 
 class RepoContentUnit(Model):
