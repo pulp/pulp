@@ -47,7 +47,7 @@ def path_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     """
 
     n1 = _create_property_name_node('Path')
-    n2 = nodes.literal(text=text.strip())
+    n2 = nodes.literal(text='/pulp/api' + text.strip())
 
     return [n1, n2], []
 
@@ -93,13 +93,23 @@ def param_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     # Split apart the parameter name, type, and description
     param_parts = text.split(',', 2)
     param_name = param_parts[0].strip()
-    param_type = param_parts[1].strip()
+    param_type = param_parts[1].strip().lower()
     param_description = param_parts[2].strip()
 
     # Handle optional
     optional = param_name.startswith('?')
     if optional:
         param_name = param_name[1:]
+
+    # Safety net in case the python types are specified
+    type_translations = {
+        'str' : 'string',
+        'int' : 'number',
+        'dict' : 'object',
+        'list' : 'array',
+        'bool' : 'boolean',
+    }
+    param_type = type_translations.get(param_type, param_type)
 
     # Assemble the nodes
     role_nodes = []
