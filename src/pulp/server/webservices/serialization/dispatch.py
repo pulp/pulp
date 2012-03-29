@@ -11,6 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from bson.objectid import ObjectId
+
+from pulp.common import dateutils
+from pulp.server.db.model.dispatch import ScheduledCall
+from pulp.server.dispatch.call import CallRequest
+
 
 def task_href(call_report):
     if call_report.task_id is None:
@@ -22,3 +28,26 @@ def job_href(call_report):
     if call_report.job_id is None:
         return {}
     return {'_href': '/pulp/api/v2/jobs/%s/' % call_report.job_id}
+
+
+def scheduled_call_obj(schedule_id):
+    collection = ScheduledCall.get_collection()
+    scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
+    if scheduled_call is None:
+        return None
+    obj = {
+        '_id': schedule_id,
+        '_href': None, # should be replaced by the caller!
+        'schedule': scheduled_call['schedule'],
+        'failure_threshold': scheduled_call['failure_threshold'],
+        'enabled': scheduled_call['enabled'],
+        '_consecutive_failures': scheduled_call['consecutive_failures'],
+        '_remaining_runs': scheduled_call['remaining_runs']
+    }
+    last_run = dateutils.format_iso8601_datetime(scheduled_call['last_run'].replace(tzinfo=dateutils.utc_tz()))
+    obj['_last_run'] = last_run
+    next_run = dateutils.format_iso8601_datetime(scheduled_call['next_run'].replace(tzinfo=dateutils.utc_tz()))
+    obj['_next_run'] = next_run
+    call_request = CallRequest.deserialize(scheduled_call['serialized_call_request'])
+    obj['overrides'] = call_request.args[1]
+    return obj
