@@ -1,3 +1,31 @@
+
++-----------------------------------------------------------------------------+
+Building
+
+From this directory, run:
+
+  make clean && make html
+
+The built documentation will be under _build/html
+
++-----------------------------------------------------------------------------+
+API Pages
+
+APIs should be divided into logical groupings to keep from making pages too
+long and cumbersome to deal with. The page title should be rendered as a reST
+section using = as the underline. For example:
+
+Creation and Configuration
+==========================
+
+Each individual API then uses - as the underline:
+
+Create a Repository
+-------------------
+
++-----------------------------------------------------------------------------+
+API Template
+
 Below is the template used for a single API. Things to keep in mind:
 
 * For response_list and sample_request, the `_` part is required.
@@ -11,7 +39,7 @@ Below is the template used for a single API. Things to keep in mind:
 
 
 API TITLE
-=========
+---------
 
 DESCRIPTION
 
