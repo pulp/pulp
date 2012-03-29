@@ -9,26 +9,25 @@ the real functionality of a repository isn't defined until importers and
 distributors are added. Repository IDs must be unique across all repositories
 in the server.
 
-* **method:** POST
-* **path:** /v2/repositories/
-* **parameters:** The body of the request is a JSON document that contains the
-  following parameters:
+| :method:`post`
+| :path:`/v2/repositories/`
+| :permission:`create`
+| :param_list:`post`
 
- * **id** *(str)* - unique identifier for the repository
- * **display_name** *(str)* - optional; user-friendly name for the repository
- * **description** *(str)* - optional; user-friendly text describing the repository's contents
- * **notes** *(dict)* - optional; key-value pairs to programmatically tag the repository
+* :param:`id,string,unique identifier for the repository`
+* :param:`?display_name,string,user-friendly name for the repository`
+* :param:`?description,string,user-friendly text describing the repository's contents`
+* :param:`?notes,object,key-value pairs to programmatically tag the repository`
 
-* **permission:** create
-* **success response:** 201
-* **failure responses:**
+| :response_list:`_`
 
- * 409 - If there is already a repository with the given ID
- * 400 - If one or more of the parameters is invalid
+* :response_code:`201,The repository was successfully created`
+* :response_code:`400,if one or more of the parameters is invalid`
+* :response_code:`409,if there is already a repository with the given ID`
 
-* **return:** database representation of the created repository
+| :return:`database representation of the created repository`
 
-Sample request body::
+:sample_request:`_` ::
 
  {
   "display_name": "Harness Repository: harness_repo_1",
@@ -36,7 +35,7 @@ Sample request body::
  }
 
 
-Sample response body::
+:sample_response:`201` ::
 
  {
   "display_name": "Harness Repository: harness_repo_1",
@@ -48,7 +47,6 @@ Sample response body::
   "id": "harness_repo_1"
  }
 
-
 Update a Repository
 -------------------
 
@@ -56,34 +54,35 @@ Much like create repository is simply related to the repository metadata (as
 compared to the associated importers/distributors), the update repository call
 is centered around updating only that metadata.
 
-* **method:** PUT
-* **path:** /v2/repositories/<repo_id>/
-* **parameters:** The body of the request is a JSON document with a root element
+| :method:`put`
+| :path:`/v2/repositories/<repo_id>/`
+| :permission:`update`
+| :param_list:`post` The body of the request is a JSON document with a root element
   called "delta". The contents of delta are the values to update. Only changed
   parameters need be specified. The following keys are allowed in the delta
   dictionary. Descriptions for each parameter can be found under the create
   repository API:
 
- * **display_name**
- * **description**
- * **notes**
+* :param:`display_name,,`
+* :param:`description,,`
+* :param:`notes,,`
 
-* **permission:** update
-* **success response:** 200
-* **failure responses:**
+| :response_list:`_`
 
- * 404 - If there is no repository with the give ID
- * 400 - If one or more of the parameters is invalid
+* :response_code:`200,if the update was executed and successful`
+* :response_code:`202,if the update was postponed`
+* :response_code:`404,if there is no repository with the give ID`
+* :response_code:`400,if one or more of the parameters is invalid`
 
-* **return:** database representation of the repository (after changes made by the update)
+| :return:`database representation of the repository (after changes made by the update)`
 
-Sample request body::
+:sample_request:`_` ::
 
  {
   "delta": {"display_name" : "Updated"},
  }
 
-Sample response body::
+:sample_response:`200` ::
 
  {
   "display_name": "Updated",
@@ -122,26 +121,24 @@ Adding an importer performs the following validation steps before confirming the
 
 The details of the added importer are returned from the call.
 
-* **method:** POST
-* **path:** /v2/repositories/<repo_id>/importers/
-* **parameters:** The body of the request is a JSON document that contains the following parameters:
+| :method:`post`
+| :path:`/v2/repositories/<repo_id>/importers/`
+| :permission:`create`
+| :param_list:`post`
 
- * **importer_type_id** *(str)* - Indicates the type of importer being associated with the repository. There must be an importer installed in the Pulp server with this ID.
- * **importer_config** *(dict)* - Configuration the repository will use to drive the behavior of the importer.
+* :param:`importer_type_id,string,indicates the type of importer being associated with the repository; there must be an importer installed in the Pulp server with this ID`
+* :param:`importer_config,object,configuration the repository will use to drive the behavior of the importer`
 
-* **permission:** create
-* **success response:** 201
-* **failure responses:**
+| :response_list:`_`
 
- * 404 - If there is no repository with the given ID.
- * 400 - If one or more of the required parameters is missing, the importer type ID refers to a
-   non-existent importer, or the importer indicates the supplied configuration is invalid.
- * 500 - If the importer raises an error during initialization.
+* :response_code:`201,if the importer was successfully added`
+* :response_code:`400,if one or more of the required parameters is missing, the importer type ID refers to a non-existent importer, or the importer indicates the supplied configuration is invalid`
+* :response_code:`404,if there is no repository with the given ID`
+* :response_code:`500,if the importer raises an error during initialization`
 
-* **return:** database representation of the importer (not the full repository
-  details, just the importer)
+| :return:`database representation of the importer (not the full repository details, just the importer)`
 
-Sample request body::
+:sample_request:`_` ::
 
  {
   "importer_type_id": "harness_importer",
@@ -151,7 +148,7 @@ Sample request body::
   }
  }
 
-Sample response body::
+:sample_response:`201` ::
 
  {
   "scratchpad": null,
@@ -196,30 +193,24 @@ Adding a distributor performs the following validation steps before confirming t
 
 The details of the added distributor are returned from the call.
 
-* **method:** POST
-* **path:** /v2/repositories/<repo_id>/distributors/
-* **parameters:** The body of the request is a JSON document that contains the following parameters:
+| :method:`post`
+| :path:`/v2/repositories/<repo_id>/distributors/`
+| :permission:`create`
+| :param_list:`post`
 
- * **distributor_type_id** *(str)* - Indicates the type of distributor being associated with the
-   repository. There must be a distributor installed in the Pulp server with this ID.
- * **distributor_config** *(dict)* - Configuration the repository will use to drive the
-   behavior of the distributor.
- * **distributor_id** *(str)* - optional; If specified, this value will be used to refer
-   to the distributor. If not specified, one will be randomly assigned to the distributor.
- * **auto_publish** *(bool)* - optional; If true, this distributor will automatically have
-   its publish operation invoked after a successful repository sync. Defaults to false if unspecified.
+* :param:`distributor_type_id,string,indicates the type of distributor being associated with the repository; there must be a distributor installed in the Pulp server with this ID`
+* :param:`distributor_config,object,configuration the repository will use to drive the behavior of the distributor`
+* :param:`?distributor_id,string,if specified, this value will be used to refer to the distributor; if not specified, one will be randomly assigned to the distributor`
+* :param:`?auto_publish,boolean,if true, this distributor will automatically have its publish operation invoked after a successful repository sync. Defaults to false if unspecified`
 
-* **permission:** create
-* **success response:** 201
-* **failure responses:**
+| :response_list:`_`
 
- * 404 - If there is no repository with the given ID.
- * 400 - If one or more of the required parameters is missing, the distributor
-   type ID refers to a non-existent distributor, or the distributor indicates
-   the supplied configuration is invalid.
- * 500 - If the distributor raises an error during initialization.
+* :response_code:`201,if the distributor was successfully added`
+* :response_code:`400,if one or more of the required parameters is missing, the distributor type ID refers to a non-existent distributor, or the distributor indicates the supplied configuration is invalid`
+* :response_code:`404,if there is no repository with the given ID`
+* :response_code:`500,if the distributor raises an error during initialization`
 
-Sample request body::
+:sample_request:`_` ::
 
  {
   "distributor_id": "dist_1",
@@ -231,7 +222,7 @@ Sample request body::
   "auto_publish": false
  }
 
-Sample response body::
+:sample_response:`201` ::
 
  {
   "scratchpad": null,

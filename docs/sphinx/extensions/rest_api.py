@@ -37,7 +37,6 @@ def method_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
 
     n1 = _create_property_name_node('Method')
     n2 = nodes.inline(text=text.strip().upper())
-    n3 = nodes.paragraph()
 
     return [n1, n2], []
 
@@ -96,31 +95,33 @@ def param_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     param_type = param_parts[1].strip().lower()
     param_description = param_parts[2].strip()
 
-    # Handle optional
+    role_nodes = []
+
+    # Handle name
     optional = param_name.startswith('?')
     if optional:
         param_name = param_name[1:]
-
-    # Safety net in case the python types are specified
-    type_translations = {
-        'str' : 'string',
-        'int' : 'number',
-        'dict' : 'object',
-        'list' : 'array',
-        'bool' : 'boolean',
-    }
-    param_type = type_translations.get(param_type, param_type)
-
-    # Assemble the nodes
-    role_nodes = []
-
     role_nodes.append(nodes.strong(text=param_name))
-    role_nodes.append(nodes.emphasis(text=' (%s) ' % param_type))
 
-    if optional:
-        role_nodes.append(nodes.emphasis(text='(optional) '))
+    # Handle type
+    if param_type != '':
+        # Safety net in case the python types are specified
+        type_translations = {
+            'str' : 'string',
+            'int' : 'number',
+            'dict' : 'object',
+            'list' : 'array',
+            'bool' : 'boolean',
+        }
+        param_type = type_translations.get(param_type, param_type)
+        role_nodes.append(nodes.inline(text=' (%s) - ' % param_type))
 
-    role_nodes.append(nodes.inline(text=param_description))
+    # Handle description
+    if param_description != '':
+        if optional:
+            role_nodes.append(nodes.emphasis(text='(optional) '))
+        param_description = _format_description(param_description)
+        role_nodes.append(nodes.inline(text=param_description))
 
     return role_nodes, []
 
@@ -145,7 +146,7 @@ def response_list_role(name, rawtext, text, lineno, inliner, options={}, content
     Example usage:  :response_list:`_`
     """
 
-    n1 = _create_property_name_node('Responses')
+    n1 = _create_property_name_node('Response Codes')
     return [n1], []
 
 def response_code_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
@@ -160,12 +161,13 @@ def response_code_role(name, rawtext, text, lineno, inliner, options={}, content
     parts = text.split(',', 1)
 
     code = parts[0].strip()
-    n1 = nodes.emphasis(text=code)
+    n1 = nodes.strong(text=code)
 
     created_nodes = [n1]
 
     if len(parts) > 1:
         description = ' '.join(parts[1:]).strip()
+        description = _format_description(description)
         n2 = nodes.inline(text=' - ' + description)
         created_nodes.append(n2)
 
@@ -177,7 +179,8 @@ def return_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     """
 
     n1 = _create_property_name_node('Return')
-    n2 = nodes.inline(text=text.strip())
+    description = _format_description(text.strip())
+    n2 = nodes.inline(text=description)
 
     return [n1, n2], []
 
@@ -227,3 +230,14 @@ def _create_property_name_node(name):
     formatted = '%s: ' % name
     property_node = nodes.strong(text=formatted)
     return property_node
+
+def _format_description(description):
+    """
+    Correctly capitalizes text in a description.
+
+    @return: formatted description
+    """
+    if len(description) is 0:
+        return description
+    else:
+        return description[0].lower() + description[1:]

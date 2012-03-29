@@ -1,0 +1,53 @@
+Below is the template used for a single API. Things to keep in mind:
+
+* For response_list and sample_request, the `_` part is required.
+* For sample_request, make sure to have a space after the ` and before ::
+* Variables in a path are denoted by <> (e.g. /repositories/<repo_id>/)
+* Order response codes in ascending order
+* A ? at the start of a param name will flag it as optional
+* param_list takes the method value as an argument
+* sample_response takes the code of the response being sampled
+
+
+
+API TITLE
+=========
+
+DESCRIPTION
+
+BLANK LINES BETWEEN MULTIPLE PARAGRAPHS
+
+| :method:`post`
+| :path:`/v2/repositories/<id>/`
+| :permission:`create`
+| :param_list:`post`
+
+* :param:`id,str,unique identifier for the repository`
+* :param:`?display_name,str,user-friendly name for the repository`
+
+| :response_list:`_`
+
+* :response_code:`201,if the repository was created`
+* :response_code:`409,if a repository already exists with the given ID`
+
+| :return:`serialized version of the created repository`
+
+:sample_request:`_` ::
+
+ {
+  "display_name": "Harness Repository: harness_repo_1",
+  "id": "harness_repo_1"
+ }
+
+:sample_response:`200` ::
+
+ {
+  "display_name": "Harness Repository: harness_repo_1",
+  "description": null,
+  "_ns": "gc_repositories",
+  "notes": {},
+  "content_unit_count": 0,
+  "_id": "harness_repo_1",
+  "id": "harness_repo_1"
+ }
+
