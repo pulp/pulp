@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -260,6 +260,36 @@ class RepoImporter(JSONController):
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
+
+class SyncScheduleCollection(JSONController):
+
+    # Scope: sub-sub-collection
+    # GET:   list all scheduled syncs
+    # POST:  create new scheduled sync
+
+    def GET(self, repo_id, importer_id):
+        raise exceptions.NotImplemented('list all scheduled syncs')
+
+    def POST(self, repo_id, importer_id):
+        raise exceptions.NotImplemented('create new scheduled sync')
+
+
+class SyncScheduleResource(JSONController):
+
+    # Scope:  exclusive sub-sub-resource
+    # DELETE: remove a scheduled sync
+    # GET:    get a representation of the scheduled sync
+    # PUT:    change a scheduled sync
+
+    def DELETE(self, repo_id, importer_id, schedule_id):
+        raise exceptions.NotImplemented('remove a scheduled sync')
+
+    def GET(self, repo_id, importer_id, schedule_id):
+        raise exceptions.NotImplemented('get a representation of a scheduled sync')
+
+    def PUT(self, repo_id, importer_id, schedule_id):
+        raise exceptions.NotImplemented('change a scheduled sync')
+
 # -- distributor controllers --------------------------------------------------
 
 class RepoDistributors(JSONController):
@@ -355,6 +385,36 @@ class RepoDistributor(JSONController):
                                    tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
+
+
+class PublishScheduleCollection(JSONController):
+
+    # Scope: sub-sub-collection
+    # GET:   list all scheduled publishes
+    # POST:  create new scheduled publish
+
+    def GET(self, repo_id, distributor_id):
+        raise exceptions.NotImplemented('list all scheduled publishes')
+
+    def POST(self, repo_id, distributor_id):
+        raise exceptions.NotImplemented('create a new scheduled publish')
+
+
+class PublishScheduleResource(JSONController):
+
+    # Scope:  exclusive sub-sub-resource
+    # DELETE: remove a scheduled publish
+    # GET:    get a representation of the scheduled publish
+    # PUT:    change a scheduled publish
+
+    def DELETE(self, repo_id, distributor_id, schedule_id):
+        raise exceptions.NotImplemented('remove a scheduled publish')
+
+    def GET(self, repo_id, distributor_id, schedule_id):
+        raise exceptions.NotImplemented('get a representation of a scheduled publish')
+
+    def PUT(self, repo_id, distributor_id, schedule_id):
+        raise exceptions.NotImplemented('change a scheduled publish')
 
 # -- history controllers ------------------------------------------------------
 
@@ -544,9 +604,13 @@ urls = (
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
     '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
+    '/([^/]+)/importers/([^/]+)/sync_schedules/$', 'SyncScheduleCollection',
+    '/([^/]+)/importers/([^/]+)/sync_schedules/([^/]+)/$', 'SyncScheduleResource',
 
     '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
+    '/([^/]+)/distributors/([^/]+)/publish_schedules/$', 'PublishScheduleCollection',
+    '/([^/]+)/distributors/([^/]+)/publish_schedules/([^/]+)/$', 'PublishScheduleResource',
 
     '/([^/]+)/history/sync/$', 'RepoSyncHistory', # sub-collection
     '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory', # sub-collection
