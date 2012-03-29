@@ -164,7 +164,8 @@ def _clone(clone_id, id, clone_name, feed='parent', relative_path=None, groupid=
     # Update repoids on distributions
     for distro_id in cloned_repo["distributionid"]:
         distro = distro_api.distribution(distro_id)
-        distro["repoids"].append(clone_id)
+        if clone_id not in distro["repoids"]:
+            distro["repoids"].append(clone_id)
         distro_api.collection.save(distro, safe=True)
 
     # Update gpg keys from parent repo
