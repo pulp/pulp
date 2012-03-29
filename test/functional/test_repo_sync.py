@@ -187,3 +187,90 @@ class TestRepoSync(testutil.PulpAsyncTest):
         finally:
             os.chmod(bad_rpm_path, bad_rpm_mode)
             os.chmod(bad_tree_path, bad_tree_mode)
+
+
+
+    def test_repo_delete_from_a_clone_updates_repoids_under_objects(self):
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = os.path.join(my_dir, "../unit/data/zoo")
+        repo_id = 'test_repo_delete_updates_repoids_under_package_object'
+        repo_id_clone = 'test_repo_delete_updates_repoids_under_package_object_clone'
+        repo = self.repo_api.create(repo_id, "test_name", 'i386', 'file://%s' % datadir)
+        repo_sync._sync(repo_id)
+        clone_task = repo_sync.clone(repo_id, repo_id_clone, repo_id_clone)
+        for index in range(0,120):
+            time.sleep(1)
+            found_tasks = async.find_async(id=clone_task.id)
+            self.assertEquals(len(found_tasks), 1)
+            t = found_tasks[0]
+            if t.state in task.task_complete_states:
+                self.assertEqual(t.state, task.task_finished)
+                break
+
+        cloned_repo = self.repo_api.repository(repo_id_clone)
+        packages = cloned_repo['packages']
+        errata = cloned_repo['errata']
+        distroids = cloned_repo['distributionid']
+
+        self.assertTrue(len(packages) > 0)
+        self.assertTrue(len(errata) > 0)
+        self.assertTrue(len(distroids) > 0)
+
+
+        pkgid = packages[0]
+        pkg = self.package_api.package(pkgid)
+        self.assertEquals(len(pkg["repoids"]), 2)
+        self.assertTrue(repo_id in pkg["repoids"])
+        self.assertTrue(repo_id_clone in pkg["repoids"])
+
+        distro_id = distroids[0]
+        distro = self.distribution_api.distribution(distro_id)
+        self.assertEquals(len(distro["repoids"]), 2)
+        self.assertTrue(repo_id in distro["repoids"])
+        self.assertTrue(repo_id_clone in distro["repoids"])
+
+        self.assertTrue("security" in errata)
+        self.assertTrue(len(errata["security"]) > 0)
+        eid = errata["security"][0]
+
+        e = self.errata_api.errata(eid)
+        self.assertEqual(len(e), 1)
+        e = e[0]
+        self.assertEquals(len(e["repoids"]), 2)
+        self.assertTrue(repo_id in e["repoids"])
+        self.assertTrue(repo_id_clone in e["repoids"])
+
+
+        #
+        # Delete repo_id
+        # repoids should have the reference to repo_id removed
+        #
+        self.repo_api.delete(repo_id)
+        pkg = self.package_api.package(pkgid)
+        self.assertEquals(len(pkg["repoids"]), 1)
+        self.assertTrue(repo_id_clone in pkg["repoids"])
+
+        distro = self.distribution_api.distribution(distro_id)
+        self.assertEquals(len(distro["repoids"]), 1)
+        self.assertTrue(repo_id_clone in distro["repoids"])
+
+        e = self.errata_api.errata(eid)
+        self.assertEqual(len(e), 1)
+        e = e[0]
+        self.assertEquals(len(e["repoids"]), 1)
+        self.assertTrue(repo_id_clone in e["repoids"])
+
+        #
+        # Delete Cloned Repo
+        # Now all objects should have been removed
+        #
+        self.repo_api.delete(repo_id_clone)
+
+        pkg = self.package_api.package(pkgid)
+        self.assertEquals(pkg, None)
+
+        distro = self.distribution_api.distribution(distro_id)
+        self.assertEquals(distro, None)
+
+        e = self.errata_api.errata(eid)
+        self.assertFalse(e)
