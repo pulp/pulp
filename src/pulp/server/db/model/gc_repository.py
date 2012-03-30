@@ -92,9 +92,6 @@ class RepoImporter(Model):
                       a particular repo)
     @type scratchpad: anything pickle-able
 
-    @ivar sync_in_progress: holds the state of the importer
-    @type sync_in_progress: bool
-
     @ivar last_sync: timestamp of the last sync (regardless of success or failure)
                      in ISO8601 format
     @type last_sync: str
@@ -112,9 +109,6 @@ class RepoImporter(Model):
         self.importer_type_id = importer_type_id
         self.config = config
         self.scratchpad = None
-
-        # Sync
-        self.sync_in_progress = False
         self.last_sync = None
 
 
@@ -148,9 +142,6 @@ class RepoDistributor(Model):
                         publish the repo on the tail end of a successful sync
     @type auto_publish: bool
 
-    @ivar publish_in_progress: holds the state of the distributor
-    @type publish_in_progress: bool
-
     @ivar last_publish: timestamp of the last publish (regardless of success or failure)
                         in ISO8601 format
     @type last_publish: str
@@ -168,9 +159,6 @@ class RepoDistributor(Model):
         self.config = config
         self.auto_publish = auto_publish
         self.scratchpad = None
-
-        # Publish
-        self.publish_in_progress = False
         self.last_publish = None
 
 

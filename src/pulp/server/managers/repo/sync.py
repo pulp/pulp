@@ -105,7 +105,6 @@ class RepoSyncManager(object):
         # Perform the sync
         sync_start_timestamp = _now_timestamp()
         try:
-            repo_importer['sync_in_progress'] = True
             importer_coll.save(repo_importer, safe=True)
             sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
         except Exception, e:
@@ -114,7 +113,6 @@ class RepoSyncManager(object):
 
             # Reload the importer in case the plugin edits the scratchpad
             repo_importer = importer_coll.find_one({'repo_id' : repo_id})
-            repo_importer['sync_in_progress'] = False
             repo_importer['last_sync'] = sync_end_timestamp
             importer_coll.save(repo_importer, safe=True)
 
@@ -130,7 +128,6 @@ class RepoSyncManager(object):
 
         # Reload the importer in case the plugin edits the scratchpad
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
-        repo_importer['sync_in_progress'] = False
         repo_importer['last_sync'] = sync_end_timestamp
         importer_coll.save(repo_importer, safe=True)
 

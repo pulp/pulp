@@ -92,15 +92,12 @@ class RepoPublishManager(object):
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
         try:
-            repo_distributor['publish_in_progress'] = True
-            distributor_coll.save(repo_distributor, safe=True)
             publish_report = distributor_instance.publish_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             publish_end_timestamp = _now_timestamp()
 
             # Reload the distributor in case the scratchpad is set by the plugin
             repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
-            repo_distributor['publish_in_progress'] = False
             repo_distributor['last_publish'] = publish_end_timestamp
             distributor_coll.save(repo_distributor, safe=True)
 
@@ -116,7 +113,6 @@ class RepoPublishManager(object):
 
         # Reload the distributor in case the scratchpad is set by the plugin
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
-        repo_distributor['publish_in_progress'] = False
         repo_distributor['last_publish'] = _now_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
 

@@ -70,7 +70,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         #   Database
         repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'dist-1'})
-        self.assertTrue(not repo_distributor['publish_in_progress'])
         self.assertTrue(repo_distributor['last_publish'] is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
@@ -246,7 +245,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         # Verify
         repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'bad-dist'})
 
-        self.assertTrue(not repo_distributor['publish_in_progress'])
         self.assertTrue(repo_distributor is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 

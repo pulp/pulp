@@ -104,7 +104,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
 
         #   Database
-        self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
@@ -179,7 +178,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
 
         #   Database
-        self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
@@ -284,7 +282,6 @@ class RepoSyncManagerTests(testutil.PulpTest):
         #    Database
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'mock-importer'})
 
-        self.assertTrue(not repo_importer['sync_in_progress'])
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
