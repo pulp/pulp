@@ -429,6 +429,10 @@ def post_sync(task):
     else:
         connection = httplib.HTTPConnection(server)
     connection.request('POST', path, body=body)
-    # do not wait for the response here, can cause a potential dead lock
+    response = connection.getresponse()
+    if response.status != httplib.OK:
+        error_msg = response.read()
+        msg = _('Error response from post_sync_url: %(e)') % {'e': error_msg}
+        log.warn(msg)
     connection.close()
 
