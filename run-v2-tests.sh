@@ -34,6 +34,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_dispatch_taskqueue.py \
        test/unit/test_gc_client_exception_handler.py \
        test/unit/test_extensions_loader.py \
+       test/unit/test_manager_factory.py \
        test/unit/test_repo_controller.py \
        test/unit/test_repo_importer_manager.py \
        test/unit/test_repo_manager.py \
