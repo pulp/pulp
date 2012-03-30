@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.280
+Version:        0.0.281
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -506,6 +506,31 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Mar 30 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.281-1
+- Cleaned up stale exceptions left over after middleware introduction
+  (jason.dobies@redhat.com)
+- Fixing unit test failures - fixed test_consumer_utils to use v2 repos and
+  distributors and removed irrelevant repo api tests with v2 patching changes
+  (skarmark@redhat.com)
+- Added admin_auth extension to build (jason.dobies@redhat.com)
+- Fixed monkey patch to restore the original implementation
+  (jason.dobies@redhat.com)
+- Added more docs (jason.dobies@redhat.com)
+- Finished porting to role based template (jason.dobies@redhat.com)
+- Added build and section information (jason.dobies@redhat.com)
+- Renamed so I can toss all of the docs in here (jason.dobies@redhat.com)
+- Tweaks to rest-api roles. Added API template. Formatted repo APIs.
+  (jason.dobies@redhat.com)
+- Added type translation safety net (jason.dobies@redhat.com)
+- Added rest-api extension and relevant roles (jason.dobies@redhat.com)
+- consumer controller crud unit tests (skarmark@redhat.com)
+- fixed string substitution (jconnor@redhat.com)
+- added docstrings (jconnor@redhat.com)
+- added NotImplemented pulp exception (jconnor@redhat.com)
+- added consumer binding resource type (jconnor@redhat.com)
+- added actual docstrings to link serialization  module (jconnor@redhat.com)
+- fixed outdated docstring (jconnor@redhat.com)
+
 * Thu Mar 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.280-1
 - Added files used in the creation of updated certs (jason.dobies@redhat.com)
 - Webservices controller for consumer crud operations (skarmark@redhat.com)
