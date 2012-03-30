@@ -196,7 +196,7 @@ class RepoImporters(JSONController):
         #  bubble up and be handled like any other 500.
 
         importer_manager = manager_factory.repo_importer_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [repo_id]
         call_request = CallRequest(importer_manager.set_importer,
@@ -227,7 +227,7 @@ class RepoImporter(JSONController):
     def DELETE(self, repo_id, importer_id):
 
         importer_manager = manager_factory.repo_importer_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [repo_id, importer_id]
         call_request = CallRequest(importer_manager.remove_importer,
@@ -249,7 +249,7 @@ class RepoImporter(JSONController):
             raise exceptions.MissingValue('importer_config')
 
         importer_manager = manager_factory.repo_importer_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [repo_id, importer_id]
         call_request = CallRequest(importer_manager.update_importer_config,
@@ -293,7 +293,7 @@ class RepoDistributors(JSONController):
         # Note: The manager will automatically replace a distributor with the
         # same ID, so there is no need to return a 409.
 
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [repo_id]
         if distributor_id is not None:
@@ -325,7 +325,7 @@ class RepoDistributor(JSONController):
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
         distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [repo_id, distributor_id]
         call_request = CallRequest(distributor_manager.remove_distributor,
@@ -347,7 +347,7 @@ class RepoDistributor(JSONController):
             raise exceptions.MissingValue('distributor_config')
 
         distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [repo_id, distributor_id]
         call_request = CallRequest(distributor_manager.update_distributor_config,
