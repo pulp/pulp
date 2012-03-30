@@ -14,6 +14,7 @@
 import httplib
 import logging
 import os
+import threading
 import time
 import traceback
 from datetime import datetime
@@ -395,6 +396,7 @@ def import_comps(repoid, comps_data=None):
     repo_api._update_groups_metadata(repoid)
     return status
 
+
 def export_comps(repoid):
     """
     Creates packagegroups and categories from a comps.xml file
@@ -412,6 +414,21 @@ def post_sync(task):
     Post sync dequeue hook to push repo and task ids to a configured url
     @param task: sync task
     """
+    # fire the actual http push function off in a separate thread to keep
+    # pulp from blocking or deadlocking due to the tasking subsystem
+    def _send_post(scheme, server, path, body):
+        if scheme.startswith('https'):
+            connection = httplib.HTTPSConnection(server)
+        else:
+            connection = httplib.HTTPConnection(server)
+        connection.request('POST', path, body=body)
+        response = connection.getresponse()
+        if response.status != httplib.OK:
+            error_msg = response.read()
+            msg = _('Error response from post_sync_url: %(e)') % {'e': error_msg}
+            log.warn(msg)
+        connection.close()
+
     url = config.config.get('server', 'post_sync_url')
     if not url:
         return
@@ -424,15 +441,7 @@ def post_sync(task):
     path = '/' + path
     data = {'task_id': task.id, 'repo_id': task.repo_id}
     body = json.dumps(data)
-    if scheme.startswith('https'):
-        connection = httplib.HTTPSConnection(server)
-    else:
-        connection = httplib.HTTPConnection(server)
-    connection.request('POST', path, body=body)
-    response = connection.getresponse()
-    if response.status != httplib.OK:
-        error_msg = response.read()
-        msg = _('Error response from post_sync_url: %(e)') % {'e': error_msg}
-        log.warn(msg)
-    connection.close()
+    thread = threading.Thread(target=_send_post, args=[scheme, server, path, body])
+    thread.setDaemon(True)
+    thread.start()
 
