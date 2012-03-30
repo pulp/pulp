@@ -60,8 +60,8 @@ class RepoManager(object):
         @param notes: key-value pairs to programmatically tag the repo
         @type  notes: dict
 
-        @raises DuplicateResource: if there is already a repo with the requested ID
-        @raises InvalidValue: if any of the fields are unacceptable
+        @raise DuplicateResource: if there is already a repo with the requested ID
+        @raise InvalidValue: if any of the fields are unacceptable
         """
 
         existing_repo = Repo.get_collection().find_one({'id' : repo_id})
@@ -117,8 +117,8 @@ class RepoManager(object):
                that would be passed to the RepoDistributorManager.add_distributor call).
         @type  distributor_list: list
 
-        @raises DuplicateResource: if there is already a repo with the requested ID
-        @raises InvalidValue: if any of the non-ID fields is unacceptable
+        @raise DuplicateResource: if there is already a repo with the requested ID
+        @raise InvalidValue: if any of the non-ID fields is unacceptable
         """
 
         # Let any exceptions out of this call simply bubble up, there's nothing
@@ -164,8 +164,8 @@ class RepoManager(object):
         @param repo_id: identifies the repo being deleted
         @type  repo_id: str
 
-        @raises MissingResource: if the given repo does not exist
-        @raises OperationFailed: if any part of the delete process fails;
+        @raise MissingResource: if the given repo does not exist
+        @raise OperationFailed: if any part of the delete process fails;
                 the exception will contain information on which sections failed
         """
 
@@ -254,7 +254,7 @@ class RepoManager(object):
         @param delta: list of attributes and their new values to change
         @type  delta: dict
 
-        @raises MissingResource: if there is no repo with repo_id
+        @raise MissingResource: if there is no repo with repo_id
         """
 
         repo_coll = Repo.get_collection()

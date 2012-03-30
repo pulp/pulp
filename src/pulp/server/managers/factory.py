@@ -40,7 +40,6 @@ TYPE_REPO_IMPORTER          = 'repo-importer-manager'
 TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
-TYPE_REPO_CLONE             = 'repo-clone-manager'
 TYPE_REPO_PUBLISH           = 'repo-publish-manager'
 TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
@@ -154,12 +153,6 @@ def repo_unit_association_query_manager():
     """
     return get_manager(TYPE_REPO_ASSOCIATION_QUERY)
 
-def repo_clone_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.clone.RepoCloneManager}
-    """
-    return get_manager(TYPE_REPO_CLONE)
-
 def repo_publish_manager():
     """
     @rtype: L{pulp.server.managers.repo.publish.RepoPublishManager}
@@ -205,7 +198,6 @@ def initialize():
     from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
-    from pulp.server.managers.repo.clone import RepoCloneManager
     from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
@@ -227,7 +219,6 @@ def initialize():
         TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_ASSOCIATION_QUERY : RepoUnitAssociationQueryManager,
-        TYPE_REPO_CLONE: RepoCloneManager,
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,

@@ -71,8 +71,8 @@ class RepoSyncManager(object):
                                      for this sync only
         @type  sync_config_override: dict
 
-        @raises MissingResource: if repo_id does not refer to a valid repo
-        @raises OperationFailed: if the given repo does not have an importer set
+        @raise MissingResource: if repo_id does not refer to a valid repo
+        @raise OperationFailed: if the given repo does not have an importer set
         """
 
         repo_coll = Repo.get_collection()
@@ -199,7 +199,7 @@ class RepoSyncManager(object):
         @return: list of sync history result instances
         @rtype:  list of L{pulp.server.db.model.gc_repository.RepoSyncResult}
 
-        @raises MissingResource: if repo_id does not reference a valid repo
+        @raise MissingResource: if repo_id does not reference a valid repo
         """
 
         # Validation

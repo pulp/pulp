@@ -18,8 +18,7 @@ from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers.repo._exceptions import InvalidImporterConfiguration
-from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException
+from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
 
 # -- constants ----------------------------------------------------------------
 
@@ -36,7 +35,7 @@ class RepoImporterManager(object):
         @return: key-value pairs describing the importer in use
         @rtype:  dict
 
-        @raises MissingResource: if the repo does not exist or has no importer associated
+        @raise MissingResource: if the repo does not exist or has no importer associated
         """
 
         importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
@@ -53,7 +52,7 @@ class RepoImporterManager(object):
                  list if the repo has no importers
         @rtype:  list of dict
 
-        @raises MissingResource: if the given repo doesn't exist
+        @raise MissingResource: if the given repo doesn't exist
         """
 
         repo = Repo.get_collection().find_one({'id' : repo_id})
@@ -123,10 +122,10 @@ class RepoImporterManager(object):
 
         except Exception, e:
             _LOG.exception('Exception received from importer [%s] while validating config' % importer_type_id)
-            raise InvalidImporterConfiguration(e), None, sys.exc_info()[2]
+            raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidImporterConfiguration(message)
+            raise PulpDataException(message)
 
         # Remove old importer if one exists
         try:
@@ -156,8 +155,8 @@ class RepoImporterManager(object):
         @param repo_id: identifies the repo
         @type  repo_id: str
 
-        @raises MissingResource: if the given repo does not exist
-        @raises MissingResource: if the given repo does not have an importer
+        @raise MissingResource: if the given repo does not exist
+        @raise MissingResource: if the given repo does not have an importer
         """
 
         repo_coll = Repo.get_collection()
@@ -200,9 +199,9 @@ class RepoImporterManager(object):
         @param importer_config: new configuration values to use for this repo
         @type  importer_config: dict
 
-        @raises MissingResource: if the given repo does not exist
-        @raises MissingResource: if the given repo does not have an importer
-        @raises InvalidConfiguration: if the plugin indicates the given
+        @raise MissingResource: if the given repo does not exist
+        @raise MissingResource: if the given repo does not have an importer
+        @raise InvalidConfiguration: if the plugin indicates the given
                 configuration is invalid
         """
 
@@ -253,10 +252,10 @@ class RepoImporterManager(object):
                 valid_config, message = result
         except Exception, e:
             _LOG.exception('Exception received from importer [%s] while validating config for repo [%s]' % (importer_type_id, repo_id))
-            raise InvalidImporterConfiguration(e), None, sys.exc_info()[2]
+            raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidImporterConfiguration(message)
+            raise PulpDataException(message)
 
         # If we got this far, the new config is valid, so update the database
         repo_importer['config'] = merged_config

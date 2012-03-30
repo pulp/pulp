@@ -94,7 +94,7 @@ class RepoUnitAssociationManager(object):
                          the importer ID or user login
         @type  owner_id: str
 
-        @raises InvalidType: if the given owner type is not of the valid enumeration
+        @raise InvalidType: if the given owner type is not of the valid enumeration
         """
 
         if owner_type not in _OWNER_TYPES:
@@ -137,7 +137,7 @@ class RepoUnitAssociationManager(object):
                          the importer ID or user login
         @type  owner_id: str
 
-        @raises InvalidType: if the given owner type is not of the valid enumeration
+        @raise InvalidType: if the given owner type is not of the valid enumeration
         """
 
         # There may be a way to batch this in mongo which would be ideal for a
@@ -173,9 +173,7 @@ class RepoUnitAssociationManager(object):
                          from the source repository
         @type  criteria: L{Criteria}
 
-        @raises MissingResource: if either of the specified repositories don't exist
-        @raises MissingImporter: if the destination repository does not have
-                a configured importer
+        @raise MissingResource: if either of the specified repositories don't exist
         """
 
         # Validation
@@ -190,7 +188,7 @@ class RepoUnitAssociationManager(object):
         if dest_repo is None:
             raise exceptions.MissingResource(dest_repo_id)
 
-        # This will raise MissingImporter if there isn't one, which is the
+        # This will raise MissingResource if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
         repo_importer = importer_manager.get_importer(dest_repo_id)
 
@@ -219,8 +217,6 @@ class RepoUnitAssociationManager(object):
 
         if len(unsupported_types) > 0:
             raise exceptions.InvalidValue(['types'])
-            # TODO: define different exception; this isn't bad data at the type level
-            #raise exceptions.InvalidType(dest_repo_id, unsupported_types)
 
         # Convert all of the units into the plugin standard representation
         type_defs = {}

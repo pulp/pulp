@@ -15,10 +15,9 @@
 Contains the manager class and exceptions for searching for repositories.
 """
 
-from gettext import gettext as _
 import logging
 
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
+from pulp.server.db.model.gc_repository import Repo
 
 # -- constants ----------------------------------------------------------------
 
@@ -84,12 +83,15 @@ class RepoQueryManager(object):
         return serialized_repos
 
     def find_by_notes(self, notes):
+        # Placeholder idea for future functionality
         pass
 
     def find_by_supported_type(self, type_name):
+        # Placeholder idea for future functionality
         pass
 
     def find_by_content_unit(self, unit_id):
+        # Placeholder idea for future functionality
         pass
 
 def _serialize_repo(repo):

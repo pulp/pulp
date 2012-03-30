@@ -27,7 +27,6 @@ from pulp.server.content.plugins.model import Repository
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.exceptions as exceptions
-import pulp.server.managers.repo._exceptions as repo_exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 
@@ -193,7 +192,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('bad_config', 'mock-importer', config)
             self.fail('Exception expected for bad config')
-        except repo_exceptions.InvalidImporterConfiguration:
+        except exceptions.PulpDataException:
             pass
 
         # Cleanup
@@ -213,7 +212,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('bad_config', 'mock-importer', config)
             self.fail('Exception expected for bad config')
-        except repo_exceptions.InvalidImporterConfiguration, e:
+        except exceptions.PulpDataException, e:
             self.assertEqual(e[0], 'Invalid stuff')
 
     def test_set_importer_invalid_config_backward_compatibility(self):
@@ -231,7 +230,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('bad_config', 'mock-importer', config)
             self.fail('Exception expected for bad config')
-        except repo_exceptions.InvalidImporterConfiguration:
+        except exceptions.PulpDataException:
             pass
 
     # -- remove ---------------------------------------------------------------
@@ -358,7 +357,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('riverwood', {})
             self.fail('Exception expected')
-        except repo_exceptions.InvalidImporterConfiguration:
+        except exceptions.PulpDataException:
             pass
 
         # Cleanup
@@ -379,7 +378,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('restoration', {})
             self.fail('Exception expected')
-        except repo_exceptions.InvalidImporterConfiguration, e:
+        except exceptions.PulpDataException, e:
             self.assertEqual('Invalid stuff', e[0])
 
         # Cleanup
@@ -400,7 +399,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.update_importer_config('restoration', {})
             self.fail('Exception expected')
-        except repo_exceptions.InvalidImporterConfiguration:
+        except exceptions.PulpDataException:
             pass
 
         # Cleanup

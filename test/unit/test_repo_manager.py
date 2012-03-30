@@ -23,7 +23,6 @@ import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
-from pulp.server.managers.repo._exceptions import InvalidImporterConfiguration, InvalidDistributorConfiguration
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -197,7 +196,7 @@ class RepoManagerTests(testutil.PulpTest):
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = False, ''
 
         # Test
-        self.assertRaises(InvalidImporterConfiguration, self.manager.create_and_configure_repo, 'repo-1', importer_type_id='mock-importer')
+        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo, 'repo-1', importer_type_id='mock-importer')
 
         # Verify the repo was deleted
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -216,7 +215,7 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Test
         distributors = [('mock-distributor', {}, True, None)]
-        self.assertRaises(InvalidDistributorConfiguration, self.manager.create_and_configure_repo, 'repo-1', distributor_list=distributors)
+        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo, 'repo-1', distributor_list=distributors)
 
         # Verify the repo was deleted
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})

@@ -19,8 +19,7 @@ import uuid
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException
-from pulp.server.managers.repo._exceptions import InvalidDistributorConfiguration
+from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
@@ -47,7 +46,7 @@ class RepoDistributorManager(object):
         @return: key-value pairs describing the distributor
         @rtype:  dict
 
-        @raises MissingResource: if either the repo doesn't exist or there is no
+        @raise MissingResource: if either the repo doesn't exist or there is no
                     distributor with the given ID
         """
 
@@ -67,9 +66,9 @@ class RepoDistributorManager(object):
 
         @return: list of key-value pairs describing the distributors; empty list
                  if there are none for the given repo
-        @rtype:  list of dict or None
+        @rtype:  list, None
 
-        @raises MissingResource: if the given repo doesn't exist
+        @raise MissingResource: if the given repo doesn't exist
         """
 
         repo = Repo.get_collection().find_one({'id' : repo_id})
@@ -159,10 +158,10 @@ class RepoDistributorManager(object):
                 valid_config, message = result
         except Exception, e:
             _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
-            raise InvalidDistributorConfiguration(e), None, sys.exc_info()[2]
+            raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidDistributorConfiguration(message)
+            raise PulpDataException(message)
 
         # Remove the old distributor if it exists
         try:
@@ -193,8 +192,8 @@ class RepoDistributorManager(object):
         @param distributor_id: identifies the distributor to delete
         @type  distributor_id: str
 
-        @raises MissingResource: if repo_id doesn't correspond to a valid repo
-        @raises MissingResource: if there is no distributor with the given ID
+        @raise MissingResource: if repo_id doesn't correspond to a valid repo
+        @raise MissingResource: if there is no distributor with the given ID
         """
 
         repo_coll = Repo.get_collection()
@@ -246,9 +245,9 @@ class RepoDistributorManager(object):
         @return: the updated distributor
         @rtype:  dict
 
-        @raises MissingResource: if the given repo doesn't exist
-        @raises MissingResource: if the given distributor doesn't exist
-        @raises InvalidConfiguration: if the plugin rejects the given changes
+        @raise MissingResource: if the given repo doesn't exist
+        @raise MissingResource: if the given distributor doesn't exist
+        @raise InvalidConfiguration: if the plugin rejects the given changes
         """
 
         repo_coll = Repo.get_collection()
@@ -298,10 +297,10 @@ class RepoDistributorManager(object):
                 valid_config, message = result
         except Exception, e:
             _LOG.exception('Exception raised from distributor [%s] while validating config for repo [%s]' % (distributor_type_id, repo_id))
-            raise InvalidDistributorConfiguration(e), None, sys.exc_info()[2]
+            raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
-            raise InvalidDistributorConfiguration(message)
+            raise PulpDataException(message)
 
         # If we got this far, the new config is valid, so update the database
         repo_distributor['config'] = merged_config

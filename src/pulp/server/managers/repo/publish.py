@@ -59,7 +59,7 @@ class RepoPublishManager(object):
 
         @param publish_config_override: optional config values to use for this
                                         publish call only
-        @type  publish_config_override: dict
+        @type  publish_config_override: dict, None
         """
 
         repo_coll = Repo.get_collection()
@@ -155,7 +155,7 @@ class RepoPublishManager(object):
         @param repo_id: identifies the repo
         @type  repo_id: str
 
-        @raises OperationFailed: if one or more of the distributors errors
+        @raise OperationFailed: if one or more of the distributors errors
                 during publishing; the exception will contain information on all
                 failures
         """
@@ -195,7 +195,7 @@ class RepoPublishManager(object):
         @return: timestamp of the last publish
         @rtype:  datetime or None
 
-        @raises MissingResource: if there is no distributor identified by the
+        @raise MissingResource: if there is no distributor identified by the
                 given repo ID and distributor ID
         """
 
@@ -232,7 +232,7 @@ class RepoPublishManager(object):
         @return: list of publish history result instances
         @rtype:  list of L{pulp.server.db.model.gc_repository.RepoPublishResult}
 
-        @raises MissingResource: if repo_id does not reference a valid repo
+        @raise MissingResource: if repo_id does not reference a valid repo
         """
 
         # Validation
