@@ -44,13 +44,20 @@ FakeDistributor = {
     }
 }
 
-RepoDistributorManager.get_distributors = \
-    lambda self,repoid:[FakeDistributor,]
-
-
 class CdsApiTests(testutil.PulpAsyncTest):
 
     # -- preparation ---------------------------------------------------------
+
+    def setUp(self):
+        super(CdsApiTests, self).setUp()
+        self.orig_get_distributors = RepoDistributorManager.get_distributors
+
+        RepoDistributorManager.get_distributors = lambda self,repoid:[FakeDistributor,]
+
+    def tearDown(self):
+        super(CdsApiTests, self).tearDown()
+
+        RepoDistributorManager.get_distributors = self.orig_get_distributors
 
     def clean(self):
         testutil.PulpAsyncTest.clean(self)
