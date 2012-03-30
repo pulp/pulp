@@ -17,6 +17,7 @@ removal, and metadata update on a repository. This does not include importer
 or distributor configuration.
 """
 
+from gettext import gettext as _
 import logging
 import os
 import re
@@ -81,7 +82,10 @@ class RepoManager(object):
         create_me = Repo(repo_id, display_name, description, notes)
         Repo.get_collection().save(create_me, safe=True)
 
-        return create_me
+        # Retrieve the repo to return the SON object
+        created = Repo.get_collection().find_one({'id' : repo_id})
+
+        return created
 
     def create_and_configure_repo(self, repo_id, display_name=None, description=None,
                                   notes=None, importer_type_id=None,
@@ -166,7 +170,7 @@ class RepoManager(object):
 
         @raise MissingResource: if the given repo does not exist
         @raise OperationFailed: if any part of the delete process fails;
-                the exception will contain information on which sections failed
+               the exception will contain information on which sections failed
         """
 
         # Validation
@@ -177,9 +181,10 @@ class RepoManager(object):
         # With so much going on during a delete, it's possible that a few things
         # could go wrong while others are successful. We track lesser errors
         # that shouldn't abort the entire process until the end and then raise
-        # an exception describing the incompleteness of the delete. The user
+        # an exception describing the incompleteness of the delete. The exception
+        # arguments are captured as the second element in the tuple, but the user
         # will have to look at the server logs for more information.
-        error_codes = []
+        error_tuples = [] # tuple of failed step and exception arguments
 
         # Inform the importer
         importer_coll = RepoImporter.get_collection()
@@ -188,9 +193,9 @@ class RepoManager(object):
         if repo_importer is not None:
             try:
                 importer_manager.remove_importer(repo_id)
-            except Exception:
+            except Exception, e:
                 _LOG.exception('Error received removing importer [%s] from repo [%s]' % (repo_importer['importer_type_id'], repo_id))
-                error_codes.append("importer-error")
+                error_tuples.append( (_('Importer Delete Error'), e.args) )
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
@@ -199,9 +204,9 @@ class RepoManager(object):
         for repo_distributor in repo_distributors:
             try:
                 distributor_manager.remove_distributor(repo_id, repo_distributor['id'])
-            except Exception:
+            except Exception, e:
                 _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
-                error_codes.append("distributor-error")
+                error_tuples.append( (_('Distributor Delete Error'), e.args))
                 
         # Clean up binds
         bind_manager = manager_factory.consumer_bind_manager()
@@ -212,9 +217,9 @@ class RepoManager(object):
         if os.path.exists(repo_working_dir):
             try:
                 shutil.rmtree(repo_working_dir)
-            except Exception:
+            except Exception, e:
                 _LOG.exception('Error while deleting repo working dir [%s] for repo [%s]' % (repo_working_dir, repo_id))
-                error_codes.append("working-dir-error")
+                error_tuples.append( (_('Filesystem Cleanup Error'), e.args))
 
         # Database Updates
         try:
@@ -232,12 +237,12 @@ class RepoManager(object):
 
             # Remove all associations from the repo
             RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
-        except Exception:
+        except Exception, e:
             _LOG.exception('Error updating one or more database collections while removing repo [%s]' % repo_id)
-            error_codes.append("database-error")
+            error_tuples.append( (_('Database Removal Error'), e.args))
 
-        if len(error_codes) > 0:
-            raise PulpExecutionException(error_codes)
+        if len(error_tuples) > 0:
+            raise PulpExecutionException(error_tuples)
 
     def update_repo(self, repo_id, delta):
         """
