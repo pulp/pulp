@@ -26,7 +26,6 @@ from pulp.server.managers.content.query import ContentQueryManager
 from pulp.server.managers.content.upload import ContentUploadManager
 from pulp.server.managers.repo.cud import RepoManager
 from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
-from pulp.server.managers.repo.clone import RepoCloneManager
 from pulp.server.managers.repo.publish import RepoPublishManager
 from pulp.server.managers.repo.query import RepoQueryManager
 from pulp.server.managers.repo.sync import RepoSyncManager
@@ -48,7 +47,6 @@ class FactoryTests(testutil.PulpTest):
         # Test
         self.assertTrue(isinstance(factory.repo_manager(), RepoManager))
         self.assertTrue(isinstance(factory.repo_unit_association_manager(), RepoUnitAssociationManager))
-        self.assertTrue(isinstance(factory.repo_clone_manager(), RepoCloneManager))
         self.assertTrue(isinstance(factory.repo_publish_manager(), RepoPublishManager))
         self.assertTrue(isinstance(factory.repo_query_manager(), RepoQueryManager))
         self.assertTrue(isinstance(factory.repo_sync_manager(), RepoSyncManager))
