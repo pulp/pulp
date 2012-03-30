@@ -18,15 +18,37 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
+import mock_plugins
 
 import pulp.server.consumer_utils as utils
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.repo import RepoApi
+from pulp.server.managers.repo.cud import RepoManager
+from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.db.model.resource import Consumer
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 
 # -- test cases -------------------------------------------------------------------------
 
 class TestConsumerUtils(testutil.PulpAsyncTest):
+
+    def setUp(self):
+        testutil.PulpAsyncTest.setUp(self)
+
+        mock_plugins.install()
+
+        # Create the manager instance to test
+        self.repo_manager = RepoManager()
+        self.repo_distributor_manager = RepoDistributorManager()
+
+    def tearDown(self):
+        testutil.PulpAsyncTest.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpAsyncTest.clean(self)
+
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
 
     def test_consumers_bound_to_repo(self):
         '''
@@ -82,7 +104,9 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('repo1', 'Repo 1', 'noarch')
+        repo = self.repo_manager.create_repo('repo1', 'Repo 1')
+        distributor_config = {'random' : 'config'}
+        self.repo_distributor_manager.add_distributor('repo1', 'mock-distributor', distributor_config, True, distributor_id='test-distributor')
 
         # Test
         bind_data = utils.build_bind_data(repo, ['cds1', 'cds2'], ['key1'])
@@ -97,8 +121,7 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
         data_repo = bind_data['repo']
         self.assertTrue(data_repo is not None)
         self.assertEqual(data_repo['id'], 'repo1')
-        self.assertEqual(data_repo['name'], 'Repo 1')
-        self.assertEqual(data_repo['arch'], 'noarch')
+        self.assertEqual(data_repo['display_name'], 'Repo 1')
 
         data_hosts = bind_data['host_urls']
         self.assertTrue(data_hosts is not None)
@@ -115,7 +138,9 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repo = self.repo_api.create('repo1', 'Repo 1', 'noarch')
+        repo = self.repo_manager.create_repo('repo1', 'Repo 1')
+        distributor_config = {'random' : 'config'}
+        self.repo_distributor_manager.add_distributor('repo1', 'mock-distributor', distributor_config, True, distributor_id='test-distributor')
 
         # Test
         bind_data = utils.build_bind_data(repo, None, None)

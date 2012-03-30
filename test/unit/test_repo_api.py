@@ -297,55 +297,6 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
 
-    def test_repo_update_with_consumer_certs(self, repo_id = 'test_consumer_cert'):
-        '''
-        Tests that updating a repo by adding consumer certs properly stores the certs.
-        '''
-
-        # Setup
-        self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch')
-        self.config.set('security', 'ssl_ca_certificate', '')
-
-        # Test
-        bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
-        self.repo_api.update(repo_id, {'consumer_cert_data' : bundle})
-
-        # Verify
-        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
-        self.assertTrue(os.path.exists(repo_cert_dir))
-
-        repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(2, len(repo_certs))
-        self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('consumer')]))
-
-        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
-        self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
-        self.assertTrue(repo_id in protected_repos.values())
-
-    def test_repo_update_remove_consumer_certs(self, repo_id = 'test_consumer_cert'):
-        '''
-        Tests updating a repo by removing its consumer certs.
-        '''
-
-        # Setup
-        bundle = {'ca' : 'FOO', 'cert' : BUNDLE}
-        self.repo_api.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
-
-        # Test
-        self.repo_api.update(repo_id, {'consumer_cert_data' : None})
-
-        # Verify
-        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
-        self.assertTrue(os.path.exists(repo_cert_dir))
-
-        repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(0, len(repo_certs))
-
-        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
-        self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
-        self.assertTrue(not repo_id in protected_repos.values())
 
     def test_repo_delete_with_feed_certs(self, repo_id = 'test_feed_cert'):
         '''
@@ -556,29 +507,6 @@ class TestRepoApi(testutil.PulpAsyncTest):
         errata = self.repo_api.errata('some-id', types=['bugfix'])
         self.assertTrue(len(errata) == 0)
 
-    def test_repo_gpgkeys(self):
-        id = 'fedora'
-        relativepath = 'f11/i386'
-        feed = 'http://abc.com/%s' % relativepath
-        repo = self.repo_api.create(id, 'Fedora', 'noarch', feed=feed)
-        keyA = ('keyA', 'MY KEY (A) CONTENT')
-        keyB = ('keyB', 'MY KEY (B) CONTENT')
-        keylist = [keyA, keyB]
-        ks = KeyStore(relativepath)
-        ks.clean()
-        # multiple (2) keys
-        self.repo_api.addkeys(id, keylist)
-        found = self.repo_api.listkeys(id)
-        for i in range(0, len(keylist)):
-            path = os.path.join(relativepath, keylist[i][0])
-            self.assertTrue(path in found)
-        # single key
-        ks.clean()
-        self.repo_api.addkeys(id, keylist[1:])
-        found = self.repo_api.listkeys(id)
-        path = os.path.join(relativepath, keylist[1][0])
-        self.assertEqual(len(found), 1)
-        self.assertEqual(found[0], path)
 
     def test_repo_update(self, id = 'fedora'):
         relativepath = 'f11/i386'
