@@ -19,6 +19,11 @@ import traceback
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
 
+try:
+    from bson.objectid import ObjectId
+except ImportError:
+    from pymongo.objectid import ObjectId
+
 import mock
 import testutil
 
@@ -86,7 +91,7 @@ class SchedulerCallControlTests(SchedulerTests):
         call_request = CallRequest(call)
         schedule_id = self.scheduler.add(call_request, SCHEDULE_3_RUNS)
         collection = ScheduledCall.get_collection()
-        scheduled_call = collection.find_one({'_id': schedule_id})
+        scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertFalse(scheduled_call is None)
 
     def test_add_no_runs(self):
@@ -109,13 +114,13 @@ class SchedulerCallControlTests(SchedulerTests):
         call_request = CallRequest(call)
         schedule_id = self.scheduler.add(call_request, SCHEDULE_3_RUNS)
         collection = ScheduledCall.get_collection()
-        scheduled_call = collection.find_one({'_id': schedule_id})
+        scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['enabled'])
         self.scheduler.disable(schedule_id)
-        scheduled_call = collection.find_one({'_id': schedule_id})
+        scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertFalse(scheduled_call['enabled'])
         self.scheduler.enable(schedule_id)
-        scheduled_call = collection.find_one({'_id': schedule_id})
+        scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['enabled'])
 
 # dispatch control flow tests --------------------------------------------------
@@ -141,11 +146,11 @@ class SchedulerSchedulingTests(SchedulerTests):
         call_request = CallRequest(call)
         call_report = CallReport(state=dispatch_constants.CALL_FINISHED_STATE)
         schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE)
-        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': schedule_id})
+        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['last_run'] == None)
         self.assertTrue(scheduled_call['remaining_runs'] == 2)
         self.scheduler.update_last_run(scheduled_call, call_report)
-        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': schedule_id})
+        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         # relies on schedule's 0 length interval and initially having 2 runs
         self.assertTrue(updated_scheduled_call['last_run'] == updated_scheduled_call['next_run'])
         self.assertTrue(updated_scheduled_call['remaining_runs'] == 1)
@@ -154,11 +159,11 @@ class SchedulerSchedulingTests(SchedulerTests):
         call_request = CallRequest(call)
         call_report = CallReport(state=dispatch_constants.CALL_ERROR_STATE)
         schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE, failure_threshold=1)
-        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': schedule_id})
+        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['consecutive_failures'] == 0)
         self.assertTrue(scheduled_call['enabled'])
         self.scheduler.update_last_run(scheduled_call, call_report)
-        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': schedule_id})
+        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(updated_scheduled_call['consecutive_failures'] == 1)
         # scheduled call should be disabled because failure_threshold was set to 1
         self.assertFalse(updated_scheduled_call['enabled'])
@@ -168,12 +173,12 @@ class SchedulerSchedulingTests(SchedulerTests):
         interval = datetime.timedelta(minutes=1)
         schedule = dateutils.format_iso8601_interval(interval)
         scheduled_id = self.scheduler.add(call_request, schedule)
-        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': scheduled_id})
+        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         next_run = self.scheduler.calculate_next_run(scheduled_call)
         self.assertFalse(next_run is None)
         self.assertTrue(next_run == scheduled_call['start_date'])
         self.scheduler.update_last_run(scheduled_call)
-        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': scheduled_id})
+        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
         self.assertTrue(updated_next_run == interval + updated_scheduled_call['last_run'])
 
