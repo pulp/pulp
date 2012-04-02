@@ -66,6 +66,7 @@ from pulp.server.webservices.controllers import (
 from pulp.server.webservices.controllers import (
     dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers, gc_root_actions)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
+from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
 from gofer.messaging.broker import Broker
 
@@ -196,11 +197,11 @@ def _initialize_pulp():
 def wsgi_application():
     """
     Application factory to create, configure, and return a WSGI application
-    using the web.py framework.
+    using the web.py framework and custom Pulp middleware.
     @return: wsgi application callable
     """
-    application = web.subdir_application(URLS)
-    debug = config.config.getboolean('exception_handler', 'debug')
-    stack = ExceptionHandlerMiddleware(application.wsgifunc(), debug=debug)
+    application = web.subdir_application(URLS).wsgifunc()
+    stack_components = [application, PostponedOperationMiddleware, ExceptionHandlerMiddleware]
+    stack = reduce(lambda a, m: m(a), stack_components)
     _initialize_pulp()
     return stack
