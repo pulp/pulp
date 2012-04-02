@@ -91,3 +91,7 @@ class TestRPMs(unittest.TestCase):
         self.assertFalse(state)
         self.assertTrue("relative_url" in msg)
 
+
+    def test_basic_publish(self):
+        pass
+        # Include a test repo that has: rpms, drpms, errata, and srpms

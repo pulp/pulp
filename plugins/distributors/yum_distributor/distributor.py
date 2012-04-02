@@ -14,6 +14,7 @@
 import gettext
 import logging
 import os
+import traceback
 
 from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.content.plugins.model import PublishReport
@@ -25,10 +26,13 @@ _ = gettext.gettext
 YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
+DRPM_TYPE_ID="drpm"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey",
                         "generate_metadata", "checksum_type"]
+SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID]
+HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 ###
 # Config Options Explained
 ###
@@ -51,7 +55,12 @@ OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
 #
 # -- plugins ------------------------------------------------------------------
 
+#
+# TODO:
+#   Is this really a YumDistributor or should it be a HttpsDistributor?
+#
 class YumDistributor(Distributor):
+
 
     @classmethod
     def metadata(cls):
@@ -73,9 +82,128 @@ class YumDistributor(Distributor):
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
+        ##
+        # TODO: Need to add a check for the Repo's relativepath
+        ##
         return True, None
 
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
         details = {}
+        # Determine Content in this repo
+        unfiltered_units = publish_conduit.get_units()
+        # Remove unsupported units
+        units = filter(lambda u: u.type_id in SUPPORTED_UNIT_TYPES, unfiltered_units)
+        _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
+                % (repo.id, len(unfiltered_units), len(units)))
+        # Create symlinks under repo.working_dir
+        status, errors = self.handle_symlinks(units, repo.working_dir)
+        if not status:
+            _LOG.error("Unable to publish %s items" % (len(errors)))
+
+        # Publish for HTTPS 
+        #  Create symlink for repo.working_dir where HTTPS gets served
+        #  Should we consider HTTP?
+        repo_publish_dir = os.path.join(HTTPS_PUBLISH_DIR, "repos", repo.id)
+        self.create_symlink(repo.working_dir, repo_publish_dir)
+
+        # TODO: RepoAuth:
+        #  Where do we store RepoAuth credentials?
+        #
+        summary["repo_publish_dir"] = repo_publish_dir
+        summary["num_units_attempted"] = len(units)
+        summary["num_units_published"] = len(units) - len(errors)
+        summary["num_units_errors"] = len(errors)
+        details["errors"] = errors
         return publish_conduit.build_success_report(summary, details)
+
+    def handle_symlinks(self, units, symlink_dir):
+        _LOG.info("handle_symlinks invoked with %s units to %s dir" % (len(units), symlink_dir))
+        errors = []
+        for u in units:
+            # Skip errata...it will be published through repo metadata 'updateinfo'
+            relpath = self.get_relpath_from_unit(u)
+            source_path = u.storage_path
+            symlink_path = os.path.join(symlink_dir, relpath)
+            _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
+            try:
+                if not self.create_symlink(source_path, symlink_path):
+                    msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
+                    _LOG.error(msg)
+                    errors.append((source_path, symlink_path, msg))
+            except Exception, e:
+                tb_info = traceback.format_exc()
+                _LOG.error("%s" % (tb_info))
+                _LOG.critical(e)
+                errors.append((source_path, symlink_path, str(e)))
+        if errors:
+            return False, errors
+        return True, []
+
+    def get_relpath_from_unit(self, unit):
+        """
+        @param unit
+        @type AssociatedUnit
+
+        @return relative path
+        @rtype str
+        """
+        filename = ""
+        if unit.metadata.has_key("relativepath"):
+            relpath = unit.metadata["relativepath"]
+        elif unit.metadata.has_key("filename"):
+            relpath = unit.metadata["filename"]
+        elif unit.metadata.has_key("fileName"):
+            relpath = unit.metadata["fileName"]
+        else:
+            relpath = os.path.basename(unit.storage_path)
+        return relpath
+
+    def create_symlink(self, source_path, symlink_path):
+        """
+        @param source_path source path 
+        @type source_path str
+
+        @param symlink_path path of where we want the symlink to reside
+        @type symlink_path str
+
+        @return True on success, False on error
+        @rtype bool
+        """
+        if os.path.lexists(symlink_path):
+            if not os.path.islink(symlink_path):
+                _LOG.error("%s is not a symbolic link as expected." % (symlink_path))
+                return False
+            existing_link_target = os.readlink(symlink_path)
+            if existing_link_target == source_path:
+                return True
+            _LOG.warning("Removing <%s> since it was pointing to <%s> and not <%s>" \
+                    % (symlink_path, existing_link_target, source_path))
+            os.unlink(symlink_path)
+        # Account for when the relativepath consists of subdirectories
+        if not self.create_dirs(os.path.dirname(symlink_path)):
+            return False
+        _LOG.debug("creating symlink %s pointing to %s" % (symlink_path, source_path))
+        os.symlink(source_path, symlink_path)
+        return True
+
+    def create_dirs(self, target):
+        """
+        @param target path
+        @type target str
+
+        @return True - success, False - error
+        @rtype bool
+        """
+        try:
+            os.makedirs(target)
+        except OSError, e:
+            # Another thread may have created the dir since we checked,
+            # if that's the case we'll see errno=17, so ignore that exception
+            if e.errno != 17:
+                _LOG.error("Unable to create directories for: %s" % (target))
+                tb_info = traceback.format_exc()
+                _LOG.error("%s" % (tb_info))
+                return False
+        return True
+

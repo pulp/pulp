@@ -101,14 +101,15 @@ def get_new_rpms_and_units(available_rpms, existing_units, sync_conduit):
             new_rpms[key] = rpm
             unit_key = form_rpm_unit_key(rpm)
             metadata = form_rpm_metadata(rpm)
+            pkgpath = os.path.join(rpm["pkgpath"], rpm["filename"])
             if rpm['arch'] == 'src':
                 # initialize unit as a src rpm
-                new_units[key] = sync_conduit.init_unit(SRPM_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
+                new_units[key] = sync_conduit.init_unit(SRPM_TYPE_ID, unit_key, metadata, pkgpath)
             else:
-                new_units[key] = sync_conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, rpm["pkgpath"])
+                new_units[key] = sync_conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, pkgpath)
             # We need to determine where the unit should be stored and update
             # rpm["pkgpath"] so Grinder will store the rpm to the correct location
-            rpm["pkgpath"] = new_units[key].storage_path
+            rpm["pkgpath"] = os.path.dirname(new_units[key].storage_path)
     return new_rpms, new_units
 
 def get_missing_rpms_and_units(available_rpms, existing_units):
