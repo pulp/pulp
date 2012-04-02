@@ -17,7 +17,10 @@ import threading
 from gettext import gettext as _
 from pprint import pformat
 
-from bson.objectid import ObjectId
+try:
+    from bson.objectid import ObjectId
+except ImportError:
+    from pymongo.objectid import ObjectId
 
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
