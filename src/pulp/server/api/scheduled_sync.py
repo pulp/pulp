@@ -159,7 +159,7 @@ def _add_repo_scheduled_sync_task(repo):
     @param repo: repo to add sync task for
     """
     # hack to avoid circular imports
-    from repo_sync import (_sync, get_synchronizer,
+    from repo_sync import (_sync, get_synchronizer, post_sync,
                            local_progress_callback, yum_rhn_progress_callback)
     task = RepoSyncTask(_sync, [repo['id']], kwargs=repo['sync_options'])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
@@ -177,6 +177,7 @@ def _add_repo_scheduled_sync_task(repo):
         task.set_progress('progress_callback', yum_rhn_progress_callback)
     elif source_type == 'local':
         task.set_progress('progress_callback', local_progress_callback)
+    task.add_dequeue_hook(post_sync)
     return async.enqueue(task)
 
 
