@@ -105,7 +105,7 @@ class ConflictingOperation(PulpExecutionException):
 
 class OperationTimedOut(PulpExecutionException):
     """
-    Base class for exceptions raised whtn an operation cannot be completed
+    Base class for exceptions raised when an operation cannot be completed
     because it failed to start before a predetermined amount of time had passed.
     """
     http_status_code = httplib.SERVICE_UNAVAILABLE
@@ -126,6 +126,28 @@ class OperationTimedOut(PulpExecutionException):
 
     def data_dict(self):
         return {'timeout': self.timeout}
+
+
+class OperationPostponed(PulpExecutionException):
+    """
+    Base class for handling operations postponed by the coordinator.
+    """
+    http_status_code = httplib.ACCEPTED
+
+    def __init__(self, call_report):
+        """
+        @param call_report:  call report for postponed operation
+        @type  call_report: CallReport
+        """
+        PulpExecutionException.__init__(self, call_report)
+        self.call_report = call_report
+
+    def __str__(self):
+        msg = _('Operation postponed')
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'call_report': self.call_report}
 
 
 class NotImplemented(PulpExecutionException):
