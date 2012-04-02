@@ -164,7 +164,7 @@ class TestRPMs(unittest.TestCase):
         for k in RPM_UNIT_KEY:
             rpm[k] = value
         for k in ("vendor", "description", "buildhost", "license", 
-                "vendor", "requires", "provides", "pkgpath"):
+                "vendor", "requires", "provides", "pkgpath", "relativepath"):
             rpm[k] = value
         return rpm
     
@@ -763,3 +763,30 @@ class TestRPMs(unittest.TestCase):
         self.assertEqual(error["error"]["error_type"], "<class 'pycurl.error'>")
         self.assertTrue(isinstance(error["error"]["exception"], pycurl.error)) 
         self.assertTrue(len(error["error"]["traceback"]) > 0)
+
+    def test_local_sync_with_packages_in_subdir(self):
+        feed_url = "file://%s/repo_packages_in_subdirs/" % (self.data_dir)
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_local_sync_with_packages_in_subdir"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        self.assertTrue(summary is not None)
+        self.assertTrue(details is not None)
+        self.assertTrue(status)
+        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(summary["num_resynced_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        self.assertEquals(summary["num_orphaned_rpms"], 0)
+        self.assertEquals(details["size_total"], 6791)
+        # Confirm regular RPM files exist under self.pkg_dir
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 3)
+        for p in pkgs:
+            self.assertTrue(os.path.isfile(p))
+        # Confirm symlinks to RPMs exist under repo.working_dir
+        sym_links = self.get_files_in_dir("*.rpm", repo.working_dir)
+        self.assertEquals(len(pkgs), 3)
+        for link in sym_links:
+            self.assertTrue(os.path.islink(link))
