@@ -340,6 +340,8 @@ class TaskQueue(object):
                 self._execute_hooks(task, task_finished)
             elif task.state is task_timed_out:
                 self._execute_hooks(task, task_timed_out)
+            # even though we're not necessarily dequeueing the task, these still
+            # must be run here
             self._execute_hooks(task, task_dequeue)
             # it is important for completed tasks to be in the completed task
             # storage, however briefly
