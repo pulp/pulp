@@ -144,7 +144,7 @@ def form_rpm_unit_key(rpm):
 
 def form_rpm_metadata(rpm):
     metadata = {}
-    for key in ("vendor", "description", "buildhost", "license", "vendor", "requires", "provides"):
+    for key in ("vendor", "description", "buildhost", "license", "vendor", "requires", "provides", "relativepath"):
         metadata[key] = rpm[key]
     return metadata
 
@@ -193,13 +193,13 @@ def verify_download(missing_rpms, new_rpms, new_units):
     not_synced = {}
     for key in new_rpms.keys():
         rpm = new_rpms[key]
-        rpm_path = os.path.join(rpm["pkgpath"], rpm["relativepath"])
+        rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
         if not verify_exists(rpm_path):
             not_synced[key] = rpm
             del new_rpms[key]
     for key in missing_rpms.keys():
         rpm = missing_rpms[key]
-        rpm_path = os.path.join(rpm["pkgpath"], rpm["relativepath"])
+        rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
         if not verify_exists(rpm_path):
             not_synced[key] = rpm
             del missing_rpms[key]
@@ -432,12 +432,12 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
                 (repo.id, len(existing_units), len(orphaned_units), len(new_rpms), len(missing_rpms)))
 
-
     # process deltarpms
     drpm_items = yumRepoGrinder.getDeltaRPMItems()
     _LOG.info("Delta RPMs to sync %s" % len(drpm_items))
     available_drpms =  drpm.get_available_drpms(drpm_items)
-    orphaned_drpm_units = get_orphaned_units(available_drpms, existing_units)
+    existing_drpm_units = filter(lambda u: u.type_id == 'drpm', existing_units.values())
+    orphaned_drpm_units = get_orphaned_units(available_drpms, existing_drpm_units)
     end_metadata = time.time()
     _LOG.info("%s drpms are available in the source repo <%s> for %s, calculated in %s seconds" % \
                 (len(available_drpms), feed_url, repo.id, (end_metadata-start_metadata)))
