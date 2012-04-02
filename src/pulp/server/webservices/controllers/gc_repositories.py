@@ -151,7 +151,7 @@ class RepoResource(JSONController):
 
         if delta is None:
             _LOG.exception('Missing delta when updating repository [%s]' % id)
-            raise exceptions.MissingValue('delta')
+            raise exceptions.MissingValue(['delta'])
 
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
@@ -176,7 +176,6 @@ class RepoImporters(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
 
         importers = importer_manager.get_importers(repo_id)
-        # TODO: serialize properly
         return self.ok(importers)
 
     @auth_required(CREATE)
@@ -189,7 +188,7 @@ class RepoImporters(JSONController):
 
         if importer_type is None:
             _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
-            raise exceptions.MissingValue('importer_type')
+            raise exceptions.MissingValue(['importer_type'])
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
         # Note: If the plugin raises an exception during initialization, let it
@@ -217,10 +216,12 @@ class RepoImporter(JSONController):
     @auth_required(READ)
     def GET(self, repo_id, importer_id):
 
+        # importer_id is there to meet the REST requirement, so leave it there
+        # despite it not being used in this method.
+
         importer_manager = manager_factory.repo_importer_manager()
 
         importer = importer_manager.get_importer(repo_id)
-        # TODO: serialize properly
         return self.ok(importer)
 
     @auth_required(UPDATE)
@@ -246,7 +247,7 @@ class RepoImporter(JSONController):
 
         if importer_config is None:
             _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
-            raise exceptions.MissingValue('importer_config')
+            raise exceptions.MissingValue(['importer_config'])
 
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
@@ -272,7 +273,6 @@ class RepoDistributors(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         distributor_list = distributor_manager.get_distributors(repo_id)
-        # TODO: serialize each distributor before returning
         return self.ok(distributor_list)
 
     @auth_required(CREATE)
@@ -319,7 +319,6 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         distributor = distributor_manager.get_distributor(repo_id, distributor_id)
-        # TODO: serialize properly
         return self.ok(distributor)
 
     @auth_required(UPDATE)
@@ -344,7 +343,7 @@ class RepoDistributor(JSONController):
 
         if distributor_config is None:
             _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
-            raise exceptions.MissingValue('distributor_config')
+            raise exceptions.MissingValue(['distributor_config'])
 
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
@@ -375,7 +374,7 @@ class RepoSyncHistory(JSONController):
                 limit = int(limit[0])
             except ValueError:
                 _LOG.exception('Invalid limit specified [%s]' % limit)
-                raise exceptions.InvalidValue(limit[0])
+                raise exceptions.InvalidValue(['limit'])
 
         sync_manager = manager_factory.repo_sync_manager()
         entries = sync_manager.sync_history(repo_id, limit=limit)
@@ -398,7 +397,7 @@ class RepoPublishHistory(JSONController):
                 limit = int(limit[0])
             except ValueError:
                 _LOG.exception('Invalid limit specified [%s]' % limit)
-                raise exceptions.InvalidValue(limit[0])
+                raise exceptions.InvalidValue(['limit'])
 
         publish_manager = manager_factory.repo_publish_manager()
         entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
@@ -477,7 +476,7 @@ class RepoAssociate(JSONController):
         source_repo_id = params.get('source_repo_id', None)
 
         if source_repo_id is None:
-            raise exceptions.MissingValue('source_repo_id')
+            raise exceptions.MissingValue(['source_repo_id'])
 
         criteria = params.get('criteria', None)
         if criteria is not None:
@@ -486,10 +485,6 @@ class RepoAssociate(JSONController):
             except:
                 _LOG.exception('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
-
-        # This should probably handle the exceptions and convert them to HTTP
-        # status codes, but I'm still unsure of how we're going to handle these
-        # in the async world, so for now a 500 is fine.
 
         association_manager = manager_factory.repo_unit_association_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {source_repo_id: dispatch_constants.RESOURCE_READ_OPERATION,
@@ -522,7 +517,7 @@ class RepoUnitAdvancedSearch(JSONController):
             return self.not_found(serialized)
 
         if query is None:
-            raise exceptions.MissingValue('query')
+            raise exceptions.MissingValue(['query'])
 
         try:
             criteria = unit_association_criteria(query)
