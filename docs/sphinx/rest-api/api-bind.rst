@@ -122,10 +122,6 @@ consumer access to the published information about the repository.
     "consumer_id":"A consumer ID",
     "repo_id":"A repository ID",
     "distributor_id":"A repostory distributor ID",
-    "distributor": {
-      "distributor_type_id":"YUM",
-      "config":{},
-      ...
-    }
+    "distributor":"A distributor object"
   },
  ]
