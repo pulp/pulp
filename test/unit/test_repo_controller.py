@@ -204,20 +204,6 @@ class RepoResourceTests(RepoControllersTests):
         repo = Repo.get_collection().find_one({'id' : 'turkey'})
         self.assertEqual(repo['display_name'], req_body['delta']['display_name'])
 
-    def test_put_invalid_body(self):
-        """
-        Tests updating a repo without passing the delta.
-        """
-
-        # Setup
-        self.repo_manager.create_repo('pie')
-
-        # Test
-        status, body = self.put('/v2/repositories/pie/', params={})
-
-        # Verify
-        self.assertEqual(400, status)
-
     def test_put_missing_repo(self):
         """
         Tests updating a repo that doesn't exist.

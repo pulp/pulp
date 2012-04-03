@@ -148,16 +148,14 @@ class RepoResource(JSONController):
     def PUT(self, id):
         parameters = self.params()
         delta = parameters.get('delta', None)
-
-        if delta is None:
-            _LOG.exception('Missing delta when updating repository [%s]' % id)
-            raise exceptions.MissingValue(['delta'])
+        importer_config = parameters.get('importer_config', None)
+        distributor_configs = parameters.get('distributor_configs', None)
 
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [id]
-        call_request = CallRequest(repo_manager.update_repo,
-                                   [id, delta],
+        call_request = CallRequest(repo_manager.update_repo_and_plugins,
+                                   [id, delta, importer_config, distributor_configs],
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
