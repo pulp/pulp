@@ -15,7 +15,7 @@ from gettext import gettext as _
 from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
-from pulp.gc_client.api.responses import AsyncResponse, Response
+from pulp.gc_client.api.responses import Response
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
 
 # -- constants ----------------------------------------------------------------
