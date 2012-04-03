@@ -60,12 +60,15 @@ def generate_metadata(repo, config):
         log.info('skip metadata generation for repo %s' % repo.id)
         return False
     repo_dir = repo.working_dir
-    groups_xml_path = __get_groups_xml_info(repo_dir)
     checksum_type = get_repo_checksum_type(repo, config)
     metadata_types = config.get('metadata_types') or {}
+    if metadata_types.has_key("groups") and not metadata_types["groups"]:
+        groups_xml_path = None
+    else:
+        groups_xml_path = __get_groups_xml_info(repo_dir)
     log.info("Running createrepo, this may take a few minutes to complete.")
     start = time.time()
-    create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type)
+    create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type, metadata_types=metadata_types)
     end = time.time()
     log.info("Createrepo finished in %s seconds" % (end - start))
     return True
@@ -157,7 +160,7 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
     handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return handle
 
-def create_repo(dir, groups=None, checksum_type="sha256"):
+def create_repo(dir, groups=None, checksum_type="sha256", metadata_types={}):
     handle = None
     # Lock the lookup and launch of a new createrepo process
     # Lock is released once createrepo is launched
@@ -217,6 +220,9 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
         for ftype in ftypes:
             if ftype in base_ftypes:
                 # no need to process these again
+                continue
+            if ftype in metadata_types and not metadata_types[ftype]:
+                log.info("mdtype %s part of skip metadata; skipping" % ftype)
                 continue
             filetype_path = os.path.join(backup_repo_dir, os.path.basename(util.get_repomd_filetype_path(repodata_file, ftype)))
             # modifyrepo uses filename as mdtype, rename to type.<ext>
