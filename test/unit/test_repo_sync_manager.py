@@ -199,7 +199,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.sync_manager.sync('fake-repo')
         except repo_sync_manager.MissingResource, e:
-            self.assertTrue('fake-repo' in e)
+            self.assertTrue('fake-repo' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_sync_no_importer_set(self):
@@ -235,7 +235,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         try:
             self.sync_manager.sync('old-repo')
         except repo_sync_manager.MissingResource, e:
-            self.assertTrue('old-repo' in e)
+            self.assertTrue('old-repo' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_sync_bad_database(self):
@@ -431,7 +431,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.sync_manager.sync_history('endermen')
             self.fail('Exception expected')
         except repo_sync_manager.MissingResource, e:
-            self.assertTrue('endermen' in e)
+            self.assertTrue('endermen' == e.resources['resource_id'])
 
     def test_get_repo_storage_directory(self):
         """

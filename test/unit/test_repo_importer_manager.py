@@ -111,7 +111,7 @@ class RepoManagerTests(testutil.PulpTest):
         try:
             self.importer_manager.set_importer('fake', 'mock-importer', None)
         except exceptions.MissingResource, e:
-            self.assertTrue('fake' in e)
+            self.assertTrue('fake' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_set_importer_no_importer(self):
@@ -263,7 +263,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.importer_manager.remove_importer('not-there')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('not-there' in e)
+            self.assertTrue('not-there' == e.resources['resource_id'])
 
     def test_remove_importer_missing_importer(self):
         """
@@ -325,7 +325,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.importer_manager.update_importer_config('not-there', {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('not-there' in e)
+            self.assertTrue('not-there' == e.resources['resource_id'])
 
     def test_update_importer_missing_importer(self):
         """
@@ -487,7 +487,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.importer_manager.get_importers('fake')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake'in e)
+            self.assertTrue('fake' == e.resources['resource_id'])
 
     # -- scratchpad -----------------------------------------------------------
 

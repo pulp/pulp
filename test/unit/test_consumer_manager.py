@@ -172,7 +172,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.unregister('fake consumer')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake consumer' in e)
+            self.assertTrue('fake consumer' == e.resources['resource_id'])
 
 
     def test_update_consumer(self):
@@ -210,7 +210,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.update('not-there', {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('not-there' in e)
+            self.assertTrue('not-there' == e.resources['resource_id'])
 
     def test_add_notes(self):
         """
@@ -296,7 +296,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.update(id, delta={'notes':notes})
             self.fail('Missing Consumer did not raise an exception')
         except exceptions.MissingResource, e:
-            self.assertTrue(id in e)
+            self.assertTrue(id == e.resources['resource_id'])
             print(e)
 
 

@@ -164,7 +164,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.publish_manager.publish('not-here', 'doesnt-matter', None)
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
-            self.assertTrue('not-here' in e)
+            self.assertTrue('not-here' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_publish_no_distributor(self):
@@ -180,7 +180,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.publish_manager.publish('no-dist', 'fake-dist')
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
-            self.assertTrue('no-dist' in e)
+            self.assertTrue('no-dist' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_publish_bad_distributor(self):
@@ -201,7 +201,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.publish_manager.publish('repo', 'dist-1', None)
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
-            self.assertTrue('repo' in e)
+            self.assertTrue('repo' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_publish_bad_database(self):
@@ -221,7 +221,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
             self.publish_manager.publish('repo', 'dist-1')
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
-            self.assertTrue('repo' in e)
+            self.assertTrue('repo' == e.resources['resource_id'])
             print(e) # for coverage
 
     def test_publish_with_error(self):

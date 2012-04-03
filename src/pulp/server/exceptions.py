@@ -63,20 +63,24 @@ class MissingResource(PulpExecutionException):
     """
     http_status_code = httplib.NOT_FOUND
 
-    def __init__(self, resource_id):
+    def __init__(self, *args, **resources):
         """
-        @param resource_id: ID of the requested resource that was missing
-        @type  resource_id: str
+        @param args: backward compatibility for for positional resource_id argument
+        @param resources: keyword arguments of resource_type=resource_id
         """
-        PulpExecutionException.__init__(self, resource_id)
-        self.resource_id = resource_id
+        # backward compatibility for for previous 'resource_id' positional argument
+        if args:
+            resources['resource_id'] = args[0]
+        PulpExecutionException.__init__(self, resources)
+        self.resources = resources
 
     def __str__(self):
-        msg = _('Missing resource: %(r)s') % {'r': self.resource_id}
+        resources_str = ', '.join('%s=%s' % (k, v) for k, v in self.resources.items())
+        msg = _('Missing resource(s): %(r)s') % {'r': resources_str}
         return msg.encode('utf-8')
 
     def data_dict(self):
-        return {'resource_id': self.resource_id}
+        return {'resources': self.resources}
 
 
 class ConflictingOperation(PulpExecutionException):

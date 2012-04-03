@@ -251,7 +251,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.manager.delete_repo('fake repo')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake repo' in e)
+            self.assertTrue('fake repo' == e.resources['resource_id'])
 
     def test_delete_with_plugins(self):
         """
@@ -353,7 +353,7 @@ class RepoManagerTests(testutil.PulpTest):
             self.manager.update_repo('not-there', {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('not-there' in e)
+            self.assertTrue('not-there' == e.resources['resource_id'])
 
     def test_update_repo_and_plugins(self):
         """
