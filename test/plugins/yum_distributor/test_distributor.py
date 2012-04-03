@@ -32,14 +32,14 @@ from pulp.server.content.plugins.model import Repository, Unit
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../yum_importer")
 import importer_mocks
 
-class TestRPMs(unittest.TestCase):
+class TestDistributor(unittest.TestCase):
 
     def setUp(self):
-        super(TestRPMs, self).setUp()
+        super(TestDistributor, self).setUp()
         self.init()
 
     def tearDown(self):
-        super(TestRPMs, self).tearDown()
+        super(TestDistributor, self).tearDown()
         self.clean()
 
     def init(self):
