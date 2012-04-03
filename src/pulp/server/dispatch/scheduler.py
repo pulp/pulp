@@ -237,7 +237,7 @@ class Scheduler(object):
 
     def remove(self, schedule_id):
         """
-        Remove a scheduled call reqeust
+        Remove a scheduled call request
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
