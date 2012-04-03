@@ -36,7 +36,7 @@ _DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
 
 _LOG = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
+# -- classes ------------------------------------------------------------------
 
 class RepoManager(object):
     """
@@ -282,6 +282,65 @@ class RepoManager(object):
             repo['notes'] = delta['notes']
 
         repo_coll.save(repo, safe=True)
+
+        return repo
+
+    def update_repo_and_plugins(self, repo_id, repo_delta, importer_config,
+                                distributor_configs):
+        """
+        Aggregate method that will update one or more of the following:
+        * Repository metadata
+        * Importer config
+        * Zero or more distributors on the repository
+
+        All of the above pieces do not need to be specified. If a piece is
+        omitted it's configuration is not touched, nor is it removed from
+        the repository. The same holds true for the distributor_configs dict,
+        not every distributor must be represented.
+
+        This call will attempt the updates in the order listed above. If an
+        exception occurs during any of these steps, the updates stop and the
+        exception is immediately raised. Any updates that have already taken
+        place are not rolled back.
+
+        This call will call out to RepoImporterManager.update_importer_config
+        and RepoDistributorManager.update_distributor_config. Documentation for
+        those methods, especially possible exceptions, should be consulted for
+        more information.
+
+        @param repo_id: unique identifier for the repo
+        @type  repo_id: str
+
+        @param repo_delta: list of attributes and their new values to change;
+               if None, no attempt to update the repo's metadata will be made
+        @type  repo_delta: dict, None
+
+        @param importer_config: new configuration to use for the repo's importer;
+               if None, no attempt will be made to update the importer
+        @type  importer_config: dict, None
+
+        @param distributor_configs: mapping of distributor ID to the new configuration
+               to set for it
+        @type  distributor_configs: dict, None
+
+        @return: updated repository object, same as returned from update_repo
+        """
+
+        # Repo Update
+        if repo_delta is None:
+            repo_delta = {}
+        repo = self.update_repo(repo_id, repo_delta)
+
+        # Importer Update
+        if importer_config is not None:
+            importer_manager = manager_factory.repo_importer_manager()
+            importer_manager.update_importer_config(repo_id, importer_config)
+
+        # Distributor Update
+        if distributor_configs is not None:
+            distributor_manager = manager_factory.repo_distributor_manager()
+            for dist_id, dist_config in distributor_configs.items():
+                distributor_manager.update_distributor_config(repo_id, dist_id, dist_config)
 
         return repo
 

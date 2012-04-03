@@ -41,12 +41,7 @@ class RepoQueryManager(object):
         @rtype:  list of dict
         """
         all_repos = list(Repo.get_collection().find())
-        serialized_repos = []
-        for r in all_repos:
-            serialized = _serialize_repo(r)
-            serialized_repos.append(serialized)
-
-        return serialized_repos
+        return all_repos
 
     def find_by_id(self, repo_id):
         """
@@ -57,9 +52,6 @@ class RepoQueryManager(object):
         @rtype:  dict or None
         """
         repo = Repo.get_collection().find_one({'id' : repo_id})
-        if repo is not None:
-            repo = _serialize_repo(repo)
-
         return repo
 
     def find_by_id_list(self, repo_id_list):
@@ -74,13 +66,8 @@ class RepoQueryManager(object):
         @return: list of serialized repositories
         @rtype:  list of dict
         """
-        repos = Repo.get_collection().find({'id' : {'$in' : repo_id_list}})
-        serialized_repos = []
-        for r in repos:
-            serialized = _serialize_repo(r)
-            serialized_repos.append(serialized)
-
-        return serialized_repos
+        repos = list(Repo.get_collection().find({'id' : {'$in' : repo_id_list}}))
+        return repos
 
     def find_by_notes(self, notes):
         # Placeholder idea for future functionality
@@ -93,24 +80,3 @@ class RepoQueryManager(object):
     def find_by_content_unit(self, unit_id):
         # Placeholder idea for future functionality
         pass
-
-def _serialize_repo(repo):
-    """
-    Takes a Pulp repository SON object and converts it to a standard query
-    result format.
-
-    @param repo: repo object in SON format out of the database
-    @type  repo: dict
-
-    @return: serialized version of the repo suitable for returning from queries
-    @rtype:  dict
-    """
-
-    summary = {
-        'id' : repo['id'],
-        'display_name' : repo['display_name'],
-        'description' : repo['description'],
-        'notes' : repo['notes'],
-    }
-
-    return summary

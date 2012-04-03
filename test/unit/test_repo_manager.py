@@ -41,6 +41,7 @@ class RepoManagerTests(testutil.PulpTest):
         # Create the manager instance to test
         self.manager = repo_manager.RepoManager()
 
+
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
         mock_plugins.reset()
@@ -353,6 +354,70 @@ class RepoManagerTests(testutil.PulpTest):
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' in e)
+
+    def test_update_repo_and_plugins(self):
+        """
+        Tests the aggregate call to update a repo and its plugins.
+        """
+
+        # Setup
+        self.manager.create_repo('repo-1', 'Original', 'Original Description')
+
+        importer_manager = manager_factory.repo_importer_manager()
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        importer_manager.set_importer('repo-1', 'mock-importer', {'key-i1': 'orig-1'})
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'}, True, distributor_id='dist-1')
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d2' : 'orig-2'}, True, distributor_id='dist-2')
+
+        # Test
+        repo_delta = {'display_name' : 'Updated'}
+        new_importer_config = {'key-i1' : 'updated-1', 'key-i2' : 'new-1'}
+        new_distributor_configs = {
+            'dist-1' : {'key-d1' : 'updated-1'},
+        } # only update one of the two distributors
+
+        repo = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config, new_distributor_configs)
+
+        # Verify
+        self.assertEqual(repo['id'], 'repo-1')
+        self.assertEqual(repo['display_name'], 'Updated')
+        self.assertEqual(repo['description'], 'Original Description')
+
+        importer = importer_manager.get_importer('repo-1')
+        self.assertEqual(importer['config'], new_importer_config)
+
+        dist_1 = distributor_manager.get_distributor('repo-1', 'dist-1')
+        self.assertEqual(dist_1['config'], new_distributor_configs['dist-1'])
+
+        dist_2 = distributor_manager.get_distributor('repo-1', 'dist-2')
+        self.assertEqual(dist_2['config'], {'key-d2' : 'orig-2'})
+
+    def test_update_repo_and_plugins_partial(self):
+        """
+        Tests no errors are encountered when only updating some of the possible fields.
+        """
+
+        # Setup
+        self.manager.create_repo('repo-1', 'Original', 'Original Description')
+
+        importer_manager = manager_factory.repo_importer_manager()
+        distributor_manager = manager_factory.repo_distributor_manager()
+
+        importer_manager.set_importer('repo-1', 'mock-importer', {'key-i1': 'orig-1'})
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'}, True, distributor_id='dist-1')
+
+        # Test
+        repo = self.manager.update_repo_and_plugins('repo-1', None, None, None)
+
+        # Verify
+        self.assertEqual(repo['display_name'], 'Original')
+
+        importer = importer_manager.get_importer('repo-1')
+        self.assertEqual(importer['config'], {'key-i1' : 'orig-1'})
+
+        dist_1 = distributor_manager.get_distributor('repo-1', 'dist-1')
+        self.assertEqual(dist_1['config'], {'key-d1' : 'orig-1'})
 
     def test_get_set_scratchpad(self):
         """
