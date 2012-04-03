@@ -49,16 +49,16 @@ class RepositoryAPI(PulpAPI):
 
         Both importer and distributors are optional in this call.
 
-        @param importer_type_id: type of importer to add
-        @type  importer_type_id: str
+        :param importer_type_id: type of importer to add
+        :type  importer_type_id: str
 
-        @param importer_config: configuration to pass the importer for this repo
-        @type  importer_config: dict
+        :param importer_config: configuration to pass the importer for this repo
+        :type  importer_config: dict
 
-        @param distributors: list of tuples containing distributor_type_id,
+        :param distributors: list of tuples containing distributor_type_id,
                repo_plugin_config, auto_publish, and distributor_id (the same
                that would be passed to the RepoDistributorAPI.create call).
-        @type  distributors: list
+        :type  distributors: list
         """
         path = self.base_path
         repo_data = {
@@ -85,6 +85,61 @@ class RepositoryAPI(PulpAPI):
         body = {'delta' : delta}
         return self.server.PUT(path, body)
 
+    def update_repo_and_plugins(self, id, display_name, description, notes,
+                                importer_config, distributor_configs):
+        """
+        Calls the server-side aggregate method for updating a repository and
+        its associated plugins in a single call. They will be updated in the
+        following order:
+
+        * Repository metadata
+        * Importer configuration
+        * Distributor configuration(s)
+
+        The updates stop at the first error encountered. Any updates made prior
+        to the error are not rolled back.
+
+        The notes value is a dictionary of values to change. Any key with a
+        value of None will be removed from the notes dictionary. There is no
+        distinction between adding a new note and updating an existing one;
+        any non-None values included within will be the values set for the
+        repository.
+
+        The distributor configurations are expressed as a dictionary of distributor
+        ID to new configuration to use. Any distributors omitted from this
+        dictionary are left untouched.
+
+        :param id: identifies the repository to update
+        :type  id: str
+
+        :param display_name: new value to set; None to leave the value untouched
+        :type  display_name: str, None
+
+        :param description: new value to set; None to leave the value untouched
+        :type  description: str, None
+
+        :param notes: see above; None to skip editing notes values
+        :type  notes: dict, None
+
+        :param importer_config: new configuration to set for the importer; None
+               to leave the value untouched or if there is no importer on the repo
+        :type  importer_config: dict, None
+
+        :param distributor_configs: see above; None to skip updating distributor configs
+        :type  distributor_configs: dict, None
+        """
+
+        # Assemble the repo metadata
+        delta = {}
+        if display_name is not None: delta['display_name'] = display_name
+        if description is not None: delta['description'] = description
+        if notes is not None: delta['notes'] = notes
+
+        path = self.base_path + "%s/" % id
+        body = {'delta' : delta,
+                'importer_config' : importer_config,
+                'distributor_configs' : distributor_configs,}
+        return self.server.PUT(path, body)
 
 class RepositoryImporterAPI(PulpAPI):
     """

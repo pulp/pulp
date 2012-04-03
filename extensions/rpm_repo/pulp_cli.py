@@ -159,26 +159,18 @@ class YumRepoUpdateCommand(PulpCliCommand):
             self.context.prompt.render_failure_message(e[0])
             return
 
-        something_changed = False
+        try:
+            distributor_config = args_to_distributor_config(kwargs)
+        except InvalidConfig, e:
+            self.context.prompt.render_failure_message(e[0])
+            return
 
-        # Update the repo itself if necessary
-        if description is not None or display_name is not None:
-            delta = {}
-            if description is not None: delta['description'] = description
-            if display_name is not None: delta['display_name'] = display_name
+        distributor_configs = {DISTRIBUTOR_ID : distributor_config}
 
-            self.context.server.repo.update(repo_id, delta)
-            something_changed = True
+        response = self.context.server.repo.update_repo_and_plugins(repo_id, display_name,
+                   description, None, importer_config, distributor_configs)
 
-        # Update the importer config if necessary
-        if len(importer_config) > 0:
-            self.context.server.repo_importer.update(repo_id, IMPORTER_TYPE_ID, importer_config)
-            something_changed = True
-
-        if something_changed:
-            self.context.prompt.render_success_message('Repository [%s] successfully updated' % repo_id)
-        else:
-            self.context.prompt.write('No changes specified for repository [%s]' % repo_id)
+        self.context.prompt.render_success_message(_('Repository [%(r)s] successfully updated') % {'r' : repo_id})
 
 class YumRepoListCommand(PulpCliCommand):
 
