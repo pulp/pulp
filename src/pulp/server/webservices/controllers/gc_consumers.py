@@ -206,14 +206,27 @@ class Binding(JSONController):
 
     @classmethod
     def serialized(cls, bind):
+        """
+        Construct a REST object to be returned.
+        Add _href and augments information used by the caller
+        to consume published content.
+        @param bind: A bind model/SON object.
+        @type bind: dict/SON
+        @return: A bind REST object.
+        @rtype: dict
+        """
+        link = serialization.link.child_link_obj(
+            bind['consumer_id'],
+            bind['repo_id'],
+            bind['distributor_id'])
+        serialized = dict(bind)
+        serialized.update(link)
         manager = managers.repo_distributor_manager()
         distributor = manager.get_distributor(
             bind['repo_id'],
             bind['distributor_id'])
-        expanded = dict(bind)
-        expanded['distributor'] = distributor
-        return expanded
-
+        serialized['distributor'] = distributor
+        return serialized
 
     @auth_required(READ)
     def GET(self, consumer_id, repo_id, distributor_id):

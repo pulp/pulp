@@ -56,6 +56,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         try:
             collection.save(bind, safe=True)
+            bind = self.find(consumer_id, repo_id, distributor_id)
         except DuplicateKeyError:
             # idempotent
             pass

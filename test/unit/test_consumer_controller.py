@@ -69,7 +69,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         
-    def test_get_find(self):
+    def test_get_bind(self):
         # Setup
         self.populate()
         # Test
@@ -86,6 +86,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(body['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(body['repo_id'], self.REPO_ID)
         self.assertEquals(body['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertTrue('_href' in body)
 
     def test_get_bind_by_consumer(self):
         # Setup
@@ -102,6 +103,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertTrue('_href' in bind)
         manager = factory.repo_distributor_manager()
         distributor = manager.get_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
         for k in ('distributor_type_id', 'config'):
