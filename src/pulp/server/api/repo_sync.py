@@ -100,7 +100,7 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
     log.info("Creating [%s] feed repo [%s] cloned from [%s] with relative_path [%s]" % (feed, clone_id, id, relative_path))
     repo_api.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
                     relative_path=relative_path, feed_cert_data=feed_cert_data,
-                    consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'], 
+                    consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'],
                     content_types=content_types, publish=publish)
 
     # Associate filters if specified
@@ -421,7 +421,7 @@ def post_sync(task):
         response = connection.getresponse()
         if response.status != httplib.OK:
             error_msg = response.read()
-            msg = _('Error response from post_sync_url: %(e)') % {'e': error_msg}
+            msg = _('Error response from post_sync_url: %(e)s') % {'e': error_msg}
             log.warn(msg)
         connection.close()
 
