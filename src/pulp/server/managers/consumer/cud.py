@@ -119,7 +119,7 @@ class ConsumerManager(object):
 
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()
-        agent_consumer.unregistered()
+        agent_consumer.unregistered(id)
 
         # Database Updates
         try:
