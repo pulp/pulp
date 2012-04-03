@@ -46,6 +46,7 @@ setup(
         '../bin/pulp-admin',
         '../bin/pulp-v2-admin',
         '../bin/pulp-consumer',
+        '../bin/pulp-v2-consumer',
         '../bin/pulp-migrate',
         '../bin/pulp-package-migrate',
     ],

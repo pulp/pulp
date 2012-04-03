@@ -18,7 +18,7 @@ import os
 from pulp.gc_client.framework.extensions import PulpCliCommand
 
 def initialize(context):
-
+    return
     # Add login/logout to the root of the CLI, not in a specific section
     context.cli.add_command(LoginCommand(context))
     context.cli.add_command(LogoutCommand(context))
