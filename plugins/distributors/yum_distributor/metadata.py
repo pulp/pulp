@@ -57,14 +57,15 @@ def generate_metadata(repo, config):
       @rtype bool
     """
     if not config.get('generate_metadata'):
-        log.info('generate metadata generation for repo %s' % repo.id)
+        log.info('skip metadata generation for repo %s' % repo.id)
         return False
     repo_dir = repo.working_dir
-    groups = __get_groups_xml_info(repo_dir)
+    groups_xml_path = __get_groups_xml_info(repo_dir)
     checksum_type = get_repo_checksum_type(repo, config)
+    metadata_types = config.get('metadata_types') or {}
     log.info("Running createrepo, this may take a few minutes to complete.")
     start = time.time()
-    create_repo(repo_dir, groups=groups, checksum_type=checksum_type)
+    create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type)
     end = time.time()
     log.info("Createrepo finished in %s seconds" % (end - start))
     return True
@@ -97,13 +98,21 @@ def get_repo_checksum_type(repo, config):
 
 def __get_groups_xml_info(repo_dir):
     groups_xml_path = None
-    repomd_xml = os.path.join(repo_dir, "repodata/repomd.xml")
-    if os.path.isfile(repomd_xml):
-        ftypes = util.get_repomd_filetypes(repomd_xml)
+    repodata_file = os.path.join(repo_dir, "repodata", "repomd.xml")
+    repodata_file = encode_unicode(repodata_file)
+    if os.path.isfile(repodata_file):
+        ftypes = util.get_repomd_filetypes(repodata_file)
         log.debug("repodata has filetypes of %s" % (ftypes))
         if "group" in ftypes:
-            g = util.get_repomd_filetype_path(repomd_xml, "group")
-            groups_xml_path = os.path.join(repo_dir, g)
+            comps_ftype = util.get_repomd_filetype_path(
+                    repodata_file, "group")
+            filetype_path = os.path.join(repo_dir, comps_ftype)
+            # createrepo uses filename as mdtype, rename to type.<ext>
+            # to avoid filename too long errors
+            renamed_filetype_path = os.path.join(os.path.dirname(comps_ftype),
+                                     "comps" + '.' + '.'.join(os.path.basename(comps_ftype).split('.')[1:]))
+            groups_xml_path = os.path.join(repo_dir, renamed_filetype_path)
+            os.rename(filetype_path, groups_xml_path)
     return groups_xml_path
 
 
@@ -129,33 +138,14 @@ def modify_repo(repodata_dir, new_file, remove=False):
     return status, out
 
 def _create_repo(dir, groups=None, checksum_type="sha256"):
-    try:
-        cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
-    except UnicodeDecodeError:
-        if groups:
-            groups = decode_unicode(groups)
-        cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     if not groups:
         cmd = "createrepo --database --checksum %s --update %s " % (checksum_type, dir)
-        repodata_file = os.path.join(dir, "repodata", "repomd.xml")
-        repodata_file = encode_unicode(repodata_file)
-        if os.path.isfile(repodata_file):
-            log.info("Checking what metadata types are available: %s" % \
-                    (util.get_repomd_filetypes(repodata_file)))
-            if "group" in util.get_repomd_filetypes(repodata_file):
-                comps_ftype = util.get_repomd_filetype_path(
-                    repodata_file, "group")
-                filetype_path = os.path.join(dir,comps_ftype)
-                # createrepo uses filename as mdtype, rename to type.<ext>
-                # to avoid filename too long errors
-                renamed_filetype_path = os.path.join(os.path.dirname(comps_ftype),
-                                         "comps" + '.' + '.'.join(os.path.basename(comps_ftype).split('.')[1:]))
-                renamed_comps_file = os.path.join(dir, renamed_filetype_path)
-                os.rename(filetype_path, renamed_comps_file)
-                if renamed_comps_file and os.path.isfile(renamed_comps_file):
-                    cmd = "createrepo --database --checksum %s -g %s --update %s " % \
-                        (checksum_type, renamed_comps_file, dir)
-
+    else:
+        try:
+            cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
+        except UnicodeDecodeError:
+            groups = decode_unicode(groups)
+            cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     # shlex now can handle unicode strings as well
     cmd = encode_unicode(cmd)
     try:
