@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.0.2
+Version:        1.0.3
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Apr 03 2012 Jeff Ortel <jortel@redhat.com> 1.0.3-1
+- 809195 - added post_sync dequeue hook to scheduled syncs (jconnor@redhat.com)
+- 807332 - the continuing story of the post sync url firing off actuall POST
 * Thu Mar 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.2-1
 - 807516 - Deleting a repository does not affect repoids associated with a
   package - Update for cloned issue with repoids being appended twice in
