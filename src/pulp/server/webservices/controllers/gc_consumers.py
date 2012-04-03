@@ -21,7 +21,6 @@ import web
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.webservices import execution
-from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
@@ -42,6 +41,7 @@ class ConsumersCollection(JSONController):
 
     @auth_required(READ)
     def GET(self):
+
         query_manager = managers.consumer_query_manager()
         consumers = query_manager.find_all()
         
@@ -83,6 +83,7 @@ class ConsumerResource(JSONController):
 
     @auth_required(READ)
     def GET(self, id):
+
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
         
@@ -94,6 +95,7 @@ class ConsumerResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
+
         manager = managers.consumer_manager()
         
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}

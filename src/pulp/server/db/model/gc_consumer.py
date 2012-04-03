@@ -17,7 +17,7 @@ from pulp.server.db.model.gc_base import Model
 
 class Consumer(Model):
     """
-    Represents a consumer for the content on Pulp server.
+    Represents a consumer of the content on Pulp server.
 
     @ivar id: uniquely identifies the consumer
     @type id: str
@@ -30,10 +30,17 @@ class Consumer(Model):
 
     @ivar notes: arbitrary key-value pairs programmatically describing the consumer
     @type notes: dict
+
+    @param capabilities: operations permitted on the consumer
+    @type capabilities: dict
+
+    @param certificate: x509 certificate for the consumer
+    @type certificate: str
     """
 
     collection_name = 'gc_consumers'
     unique_indices = ('id',)
+    search_indices = ('notes',)
 
     def __init__(self, id, display_name, description=None, notes=None, capabilities=None, certificate=None):
         super(Consumer, self).__init__()

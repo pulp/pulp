@@ -57,8 +57,8 @@ class ConsumerManager(object):
         @param notes: key-value pairs to programmatically tag the consumer
         @type  notes: dict
 
-        @param capabilities:
-        @type capabilities:
+        @param capabilities: operations permitted on the consumer
+        @type capabilities: dict
 
         @raises DuplicateResource: if there is already a consumer or a used with the requested ID
         @raises InvalidValue: if any of the fields is unacceptable
@@ -66,8 +66,7 @@ class ConsumerManager(object):
         if not is_consumer_id_valid(id):
             raise InvalidValue(id)
 
-        existing_consumer = Consumer.get_collection().find_one({'id' : id})
-        if existing_consumer is not None:
+        if self.get_consumer(id) is not None:
             raise DuplicateResource(id)
 
         if notes is not None and not isinstance(notes, dict):
@@ -87,8 +86,6 @@ class ConsumerManager(object):
         create_me = Consumer(id, display_name, description, notes, capabilities, certificate=crt.strip())
         Consumer.get_collection().save(create_me, safe=True)
 
-#        self.consumer_history_api.consumer_registered(c.id)
-
         create_me.certificate = Bundle.join(key, crt)
         return create_me
 
@@ -106,16 +103,12 @@ class ConsumerManager(object):
         @raises PulpExecutionException: if error during updating database collection
         """
 
-        consumer_coll = Consumer.get_collection()
-
-        consumer = consumer_coll.find_one({'id' : id})
-        if consumer is None:
+        if self.get_consumer(id) is None:
             raise MissingResource(id)
         
+        # Remove associate bind
         manager = factory.consumer_bind_manager()
         manager.consumer_deleted(id)
-
-        # To do - Update consumergroups after we add consumergroup support in V2
 
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()
@@ -128,7 +121,9 @@ class ConsumerManager(object):
             _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
             raise PulpExecutionException("database-error")
 
-#        self.consumer_history_api.consumer_unregistered(id)
+        # To do - Update consumergroups after we add consumergroup support in V2
+        # To do - Consumer history update
+
 
     def update(self, id, delta):
         """
@@ -150,9 +145,7 @@ class ConsumerManager(object):
         @raises InvalidValue: if notes are provided in unacceptable (non-dict) form
         @raises MissingValue: if delta provided is empty
         """
-        consumer_coll = Consumer.get_collection()
-
-        consumer = consumer_coll.find_one({'id' : id})
+        consumer = self.get_consumer(id)
         if consumer is None:
             raise MissingResource(id)
         
@@ -172,7 +165,7 @@ class ConsumerManager(object):
         if 'description' in delta:
             consumer['description'] = delta['description']
 
-        consumer_coll.save(consumer, safe=True)
+        Consumer.get_collection().save(consumer, safe=True)
 
         return consumer
     
