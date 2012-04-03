@@ -178,7 +178,6 @@ def _initialize_pulp():
     HEARTBEAT_LISTENER.start()
     # async subsystem and schedules tasks
     async.initialize()
-    dispatch_factory.initialize()
     # pulp finalization methods, registered via 'atexit'
     atexit.register(async.finalize)
     # setup debugging, if configured
@@ -192,6 +191,8 @@ def _initialize_pulp():
     # pulp generic content initialization
     manager_factory.initialize()
     plugin_loader.initialize()
+    # new async dispatch initialization
+    dispatch_factory.initialize()
 
 
 def wsgi_application():
