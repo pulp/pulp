@@ -339,9 +339,9 @@ class UtilityMethodsTests(testutil.PulpTest):
 
 class BindManagerTests(testutil.PulpTest):
 
-    CONSUMER_ID = 'mycon'
-    REPO_ID = 'myrepo'
-    DISTRIBUTOR_ID = 'mydist'
+    CONSUMER_ID = 'test-consumer'
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'test-distributor'
     QUERY = dict(
         consumer_id=CONSUMER_ID,
         repo_id=REPO_ID,
@@ -412,6 +412,21 @@ class BindManagerTests(testutil.PulpTest):
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is None)
+
+    def test_get_bind(self):
+        # Setup
+        self.test_bind()
+        manager = factory.consumer_bind_manager()
+        # Test
+        bind = manager.get_bind(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID)
+        # Verify
+        self.assertTrue(bind is not None)
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
 
     def test_find_all(self):
         # Setup
@@ -547,6 +562,21 @@ class BindManagerTests(testutil.PulpTest):
     # Error Cases
     #
 
+    def test_get_missing_bind(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        # Test
+        try:
+            manager.get_bind(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+            raise Exception('MissingResource <Bind>, expected')
+        except MissingResource:
+            # expected
+            pass
+
     def test_bind_missing_consumer(self):
         # Setup
         self.populate()
@@ -590,3 +620,117 @@ class BindManagerTests(testutil.PulpTest):
         binds = collection.find({})
         binds = [b for b in binds]
         self.assertEquals(len(binds), 0)
+
+
+class AgentManagerTests(testutil.PulpTest):
+
+    CONSUMER_ID = 'test-consumer'
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'test-distributor'
+
+    def setUp(self):
+        testutil.PulpTest.setUp(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+    def tearDown(self):
+        testutil.PulpTest.tearDown(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        mock_plugins.reset()
+
+    def clean(self):
+        testutil.PulpTest.clean(self)
+
+    def populate(self):
+        config = {'key1' : 'value1', 'key2' : None}
+        manager = factory.repo_manager()
+        repo = manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            'mock-distributor',
+            config,
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+
+    def test_unregistered(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_agent_manager()
+        manager.unregistered(self.CONSUMER_ID)
+        # verify
+        # TODO: verify
+
+    def test_bind(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID)
+        # Test
+        manager = factory.consumer_agent_manager()
+        manager.bind(bind)
+        # verify
+        # TODO: verify
+
+    def test_unbind(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID)
+        # Test
+        manager = factory.consumer_agent_manager()
+        manager.bind(bind)
+        # verify
+        # TODO: verify
+
+    def test_content_install(self):
+        # Setup
+        self.populate()
+        # Test
+        md = dict(name='python-gofer', version='0.66')
+        unit = dict(type_id='rpm', metadata=md)
+        units = [unit,]
+        options = dict(importkeys=True)
+        manager = factory.consumer_agent_manager()
+        manager.content.install(self.CONSUMER_ID, units, options)
+        # verify
+        # TODO: verify
+
+    def test_content_update(self):
+        # Setup
+        self.populate()
+        # Test
+        unit = dict(type_id='rpm', metadata=dict(name='zsh'))
+        units = [unit,]
+        options = {}
+        manager = factory.consumer_agent_manager()
+        manager.content.update(self.CONSUMER_ID, units, options)
+        # verify
+        # TODO: verify
+
+    def test_content_uninstall(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_agent_manager()
+        unit = dict(type_id='rpm', metadata=dict(name='zsh'))
+        units = [unit,]
+        manager.content.uninstall(self.CONSUMER_ID, units)
+        # verify
+        # TODO: verify

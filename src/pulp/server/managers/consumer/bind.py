@@ -56,7 +56,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         try:
             collection.save(bind, safe=True)
-            bind = self.find(consumer_id, repo_id, distributor_id)
+            bind = self.get_bind(consumer_id, repo_id, distributor_id)
         except DuplicateKeyError:
             # idempotent
             pass
@@ -132,7 +132,7 @@ class BindManager(object):
             agent = factory.consumer_agent_manager()
             agent.unbind(bind)
 
-    def find(self, consumer_id, repo_id, distributor_id):
+    def get_bind(self, consumer_id, repo_id, distributor_id):
         """
         Find a specific bind.
         @param consumer_id: uniquely identifies the consumer.

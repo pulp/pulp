@@ -247,7 +247,7 @@ class Binding(JSONController):
         @rtype: dict
         """
         manager = managers.consumer_bind_manager()
-        bind = manager.find(consumer_id, repo_id, distributor_id)
+        bind = manager.get_bind(consumer_id, repo_id, distributor_id)
         return self.ok(self.serialized(bind))
 
     @auth_required(UPDATE)
