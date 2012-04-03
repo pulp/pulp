@@ -485,8 +485,9 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
         try:
             remove_unit(sync_conduit, repo, u)
         except Exception, e:
-            _LOG.exception("Unable to remove: %s" % (u))
-            removal_errors.append((u, e))
+            unit_info = str(u.unit_key)
+            _LOG.exception("Unable to remove: %s" % (unit_info))
+            removal_errors.append((unit_info, str(e)))
     end = time.time()
 
     # filter out rpm specific data if any
