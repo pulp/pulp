@@ -251,6 +251,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
+            self.__running_weight -= task.call_request.weight
             self.dequeue(task)
         finally:
             self.__lock.release()
