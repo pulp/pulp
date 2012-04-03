@@ -12,12 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-import sys
 from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
+from pulp.gc_client.api.responses import AsyncResponse, Response
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
-from pulp.gc_client.api.exceptions import RequestException, ConflictException, BadRequestException
 
 # -- constants ----------------------------------------------------------------
 
@@ -74,10 +73,12 @@ def initialize(context):
     repo_section.remove_command('create')
     repo_section.remove_command('update')
     repo_section.remove_command('list')
+    repo_section.remove_command('delete')
     repo_section.remove_subsection('importer')
 
     # Add in overridden yum functionality
     repo_section.add_command(YumRepoCreateCommand(context))
+    repo_section.add_command(YumRepoDeleteCommand(context))
     repo_section.add_command(YumRepoUpdateCommand(context))
     repo_section.add_command(YumRepoListCommand(context))
 
@@ -137,6 +138,23 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         self.context.prompt.render_success_message('Successfully created repository [%s]' % repo_id)
 
+class YumRepoDeleteCommand(PulpCliCommand):
+    def __init__(self, context):
+        desc = 'deletes a repository'
+        PulpCliCommand.__init__(self, 'delete', desc, self.delete)
+        self.context = context
+
+        self.add_option(PulpCliOption('--id', 'identifies the repository to delete', required=True))
+
+    def delete(self, **kwargs):
+        repo_id = kwargs['id']
+        response = self.context.server.repo.delete(repo_id)
+
+        if isinstance(response, Response):
+            self.context.prompt.render_success_message(_('Repository [%(r)s] successfully deleted') % {'r' : repo_id})
+        else:
+            self.context.prompt.render_paragraph('Repository delete postponed due to other operation (eventually we\'ll show how to look this up later')
+
 class YumRepoUpdateCommand(PulpCliCommand):
     def __init__(self, context):
         desc = 'updates an existing repository\'s configuration'
@@ -170,7 +188,10 @@ class YumRepoUpdateCommand(PulpCliCommand):
         response = self.context.server.repo.update_repo_and_plugins(repo_id, display_name,
                    description, None, importer_config, distributor_configs)
 
-        self.context.prompt.render_success_message(_('Repository [%(r)s] successfully updated') % {'r' : repo_id})
+        if isinstance(response, Response):
+            self.context.prompt.render_success_message(_('Repository [%(r)s] successfully updated') % {'r' : repo_id})
+        else:
+            self.context.prompt.render_paragraph('Repository update postponed due to other operation (eventually we\'ll show how to look this up later')
 
 class YumRepoListCommand(PulpCliCommand):
 
