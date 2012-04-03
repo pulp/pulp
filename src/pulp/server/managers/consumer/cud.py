@@ -65,10 +65,11 @@ class ConsumerManager(object):
         """
         if not is_consumer_id_valid(id):
             raise InvalidValue(id)
-
-        if self.get_consumer(id) is not None:
+        
+        existing_consumer = Consumer.get_collection().find_one({'id' : id})
+        if existing_consumer is not None:
             raise DuplicateResource(id)
-
+            
         if notes is not None and not isinstance(notes, dict):
             raise InvalidValue(notes)
 
@@ -103,8 +104,7 @@ class ConsumerManager(object):
         @raises PulpExecutionException: if error during updating database collection
         """
 
-        if self.get_consumer(id) is None:
-            raise MissingResource(id)
+        self.get_consumer(id)
         
         # Remove associate bind
         manager = factory.consumer_bind_manager()
@@ -146,8 +146,6 @@ class ConsumerManager(object):
         @raises MissingValue: if delta provided is empty
         """
         consumer = self.get_consumer(id)
-        if consumer is None:
-            raise MissingResource(id)
         
         if delta is None:
             _LOG.exception('Missing delta when updating consumer [%s]' % id)
