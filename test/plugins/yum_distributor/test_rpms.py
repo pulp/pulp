@@ -91,7 +91,103 @@ class TestRPMs(unittest.TestCase):
         self.assertFalse(state)
         self.assertTrue("relative_url" in msg)
 
+    def test_handle_symlinks(self):
+        distributor = YumDistributor()
+        units = []
+        symlink_dir = os.path.join(self.temp_dir, "symlinks")
+        pkg_dir = os.path.join(self.temp_dir, "packages")
+        os.makedirs(pkg_dir)
+        num_links = 5
+        for index in range(0,num_links):
+            relpath = "file_%s.rpm" % (index)
+            sp = os.path.join(pkg_dir, relpath)
+            open(sp, "a") # Create an empty file
+            if index % 2 == 0:
+                # Ensure we can support symlinks in subdirs
+                relpath = os.path.join("a", "b", "c", relpath)
+            u = Unit("rpm", "unit_key_%s" % (index), {"relativepath":relpath}, sp)
+            units.append(u)
 
-    def test_basic_publish(self):
-        pass
-        # Include a test repo that has: rpms, drpms, errata, and srpms
+        status, errors = distributor.handle_symlinks(units, symlink_dir)
+        self.assertTrue(status)
+        self.assertEqual(len(errors), 0)
+        for u in units:
+            symlink_path = os.path.join(symlink_dir, u.metadata["relativepath"])
+            self.assertTrue(os.path.exists(symlink_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            target = os.readlink(symlink_path)
+            self.assertEqual(target, u.storage_path)
+        # Test republish is successful
+        status, errors = distributor.handle_symlinks(units, symlink_dir)
+        self.assertTrue(status)
+        self.assertEqual(len(errors), 0)
+        for u in units:
+            symlink_path = os.path.join(symlink_dir, u.metadata["relativepath"])
+            self.assertTrue(os.path.exists(symlink_path))
+            self.assertTrue(os.path.islink(symlink_path))
+            target = os.readlink(symlink_path)
+            self.assertEqual(target, u.storage_path)
+        # Simulate a package is deleted
+        os.unlink(units[0].storage_path)
+        status, errors = distributor.handle_symlinks(units, symlink_dir)
+        self.assertFalse(status)
+        self.assertEqual(len(errors), 1)
+
+
+    def test_get_relpath_from_unit(self):
+        distributor = YumDistributor()
+        test_unit = Unit("rpm", "unit_key", {}, "")
+
+        test_unit.storage_path = "test_0"
+        rel_path = distributor.get_relpath_from_unit(test_unit)
+        self.assertEqual(rel_path, "test_0")
+
+        test_unit.metadata["fileName"] = "test_1"
+        rel_path = distributor.get_relpath_from_unit(test_unit)
+        self.assertEqual(rel_path, "test_1")
+
+        test_unit.metadata["filename"] = "test_2"
+        rel_path = distributor.get_relpath_from_unit(test_unit)
+        self.assertEqual(rel_path, "test_2")
+
+        test_unit.metadata["relativepath"] = "test_3"
+        rel_path = distributor.get_relpath_from_unit(test_unit)
+        self.assertEqual(rel_path, "test_3")
+
+
+    def test_create_symlink(self):
+        target_dir = os.path.join(self.temp_dir, "a", "b", "c", "d", "e")
+        distributor = YumDistributor()
+        # Create an empty file to serve as the source_path
+        source_path = os.path.join(self.temp_dir, "some_test_file.txt")
+        open(source_path, "a")
+        symlink_path = os.path.join(self.temp_dir, "symlink_dir", "a", "b", "file_path.lnk")
+        # Confirm subdir of symlink_path doesn't exist
+        self.assertFalse(os.path.isdir(os.path.dirname(symlink_path)))
+        self.assertTrue(distributor.create_symlink(source_path, symlink_path))
+        # Confirm we created the subdir
+        self.assertTrue(os.path.isdir(os.path.dirname(symlink_path)))
+        self.assertTrue(os.path.exists(symlink_path))
+        self.assertTrue(os.path.islink(symlink_path))
+        # Verify the symlink points to the source_path
+        a = os.readlink(symlink_path)
+        self.assertEqual(a, source_path)
+
+    def test_create_dirs(self):
+        target_dir = os.path.join(self.temp_dir, "a", "b", "c", "d", "e")
+        distributor = YumDistributor()
+        self.assertFalse(os.path.exists(target_dir))
+        self.assertTrue(distributor.create_dirs(target_dir))
+        self.assertTrue(os.path.exists(target_dir))
+        self.assertTrue(os.path.isdir(target_dir))
+        # Test we can call it twice with no errors
+        self.assertTrue(distributor.create_dirs(target_dir))
+        # Remove permissions to directory and force an error
+        orig_stat = os.stat(target_dir)
+        try:
+            os.chmod(target_dir, 0000)
+            self.assertFalse(os.access(target_dir, os.R_OK))
+            target_dir_b = os.path.join(target_dir, "f")
+            self.assertFalse(distributor.create_dirs(target_dir_b))
+        finally:
+            os.chmod(target_dir, orig_stat.st_mode)

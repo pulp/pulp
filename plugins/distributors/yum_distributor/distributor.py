@@ -118,6 +118,16 @@ class YumDistributor(Distributor):
         return publish_conduit.build_success_report(summary, details)
 
     def handle_symlinks(self, units, symlink_dir):
+        """
+        @param units list of units that belong to the repo and should be published
+        @type units [AssociatedUnit]
+
+        @param symlink_dir where to create symlinks 
+        @type symlink_dir str
+        
+        @return tuple of status and list of error messages if any occurred 
+        @rtype (bool, [str])
+        """
         _LOG.info("handle_symlinks invoked with %s units to %s dir" % (len(units), symlink_dir))
         errors = []
         for u in units:
@@ -125,17 +135,23 @@ class YumDistributor(Distributor):
             relpath = self.get_relpath_from_unit(u)
             source_path = u.storage_path
             symlink_path = os.path.join(symlink_dir, relpath)
+            if not os.path.exists(source_path):
+                msg = "Source path: %s is missing" % (source_path)
+                errors.append((source_path, symlink_path, msg))
+                continue
             _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
             try:
                 if not self.create_symlink(source_path, symlink_path):
                     msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
                     _LOG.error(msg)
                     errors.append((source_path, symlink_path, msg))
+                    continue
             except Exception, e:
                 tb_info = traceback.format_exc()
                 _LOG.error("%s" % (tb_info))
                 _LOG.critical(e)
                 errors.append((source_path, symlink_path, str(e)))
+                continue
         if errors:
             return False, errors
         return True, []
