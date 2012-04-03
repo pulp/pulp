@@ -62,6 +62,9 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog -------------------------------------------------------------------
 
 %changelog
+* Tue Apr 03 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.13-1
+- Upgraded okaara to 1.0.13 (jason.dobies@redhat.com)
+
 * Wed Mar 28 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.13-1
 - Added add/find command to root of the CLI (jason.dobies@redhat.com)
 - Fixed bar rendering when prompt auto_wrap is enabled and the user supplies a
