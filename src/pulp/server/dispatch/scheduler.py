@@ -212,22 +212,19 @@ class Scheduler(object):
 
     # schedule control methods -------------------------------------------------
 
-    def add(self, call_request, schedule, failure_threshold=None, last_run=None):
+    def add(self, scheduled_call_request):
         """
         Add a scheduled call request
-        @param call_request: call request to schedule
-        @type  call_request: pulp.server.dispatch.call.CallRequest
-        @param schedule: iso8601 formatted interval schedule
-        @type  schedule: str
-        @param failure_threshold: max number of consecutive failures, before scheduled call is disabled, None means no max
-        @type  failure_threshold: int or None
-        @param last_run: datetime of the last run of the call request or None if no last run
-        @type  last_run: datetime.datetime or None
+        @param scheduled_call_request: scheduled call request
+        @type  scheduled_call_request: pulp.server.dispatch.call.ScheduledCallRequest
         @return: schedule id if successfully scheduled or None otherwise
         @rtype:  str or None
         """
-        call_request.tags.append(SCHEDULED_TAG)
-        scheduled_call = ScheduledCall(call_request, schedule, failure_threshold, last_run)
+        scheduled_call_request.call_request.tags.append(SCHEDULED_TAG)
+        scheduled_call = ScheduledCall(scheduled_call_request.call_request,
+                                       scheduled_call_request.schedule,
+                                       scheduled_call_request.failure_threshold,
+                                       scheduled_call_request.last_run)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             return None
