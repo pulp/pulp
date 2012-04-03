@@ -29,9 +29,9 @@ from pulp.server.webservices.controllers import statuses
 
 class BindTest(testutil.PulpV2WebserviceTest):
     
-    CONSUMER_ID = 'mycon'
-    REPO_ID = 'myrepo'
-    DISTRIBUTOR_ID = 'mydist'
+    CONSUMER_ID = 'test-consumer'
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'test-distributor'
     QUERY = dict(
         consumer_id=CONSUMER_ID,
         repo_id=REPO_ID,
@@ -183,3 +183,89 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(status, 404)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
+
+
+class ContentTest(testutil.PulpV2WebserviceTest):
+
+    CONSUMER_ID = 'test-consumer'
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'test-distributor'
+
+    def setUp(self):
+        testutil.PulpV2WebserviceTest.setUp(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        plugin_loader._create_loader()
+        mock_plugins.install()
+
+    def tearDown(self):
+        testutil.PulpTest.tearDown(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate(self):
+        config = {'key1' : 'value1', 'key2' : None}
+        manager = factory.repo_manager()
+        repo = manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            'mock-distributor',
+            config,
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+
+    def __test_install(self):
+        # Setup
+        self.populate()
+        # Test
+        md = dict(name='python-gofer', version='0.66')
+        unit = dict(type_id='rpm', metadata=md)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/install' % self.CONSUMER_ID
+        body = dict(
+            units=units,
+            options=options,)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 201)
+
+    def __test_update(self):
+        # Setup
+        self.populate()
+        # Test
+        md = dict(name='python-gofer', version='0.66')
+        unit = dict(type_id='rpm', metadata=md)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/update' % self.CONSUMER_ID
+        body = dict(
+            units=units,
+            options=options,)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 201)
+
+    def __test_uninstall(self):
+        # Setup
+        self.populate()
+        # Test
+        md = dict(name='python-gofer', version='0.66')
+        unit = dict(type_id='rpm', metadata=md)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/uninstall' % self.CONSUMER_ID
+        body = dict(
+            units=units,
+            options=options,)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 201)

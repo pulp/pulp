@@ -201,7 +201,7 @@ class Bindings(JSONController):
 
 class Binding(JSONController):
     """
-    Represents a specific bind object.
+    Represents a specific bind resource.
     """
 
     @classmethod
@@ -286,6 +286,92 @@ class Binding(JSONController):
         return self.ok(bind)
 
 
+class Content(JSONController):
+    """
+    Represents a specific bind object.
+    """
+
+    @auth_required(CREATE)
+    def POST(self, id, action):
+        """
+        Content actions.
+        """
+        method = getattr(self, action, None)
+        if method:
+            return method(id)
+        else:
+            raise BadRequest()
+
+    def install(self, id):
+        body = self.params()
+        units = body.get('units')
+        options = body.get('options')
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            id,
+            units,
+            options,
+        ]
+        manager = managers.consumer_agent_manager()
+        call_request = CallRequest(
+            manager.content.install,
+            args,
+            resources=resources,
+            weight=0,
+            asynchronous=True)
+        result = execution.execute_async(self, call_request)
+        return result
+
+    def update(self, id):
+        body = self.params()
+        units = body.get('units')
+        options = body.get('options')
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            id,
+            units,
+            options,
+        ]
+        manager = managers.consumer_agent_manager()
+        call_request = CallRequest(
+            manager.content.update,
+            args,
+            resources=resources,
+            weight=0,
+            asynchronous=True)
+        result = execution.execute_async(self, call_request)
+        return result
+
+    def uninstall(self, id):
+        body = self.params()
+        units = body.get('units')
+        options = body.get('options')
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            id,
+            units,
+            options,
+        ]
+        manager = managers.consumer_agent_manager()
+        call_request = CallRequest(
+            manager.content.install,
+            args,
+            resources=resources,
+            weight=0,
+            asynchronous=True)
+        result = execution.execute_async(self, call_request)
+        return result
+
+
 # -- web.py application -------------------------------------------------------
 
 
@@ -294,6 +380,7 @@ urls = (
     '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
+    '/([^/]+)/actions/content/(install|update|uninstall)', Content,
 )
 
 application = web.application(urls, globals())
