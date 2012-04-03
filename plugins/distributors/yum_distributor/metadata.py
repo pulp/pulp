@@ -20,7 +20,8 @@ import subprocess
 import threading
 import signal
 import time
-import pulp.server.util as util
+from pulp.yum_plugin import util
+from pulp.common.util import encode_unicode, decode_unicode
 
 log = logging.getLogger(__name__)
 __yum_lock = threading.Lock()
@@ -132,12 +133,12 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
         cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     except UnicodeDecodeError:
         if groups:
-            groups = util.decode_unicode(groups)
+            groups = decode_unicode(groups)
         cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     if not groups:
         cmd = "createrepo --database --checksum %s --update %s " % (checksum_type, dir)
         repodata_file = os.path.join(dir, "repodata", "repomd.xml")
-        repodata_file = util.encode_unicode(repodata_file)
+        repodata_file = encode_unicode(repodata_file)
         if os.path.isfile(repodata_file):
             log.info("Checking what metadata types are available: %s" % \
                     (util.get_repomd_filetypes(repodata_file)))
@@ -156,7 +157,7 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
                         (checksum_type, renamed_comps_file, dir)
 
     # shlex now can handle unicode strings as well
-    cmd = util.encode_unicode(cmd)
+    cmd = encode_unicode(cmd)
     try:
         cmd = shlex.split(cmd.encode('ascii', 'ignore'))
     except:
@@ -178,7 +179,7 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
         # Note: backup_repo_dir is used to store presto metadata and possibly other custom metadata types
         # they will be copied back into new 'repodata' if needed.
         backup_repo_dir = None
-        current_repo_dir = util.encode_unicode(current_repo_dir)
+        current_repo_dir = encode_unicode(current_repo_dir)
         if os.path.exists(current_repo_dir):
             log.info("metadata found; taking backup.")
             backup_repo_dir = os.path.join(dir, "repodata.old")
