@@ -15,6 +15,7 @@ import gettext
 import logging
 import os
 import traceback
+import metadata
 
 from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.content.plugins.model import PublishReport
@@ -29,8 +30,9 @@ SRPM_TYPE_ID="srpm"
 DRPM_TYPE_ID="drpm"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
-                        "https_ca", "gpgkey",
-                        "generate_metadata", "checksum_type"]
+                        "https_ca", "gpgkey", "generate_metadata",
+                        "checksum_type", "metadata_types"]
+
 SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID]
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 ###
@@ -49,6 +51,7 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 # generate_metadata     - True will run createrepo
 #                         False will not run and uses existing metadata from sync
 # checksum_type         - Checksum type to use for metadata generation
+# metadata_types        - {'groups' : 1, 'updateinfo' : 1, 'prestodelta' : 1}: types to include or skip from metadata generation
 #
 # TODO:  Need to think some more about a 'mirror' option, how do we want to handle
 # mirroring a remote url and not allowing any changes, what we were calling 'preserve_metadata' in v1.
@@ -100,7 +103,8 @@ class YumDistributor(Distributor):
         status, errors = self.handle_symlinks(units, repo.working_dir)
         if not status:
             _LOG.error("Unable to publish %s items" % (len(errors)))
-
+        # update/generate metadata for the published repo
+        metadata.generate_metadata(repo, config)
         # Publish for HTTPS 
         #  Create symlink for repo.working_dir where HTTPS gets served
         #  Should we consider HTTP?
