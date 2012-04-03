@@ -30,13 +30,9 @@ def job_href(call_report):
     return {'_href': '/pulp/api/v2/jobs/%s/' % call_report.job_id}
 
 
-def scheduled_call_obj(schedule_id):
-    collection = ScheduledCall.get_collection()
-    scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
-    if scheduled_call is None:
-        return None
+def scheduled_call_obj(scheduled_call):
     obj = {
-        '_id': schedule_id,
+        '_id': str(scheduled_call['_id']),
         '_href': None, # should be replaced by the caller!
         'schedule': scheduled_call['schedule'],
         'failure_threshold': scheduled_call['failure_threshold'],
@@ -49,5 +45,5 @@ def scheduled_call_obj(schedule_id):
     next_run = dateutils.format_iso8601_datetime(scheduled_call['next_run'].replace(tzinfo=dateutils.utc_tz()))
     obj['_next_run'] = next_run
     call_request = CallRequest.deserialize(scheduled_call['serialized_call_request'])
-    obj['overrides'] = call_request.args[1]
+    obj['overrides'] = call_request.args[1] # XXX this is making an assumption
     return obj
