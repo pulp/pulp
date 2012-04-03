@@ -27,8 +27,8 @@ class TestErrata(unittest.TestCase):
 
     def setUp(self):
         super(TestErrata, self).setUp()
-        self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.repo_dir = os.path.abspath(os.path.dirname(__file__)) + "/data/test_repo/"
+        self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
+        self.repo_dir = os.path.abspath(os.path.dirname(__file__)) + "/../data/test_repo/"
 
     def tearDown(self):
         super(TestErrata, self).tearDown()
