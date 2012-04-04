@@ -107,7 +107,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.register('bad id')
             self.fail('Invalid ID did not raise an exception')
         except exceptions.InvalidValue, e:
-            self.assertTrue('bad id' in e)
+            self.assertTrue(['id'] in e)
             print(e) # for coverage
 
     def test_create_duplicate_id(self):
@@ -143,7 +143,8 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.register(id, notes=notes)
             self.fail('Invalid notes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
-            self.assertTrue(notes in e)
+            print e
+            self.assertTrue(['notes'] in e)
             print(e) # for coverage
 
     def test_unregister_consumer(self):
@@ -314,7 +315,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.update(id, delta={'notes':notes})
             self.fail('Invalid notes did not raise an exception')
         except exceptions.InvalidValue, e:
-            self.assertTrue(notes in e)
+            self.assertTrue("delta['notes']" in e)
             print(e)
 
 

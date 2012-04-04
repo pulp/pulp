@@ -16,6 +16,7 @@ Contains manager class and exceptions for operations surrounding the creation,
 removal, and update on a consumer.
 """
 
+import sys
 import logging
 import re
 
@@ -64,17 +65,17 @@ class ConsumerManager(object):
         @raises InvalidValue: if any of the fields is unacceptable
         """
         if not is_consumer_id_valid(id):
-            raise InvalidValue(id)
+            raise InvalidValue(['id'])
         
         existing_consumer = Consumer.get_collection().find_one({'id' : id})
         if existing_consumer is not None:
             raise DuplicateResource(id)
             
         if notes is not None and not isinstance(notes, dict):
-            raise InvalidValue(notes)
+            raise InvalidValue(['notes'])
 
         if capabilities is not None and not isinstance(capabilities, dict):
-            raise InvalidValue(capabilities)
+            raise InvalidValue(['capabilities'])
 
         # Use the ID for the display name if one was not specified
         display_name = display_name or id
@@ -119,7 +120,7 @@ class ConsumerManager(object):
             Consumer.get_collection().remove({'id' : id}, safe=True)
         except Exception:
             _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
-            raise PulpExecutionException("database-error")
+            raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
 
         # To do - Update consumergroups after we add consumergroup support in V2
         # To do - Consumer history update
@@ -153,7 +154,7 @@ class ConsumerManager(object):
 
         if 'notes' in delta:
             if delta['notes'] is not None and not isinstance(delta['notes'], dict):
-                raise InvalidValue(delta['notes'])
+                raise InvalidValue("delta['notes']")
             else:
                 consumer['notes'] = update_notes(consumer['notes'], delta['notes'])
 
