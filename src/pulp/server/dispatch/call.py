@@ -222,6 +222,7 @@ class ScheduledCallRequest(object):
         self.failure_threshold = failure_threshold
         self.last_run = last_run
         self.enabled = enabled
+        self.schedule_id = None
 
 # call report class ------------------------------------------------------------
 
