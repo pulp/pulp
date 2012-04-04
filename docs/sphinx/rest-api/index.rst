@@ -7,8 +7,8 @@ APIs
 .. toctree::
    :maxdepth: 2
 
-   api-consumers
-   api-repositories
+   consumer/index
+   repo/index
 
 Documentation
 -------------

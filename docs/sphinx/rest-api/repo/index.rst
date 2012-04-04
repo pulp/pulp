@@ -4,5 +4,5 @@ Repository APIs
 .. toctree::
    :maxdepth: 3
 
-   api-repo-create-and-configure
-   api-repo-retrieval
+   create-and-configure
+   retrieval
