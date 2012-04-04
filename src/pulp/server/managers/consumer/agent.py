@@ -98,7 +98,7 @@ class ContentManager(object):
         """
         _LOG.info('id:%s units:%s, options:%s', id, units, options)
 
-    def uninstall(self, units, options):
+    def uninstall(self, id, units, options):
         """
         Uninstall content on a consumer.
         @param id: The consumer ID.
@@ -109,4 +109,4 @@ class ContentManager(object):
         @param options: Uninstall options; based on unit type.
         @type options: dict
         """
-        _LOG.info('units:%s, options:%s', units, options)
+        _LOG.info('id:%s units:%s, options:%s', id, units, options)

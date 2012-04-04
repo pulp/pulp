@@ -732,6 +732,7 @@ class AgentManagerTests(testutil.PulpTest):
         manager = factory.consumer_agent_manager()
         unit = dict(type_id='rpm', metadata=dict(name='zsh'))
         units = [unit,]
-        manager.content.uninstall(self.CONSUMER_ID, units)
+        options = {}
+        manager.content.uninstall(self.CONSUMER_ID, units, options)
         # verify
         # TODO: verify
