@@ -24,7 +24,7 @@ def initialize(context):
 class AdminConsumerSection(PulpCliSection):
 
     def __init__(self, context):
-        PulpCliSection.__init__(self, 'consumer', 'consumer lifecycle (register, unregister, update, etc.) commands')
+        PulpCliSection.__init__(self, 'consumer', 'consumer lifecycle (list, update, etc.) commands')
 
         self.context = context
         self.prompt = context.prompt # for easier access
@@ -52,18 +52,17 @@ class AdminConsumerSection(PulpCliSection):
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
 
-
     def update(self, **kwargs):
 
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop('id') # not needed in the delta
-        print delta
         try:
             self.context.server.consumer.update(kwargs['id'], delta)
             self.prompt.render_success_message('Consumer [%s] successfully updated' % kwargs['id'])
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % kwargs['id'], tag='not-found')
+
 
     def unregister(self, **kwargs):
         id = kwargs['id']
