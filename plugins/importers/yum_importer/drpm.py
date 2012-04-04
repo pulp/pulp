@@ -15,6 +15,7 @@
 DeltaRPM Support for Yum Importer
 """
 import logging
+import os
 
 _LOG = logging.getLogger(__name__)
 DRPM_TYPE_ID="drpm"
@@ -58,12 +59,12 @@ def get_new_drpms_and_units(available_drpms, existing_units, sync_conduit):
     for key in available_drpms:
         if key not in existing_units:
             drpm = available_drpms[key]
+            drpm["fileName"] = os.path.basename(drpm["fileName"])
             new_drpms[key] = drpm
             unit_key = form_drpm_unit_key(drpm)
             metadata = form_drpm_metadata(drpm)
             new_units[key] = sync_conduit.init_unit(DRPM_TYPE_ID, unit_key, metadata, drpm["pkgpath"])
             drpm["pkgpath"] = new_units[key].storage_path
-
     return new_drpms, new_units
 
 def form_drpm_metadata(drpm):
