@@ -6,6 +6,6 @@ Pulp+RPM User Guide
 
    installation
    quick-start
-   admin-guide
-   consumer-guide
+   admin-client/index
+   consumer-client/index
    general
