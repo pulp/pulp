@@ -18,6 +18,7 @@ import logging
 import web
 
 # Pulp
+from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.webservices import execution
@@ -66,12 +67,14 @@ class ConsumersCollection(JSONController):
         manager = managers.consumer_manager()
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
         args = [id, display_name, description, notes]
+        weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [id]
         call_request = CallRequest(manager.register,
                                    args,
                                    resources=resources,
+                                   weight=weight,
                                    tags=tags)
-        return execution.execute_created(self, call_request, id)
+        return execution.execute_sync_created(self, call_request, id)
 
 
 class ConsumerResource(JSONController):
