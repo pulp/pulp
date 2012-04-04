@@ -303,6 +303,16 @@ class Content(JSONController):
             raise BadRequest()
 
     def install(self, id):
+        """
+        Install content (units) on a consumer.
+        Expected body: {units:[], options:<dict>}
+        where unit is: {type_id:<str>, metadata={}} and the
+        options is a dict of install options.
+        @param id: A consumer ID.
+        @type id: str
+        @return: TBD
+        @rtype: dict
+        """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
@@ -321,11 +331,22 @@ class Content(JSONController):
             args,
             resources=resources,
             weight=0,
-            asynchronous=True)
+            asynchronous=False,
+            archive=True,)
         result = execution.execute_async(self, call_request)
         return result
 
     def update(self, id):
+        """
+        Update content (units) on a consumer.
+        Expected body: {units:[], options:<dict>}
+        where unit is: {type_id:<str>, metadata={}} and the
+        options is a dict of update options.
+        @param id: A consumer ID.
+        @type id: str
+        @return: TBD
+        @rtype: dict
+        """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
@@ -344,11 +365,22 @@ class Content(JSONController):
             args,
             resources=resources,
             weight=0,
-            asynchronous=True)
+            asynchronous=False,
+            archive=True,)
         result = execution.execute_async(self, call_request)
         return result
 
     def uninstall(self, id):
+        """
+        Uninstall content (units) on a consumer.
+        Expected body: {units:[], options:<dict>}
+        where unit is: {type_id:<str>, metadata={}} and the
+        options is a dict of uninstall options.
+        @param id: A consumer ID.
+        @type id: str
+        @return: TBD
+        @rtype: dict
+        """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
@@ -367,7 +399,8 @@ class Content(JSONController):
             args,
             resources=resources,
             weight=0,
-            asynchronous=True)
+            asynchronous=False,
+            archive=True,)
         result = execution.execute_async(self, call_request)
         return result
 
@@ -380,7 +413,7 @@ urls = (
     '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
-    '/([^/]+)/actions/content/(install|update|uninstall)', Content,
+    '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
 )
 
 application = web.application(urls, globals())
