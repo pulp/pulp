@@ -202,13 +202,13 @@ class SchedulerQueryTests(SchedulerTests):
         call_request_1 = CallRequest(call)
         schedule_id = self.scheduler.add(ScheduledCallRequest(call_request_1, SCHEDULE_3_RUNS))
         self.assertFalse(schedule_id is None)
-        call_request_2, schedule = self.scheduler.get(schedule_id)
-        self.assertFalse(schedule is None)
-        self.assertFalse(call_request_2 is None)
-        self.assertTrue(call_request_1.call == call_request_2.call)
-        self.assertTrue(call_request_1.args == call_request_2.args)
-        self.assertTrue(call_request_1.kwargs == call_request_2.kwargs)
-        self.assertTrue(SCHEDULE_3_RUNS == schedule)
+        scheduled_call_request = self.scheduler.get(schedule_id)
+        self.assertFalse(scheduled_call_request.schedule is None)
+        self.assertFalse(scheduled_call_request.call_request is None)
+        self.assertTrue(call_request_1.call == scheduled_call_request.call_request.call)
+        self.assertTrue(call_request_1.args == scheduled_call_request.call_request.args)
+        self.assertTrue(call_request_1.kwargs == scheduled_call_request.call_request.kwargs)
+        self.assertTrue(SCHEDULE_3_RUNS == scheduled_call_request.schedule)
 
     def test_find_single_tag(self):
         tag = 'TAG'
