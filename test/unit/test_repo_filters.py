@@ -84,26 +84,6 @@ class TestRepoFilters(testutil.PulpAsyncTest):
         except Exception:
             self.assertTrue(False)
 
-    def test_remove_filters_from_repo(self, id = "filter-test1"):
-        repoid = 'clone-some-id'
-        parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
-        self.assertTrue(parent_repo is not None)
-        repo_sync._sync(repo_id='some-id')
-        repo_sync.clone('some-id', repoid, repoid)
-        self.filter_api.create(id, type="blacklist")
-        self.filter_api.create('filter-test2', type="whitelist")
-        filter_ids = [id, "filter-test2"]
-        try:
-            self.repo_api.add_filters(repoid, filter_ids)
-        except Exception:
-            self.assertTrue(False)
-        # Remove added filters
-        try:
-            self.repo_api.remove_filters(repoid, filter_ids)
-        except Exception:
-            self.assertTrue(False)
-
     def test_list_repo_filters(self, id = "filter-test1"):
         repoid = 'clone-some-id'
         parent_repo = self.repo_api.create('some-id', 'some name', 'i386',
@@ -204,8 +184,6 @@ class TestRepoFilters(testutil.PulpAsyncTest):
         self.test_list_repo_filters(get_random_unicode())
         self.clean()
         self.test_nonexistent_filter_delete(get_random_unicode())
-        self.clean()
-        self.test_remove_filters_from_repo(get_random_unicode())
         self.clean()
         self.test_remove_packages_from_filter(get_random_unicode())
         self.clean()
