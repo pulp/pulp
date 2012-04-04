@@ -31,7 +31,7 @@ DRPM_TYPE_ID="drpm"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "metadata_types"]
+                        "checksum_type", "metadata_types", "https_publish_dir"]
 
 SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID]
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
@@ -52,7 +52,7 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 #                         False will not run and uses existing metadata from sync
 # checksum_type         - Checksum type to use for metadata generation
 # metadata_types        - {'groups' : 1, 'updateinfo' : 1, 'prestodelta' : 1}: types to include or skip from metadata generation
-#
+# https_publish_dir     - Optional parameter to override the HTTPS_PUBLISH_DIR, mainly used for unit tests
 # TODO:  Need to think some more about a 'mirror' option, how do we want to handle
 # mirroring a remote url and not allowing any changes, what we were calling 'preserve_metadata' in v1.
 #
@@ -60,8 +60,9 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 
 #
 # TODO:
-#   Is this really a YumDistributor or should it be a HttpsDistributor?
-#
+#   - Is this really a YumDistributor or should it be a HttpsDistributor?
+#   - What if the relative_url changes between invocations, 
+#    - How will we handle cleanup of the prior publish path/symlink
 class YumDistributor(Distributor):
 
 
@@ -85,10 +86,36 @@ class YumDistributor(Distributor):
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
+        # If overriding https publish dir, be sure it exists and we can write to it
+        if config.repo_plugin_config.has_key("https_publish_dir"):
+            publish_dir = config.repo_plugin_config["https_publish_dir"]
+            if not os.path.exists(publish_dir) or not os.path.isdir(publish_dir):
+                msg = _("Value for 'https_publish_dir' is not an existing directory: %(publish_dir)s" % {"publish_dir":publish_dir})
+                return False, msg
+            if not os.access(publish_dir, os.R_OK) or not os.access(publish_dir, os.W_OK):
+                msg = _("Unable to read & write to specified 'https_publish_dir': %(publish_dir)s" % {"publish_dir":publish_dir})
+                return False, msg
         ##
         # TODO: Need to add a check for the Repo's relativepath
         ##
         return True, None
+
+    def get_https_publish_dir(self, config=None):
+        """
+        @param config
+        @type pulp.server.content.plugins.config.PluginCallConfiguration
+
+        """
+        if config:
+            if config.repo_plugin_config.has_key("https_publish_dir"):
+                return config.repo_plugin_config["https_publish_dir"]
+        return HTTPS_PUBLISH_DIR
+
+    def get_repo_relative_path(self, repo, config):
+        relative_url = config.get("relative_url")
+        if relative_url:
+            return relative_url
+        return repo.id
 
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
@@ -108,7 +135,10 @@ class YumDistributor(Distributor):
         # Publish for HTTPS 
         #  Create symlink for repo.working_dir where HTTPS gets served
         #  Should we consider HTTP?
-        repo_publish_dir = os.path.join(HTTPS_PUBLISH_DIR, "repos", repo.id)
+        https_publish_dir = self.get_https_publish_dir(config)
+        relpath = self.get_repo_relative_path(repo, config)
+        repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
+        _LOG.info("Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
         self.create_symlink(repo.working_dir, repo_publish_dir)
 
         # TODO: RepoAuth:
@@ -119,6 +149,7 @@ class YumDistributor(Distributor):
         summary["num_units_published"] = len(units) - len(errors)
         summary["num_units_errors"] = len(errors)
         details["errors"] = errors
+        _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
         return publish_conduit.build_success_report(summary, details)
 
     def handle_symlinks(self, units, symlink_dir):

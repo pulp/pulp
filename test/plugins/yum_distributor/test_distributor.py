@@ -29,8 +29,7 @@ from distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID, \
 
 from pulp.server.content.plugins.model import Repository, Unit
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../yum_importer")
-import importer_mocks
+import distributor_mocks
 
 class TestDistributor(unittest.TestCase):
 
@@ -44,6 +43,9 @@ class TestDistributor(unittest.TestCase):
 
     def init(self):
         self.temp_dir = tempfile.mkdtemp()
+        self.pkg_dir = os.path.join(self.temp_dir, "packages")
+        self.publish_dir = os.path.join(self.temp_dir, "publish")
+        self.repo_working_dir = os.path.join(self.temp_dir, "repo_working_dir")
 
     def clean(self):
         shutil.rmtree(self.temp_dir)
@@ -61,32 +63,44 @@ class TestDistributor(unittest.TestCase):
         req_kwargs = {}
         for arg in REQUIRED_CONFIG_KEYS:
             req_kwargs[arg] = "sample_value"
-        config = importer_mocks.get_basic_config(**req_kwargs)
+        config = distributor_mocks.get_basic_config(**req_kwargs)
         state, msg = distributor.validate_config(repo, config)
         self.assertTrue(state)
         # Confirm required and optional are successful
         optional_kwargs = dict(req_kwargs)
         for arg in OPTIONAL_CONFIG_KEYS:
-            optional_kwargs[arg] = "sample_value"
-        config = importer_mocks.get_basic_config(**optional_kwargs)
+            if arg != "https_publish_dir":
+                optional_kwargs[arg] = "sample_value"
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config)
         self.assertTrue(state)
+        # Test that config fails when a bad value for non_existing_dir is used
+        optional_kwargs["https_publish_dir"] = "non_existing_dir"
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        state, msg = distributor.validate_config(repo, config)
+        self.assertFalse(state)
+        # Test config succeeds with a good value of https_publish_dir
+        optional_kwargs["https_publish_dir"] = self.temp_dir
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        state, msg = distributor.validate_config(repo, config)
+        self.assertTrue(state)
+        del optional_kwargs["https_publish_dir"]
 
         # Confirm an extra key fails
         optional_kwargs["extra_arg_not_used"] = "sample_value"
-        config = importer_mocks.get_basic_config(**optional_kwargs)
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config)
         self.assertFalse(state)
         self.assertTrue("extra_arg_not_used" in msg)
 
         # Confirm missing a required fails
         del optional_kwargs["extra_arg_not_used"]
-        config = importer_mocks.get_basic_config(**optional_kwargs)
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config)
         self.assertTrue(state)
 
         del optional_kwargs["relative_url"]
-        config = importer_mocks.get_basic_config(**optional_kwargs)
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config)
         self.assertFalse(state)
         self.assertTrue("relative_url" in msg)
@@ -191,3 +205,15 @@ class TestDistributor(unittest.TestCase):
             self.assertFalse(distributor.create_dirs(target_dir_b))
         finally:
             os.chmod(target_dir, orig_stat.st_mode)
+
+    def test_empty_publish(self):
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "test_publish"
+        existing_units = []
+        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir)
+        distributor = YumDistributor()
+        report = distributor.publish_repo(repo, publish_conduit, config)
+        self.assertTrue(report.success_flag)
+
