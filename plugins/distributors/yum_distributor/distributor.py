@@ -108,7 +108,9 @@ class YumDistributor(Distributor):
         """
         if config:
             if config.repo_plugin_config.has_key("https_publish_dir"):
-                return config.repo_plugin_config["https_publish_dir"]
+                publish_dir = config.repo_plugin_config["https_publish_dir"]
+                _LOG.info("Override HTTPS publish directory from passed in config value to: %s" % (publish_dir))
+                return publish_dir
         return HTTPS_PUBLISH_DIR
 
     def get_repo_relative_path(self, repo, config):
@@ -137,6 +139,9 @@ class YumDistributor(Distributor):
         #  Should we consider HTTP?
         https_publish_dir = self.get_https_publish_dir(config)
         relpath = self.get_repo_relative_path(repo, config)
+        if relpath.startswith("/"):
+            relpath = relpath[1:]
+        _LOG.info("Using https_publish_dir: %s, relative path: %s" % (https_publish_dir, relpath))
         repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
         _LOG.info("Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
         self.create_symlink(repo.working_dir, repo_publish_dir)
@@ -221,6 +226,8 @@ class YumDistributor(Distributor):
         @return True on success, False on error
         @rtype bool
         """
+        if symlink_path.endswith("/"):
+            symlink_path = symlink_path[:-1]
         if os.path.lexists(symlink_path):
             if not os.path.islink(symlink_path):
                 _LOG.error("%s is not a symbolic link as expected." % (symlink_path))
@@ -235,6 +242,9 @@ class YumDistributor(Distributor):
         if not self.create_dirs(os.path.dirname(symlink_path)):
             return False
         _LOG.debug("creating symlink %s pointing to %s" % (symlink_path, source_path))
+        # TODO:
+        #  Need to handle conflicts when a subdirectory already exists
+        #  Or what happens if another repo has published into this path already
         os.symlink(source_path, symlink_path)
         return True
 
