@@ -5,7 +5,7 @@ Glossary
 
 .. glossary::
 
-  bind
+  binding
     An association between a :term:`consumer` and a :term:`repository`
     :term:`distributor` for the purpose of installing :term:`content units <content unit>`
     on the specified consumer.
