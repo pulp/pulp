@@ -47,7 +47,7 @@ class TestDRPMS(unittest.TestCase):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_repo"
-        sync_conduit = importer_mocks.get_sync_conduit()
+        sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(status)
