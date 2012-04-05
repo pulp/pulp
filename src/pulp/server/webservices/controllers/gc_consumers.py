@@ -330,7 +330,7 @@ class Content(JSONController):
         ]
         manager = managers.consumer_agent_manager()
         call_request = CallRequest(
-            manager.content.install,
+            manager.install_content,
             args,
             resources=resources,
             weight=0,
@@ -364,7 +364,7 @@ class Content(JSONController):
         ]
         manager = managers.consumer_agent_manager()
         call_request = CallRequest(
-            manager.content.update,
+            manager.update_content,
             args,
             resources=resources,
             weight=0,
@@ -398,7 +398,7 @@ class Content(JSONController):
         ]
         manager = managers.consumer_agent_manager()
         call_request = CallRequest(
-            manager.content.install,
+            manager.uninstall_content,
             args,
             resources=resources,
             weight=0,

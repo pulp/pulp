@@ -709,7 +709,7 @@ class AgentManagerTests(testutil.PulpTest):
         units = [unit,]
         options = dict(importkeys=True)
         manager = factory.consumer_agent_manager()
-        manager.content.install(self.CONSUMER_ID, units, options)
+        manager.install_content(self.CONSUMER_ID, units, options)
         # verify
         # TODO: verify
 
@@ -721,7 +721,7 @@ class AgentManagerTests(testutil.PulpTest):
         units = [unit,]
         options = {}
         manager = factory.consumer_agent_manager()
-        manager.content.update(self.CONSUMER_ID, units, options)
+        manager.update_content(self.CONSUMER_ID, units, options)
         # verify
         # TODO: verify
 
@@ -733,6 +733,6 @@ class AgentManagerTests(testutil.PulpTest):
         unit = dict(type_id='rpm', metadata=dict(name='zsh'))
         units = [unit,]
         options = {}
-        manager.content.uninstall(self.CONSUMER_ID, units, options)
+        manager.uninstall_content(self.CONSUMER_ID, units, options)
         # verify
         # TODO: verify

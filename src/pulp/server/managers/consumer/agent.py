@@ -25,13 +25,8 @@ _LOG = getLogger(__name__)
 
 class AgentManager(object):
     """
-    The main agent manager.
-    @ivar content: The content sub-manager.
-    @type content: L{ContentManager}
+    The agent manager.
     """
-
-    def __init__(self):
-        self.content = ContentManager()
 
     def unregistered(self, id):
         """
@@ -65,16 +60,9 @@ class AgentManager(object):
         """
         _LOG.info(bind)
 
-
-
-class ContentManager(object):
-    """
-    The agent content manager.
-    """
-
-    def install(self, id, units, options):
+    def install_content(self, id, units, options):
         """
-        Install content on a consumer.
+        Install content units on a consumer.
         @param id: The consumer ID.
         @type id: str
         @param units: A list of content units to be installed.
@@ -85,9 +73,9 @@ class ContentManager(object):
         """
         _LOG.info('id:%s units:%s, options:%s', id, units, options)
 
-    def update(self, id, units, options):
+    def update_content(self, id, units, options):
         """
-        Update content on a consumer.
+        Update content units on a consumer.
         @param id: The consumer ID.
         @type id: str
         @param units: A list of content units to be updated.
@@ -98,9 +86,9 @@ class ContentManager(object):
         """
         _LOG.info('id:%s units:%s, options:%s', id, units, options)
 
-    def uninstall(self, id, units, options):
+    def uninstall_content(self, id, units, options):
         """
-        Uninstall content on a consumer.
+        Uninstall content units on a consumer.
         @param id: The consumer ID.
         @type id: str
         @param units: A list of content units to be uninstalled.
@@ -110,3 +98,11 @@ class ContentManager(object):
         @type options: dict
         """
         _LOG.info('id:%s units:%s, options:%s', id, units, options)
+
+    def send_profile(self, id):
+        """
+        Send the content profile(s).
+        @param id: The consumer ID.
+        @type id: str
+        """
+        _LOG.info(id)
