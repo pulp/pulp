@@ -183,7 +183,11 @@ class HTTPSServerWrapper(object):
         try:
             response = connection.getresponse()
         except SSL.SSLError, err:
-            raise exceptions.ConnectionException(None, str(err), None)
+            # Translate stale login certificate to an auth exception
+            if 'sslv3 alert certificate expired' == str(err):
+                raise exceptions.PermissionsException()
+            else:
+                raise exceptions.ConnectionException(None, str(err), None)
 
         # Attempt to deserialize the body (should pass unless the server is busted)
         response_body = response.read()
