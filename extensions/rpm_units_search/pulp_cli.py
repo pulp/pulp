@@ -412,9 +412,9 @@ def add_display_group(command, default_fields):
     """
     Adds the display group and all of its options to the given command.
     """
-    d  = 'comma-separated list of fields to include for each erratum; if unspecified all of the following will be displayed; '
+    d  = 'comma-separated list of fields to include for each unit; if unspecified all of the following will be displayed; '
     d += 'valid fields: %(f)s'
-    description = _(d) % {'f' : ', '.join(FIELDS_ERRATA)}
+    description = _(d) % {'f' : ', '.join(default_fields)}
 
     display_group = PulpCliOptionGroup(_('Display'))
     display_group.add_option(PulpCliOption('--fields', description, aliases=['-f'], required=False, default=','.join(default_fields)))
