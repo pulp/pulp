@@ -5,3 +5,4 @@ Consumer APIs
    :maxdepth: 3
 
    bind
+   content
