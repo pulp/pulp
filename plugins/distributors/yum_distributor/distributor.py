@@ -155,6 +155,8 @@ class YumDistributor(Distributor):
         summary["num_units_errors"] = len(errors)
         details["errors"] = errors
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
+        if errors:
+            return publish_conduit.build_failure_report(summary, details)
         return publish_conduit.build_success_report(summary, details)
 
     def handle_symlinks(self, units, symlink_dir):

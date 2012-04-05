@@ -20,6 +20,7 @@ import sys
 import tempfile
 import time
 import unittest
+from uuid import uuid4
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
@@ -43,12 +44,37 @@ class TestDistributor(unittest.TestCase):
 
     def init(self):
         self.temp_dir = tempfile.mkdtemp()
+        #pkg_dir is where we simulate units actually residing
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
+        os.makedirs(self.pkg_dir)
+        #publish_dir simulates /var/lib/pulp/published
         self.publish_dir = os.path.join(self.temp_dir, "publish")
+        os.makedirs(self.publish_dir)
         self.repo_working_dir = os.path.join(self.temp_dir, "repo_working_dir")
+        os.makedirs(self.repo_working_dir)
 
     def clean(self):
         shutil.rmtree(self.temp_dir)
+
+    def get_units(self, count=5):
+        units = []
+        for index in range(0, count):
+            u = self.get_unit()
+            units.append(u)
+        return units
+
+    def get_unit(self, type_id="rpm"):
+        uniq_id = uuid4()
+        filename = "test_unit-%s" % (uniq_id)
+        storage_path = os.path.join(self.pkg_dir, filename)
+        metadata = {}
+        metadata["relativepath"] = os.path.join("a/b/c", filename)
+        metadata["filename"] = filename
+        unit_key = uniq_id
+        # Create empty file to represent the unit
+        open(storage_path, "a+")
+        u = Unit(type_id, unit_key, metadata, storage_path)
+        return u
 
     def test_metadata(self):
         metadata = YumDistributor.metadata()
@@ -109,12 +135,10 @@ class TestDistributor(unittest.TestCase):
         distributor = YumDistributor()
         units = []
         symlink_dir = os.path.join(self.temp_dir, "symlinks")
-        pkg_dir = os.path.join(self.temp_dir, "packages")
-        os.makedirs(pkg_dir)
         num_links = 5
         for index in range(0,num_links):
             relpath = "file_%s.rpm" % (index)
-            sp = os.path.join(pkg_dir, relpath)
+            sp = os.path.join(self.pkg_dir, relpath)
             open(sp, "a") # Create an empty file
             if index % 2 == 0:
                 # Ensure we can support symlinks in subdirs
@@ -209,11 +233,56 @@ class TestDistributor(unittest.TestCase):
     def test_empty_publish(self):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.repo_working_dir
-        repo.id = "test_publish"
+        repo.id = "test_empty_publish"
         existing_units = []
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir)
         distributor = YumDistributor()
         report = distributor.publish_repo(repo, publish_conduit, config)
         self.assertTrue(report.success_flag)
+        summary = report.summary
+        self.assertEqual(summary["num_units_attempted"], 0)
+        self.assertEqual(summary["num_units_published"], 0)
+        self.assertEqual(summary["num_units_errors"], 0)
+        expected_repo_publish_dir = os.path.join(self.publish_dir, "repos", repo.id)
+        self.assertEqual(summary["repo_publish_dir"], expected_repo_publish_dir)
+        details = report.details
+        self.assertEqual(len(details["errors"]), 0)
 
+
+    def test_publish(self):
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "test_publish"
+        num_units = 10
+        relative_url = "rel_a/rel_b/rel_c/"
+        existing_units = self.get_units(count=num_units)
+        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir, relative_url=relative_url)
+        distributor = YumDistributor()
+        report = distributor.publish_repo(repo, publish_conduit, config)
+        self.assertTrue(report.success_flag)
+        summary = report.summary
+        self.assertEqual(summary["num_units_attempted"], num_units)
+        self.assertEqual(summary["num_units_published"], num_units)
+        self.assertEqual(summary["num_units_errors"], 0)
+        expected_repo_publish_dir = os.path.join(self.publish_dir, "repos", relative_url)
+        self.assertEqual(summary["repo_publish_dir"], expected_repo_publish_dir)
+        details = report.details
+        self.assertEqual(len(details["errors"]), 0)
+        #
+        # Add a verification of the publish directory
+        #
+        self.assertTrue(os.path.exists(summary["repo_publish_dir"]))
+        self.assertTrue(os.path.islink(summary["repo_publish_dir"].rstrip("/")))
+        source_of_link = os.readlink(expected_repo_publish_dir.rstrip("/"))
+        self.assertEquals(source_of_link, repo.working_dir)
+        #
+        # Verify the expected units
+        #
+        for u in existing_units:
+            expected_link = os.path.join(expected_repo_publish_dir, u.metadata["relativepath"])
+            self.assertTrue(os.path.exists(expected_link))
+            actual_target = os.readlink(expected_link)
+            expected_target = u.storage_path
+            self.assertEqual(actual_target, expected_target)

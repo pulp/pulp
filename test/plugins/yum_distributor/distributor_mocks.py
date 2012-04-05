@@ -14,10 +14,15 @@ import os
 import mock
 from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.content.plugins.model import Unit
-
+from pulp.server.content.plugins.model import PublishReport, Unit
 
 def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None):
+    def build_success_report(summary, details):
+        return PublishReport(True, summary, details)
+
+    def build_failure_report(summary, details):
+        return PublishReport(False, summary, details)
+
     def get_units(criteria=None):
         ret_units = True
         if criteria and hasattr(criteria, "type_ids"):
@@ -30,6 +35,10 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None):
     publish_conduit = mock.Mock(spec=RepoPublishConduit)
     publish_conduit.get_units = mock.Mock()
     publish_conduit.get_units.side_effect = get_units
+    publish_conduit.build_failure_report = mock.Mock()
+    publish_conduit.build_failure_report = build_failure_report
+    publish_conduit.build_success_report = mock.Mock()
+    publish_conduit.build_success_report = build_success_report
     return publish_conduit
 
 
