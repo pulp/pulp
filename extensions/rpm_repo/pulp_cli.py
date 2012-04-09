@@ -130,6 +130,10 @@ class YumRepoCreateCommand(PulpCliCommand):
                 relative_path = url_parse[2]
             distributor_config['relative_url'] = relative_path
 
+        # Likely a temporary hack as we continue to refine how metadata generation
+        # is done on the distributor
+        distributor_config['generate_metadata'] = True
+
         # Package distributors for the call
         distributors = [(DISTRIBUTOR_TYPE_ID, distributor_config, True, DISTRIBUTOR_ID)]
 
