@@ -182,7 +182,7 @@ class ExceptionHandler:
 
         msg = 'An internal error occurred on the Pulp server. More information ' \
               'can be found in the client log file %(l)s.'
-        msg = _(msg)
+        msg = _(msg) % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_PULP_SERVER_EXCEPTION
