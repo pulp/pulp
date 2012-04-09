@@ -14,6 +14,7 @@
 import gettext
 import logging
 import os
+import shutil
 import traceback
 import metadata
 
@@ -133,8 +134,11 @@ class YumDistributor(Distributor):
         if not status:
             _LOG.error("Unable to publish %s items" % (len(errors)))
         # update/generate metadata for the published repo
-        # TODO: copy repodata from importer to distributor
-
+        repo_scratchpad = publish_conduit.get_repo_scratchpad()
+        src_working_dir = ''
+        if repo_scratchpad.has_key("importer_working_dir"):
+            src_working_dir = repo_scratchpad['importer_working_dir']
+        self.copy_importer_repodata(src_working_dir, repo.working_dir)
         metadata.generate_metadata(repo, publish_conduit, config)
         # Publish for HTTPS 
         #  Create symlink for repo.working_dir where HTTPS gets served
@@ -270,5 +274,33 @@ class YumDistributor(Distributor):
                 tb_info = traceback.format_exc()
                 _LOG.error("%s" % (tb_info))
                 return False
+        return True
+
+    def copy_importer_repodata(self, src_working_dir, tgt_working_dir):
+        """
+        @param src_working_dir importer repo working dir where repodata dir exists
+        @type src_working_dir str
+
+        @param tgt_working_dir importer repo working dir where repodata dir needs to be copied
+        @type tgt_working_dir str
+
+        @return True - success, False - error
+        @rtype bool
+        """
+        try:
+            src_repodata_dir = os.path.join(src_working_dir, "repodata")
+            if not os.path.exists(src_repodata_dir):
+                _LOG.debug("No repodata dir to copy at %s" % src_repodata_dir)
+                return False
+            tgt_repodata_dir = os.path.join(tgt_working_dir, "repodata")
+            if os.path.exists(tgt_repodata_dir):
+                shutil.rmtree(tgt_repodata_dir)
+            shutil.copytree(src_repodata_dir, tgt_repodata_dir)
+        except (IOError, OSError):
+            _LOG.error("Unable to copy repodata directory from %s to %s" % (src_working_dir, tgt_working_dir))
+            tb_info = traceback.format_exc()
+            _LOG.error("%s" % (tb_info))
+            return False
+        _LOG.info("Copied repodata from %s to %s" % (src_working_dir, tgt_working_dir))
         return True
 

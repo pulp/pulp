@@ -417,6 +417,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
         _LOG.error("Failed to fetch metadata on: %s" % (feed_url))
         raise
     set_progress("metadata", {"state": "FINISHED"})
+
     rpm_items = yumRepoGrinder.getRPMItems()
     available_rpms = get_available_rpms(rpm_items)
     end_metadata = time.time()
@@ -464,6 +465,12 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     _LOG.info("Finished download of %s in % seconds.  %s" % (repo.id, end_download-start_download, report))
     # determine the checksum type from downloaded metadata
     set_repo_checksum_type(repo, sync_conduit, config)
+    # store the importer working dir on scratchpad to lookup downloaded data
+    importer_working_repo_dir = os.path.join(repo.working_dir, repo.id)
+    if os.path.exists(importer_working_repo_dir):
+        existing_scratch_pad = sync_conduit.get_repo_scratchpad() or {}
+        existing_scratch_pad.update({'importer_working_dir' : importer_working_repo_dir})
+        sync_conduit.set_repo_scratchpad(existing_scratch_pad)
     rpms_with_errors = search_for_errors(new_rpms, missing_rpms)
     drpms_with_errors = search_for_errors(new_drpms, missing_drpms)
     rpms_with_errors.update(drpms_with_errors)
