@@ -133,7 +133,9 @@ class YumDistributor(Distributor):
         if not status:
             _LOG.error("Unable to publish %s items" % (len(errors)))
         # update/generate metadata for the published repo
-        metadata.generate_metadata(repo, config)
+        # TODO: copy repodata from importer to distributor
+
+        metadata.generate_metadata(repo, publish_conduit, config)
         # Publish for HTTPS 
         #  Create symlink for repo.working_dir where HTTPS gets served
         #  Should we consider HTTP?

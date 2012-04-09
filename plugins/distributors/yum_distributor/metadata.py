@@ -43,7 +43,7 @@ class ModifyRepoError(CreateRepoError):
 class CancelException(Exception):
     pass
 
-def generate_metadata(repo, config):
+def generate_metadata(repo, publish_conduit, config):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
@@ -60,7 +60,7 @@ def generate_metadata(repo, config):
         log.info('skip metadata generation for repo %s' % repo.id)
         return False
     repo_dir = repo.working_dir
-    checksum_type = get_repo_checksum_type(repo, config)
+    checksum_type = get_repo_checksum_type(repo, publish_conduit, config)
     metadata_types = config.get('metadata_types') or {}
     if metadata_types.has_key("groups") and not metadata_types["groups"]:
         groups_xml_path = None
@@ -73,7 +73,7 @@ def generate_metadata(repo, config):
     log.info("Createrepo finished in %s seconds" % (end - start))
     return True
 
-def get_repo_checksum_type(repo, config):
+def get_repo_checksum_type(repo, publish_conduit, config):
     """
       Lookup checksum type on the repo to use for metadata generation;
       importer sets this value if available on the repo scratchpad.
@@ -92,7 +92,7 @@ def get_repo_checksum_type(repo, config):
     print checksum_type
     if checksum_type:
         return checksum_type
-    scratchpad_data = repo.scratchpad
+    scratchpad_data = publish_conduit.get_repo_scratchpad()
     if not scratchpad_data:
         return DEFAULT_CHECKSUM
     checksum_type = scratchpad_data['checksum_type']
