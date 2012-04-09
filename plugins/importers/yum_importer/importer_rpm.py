@@ -425,7 +425,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
                 (len(available_rpms), feed_url, repo.id, (end_metadata-start_metadata)))
 
     # Determine what exists and what has been orphaned, or exists in Pulp but has been removed from the source repo
-    criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID, drpm.DRPM_TYPE_ID])
+    criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
     existing_units = get_existing_units(sync_conduit, criteria)
     orphaned_units = get_orphaned_units(available_rpms, existing_units)
 
@@ -439,21 +439,19 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     drpm_items = yumRepoGrinder.getDeltaRPMItems()
     _LOG.info("Delta RPMs to sync %s" % len(drpm_items))
     available_drpms =  drpm.get_available_drpms(drpm_items)
-    existing_drpm_units = filter(lambda u: u.type_id == 'drpm', existing_units.values())
+    existing_drpm_units = drpm.get_existing_drpm_units(sync_conduit)
     orphaned_drpm_units = get_orphaned_units(available_drpms, existing_drpm_units)
     end_metadata = time.time()
     _LOG.info("%s drpms are available in the source repo <%s> for %s, calculated in %s seconds" % \
                 (len(available_drpms), feed_url, repo.id, (end_metadata-start_metadata)))
 
     # Determine new and missing items
-    new_drpms, new_drpm_units = drpm.get_new_drpms_and_units(available_drpms, existing_units, sync_conduit)
-    missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_units)
+    new_drpms, new_drpm_units = drpm.get_new_drpms_and_units(available_drpms, existing_drpm_units, sync_conduit)
+    missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_drpm_units)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." % \
-                (repo.id, len(existing_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
+                (repo.id, len(existing_drpm_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
     # include new drpm units 
     new_units.update(new_drpm_units)
-    # include any orphaned drpm units
-    orphaned_units.update(orphaned_drpm_units)
     # Sync the new and missing rpms, drpms
     yumRepoGrinder.addItems(new_rpms.values())
     yumRepoGrinder.addItems(missing_rpms.values())
@@ -496,6 +494,8 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
             unit_info = str(u.unit_key)
             _LOG.exception("Unable to remove: %s" % (unit_info))
             removal_errors.append((unit_info, str(e)))
+    # purge any orphaned drpms
+    drpm.purge_orphaned_drpm_units(sync_conduit, repo, orphaned_drpm_units.values())
     end = time.time()
 
     # filter out rpm specific data if any

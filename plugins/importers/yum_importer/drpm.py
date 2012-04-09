@@ -16,6 +16,7 @@ DeltaRPM Support for Yum Importer
 """
 import logging
 import os
+from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
 DRPM_TYPE_ID="drpm"
@@ -38,6 +39,21 @@ def get_available_drpms(drpm_items):
         available_drpms[key] = drpm
     return available_drpms
 
+def get_existing_drpm_units(sync_conduit):
+   """
+   @param sync_conduit
+   @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
+
+   @return a dictionary of existing units, key is the drpm lookup_key and the value is the unit
+   @rtype {():pulp.server.content.plugins.model.Unit}
+   """
+   existing_drpm_units = {}
+   criteria = Criteria(type_ids=[DRPM_TYPE_ID])
+   for u in sync_conduit.get_units(criteria):
+       key = form_lookup_drpm_key(u.unit_key)
+       existing_drpm_units[key] = u
+   return existing_drpm_units
+
 def get_new_drpms_and_units(available_drpms, existing_units, sync_conduit):
     """
     Determines what rpms are new and will initialize new units to match these drpms
@@ -59,12 +75,12 @@ def get_new_drpms_and_units(available_drpms, existing_units, sync_conduit):
     for key in available_drpms:
         if key not in existing_units:
             drpm = available_drpms[key]
-            drpm["fileName"] = os.path.basename(drpm["fileName"])
+            pkgpath = os.path.join(drpm["pkgpath"], drpm["fileName"])
             new_drpms[key] = drpm
             unit_key = form_drpm_unit_key(drpm)
             metadata = form_drpm_metadata(drpm)
-            new_units[key] = sync_conduit.init_unit(DRPM_TYPE_ID, unit_key, metadata, drpm["pkgpath"])
-            drpm["pkgpath"] = new_units[key].storage_path
+            new_units[key] = sync_conduit.init_unit(DRPM_TYPE_ID, unit_key, metadata, pkgpath)
+            drpm["pkgpath"] = os.path.dirname(new_units[key].storage_path).split("/drpms")[0]
     return new_drpms, new_units
 
 def form_drpm_metadata(drpm):
@@ -82,4 +98,24 @@ def form_drpm_unit_key(rpm):
     for key in DRPM_UNIT_KEY:
         unit_key[key] = rpm[key]
     return unit_key
+
+def purge_orphaned_drpm_units(sync_conduit, repo, orphaned_units):
+    """
+    @param sync_conduit
+    @type sync_conduit L{pulp.server.content.conduits.repo_sync.RepoSyncConduit}
+
+    @param repo
+    @type repo  L{pulp.server.content.plugins.data.Repository}
+
+    @param orphaned_units
+    @type orphaned_units  list of L{pulp.server.content.plugins.model.Unit}
+    """
+    _LOG.info("purging orphaned drpm units")
+    for unit in orphaned_units:
+        _LOG.info("Removing unit <%s>" % unit)
+        sync_conduit.remove_unit(unit)
+        sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["fileName"])
+        if os.path.lexists(sym_link):
+            _LOG.debug("Remove link: %s" % sym_link)
+            os.unlink(sym_link)
 

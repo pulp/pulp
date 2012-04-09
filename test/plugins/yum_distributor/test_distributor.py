@@ -176,13 +176,14 @@ class TestDistributor(unittest.TestCase):
         distributor = YumDistributor()
         test_unit = Unit("rpm", "unit_key", {}, "")
 
+        test_unit.unit_key = {"fileName" : "test_1"}
+        rel_path = distributor.get_relpath_from_unit(test_unit)
+        self.assertEqual(rel_path, "test_1")
+
+        test_unit.unit_key = {}
         test_unit.storage_path = "test_0"
         rel_path = distributor.get_relpath_from_unit(test_unit)
         self.assertEqual(rel_path, "test_0")
-
-        test_unit.metadata["fileName"] = "test_1"
-        rel_path = distributor.get_relpath_from_unit(test_unit)
-        self.assertEqual(rel_path, "test_1")
 
         test_unit.metadata["filename"] = "test_2"
         rel_path = distributor.get_relpath_from_unit(test_unit)
