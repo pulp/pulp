@@ -257,7 +257,7 @@ class TestRPMs(unittest.TestCase):
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
         existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
-        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
@@ -472,7 +472,7 @@ class TestRPMs(unittest.TestCase):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_remove_old_packages"
-        sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, pkg_dir=self.pkg_dir)
         ###
         # Test that old packages are not in rpmList and are never intended to be downloaded
         # Additionallity verify that already existing packages which are NOT orphaned are also
@@ -500,7 +500,7 @@ class TestRPMs(unittest.TestCase):
                     os.path.join(self.pkg_dir, rpm["pkgpath"], rpm["filename"]))
             existing_units.append(u)
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=6)
-        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
         status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertEquals(summary["num_rpms"], 7)
