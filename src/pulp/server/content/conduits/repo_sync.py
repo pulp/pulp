@@ -128,8 +128,18 @@ class RepoSyncConduit(BaseImporterConduit):
                to the importer implementation so long as it is serializable
         @type  status: dict
         """
-        context = dispatch_factory.context()
-        context.report_progress(status)
+        try:
+            context = dispatch_factory.context()
+            context.report_progress(status)
+        except Exception, e:
+            _LOG.exception('Exception from server setting progress for repository [%s]' % self.repo_id)
+            try:
+                _LOG.error('Progress value: %s' % str(status))
+            except:
+                # Best effort to print this, but if its that grossly unserializable
+                # the log will tank and we don't want that exception to bubble up
+                pass
+            raise RepoSyncConduitException(e), None, sys.exc_info()[2]
 
     # -- unit lifecycle -------------------------------------------------------
 
