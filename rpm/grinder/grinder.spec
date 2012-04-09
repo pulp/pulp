@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Apr 09 2012 John Matthews <jmatthews@redhat.com> 0.0.145-1
+- Bumped grinder to .145 (jmatthews@redhat.com)
+
+* Mon Apr 09 2012 John Matthews <jmatthews@redhat.com> 0.0.145-1
 - Adding a low speed limit threshold to recognize a hung connection and abort
   (jmatthews@redhat.com)
 - change the drpm info to return new package keys (pkilambi@redhat.com)
