@@ -16,7 +16,7 @@ from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import PublishReport, Unit
 
-def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None):
+def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksum_type="sha"):
     def build_success_report(summary, details):
         return PublishReport(True, summary, details)
 
@@ -32,6 +32,12 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None):
             return existing_units
         return []
 
+    def get_repo_scratchpad():
+        scratchpad = None
+        if checksum_type:
+            scratchpad = {"checksum_type" : checksum_type}
+        return scratchpad
+
     publish_conduit = mock.Mock(spec=RepoPublishConduit)
     publish_conduit.get_units = mock.Mock()
     publish_conduit.get_units.side_effect = get_units
@@ -39,7 +45,10 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None):
     publish_conduit.build_failure_report = build_failure_report
     publish_conduit.build_success_report = mock.Mock()
     publish_conduit.build_success_report = build_success_report
+    publish_conduit.get_repo_scratchpad = mock.Mock()
+    publish_conduit.get_repo_scratchpad.side_effect = get_repo_scratchpad
     return publish_conduit
+
 
 
 def get_basic_config(*arg, **kwargs):
