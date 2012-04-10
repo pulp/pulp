@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.145
+Version: 0.0.146
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -59,8 +59,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Mon Apr 09 2012 John Matthews <jmatthews@redhat.com> 0.0.145-1
-- Bumped grinder to .145 (jmatthews@redhat.com)
+* Tue Apr 10 2012 John Matthews <jmatthews@redhat.com> 0.0.146-1
+- Update error report (jmatthews@redhat.com)
 
 * Mon Apr 09 2012 John Matthews <jmatthews@redhat.com> 0.0.145-1
 - Adding a low speed limit threshold to recognize a hung connection and abort
