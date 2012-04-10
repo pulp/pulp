@@ -283,6 +283,7 @@ class RunSyncCommand(PulpCliCommand):
 
         elif state == STATE_COMPLETE and self.errata_last_state not in END_STATES:
             self.errata_spinner.next(finished=True)
+            self.prompt.write(_('Imported %s errata') % progress_report['errata']['num_errata'])
             self.prompt.write(_('... completed'))
             self.prompt.render_spacer()
             self.errata_last_state = STATE_COMPLETE
