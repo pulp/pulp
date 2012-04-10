@@ -136,7 +136,6 @@ class YumImporter(Importer):
             _LOG.error("Caught Exception: %s" % (e))
             summary = {}
             summary["error"] = str(e)
-            summary["exception"] = e
             report = sync_conduit.build_failure_report(summary, None)
         return report
 

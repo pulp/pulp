@@ -354,6 +354,12 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
         if importer_progress_callback:
             importer_progress_callback(type_id, status)
 
+    def cleanup_error_details(error_details):
+        for error in error_details:
+            if error.has_key("exception"):
+                error["exception"] = str(error["exception"])
+        return error_details
+
     def progress_callback(report):
         """
         @param report progress report from Grinder
@@ -372,7 +378,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
             status["size_total"] = report.size_total
             status["items_left"] = report.items_left
             status["items_total"] = report.items_total
-            status["error_details"] = report.error_details
+            status["error_details"] = cleanup_error_details(report.error_details)
             status["details"] = {}
             if report.details:
                 for key in report.details.keys():

@@ -757,12 +757,11 @@ class TestRPMs(unittest.TestCase):
         self.assertEqual(len(updated_progress["content"]["error_details"]), 1)
         error = updated_progress["content"]["error_details"][0]
         self.assertEqual(error["filename"], "pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
-        self.assertEqual(error["error"]["value"], 
+        self.assertEqual(error["value"], 
             '(37, "Couldn\'t open file %s")' % (test_rpm_with_error))
-        self.assertEqual(error["error_type"], "error")
-        self.assertEqual(error["error"]["error_type"], "<class 'pycurl.error'>")
-        self.assertTrue(isinstance(error["error"]["exception"], pycurl.error)) 
-        self.assertTrue(len(error["error"]["traceback"]) > 0)
+        self.assertEqual(error["error_type"], "<class 'pycurl.error'>")
+        self.assertTrue(isinstance(error["exception"], basestring)) 
+        self.assertTrue(len(error["traceback"]) > 0)
 
     def test_local_sync_with_packages_in_subdir(self):
         feed_url = "file://%s/repo_packages_in_subdirs/" % (self.data_dir)

@@ -237,8 +237,8 @@ class RunSyncCommand(PulpCliCommand):
                     for i in range(0, num_errors):
                         error = data['error_details'][i]
 
-                        error_type = error['error']['error_type']
-                        traceback = '\n'.join(error['error']['traceback'])
+                        error_type = error['error_type']
+                        traceback = '\n'.join(error['traceback'])
 
                         message_data = {
                             'name'      : error['filename'],
