@@ -236,20 +236,20 @@ class RunSyncCommand(PulpCliCommand):
 
                     for i in range(0, num_errors):
                         error = data['error_details'][i]
-
-                        error_type = error['error_type']
+                        error_msg = error['error']
                         traceback = '\n'.join(error['traceback'])
 
                         message_data = {
                             'name'      : error['filename'],
-                            'type'      : error_type,
+                            'error'      : error_msg,
                             'traceback' : traceback
                         }
 
                         template  = 'Package: %(name)s\n'
-                        template += 'Error:   %(type)s\n'
-                        template += 'Traceback:\n'
-                        template += '%(traceback)s'
+                        template += 'Error:   %(error)s\n'
+                        if message_data["traceback"]:
+                            template += 'Traceback:\n'
+                            template += '%(traceback)s'
 
                         message = template % message_data
 

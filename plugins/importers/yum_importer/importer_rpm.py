@@ -135,7 +135,7 @@ def get_missing_rpms_and_units(available_rpms, existing_units):
                 missing_units[key] = existing_units[key]
                 # Adjust storage path to match intended location
                 # Grinder will use this 'pkgpath' to write the file
-                missing_rpms[key]["pkgpath"] = missing_units[key].storage_path
+                missing_rpms[key]["pkgpath"] = os.path.dirname(missing_units[key].storage_path)
     return missing_rpms, missing_units
 
 def form_rpm_unit_key(rpm):
