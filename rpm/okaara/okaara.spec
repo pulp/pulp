@@ -56,6 +56,11 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
+* Tue Apr 10 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.14-1
+- Upgraded okaara to 1.0.14 (jason.dobies@redhat.com)
+- Automatic commit of package [python-okaara] minor release [1.0.13-1].
+  (jason.dobies@redhat.com)
+
 * Wed Apr 04 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.14-1
 - Added create methods to CLI itself and default exit code for commands
   (jason.dobies@redhat.com)
