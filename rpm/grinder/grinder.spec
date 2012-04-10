@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Apr 10 2012 John Matthews <jmatthews@redhat.com> 0.0.146-1
+- Bump to Grinder .146 (jmatthews@redhat.com)
+
+* Tue Apr 10 2012 John Matthews <jmatthews@redhat.com> 0.0.146-1
 - Update error report (jmatthews@redhat.com)
 
 * Mon Apr 09 2012 John Matthews <jmatthews@redhat.com> 0.0.145-1
