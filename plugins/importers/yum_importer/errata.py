@@ -20,7 +20,7 @@ import time
 import yum
 import logging
 import updateinfo
-from util import get_repomd_filetype_path, get_repomd_filetypes
+from pulp.yum_plugin import util
 from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
@@ -45,11 +45,11 @@ def get_available_errata(repo_dir):
         @rtype {'':{}}
     """
     repomd_xml = os.path.join(repo_dir, "repodata/repomd.xml")
-    ftypes = get_repomd_filetypes(repomd_xml)
+    ftypes = util.get_repomd_filetypes(repomd_xml)
     errata_from_xml = {}
     if "updateinfo" not in ftypes:
         return errata_from_xml
-    updateinfo_xml_path = os.path.join(repo_dir, get_repomd_filetype_path(repomd_xml, "updateinfo"))
+    updateinfo_xml_path = os.path.join(repo_dir, util.get_repomd_filetype_path(repomd_xml, "updateinfo"))
     if not os.path.exists(updateinfo_xml_path):
         return {}
     try:
