@@ -404,6 +404,7 @@ fi
 # For noarch packages: sitelib
 %attr(-, root, root) %{python_sitelib}/pulp/server/
 %attr(-, root, root) %{python_sitelib}/pulp/repo_auth/
+%attr(-, root, root) %{python_sitelib}/pulp/yum_plugin/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
 %config(noreplace) %{_sysconfdir}/pulp/pulp.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
