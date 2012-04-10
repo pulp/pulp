@@ -212,7 +212,6 @@ class YumDistributor(Distributor):
         @return relative path
         @rtype str
         """
-        _LOG.info("UNIt info %s" % dir(unit))
         filename = ""
         if unit.metadata.has_key("relativepath"):
             relpath = unit.metadata["relativepath"]

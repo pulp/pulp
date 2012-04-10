@@ -10,18 +10,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
 import logging
 import yum
-from yum.update_md import UpdateMetadata, UpdateNotice
-from pulp.server.db.model import Errata
-from pulp.server.api.errata import ErrataApi
-from pulp.server.compat import chain
-import pulp.server.util
+from yum.update_md import UpdateMetadata
 
 log = logging.getLogger(__name__)
-
 #
 # yum 3.2.22 compat:  UpdateMetadata.add_notice() not
 # supported in 3.2.22.
@@ -50,7 +43,7 @@ def get_update_notices(path_to_updateinfo):
     Dictionary is based on keys from yum.update_md.UpdateNotice
     """
     um = UpdateMetadata()
-    um.add(pulp.server.util.encode_unicode(path_to_updateinfo))
+    um.add(path_to_updateinfo)
     notices = []
     for info in um.get_notices():
         notices.append(info.get_metadata())
@@ -103,81 +96,39 @@ def _translate_updatenotice_to_erratum(unotice):
         references, pkglist, severity, rights, summary, solution)
     return erratum
 
-def generate_updateinfo(repo):
+class Errata(dict):
     """
-    Method to generate updateinfo xml for a given repo, write to file and
-    update repomd.xml with new updateinfo
-    @param repo:  repo object with errata to generate updateinfo.xml
-    @type repo:  repository object
+    Errata object to represent software updates
+    maps to yum.update_md.UpdateNotice fields
     """
-    if repo['preserve_metadata']:
-        # metadata is set to be preserved, dont generate updatinfo
-        return
-    if not repo['errata']:
-        #no errata to process, return
-        return
-    errataids = list(chain.from_iterable(repo['errata'].values()))
-    repo_dir = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path'])
-    updateinfo_path = updateinfo(errataids, repo_dir)
-    if updateinfo_path:
-        log.debug("Modifying repo for updateinfo")
-        pulp.server.util.modify_repo(os.path.join(repo_dir, "repodata"),
-                updateinfo_path)
 
-def updateinfo(errataids, save_location):
-    um = UpdateMetadata()
-    eapi = ErrataApi()
-    for eid in errataids:
-        un = UpdateNotice()
-        e = eapi.erratum(eid)
+    def __init__(self, id, title, description, version, release, type, status=u"",
+            updated=u"", issued=u"", pushcount=1, from_str=u"",
+            reboot_suggested=False, references=[], pkglist=[], severity=u"",
+            rights=u"", summary=u"", solution=u""):
+        self.id = id
+        self.title = title
+        self.description = description
+        self.version = version
+        self.release = release
+        self.type = type
+        self.status = status
+        self.updated = updated
+        self.issued = issued
+        if pushcount:
+            self.pushcount = int(pushcount)
+        else:
+            self.pushcount = 1
+        self.from_str = from_str
+        self.reboot_suggested = reboot_suggested
+        self.references = references
+        self.pkglist = pkglist
+        self.rights = rights
+        self.severity = severity
+        self.summary = summary
+        self.solution = solution
 
-        _md = {
-            'from'             : e['from_str'],
-            'type'             : e['type'],
-            'title'            : e['title'],
-            'release'          : e['release'],
-            'status'           : e['status'],
-            'version'          : e['version'],
-            'pushcount'        : e['pushcount'],
-            'update_id'        : e['id'],
-            'issued'           : e['issued'],
-            'updated'          : e['updated'],
-            'description'      : e['description'],
-            'references'       : e['references'],
-            'pkglist'          : e['pkglist'],
-            'reboot_suggested' : e['reboot_suggested'],
-            'severity'         : e['severity'],
-            'rights'           : e['rights'],
-            'summary'          : e['summary'],
-            'solution'         : e['solution'],
-        }
-        un._md = _md
-        um.add_notice(un)
-
-    if not um._notices:
-        # nothing to do return
-        return
-    updateinfo_path = None
-    try:
-        updateinfo_path = "%s/%s" % (save_location, "updateinfo.xml")
-        updateinfo_xml = um.xml(fileobj=open(updateinfo_path, 'wt'))
-        log.info("updateinfo.xml generated and written to file %s" % updateinfo_path)
-    except:
-        log.error("Error writing updateinfo.xml to path %s" % updateinfo_path)
-    return updateinfo_path
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print "Usage: %s <PATH_TO/updateinfo.xml>"
-        sys.exit(1)
-    updateinfo_path = sys.argv[1]
-    notices = get_update_notices(updateinfo_path)
-    if len(notices) < 1:
-        print "Error parsing %s" % (updateinfo_path)
-        print "Ensure you are specifying the path to updateinfo.xml"
-        sys.exit(1)
-    print "UpdateInfo has been parsed for %s notices." % (len(notices))
-    example = notices[0]
-    for key in example.keys():
-        print "%s: %s" % (key, example[key])
-    print "Available keys are: %s" % (example.keys())
+    def __getattr__(self, attr):
+        return self.get(attr, None)
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__

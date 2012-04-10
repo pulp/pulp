@@ -19,8 +19,7 @@ import sys
 import time
 import yum
 import logging
-import updateinfo
-from pulp.yum_plugin import util
+from pulp.yum_plugin import util, updateinfo
 from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
