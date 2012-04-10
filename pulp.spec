@@ -448,6 +448,7 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-consumer
+%{_bindir}/pulp-v2-consumer
 %{_libdir}/gofer/plugins/*.py*
 %{_usr}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
@@ -456,6 +457,7 @@ fi
 %attr(755,root,root) %{_sysconfdir}/pki/pulp/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %config(noreplace) %{_sysconfdir}/pulp/consumer/consumer.conf
+%config(noreplace) %{_sysconfdir}/pulp/consumer/v2_consumer.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # -- files - pulp admin -----------------------------------------------------
