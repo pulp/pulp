@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import glob
 import os
 import sys
 import mock
@@ -18,10 +19,11 @@ import tempfile
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
 import drpm
-import importer_rpm
 import importer_mocks
+import importer_rpm
 from importer import YumImporter
 from importer import YUM_IMPORTER_TYPE_ID
+from drpm import DRPM_UNIT_KEY, DRPM_TYPE_ID
 from pulp.server.content.plugins.model import Repository, Unit
 
 class TestDRPMS(unittest.TestCase):
@@ -43,7 +45,6 @@ class TestDRPMS(unittest.TestCase):
 
     def test_drpm_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_drpm_repo/"
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_repo"
@@ -56,3 +57,30 @@ class TestDRPMS(unittest.TestCase):
         self.assertEquals(summary["num_synced_new_drpms"], 18)
         self.assertEquals(summary["num_resynced_drpms"], 0)
         self.assertEquals(summary["num_orphaned_drpms"], 0)
+        # validate drpms on filesystem
+        def get_drpm_list(dir):
+            dpkgs = []
+            for root, dirs, files in os.walk(dir):
+                for file in files:
+                    dpkgs.append("%s/%s" % (root, file))
+            return dpkgs
+        dpkgs = filter(lambda x: x.endswith(".drpm"), get_drpm_list(self.pkg_dir))
+        self.assertEquals(len(dpkgs), 18)
+        # Confirm symlinks
+        sym_links = filter(lambda x: x.endswith(".drpm"), get_drpm_list(repo.working_dir))
+        self.assertEquals(len(sym_links), 18)
+        for link in sym_links:
+            self.assertTrue(os.path.islink(link))
+
+    def test_get_available_drpms(self):
+        deltarpm = {}
+        for k in DRPM_UNIT_KEY:
+            deltarpm[k] = "test_drpm"
+        available_drpms = drpm.get_available_drpms([deltarpm])
+        lookup_key = drpm.form_lookup_drpm_key(deltarpm)
+        self.assertEqual(available_drpms[lookup_key], deltarpm)
+
+    def test_purge_drpms(self):
+        pass
+
+
