@@ -16,8 +16,8 @@ Contains (proxy) classes that represent the pulp agent.
 """
 
 import hashlib
-from agenthub.rest import Rest as RestImpl
-from agenthub.client import Agent
+from pulp.server.gc_agent.rest import Rest as RestImpl
+from pulp.server.gc_agent.client import Agent
 from pulp.server.exceptions import PulpDataException
 from logging import getLogger
 
