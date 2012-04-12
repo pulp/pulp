@@ -79,8 +79,7 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        options['taskid'] = factory.context().task_id
-        agent = PulpAgent(consumer)
+        agent = PulpAgent(consumer, factory.context().task_id)
         agent.content.install(units, options)
 
     def update_content(self, id, units, options):
@@ -96,8 +95,7 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        options['taskid'] = factory.context().task_id
-        agent = PulpAgent(consumer)
+        agent = PulpAgent(consumer, factory.context().task_id)
         agent.content.update(units, options)
 
     def uninstall_content(self, id, units, options):
@@ -113,8 +111,7 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        options['taskid'] = factory.context().task_id
-        agent = PulpAgent(consumer)
+        agent = PulpAgent(consumer, factory.context().task_id)
         agent.content.uninstall(units, options)
 
     def send_profile(self, id):

@@ -18,7 +18,6 @@ Contains (proxy) classes that represent the pulp agent.
 import hashlib
 from pulp.server.gc_agent.rest import Rest as RestImpl
 from pulp.server.gc_agent.client import Agent
-from pulp.server.exceptions import PulpDataException
 from logging import getLogger
 
 
@@ -112,7 +111,8 @@ class Consumer(Domain):
         agent = Agent(
             self.context.uuid,
             self.context.rest,
-            secret=self.context.secret)
+            secret=self.context.secret,
+            async=True)
         return agent
 
     def unregistered(self):
@@ -122,7 +122,7 @@ class Consumer(Domain):
         """
         agent = self.agent()
         consumer = agent.Consumer()
-        result = consumer.unregistered()
+        status, result = consumer.unregistered()
         # TODO: process
         return result
 

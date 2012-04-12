@@ -72,13 +72,13 @@ class Consumer(object):
     """
 
     def unregistered(self):
-        return (200, None)
+        return (202, None)
     
     def bind(self, repoid):
-        return (200, repoid)
+        return (202, repoid)
     
     def unbind(self, repoid):
-        return (200, repoid)
+        return (202, repoid)
 
 
 class Content(object):
