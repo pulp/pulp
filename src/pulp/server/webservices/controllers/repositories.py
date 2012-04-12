@@ -1894,7 +1894,17 @@ class RepositoryActions(JSONController):
         failure response: 404 Not Found if the id does not match a repository
         return: object of package file names to Package objects
         parameters:
-         * nvrea, list of str, list of name, version, release, epoch, architecture specifications
+         * nvrea, object, object fields: name, version, release, epoch, arch
+        example:
+        {{{
+        #!js
+         {'nvrea': {'name': 'pulp',
+                    'version': '1.0.0',
+                    'release': '2',
+                    'epoch': '0',
+                    'arch': 'x86_64'}
+         }
+        }}}
         """
         data = self.params()
         return self.ok(api.get_packages_by_nvrea(id, data['nvrea']))
