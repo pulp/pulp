@@ -874,7 +874,7 @@ class RepoApi(BaseApi):
         log.debug("looking up pkg(s) [%s] in repo [%s]" % (nvreas, repo_id))
         repo = self._get_existing_repo(repo_id)
         repo_packages = repo['packages']
-        result = self.packageapi.or_query(nvreas, restrict_ids=repo_packages)
+        result = self.packageapi.and_query(nvreas, restrict_ids=repo_packages)
         pkgs = {}
         for p in result:
             if verify_existing:
