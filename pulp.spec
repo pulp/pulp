@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.281
+Version:        0.0.282
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -509,6 +509,167 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Apr 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.282-1
+- 796292 - adding simple check for None return from package lookup
+  (jconnor@redhat.com)
+- 790919 - updated parametes to reflect acutal parameters not outdated ones
+  (jconnor@redhat.com)
+- 791341 - moved role removal into own loop (jconnor@redhat.com)
+- 791341 - removing role name from user roles when role is deleted
+  (jconnor@redhat.com)
+- Connect agent_manager to agent proxy; update unit tests. (jortel@redhat.com)
+- Add agent proxy unit tests and mocks. (jortel@redhat.com)
+- 809234 - added content-length header for base class response returns
+  (jconnor@redhat.com)
+- tests to validate drpms on filesystem (pkilambi@redhat.com)
+- YumImporter:  Fix path issue on resync of a rpm and update CLI to display
+  error message (jmatthews@redhat.com)
+- Automatic commit of package [python-okaara] minor release [1.0.14-1].
+  (jason.dobies@redhat.com)
+- Upgraded okaara to 1.0.14 (jason.dobies@redhat.com)
+- Added errata count to sync output (jason.dobies@redhat.com)
+- adding pulp-v2-consumer and v2_consumer.conf to spec file
+  (skarmark@redhat.com)
+- updating spec to include pulp.yum_plugin (pkilambi@redhat.com)
+- clean up and move updateinfo to yum_plugin package (pkilambi@redhat.com)
+- change the utils to use new yum_plugin package (pkilambi@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.146-1].
+  (jmatthews@redhat.com)
+- Bump to Grinder .146 (jmatthews@redhat.com)
+- YumImporter:  Remove exception from being added to sync report/progress
+  (jmatthews@redhat.com)
+- fixing the drpm sync to store the units in the correct location and symlink
+  to working directory (pkilambi@redhat.com)
+- changed get and find interfaces to return scheduled call requests instead of
+  tuples (jconnor@redhat.com)
+- added schedule_id filed to scheduled call request (jconnor@redhat.com)
+- copy importer repodata to the distributor location on publish and before
+  generating metadata (pkilambi@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.145-1].
+  (jmatthews@redhat.com)
+- Bumped grinder to .145 (jmatthews@redhat.com)
+- changing the call to get the info from scratchpad (pkilambi@redhat.com)
+- Wrap exceptions from the conduit in the proper wrapper
+  (jason.dobies@redhat.com)
+- Fixed missing string substitution (jason.dobies@redhat.com)
+- Default generate_metadata to true in the added distributor
+  (jason.dobies@redhat.com)
+- Consolidate agent manager API. (jortel@redhat.com)
+- move GC agent proxy onto separate package. (jortel@redhat.com)
+- YumDistributor:  added a full publish test (jmatthews@redhat.com)
+- 807002 - Fixed incorrect help on RPM unit search (jason.dobies@redhat.com)
+- Convert SSL certificate expiration into a PermissionException
+  (jason.dobies@redhat.com)
+- Removing V1 test_remove_filters test which is randomly failing because of
+  repodata unavailable, this will changed in v2 (skarmark@redhat.com)
+- Add missing (options) to content.uninstall(). (jortel@redhat.com)
+- Rename (jason.dobies@redhat.com)
+- Slight restructuring of rpm user guide (jason.dobies@redhat.com)
+- Restructured API documents into subdirectories to keep the api_* files from
+  getting out of control (jason.dobies@redhat.com)
+- Updating consumer register api to use create_weight from config and
+  execute_sync_created call (skarmark@redhat.com)
+- Fixing manager layer to pass property name instead of property value to
+  InvalidType exception and fixing unit tests accordingly (skarmark@redhat.com)
+- Removing register from v2 admin_consumer section description
+  (skarmark@redhat.com)
+- YumDistributor:  Fix to handle when relative_url starts or ends with "/"
+  (jmatthews@redhat.com)
+- Update units for GC content install. (jortel@redhat.com)
+- YumDistributor: Simple support for relative_url and override of
+  https_publish_dir (jmatthews@redhat.com)
+- trim the drpm storage path to include only drpm file (pkilambi@redhat.com)
+- seeting packages dir for drpm test (pkilambi@redhat.com)
+- Changed definition to binding to describe what the definition is for
+  (jason.dobies@redhat.com)
+- Alphabetized the glossary (jason.dobies@redhat.com)
+- OCD renaming (jason.dobies@redhat.com)
+- YumImporter: consolidated test data into same location (jmatthews@redhat.com)
+- metadata types dict to lookup what types to include and skip during
+  createrepo (pkilambi@redhat.com)
+- added postponed middleware to test stack (jconnor@redhat.com)
+- changed MissingResource to accept keyword arggumets as per our sprint review
+  while maintaining backward compatability with single resource_id positional
+  argument (jconnor@redhat.com)
+- converted scheuler add to use scheduled call request instance
+  (jconnor@redhat.com)
+- added scheduled call request (jconnor@redhat.com)
+- simplifying group logic to its own call (pkilambi@redhat.com)
+- Initial add support for GC content install in consumer controller.
+  (jortel@redhat.com)
+- Initial structure of the Pulp RPM user guide (jason.dobies@redhat.com)
+- Add initial agent manager tests. (jortel@redhat.com)
+- Return fetched object on bind create; add _href in returned bind object.
+  (jortel@redhat.com)
+- Added basic handling for sync v. async responses (jason.dobies@redhat.com)
+- Added bindings call for update_repo_and_plugins and changed repo update to
+  use it (jason.dobies@redhat.com)
+-  create a pulp.yum_plugin package with common calls between importer and
+  distributor (pkilambi@redhat.com)
+- Updated REST API for update to use the aggregate call
+  (jason.dobies@redhat.com)
+- YumDistributor: initial changes to support metadata generation in the
+  distributor publish (pkilambi@redhat.com)
+- Added manager aggregate method for update repo and plugins
+  (jason.dobies@redhat.com)
+- Removing return from pulp_admin_auth extension as extension loading failure
+  is fixed now (skarmark@redhat.com)
+- consumer client bindings (skarmark@redhat.com)
+- Minor enhancements and comments in consumer manager and webservices
+  (skarmark@redhat.com)
+- added comment (jconnor@redhat.com)
+- moving the dispatch initialization until *after* the v2 plugins are loaded
+  which might help when kicking off tasks that rely on them... duh
+  (jconnor@redhat.com)
+- turns out I was incrementing the running weight when I kicked off tasks, but
+  never decrementing it when they completed AWESOME (jconnor@redhat.com)
+- YumDistributor: rename unit test (jmatthews@redhat.com)
+- YumDistributor: unit tests for basic symlink functionality
+  (jmatthews@redhat.com)
+- YumImporter: Remove AssociatedUnit from being stored in error report
+  (jmatthews@redhat.com)
+- Automatic commit of package [python-okaara] minor release [1.0.13-1].
+  (jason.dobies@redhat.com)
+- Fixed consumer unregister to use latest changes to agent.unregistered call
+  which was causing unit tests to fail (skarmark@redhat.com)
+- added pymongo 1.6 compatability (jconnor@redhat.com)
+- using ObjectId for lookups in db now (jconnor@redhat.com)
+- re-implemented execute and execute_sync that now return the call result if
+  all goes well (jconnor@redhat.com)
+- converted all postponed calls to use new OperationPostponed exception and
+  postponed middleware (jconnor@redhat.com)
+- added postponed operation middleware to application stack
+  (jconnor@redhat.com)
+- added postponed operation middleware (jconnor@redhat.com)
+- added OperationPostponed exception (jconnor@redhat.com)
+- removed unused middleware (jconnor@redhat.com)
+- initial scheduled_call serialization (jconnor@redhat.com)
+- added scheduled syncs and publishes to importer and distributor models
+  (jconnor@redhat.com)
+- added operational placeholders for scheduled syncs and publishes
+  (jconnor@redhat.com)
+- added schedule resource type (jconnor@redhat.com)
+- added handling of ObjectId and basestring instances for schedule_id
+  (jconnor@redhat.com)
+- Syntax correction in ReST docs for bind. (jortel@redhat.com)
+- Repository controller exception cleanup (jason.dobies@redhat.com)
+- YumDistributor: First attempt at symlink creation and publish
+  (jmatthews@redhat.com)
+- YumImporter unit test data for packages under sub directories
+  (jmatthews@redhat.com)
+- add terms (repository, consumer & bind to sphinx glossery.
+  (jortel@redhat.com)
+- Refactored for proper namespacing. (jortel@redhat.com)
+  (jmatthews@redhat.com)
+- changed all importer/distributor operations to also be update operations on
+  the repo itself for better conflict detection in the coordinator
+  (jconnor@redhat.com)
+- Added manager factory test (jason.dobies@redhat.com)
+- Fixed for removed manager (jason.dobies@redhat.com)
+- Exception cleanup after middleware introduction (jason.dobies@redhat.com)
+- Removed in_progress flags for importers/distributors; the tasking subsystem
+  handles that (jason.dobies@redhat.com)
+
 * Fri Mar 30 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.281-1
 - Cleaned up stale exceptions left over after middleware introduction
   (jason.dobies@redhat.com)
