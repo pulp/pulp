@@ -930,8 +930,19 @@ If you do edit this page directly, please remove this comment
 [[BR]]
 '''return''': object of package file names to Package objects [[BR]]
 [[BR]]
+'''example''': 
+{{{
+#!js
+ {'nvrea': {'name': 'pulp',
+            'version': '1.0.0',
+            'release': '2',
+            'epoch': '0',
+            'arch': 'x86_64'}
+ }
+}}}
+[[BR]]
 '''parameters''': 
- * '''nvrea''' <list of str> ''list of name, version, release, epoch, architecture specifications''
+ * '''nvrea''' <object> ''object fields: name, version, release, epoch, arch''
 [[BR]]
 
 == Import Comps ==
