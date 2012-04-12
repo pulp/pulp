@@ -414,6 +414,8 @@ def delete_role(role_name):
     users = _get_users_belonging_to_role(role)
     for resource, operations in role['permissions'].items():
         for user in users:
+            user['roles'].remove(role_name)
+            _user_api.update(user['login'], Delta(user, 'roles'))
             other_roles = _get_other_roles(role, user['roles'])
             user_ops = _operations_not_granted_by_roles(resource,
                                                         operations,
