@@ -128,8 +128,10 @@ class JSONController(object):
         """
         JSON encode the response and set the appropriate headers
         """
+        body = json.dumps(data, default=json_util.default)
         http.header('Content-Type', 'application/json')
-        return json.dumps(data, default=json_util.default)
+        http.header('Content-Length', len(body))
+        return body
 
     def _error_dict(self, msg, code=None):
         """
