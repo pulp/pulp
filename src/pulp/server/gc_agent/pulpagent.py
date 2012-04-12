@@ -163,8 +163,6 @@ class Content(Domain):
         @rtype: L{Agent}
         """
         taskid = self.context.get('taskid')
-        if not taskid:
-            raise PulpDataException('taskid required')
         agent = Agent(
             self.context.uuid,
             self.context.rest,

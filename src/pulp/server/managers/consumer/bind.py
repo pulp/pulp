@@ -60,8 +60,8 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             pass
-        agent = factory.consumer_agent_manager()
-        agent.bind(bind)
+        manager = factory.consumer_agent_manager()
+        manager.bind(consumer_id, repo_id)
         return bind
 
     def unbind(self, consumer_id, repo_id, distributor_id):
@@ -87,8 +87,8 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        agent = factory.consumer_agent_manager()
-        agent.unbind(bind)
+        manager = factory.consumer_agent_manager()
+        manager.unbind(consumer_id, repo_id)
         return bind
         
     def consumer_deleted(self, id):
@@ -99,23 +99,25 @@ class BindManager(object):
         @type id: str
         """
         collection = Bind.get_collection()
+        agent_manager = factory.consumer_agent_manager()
         for bind in self.find_by_consumer(id):
             collection.remove(bind, safe=True)
-            agent = factory.consumer_agent_manager()
-            agent.unbind(bind)
+            repo_id = bind['repo_id']
+            agent_manager.unbind(id, repo_id)
     
-    def repo_deleted(self, id):
+    def repo_deleted(self, repo_id):
         """
         Notification that a repository has been deleted.
         Associated binds are removed.
-        @param id: A repo ID.
-        @type id: str
+        @param repo_id: A repo ID.
+        @type repo_id: str
         """
         collection = Bind.get_collection()
-        for bind in self.find_by_repo(id):
+        agent_manager = factory.consumer_agent_manager()
+        for bind in self.find_by_repo(repo_id):
             collection.remove(bind, safe=True)
-            agent = factory.consumer_agent_manager()
-            agent.unbind(bind)
+            consumer_id = bind['consumer_id']
+            agent_manager.unbind(consumer_id, repo_id)
 
     def distributor_deleted(self, repo_id, distributor_id):
         """
@@ -127,10 +129,11 @@ class BindManager(object):
         @type distributor_id: str
         """
         collection = Bind.get_collection()
+        agent_manager = factory.consumer_agent_manager()
         for bind in self.find_by_distributor(repo_id, distributor_id):
             collection.remove(bind, safe=True)
-            agent = factory.consumer_agent_manager()
-            agent.unbind(bind)
+            consumer_id = bind['consumer_id']
+            agent_manager.unbind(consumer_id, repo_id)
 
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """

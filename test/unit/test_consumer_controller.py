@@ -19,13 +19,15 @@ import mock
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
-
 import mock_plugins
+import mockagent
+
 import pulp.server.content.loader as plugin_loader
 from pulp.server.managers import factory
 from pulp.server.db.model.gc_consumer import Consumer, Bind
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 from pulp.server.webservices.controllers import statuses
+
 
 class BindTest(testutil.PulpV2WebserviceTest):
     
@@ -46,6 +48,7 @@ class BindTest(testutil.PulpV2WebserviceTest):
         Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
+        mockagent.install()
         
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
@@ -199,6 +202,7 @@ class ContentTest(testutil.PulpV2WebserviceTest):
         Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
+        mockagent.install()
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)

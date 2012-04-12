@@ -16,7 +16,10 @@
 """
 Contains agent management classes
 """
-
+from pulp.server.managers import factory as managers
+from pulp.server.exceptions import InvalidValue, MissingResource
+from pulp.server.gc_agent.pulpagent import PulpAgent
+from pulp.server.dispatch import factory
 from logging import getLogger
 
 
@@ -36,29 +39,32 @@ class AgentManager(object):
         @param id: The consumer ID.
         @type id: str
         """
-        _LOG.info(id)
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        agent = PulpAgent(consumer)
+        agent.consumer.unregistered()
 
-    def bind(self, bind):
+    def bind(self, id, repo_id):
         """
         Apply a bind to the agent.
-        @param bind: The bind added.
-            {consumer_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>}
-        @type bind: dict
+        @param repo_id: A repository ID.
+        @type repo_id: str
         """
-        _LOG.info(bind)
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        agent = PulpAgent(consumer)
+        agent.consumer.bind(repo_id)
 
-    def unbind(self, bind):
+    def unbind(self, id, repo_id):
         """
         Apply a unbind to the agent.
-        @param bind: The bind removed.
-            {consumer_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>}
-        @type bind: dict
+        @param repo_id: A repository ID.
+        @type repo_id: str
         """
-        _LOG.info(bind)
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        agent = PulpAgent(consumer)
+        agent.consumer.unbind(repo_id)
 
     def install_content(self, id, units, options):
         """
@@ -71,7 +77,11 @@ class AgentManager(object):
         @param options: Install options; based on unit type.
         @type options: dict
         """
-        _LOG.info('id:%s units:%s, options:%s', id, units, options)
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        options['taskid'] = factory.context().task_id
+        agent = PulpAgent(consumer)
+        agent.content.install(units, options)
 
     def update_content(self, id, units, options):
         """
@@ -84,7 +94,11 @@ class AgentManager(object):
         @param options: Update options; based on unit type.
         @type options: dict
         """
-        _LOG.info('id:%s units:%s, options:%s', id, units, options)
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        options['taskid'] = factory.context().task_id
+        agent = PulpAgent(consumer)
+        agent.content.update(units, options)
 
     def uninstall_content(self, id, units, options):
         """
@@ -97,7 +111,11 @@ class AgentManager(object):
         @param options: Uninstall options; based on unit type.
         @type options: dict
         """
-        _LOG.info('id:%s units:%s, options:%s', id, units, options)
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        options['taskid'] = factory.context().task_id
+        agent = PulpAgent(consumer)
+        agent.content.uninstall(units, options)
 
     def send_profile(self, id):
         """

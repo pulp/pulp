@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 
 import testutil
 import mock_plugins
+import mockagent
 
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_consumer import Consumer, Bind
@@ -29,15 +30,16 @@ import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.factory as factory
 import pulp.server.exceptions as exceptions
 
+
 # -- test cases ---------------------------------------------------------------
 
 class ConsumerManagerTests(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-
         plugin_loader._create_loader()
         mock_plugins.install()
+        mockagent.install()
 
         # Create the manager instance to test
         self.manager = consumer_manager.ConsumerManager()
@@ -637,6 +639,7 @@ class AgentManagerTests(testutil.PulpTest):
         Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
+        mockagent.install()
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
@@ -682,7 +685,7 @@ class AgentManagerTests(testutil.PulpTest):
             self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.bind(bind)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID)
         # verify
         # TODO: verify
 
@@ -696,7 +699,7 @@ class AgentManagerTests(testutil.PulpTest):
             self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.bind(bind)
+        manager.unbind(self.CONSUMER_ID, self.REPO_ID)
         # verify
         # TODO: verify
 
