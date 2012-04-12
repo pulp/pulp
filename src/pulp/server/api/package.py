@@ -94,8 +94,10 @@ class PackageApi(BaseApi):
         """
         if self.referenced(id):
             raise PackageHasReferences(id)
+        pkg = self.package(id)
+        if pkg is None:
+            return
         if not keep_files:
-            pkg = self.package(id)
             pkg_packages_path = util.get_shared_package_path(
                                            pkg["name"], pkg["version"], pkg["release"], pkg["arch"],
                                            pkg["filename"], pkg["checksum"])
@@ -184,11 +186,11 @@ class PackageApi(BaseApi):
         @param pkg_ids list of package ids
         @type dictionary of package objects, key is package id
         @type kwargs: variable number of named keyword arguments
-        @param kwargs: a variable number of arguments can be passed into 
+        @param kwargs: a variable number of arguments can be passed into
                        the search query, example: name="pkg_name1", filename="file1.rpm"
 
-        One use of this method is to query for a particular package inside of a repo. 
-        First restrict the search to only ids in the repo, then refine to match the 
+        One use of this method is to query for a particular package inside of a repo.
+        First restrict the search to only ids in the repo, then refine to match the
         desired query
         """
         search_dict = {"id":{"$in":pkg_ids}}
