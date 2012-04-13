@@ -163,6 +163,9 @@ class RepoUnitAssociationManager(object):
         importer. It is the job of the importer to make the associate calls
         back into Pulp where applicable.
 
+        If criteria is None, the effect of this call is to copy the source
+        repository's associations into the destination repository.
+
         @param source_repo_id: identifies the source repository
         @type  source_repo_id: str
 
@@ -190,59 +193,77 @@ class RepoUnitAssociationManager(object):
 
         # This will raise MissingResource if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
-        repo_importer = importer_manager.get_importer(dest_repo_id)
+        dest_repo_importer = importer_manager.get_importer(dest_repo_id)
+        source_repo_importer = importer_manager.get_importer(source_repo_id)
 
         # The docs are incorrect on the list_importer_types call; it actually
         # returns a dict with the types under key "types" for some reason.
-        supported_type_ids = plugin_loader.list_importer_types(repo_importer['importer_type_id'])['types']
+        supported_type_ids = plugin_loader.list_importer_types(dest_repo_importer['importer_type_id'])['types']
 
-        # The plugin should get all of the information for each unit, so in case
-        # the user specified filters remove them
+        # If criteria is specified, retrieve the list of units now
+        associate_us = None
         if criteria is not None:
             criteria.association_fields = None
             criteria.unit_fields = None
 
-        # Retrieve the units to be associated
-        association_query_manager = manager_factory.repo_unit_association_query_manager()
-        associate_us = association_query_manager.get_units(source_repo_id, criteria=criteria)
+            # Retrieve the units to be associated
+            association_query_manager = manager_factory.repo_unit_association_query_manager()
+            associate_us = association_query_manager.get_units(source_repo_id, criteria=criteria)
 
-        # If there are no matching units, there's no need to bother the plugin
-        if len(associate_us) is 0:
-            return
+            # If units were supposed to be filtered but none matched, we're done
+            if len(associate_us) is 0:
+                return
 
         # Now we can make sure the destination repository's importer is capable
-        # of importing the selected units
-        associated_unit_type_ids = set([u['unit_type_id'] for u in associate_us])
+        # of importing either the selected units or all of the units
+        if associate_us is not None:
+            associated_unit_type_ids = set([u['unit_type_id'] for u in associate_us])
+        else:
+            association_query_manager = manager_factory.repo_unit_association_query_manager()
+
+            # We may want to make a call here that only retrieves the unique
+            # type IDs instead of all of the units, but for now it doesn't exist
+            # and I'm not entirely sure this will be a huge problem.
+            all_units = association_query_manager.get_units(source_repo_id)
+            associated_unit_type_ids = set(u['unit_type_id'] for u in all_units)
+
         unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
 
         if len(unsupported_types) > 0:
             raise exceptions.InvalidValue(['types'])
 
-        # Convert all of the units into the plugin standard representation
-        type_defs = {}
-        for def_id in associated_unit_type_ids:
-            type_def = types_db.type_definition(def_id)
-            type_defs[def_id] = type_def
+        # Convert all of the units into the plugin standard representation if
+        # a filter was specified
+        transfer_units = None
+        if associate_us is not None:
+            type_defs = {}
+            for def_id in associated_unit_type_ids:
+                type_def = types_db.type_definition(def_id)
+                type_defs[def_id] = type_def
 
-        transfer_units = []
-        for unit in associate_us:
-            type_id = unit['unit_type_id']
-            u = conduit_common_utils.to_plugin_unit(unit, type_defs[type_id])
-            transfer_units.append(u)
+            transfer_units = []
+            for unit in associate_us:
+                type_id = unit['unit_type_id']
+                u = conduit_common_utils.to_plugin_unit(unit, type_defs[type_id])
+                transfer_units.append(u)
 
-        transfer_repo = common_utils.to_transfer_repo(dest_repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], dest_repo['id'], mkdir=True)
+        # Convert the two repos into the plugin API model
+        transfer_dest_repo = common_utils.to_transfer_repo(dest_repo)
+        transfer_dest_repo.working_dir = common_utils.importer_working_dir(dest_repo_importer['importer_type_id'], dest_repo['id'], mkdir=True)
+
+        transfer_source_repo = common_utils.to_transfer_repo(source_repo)
+        transfer_source_repo.working_dir = common_utils.importer_working_dir(source_repo_importer['importer_type_id'], source_repo['id'], mkdir=True)
 
         # Invoke the importer
-        importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
+        importer_instance, plugin_config = plugin_loader.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
-        call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
-        conduit = ImportUnitConduit(dest_repo_id, repo_importer['id'])
+        call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'])
+        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
 
         try:
-            importer_instance.import_units(transfer_repo, transfer_units, conduit, call_config)
+            importer_instance.import_units(transfer_source_repo, transfer_dest_repo, conduit, call_config, units=transfer_units)
         except Exception:
-            _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (repo_importer['importer_type_id'], dest_repo_id))
+            _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (dest_repo_importer['importer_type_id'], dest_repo_id))
             raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
@@ -278,6 +299,9 @@ class RepoUnitAssociationManager(object):
                 'owner_id' : owner_id,
                 }
 
+        # TODO: Contact the importer to tell it about the removal
+        # It's the remove_units call in the Importer API
+
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove(spec, safe=True)
 
@@ -310,6 +334,9 @@ class RepoUnitAssociationManager(object):
                 'owner_type' : owner_type,
                 'owner_id' : owner_id,
                 }
+
+        # TODO: Contact the importer to tell it about the removal
+        # It's the remove_units call in the Importer API
 
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove(spec, safe=True)

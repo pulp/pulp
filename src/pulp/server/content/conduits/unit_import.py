@@ -21,8 +21,12 @@ import logging
 import sys
 
 from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
+import pulp.server.content.conduits._common as common_utils
+import pulp.server.content.types.database as types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
+
+from pulp.server.managers.repo.unit_association_query import Criteria # shadow for importing by plugins
 
 # -- constants ----------------------------------------------------------------
 
@@ -51,13 +55,17 @@ class ImportUnitConduit(BaseImporterConduit):
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, importer_id):
-        BaseImporterConduit.__init__(self, repo_id, importer_id)
+    def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id):
+        BaseImporterConduit.__init__(self, dest_repo_id, dest_importer_id)
 
-        self.repo_id = repo_id
-        self.importer_id = importer_id
+        self.source_repo_id = source_repo_id
+        self.dest_repo_id = dest_repo_id
+
+        self.source_importer_id = source_importer_id
+        self.dest_importer_id = dest_importer_id
 
         self.__association_manager = manager_factory.repo_unit_association_manager()
+        self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
         self.__importer_manager = manager_factory.repo_importer_manager()
 
     def __str__(self):
@@ -80,8 +88,48 @@ class ImportUnitConduit(BaseImporterConduit):
         """
 
         try:
-            self.__association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, RepoContentUnit.OWNER_TYPE_IMPORTER, self.importer_id)
+            self.__association_manager.associate_unit_by_id(self.dest_repo_id, unit.type_id, unit.id, RepoContentUnit.OWNER_TYPE_IMPORTER, self.dest_importer_id)
             return unit
         except Exception, e:
             _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
+            raise UnitImportConduitException(e), None, sys.exc_info()[2]
+
+    def get_source_units(self, criteria=None):
+        """
+        Returns the collection of content units associated with the source
+        repository for a unit import.
+
+        Units returned from this call will have the id field populated and are
+        useable in any calls in this conduit that require the id field.
+
+        @param criteria: used to scope the returned results or the data within;
+               the Criteria class can be imported from this module
+        @type  criteria: L{Criteria}
+
+        @return: list of unit instances
+        @rtype:  list of L{AssociatedUnit}
+        """
+
+        try:
+            units = self.__association_query_manager.get_units_across_types(self.source_repo_id, criteria=criteria)
+
+            all_units = []
+
+            # Load all type definitions in use so we don't hammer the database
+            unique_type_defs = set([u['unit_type_id'] for u in units])
+            type_defs = {}
+            for def_id in unique_type_defs:
+                type_def = types_db.type_definition(def_id)
+                type_defs[def_id] = type_def
+
+            # Convert to transfer object
+            for unit in units:
+                type_id = unit['unit_type_id']
+                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+                all_units.append(u)
+
+            return all_units
+
+        except Exception, e:
+            _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
             raise UnitImportConduitException(e), None, sys.exc_info()[2]

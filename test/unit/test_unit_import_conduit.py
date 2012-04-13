@@ -25,19 +25,14 @@ from pulp.server.content.conduits.unit_import import ImportUnitConduit, UnitImpo
 from pulp.server.content.conduits._common import to_plugin_unit
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
-from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
+from pulp.server.db.model.gc_repository import Repo, RepoContentUnit, RepoImporter
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo.cud as repo_manager
-import pulp.server.managers.repo.importer as importer_manager
+import pulp.server.managers.repo._common as common_utils
 import pulp.server.managers.repo.unit_association as association_manager
-import pulp.server.managers.repo.unit_association_query as association_query_manager
-import pulp.server.managers.content.cud as content_manager
-import pulp.server.managers.content.query as content_query_manager
 
 # constants --------------------------------------------------------------------
 
 MOCK_TYPE_DEF = types_model.TypeDefinition('mock-type', 'Mock Type', 'Used by the mock importer', ['key-1'], [], [])
-
 
 # -- test cases ---------------------------------------------------------------
 
@@ -48,6 +43,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         types_database.clean()
 
         RepoContentUnit.get_collection().remove()
+        RepoImporter.get_collection().remove()
         Repo.get_collection().remove()
 
     def setUp(self):
@@ -55,19 +51,21 @@ class RepoSyncConduitTests(testutil.PulpTest):
         mock_plugins.install()
         types_database.update_database([MOCK_TYPE_DEF])
 
-        self.repo_manager = repo_manager.RepoManager()
-        self.importer_manager = importer_manager.RepoImporterManager()
-        self.association_manager = association_manager.RepoUnitAssociationManager()
-        self.association_query_manager = association_query_manager.RepoUnitAssociationQueryManager()
-        self.content_manager = content_manager.ContentManager()
-        self.content_query_manager = content_query_manager.ContentQueryManager()
+        self.repo_manager = manager_factory.repo_manager()
+        self.repo_query_manager = manager_factory.repo_query_manager()
+        self.importer_manager = manager_factory.repo_importer_manager()
+        self.association_manager = manager_factory.repo_unit_association_manager()
+        self.association_query_manager = manager_factory.repo_unit_association_query_manager()
+        self.content_manager = manager_factory.content_manager()
+        self.content_query_manager = manager_factory.content_query_manager()
 
         self.repo_manager.create_repo('source_repo')
+        self.importer_manager.set_importer('source_repo', 'mock-importer', {})
 
         self.repo_manager.create_repo('dest_repo')
         self.importer_manager.set_importer('dest_repo', 'mock-importer', {})
 
-        self.conduit = ImportUnitConduit('dest_repo', 'test-importer')
+        self.conduit = ImportUnitConduit('source_repo', 'dest_repo', 'mock-importer', 'mock-importer')
 
     def tearDown(self):
         super(RepoSyncConduitTests, self).tearDown()
@@ -106,7 +104,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         mock_association_manager.associate_unit_by_id.side_effect = Exception()
         manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = mock_association_manager
 
-        conduit = ImportUnitConduit('dest_repo', 'test-importer')
+        conduit = ImportUnitConduit('source_repo', 'dest_repo', 'mock-importer', 'mock-importer')
 
         # Test
         try:
@@ -114,3 +112,28 @@ class RepoSyncConduitTests(testutil.PulpTest):
            self.fail('Exception expected')
         except UnitImportConduitException:
             pass
+
+    def test_get_source_units(self):
+
+        # Setup
+        self.content_manager.add_content_unit('mock-type', 'unit_1', {'key-1' : 'unit-1'})
+        self.association_manager.associate_unit_by_id('source_repo', 'mock-type', 'unit_1', association_manager.OWNER_TYPE_USER, 'admin')
+
+        # Test
+        units = self.conduit.get_source_units()
+
+        # Verify
+        self.assertEqual(1, len(units))
+
+    def test_get_source_units_with_error(self):
+
+        # Setup
+        self.conduit._ImportUnitConduit__association_query_manager = mock.Mock()
+        self.conduit._ImportUnitConduit__association_query_manager.get_units_across_types.side_effect = Exception()
+
+        # Test
+        try:
+            self.conduit.get_source_units()
+            self.fail('Exception expected')
+        except UnitImportConduitException, e:
+            print(e) # for coverage

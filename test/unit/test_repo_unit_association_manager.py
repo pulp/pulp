@@ -229,9 +229,11 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
 
         args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
+        kwargs = mock_plugins.MOCK_IMPORTER.import_units.call_args[1]
         self.assertTrue(isinstance(args[0], Repository)) # repository transfer object
-        self.assertEqual(args[0].id, 'dest-repo') # repo importing units into
-        self.assertEqual(3, len(args[1])) # units to import
+        self.assertEqual(args[0].id, 'source-repo') # repo importing units from
+        self.assertEqual(args[1].id, 'dest-repo') # repo importing units into
+        self.assertEqual(None, kwargs['units']) # units to import
         self.assertTrue(isinstance(args[2], ImportUnitConduit)) # conduit
         self.assertTrue(isinstance(args[3], PluginCallConfiguration)) # config
 
@@ -261,9 +263,9 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         # Verify
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
 
-        args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
-        self.assertEqual(1, len(args[1]))
-        self.assertEqual(args[1][0].id, 'unit-2')
+        kwargs = mock_plugins.MOCK_IMPORTER.import_units.call_args[1]
+        self.assertEqual(1, len(kwargs['units']))
+        self.assertEqual(kwargs['units'][0].id, 'unit-2')
 
     def test_associate_from_repo_dest_has_no_importer(self):
         # Setup
@@ -318,7 +320,6 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1'})
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-1', OWNER_TYPE_USER, 'admin')
 
-
         # Test
         try:
             self.manager.associate_from_repo(source_repo_id, dest_repo_id)
@@ -341,7 +342,8 @@ class RepoUnitAssociationManagerTests(testutil.PulpTest):
         self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
 
         # Test
-        self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+        criteria = Criteria(type_ids=['mock-type'], unit_filters={'key-1' : 'no way this matches squat'})
+        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
 
         # Verify
         self.assertEqual(0, mock_plugins.MOCK_IMPORTER.import_units.call_count)
