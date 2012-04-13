@@ -124,6 +124,7 @@ A collection of libraries used by by the pulp client tools.
 Summary:        Client side tool for pulp consumers
 Group:          Development/Languages
 Requires:       %{name}-client-lib = %{version}
+Requires:       python-okaara >= 1.0.12
 Obsoletes:      pulp-client <= 0.218
 
 %description consumer
@@ -464,6 +465,7 @@ fi
 %config(noreplace) %{_sysconfdir}/pulp/consumer/consumer.conf
 %config(noreplace) %{_sysconfdir}/pulp/consumer/v2_consumer.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
+/var/lib/pulp_client/consumer
 
 # -- files - pulp admin -----------------------------------------------------
 
