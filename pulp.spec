@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.1
+Version:        1.1.2
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,20 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Apr 13 2012 Jeff Ortel <jortel@redhat.com> 1.1.2-1
+- 791341 - moved role removal into own loop (jconnor@redhat.com)
+- 791341 - removing role name from user roles when role is deleted
+  (jconnor@redhat.com)
+- 790909 - changing the get_packages_by_nvrea to use and query
+  (pkilambi@redhat.com)
+- 809234 - added content-length header for base class response returns
+  (jconnor@redhat.com)
+- 809628 - fixed error message formatting (jconnor@redhat.com)
+- 809195 - added post_sync dequeue hook to scheduled syncs (jconnor@redhat.com)
+- 807332 - the continuing story of the post sync url firing off actuall POST
+  request in separate thread so that the post_sync callback does hold the lock
+  on the task queue while waiting for a response from the http server
+  (jconnor@redhat.com)
 * Thu Mar 29 2012 Mike McCune <mmccune@redhat.com> 1.1.1-1
 - 807516 - Deleting a repository does not affect repoids associated with a
   package  - Update for cloned issue with repoids being appended twice in
