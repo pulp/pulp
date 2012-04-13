@@ -325,10 +325,15 @@ mkdir -p %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/pulp_admin_auth %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/pulp_server_info %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/pulp_repo %{buildroot}/var/lib/pulp_client/admin/extensions
+cp -R extensions/pulp_admin_consumer %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/pulp_tasks %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_repo %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_sync %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_units_search %{buildroot}/var/lib/pulp_client/admin/extensions
+
+# Consumer Client Extensions
+mkdir -p %{buildroot}/var/lib/pulp_client/consumer/extensions
+cp -R extensions/pulp_consumer %{buildroot}/var/lib/pulp_client/consumer/extensions
 
 # -- clean --------------------------------------------------------------------
 
