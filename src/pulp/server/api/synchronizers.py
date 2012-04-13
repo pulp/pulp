@@ -461,11 +461,17 @@ class BaseSynchronizer(object):
         timestamp = None
         if treeinfo['timestamp']:
             timestamp = datetime.datetime.fromtimestamp(float(treeinfo['timestamp']))
-        distro = self.distro_api.create(id, description, distro_path, \
-                family=treeinfo['family'], variant=treeinfo['variant'], \
-                version=treeinfo['version'], timestamp=timestamp, files=files,\
-                arch=treeinfo['arch'], repoids=[repo['id']])
-        if distro['id'] not in repo['distributionid']:
+        try:
+            distro = self.distro_api.create(id, description, distro_path, \
+                    family=treeinfo['family'], variant=treeinfo['variant'], \
+                    version=treeinfo['version'], timestamp=timestamp, files=files,\
+                    arch=treeinfo['arch'], repoids=[repo['id']])
+        except DuplicateKeyError:
+            distro = self.distro_api.distribution(id)
+            if repo["id"] not in distro["repoids"]:
+                distro["repoids"].extend(repo["id"])
+                self.distro_api.update(distro["id"], {"repoids":distro["repoids"]})
+        if distro["id"] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
             log.info("Created a distributionID %s" % distro['id'])
         if not repo['publish']:
