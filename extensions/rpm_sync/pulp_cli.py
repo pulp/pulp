@@ -138,7 +138,7 @@ class RunSyncCommand(PulpCliCommand):
 
     def render_metadata_step(self, progress_report):
 
-        state = progress_report['metadata']['state']
+        state = progress_report['importer']['metadata']['state']
 
         # Render nothing if we haven't begun yet
         if state == STATE_NOT_STARTED:
@@ -166,7 +166,7 @@ class RunSyncCommand(PulpCliCommand):
 
     def render_download_step(self, progress_report):
 
-        data = progress_report['content']
+        data = progress_report['importer']['content']
         state = data['state']
 
         # Render nothing if we haven't begun yet
@@ -267,7 +267,7 @@ class RunSyncCommand(PulpCliCommand):
 
     def render_errata_step(self, progress_report):
 
-        state = progress_report['errata']['state']
+        state = progress_report['importer']['errata']['state']
 
         # Render nothing if we haven't begun yet
         if state == STATE_NOT_STARTED:
@@ -283,7 +283,7 @@ class RunSyncCommand(PulpCliCommand):
 
         elif state == STATE_COMPLETE and self.errata_last_state not in END_STATES:
             self.errata_spinner.next(finished=True)
-            self.prompt.write(_('Imported %s errata') % progress_report['errata']['num_errata'])
+            self.prompt.write(_('Imported %s errata') % progress_report['importer']['errata']['num_errata'])
             self.prompt.write(_('... completed'))
             self.prompt.render_spacer()
             self.errata_last_state = STATE_COMPLETE

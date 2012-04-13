@@ -58,22 +58,23 @@ class RepoPublishConduit(BaseDistributorConduit):
     def __init__(self,
                  repo_id,
                  distributor_id,
-                 progress_callback=None):
+                 base_progress_report=None):
         """
         @param repo_id: identifies the repo being published
         @type  repo_id: str
 
         @param distributor_id: identifies the distributor being published
         @type  distributor_id: str
-
-        @param progress_callback: used to update the server's knowledge of the
-                                  publish progress
-        @type  progress_callback: ?
         """
         BaseDistributorConduit.__init__(self, repo_id, distributor_id)
 
         self.repo_id = repo_id
         self.distributor_id = distributor_id
+
+        if base_progress_report is not None:
+            self.progress_report = base_progress_report
+        else:
+            self.progress_report = {}
 
         self.__repo_manager = manager_factory.repo_manager()
         self.__repo_publish_manager = manager_factory.repo_publish_manager()
@@ -81,7 +82,6 @@ class RepoPublishConduit(BaseDistributorConduit):
         self.__association_manager = manager_factory.repo_unit_association_manager()
         self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
         self.__content_query_manager = manager_factory.content_manager()
-        self.__progress_callback = progress_callback
 
     def __str__(self):
         return _('RepoPublishConduit for repository [%(r)s]' % {'r' : self.repo_id})
@@ -97,12 +97,20 @@ class RepoPublishConduit(BaseDistributorConduit):
         @param status: contains arbitrary data to describe the state of the
                publish; the contents may contain whatever information is relevant
                to the distributor implementation so long as it is serializable
-        @type  status: dict
         """
-
-        _LOG.info('Set progress for repo [%s]' % self.repo_id)
-        context = dispatch_factory.context()
-        context.report_progress(status)
+        try:
+            self.progress_report[self.distributor_id] = status
+            context = dispatch_factory.context()
+            context.report_progress(self.progress_report)
+        except Exception, e:
+            _LOG.exception('Exception from server setting progress for repository [%s]' % self.repo_id)
+            try:
+                _LOG.error('Progress value: %s' % str(status))
+            except:
+                # Best effort to print this, but if its that grossly unserializable
+                # the log will tank and we don't want that exception to bubble up
+                pass
+            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
 
     def last_publish(self):
         """

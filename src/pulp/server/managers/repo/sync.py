@@ -158,7 +158,8 @@ class RepoSyncManager(object):
         # Request any auto-distributors publish (if we're here, the sync was successful)
         publish_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_PUBLISH)
         try:
-            publish_manager.auto_publish_for_repo(repo_id)
+            sync_progress_report = conduit.progress_report
+            publish_manager.auto_publish_for_repo(repo_id, sync_progress_report)
         except Exception:
             _LOG.exception('Exception automatically publishing distributors for repo [%s]' % repo_id)
             raise

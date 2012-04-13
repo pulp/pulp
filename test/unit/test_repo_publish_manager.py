@@ -277,11 +277,16 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, False, 'manual')
 
         # Test
-        self.publish_manager.auto_publish_for_repo('publish-me')
+        self.publish_manager.auto_publish_for_repo('publish-me', {'importer' : 'status'})
 
         # Verify
         self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_count)
         self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
+
+        #   Make sure the sync progress was used to seed the conduit
+        publish_args = mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_args
+        conduit = publish_args[0][1]
+        self.assertEqual(conduit.progress_report['importer'], 'status')
 
     def test_auto_publish_no_repo(self):
         """
@@ -290,7 +295,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         """
 
         # Test
-        self.publish_manager.auto_publish_for_repo('non-existent') # should not error
+        self.publish_manager.auto_publish_for_repo('non-existent', {'importer' : 'status'}) # should not error
 
     def test_auto_publish_with_error(self):
         """
@@ -307,7 +312,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Test
         try:
-            self.publish_manager.auto_publish_for_repo('publish-me')
+            self.publish_manager.auto_publish_for_repo('publish-me', {'importer' : 'status'})
             self.fail('Expected exception was not raised')
         except publish_manager.PulpExecutionException, e:
             pass

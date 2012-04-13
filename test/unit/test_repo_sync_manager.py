@@ -38,6 +38,7 @@ class MockRepoPublishManager:
 
     # Last call state
     repo_id = None
+    base_progress_report = None
 
     # Call behavior
     raise_error = False
@@ -45,8 +46,9 @@ class MockRepoPublishManager:
     def validate_config(self, repo_data, distributor_config):
         return True
 
-    def auto_publish_for_repo(self, repo_id):
+    def auto_publish_for_repo(self, repo_id, base_progress_report):
         MockRepoPublishManager.repo_id = repo_id
+        MockRepoPublishManager.base_progress_report = base_progress_report
 
         if MockRepoPublishManager.raise_error:
             raise repo_publish_manager.PulpExecutionException(repo_id)
@@ -325,6 +327,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
 
         # Verify
         self.assertEqual('repo', MockRepoPublishManager.repo_id)
+        self.assertEqual({}, MockRepoPublishManager.base_progress_report)
 
     def test_sync_with_auto_publish_error(self):
         """

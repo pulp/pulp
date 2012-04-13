@@ -99,6 +99,8 @@ class RepoSyncConduit(BaseImporterConduit):
         """
         BaseImporterConduit.__init__(self, repo_id, importer_id)
 
+        self.progress_report = {}
+
         self.__repo_manager = manager_factory.repo_manager()
         self.__importer_manager = manager_factory.repo_importer_manager()
         self.__sync_manager = manager_factory.repo_sync_manager()
@@ -126,11 +128,11 @@ class RepoSyncConduit(BaseImporterConduit):
         @param status: contains arbitrary data to describe the state of the
                sync; the contents may contain whatever information is relevant
                to the importer implementation so long as it is serializable
-        @type  status: dict
         """
         try:
+            self.progress_report['importer'] = status
             context = dispatch_factory.context()
-            context.report_progress(status)
+            context.report_progress(self.progress_report)
         except Exception, e:
             _LOG.exception('Exception from server setting progress for repository [%s]' % self.repo_id)
             try:
