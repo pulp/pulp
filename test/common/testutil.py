@@ -42,6 +42,8 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+from pulp.gc_client.api.bindings import Bindings
+from pulp.gc_client.api.server import  PulpConnection
 from pulp.gc_client.framework.core import ClientContext, PulpPrompt, PulpCli
 from pulp.gc_client.framework.exceptions import ExceptionHandler
 from okaara.prompt import Recorder
@@ -433,7 +435,9 @@ class PulpV2ClientTest(unittest.TestCase):
         config_filename = os.path.abspath(os.path.dirname(__file__)) + '/test-override-v2-admin.conf'
         self.client_config.read(config_filename)
 
-        self.server = None # TODO: replace with PulpConnection with mocked out ServerWrapper
+        self.server_mock = mock.Mock()
+        self.pulp_connection = PulpConnection('', server_wrapper=self.server_mock)
+        self.bindings = Bindings(self.pulp_connection)
 
         # Disabling color makes it easier to grep results since the character codes aren't there
         self.recorder = Recorder()
@@ -442,7 +446,7 @@ class PulpV2ClientTest(unittest.TestCase):
         self.logger = logging.getLogger('pulp')
         self.exception_handler = ExceptionHandler(self.prompt, self.client_config)
 
-        self.context = ClientContext(self.server, self.client_config, self.logger, self.prompt, self.exception_handler)
+        self.context = ClientContext(self.bindings, self.client_config, self.logger, self.prompt, self.exception_handler)
 
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli

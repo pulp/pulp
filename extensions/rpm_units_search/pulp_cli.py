@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+import logging
 
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
 
@@ -84,7 +85,7 @@ REFERENCES_TEMPLATE = _('''  ID:   %(i)s
 
 ''')
 
-LOG = None # set by the context
+LOG = logging.getLogger(__name__)
 
 # -- plugin hook --------------------------------------------------------------
 
@@ -382,11 +383,11 @@ def args_to_criteria_doc(kwargs, type_ids):
 
         return num
 
-    if kwargs['limit'] is not None:
+    if 'limit' in kwargs and kwargs['limit'] is not None:
         limit = num_parse('limit', 1)
         criteria['limit'] = limit
 
-    if kwargs['skip'] is not None:
+    if 'skip' in kwargs and kwargs['skip'] is not None:
         skip = num_parse('skip', 0)
         criteria['skip'] = skip
 
