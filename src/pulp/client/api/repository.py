@@ -431,3 +431,18 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/notes/%s/" % (id, key)
         return self.server.PUT(path, value)[1]
 
+    def diff(self, id, id2):
+        """ diff() returns a dict; each key is a package name.arch,
+        and each value is a dict of repoid => [packages].  That is,
+        given each name.arch in both repos, you can easily determine
+        which packages for that name.arch are in each repo """
+        pkgs1 = self.packages(id)
+        pkgs2 = self.packages(id2)
+        allpackages = dict([("%s.%s" % (p['name'], p['arch']),
+                             {id:[], id2:[]})
+                            for p in pkgs1 + pkgs2])
+        for pkg in pkgs1:
+            allpackages["%s.%s" % (pkg['name'], pkg['arch'])][id].append(pkg)
+        for pkg in pkgs2:
+            allpackages["%s.%s" % (pkg['name'], pkg['arch'])][id2].append(pkg)
+        return allpackages

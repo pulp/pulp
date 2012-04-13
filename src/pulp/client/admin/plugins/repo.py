@@ -14,12 +14,14 @@ import os
 import string
 import sys
 import time
+import fcntl
+import struct
+import termios
+import difflib
 import urlparse
 from datetime import timedelta
 from gettext import gettext as _
 from itertools import chain
-from optparse import OptionGroup
-from pprint import pformat
 
 from isodate import ISO8601Error
 
@@ -62,6 +64,14 @@ class SyncError(Exception):
 
 class CloneError(Exception):
     pass
+
+# terminal helper functions ---------------------------------------------------
+
+def get_termsize():
+    """ get a tuple of (width, height) giving the size of the terminal """
+    ioctl = fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0))
+    h, w, hp, wp = struct.unpack('HHHH', ioctl)
+    return w, h
 
 # base repo action class ------------------------------------------------------
 
@@ -2072,6 +2082,92 @@ class Info(AdminRepoAction):
         repo = self.get_repo(repoid)
         return self.print_repo(repo)
 
+
+class Diff(AdminRepoAction):
+    name = "diff"
+    description = _("diff two repositories")
+
+    def setup_parser(self):
+        super(Diff, self).setup_parser()
+        self.parser.add_option("--id2",
+                               help=_("second repository id (required)"))
+        self.parser.add_option("--only-diffs", action='store_true',
+                               help=_("only show packages that are different"))
+        self.parser.add_option("--unified", "-U", action='store_true',
+                               help=_("show diffs in unified, single column format"))
+        self.parser.add_option("--summary", action='store_true',
+                               help=_("show summary count information about changes"))
+
+    def run(self):
+        repoid1 = self.get_required_option('id')
+        repoid2 = self.get_required_option('id2')
+        allpackages = self.repository_api.diff(repoid1, repoid2)
+
+        if self.opts.summary:
+            added = 0
+            removed = 0
+            modified = 0
+            for pkgname in sorted(allpackages.keys()):
+                pkgs1 = [p['filename'] for p in allpackages[pkgname][repoid1]]
+                pkgs2 = [p['filename'] for p in allpackages[pkgname][repoid2]]
+                if not pkgs1:
+                    added += 1
+                elif not pkgs2:
+                    removed += 1
+                elif pkgs1 != pkgs2:
+                    modified += 1
+            print "Added: %d" % added
+            print "Removed: %d" % removed
+            print "Modified: %d" % modified
+        else:
+            if self.opts.unified:
+                differ = self._unified_diff
+            else:
+                differ = self._column_diff
+            differ(repoid1, repoid2, allpackages, diffs=self.opts.only_diffs)
+
+    def _unified_diff(self, repoid1, repoid2, allpackages, diffs=False):
+        print "--- %s" % repoid1
+        print "+++ %s" % repoid2
+        for pkgname in sorted(allpackages.keys()):
+            pkgs1 = [p['filename'] for p in allpackages[pkgname][repoid1]]
+            pkgs2 = [p['filename'] for p in allpackages[pkgname][repoid2]]
+            sm = difflib.SequenceMatcher()
+            sm.set_seqs(pkgs1, pkgs2)
+            for opcode in sm.get_opcodes():
+                op = opcode[0]
+                if op == 'delete' or op == 'replace':
+                    for pkg in pkgs1[opcode[1]:opcode[2]]:
+                        print("-" + pkg)
+                if op == 'insert' or op == 'replace':
+                    for pkg in pkgs2[opcode[3]:opcode[4]]:
+                        print("+" + pkg)
+                if op == 'equal' and not diffs:
+                    for pkg in pkgs1[opcode[1]:opcode[2]]:
+                        print(" " + pkg)
+
+    def _column_diff(self, repoid1, repoid2, allpackages, diffs=False):
+        width = (get_termsize()[0] - 2) / 2
+        fmt = "%%-%ds %%-%ds" % (width, width)
+        print(fmt % (repoid1, repoid2))
+        print(fmt % ("=" * width, "=" * width))
+        for pkgname in sorted(allpackages.keys()):
+            pkgs1 = [p['filename'] for p in allpackages[pkgname][repoid1]]
+            pkgs2 = [p['filename'] for p in allpackages[pkgname][repoid2]]
+            sm = difflib.SequenceMatcher()
+            sm.set_seqs(pkgs1, pkgs2)
+            for opcode in sm.get_opcodes():
+                op = opcode[0]
+                if op == 'delete' or op == 'replace':
+                    for pkg in pkgs1[opcode[1]:opcode[2]]:
+                        print(fmt % (pkg, ''))
+                if op == 'insert' or op == 'replace':
+                    for pkg in pkgs2[opcode[3]:opcode[4]]:
+                        print(fmt % ('', pkg))
+                if op == 'equal' and not diffs:
+                    for pkg in pkgs1[opcode[1]:opcode[2]]:
+                        print(fmt % (pkg, pkg))
+
 # repo command ----------------------------------------------------------------
 
 class AdminRepo(Repo):
@@ -2112,7 +2208,8 @@ class AdminRepo(Repo):
                 RemoveDistribution,
                 AddNote,
                 DeleteNote,
-                UpdateNote,]
+                UpdateNote,
+                Diff,]
 
 # repo plugin ----------------------------------------------------------------
 
