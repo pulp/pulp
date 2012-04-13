@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.282
+Version:        0.0.283
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -516,6 +516,15 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Apr 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.283-1
+- Adding /var/lib/pulp_client/consumer in specfile to consumer's list of file
+  (skarmark@redhat.com)
+- Adding copying of pulp_admin_consumer and pulp_consumer client extensions in
+  specfile (skarmark@redhat.com)
+- 798803 - added missing premission remove when revoking permissions from a
+  role (jconnor@redhat.com)
+- Publish progress reports will now merge with sync results on auto publish
+  (jason.dobies@redhat.com)
 * Thu Apr 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.282-1
 - 796292 - adding simple check for None return from package lookup
   (jconnor@redhat.com)
