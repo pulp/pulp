@@ -47,8 +47,9 @@ class AdminConsumerSection(PulpCliSection):
         self.add_command(unregister_command)
 
         # List Command
-        list_command = PulpCliCommand('list', 'lists consumers registered to the Pulp server', self.list)
-        list_command.add_option(PulpCliFlag('--summary', 'if specified, only a minimal amount of consumer information is displayed'))
+        list_command = PulpCliCommand('list', 'lists summary of consumers registered to the Pulp server', self.list)
+        list_command.add_option(PulpCliFlag('--details', 'if specified, all the consumer information is displayed'))
+
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
 
@@ -80,12 +81,12 @@ class AdminConsumerSection(PulpCliSection):
         consumer_list = self.context.server.consumer.consumers().response_body
 
         # Default flags to render_document_list
-        filters = None
-        order = ['id', 'display_name', 'description', 'notes']
+        filters = ['id', 'display_name', 'description', 'bindings', 'notes']
+        order = filters
 
-        if kwargs['summary'] is True:
-            filters = ['id', 'display_name']
-            order = filters
+        if kwargs['details'] is True:
+            filters = None
+            order = ['id', 'display_name']
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
             if 'id' not in filters:
