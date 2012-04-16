@@ -279,7 +279,21 @@ class RepoManager(object):
             repo['description'] = delta['description']
 
         if 'notes' in delta:
-            repo['notes'] = delta['notes']
+
+            # Merge in the notes included in the delta using the following rules:
+            # * If the delta value is non-None, set/overwrite the value in the
+            #   repo's note
+            # * If the delta valus is None, remove the note from the repo's note
+
+            existing_notes = repo['notes'] or {}
+
+            for k, v in delta['notes'].items():
+                if v is None:
+                    existing_notes.pop(k, None)
+                else:
+                    existing_notes[k] = v
+
+            repo['notes'] = existing_notes
 
         repo_coll.save(repo, safe=True)
 

@@ -321,12 +321,12 @@ class RepoManagerTests(testutil.PulpTest):
         """
 
         # Setup
-        self.manager.create_repo('update-me', display_name='display_name_1', description='description_1', notes={'a' : 'a'})
+        self.manager.create_repo('update-me', display_name='display_name_1', description='description_1', notes={'a' : 'a', 'b' : 'b', 'c' : 'c'})
 
         delta = {
             'display_name' : 'display_name_2',
             'description'  : 'description_2',
-            'notes'        : {'b' : 'b'},
+            'notes'        : {'b' : 'x', 'c' : None},
             'disregard'    : 'ignored',
         }
 
@@ -334,14 +334,16 @@ class RepoManagerTests(testutil.PulpTest):
         updated = self.manager.update_repo('update-me', delta)
 
         # Verify
+        expected_notes = {'a' : 'a', 'b' : 'x'}
+
         repo = Repo.get_collection().find_one({'id' : 'update-me'})
         self.assertEqual(repo['display_name'], delta['display_name'])
         self.assertEqual(repo['description'], delta['description'])
-        self.assertEqual(repo['notes'], delta['notes'])
+        self.assertEqual(repo['notes'], expected_notes)
 
         self.assertEqual(updated['display_name'], delta['display_name'])
         self.assertEqual(updated['description'], delta['description'])
-        self.assertEqual(updated['notes'], delta['notes'])
+        self.assertEqual(updated['notes'], expected_notes)
 
     def test_update_missing_repo(self):
         """
