@@ -16,12 +16,14 @@ import shutil
 import sys
 import os
 import urlparse
+from M2Crypto import X509
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 import pulp.repo_auth.oid_validation as oid_validation
 from pulp.repo_auth.oid_validation import OidValidator
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.auth import AuthApi
 
@@ -62,7 +64,48 @@ class TestOidValidation(testutil.PulpAsyncTest):
         testutil.PulpAsyncTest.setUp(self)
         self.validator = OidValidator(self.config)
 
+
+    def print_debug(self):
+        valid_ca = X509.load_cert_string(VALID_CA)
+        invalid_ca = X509.load_cert_string(INVALID_CA)
+        print "--Reference Values--"
+        print "INVALID_CA: %s %s" % (invalid_ca.get_subject(), invalid_ca.get_subject().as_hash())
+        print "VALID_CA: %s %s" % (valid_ca.get_subject(), valid_ca.get_subject().as_hash())
+
     # See https://fedorahosted.org/pulp/wiki/RepoAuth for more information on scenarios
+    def simple_m2crypto_verify(self, cert_pem, ca_pem):
+        cert = X509.load_cert_string(cert_pem)
+        issuer = cert.get_issuer()
+        ca_cert = X509.load_cert_string(ca_pem)
+        #print "Cert issued by: %s, with hash of: %s" % (issuer, issuer.as_hash())
+        #print "CA is: %s, with hash of: %s" % (ca_cert.get_subject(), ca_cert.get_subject().as_hash())
+        return cert.verify(ca_cert.get_pubkey())
+
+    def test_basic_validate(self):
+        self.auth_api.disable_global_repo_auth()
+        repo_cert_utils = RepoCertUtils(config=self.config)
+
+        cert_pem = FULL_CLIENT_CERT
+        ca_pem = VALID_CA
+        status = repo_cert_utils.validate_certificate_pem(cert_pem, ca_pem)
+        self.assertTrue(status)
+        status = self.simple_m2crypto_verify(cert_pem, ca_pem)
+        self.assertTrue(status)
+
+        cert_pem = FULL_CLIENT_CERT
+        ca_pem = INVALID_CA
+        status = repo_cert_utils.validate_certificate_pem(cert_pem, ca_pem)
+        self.assertFalse(status)
+        status = self.simple_m2crypto_verify(cert_pem, ca_pem)
+        self.assertFalse(status)
+
+        cert_pem = ANYCERT
+        ca_pem = VALID_CA
+        status = repo_cert_utils.validate_certificate_pem(cert_pem, ca_pem)
+        self.assertFalse(status)
+        status = self.simple_m2crypto_verify(cert_pem, ca_pem)
+        self.assertFalse(status)
+
 
     def test_scenario_1(self):
         '''
@@ -715,6 +758,32 @@ hYMwmwaaUUDm4wSKS/4mmUKFCN8eaCGHKFN47hK66KZ9vRKK3VFOssQ5CIE8o2b7
 '''
 
 INVALID_CA = '''
+-----BEGIN CERTIFICATE-----
+MIIDpTCCAo2gAwIBAgIJAKkrGxLzlBlLMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV
+BAYTAlVTMQswCQYDVQQIDAJOSjESMBAGA1UEBwwJTWlja2xldG9uMRAwDgYDVQQK
+DAdSZWQgSGF0MQ0wCwYDVQQLDARQdWxwMRgwFgYDVQQDDA9wdWxwLWludmFsaWQt
+Y2EwHhcNMTIwNDE2MTM0NTIxWhcNMjUxMjI0MTM0NTIxWjBpMQswCQYDVQQGEwJV
+UzELMAkGA1UECAwCTkoxEjAQBgNVBAcMCU1pY2tsZXRvbjEQMA4GA1UECgwHUmVk
+IEhhdDENMAsGA1UECwwEUHVscDEYMBYGA1UEAwwPcHVscC1pbnZhbGlkLWNhMIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqdGWUTKTf74EsxrT7+XqDh3F
+muGiJIRs4BAZPBMCenxxag/FRwtWeR/Z8xovLvlpivOvJiYxDlmQROMH9AbzCT94
+qChgre+weel81bWR6gc4fOxUTap4cHA7nwvP5PQP6oUlcn0ZH0fyN/YAj1c0d7Bv
+UHyne+C1fxcYIjgouERHWo9P0xv7jpnn2nUxs40B4QDTK+g0Zu4h/KGiEVr6IK+/
+ZRO8KCih9UdzVYKG8AjeY0d0LP3eSuX8srcM2RFwFcXh3gpt5aWgcUQR3OjeSHBR
+ho/yDXxm52tsD7J5QXvijvu7ILuE7yUVVkCxtOu7POtEKf/aDjQiMh194MZ0gQID
+AQABo1AwTjAdBgNVHQ4EFgQUtlwrMUV5vmkU/UJq3xBGCGmQmIMwHwYDVR0jBBgw
+FoAUtlwrMUV5vmkU/UJq3xBGCGmQmIMwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0B
+AQUFAAOCAQEABlL6CBQBEqGreP8hvc8mm9YWb4SOZdCreEuewMYdV0tdIiS6rjg6
+xoQhAzWmvBVxd0kpm33TAP9mqD9oExrH7WTc+QCRoihW7EcoK5utXAeU8oiuFSSh
+zZUBkCBQkDX7QF0twLorfKxfNEuNuUj1anGHEjESadQV++dNl9yvM82JcpqgAuoj
+rdAaDQrVVRVpCe5ClJqWJROziEEGj10nsTskjuqXChaslJ2O0iYm6ZPZcmDXOOEj
+yF0ir5JjvZQ6zZdo/D+wSdfK1TLl5hjpzFTlElOeOC5XM13pgUfIF3nWeIKJEUyJ
+YSMf0fu6BrpTgoyet283Ek9qg8NqKtMv1A==
+-----END CERTIFICATE-----
+'''
+
+
+PRE_INVALID_CA = '''
 -----BEGIN CERTIFICATE-----
 MIIDpTCCAo2gAwIBAgIJAOEkwX9JQSjkMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJOSjESMBAGA1UEBwwJTWlja2xldG9uMRAwDgYDVQQK
