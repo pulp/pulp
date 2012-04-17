@@ -31,7 +31,7 @@ from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import pickling
-from pulp.server.dispatch.call import CallReport, CallRequest, ScheduledCallRequest
+from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.coordinator import Coordinator
 from pulp.server.dispatch.scheduler import Scheduler
 from pulp.server.dispatch.taskqueue import TaskQueue
@@ -89,16 +89,14 @@ class SchedulerCallControlTests(SchedulerTests):
 
     def test_add(self):
         call_request = CallRequest(call)
-        scheduled_call_request = ScheduledCallRequest(call_request, SCHEDULE_3_RUNS)
-        schedule_id = self.scheduler.add(scheduled_call_request)
+        schedule_id = self.scheduler.add(call_request, SCHEDULE_3_RUNS)
         collection = ScheduledCall.get_collection()
         scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertFalse(scheduled_call is None)
 
     def test_add_no_runs(self):
         call_request = CallRequest(call)
-        scheduled_call_request = ScheduledCallRequest(call_request, SCHEDULE_0_RUNS)
-        schedule_id = self.scheduler.add(scheduled_call_request)
+        schedule_id = self.scheduler.add(call_request, SCHEDULE_0_RUNS)
         self.assertTrue(schedule_id is None)
         collection = ScheduledCall.get_collection()
         cursor = collection.find()
@@ -106,8 +104,7 @@ class SchedulerCallControlTests(SchedulerTests):
 
     def test_remove(self):
         call_request = CallRequest(call)
-        scheduled_call_request = ScheduledCallRequest(call_request, SCHEDULE_START_TIME)
-        schedule_id = self.scheduler.add(scheduled_call_request)
+        schedule_id = self.scheduler.add(call_request, SCHEDULE_START_TIME)
         self.scheduler.remove(schedule_id)
         collection = ScheduledCall.get_collection()
         scheduled_call = collection.find_one({'_id': schedule_id})
@@ -115,8 +112,7 @@ class SchedulerCallControlTests(SchedulerTests):
 
     def test_disable_enable(self):
         call_request = CallRequest(call)
-        scheduled_call_request = ScheduledCallRequest(call_request, SCHEDULE_3_RUNS)
-        schedule_id = self.scheduler.add(scheduled_call_request)
+        schedule_id = self.scheduler.add(call_request, SCHEDULE_3_RUNS)
         collection = ScheduledCall.get_collection()
         scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['enabled'])
@@ -132,14 +128,13 @@ class SchedulerCallControlTests(SchedulerTests):
 class SchedulerDispatchControlFlowTests(SchedulerTests):
 
     def test_run_scheduled_calls(self):
-        scheduled_call_request = ScheduledCallRequest(CallRequest(call), DISPATCH_SCHEDULE)
-        self.scheduler.add(scheduled_call_request)
+        self.scheduler.add(CallRequest(call), DISPATCH_SCHEDULE)
         self.scheduler._run_scheduled_calls()
         self.assertTrue(self.scheduler.coordinator.execute_call_asynchronously.call_count == 1)
 
     def test_run_scheduled_calls_multiple_calls(self):
-        self.scheduler.add(ScheduledCallRequest(CallRequest(call), DISPATCH_SCHEDULE))
-        self.scheduler.add(ScheduledCallRequest(CallRequest(call), DISPATCH_FUTURE_SCHEDULE))
+        self.scheduler.add(CallRequest(call), DISPATCH_SCHEDULE)
+        self.scheduler.add(CallRequest(call), DISPATCH_FUTURE_SCHEDULE)
         self.scheduler._run_scheduled_calls()
         self.assertTrue(self.scheduler.coordinator.execute_call_asynchronously.call_count == 1)
 
@@ -150,8 +145,7 @@ class SchedulerSchedulingTests(SchedulerTests):
     def test_update_last_run_success(self):
         call_request = CallRequest(call)
         call_report = CallReport(state=dispatch_constants.CALL_FINISHED_STATE)
-        scheduled_call_request = ScheduledCallRequest(call_request, DISPATCH_SCHEDULE)
-        schedule_id = self.scheduler.add(scheduled_call_request)
+        schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE)
         scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['last_run'] == None)
         self.assertTrue(scheduled_call['remaining_runs'] == 2)
@@ -164,8 +158,7 @@ class SchedulerSchedulingTests(SchedulerTests):
     def test_update_last_run_failure(self):
         call_request = CallRequest(call)
         call_report = CallReport(state=dispatch_constants.CALL_ERROR_STATE)
-        scheduled_call_request = ScheduledCallRequest(call_request, DISPATCH_SCHEDULE, failure_threshold=1)
-        schedule_id = self.scheduler.add(scheduled_call_request)
+        schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE, failure_threshold=1)
         scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['consecutive_failures'] == 0)
         self.assertTrue(scheduled_call['enabled'])
@@ -179,8 +172,7 @@ class SchedulerSchedulingTests(SchedulerTests):
         call_request = CallRequest(call)
         interval = datetime.timedelta(minutes=1)
         schedule = dateutils.format_iso8601_interval(interval)
-        scheduled_call_request = ScheduledCallRequest(call_request, schedule)
-        scheduled_id = self.scheduler.add(scheduled_call_request)
+        scheduled_id = self.scheduler.add(call_request, schedule)
         scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         next_run = self.scheduler.calculate_next_run(scheduled_call)
         self.assertFalse(next_run is None)
@@ -200,7 +192,7 @@ class SchedulerQueryTests(SchedulerTests):
 
     def test_get(self):
         call_request_1 = CallRequest(call)
-        schedule_id = self.scheduler.add(ScheduledCallRequest(call_request_1, SCHEDULE_3_RUNS))
+        schedule_id = self.scheduler.add(call_request_1, SCHEDULE_3_RUNS)
         self.assertFalse(schedule_id is None)
         scheduled_call_request = self.scheduler.get(schedule_id)
         self.assertFalse(scheduled_call_request.schedule is None)
@@ -214,7 +206,7 @@ class SchedulerQueryTests(SchedulerTests):
         tag = 'TAG'
         call_request_1 = CallRequest(call)
         call_request_1.tags.append(tag)
-        id_1 = self.scheduler.add(ScheduledCallRequest(call_request_1, SCHEDULE_INDEFINITE_RUNS))
+        id_1 = self.scheduler.add(call_request_1, SCHEDULE_INDEFINITE_RUNS)
         call_list = self.scheduler.find(tag)
         self.assertTrue(len(call_list) == 1)
 
