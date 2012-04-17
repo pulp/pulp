@@ -271,48 +271,30 @@ class Scheduler(object):
 
     def get(self, schedule_id):
         """
-        Get the scheduled call request for the given schedule id
+        Get the call request and the schedule for the given schedule id
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
-        @return: scheduled call request corresponding to the schedule_id
-        @rtype:  call.ScheduledCall or None
+        @return: tuple of (call request, schedule) if found, (None, None) otherwise
+        @rtype:  tuple (CallRequest, str) or tupe(None, None)
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
         scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
         if scheduled_call is None:
-            return None
-        return scheduled_call_to_request(scheduled_call)
+            return (None, None)
+        serialized_call_request = scheduled_call['serialized_call_request']
+        call_request = call.CallRequest.deserialize(serialized_call_request)
+        schedule = scheduled_call['schedule']
+        return (call_request, schedule)
 
     def find(self, *tags):
         """
         Find the scheduled call requests for the given call request tags
-        @param tags: arbitrary tags to search on
-        @type  tags: list of str
-        @return: (possibly empty) list of call.ScheduleCallRequest
-        @rtype:  list
+        @return: list of tuples (scheduled id, call request, schedule)
         """
         query = {'serialized_call_request.tags': {'$all': tags}}
         scheduled_calls = self.scheduled_call_collection.find(query)
-        return [scheduled_call_to_request(s) for s in scheduled_calls]
-
-# utility functions ------------------------------------------------------------
-
-def scheduled_call_to_request(scheduled_call):
-    """
-    Convert a scheduled call into a corresponding scheduled call request.
-    @param scheduled_call: scheduled call to convert
-    @type  scheduled_call: document from scheduled_calls mongodb collection
-    @return: scheduled call request
-    @rtype:  call.ScheduledCallRequest
-    """
-    call_request = call.CallRequest.deserialize(scheduled_call['serialized_call_request'])
-    schedule = scheduled_call['schedule']
-    failure_threshold = scheduled_call['failure_threshold']
-    last_run = scheduled_call['last_run']
-    enabled = scheduled_call['enabled']
-    request = call.ScheduledCallRequest(call_request, schedule, failure_threshold, last_run, enabled)
-    request.schedule_id = str(scheduled_call['_id'])
-    return request
-
-
+        return [(s['_id'],
+                 call.CallRequest.deserialize(s['serialized_call_request']),
+                 s['schedule'])
+                for s in scheduled_calls]
