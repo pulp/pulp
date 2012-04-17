@@ -113,7 +113,7 @@ def get_new_rpms_and_units(available_rpms, existing_units, sync_conduit):
             rpm["pkgpath"] = os.path.dirname(new_units[key].storage_path)
     return new_rpms, new_units
 
-def get_missing_rpms_and_units(available_rpms, existing_units):
+def get_missing_rpms_and_units(available_rpms, existing_units, verify_options={}):
     """
     @param available_rpms dict of available rpms
     @type available_rpms {}
@@ -129,7 +129,8 @@ def get_missing_rpms_and_units(available_rpms, existing_units):
     for key in available_rpms:
         if key in existing_units:
             rpm_path = existing_units[key].storage_path
-            if not verify_exists(rpm_path):
+            if not verify_exists(rpm_path, existing_units[key].unit_key.get('checksum'),
+                existing_units[key].unit_key.get('checksumtype'), verify_options):
                 _LOG.info("Missing an existing unit: %s.  Will add to resync." % (rpm_path))
                 missing_rpms[key] = available_rpms[key]
                 missing_units[key] = existing_units[key]
@@ -175,7 +176,7 @@ def form_report(report):
     ret_val["size_left"] = report.last_progress.size_left
     return ret_val
 
-def verify_download(missing_rpms, new_rpms, new_units):
+def verify_download(missing_rpms, new_rpms, new_units, verify_options={}):
     """
     Will verify that intended items have been downloaded.
     Items not downloaded will be removed from passed in dicts
@@ -196,22 +197,73 @@ def verify_download(missing_rpms, new_rpms, new_units):
     for key in new_rpms.keys():
         rpm = new_rpms[key]
         rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
-        if not verify_exists(rpm_path):
+        _LOG.info("RPM object %s ; KEY : %s" % (rpm, key))
+        if not verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
             not_synced[key] = rpm
             del new_rpms[key]
     for key in missing_rpms.keys():
         rpm = missing_rpms[key]
         rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
-        if not verify_exists(rpm_path):
+        if not verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
             not_synced[key] = rpm
             del missing_rpms[key]
     for key in not_synced:
         del new_units[key]
     return not_synced
 
-def verify_exists(file_path):
+def _verify_exists(file_path):
     return os.path.exists(file_path)
 
+def verify_exists(file_path, checksum=None, checksum_type="sha256", size=None, verify_options={}):
+    """
+    Verify if the rpm existence; checks include
+     - exists on the filesystem
+     - size match
+     - checksums match
+
+    @param file_path rpm file path on filesystem
+    @type missing_rpms str
+
+    @param checksum checksum value of the rpm
+    @type checksum str
+
+    @param checksum_type type used to calculate checksum
+    @type checksum_type str
+
+    @param size size of the file
+    @type size int
+
+    @param verify_options dict of checksum of size verify options
+    @type size dict
+
+    @return True if all checks pass; else False
+    @rtype bool
+    """
+    _LOG.debug("Verify path [%s] exists" % file_path)
+    if not os.path.exists(file_path):
+        # file path not found
+        return False
+    verify_size = verify_options.get("size") or False
+    # compute the size
+    if verify_size and size is not None:
+        f_stat = os.stat(file_path)
+        if int(size) and f_stat.st_size != int(size):
+            cleanup_file(file_path)
+            return False
+    verify_checksum = verify_options.get("checksum") or False
+    # compute checksum
+    if verify_checksum and checksum is not None:
+        computed_checksum = util.get_file_checksum(filename=file_path, hashtype=checksum_type)
+        if computed_checksum != checksum:
+            cleanup_file(file_path)
+            return False
+    return True
+
+def cleanup_file(file_path):
+    try:
+        os.remove(file_path)
+    except (OSError, IOError), e:
+        _LOG.info("Error [%s] trying to clean up file path [%s]" % (e, file_path))
 
 def get_yumRepoGrinder(repo_id, tmp_path, config):
     """
@@ -412,6 +464,9 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     ####
     start = time.time()
     feed_url = config.get("feed_url")
+    verify_checksum = config.get("verify_checksum") or False
+    verify_size = config.get("verify_size") or False
+    verify_options = {"checksum":verify_checksum, "size":verify_size}
     _LOG.info("Begin sync of repo <%s> from feed_url <%s>" % (repo.id, feed_url))
     start_metadata = time.time()
     yumRepoGrinder = get_yumRepoGrinder(repo.id, repo.working_dir, config)
@@ -437,7 +492,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
 
     # Determine new and missing items
     new_rpms, new_units = get_new_rpms_and_units(available_rpms, existing_units, sync_conduit)
-    missing_rpms, missing_units = get_missing_rpms_and_units(available_rpms, existing_units)
+    missing_rpms, missing_units = get_missing_rpms_and_units(available_rpms, existing_units, verify_options)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
                 (repo.id, len(existing_units), len(orphaned_units), len(new_rpms), len(missing_rpms)))
 
@@ -453,7 +508,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
 
     # Determine new and missing items
     new_drpms, new_drpm_units = drpm.get_new_drpms_and_units(available_drpms, existing_drpm_units, sync_conduit)
-    missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_drpm_units)
+    missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_drpm_units, verify_options)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." % \
                 (repo.id, len(existing_drpm_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
     # include new drpm units 
@@ -480,7 +535,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     rpms_with_errors.update(drpms_with_errors)
     # TODO: Re-examine verify_download(), most likely remove and keep this functionality in grinder
     # Verify we synced what we expected, update the passed in dicts to remove non-downloaded items
-    not_synced = verify_download(missing_rpms, new_rpms, new_units)
+    not_synced = verify_download(missing_rpms, new_rpms, new_units, verify_options)
     if not_synced:
         _LOG.warning("%s rpms were not downloaded" % (len(not_synced)))
 

@@ -10,8 +10,10 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import hashlib
 import yum
 import time
+import os
 
 def get_repomd_filetypes(repomd_path):
     """
@@ -85,5 +87,39 @@ def is_valid_checksum_type(checksum_type):
     if checksum_type not in VALID_TYPES:
         return False
     return True
+
+def get_file_checksum(filename=None, fd=None, file=None, buffer_size=None, hashtype="sha256"):
+    """
+    Compute a file's checksum.
+    """
+    if hashtype in ['sha', 'SHA']:
+        hashtype = 'sha1'
+
+    if buffer_size is None:
+        buffer_size = 65536
+
+    if filename is None and fd is None and file is None:
+        raise Exception("no file specified")
+    if file:
+        f = file
+    elif fd is not None:
+        f = os.fdopen(os.dup(fd), "r")
+    else:
+        f = open(filename, "r")
+    # Rewind it
+    f.seek(0, 0)
+    m = hashlib.new(hashtype)
+    while 1:
+        buffer = f.read(buffer_size)
+        if not buffer:
+            break
+        m.update(buffer)
+
+    # cleanup time
+    if file is not None:
+        file.seek(0, 0)
+    else:
+        f.close()
+    return m.hexdigest()
 
 
