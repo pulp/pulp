@@ -17,6 +17,7 @@ import sys
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.content.loader as plugin_loader
 from pulp.server.content.plugins.config import PluginCallConfiguration
+import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
 
@@ -110,8 +111,17 @@ class RepoImporterManager(object):
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
+        query_manager = manager_factory.repo_query_manager()
+        related_repos = query_manager.find_with_importer_type(importer_type_id)
+
+        transfer_related_repos = []
+        for r in related_repos:
+            all_configs = [d['config'] for d in r['importers']]
+            trr = common_utils.to_related_repo(r, all_configs)
+            transfer_related_repos.append(trr)
+
         try:
-            result = importer_instance.validate_config(transfer_repo, call_config)
+            result = importer_instance.validate_config(transfer_repo, call_config, transfer_related_repos)
 
             # For backward compatibility with plugins that don't yet return the tuple
             if isinstance(result, bool):
@@ -241,8 +251,22 @@ class RepoImporterManager(object):
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
+        query_manager = manager_factory.repo_query_manager()
+        related_repos = query_manager.find_with_importer_type(importer_type_id)
+
+        transfer_related_repos = []
+        for r in related_repos:
+
+            # Don't include the repo being updated in this list
+            if r['id'] == repo_id:
+                continue
+
+            all_configs = [d['config'] for d in r['importers']]
+            trr = common_utils.to_related_repo(r, all_configs)
+            transfer_related_repos.append(trr)
+
         try:
-            result = importer_instance.validate_config(transfer_repo, call_config)
+            result = importer_instance.validate_config(transfer_repo, call_config, transfer_related_repos)
 
             # For backward compatibility with plugins that don't yet return the tuple
             if isinstance(result, bool):

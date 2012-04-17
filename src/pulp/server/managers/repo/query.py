@@ -17,7 +17,7 @@ Contains the manager class and exceptions for searching for repositories.
 
 import logging
 
-from pulp.server.db.model.gc_repository import Repo
+from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
 
 # -- constants ----------------------------------------------------------------
 
@@ -30,6 +30,9 @@ class RepoQueryManager(object):
     Manager used to process user queries on repositories. Repos returned from
     these calls will be serialized to a specific format instead of simply being
     returned SON objects from the database.
+
+    The majority of the methods below will be replaced with a single
+    criteria-based find call.
     """
 
     def find_all(self):
@@ -69,14 +72,50 @@ class RepoQueryManager(object):
         repos = list(Repo.get_collection().find({'id' : {'$in' : repo_id_list}}))
         return repos
 
-    def find_by_notes(self, notes):
-        # Placeholder idea for future functionality
-        pass
+    def find_with_distributor_type(self, distributor_type_id):
+        """
+        Returns a list of repositories, including distributor configuration,
+        for all repositories that have a configured distributor of the given
+        type. The distributor for each repository will be stored in the repo
+        under the key "distributors".
 
-    def find_by_supported_type(self, type_name):
-        # Placeholder idea for future functionality
-        pass
+        @return: list of repository dictionaries
+        @rtype:  list
+        """
 
-    def find_by_content_unit(self, unit_id):
-        # Placeholder idea for future functionality
-        pass
+        repos_by_id = {}
+
+        repo_distributors = list(RepoDistributor.get_collection().find({'distributor_type_id' : distributor_type_id}))
+        for rd in repo_distributors:
+            repo = repos_by_id.get(rd['repo_id'], None)
+            if repo is None:
+                repo = Repo.get_collection().find_one({'id' : rd['repo_id']})
+                repos_by_id[rd['repo_id']] = repo
+
+            dists = repo.setdefault('distributors', [])
+            dists.append(rd)
+
+        return repos_by_id.values()
+
+    def find_with_importer_type(self, importer_type_id):
+        """
+        Returns a list of repositories, including importer configuration,
+        for all repositories that have a configured importer of the given type.
+        The importer for each repository will be stored in the repo under the
+        key "importer".
+
+        @return: list of repository dictionaries
+        @rtype:  list
+        """
+
+        # Only one importer per repo, so no need for supporting multiple
+
+        results = []
+
+        repo_importers = list(RepoImporter.get_collection().find({'importer_type_id' : importer_type_id}))
+        for ri in repo_importers:
+            repo = Repo.get_collection().find_one({'id' : ri['repo_id']})
+            repo['importers'] = [ri]
+            results.append(repo)
+
+        return results

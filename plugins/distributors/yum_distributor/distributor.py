@@ -75,7 +75,7 @@ class YumDistributor(Distributor):
             'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID]
         }
 
-    def validate_config(self, repo, config):
+    def validate_config(self, repo, config, related_repos):
         _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
         for key in REQUIRED_CONFIG_KEYS:
             if key not in config.repo_plugin_config:

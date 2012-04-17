@@ -90,7 +90,7 @@ class TestDistributor(unittest.TestCase):
         for arg in REQUIRED_CONFIG_KEYS:
             req_kwargs[arg] = "sample_value"
         config = distributor_mocks.get_basic_config(**req_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
         # Confirm required and optional are successful
         optional_kwargs = dict(req_kwargs)
@@ -98,36 +98,36 @@ class TestDistributor(unittest.TestCase):
             if arg != "https_publish_dir":
                 optional_kwargs[arg] = "sample_value"
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
         # Test that config fails when a bad value for non_existing_dir is used
         optional_kwargs["https_publish_dir"] = "non_existing_dir"
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
         # Test config succeeds with a good value of https_publish_dir
         optional_kwargs["https_publish_dir"] = self.temp_dir
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
         del optional_kwargs["https_publish_dir"]
 
         # Confirm an extra key fails
         optional_kwargs["extra_arg_not_used"] = "sample_value"
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
         self.assertTrue("extra_arg_not_used" in msg)
 
         # Confirm missing a required fails
         del optional_kwargs["extra_arg_not_used"]
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
 
         del optional_kwargs["relative_url"]
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        state, msg = distributor.validate_config(repo, config)
+        state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
         self.assertTrue("relative_url" in msg)
 

@@ -43,7 +43,7 @@ class Importer(object):
 
     # -- repo lifecycle -------------------------------------------------------
 
-    def validate_config(self, repo, config):
+    def validate_config(self, repo, config, related_repos):
         """
         Allows the importer to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -58,6 +58,10 @@ class Importer(object):
         communicated to the caller so the plugin should take i18n into
         consideration when generating the message.
 
+        The related_repos parameter contains a list of other repositories that
+        have a configured importer of this type. The importer configurations
+        is found in each repository in the "plugin_configs" field.
+
         @param repo: metadata describing the repository to which the
                      configuration applies
         @type  repo: L{pulp.server.content.plugins.data.Repository}
@@ -65,6 +69,11 @@ class Importer(object):
         @param config: plugin configuration instance; the proposed repo
                        configuration is found within
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @param related_repos: list of other repositories using this distributor
+               type; empty list if there are none; entries are of type
+               L{pulp.server.content.plugins.data.RelatedRepository}
+        @type  related_repos: list
 
         @return: tuple of (bool, str) to describe the result
         @rtype:  tuple

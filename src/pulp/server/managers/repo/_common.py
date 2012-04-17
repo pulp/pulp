@@ -32,7 +32,7 @@ working directory is simply deleted.
 import os
 
 import pulp.server.constants as pulp_constants
-from pulp.server.content.plugins.model import Repository
+from pulp.server.content.plugins.model import Repository, RelatedRepository
 
 # -- constants ----------------------------------------------------------------
 
@@ -53,6 +53,24 @@ def to_transfer_repo(repo_data):
     @rtype:  L{pulp.server.content.plugins.data.Repository}
     """
     r = Repository(repo_data['id'], repo_data['display_name'], repo_data['description'], repo_data['notes'])
+    return r
+
+def to_related_repo(repo_data, configs):
+    """
+    Converts the given database representation of a repository into a plugin's
+    representation of a related repository. The list of configurations for
+    the repository's plugins will be included in the returned type.
+
+    @param repo_data: database representation of a repository
+    @type  repo_data: dict
+
+    @param configs: list of configurations for all relevant plugins on the repo
+    @type  configs: list
+
+    @return: transfer object used in many plugin API calls
+    @rtype:  L{pulp.server.content.plugins.data.RelatedRepository}
+    """
+    r = RelatedRepository(repo_data['id'], configs, repo_data['display_name'], repo_data['description'], repo_data['notes'])
     return r
 
 def repository_working_dir(repo_id, mkdir=True):

@@ -139,7 +139,7 @@ class RepoManagerTests(testutil.PulpTest):
             def metadata(cls):
                 return {'types': ['mock_types_2']}
 
-            def validate_config(self, repo_data, importer_config):
+            def validate_config(self, repo_data, importer_config, related_repos):
                 return True
 
         mock_plugins.IMPORTER_MAPPINGS['mock-importer-2'] = MockImporter2()
@@ -232,6 +232,26 @@ class RepoManagerTests(testutil.PulpTest):
             self.fail('Exception expected for bad config')
         except exceptions.PulpDataException:
             pass
+
+    def test_set_importer_with_related(self):
+        # Setup
+        self.repo_manager.create_repo('repo-a')
+        self.repo_manager.create_repo('repo-b')
+
+        self.importer_manager.set_importer('repo-a', 'mock-importer', {'a' : 'a'})
+
+        # Test
+        self.importer_manager.set_importer('repo-b', 'mock-importer', {'b' : 'b'})
+
+        # Verify
+        args = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0]
+        self.assertEqual(args[1].repo_plugin_config, {'b' : 'b'})
+
+        related_repos = args[2]
+        self.assertEqual(1, len(related_repos))
+        self.assertEqual(related_repos[0].id, 'repo-a')
+        self.assertEqual(1, len(related_repos[0].plugin_configs))
+        self.assertEqual(related_repos[0].plugin_configs[0], {'a' : 'a'})
 
     # -- remove ---------------------------------------------------------------
 
@@ -404,6 +424,27 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = True
+
+    def test_update_importer_with_related(self):
+        # Setup
+        self.repo_manager.create_repo('repo-a')
+        self.repo_manager.create_repo('repo-b')
+
+        self.importer_manager.set_importer('repo-a', 'mock-importer', {'a' : 'a'})
+        self.importer_manager.set_importer('repo-b', 'mock-importer', {'b' : 'b1'})
+
+        # Test
+        self.importer_manager.update_importer_config('repo-b', {'b' : 'b2'})
+
+        # Verify
+        args = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0]
+        self.assertEqual(args[1].repo_plugin_config, {'b' : 'b2'})
+
+        related_repos = args[2]
+        self.assertEqual(1, len(related_repos))
+        self.assertEqual(related_repos[0].id, 'repo-a')
+        self.assertEqual(1, len(related_repos[0].plugin_configs))
+        self.assertTrue(related_repos[0].plugin_configs[0], {'a' : 'a'})
 
     # -- get ------------------------------------------------------------------
 

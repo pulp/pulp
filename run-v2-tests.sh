@@ -50,8 +50,10 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_types_parser.py \
        test/unit/test_unit_import_conduit.py \
        test/unit/test_user_manager.py \
+       test/plugins/yum_importer/test_drpms.py \
+       test/plugins/yum_importer/test_repo_scratchpad.py \
        test/plugins/yum_importer/test_rpms.py \
-       test/plugins/yum_importer/test_errata.py 
+       test/plugins/yum_importer/test_errata.py
        "
 
 nosetests --with-coverage --cover-html  --cover-erase --cover-package $PACKAGES $TESTS

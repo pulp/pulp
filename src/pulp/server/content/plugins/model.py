@@ -51,7 +51,21 @@ class Repository:
 
     def __str__(self):
         return 'Repository [%s]' % self.id
-        
+
+class RelatedRepository(Repository):
+    """
+    When validating a plugin configuration, instances of this class will
+    describe other repositories that share the same plugin type as the
+    plugin being configured. This class will describe the basic repository
+    metadata for one such repository and information on that repo's
+    configuration for the plugin. If the repository has multiple associations
+    to the given plugin type, a list of configurations will be returned.
+    """
+
+    def __init__(self, id, plugin_configs, display_name=None, description=None, notes=None):
+        Repository.__init__(self, id, display_name, description, notes)
+        self.plugin_configs = plugin_configs
+
 class Unit:
     """
     Contains information related to a single content unit. The unit may or

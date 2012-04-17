@@ -283,6 +283,28 @@ class RepoManagerTests(testutil.PulpTest):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
+    def test_add_distributor_with_related(self):
+        # Setup
+        self.repo_manager.create_repo('repo-a')
+        self.repo_manager.create_repo('repo-b')
+
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a1' : 'a1'}, True, distributor_id='dist-a1')
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a2' : 'a2'}, True, distributor_id='dist-a2')
+
+        # Test
+        self.distributor_manager.add_distributor('repo-b', 'mock-distributor', {'b' : 'b'}, True)
+
+        # Verify
+        args = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0]
+        self.assertEqual(args[1].repo_plugin_config, {'b' : 'b'})
+
+        related_repos = args[2]
+        self.assertEqual(1, len(related_repos))
+        self.assertEqual(related_repos[0].id, 'repo-a')
+        self.assertEqual(2, len(related_repos[0].plugin_configs))
+        self.assertTrue({'a1' : 'a1'} in related_repos[0].plugin_configs)
+        self.assertTrue({'a2' : 'a2'} in related_repos[0].plugin_configs)
+
     # -- remove ---------------------------------------------------------------
 
     def test_remove_distributor(self):
@@ -452,6 +474,29 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    def test_update_config_with_related(self):
+        # Setup
+        self.repo_manager.create_repo('repo-a')
+        self.repo_manager.create_repo('repo-b')
+
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a1' : 'a1'}, True, distributor_id='dist-a1')
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a2' : 'a2'}, True, distributor_id='dist-a2')
+        self.distributor_manager.add_distributor('repo-b', 'mock-distributor', {'b' : 'b'}, True, distributor_id='dist-b')
+
+        # Test
+        self.distributor_manager.update_distributor_config('repo-b', 'dist-b', {'b' : 'b2'})
+
+        # Verify
+        args = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0]
+        self.assertEqual(args[1].repo_plugin_config, {'b' : 'b2'})
+
+        related_repos = args[2]
+        self.assertEqual(1, len(related_repos))
+        self.assertEqual(related_repos[0].id, 'repo-a')
+        self.assertEqual(2, len(related_repos[0].plugin_configs))
+        self.assertTrue({'a1' : 'a1'} in related_repos[0].plugin_configs)
+        self.assertTrue({'a2' : 'a2'} in related_repos[0].plugin_configs)
 
     # -- get ------------------------------------------------------------------
 
