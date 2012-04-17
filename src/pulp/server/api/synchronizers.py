@@ -250,6 +250,7 @@ class BaseSynchronizer(object):
                 pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (pulp.server.util.top_package_location(), package.name, package.version, \
                                                           package.release, package.arch, package.checksum, os.path.basename(package.relativepath))
                 if not os.path.exists(pkg_path):
+                    log.info("Skipping %s since it's missing" % (pkg_path))
                     # skip import; package is missing from the filesystem
                     continue
                 package = self.import_package(package, repo, repo_defined=True)
@@ -1008,23 +1009,7 @@ class YumSynchronizer(BaseSynchronizer):
                 self.progress["item_type"] = ""
                 self.progress["item_name"] = ""
         log.info("Finished copying %s packages" % (len(pkglist)))
-        # Remove rpms which are no longer in source
-        # TODO: Consider removing this purge step
-        # Also remove from grinder, allow repo.py to handle any purge
-        # operations when needed
-        existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
-        existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
-        existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
-        source_pkgs = [os.path.basename(p.relativepath) for p in unfiltered_pkglist]
-
-        if progress_callback is not None:
-            log.debug("Updating progress to %s" % (ProgressReport.PurgeOrphanedPackages))
-            self.progress["step"] = ProgressReport.PurgeOrphanedPackages
-            progress_callback(self.progress)
-        for epkg in existing_pkgs:
-            if epkg not in source_pkgs:
-                log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
-                os.remove(os.path.join(dst_repo_dir, epkg))
+        return
 
     def _clone_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, progress_callback=None):
         # Compute and clone packages

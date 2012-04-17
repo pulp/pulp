@@ -274,3 +274,24 @@ class TestRepoSync(testutil.PulpAsyncTest):
 
         e = self.errata_api.errata(eid)
         self.assertFalse(e)
+
+    def test_local_sync_orphaned_package(self):
+        repo_path = os.path.join(self.data_path, "test_repo_sync_rpms_subdirs_a")
+        r = self.repo_api.create("test_local_sync_orphaned_package",
+                'test_local_sync_orphaned_package', 'x86_64', 'file://%s' % (repo_path))
+        self.assertTrue(r != None)
+        repo_sync._sync(r["id"])
+        # Refresh object now it's been sync'd
+        r = self.repo_api.repository(r['id'])
+        self.assertTrue(len(r["packages"]) == 3)
+        repo_path = os.path.join(self.data_path, "test_repo_sync_rpms_subdirs_b")
+        # Update the repo object's feed url
+        new_source = "file://%s" % repo_path
+        self.repo_api.collection.update({"id":r["id"]}, {"$set":{"source":{"url":new_source, "type":"local"}}})
+        r = self.repo_api.repository(r["id"])
+        self.assertEqual(new_source, r["source"]["url"])
+        repo_sync._sync(r["id"])
+        r = self.repo_api.repository(r["id"])
+        self.assertTrue(len(r["packages"]) == 2)
+
+

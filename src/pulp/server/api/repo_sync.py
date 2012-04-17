@@ -296,11 +296,13 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
             log.info("%s old packages to process, %s new packages to process" % \
                 (len(old_pkgs), len(new_pkgs)))
             synchronizer.progress_callback(step="Removing %s packages" % (len(old_pkgs)))
+            log.info("Removing %s old packages" % (len(old_pkgs)))
             # Remove packages that are no longer in source repo
             repo_api.remove_packages(repo["id"], old_pkgs)
             # Refresh repo object since we may have deleted some packages
             repo = repo_api._get_existing_repo(repo_id)
             synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
+            log.info("Adding %s new packages" % (len(new_pkgs)))
             for pkg in new_pkgs:
                 repo_api._add_package(repo, pkg)
             # Update repo for package additions
