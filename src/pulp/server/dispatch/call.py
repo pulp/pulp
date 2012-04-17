@@ -15,7 +15,6 @@ import itertools
 import logging
 import pickle
 import traceback
-from datetime import datetime
 from types import NoneType, TracebackType
 
 from pulp.common import dateutils
@@ -186,44 +185,6 @@ class CallRequest(object):
 
         return instance
 
-# scheduled call request -------------------------------------------------------
-
-class ScheduledCallRequest(object):
-    """
-    Scheduled call request class
-    Represents the metadata needed to schedule a call request
-    @ivar call_request: call request to schedule
-    @type call_request: CallRequest
-    @ivar schedule: iso8601 interval schedule
-    @type schedule: basestring
-    @ivar failure_threshold: number of consecutive failures before call is disabled
-    @type failure_threshold: int
-    @ivar last_run: last run if call is to be a continuation of another schedule
-    @type last_run: datetime.datetime
-    @ivar enabled: whether or not the scheduled call is enabled
-    @type enabled: bool
-    """
-
-    def __init__(self,
-                 call_request,
-                 schedule,
-                 failure_threshold=None,
-                 last_run=None,
-                 enabled=True):
-
-        assert isinstance(call_request, CallRequest)
-        assert isinstance(schedule, basestring)
-        assert isinstance(failure_threshold, (NoneType, int))
-        assert isinstance(last_run, (NoneType, datetime))
-        assert isinstance(enabled, bool)
-
-        self.call_request = call_request
-        self.schedule = schedule
-        self.failure_threshold = failure_threshold
-        self.last_run = last_run
-        self.enabled = enabled
-        self.schedule_id = None
-
 # call report class ------------------------------------------------------------
 
 class CallReport(object):
@@ -306,4 +267,3 @@ class CallReport(object):
             else:
                 data[field] = None
         return data
-
