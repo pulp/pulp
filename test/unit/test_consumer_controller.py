@@ -226,21 +226,6 @@ class ContentTest(testutil.PulpV2WebserviceTest):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
 
-    def test_install(self):
-        # Setup
-        self.populate()
-        # Test
-        md = dict(name='python-gofer', version='0.66')
-        unit = dict(type_id='rpm', metadata=md)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumers/%s/actions/content/install/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 200) # TODO: 202 when asynchronous
 
     def test_update(self):
         # Setup
@@ -258,18 +243,3 @@ class ContentTest(testutil.PulpV2WebserviceTest):
         # Verify
         self.assertEquals(status, 200) # TODO: 202 when asynchronous
 
-    def test_uninstall(self):
-        # Setup
-        self.populate()
-        # Test
-        md = dict(name='gofer')
-        unit = dict(type_id='rpm', metadata=md)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumers/%s/actions/content/uninstall/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 200) # TODO: 202 when asynchronous
