@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.142
+Version: 0.0.147
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -59,8 +59,32 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
-- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+* Tue Apr 17 2012 John Matthews <jmatthews@redhat.com> 0.0.147-1
+- 797880 - 'NaN' token in JSON response (jmatthews@redhat.com)
+
+* Tue Apr 10 2012 John Matthews <jmatthews@redhat.com> 0.0.146-1
+- Update error report (jmatthews@redhat.com)
+
+* Mon Apr 09 2012 John Matthews <jmatthews@redhat.com> 0.0.145-1
+- Adding a low speed limit threshold to recognize a hung connection and abort
+  (jmatthews@redhat.com)
+- change the drpm info to return new package keys (pkilambi@redhat.com)
+- adding extra info to delta rpm fetch (pkilambi@redhat.com)
+- Adding Filter.py from John Morris's Filter patch (john@zultron.com)
+- Added a unit test for Filters, removed some older tests
+  (jmatthews@redhat.com)
+- Allows package filtering on RPM downloads Community contribution received
+  through pulp-list on: March 22, 2012 2:28 AM (john@zultron.com)
+
+* Fri Mar 23 2012 John Matthews <jmatthews@redhat.com> 0.0.144-1
+- Fix for cleanup of temp .part file when pycurl throws an exception  - Also
+  fix md5/size mismatch to have same format of error info reported.
+  (jmatthews@redhat.com)
+
+* Fri Mar 23 2012 John Matthews <jmatthews@redhat.com> 0.0.143-1
+- Updating activeobject to raise the original exception (jmatthews@redhat.com)
+- Reduce the output when an error occurs with activeobject
+  (jmatthews@redhat.com)
 
 * Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
 - 805543 - adding an optional arg to force fetch files; this is useful for
