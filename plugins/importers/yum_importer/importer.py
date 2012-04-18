@@ -16,12 +16,14 @@ Importer plugin for Yum functionality
 """
 import gettext
 import logging
+import os
 import time
 
 import drpm
 import errata
 import importer_rpm
 from pulp.server.content.plugins.importer import Importer
+from pulp.yum_plugin import util
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
@@ -56,6 +58,7 @@ OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_cli
 # num_old_packages: Defaults to 0, controls how many old packages to keep if remove_old is True
 # purge_orphaned: Defaults to True, when True will delete packages no longer available from the source repository
 # skip: Dictionary of what content types to skip during sync, options: {"packages", "distribution"}
+# checksum_type: checksum type to use for repodata; defaults to source checksum type or sha256
 
 class YumImporter(Importer):
     @classmethod
@@ -73,11 +76,144 @@ class YumImporter(Importer):
                 msg = _("Missing required configuration key: %(key)s" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
+            if key == 'feed_url':
+                feed_url = config.get('feed_url')
+                if not util.validate_feed(feed_url):
+                    msg = _("feed_url [%s] does not start with a valid protocol" % feed_url)
+                    _LOG.error(msg)
+                    return False, msg
+
         for key in config.repo_plugin_config:
             if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
+            if key == 'ssl_verify':
+                ssl_verify = config.get('ssl_verify')
+                if ssl_verify is not None and not isinstance(ssl_verify, bool) :
+                    msg = _("ssl_verify should be a boolean; got %s instead" % ssl_verify)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'ssl_ca_cert':
+                ssl_ca_cert = config.get('ssl_ca_cert')
+                if ssl_ca_cert is not None:
+                    if not isinstance(ssl_ca_cert, str) :
+                        msg = _("ssl_ca_cert should be a str; got %s instead" % ssl_ca_cert)
+                        _LOG.error(msg)
+                        return False, msg
+                    if not os.path.exists(ssl_ca_cert):
+                        msg = _("Path for ssl_ca_cert [%s] does not exist" % ssl_ca_cert)
+                        _LOG.error(msg)
+                        return False, msg
+
+            if key == 'ssl_client_cert':
+                ssl_client_cert = config.get('ssl_client_cert')
+                if ssl_client_cert is not None:
+                    if not isinstance(ssl_client_cert, str) :
+                        msg = _("ssl_client_cert should be a str; got %s instead" % ssl_client_cert)
+                        _LOG.error(msg)
+                        return False, msg
+                    if not os.path.exists(ssl_client_cert):
+                        msg = _("Path for ssl_client_cert [%s] does not exist" % ssl_client_cert)
+                        _LOG.error(msg)
+                        return False, msg
+
+            if key == 'ssl_client_key':
+                ssl_client_key = config.get('ssl_client_key')
+                if ssl_client_key is not None:
+                    if not isinstance(ssl_client_key, str) :
+                        msg = _("ssl_cleint_key should be a str; got %s instead" % ssl_client_key)
+                        _LOG.error(msg)
+                        return False, msg
+                    if not os.path.exists(ssl_client_key):
+                        msg = _("Path for ssl_client_key [%s] does not exist" % ssl_client_key)
+                        _LOG.error(msg)
+                        return False, msg
+
+            if key == 'proxy_url':
+                proxy_url = config.get('proxy_url')
+                if proxy_url is not None and not util.validate_feed(proxy_url):
+                    msg = _("Invalid proxy url: %s" % proxy_url)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'proxy_port':
+                proxy_port = config.get('proxy_port')
+                if proxy_port is not None and isinstance(proxy_port, int):
+                    msg = _("Invalid proxy port: %s" % proxy_port)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'verify_checksum':
+                verify_checksum = config.get('verify_checksum')
+                if verify_checksum is not None and not isinstance(verify_checksum, bool) :
+                    msg = _("verify_checksum should be a boolean; got %s instead" % verify_checksum)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'verify_size':
+                verify_size = config.get('verify_size')
+                if verify_size is not None and not isinstance(verify_size, bool) :
+                    msg = _("verify_size should be a boolean; got %s instead" % verify_size)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'max_speed':
+                max_speed = config.get('max_speed')
+                if max_speed is not None and not isinstance(max_speed, int) :
+                    msg = _("max_speed should be an integer; got %s instead" % max_speed)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'num_threads':
+                num_threads = config.get('num_threads')
+                if num_threads is not None and not isinstance(num_threads, int) :
+                    msg = _("num_threads should be an integer; got %s instead" % num_threads)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'newest':
+                newest = config.get('newest')
+                if newest is not None and not isinstance(newest, bool) :
+                    msg = _("newest should be a boolean; got %s instead" % newest)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'remove_old':
+                remove_old = config.get('remove_old')
+                if remove_old is not None and not isinstance(remove_old, bool) :
+                    msg = _("newest should be a boolean; got %s instead" % remove_old)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'num_old_packages':
+                num_old_packages = config.get('num_old_packages')
+                if num_old_packages is not None and not isinstance(num_old_packages, int) :
+                    msg = _("num_old_packages should be an integer; got %s instead" % num_old_packages)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'purge_orphaned':
+                purge_orphaned = config.get('purge_orphaned')
+                if purge_orphaned is not None and not isinstance(purge_orphaned, bool) :
+                    msg = _("purge_orphaned should be a boolean; got %s instead" % purge_orphaned)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'skip':
+                skip = config.get('skip')
+                if skip is not None and not isinstance(skip, dict):
+                    msg = _("skip should be a dictionary; got %s instead" % skip)
+                    _LOG.error(msg)
+                    return False, msg
+
+            if key == 'checksum_type':
+                checksum_type = config.get('checksum_type')
+                if checksum_type is not None and not util.is_valid_checksum_type(checksum_type):
+                    msg = _("%s is not a valid checksum type" % checksum_type)
+                    _LOG.error(msg)
+                    return False, msg
+
         return True, None
 
     def importer_added(self, repo, config):

@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import hashlib
+import urlparse
 import yum
 import time
 import os
@@ -83,8 +84,26 @@ def get_repomd_filetype_path(path, filetype):
     return None
 
 def is_valid_checksum_type(checksum_type):
+    """
+    @param checksum_type: checksum type to validate
+    @type checksum_type str
+    @return: True if valid, else False
+    @rtype bool
+    """
     VALID_TYPES = ['sha256', 'sha', 'sha1', 'md5', 'sha512']
     if checksum_type not in VALID_TYPES:
+        return False
+    return True
+
+def validate_feed(feed_url):
+    """
+    @param feed_url: feed url to validate
+    @type feed_url str
+    @return: True if valid, else False
+    @rtype bool
+    """
+    proto, netloc, path, params, query, frag = urlparse.urlparse(feed_url)
+    if proto not in ['http', 'https', 'ftp', 'file']:
         return False
     return True
 
