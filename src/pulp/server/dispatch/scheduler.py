@@ -34,17 +34,6 @@ from pulp.server.util import subdict
 
 _LOG = logging.getLogger(__name__)
 
-# tags -------------------------------------------------------------------------
-
-SCHEDULED_TAG = 'scheduled'
-
-_SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
-_SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
-                            'remaining_runs', 'enabled')
-_SCHEDULE_REPORT_FIELDS = ('_id', 'schedule', 'consecutive_failures',
-                           'first_run', 'last_run', 'next_run',
-                           'remaining_runs', 'enabled')
-
 # scheduler --------------------------------------------------------------------
 
 class Scheduler(object):
@@ -215,7 +204,7 @@ class Scheduler(object):
         """
         Call back for task (call_request) results and rescheduling
         """
-        index = call_request.tags.index(SCHEDULED_TAG)
+        index = call_request.tags.index(dispatch_constants.SCHEDULED_TAG)
         schedule_id = call_request.tags[index + 1]
         scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
         self.update_last_run(scheduled_call, call_report)
@@ -239,8 +228,8 @@ class Scheduler(object):
         @return: schedule id if successfully scheduled or None otherwise
         @rtype:  str or None
         """
-        validate_keys(schedule_options, _SCHEDULE_OPTIONS_FIELDS)
-        call_request.tags.append(SCHEDULED_TAG)
+        validate_keys(schedule_options, dispatch_constants.SCHEDULE_OPTIONS_FIELDS)
+        call_request.tags.append(dispatch_constants.SCHEDULED_TAG)
         scheduled_call = ScheduledCall(call_request, schedule, **schedule_options)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
@@ -267,7 +256,7 @@ class Scheduler(object):
             schedule_id = ObjectId(schedule_id)
         if self.scheduled_call_collection.find_one(schedule_id) is None:
             raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
-        validate_keys(schedule_updates, _SCHEDULE_MUTABLE_FIELDS)
+        validate_keys(schedule_updates, dispatch_constants.SCHEDULE_MUTABLE_FIELDS)
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
@@ -364,6 +353,6 @@ def scheduled_call_to_report_dict(scheduled_call):
     @rtype:  dict
     """
     call_request = call.CallRequest.deserialize(scheduled_call['serialized_call_request'])
-    report = subdict(scheduled_call, _SCHEDULE_REPORT_FIELDS)
+    report = subdict(scheduled_call, dispatch_constants.SCHEDULE_REPORT_FIELDS)
     report['call_request'] = call_request
     return report

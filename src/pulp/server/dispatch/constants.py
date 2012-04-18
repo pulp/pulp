@@ -146,3 +146,13 @@ RESOURCE_OPERATIONS_MATRIX = {
                                 RESOURCE_DELETE_OPERATION: CALL_REJECTED_RESPONSE}
 }
 
+# schedule tags and fields -----------------------------------------------------
+
+SCHEDULED_TAG = 'scheduled'
+
+SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
+SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
+                           'remaining_runs', 'enabled')
+SCHEDULE_REPORT_FIELDS = ('_id', 'schedule', 'consecutive_failures',
+                          'first_run', 'last_run', 'next_run', 'remaining_runs',
+                          'enabled')
