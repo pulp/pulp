@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
+import itertools
 import logging
 import threading
 from gettext import gettext as _
@@ -22,10 +23,12 @@ try:
 except ImportError:
     from pymongo.objectid import ObjectId
 
+from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.coordinator import Coordinator
+from pulp.server.util import subdict
 
 
 _LOG = logging.getLogger(__name__)
@@ -33,6 +36,11 @@ _LOG = logging.getLogger(__name__)
 # tags -------------------------------------------------------------------------
 
 SCHEDULED_TAG = 'scheduled'
+
+_SCHEDULE_REQUIRED_FIELDS = ('call_request', 'schedule')
+_SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
+_SCHEDULE_REPORT_FIELDS = ('consecutive_failures', 'start_date',
+                           'remaining_runs', 'next_run')
 
 # scheduler --------------------------------------------------------------------
 
@@ -212,22 +220,31 @@ class Scheduler(object):
 
     # schedule control methods -------------------------------------------------
 
-    def add(self, call_request, schedule, failure_threshold=None, last_run=None):
+    def add(self, call_request, schedule, **schedule_options):
         """
         Add a scheduled call request
+        Valid schedule options:
+         * failure_threshold: max number of consecutive failures, before scheduled call is disabled, None means no max
+         * last_run: datetime of the last run of the call request or None if no last run
+         * enabled: boolean flag if the scheduled call is enabled or not
         @param call_request: call request to schedule
         @type  call_request: pulp.server.dispatch.call.CallRequest
         @param schedule: iso8601 formatted interval schedule
         @type  schedule: str
-        @param failure_threshold: max number of consecutive failures, before scheduled call is disabled, None means no max
-        @type  failure_threshold: int or None
-        @param last_run: datetime of the last run of the call request or None if no last run
-        @type  last_run: datetime.datetime or None
+        @param schedule_options: keyword options for this schedule
+        @type  schedule_options: dict
         @return: schedule id if successfully scheduled or None otherwise
         @rtype:  str or None
         """
+        invalid_options = []
+        for option in schedule_options:
+            if option in _SCHEDULE_OPTIONS_FIELDS:
+                continue
+            invalid_options.append(option)
+        if invalid_options:
+            raise pulp_exceptions.InvalidValue(invalid_options)
         call_request.tags.append(SCHEDULED_TAG)
-        scheduled_call = ScheduledCall(call_request, schedule, failure_threshold, last_run)
+        scheduled_call = ScheduledCall(call_request, schedule, **schedule_options)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             return None
@@ -281,7 +298,7 @@ class Scheduler(object):
             schedule_id = ObjectId(schedule_id)
         scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
         if scheduled_call is None:
-            return (None, None)
+            raise pulp_exceptions.MissingResource(schedule=schedule_id)
         serialized_call_request = scheduled_call['serialized_call_request']
         call_request = call.CallRequest.deserialize(serialized_call_request)
         schedule = scheduled_call['schedule']
