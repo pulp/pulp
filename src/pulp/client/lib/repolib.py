@@ -125,7 +125,7 @@ def bind(repo_filename,
             log.info('Updating existing repo [%s]' % repo.id)
             repo_file.update_repo(repo)
         else:
-            log.info('Adding new repo [%s] : %s' % (repo.id, type(repo.id)))
+            log.info('Adding new repo [%s]' % repo.id)
             repo_file.add_repo(repo)
             
         repo_file.save()
