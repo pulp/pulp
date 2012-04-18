@@ -163,7 +163,7 @@ class RepoFile(object):
             f.write(RepoFile.FILE_HEADER)
 
         # Write the contents of the parser
-        self.parser.write(encode_unicode(f))
+        self.parser.write(f)
         
         f.close()
 
