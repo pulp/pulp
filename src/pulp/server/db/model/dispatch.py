@@ -42,24 +42,19 @@ class ScheduledCall(Model):
 
     def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
-        # tag the call request with the schedule id
-        call_request.tags.append(str(self._id))
+
+        call_request.tags.append(str(self._id)) # schedule_id tag
+        interval, start, runs = dateutils.parse_iso8601_interval(schedule)
 
         self.serialized_call_request = call_request.serialize()
         self.schedule = schedule
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
+        self.first_run = dateutils.to_naive_utc_datetime(start)
         self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
-        self.enabled = enabled
-
-        interval, start_date, runs = dateutils.parse_iso8601_interval(schedule)
-        start_date = start_date or datetime.now()
-
-        self.interval_in_seconds = interval.seconds + interval.days * 86400
-        self.start_date = dateutils.to_naive_utc_datetime(start_date)
-        self.remaining_runs = runs
-
         self.next_run = None # will calculated and set by the scheduler
+        self.remaining_runs = runs
+        self.enabled = enabled
 
 
 class ArchivedCall(Model):

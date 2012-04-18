@@ -23,6 +23,7 @@ try:
 except ImportError:
     from pymongo.objectid import ObjectId
 
+from pulp.common import dateutils
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
@@ -197,13 +198,13 @@ class Scheduler(object):
         if scheduled_call['remaining_runs'] == 0:
             return None
 
-        now = datetime.datetime.utcnow()
         last_run = scheduled_call['last_run']
         if last_run is None:
-            return scheduled_call['start_date']
+            return scheduled_call['first_run']
 
+        now = datetime.datetime.utcnow()
+        interval = dateutils.parse_iso8601_interval(scheduled_call['schedule'])[0]
         next_run = last_run
-        interval = datetime.timedelta(seconds=scheduled_call['interval_in_seconds'])
         while next_run < now:
             next_run += interval
         return next_run
