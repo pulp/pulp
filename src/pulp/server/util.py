@@ -751,4 +751,4 @@ class subdict(dict):
         @param keys: list of keys to copy from d
         """
         n = dict((k, v) for k, v in d.items() if k in keys)
-        super(SubDict, self).__init__(n)
+        super(subdict, self).__init__(n)
