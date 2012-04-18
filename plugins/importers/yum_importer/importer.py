@@ -98,39 +98,18 @@ class YumImporter(Importer):
             if key == 'ssl_ca_cert':
                 ssl_ca_cert = config.get('ssl_ca_cert')
                 if ssl_ca_cert is not None:
-                    if not isinstance(ssl_ca_cert, str) :
-                        msg = _("ssl_ca_cert should be a str; got %s instead" % ssl_ca_cert)
-                        _LOG.error(msg)
-                        return False, msg
-                    if not os.path.exists(ssl_ca_cert):
-                        msg = _("Path for ssl_ca_cert [%s] does not exist" % ssl_ca_cert)
+                    if not util.validate_cert(ssl_ca_cert) :
+                        msg = _("ssl_ca_cert is not a valid certificate")
                         _LOG.error(msg)
                         return False, msg
 
             if key == 'ssl_client_cert':
                 ssl_client_cert = config.get('ssl_client_cert')
                 if ssl_client_cert is not None:
-                    if not isinstance(ssl_client_cert, str) :
-                        msg = _("ssl_client_cert should be a str; got %s instead" % ssl_client_cert)
+                    if not util.validate_cert(ssl_client_cert) :
+                        msg = _("ssl_client_cert is not a valid certificate")
                         _LOG.error(msg)
                         return False, msg
-                    if not os.path.exists(ssl_client_cert):
-                        msg = _("Path for ssl_client_cert [%s] does not exist" % ssl_client_cert)
-                        _LOG.error(msg)
-                        return False, msg
-
-            if key == 'ssl_client_key':
-                ssl_client_key = config.get('ssl_client_key')
-                if ssl_client_key is not None:
-                    if not isinstance(ssl_client_key, str) :
-                        msg = _("ssl_cleint_key should be a str; got %s instead" % ssl_client_key)
-                        _LOG.error(msg)
-                        return False, msg
-                    if not os.path.exists(ssl_client_key):
-                        msg = _("Path for ssl_client_key [%s] does not exist" % ssl_client_key)
-                        _LOG.error(msg)
-                        return False, msg
-
             if key == 'proxy_url':
                 proxy_url = config.get('proxy_url')
                 if proxy_url is not None and not util.validate_feed(proxy_url):

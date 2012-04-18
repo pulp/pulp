@@ -67,7 +67,7 @@ class TestValidateConfig(unittest.TestCase):
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertFalse(state)
 
-        ssl_ca_cert = os.path.join(self.data_dir, "ca.key")
+        ssl_ca_cert = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
         config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_ca_cert=ssl_ca_cert)
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertTrue(state)
@@ -79,20 +79,8 @@ class TestValidateConfig(unittest.TestCase):
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertFalse(state)
 
-        ssl_client_cert = os.path.join(self.data_dir, "cert.crt")
+        ssl_client_cert = open(os.path.join(self.data_dir, "cert.crt")).read()
         config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_client_cert=ssl_client_cert)
-        state, msg = self.importer.validate_config(self.repo, config, [])
-        self.assertTrue(state)
-
-    def test_config_ssl_client_key(self):
-        feed_url = "http://example.redhat.com/"
-        ssl_client_key = "fake_path_to_client_key"
-        config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_client_key=ssl_client_key)
-        state, msg = self.importer.validate_config(self.repo, config, [])
-        self.assertFalse(state)
-
-        ssl_client_key = os.path.join(self.data_dir, "cert.key")
-        config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_client_key=ssl_client_key)
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertTrue(state)
 

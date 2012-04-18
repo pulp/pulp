@@ -15,6 +15,7 @@ import urlparse
 import yum
 import time
 import os
+from M2Crypto import X509
 
 def get_repomd_filetypes(repomd_path):
     """
@@ -141,4 +142,16 @@ def get_file_checksum(filename=None, fd=None, file=None, buffer_size=None, hasht
         f.close()
     return m.hexdigest()
 
+def validate_cert(cert_pem):
+    """
+    @param cert_pem: certificate pem to verify
+    @type cert_pem str
+    @return: True if valid, else False
+    @rtype bool
+    """
+    try:
+        cert = X509.load_cert_string(cert_pem)
+    except X509.X509Error:
+        return False
+    return True
 
