@@ -38,10 +38,12 @@ class TestRPMs(unittest.TestCase):
 
     def setUp(self):
         super(TestRPMs, self).setUp()
+        self.saved_verify_exists = importer_rpm.verify_exists
         self.init()
 
     def tearDown(self):
         super(TestRPMs, self).tearDown()
+        importer_rpm.verify_exists = self.saved_verify_exists
         self.clean()
 
     def init(self):
@@ -405,7 +407,7 @@ class TestRPMs(unittest.TestCase):
         # 2 Existing RPMs, one is missing
         # Expecting return of the one missing rpm
         # Fake out the verify_exists
-        def side_effect(arg, checksum=None, checksum_type=None, size=None, verify_options={}):
+        def side_effect(arg, checksum=None, checksum_type="sha256", size=None, verify_options={}):
             if arg == "rel_path_b":
                 return False
             return True
@@ -425,9 +427,8 @@ class TestRPMs(unittest.TestCase):
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         existing_units[rpm_lookup_key_b] = unit_b
-        verify_options={'checksum' : True, 'size' : True}
-        missing_rpms, missing_units = importer_rpm.get_missing_rpms_and_units(available_rpms, 
-                existing_units, verify_options)
+        missing_rpms, missing_units = importer_rpm.get_missing_rpms_and_units(available_rpms,
+                existing_units)
         self.assertEquals(len(missing_rpms), 1)
         self.assertEquals(len(missing_units), 1)
         self.assertTrue(rpm_lookup_key_b in missing_rpms)

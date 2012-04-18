@@ -28,9 +28,6 @@ class TestVerifyOptions(unittest.TestCase):
 
     def setUp(self):
         super(TestVerifyOptions, self).setUp()
-        self.temp_dir = tempfile.mkdtemp()
-        self.working_dir = os.path.join(self.temp_dir, "working")
-        self.pkg_dir = os.path.join(self.temp_dir, "packages")
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
 
     def tearDown(self):
@@ -38,6 +35,7 @@ class TestVerifyOptions(unittest.TestCase):
 
     def test_verify_options(self):
         def side_effect(path):
+            # no-op to override file removal
             pass
         importer_rpm.cleanup_file = mock.Mock()
         importer_rpm.cleanup_file = side_effect
@@ -51,8 +49,8 @@ class TestVerifyOptions(unittest.TestCase):
 
         # check invalid size
         size = 1232
-        exists = importer_rpm.verify_exists(test_pkg_path, checksum, checksum_type, size, verify_options)
-        self.assertFalse(exists)
+        t_exists = importer_rpm.verify_exists(test_pkg_path, checksum, checksum_type, size, verify_options)
+        self.assertFalse(t_exists)
 
         # check None size
         size = None
@@ -64,10 +62,12 @@ class TestVerifyOptions(unittest.TestCase):
         exists = importer_rpm.verify_exists(test_pkg_path, checksum, checksum_type, size, verify_options)
         self.assertFalse(exists)
 
+        # skip size/checksum checks
         verify_options = dict(checksum=False, size=False)
         exists = importer_rpm.verify_exists(test_pkg_path, checksum, checksum_type, size, verify_options)
         self.assertTrue(exists)
 
+        # invalid path
         test_pkg_fake_path = os.path.join(self.data_dir, "test_fake_repo", "pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
         exists = importer_rpm.verify_exists(test_pkg_fake_path, checksum, checksum_type, size, verify_options)
         self.assertFalse(exists)
