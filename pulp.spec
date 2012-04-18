@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.283
+Version:        0.0.284
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -516,6 +516,39 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Apr 18 2012 Jeff Ortel <jortel@redhat.com> 0.0.284-1
+- 802447 - removing wrong unicode encoding of file handler instead of file
+  contents (skarmark@redhat.com)
+- adding config voption validation to yum importer (pkilambi@redhat.com)
+- added custom call report that records the schedule_id (jconnor@redhat.com)
+- added schedule_id field to call report (jconnor@redhat.com)
+- added ability to pass in custom call report on all single call request
+  execution calls (jconnor@redhat.com)
+- moved constants to constants module (jconnor@redhat.com)
+- added scheduled call update method (jconnor@redhat.com)
+- moved key validation into a utility function (jconnor@redhat.com)
+- fixed passing None into dateutils (jconnor@redhat.com)
+- update key comparison (jconnor@redhat.com)
+- removed unnecessary interval_in_seconds field and calculate the interval on
+  the fly, allowing cleaner reporting as well as variable length interval such
+  as 1 month, 1 year, etc (jconnor@redhat.com)
+- added subdict utilty class (jconnor@redhat.com)
+- Implemented related repos concept in plugin validate config
+  (jason.dobies@redhat.com)
+- 802447 - encoding i18n repoid in repo file before installing on the consumer
+  (skarmark@redhat.com)
+- Removing failing outdated v1 consumer controller tests (skarmark@redhat.com)
+- Adding checks to verify checksum/size to verify package exists
+  (pkilambi@redhat.com)
+- Added repo create and update documentation. (jason.dobies@redhat.com)
+- Added ability to manipulate notes on repo create/update
+  (jason.dobies@redhat.com)
+- Update invalid_ca & invalid_ca_key for test_oid (jmatthews@redhat.com)
+- Changed semantics on how repo update works on notes (jason.dobies@redhat.com)
+- Changes to importer API for import_units (jason.dobies@redhat.com)
+- Making consumer list default to summary and adding --details option to list
+  details (skarmark@redhat.com)
+
 * Fri Apr 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.283-1
 - Adding /var/lib/pulp_client/consumer in specfile to consumer's list of file
   (skarmark@redhat.com)
