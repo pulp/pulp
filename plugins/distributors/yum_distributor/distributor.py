@@ -17,7 +17,7 @@ import os
 import shutil
 import traceback
 import metadata
-
+from pulp.yum_plugin import util
 from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.content.plugins.model import PublishReport
 
@@ -82,11 +82,65 @@ class YumDistributor(Distributor):
                 msg = _("Missing required configuration key: %(key)s" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
+            if key == 'relative_url':
+                relative_path = config.get('relative_url')
+                if relative_path is not None and not isinstance(relative_path, str):
+                    msg = _("relative_url should be a string; got %s instead" % relative_path)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'http':
+                config_http = config.get('http')
+                if config_http is not None and not isinstance(config_http, bool):
+                    msg = _("http should be a boolean; got %s instead" % config_http)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'https':
+                config_https = config.get('https')
+                if config_https is not None and not isinstance(config_https, bool):
+                    msg = _("https should be a boolean; got %s instead" % config_https)
+                    _LOG.error(msg)
+                    return False, msg
         for key in config.repo_plugin_config:
             if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
+            if key == 'protected':
+                protected = config.get('protected')
+                if protected is not None and not isinstance(protected, bool):
+                    msg = _("protected should be a boolean; got %s instead" % protected)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'generate_metadata':
+                generate_metadata = config.get('generate_metadata')
+                if generate_metadata is not None and not isinstance(generate_metadata, bool):
+                    msg = _("generate_metadata should be a boolean; got %s instead" % generate_metadata)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'checksum_type':
+                checksum_type = config.get('checksum_type')
+                if checksum_type is not None and not util.is_valid_checksum_type(checksum_type):
+                    msg = _("%s is not a valid checksum type" % checksum_type)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'metadata_types':
+                metadata_types = config.get('metadata_types')
+                if metadata_types is not None and not isinstance(metadata_types, dict):
+                    msg = _("metadata_types should be a dictionary; got %s instead" % metadata_types)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'auth_cert':
+                auth_pem = config.get('auth_cert')
+                if auth_pem is not None and not util.validate_cert(auth_pem):
+                    msg = _("auth_cert is not a valid certificate")
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'auth_ca':
+                auth_ca = config.get('auth_ca')
+                if auth_ca is not None and not util.validate_cert(auth_ca):
+                    msg = _("auth_ca is not a valid certificate")
+                    _LOG.error(msg)
+                    return False, msg
         # If overriding https publish dir, be sure it exists and we can write to it
         if config.repo_plugin_config.has_key("https_publish_dir"):
             publish_dir = config.repo_plugin_config["https_publish_dir"]
