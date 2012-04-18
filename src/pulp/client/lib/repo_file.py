@@ -12,7 +12,11 @@
 from iniparse import ConfigParser
 import os
 import shutil
-from pulp.common.util import encode_unicode
+from pulp.client.lib.logutil import getLogger
+from pulp.common.util import encode_unicode, decode_unicode
+
+log = getLogger(__name__)
+
 
 class Repo(dict):
     '''
@@ -246,8 +250,10 @@ class RepoFile(object):
         @type  repo: L{Repo}
         '''
         for k, v in repo.items():
+            log.info("$$$$$$$$$$$$$$$$$$$$$$$$ - %s - %s - %s" % (k, v, type(v)))
+        for k, v in repo.items():
             if v:
-                self.parser.set(repo.id, k, v)
+                self.parser.set(repo.id, k, encode_unicode(v))
             else:
                 self.parser.remove_option(repo.id, k)
 
