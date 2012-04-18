@@ -145,7 +145,7 @@ def relative_repo_path(path):
         path = path[len(top):]
     while path.startswith('/'):
         path = path[1:]
-    return path 
+    return path
 
 def get_rpm_information(rpm_path):
     """
@@ -154,7 +154,7 @@ def get_rpm_information(rpm_path):
     @param rpm_path: Full path to the RPM to inspect
     """
     ts = rpm.ts()
-    ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES) 
+    ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
     file_descriptor_number = os.open(rpm_path, os.O_RDONLY)
     rpm_info = ts.hdrFromFdno(file_descriptor_number);
     os.close(file_descriptor_number)
@@ -166,7 +166,7 @@ def random_string():
     Generates a random string suitable for using as a password.
     '''
     chars = string.ascii_letters + string.digits
-    return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     
+    return "".join(random.choice(chars) for x in range(random.randint(8, 16)))
 
 
 def chunks(l, n):
@@ -290,7 +290,7 @@ def _get_yum_repomd(path, temp_path=None):
 
 def get_repo_package(repo_path, package_filename):
     """
-    @param repo_path: The file system path to the repository you wish to fetch 
+    @param repo_path: The file system path to the repository you wish to fetch
     the package metadata from
     @param package_filename: the filename of the package you want the metadata for
     """
@@ -298,9 +298,9 @@ def get_repo_package(repo_path, package_filename):
     found = None
     for p in repoPackages:
         if (p.relativepath == package_filename):
-            found = p 
+            found = p
     if found is None:
-        raise PulpException("No package with file name: %s found in repository: %s" 
+        raise PulpException("No package with file name: %s found in repository: %s"
                             % (package_filename, repo_path))
     return found
 
@@ -310,7 +310,7 @@ def get_repo_packages(path):
     Get a list of packages in the yum repo.
     A list of L{Package} data objects are returned so that the repo
     and associated resources can be closed.
-    @param path: path to repo's base (not the repodatadir, this api 
+    @param path: path to repo's base (not the repodatadir, this api
     expects a path/repodata underneath this path)
     @return: List of available packages (data) objects in the repo.
     """
@@ -443,7 +443,7 @@ def create_rel_symlink(source_path, dest_path):
 def create_symlinks(source_path, link_path):
     link_path = encode_unicode(link_path)
     if not os.path.exists(os.path.dirname(link_path)):
-        # Create published dir as well as 
+        # Create published dir as well as
         # any needed dir parts if rel_path has multiple parts
         os.makedirs(os.path.dirname(link_path))
     if not os.path.exists(link_path):
@@ -452,7 +452,7 @@ def create_symlinks(source_path, link_path):
             os.unlink(link_path)
         log.debug("Create symlink for [%s] to [%s]" % (decode_unicode(source_path), decode_unicode(link_path)))
         os.symlink(encode_unicode(source_path), link_path)
-        
+
 def _create_repo(dir, groups=None, checksum_type="sha256"):
     try:
         cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
@@ -707,19 +707,19 @@ class Singleton(type):
     """
     Singleton metaclass. To make a class instance a singleton, use this class
     as your class's metaclass as follows:
-    
+
     class MyClass(object):
         __metaclass__ = Singleton
-    
+
     Singletons are created by passing the exact same arguments to the
     constructor. For example:
-    
+
     class T():
         __metaclass__ = Singleton
-        
+
         def __init__(self, value=None):
             self.value = value
-        
+
     t1 = T()
     t2 = T()
     t1 is t2
@@ -734,7 +734,21 @@ class Singleton(type):
     def __init__(self, name, bases, ns):
         super(Singleton, self).__init__(name, bases, ns)
         self.instances = {}
-        
+
     def __call__(self, *args, **kwargs):
         key = (tuple(args), tuple(sorted(kwargs.items())))
         return self.instances.setdefault(key, super(Singleton, self).__call__(*args, **kwargs))
+
+
+class subdict(dict):
+    """
+    A dictionary that posseses a subset of the keys in some other dictioary.
+    """
+
+    def __init__(self, d, keys=()):
+        """
+        @param d: mapping type to be a subdict of
+        @param keys: list of keys to copy from d
+        """
+        n = dict((k, v) for k, v in d.items() if k in keys)
+        super(SubDict, self).__init__(n)
