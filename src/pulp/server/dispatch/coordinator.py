@@ -69,52 +69,58 @@ class Coordinator(object):
 
     # execution methods --------------------------------------------------------
 
-    def execute_call(self, call_request):
+    def execute_call(self, call_request, call_report=None):
         """
         Execute a call request in the tasking sub-system.
         This will run the task synchronously if no conflicts are detected,
         asynchronously if there are tasks that will postpone this one.
         @param call_request: call request to run
         @type  call_request: L{call.CallRequest} instance
+        @param call_report: call report for call request
+        @type  call_report: L{call.CallReport} instance or None
         @return: call report pertaining to the running of the request call
         @rtype:  L{call.CallReport} instance
         """
-        task = self._create_task(call_request)
+        task = self._create_task(call_request, call_report)
         synchronous = None
         if isinstance(task, AsyncTask):
             synchronous = False
         self._run_task(task, synchronous)
         return copy.copy(task.call_report)
 
-    def execute_call_synchronously(self, call_request, timeout=None):
+    def execute_call_synchronously(self, call_request, call_report=None, timeout=None):
         """
         Execute a call request in the tasking sub-system.
         This will run the task synchronously regardless of postponing conflicts.
         NOTE: this method cannot be used to execute asynchronous tasks.
         @param call_request: call request to run
         @type  call_request: L{call.CallRequest} instance
+        @param call_report: call report for call request
+        @type  call_report: L{call.CallReport} instance or None
         @param timeout: maximum amount of time to wait for the task to start
         @type  timeout: None or datetime.timedelta
         @return: call report pertaining to the running of the request call
         @rtype:  L{call.CallReport} instance
         """
         assert isinstance(timeout, (datetime.timedelta, types.NoneType))
-        task = self._create_task(call_request)
+        task = self._create_task(call_request, call_report)
         if isinstance(task, AsyncTask):
             raise dispatch_exceptions.AsynchronousExecutionError('asynchronous')
         self._run_task(task, True, timeout)
         return copy.copy(task.call_report)
 
-    def execute_call_asynchronously(self, call_request):
+    def execute_call_asynchronously(self, call_request, call_report=None):
         """
         Execute a call request in the tasking sub-system.
         This will run the task asynchronously regardless of no postponing conflicts.
         @param call_request: call request to run
         @type  call_request: L{call.CallRequest} instance
+        @param call_report: call report for call request
+        @type  call_report: L{call.CallReport} instance or None
         @return: call report pertaining to the running of the request call
         @rtype:  L{call.CallReport} instance
         """
-        task = self._create_task(call_request)
+        task = self._create_task(call_request, call_report)
         self._run_task(task, False)
         return copy.copy(task.call_report)
 
@@ -130,27 +136,29 @@ class Coordinator(object):
         job_id = self._generate_job_id()
         call_report_list = []
         for call_request in call_request_list:
-            task = self._create_task(call_request, job_id)
+            task = self._create_task(call_request, job_id=job_id)
             self._run_task(task, False)
             call_report_list.append(copy.copy(task.call_report))
         return call_report_list
 
     # execution utilities ------------------------------------------------------
 
-    def _create_task(self, call_request, job_id=None):
+    def _create_task(self, call_request, call_report=None, job_id=None):
         """
         Create the task for the given call request.
         @param call_request: call request to encapsulate in a task
         @type  call_request: L{call.CallRequest} instance
+        @param call_report: call report for call request
+        @type  call_report: L{call.CallReport} instance or None
         @param job_id: optional job id
         @type  job_id: None or str
         @return: task that encapsulates the call request
         @rtype:  L{Task} instance
         """
         if not call_request.asynchronous:
-            task = Task(call_request)
+            task = Task(call_request, call_report)
         else:
-            task = AsyncTask(call_request)
+            task = AsyncTask(call_request, call_report)
         task.call_report.task_id = task.id
         task.call_report.job_id = job_id
         return task
