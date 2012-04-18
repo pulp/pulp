@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.2
+Version:        1.1.3
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,23 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Apr 18 2012 Jeff Ortel <jortel@redhat.com> 1.1.3-1
+- 802447 - removing wrong unicode encoding of file handler instead of file
+  contents (skarmark@redhat.com)
+- 802447 - encoding i18n repoid in repo file before installing on the consumer
+  (skarmark@redhat.com)
+- 802447 - Fixing unicode handling bug on the client side while binding a i18n
+  id repo to a consumer (skarmark@redhat.com)
+- Bump grinder to 0.0.147 (jmatthews@redhat.com)
+- 801114 - Logic for handling orphan packages should account for sub
+  directories (jmatthews@redhat.com)
+- 805678 - Incorporated patch to add repo diff functionality
+  (jason.dobies@redhat.com)
+- 808183 - handle duplicatekey error on distro creation when multiple syncs are
+  creating same distribution (pkilambi@redhat.com)
+- 798803 - added missing premission remove when revoking permissions from a
+  role (jconnor@redhat.com)
+
 * Fri Apr 13 2012 Jeff Ortel <jortel@redhat.com> 1.1.2-1
 - 791341 - moved role removal into own loop (jconnor@redhat.com)
 - 791341 - removing role name from user roles when role is deleted
