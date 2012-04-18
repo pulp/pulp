@@ -69,7 +69,7 @@ class Distributor(object):
 
         @param config: plugin configuration instance; the proposed repo
                        configuration is found within
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
         @param related_repos: list of other repositories using this distributor
                type; empty list if there are none; entries are of type
@@ -97,7 +97,7 @@ class Distributor(object):
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         pass
 
@@ -114,6 +114,12 @@ class Distributor(object):
         If this call raises an exception, the distributor will still be removed
         from the repository and the working directory contents will still be
         wiped by Pulp.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         pass
 
@@ -141,3 +147,24 @@ class Distributor(object):
         @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
         """
         raise NotImplementedError()
+
+    def create_consumer_payload(self, repo, config):
+        """
+        Called when a consumer binds to a repository using this distributor.
+        This call should return a dictionary describing all data the consumer
+        will need to access the repository. The contents will vary wildly
+        depending on the method the repository is published, but examples
+        of returned data includes authentication information, location of the
+        repository (e.g. URL), and data required to verify the contents
+        of the published repository.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @return: dictionary of relevant data
+        @rtype:  dict
+        """
+        return {}

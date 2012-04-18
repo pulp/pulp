@@ -498,6 +498,39 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertTrue({'a1' : 'a1'} in related_repos[0].plugin_configs)
         self.assertTrue({'a2' : 'a2'} in related_repos[0].plugin_configs)
 
+    # -- payload --------------------------------------------------------------
+
+    def test_create_bind_payload(self):
+        # Setup
+        self.repo_manager.create_repo('repo-a')
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True, distributor_id='dist-1')
+
+        expected_payload = {'payload' : 'stuff'}
+        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value = expected_payload
+
+        # Test
+        payload = self.distributor_manager.create_bind_payload('repo-a', 'dist-1')
+
+        # Verify
+        self.assertEqual(payload, expected_payload)
+
+        # Cleanup
+        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value = None
+
+    def test_create_bind_payload_missing_repo(self):
+        # Test
+        self.assertRaises(exceptions.MissingResource, self.distributor_manager.create_bind_payload, 'missing', 'also missing')
+
+    def test_create_bind_payload_distributor_error(self):
+        # Setup
+        self.repo_manager.create_repo('repo-a')
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True, distributor_id='dist-1')
+
+        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.side_effect = Exception()
+
+        # Test
+        self.assertRaises(exceptions.PulpExecutionException, self.distributor_manager.create_bind_payload, 'repo-a', 'dist-1')
+
     # -- get ------------------------------------------------------------------
 
     def test_get_distributor(self):

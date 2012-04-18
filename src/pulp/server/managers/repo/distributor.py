@@ -47,7 +47,7 @@ class RepoDistributorManager(object):
         @rtype:  dict
 
         @raise MissingResource: if either the repo doesn't exist or there is no
-                    distributor with the given ID
+               distributor with the given ID
         """
 
         distributor = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
@@ -330,6 +330,42 @@ class RepoDistributorManager(object):
         distributor_coll.save(repo_distributor, safe=True)
 
         return repo_distributor
+
+    def create_bind_payload(self, repo_id, distributor_id):
+        """
+        Requests the distributor plugin to generate the consumer bind payload.
+
+        @param repo_id: identifies the repo being bound
+        @type  repo_id: str
+
+        @param distributor_id: identifies the distributor
+        @type  distributor_id: str
+
+        @return: payload object to pass to the consumer
+        @rtype:  dict
+
+        @raise MissingResource: if the repo or distributor do not exist
+        @raise PulpExecutionException: if the distributor raises an error
+        """
+
+        # Input Validation
+        repo_distributor = self.get_distributor(repo_id, distributor_id)
+        repo = Repo.get_collection().find_one({'id' : repo_id})
+
+        distributor_type_id = repo_distributor['distributor_type_id']
+        distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+
+        # Let the distributor plugin verify the configuration
+        call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
+        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+
+        try:
+            payload = distributor_instance.create_consumer_payload(transfer_repo, call_config)
+            return payload
+        except Exception:
+            _LOG.exception('Exception raised from distributor [%s] generating consumer payload' % distributor_id)
+            raise PulpExecutionException(), None, sys.exc_info()[2]
 
     def get_distributor_scratchpad(self, repo_id, distributor_id):
         """
