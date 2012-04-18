@@ -40,6 +40,7 @@ SCHEDULED_TAG = 'scheduled'
 
 _SCHEDULE_REQUIRED_FIELDS = ('call_request', 'schedule')
 _SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
+_SCHEDULE_IMMUTABLE_FIELDS = ('call_request', 'schedule')
 _SCHEDULE_REPORT_FIELDS = ('consecutive_failures', 'start_date',
                            'remaining_runs', 'next_run')
 
@@ -237,13 +238,7 @@ class Scheduler(object):
         @return: schedule id if successfully scheduled or None otherwise
         @rtype:  str or None
         """
-        invalid_options = []
-        for option in schedule_options:
-            if option in _SCHEDULE_OPTIONS_FIELDS:
-                continue
-            invalid_options.append(option)
-        if invalid_options:
-            raise pulp_exceptions.InvalidValue(invalid_options)
+        validate_keys(schedule_options, _SCHEDULE_OPTIONS_FIELDS)
         call_request.tags.append(SCHEDULED_TAG)
         scheduled_call = ScheduledCall(call_request, schedule, **schedule_options)
         next_run = self.calculate_next_run(scheduled_call)
@@ -316,3 +311,21 @@ class Scheduler(object):
                  call.CallRequest.deserialize(s['serialized_call_request']),
                  s['schedule'])
                 for s in scheduled_calls]
+
+# utility functions ------------------------------------------------------------
+
+def validate_keys(dictionary, valid_keys):
+    """
+    Check that the key of a passed in dictionary are valid.
+    @param dictionary: dictionary to validate
+    @type  dictionary: dict
+    @param valid_keys: valid dictionary keys
+    @type  valid_keys: iterable
+    @raise pulp_exceptions.InvalidValue: if the dictionary contains keys not in the valid keys
+    """
+    invalid_keys = []
+    for key in dictionary:
+        if key not in valid_keys:
+            invalid_keys.append(key)
+    if invalid_keys:
+        raise pulp_exceptions.InvalidValue(invalid_keys)
