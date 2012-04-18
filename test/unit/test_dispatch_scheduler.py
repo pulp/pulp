@@ -194,7 +194,9 @@ class SchedulerQueryTests(SchedulerTests):
         call_request_1 = CallRequest(call)
         schedule_id = self.scheduler.add(call_request_1, SCHEDULE_3_RUNS)
         self.assertFalse(schedule_id is None)
-        call_request_2, schedule = self.scheduler.get(schedule_id)
+        schedule_report = self.scheduler.get(schedule_id)
+        call_request_2 = schedule_report['call_request']
+        schedule = schedule_report['schedule']
         self.assertFalse(schedule is None)
         self.assertFalse(call_request_2 is None)
         self.assertTrue(call_request_1.call == call_request_2.call)

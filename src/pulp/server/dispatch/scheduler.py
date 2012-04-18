@@ -38,12 +38,12 @@ _LOG = logging.getLogger(__name__)
 
 SCHEDULED_TAG = 'scheduled'
 
-_SCHEDULE_REQUIRED_FIELDS = ('call_request', 'schedule')
 _SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
 _SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
                             'remaining_runs', 'enabled')
-_SCHEDULE_REPORT_FIELDS = ('consecutive_failures', 'start_date',
-                           'remaining_runs', 'next_run')
+_SCHEDULE_REPORT_FIELDS = ('_id', 'schedule', 'consecutive_failures',
+                           'first_run', 'last_run', 'next_run',
+                           'remaining_runs', 'enabled')
 
 # scheduler --------------------------------------------------------------------
 
@@ -252,6 +252,12 @@ class Scheduler(object):
     def update(self, schedule_id, **schedule_updates):
         """
         Update a scheduled call reqeust
+        Valid schedule updates:
+         * call_request
+         * schedule
+         * failure_threshold
+         * remaining_runs
+         * enabled
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         @param schedule_updates: updates for scheduled call
@@ -306,30 +312,29 @@ class Scheduler(object):
         Get the call request and the schedule for the given schedule id
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
-        @return: tuple of (call request, schedule) if found, (None, None) otherwise
-        @rtype:  tuple (CallRequest, str) or tupe(None, None)
+        @return: scheduled call report dictionary
+        @rtype:  dict
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
         scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
         if scheduled_call is None:
-            raise pulp_exceptions.MissingResource(schedule=schedule_id)
-        serialized_call_request = scheduled_call['serialized_call_request']
-        call_request = call.CallRequest.deserialize(serialized_call_request)
-        schedule = scheduled_call['schedule']
-        return (call_request, schedule)
+            raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
+        report = scheduled_call_to_report_dict(scheduled_call)
+        return report
 
     def find(self, *tags):
         """
         Find the scheduled call requests for the given call request tags
-        @return: list of tuples (scheduled id, call request, schedule)
+        @param tags: call request tags
+        @type  tags: list
+        @return: possibly empty list of scheduled call report dictionaries
+        @rtype:  list
         """
         query = {'serialized_call_request.tags': {'$all': tags}}
         scheduled_calls = self.scheduled_call_collection.find(query)
-        return [(s['_id'],
-                 call.CallRequest.deserialize(s['serialized_call_request']),
-                 s['schedule'])
-                for s in scheduled_calls]
+        reports = [scheduled_call_to_report_dict(s) for s in scheduled_calls]
+        return reports
 
 # utility functions ------------------------------------------------------------
 
@@ -348,3 +353,17 @@ def validate_keys(dictionary, valid_keys):
             invalid_keys.append(key)
     if invalid_keys:
         raise pulp_exceptions.InvalidValue(invalid_keys)
+
+
+def scheduled_call_to_report_dict(scheduled_call):
+    """
+    Build a report dict from a scheduled call.
+    @param scheduled_call: scheduled call to build report for
+    @type  scheduled_call: BSON
+    @return: report dict
+    @rtype:  dict
+    """
+    call_request = call.CallRequest.deserialize(scheduled_call['serialized_call_request'])
+    report = subdict(scheduled_call, _SCHEDULE_REPORT_FIELDS)
+    report['call_request'] = call_request
+    return report
