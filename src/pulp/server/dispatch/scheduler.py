@@ -40,7 +40,8 @@ SCHEDULED_TAG = 'scheduled'
 
 _SCHEDULE_REQUIRED_FIELDS = ('call_request', 'schedule')
 _SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
-_SCHEDULE_IMMUTABLE_FIELDS = ('call_request', 'schedule')
+_SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
+                            'remaining_runs', 'enabled')
 _SCHEDULE_REPORT_FIELDS = ('consecutive_failures', 'start_date',
                            'remaining_runs', 'next_run')
 
@@ -247,6 +248,24 @@ class Scheduler(object):
         scheduled_call['next_run'] = next_run
         self.scheduled_call_collection.insert(scheduled_call, safe=True)
         return str(scheduled_call['_id'])
+
+    def update(self, schedule_id, **schedule_updates):
+        """
+        Update a scheduled call reqeust
+        @param schedule_id: id of the schedule for the call request
+        @type  schedule_id: str
+        @param schedule_updates: updates for scheduled call
+        @type  schedule_updates: dict
+        """
+        if isinstance(schedule_id, basestring):
+            schedule_id = ObjectId(schedule_id)
+        if self.scheduled_call_collection.find_one(schedule_id) is None:
+            raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
+        validate_keys(schedule_updates, _SCHEDULE_MUTABLE_FIELDS)
+        call_request = schedule_updates.pop('call_request', None)
+        if call_request is not None:
+            schedule_updates['serialized_call_request'] = call_request.serialize()
+        self.scheduled_call_collection.update({'_id': schedule_id}, schedule_updates, safe=True)
 
     def remove(self, schedule_id):
         """
