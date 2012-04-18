@@ -93,7 +93,8 @@ class Scheduler(object):
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
             call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, self.call_finished_callback)
-            call_report = self.coordinator.execute_call_asynchronously(call_request)
+            call_report = call.CallReport(schedule_id=str(scheduled_call['_id']))
+            call_report = self.coordinator.execute_call_asynchronously(call_request, call_report)
             log_msg = _('Scheduled %s: %s [reasons: %s]') % \
                       (str(call_request), call_report.response, pformat(call_report.reasons))
             if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
