@@ -201,6 +201,8 @@ class CallReport(object):
     @type task_id: str
     @ivar job_id: identity of job the call is a part of
     @type job_id: str
+    @ivar schedule_id: identity of the schedule that made this call
+    @type schedule_id: str
     @ivar progress: dictionary of progress information
     @type progress: dict
     @ivar result: return value of the callable, if any
@@ -217,6 +219,7 @@ class CallReport(object):
                  state=None,
                  task_id=None,
                  job_id=None,
+                 schedule_id=None,
                  progress=None,
                  result=None,
                  exception=None,
@@ -228,6 +231,7 @@ class CallReport(object):
         assert isinstance(state, (NoneType, basestring))
         assert isinstance(task_id, (NoneType, basestring))
         assert isinstance(job_id, (NoneType, basestring))
+        assert isinstance(schedule_id, (NoneType, basestring))
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
@@ -237,6 +241,7 @@ class CallReport(object):
         self.state = state
         self.task_id = task_id
         self.job_id = job_id
+        self.schedule_id = schedule_id
         self.progress = progress or {}
         self.result = result
         self.exception = exception
@@ -248,7 +253,7 @@ class CallReport(object):
     def serialize(self):
         data = {}
         for field in ('response', 'reasons', 'state', 'task_id', 'job_id',
-                      'progress', 'result', 'tags'):
+                      'schedule_id', 'progress', 'result', 'tags'):
             data[field] = getattr(self, field)
         ex = getattr(self, 'exception')
         if ex is not None:
