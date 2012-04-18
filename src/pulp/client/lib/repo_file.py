@@ -12,7 +12,6 @@
 from iniparse import ConfigParser
 import os
 import shutil
-from pulp.common.util import encode_unicode
 
 class Repo(dict):
     '''
@@ -163,7 +162,7 @@ class RepoFile(object):
             f.write(RepoFile.FILE_HEADER)
 
         # Write the contents of the parser
-        self.parser.write(encode_unicode(f))
+        self.parser.write(f)
         
         f.close()
 
