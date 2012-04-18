@@ -45,12 +45,13 @@ class ScheduledCall(Model):
 
         call_request.tags.append(str(self._id)) # schedule_id tag
         interval, start, runs = dateutils.parse_iso8601_interval(schedule)
+        start = start and dateutils.to_naive_utc_datetime(start)
 
         self.serialized_call_request = call_request.serialize()
         self.schedule = schedule
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
-        self.first_run = dateutils.to_naive_utc_datetime(start)
+        self.first_run = start or datetime.utcnow()
         self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
         self.next_run = None # will calculated and set by the scheduler
         self.remaining_runs = runs
