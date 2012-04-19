@@ -52,6 +52,7 @@ class TestDistributor(unittest.TestCase):
         os.makedirs(self.publish_dir)
         self.repo_working_dir = os.path.join(self.temp_dir, "repo_working_dir")
         os.makedirs(self.repo_working_dir)
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
 
     def clean(self):
         shutil.rmtree(self.temp_dir)
@@ -87,16 +88,21 @@ class TestDistributor(unittest.TestCase):
         distributor = YumDistributor()
         # Confirm that required keys are successful
         req_kwargs = {}
-        for arg in REQUIRED_CONFIG_KEYS:
-            req_kwargs[arg] = "sample_value"
+        req_kwargs['http'] = True
+        req_kwargs['https'] = False
+        req_kwargs['relative_url'] = "sample_value"
         config = distributor_mocks.get_basic_config(**req_kwargs)
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
         # Confirm required and optional are successful
         optional_kwargs = dict(req_kwargs)
-        for arg in OPTIONAL_CONFIG_KEYS:
-            if arg != "https_publish_dir":
-                optional_kwargs[arg] = "sample_value"
+        optional_kwargs['auth_ca'] = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
+        optional_kwargs['https_ca'] = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
+        optional_kwargs['protected'] = True
+        optional_kwargs['generate_metadata'] = True
+        optional_kwargs['checksum_type'] = "sha"
+        optional_kwargs['metadata_types'] = {}
+        optional_kwargs['auth_cert'] = open(os.path.join(self.data_dir, "cert.crt")).read()
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
