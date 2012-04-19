@@ -331,7 +331,7 @@ class Repositories(JSONController):
                           notes=repo_data.get('notes', None),
                           preserve_metadata=repo_data.get('preserve_metadata', False),
                           content_types=repo_data.get('content_types', 'yum'),
-                          publish=repo_data.get('publish', None),)
+                          publish=repo_data.get('publish', None), packages_dir=repo_data.get('packages_dir', None))
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path

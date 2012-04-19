@@ -302,6 +302,7 @@ class Repo(Model):
             self.notes = {}
         self.preserve_metadata = False
         self.content_types = content_types
+        self.packages_dir = None
 
 #        self.size = None
 

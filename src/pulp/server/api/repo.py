@@ -220,7 +220,7 @@ class RepoApi(BaseApi):
     def create(self, id, name, arch=None, feed=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={},
-               preserve_metadata=False, content_types="yum", publish=None):
+               preserve_metadata=False, content_types="yum", publish=None, packages_dir=None):
         """
         Create a new Repository object and return it
         """
@@ -314,6 +314,8 @@ class RepoApi(BaseApi):
             r['preserve_metadata'] = preserve_metadata
         if content_types:
             r['content_types'] = content_types
+        if not feed and packages_dir:
+            r['packages_dir'] = packages_dir
         try:
             self.collection.insert(r, safe=True)
         except DuplicateKeyError, dke:
@@ -324,6 +326,7 @@ class RepoApi(BaseApi):
         repo_path = encode_unicode(repo_path)
         if not os.path.exists(repo_path):
             pulp.server.util.makedirs(repo_path)
+
         if content_types in ("yum") and not r['preserve_metadata']:
             # if its yum or if metadata is not preserved, trigger an empty repodata
             pulp.server.util.create_repo(repo_path, checksum_type=r['checksum_type'])
@@ -777,6 +780,14 @@ class RepoApi(BaseApi):
                 else:
                     log.info('the repo checksum type is already %s' % value)
                 continue
+            if key == 'packages_dir':
+                if repo['source']:
+                    raise PulpException('packages_dir can only be set on a feedless repo, repo %s is a feed repo' % id)
+                if repo['package_count'] > 0:
+                    # if repo already has content dont allow package_dir update
+                    raise PulpException('Repo %s already has content, cannot change packages_dir' % id)
+                repo[key] = value
+                continue
             raise Exception, \
                   'update keyword "%s", not-supported' % key
 
@@ -936,6 +947,11 @@ class RepoApi(BaseApi):
             pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             pulp.server.util.makedirs(repo_path)
+        if not repo['source'] and repo['packages_dir'] is not None:
+            # if its a feedless repo and packages dir is defined create the path
+            pkg_path = os.path.join(repo_path, repo['packages_dir'])
+            if not os.path.exists(pkg_path):
+                pulp.server.util.makedirs(pkg_path)
         packages = {}
         nevras = {}
         filenames = {}
@@ -1045,8 +1061,13 @@ class RepoApi(BaseApi):
             shared_pkg = pulp.server.util.get_shared_package_path(
                 pkg['name'], pkg['version'], pkg['release'],
                 pkg['arch'], pkg["filename"], pkg['checksum'])
-            pkg_repo_path = pulp.server.util.get_repo_package_path(
-                repo['relative_path'], pkg["filename"])
+            if not repo['source'] and repo['packages_dir'] is not None:
+                # if its a feedless repo and packages dir is defined include that in the path
+                pkg_repo_path = pulp.server.util.get_repo_package_path(
+                    repo['relative_path'], os.path.join(repo['packages_dir'], pkg["filename"]))
+            else:
+                pkg_repo_path = pulp.server.util.get_repo_package_path(
+                    repo['relative_path'], pkg["filename"])
             if not os.path.exists(pkg_repo_path):
                 try:
                     pulp.server.util.create_rel_symlink(shared_pkg, pkg_repo_path)
@@ -1106,8 +1127,12 @@ class RepoApi(BaseApi):
                 del pkg['repoids'][pkg['repoids'].index(repoid)]
                 pkg_collection.save(pkg, safe=True)
             # Remove package from repo location on file system
-            pkg_repo_path = pulp.server.util.get_repo_package_path(
-                repo['relative_path'], pkg["filename"])
+            if not repo['source'] and repo['packages_dir'] is not None:
+                pkg_repo_path = pulp.server.util.get_repo_package_path(
+                    repo['relative_path'], os.path.join(repo['packages_dir'], pkg["filename"]))
+            else:
+                pkg_repo_path = pulp.server.util.get_repo_package_path(
+                    repo['relative_path'], pkg["filename"])
             if os.path.exists(encode_unicode(pkg_repo_path)):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_repo_path))
                 os.remove(encode_unicode(pkg_repo_path))

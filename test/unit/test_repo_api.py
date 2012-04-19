@@ -1733,3 +1733,34 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertEquals(len(distro["repoids"]), 1)
         self.assertTrue(repo_b["id"] in distro["repoids"])
 
+    def test_repo_create_packages_dir(self):
+        test_repo = self.repo_api.create("test_repo_1", "test_name", 'i386', packages_dir="Packages")
+        repo_a = self.repo_api.repository("test_repo_1")
+        print repo_a
+        self.assertTrue(repo_a['packages_dir'] == "Packages")
+
+        test_repo = self.repo_api.create("test_repo_2", "test_name", 'i386', feed="http://example.redhat.com", packages_dir="Packages")
+        repo_a = self.repo_api.repository("test_repo_2")
+        self.assertTrue(repo_a['packages_dir'] is None)
+
+    def test_repo_update_packages_dir(self):
+        repo = self.repo_api.create("test_repo_1", "test_name", 'i386', packages_dir="Packages")
+        repo_a = self.repo_api.repository("test_repo_1")
+        print repo_a
+        self.assertTrue(repo_a['packages_dir'] == "Packages")
+
+        self.repo_api.update("test_repo_1", {'packages_dir' : "new_packages_dir"})
+        repo_b = self.repo_api.repository("test_repo_1")
+        self.assertTrue(repo_b['packages_dir'] == "new_packages_dir")
+
+        p1 = testutil.create_package(self.package_api, 'test_pkg_by_name1',
+                filename="test01.rpm", checksum="blah1")
+        self.repo_api.add_package(repo_a["id"], [p1["id"]])
+        failure = False
+        try:
+            self.repo_api.update("test_repo_1", {'packages_dir' : "new_packages_dir_2"})
+        except:
+            # since conetnt is assciated to the repo, update should fail
+            failure = True
+        self.assertTrue(failure)
+

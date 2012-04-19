@@ -473,6 +473,9 @@ class Create(AdminRepoAction):
                                help=_("Preserves the original metadata; only works with feed repos"))
         self.parser.add_option('--content_type', dest='content_type', default="yum",
                             help=_('content type allowed in this repository; default:yum; supported: [yum, file]'))
+        self.parser.add_option('--packages_dir', dest='packages_dir',
+                            help=_("Directory location where the package is symlinked under the repo directory for feedless repos; \
+                                    for feed repos this is directly set from the source metadata"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -483,6 +486,9 @@ class Create(AdminRepoAction):
             utils.system_exit(os.EX_USAGE, _('Cannot use `preserve_metadata` option for feedless repos'))
         if feed and self.opts.checksum_type:
             utils.system_exit(os.EX_USAGE, _('Cannot use `checksum_type` option for feed repos; type is determined from source metadata'))
+        if feed and self.opts.packages_dir:
+            utils.system_exit(os.EX_USAGE, _('Cannot use `packages_dir` option for feed repos; packages_dir is determined from source metadata'))
+
         preserve_metadata = False
         if self.opts.preserve_metadata:
             preserve_metadata = self.opts.preserve_metadata
@@ -536,6 +542,9 @@ class Create(AdminRepoAction):
             checksum_type = self.opts.checksum_type
         else:
             checksum_type = "sha256"
+        packages_dir = None
+        if self.opts.packages_dir:
+            packages_dir = self.opts.packages_dir
         repo = self.repository_api.create(id, name, arch, feed,
                                           feed_cert_data=feed_cert_data,
                                           consumer_cert_data=consumer_cert_data,
@@ -544,7 +553,8 @@ class Create(AdminRepoAction):
                                           gpgkeys=keylist,
                                           checksum_type=checksum_type,
                                           preserve_metadata=preserve_metadata,
-                                          content_types=self.opts.content_type)
+                                          content_types=self.opts.content_type,
+                                          packages_dir=packages_dir)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 class Clone(RepoProgressAction):
@@ -685,6 +695,9 @@ class Update(AdminRepoAction):
                                help=_("a ',' separated list of GPG key names"))
         self.parser.add_option("--checksum_type", dest="checksum_type",
                                help=_("checksum type to use for repository metadata; this will perform a metadata update"))
+        self.parser.add_option("--packages_dir", dest="packages_dir",
+                               help=_("Directory location where the package is symlinked under the repo directory for feedless repos; \
+                                    for feed repos this is directly set from the source metadata"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -728,6 +741,9 @@ class Update(AdminRepoAction):
                 f.close()
                 consumer_cert_bundle = consumer_cert_bundle or {}
                 consumer_cert_bundle[k[9:]] = v
+                continue
+            if k == 'packages_dir':
+                delta['packages_dir'] = v
                 continue
             delta[k] = v
 
