@@ -335,3 +335,13 @@ class RepoImporterManager(object):
         repo_importer['scratchpad'] = contents
         importer_coll.save(repo_importer, safe=True)
 
+    def add_sync_schedule(self, repo_id, schedule_id):
+        pass
+
+    def remove_sync_schedule(self, repo_id, schedule_id):
+        pass
+
+    def list_sync_schedules(self, repo_id):
+        pass
+
+
