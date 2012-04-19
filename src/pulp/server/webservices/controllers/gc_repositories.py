@@ -24,13 +24,14 @@ import pulp.server.managers.factory as manager_factory
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
+from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch.call import CallRequest, ScheduledCallRequest
 from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.webservices import execution
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.queries.repo import unit_association_criteria
-from pulp.server.webservices.serialization.error import http_error_obj
 
 # -- constants ----------------------------------------------------------------
 
@@ -266,7 +267,16 @@ class SyncScheduleCollection(JSONController):
     # POST:  create new scheduled sync
 
     def GET(self, repo_id, importer_id):
-        raise exceptions.NotImplemented('list all scheduled syncs')
+        importer_manager = manager_factory.repo_importer_manager()
+        importer = importer_manager.get_importer(repo_id)
+        if importer_id != importer['id']:
+            raise exceptions.MissingResource(importer=importer_id)
+        schedule_objs = []
+        for schedule_id in importer['scheduled_syncs']:
+            obj = {'_id': schedule_id}
+            obj.update(serialization.link.child_link_obj(schedule_id))
+            schedule_objs.append(obj)
+        return self.ok(schedule_objs)
 
     def POST(self, repo_id, importer_id):
         raise exceptions.NotImplemented('create new scheduled sync')
@@ -571,8 +581,7 @@ class RepoUnitAdvancedSearch(JSONController):
         repo_query_manager = manager_factory.repo_query_manager()
         repo = repo_query_manager.find_by_id(repo_id)
         if repo is None:
-            serialized = http_error_obj(404)
-            return self.not_found(serialized)
+            raise exceptions.MissingResource(repo_id=repo_id)
 
         if query is None:
             raise exceptions.MissingValue(['query'])
