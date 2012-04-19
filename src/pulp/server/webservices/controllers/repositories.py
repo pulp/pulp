@@ -311,6 +311,7 @@ class Repositories(JSONController):
          * preserve_metadata?, bool, will not regenerate metadata and treats the repo as a mirror
          * content_types?, str, content type allowed in this repository; default:yum; supported: [yum, file]
          * publish?, bool, sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf
+         * packages_dir?, str, Directory location where the package is symlinked under the repo directory for feedless repos; for feed repos this is directly set from the source metadata
         """
         repo_data = self.params()
 
@@ -493,6 +494,8 @@ class Repository(JSONController):
          * rmgrp?, list of str, list of group ids to remove the repository from
          * addkeys?, list of str, list of keys to add to the repository
          * rmkeys?, list of str, list of keys to remove from the repository
+         * packages_dir?, str, Directory location where the package is symlinked under the repo directory for feedless repos; for feed repos this is directly set from the source metadata
+
         """
         delta = self.params()
         if delta.pop('id', id) != id:
