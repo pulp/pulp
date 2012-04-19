@@ -25,7 +25,7 @@ from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest, ScheduledCallRequest
+from pulp.server.dispatch.call import CallRequest
 from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
