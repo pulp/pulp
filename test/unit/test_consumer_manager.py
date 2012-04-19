@@ -707,8 +707,8 @@ class AgentManagerTests(testutil.PulpTest):
         # Setup
         self.populate()
         # Test
-        md = dict(name='python-gofer', version='0.66')
-        unit = dict(type_id='rpm', metadata=md)
+        unit_key = dict(name='python-gofer', version='0.66')
+        unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
         manager = factory.consumer_agent_manager()
@@ -720,7 +720,7 @@ class AgentManagerTests(testutil.PulpTest):
         # Setup
         self.populate()
         # Test
-        unit = dict(type_id='rpm', metadata=dict(name='zsh'))
+        unit = dict(type_id='rpm', unit_key=dict(name='zsh'))
         units = [unit,]
         options = {}
         manager = factory.consumer_agent_manager()
@@ -733,7 +733,7 @@ class AgentManagerTests(testutil.PulpTest):
         self.populate()
         # Test
         manager = factory.consumer_agent_manager()
-        unit = dict(type_id='rpm', metadata=dict(name='zsh'))
+        unit = dict(type_id='rpm', unit_key=dict(name='zsh'))
         units = [unit,]
         options = {}
         manager.uninstall_content(self.CONSUMER_ID, units, options)

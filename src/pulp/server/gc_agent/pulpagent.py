@@ -177,7 +177,7 @@ class Content(Domain):
         Install content on a consumer.
         @param units: A list of content units to be installed.
         @type units: list of:
-            { type_id:<str>, metadata:<dict> }
+            { type_id:<str>, unit_key:<dict> }
         @param options: Install options; based on unit type.
         @type options: dict
         """
@@ -192,7 +192,7 @@ class Content(Domain):
         Update content on a consumer.
         @param units: A list of content units to be updated.
         @type units: list of:
-            { type_id:<str>, metadata:<dict> }
+            { type_id:<str>, unit_key:<dict> }
         @param options: Update options; based on unit type.
         @type options: dict
         """
@@ -207,7 +207,7 @@ class Content(Domain):
         Uninstall content on a consumer.
         @param units: A list of content units to be uninstalled.
         @type units: list of:
-            { type_id:<str>, metadata:<dict> }
+            { type_id:<str>, unit_key:<dict> }
         @param options: Uninstall options; based on unit type.
         @type options: dict
         """

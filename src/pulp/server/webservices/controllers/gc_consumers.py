@@ -309,7 +309,7 @@ class Content(JSONController):
         """
         Install content (units) on a consumer.
         Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, metadata={}} and the
+        where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of install options.
         @param id: A consumer ID.
         @type id: str
@@ -343,7 +343,7 @@ class Content(JSONController):
         """
         Update content (units) on a consumer.
         Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, metadata={}} and the
+        where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of update options.
         @param id: A consumer ID.
         @type id: str
@@ -377,7 +377,7 @@ class Content(JSONController):
         """
         Uninstall content (units) on a consumer.
         Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, metadata={}} and the
+        where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of uninstall options.
         @param id: A consumer ID.
         @type id: str
