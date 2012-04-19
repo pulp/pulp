@@ -43,6 +43,13 @@ IMPORTER_CONFIG_KEYS = [
     ('proxy_pass', 'proxy_pass'),
     ('max_speed', 'max_speed'),
     ('num_threads', 'num_threads'),
+    ('newest', 'only_newest'),
+    ('skip', 'skip_types'),
+
+    # Not part of the CLI yet; may be removed entirely
+    ('remove_old', 'remove_old'),
+    ('num_old_packages', 'retain_old_count'),
+    ('purge_orphaned', 'remove_orphaned'),
 ]
 
 DISTRIBUTOR_CONFIG_KEYS = [
@@ -54,7 +61,11 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('auth_ca', 'auth_ca'),
     ('auth_cert', 'auth_cert'),
     ('https_ca', 'host_ca'),
+    ('generate_metadata', 'regenerate_metadata'),
+    ('metadata_types', 'skip_types'),
 ]
+
+VALID_SKIP_TYPES = ['packages', 'distributions', 'errata']
 
 LOG = None # set by context
 
@@ -273,8 +284,8 @@ def add_repo_options(command, is_update):
     basic_group = PulpCliOptionGroup('Basic')
     throttling_group = PulpCliOptionGroup('Throttling')
     ssl_group = PulpCliOptionGroup('Feed Authentication')
-    verify_group = PulpCliOptionGroup('Verification')
     proxy_group = PulpCliOptionGroup('Feed Proxy')
+    sync_group = PulpCliOptionGroup('Synchronization')
     publish_group = PulpCliOptionGroup('Publishing')
     repo_auth_group = PulpCliOptionGroup('Client Authentication')
 
@@ -282,10 +293,10 @@ def add_repo_options(command, is_update):
     # dorking with it to make sure it makes sense
     command.add_option_group(required_group)
     command.add_option_group(basic_group)
+    command.add_option_group(sync_group)
     command.add_option_group(publish_group)
     command.add_option_group(ssl_group)
     command.add_option_group(repo_auth_group)
-    command.add_option_group(verify_group)
     command.add_option_group(proxy_group)
     command.add_option_group(throttling_group)
 
@@ -309,9 +320,11 @@ def add_repo_options(command, is_update):
     d += 'specifying "" as the value'
     basic_group.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
 
-    # Verify Options
-    verify_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
-    verify_group.add_option(PulpCliOption('--verify_checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    # Synchronization Options
+    sync_group.add_option(PulpCliOption('--only_newest', 'if "true", only the newest version of a given package is downloaded', required=False))
+    sync_group.add_option(PulpCliOption('--skip_types', 'comma-separated list of types to synchronize, if omitted all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
+    sync_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    sync_group.add_option(PulpCliOption('--verify_checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
 
     # Proxy Options
     proxy_group.add_option(PulpCliOption('--proxy_url', 'URL to the proxy server to use', required=False))
@@ -335,6 +348,7 @@ def add_repo_options(command, is_update):
     publish_group.add_option(PulpCliOption('--serve_https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False, default='true'))
     publish_group.add_option(PulpCliOption('--checksum_type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg_key', 'GPG key used to sign and verify packages in the repository', required=False))
+    publish_group.add_option(PulpCliOption('--regenerate_metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed', required=False))
 
     # Publish Security Options
     repo_auth_group.add_option(PulpCliOption('--host_ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
@@ -390,12 +404,17 @@ def args_to_importer_config(kwargs):
     importer_config = _prep_config(kwargs, IMPORTER_CONFIG_KEYS)
 
     # Parsing of true/false
-    boolean_arguments = ('ssl_verify', 'verify_size', 'verify_checksum')
+    boolean_arguments = ('ssl_verify', 'verify_size', 'verify_checksum', 'newest')
     _convert_boolean_arguments(boolean_arguments, importer_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key')
     _convert_file_contents(file_arguments, importer_config)
+
+    # Handle skip types
+    if 'skip' in importer_config:
+        skip_as_list = _convert_skip_types(importer_config['skip'])
+        importer_config['skip'] = skip_as_list
 
     LOG.debug('Importer configuration options')
     LOG.debug(importer_config)
@@ -413,12 +432,17 @@ def args_to_distributor_config(kwargs):
     distributor_config = _prep_config(kwargs, DISTRIBUTOR_CONFIG_KEYS)
 
     # Parsing of true/false
-    boolean_arguments = ('http', 'https')
+    boolean_arguments = ('http', 'https', 'generate_metadata')
     _convert_boolean_arguments(boolean_arguments, distributor_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('auth_cert', 'auth_ca', 'https_ca', 'gpgkey')
     _convert_file_contents(file_arguments, distributor_config)
+
+    # Handle skip types
+    if 'metadata_types' in distributor_config:
+        skip_as_list = _convert_skip_types(distributor_config['metadata_types'])
+        distributor_config['metadata_types'] = skip_as_list
 
     # There is an explicit flag for enabling/disabling repository protection.
     # This may be useful to expose to the user to quickly turn on/off repo
@@ -477,6 +501,21 @@ def _prep_config(kwargs, plugin_config_keys):
         plugin_config[k] = None
 
     return plugin_config
+
+def _convert_skip_types(skip_types):
+    """
+    Parses the skip_types parameter and converts the comma-separated list
+    into a python list.
+    """
+
+    parsed = skip_types.split(',')
+    parsed = [p.strip() for p in parsed]
+
+    unmatched = [p for p in parsed if p not in VALID_SKIP_TYPES]
+    if len(unmatched) > 0:
+        raise InvalidConfig(_('Types must be a comma-separated list using only the following values: %s' % ', '.join(VALID_SKIP_TYPES)))
+
+    return parsed
 
 def _convert_boolean_arguments(boolean_keys, config):
     """
