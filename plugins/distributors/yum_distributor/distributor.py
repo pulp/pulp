@@ -150,10 +150,112 @@ class YumDistributor(Distributor):
             if not os.access(publish_dir, os.R_OK) or not os.access(publish_dir, os.W_OK):
                 msg = _("Unable to read & write to specified 'https_publish_dir': %(publish_dir)s" % {"publish_dir":publish_dir})
                 return False, msg
-        ##
-        # TODO: Need to add a check for the Repo's relativepath
-        ##
+        rel_url =  config.get("relative_url")
+        if rel_url:
+            conflict_status, conflict_msg = self.does_rel_url_conflict(rel_url, related_repos)
+            if conflict_status:
+                return False, conflict_msg
         return True, None
+
+    def does_rel_url_conflict(self, rel_url, related_repos):
+        """
+        @param rel_url
+        @type rel_url: str
+
+        @param related_repos
+        @type related_repos: L{pulp.server.content.plugins.model.RelatedRepository}
+
+        @return True, msg - conflict found,  False, None - no conflict found
+        @rtype bool, msg
+        """
+        existing_rel_urls = self.form_rel_url_lookup_table(related_repos)
+        current_url_pieces = self.split_path(rel_url)
+        temp_lookup = existing_rel_urls
+        for piece in current_url_pieces:
+            if not temp_lookup.has_key(piece):
+                break
+            if temp_lookup.has_key("repo_id"):
+                conflict = True
+            temp_lookup = temp_lookup[piece]
+        if temp_lookup.has_key("repo_id"):
+            msg = _("Relative url %(rel_url)s conflict with existing repo id: %(conflict_repo_id)s" \
+                        % {"rel_url":rel_url, "conflict_repo_id":temp_lookup["repo_id"]})
+            return True, msg
+        return False, None
+
+    def split_path(self, path):
+        pieces = []
+        temp_pieces = path.split("/")
+        for p in temp_pieces:
+            if p:
+                pieces.append(p)
+        return pieces
+
+    def form_rel_url_lookup_table(self, repos):
+        """
+        @param repos:
+        @type L{pulp.server.content.plugins.model.RelatedRepository}
+
+        @return a dictionary to serve as a lookup table
+        @rtype: dict
+
+        Format:
+         {"path_component_1": {"path_component_2": {"repo_id":"id"}}}
+        Example:
+            /pub/rhel/el5/i386
+            /pub/rhel/el5/x86_64
+            /pub/rhel/el6/i386
+            /pub/rhel/el6/x86_64
+
+         {"pub": {
+            "rhel": {"el5": {
+                            "i386": {"repo_id":"rhel_el5_i386"}
+                            "x86_64": {"repod_id":"rhel_el5_x86_64"}}
+                    "el6":{
+                            "i386": { "repo_id":"rhel_el6_i386" }
+                            "x86_64": { "repo_id":"rhel_el6_x86_64" }}
+                }}}
+
+        """
+        # We will construct a tree like data object referenced by the lookup dict
+        # Each piece of a url will be used to create a new dict
+        # When we get to the end of the url pieces we will store 
+        # a single key/value pair of 'repo_id':"id"
+        # The existance of this key/value pair signifies a conflict
+        #  Desire is to support similar subdirs
+        #  ...yet avoid the chance of a new repo conflicting with an already established repo's subdir
+        lookup = {}
+        if not repos:
+            return lookup
+        for r in repos:
+            rel_url = r.plugin_configs.get("relative_url")
+            if not rel_url:
+                # Skip this repo since no relative_url
+                # TODO: Account for the repo's repo_id
+                continue
+            url_pieces = self.split_path(rel_url)
+            if not url_pieces:
+                # Skip this repo since we didn't find any url pieces to process
+                continue
+            temp_lookup = lookup
+            for piece in url_pieces:
+                if not temp_lookup.has_key(piece):
+                    temp_lookup[piece] = {}
+                temp_lookup = temp_lookup[piece]
+            if len(temp_lookup.keys()) != 0:
+                msg = _("Relative URL lookup table encountered a conflict with repo <%(repo_id)s> with relative_url <%(rel_url)s> broken into %(pieces)s.\n") % \
+                        {"repo_id":r.id, "rel_url":rel_url, "pieces":url_pieces}
+                if temp_lookup.has_key("repo_id"):
+                    msg += _("This repo <%(repo_id)s> conflicts with repo <%(conflict_repo_id)s>") % {"repo_id":r.id, "conflict_repo_id":temp_lookup["repo_id"]}
+                    _LOG.error(msg)
+                    raise Exception(msg)
+                # Unexpected occurence, raise an exception
+                msg += _("This repo <%(repo_id)s> conflicts with an existing repos sub directories, specific sub dirs of conflict are %(sub_dirs)s") \
+                        % {"repo_id":r.id, "sub_dirs":temp_lookup}
+                _LOG.error(msg)
+                raise Exception(msg)
+            temp_lookup["repo_id"] = r.id
+        return lookup
 
     def get_https_publish_dir(self, config=None):
         """
