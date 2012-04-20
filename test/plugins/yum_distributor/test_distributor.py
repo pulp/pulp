@@ -391,6 +391,8 @@ class TestDistributor(unittest.TestCase):
         existing_urls = distributor.form_rel_url_lookup_table([repo_a, repo_d, repo_e, repo_f, repo_g, repo_h])
         self.assertEqual(existing_urls, {'simple': {'repo_id': repo_d.id, 'url': url_d}, 
             'abc': {'de': {'fg': {'repo_id': repo_a.id, 'url': url_a}}}, 
+            repo_e.id : {'repo_id': repo_e.id, 'url': repo_e.id}, # url_e is empty so we default to use repo id
+            repo_h.id : {'repo_id': repo_h.id, 'url': repo_h.id}, # urk_h is None so we default to use repo id
             'bar': {'repo_id': repo_g.id, 'url':url_g}, 'foo': {'repo_id': repo_f.id, 'url': url_f}})
 
         existing_urls = distributor.form_rel_url_lookup_table([repo_a])

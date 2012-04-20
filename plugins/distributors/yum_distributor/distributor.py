@@ -234,10 +234,10 @@ class YumDistributor(Distributor):
             # It's possible that multiple instances of a Distributor could be associated
             # to a RelatedRepository.  At this point we don't intend to support that so we will
             # assume that we only use the first instance of the config
-            rel_url = r.plugin_configs[0].get("relative_url")
+            # Note: ...Pulp will be sure to only pass us plugin_configs which relate to our distributor type
+            related_config = r.plugin_configs[0]
+            rel_url = self.get_repo_relative_path(r, related_config)
             if not rel_url:
-                # Skip this repo since no relative_url
-                # TODO: Account for the repo's repo_id
                 continue
             url_pieces = self.split_path(rel_url)
             if not url_pieces:
@@ -249,6 +249,8 @@ class YumDistributor(Distributor):
                     temp_lookup[piece] = {}
                 temp_lookup = temp_lookup[piece]
             if len(temp_lookup.keys()) != 0:
+                # We expect these exceptions should never occur, since validate_config is called before accepting any repo
+                # ...yet in the case something goes wrong we enforce these checks and thrown an exception
                 msg = _("Relative URL lookup table encountered a conflict with repo <%(repo_id)s> with relative_url <%(rel_url)s> broken into %(pieces)s.\n") % \
                         {"repo_id":r.id, "rel_url":rel_url, "pieces":url_pieces}
                 if temp_lookup.has_key("repo_id"):
@@ -260,8 +262,11 @@ class YumDistributor(Distributor):
                         % {"repo_id":r.id, "sub_dirs":temp_lookup}
                 _LOG.error(msg)
                 raise Exception(msg)
+            # Note:  We are storing both repo_id and rel_url at the root of each path to make it easier to repo
+            # the repo/relative_url occupying this space when a conflict is detected.
             temp_lookup["repo_id"] = r.id
             temp_lookup["url"] = rel_url
+        _LOG.info("Formed lookup map of: %s" % (lookup))
         return lookup
 
     def get_https_publish_dir(self, config=None):
