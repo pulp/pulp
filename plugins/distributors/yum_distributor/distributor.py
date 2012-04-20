@@ -154,6 +154,7 @@ class YumDistributor(Distributor):
         if rel_url:
             conflict_status, conflict_msg = self.does_rel_url_conflict(rel_url, related_repos)
             if conflict_status:
+                _LOG.info(conflict_msg)
                 return False, conflict_msg
         return True, None
 
@@ -178,8 +179,8 @@ class YumDistributor(Distributor):
                 conflict = True
             temp_lookup = temp_lookup[piece]
         if temp_lookup.has_key("repo_id"):
-            msg = _("Relative url %(rel_url)s conflict with existing repo id: %(conflict_repo_id)s" \
-                        % {"rel_url":rel_url, "conflict_repo_id":temp_lookup["repo_id"]})
+            msg = _("Relative url '%(rel_url)s' conflicts with existing relative_url of '%(conflict_rel_url)s' from repo '%(conflict_repo_id)s'" \
+                    % {"rel_url":rel_url, "conflict_rel_url":temp_lookup["url"], "conflict_repo_id":temp_lookup["repo_id"]})
             return True, msg
         return False, None
 
@@ -209,11 +210,11 @@ class YumDistributor(Distributor):
 
          {"pub": {
             "rhel": {"el5": {
-                            "i386": {"repo_id":"rhel_el5_i386"}
-                            "x86_64": {"repod_id":"rhel_el5_x86_64"}}
+                            "i386": {"repo_id":"rhel_el5_i386", "url":"/pub/rhel/el5/i386" }
+                            "x86_64": {"repod_id":"rhel_el5_x86_64", "url":"/pub/rhel/el5/x86_64"})
                     "el6":{
-                            "i386": { "repo_id":"rhel_el6_i386" }
-                            "x86_64": { "repo_id":"rhel_el6_x86_64" }}
+                            "i386": { "repo_id":"rhel_el6_i386", "url":"/pub/rhel/el6/i386"}
+                            "x86_64": { "repo_id":"rhel_el6_x86_64", "url":"/pub/rhel/el6/x86_64"}}
                 }}}
 
         """
@@ -228,7 +229,12 @@ class YumDistributor(Distributor):
         if not repos:
             return lookup
         for r in repos:
-            rel_url = r.plugin_configs.get("relative_url")
+            if not r.plugin_configs:
+                continue
+            # It's possible that multiple instances of a Distributor could be associated
+            # to a RelatedRepository.  At this point we don't intend to support that so we will
+            # assume that we only use the first instance of the config
+            rel_url = r.plugin_configs[0].get("relative_url")
             if not rel_url:
                 # Skip this repo since no relative_url
                 # TODO: Account for the repo's repo_id
@@ -255,6 +261,7 @@ class YumDistributor(Distributor):
                 _LOG.error(msg)
                 raise Exception(msg)
             temp_lookup["repo_id"] = r.id
+            temp_lookup["url"] = rel_url
         return lookup
 
     def get_https_publish_dir(self, config=None):
