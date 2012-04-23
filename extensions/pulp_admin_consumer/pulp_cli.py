@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.gc_client.api.exceptions import NotFoundException
 
@@ -18,6 +20,16 @@ from pulp.gc_client.api.exceptions import NotFoundException
 
 def initialize(context):
     context.cli.add_section(AdminConsumerSection(context))
+    
+# -- common exceptions --------------------------------------------------------
+
+class InvalidConfig(Exception):
+    """
+    During parsing of the user supplied arguments, this will indicate a
+    malformed set of values. The message in the exception (e[0]) is formatted
+    and i18n'ed to be displayed directly to the user.
+    """
+    pass
 
 # -- sections -----------------------------------------------------------------
 
@@ -39,6 +51,11 @@ class AdminConsumerSection(PulpCliSection):
         update_command.add_option(id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
+        d =  '(optional) adds/updates/deletes notes to programmtically identify the consumer; '
+        d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
+        d += 'be changed by specifying this option multiple times; notes are deleted by '
+        d += 'specifying "" as the value'
+        update_command.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
         self.add_command(update_command)
 
         # Delete Command
@@ -58,6 +75,11 @@ class AdminConsumerSection(PulpCliSection):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop('id') # not needed in the delta
+        if 'note' in kwargs.keys():
+            if kwargs['note']:
+                delta['notes'] = self._parse_notes(kwargs['note'])
+            delta.pop('note')
+
         try:
             self.context.server.consumer.update(kwargs['id'], delta)
             self.prompt.render_success_message('Consumer [%s] successfully updated' % kwargs['id'])
@@ -97,3 +119,34 @@ class AdminConsumerSection(PulpCliSection):
         # manually based on the CLI flags.
         for c in consumer_list:
             self.prompt.render_document(c, filters=filters, order=order)
+
+
+    def _parse_notes(self, notes_list):
+        """
+        Extracts notes information from the user-specified options and puts them in a dictionary
+
+        @return: dict of notes
+
+        @raises InvalidConfig: if one or more of the notes is malformed
+        """
+
+        notes_dict = {}
+        for note in notes_list:
+            pieces = note.split('=', 1)
+
+            if len(pieces) < 2:
+                raise InvalidConfig(_('Notes must be specified in the format key=value'))
+
+            key = pieces[0]
+            value = pieces[1]
+
+            if value in (None, '', '""'):
+                value = None
+
+            if key in notes_dict.keys():
+                self.prompt.write('Multiple values entered for a note with key [%s]. All except first value will be ignored.' % key)
+                continue
+
+            notes_dict[key] = value
+
+        return notes_dict
