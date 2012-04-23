@@ -272,7 +272,7 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertTrue(importer is None)
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
-        
+
     def test_remove_importer_missing_repo(self):
         """
         Tests removing the importer from a repo that doesn't exist.
@@ -502,7 +502,7 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertTrue(importers is not None)
         self.assertEqual(1, len(importers))
         self.assertEqual('mock-importer', importers[0]['id'])
-        
+
     def test_get_importers_none(self):
         """
         Tests an empty list is returned for a repo that has none.
@@ -570,4 +570,46 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Test - Set Fake Repo
         self.importer_manager.set_importer_scratchpad('fake', 'bar') # should not error
+
+    # -- sync schedules --------------------------------------------------------
+
+    def test_sync_schedule(self):
+
+        # setup
+        repo_id = 'scheduled_repo'
+        importer_type_id = 'mock-importer'
+        schedule_id = 'scheduled_repo_sync'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, importer_type_id, {})
+
+        # pre-condition
+        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 0)
+
+        # add the schedule
+        self.importer_manager.add_sync_schedule(repo_id, schedule_id)
+        self.assertTrue(schedule_id in self.importer_manager.list_sync_schedules(repo_id))
+        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 1)
+
+        # idempotent add
+        self.importer_manager.add_sync_schedule(repo_id, schedule_id)
+        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 1)
+
+        # remove the schedule
+        self.importer_manager.remove_sync_schedule(repo_id, schedule_id)
+        self.assertFalse(schedule_id in self.importer_manager.list_sync_schedules(repo_id))
+        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 0)
+
+        # idempotent remove
+        self.importer_manager.remove_sync_schedule(repo_id, schedule_id)
+        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 0)
+
+        # errors
+        self.importer_manager.remove_importer(repo_id)
+        self.assertRaises(exceptions.MissingResource,
+                          self.importer_manager.add_sync_schedule,
+                          repo_id, schedule_id)
+        self.assertRaises(exceptions.MissingResource,
+                          self.importer_manager.remove_sync_schedule,
+                          repo_id, schedule_id)
+
 

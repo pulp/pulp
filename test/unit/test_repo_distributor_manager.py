@@ -596,7 +596,7 @@ class RepoManagerTests(testutil.PulpTest):
         # Verify
         self.assertTrue(distributors is not None)
         self.assertEqual(2, len(distributors))
-        
+
     def test_get_distributors_none(self):
         """
         Tests an empty list is returned when none are present on the repo.
@@ -664,3 +664,47 @@ class RepoManagerTests(testutil.PulpTest):
 
         # Test - Set No Repo
         self.distributor_manager.set_distributor_scratchpad('fake', 'irrelevant', 'blah')
+
+    # -- publish schedules -----------------------------------------------------
+
+    def test_publish_schedule(self):
+
+        # setup
+        repo_id = 'scheduled_repo'
+        distributor_type_id = 'mock-distributor'
+        distributor_id = 'scheduled_repo_distributor'
+        schedule_id = 'scheduled_repo_publish'
+        self.repo_manager.create_repo(repo_id)
+        self.distributor_manager.add_distributor(repo_id, distributor_type_id, {}, False, distributor_id=distributor_id)
+
+        # pre-condition
+        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
+
+        # add the schedule
+        self.distributor_manager.add_publish_schedule(repo_id, distributor_id, schedule_id)
+        self.assertTrue(schedule_id in self.distributor_manager.list_publish_schedules(repo_id, distributor_id))
+        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 1)
+
+        # idempotent add
+        self.distributor_manager.add_publish_schedule(repo_id, distributor_id, schedule_id)
+        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 1)
+
+        # remove the schedule
+        self.distributor_manager.remove_publish_schedule(repo_id, distributor_id, schedule_id)
+        self.assertFalse(schedule_id in self.distributor_manager.list_publish_schedules(repo_id, distributor_id))
+        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
+
+        # idempotent remove
+        self.distributor_manager.remove_publish_schedule(repo_id, distributor_id, schedule_id)
+        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
+
+        # errors
+        self.distributor_manager.remove_distributor(repo_id, distributor_id)
+        self.assertRaises(exceptions.MissingResource,
+                          self.distributor_manager.add_publish_schedule,
+                          repo_id, distributor_id, schedule_id)
+        self.assertRaises(exceptions.MissingResource,
+                          self.distributor_manager.remove_publish_schedule,
+                          repo_id, distributor_id, schedule_id)
+
+
