@@ -422,6 +422,52 @@ class RepoDistributorManager(object):
         repo_distributor['scratchpad'] = contents
         distributor_coll.save(repo_distributor, safe=True)
 
+    def add_publish_schedule(self, repo_id, distributor_id, schedule_id):
+        """
+        Add a scheduled publish for the repo to the given distributor.
+        @param repo_id:
+        @param distributor_id:
+        @param schedule_id:
+        """
+        collection = RepoDistributor.get_collection()
+        distributor = collection.find_one({'repo_id': repo_id, 'id': distributor_id})
+        if distributor is None:
+            raise MissingResource(repo=repo_id, distributor=distributor_id)
+        if schedule_id in distributor['scheduled_publishes']:
+            return
+        collection.update({'_id': distributor['_id']},
+                          {'$push': {'scheduled_publishes': schedule_id}},
+                          safe=True)
+
+    def remove_publish_schedule(self, repo_id, distributor_id, schedule_id):
+        """
+        Add a scheduled publish for the repo to the given distributor.
+        @param repo_id:
+        @param distributor_id:
+        @param schedule_id:
+        """
+        collection = RepoDistributor.get_collection()
+        distributor = collection.find_one({'repo_id': repo_id, 'id': distributor_id})
+        if distributor is None:
+            raise MissingResource(repo=repo_id, distributor=distributor_id)
+        if schedule_id not in distributor['scheduled_publishes']:
+            return
+        collection.update({'_id': distributor['_id']},
+                          {'$pull': {'scheduled_publishes': schedule_id}},
+                          safe=True)
+
+    def list_publish_schedules(self, repo_id, distributor_id):
+        """
+        Add a scheduled publish for the repo to the given distributor.
+        @param repo_id:
+        @param distributor_id:
+        """
+        collection = RepoDistributor.get_collection()
+        distributor = collection.find_one({'repo_id': repo_id, 'id': distributor_id})
+        if distributor is None:
+            raise MissingResource(repo=repo_id, distributor=distributor_id)
+        return distributor['scheduled_publishes']
+
 # -- functions ----------------------------------------------------------------
 
 def is_distributor_id_valid(distributor_id):
