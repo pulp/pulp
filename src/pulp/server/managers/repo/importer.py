@@ -336,12 +336,49 @@ class RepoImporterManager(object):
         importer_coll.save(repo_importer, safe=True)
 
     def add_sync_schedule(self, repo_id, schedule_id):
-        pass
+        """
+        Adds a sync schedule for a repo to the importer.
+        @param repo_id:
+        @param schedule_id:
+        @return:
+        """
+        collection = RepoImporter.get_collection()
+        importer = collection.find_one({'repo_id': repo_id})
+        if importer is None:
+            raise MissingResource(importer=repo_id)
+        if schedule_id in importer['scheduled_syncs']:
+            return
+        collection.update({'_id': importer['_id']},
+                          {'$push': {'scheduled_syncs': schedule_id}},
+                          safe=True)
 
     def remove_sync_schedule(self, repo_id, schedule_id):
-        pass
+        """
+        Removes a sync schedule for a repo from the importer.
+        @param repo_id:
+        @param schedule_id:
+        @return:
+        """
+        collection = RepoImporter.get_collection()
+        importer = collection.find_one({'repo_id': repo_id})
+        if importer is None:
+            raise MissingResource(importer=repo_id)
+        if schedule_id not in importer['scheduled_syncs']:
+            return
+        collection.update({'_id': importer['_id']},
+                          {'$pull': {'scheduled_syncs': schedule_id}},
+                          safe=True)
 
     def list_sync_schedules(self, repo_id):
-        pass
+        """
+        List the sync schedules currently defined for the repo.
+        @param repo_id:
+        @return:
+        """
+        collection = RepoImporter.get_collection()
+        importer = collection.find_one({'repo_id': repo_id})
+        if importer is None:
+            raise MissingResource(importer=repo_id)
+        return importer['scheduled_syncs']
 
 
