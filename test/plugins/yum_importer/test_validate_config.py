@@ -19,6 +19,7 @@ import unittest
 from importer import YumImporter
 import importer_mocks
 from pulp.server.content.plugins.model import Repository
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 class TestValidateConfig(unittest.TestCase):
 
@@ -61,6 +62,8 @@ class TestValidateConfig(unittest.TestCase):
 
 
     def test_config_ssl_ca_cert(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         feed_url = "http://example.redhat.com/"
         ssl_ca_cert = "fake_path_to_ca"
         config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_ca_cert=ssl_ca_cert)
@@ -73,6 +76,8 @@ class TestValidateConfig(unittest.TestCase):
         self.assertTrue(state)
 
     def test_config_ssl_client_cert(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         feed_url = "http://example.redhat.com/"
         ssl_client_cert = "fake_path_to_client_cert"
         config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_client_cert=ssl_client_cert)

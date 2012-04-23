@@ -19,6 +19,7 @@ import unittest
 from distributor import YumDistributor
 import distributor_mocks
 from pulp.server.content.plugins.model import Repository
+from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 class TestValidateConfig(unittest.TestCase):
 
@@ -139,6 +140,8 @@ class TestValidateConfig(unittest.TestCase):
         self.assertTrue(state)
 
     def test_config_auth_pem(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         http = True
         https = False
         relative_url = "test_path"
@@ -155,6 +158,8 @@ class TestValidateConfig(unittest.TestCase):
         self.assertTrue(state)
 
     def test_config_auth_ca(self):
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
         http = True
         https = False
         relative_url = "test_path"
