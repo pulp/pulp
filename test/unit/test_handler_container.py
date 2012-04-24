@@ -21,36 +21,8 @@ import unittest
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
+from mock_handlers import MockInstaller
 from pulp.client.consumer.agent.container import *
-
-
-Descriptor.ROOT = '/tmp/etc/agent/handler'
-Container.PATH = ['/tmp/usr/lib/agent/handler',]
-
-HANDLER_A = dict(
-name='handlerA',
-descriptor="""
-[main]
-enabled=1
-types=rpm
-
-[rpm]
-class=RpmHandler
-""",
-handler=
-"""
-class RpmHandler:
-  def __init__(self, cfg):
-    pass
-  def install(units, options):
-    pass
-  def update(units, options):
-    pass
-  def uninstall(units, options):
-    pass
-  def profile():
-    pass
-""")
 
 
 
@@ -58,32 +30,25 @@ class TestHandlerContainer(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-        for path in (Descriptor.ROOT, Container.PATH[0]):
-            shutil.rmtree(path, ignore_errors=True)
-            os.makedirs(path)
+        self.mock = MockInstaller()
+        self.mock.install()
 
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
-        for path in (Descriptor.ROOT, Container.PATH[0]):
-            shutil.rmtree(path, ignore_errors=True)
-
-    def deploy(self, handler):
-        name = handler['name']
-        fn = '.'.join((name, 'conf'))
-        path = os.path.join(Descriptor.ROOT, fn)
-        f = open(path, 'w')
-        f.write(handler['descriptor'])
-        f.close()
-        fn = '.'.join((name, 'py'))
-        path = os.path.join(Container.PATH[0], fn)
-        f = open(path, 'w')
-        f.write(handler['handler'])
-        f.close()
+        self.mock.clean()
+        
+    def container(self):
+        return Container(MockInstaller.ROOT, MockInstaller.PATH)
 
     def test_loading(self):
-        self.deploy(HANDLER_A)
-        container = Container()
+        container = self.container()
         container.load()
         handler = container.find('rpm')
         self.assertTrue(handler is not None)
+        
+    def test_find(self):
+        container = self.container()
+        container.load()
+        handler = container.find('xxx')
+        self.assertTrue(handler is None)
