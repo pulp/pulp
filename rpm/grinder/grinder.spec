@@ -60,6 +60,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Apr 24 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.2-1
+- first pass at distribution support in yumImporter; also updating grinder
+  version (pkilambi@redhat.com)
+
+* Tue Apr 24 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.2-1
 - fix the filename in ksfiles to  include relativepath (pkilambi@redhat.com)
 - Adding more details to distro info post preparing trees (pkilambi@redhat.com)
 - 797880 - 'NaN' token in JSON response (jmatthews@redhat.com)
