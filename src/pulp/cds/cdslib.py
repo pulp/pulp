@@ -191,7 +191,7 @@ class CdsLib(object):
             # have any repos.
             repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
             for r in successfully_syncced_repos:
-                repos_file.write(r['relative_path'])
+                repos_file.write(os.path.join('repos', r['relative_path']))
                 repos_file.write('\n')
             repos_file.close()
 
