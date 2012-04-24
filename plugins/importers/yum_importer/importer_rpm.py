@@ -460,7 +460,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
                 (repo.id, len(existing_drpm_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
     yumRepoGrinder.setupDistroInfo()
     distro_items = yumRepoGrinder.getDistroItems()
-    available_distros = distribution.get_available_distributions([distro_items])
+    available_distros = distribution.get_available_distributions(distro_items)
     existing_distro_units = distribution.get_existing_distro_units(sync_conduit)
     orphaned_distro_units = []
     end_metadata = time.time()

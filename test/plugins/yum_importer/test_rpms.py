@@ -191,7 +191,7 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_resynced_rpms"], 0)
         self.assertEquals(summary["num_not_synced_rpms"], 0)
         self.assertEquals(summary["num_orphaned_rpms"], 0)
-        self.assertEquals(details["size_total"], 6791)
+        self.assertEquals(details["size_total"], 6868)
         # Confirm regular RPM files exist under self.pkg_dir
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 3)
@@ -218,7 +218,7 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_resynced_rpms"], 0)
         self.assertEquals(summary["num_not_synced_rpms"], 0)
         self.assertEquals(summary["num_orphaned_rpms"], 0)
-        self.assertEquals(details["size_total"], 6791)
+        self.assertEquals(details["size_total"], 6868)
         # Confirm regular RPM files exist under self.pkg_dir
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 3)
@@ -780,7 +780,7 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_resynced_rpms"], 0)
         self.assertEquals(summary["num_not_synced_rpms"], 0)
         self.assertEquals(summary["num_orphaned_rpms"], 0)
-        self.assertEquals(details["size_total"], 6791)
+        self.assertEquals(details["size_total"], 6868)
         # Confirm regular RPM files exist under self.pkg_dir
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 3)

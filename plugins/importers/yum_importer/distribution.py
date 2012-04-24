@@ -34,6 +34,8 @@ def get_available_distributions(distro_items):
     @rtype {():{}}
     """
     available_distros = {}
+    if distro_items:
+        distro_items = [distro_items]
     for dinfo in distro_items:
         key = form_lookup_distro_key(dinfo)
         available_distros[key] = dinfo
