@@ -76,12 +76,14 @@ class Handler:
 class Descriptor:
     """
     Content handler descriptor and configuration.
+    @cvar ROOT: The default directory contining descriptors.
+    @type ROOT: str
     @ivar name: The content unit name
     @type name: str
     @ivar cfg: The raw INI configuration object.
     @type cfg: INIConfig
     """
-
+    
     ROOT = '/etc/pulp/consumer/agent/handler'
 
     SCHEMA = (
@@ -94,15 +96,17 @@ class Descriptor:
     )
 
     @classmethod
-    def list(cls):
+    def list(cls, root=ROOT):
         """
         Load the handler descriptors.
+        @param root: The root directory contining descriptors.
+        @type root: str
         @return: A list of descriptors.
         @rtype: list
         """
         descriptors = []
-        cls.__mkdir()
-        for name, path in cls.__list():
+        cls.__mkdir(root)
+        for name, path in cls.__list(root):
             try:
                 descriptor = cls(name, path)
                 if not descriptor.enabled():
@@ -113,13 +117,15 @@ class Descriptor:
         return descriptors
 
     @classmethod
-    def __list(cls):
+    def __list(cls, root):
         """
         Load the handler descriptors.
+        @param root: The root directory contining descriptors.
+        @type root: str
         @return: A list of descriptors.
         @rtype: list
         """
-        files = os.listdir(cls.ROOT)
+        files = os.listdir(root)
         for fn in sorted(files):
             part = fn.split('.', 1)
             if len(part) < 2:
@@ -127,18 +133,20 @@ class Descriptor:
             name,ext = part
             if not ext in ('.conf'):
                 continue
-            path = os.path.join(cls.ROOT, fn)
+            path = os.path.join(root, fn)
             if os.path.isdir(path):
                 continue
             yield (name, path)
 
     @classmethod
-    def __mkdir(cls):
+    def __mkdir(cls, path):
         """
         Ensure the descriptor root directory exists.
+        @param path: The root directory contining descriptors.
+        @type path: str
         """
-        if not os.path.exists(cls.ROOT):
-            os.makedirs(cls.ROOT)
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     def __init__(self, name, path):
         """
@@ -231,6 +239,10 @@ class Container:
     mapped by type_id.
     @cvar PATH: A list of directories containing handlers.
     @type PATH: list
+    @ivar root: The descriptor root directory.
+    @type root: str
+    @ivar path: The list of directories to search for handlers.
+    @type path: list
     """
 
     PATH = [
@@ -239,9 +251,15 @@ class Container:
         '/opt/pulp/agent/handler',
     ]
 
-    def __init__(self):
+    def __init__(self, root=Descriptor.ROOT, path=PATH):
         """
+        @param root: The descriptor root directory.
+        @type root: str
+        @param path: The list of directories to search for handlers.
+        @type path: list
         """
+        self.root = root
+        self.path = path
         self.reset()
 
     def reset(self):
@@ -255,7 +273,7 @@ class Container:
         Load and validate content handlers.
         """
         self.reset()
-        for name, descriptor in Descriptor.list():
+        for name, descriptor in Descriptor.list(self.root):
             self.__import(name, descriptor)
 
     def find(self, type_id):
@@ -268,7 +286,7 @@ class Container:
             handle the specified type ID.
         @rtype: L{Handler}
         """
-        return self.handlers[type_id]
+        return self.handlers.get(type_id)
 
     def __import(self, name, descriptor):
         try:
@@ -306,9 +324,9 @@ class Container:
         @raise Exception: When not found.
         """
         mod = '%s.py' % name
-        for root in self.PATH:
+        for root in self.path:
             path = os.path.join(root, mod)
             if os.path.exists(path):
                 log.info('using: %s', path)
                 return path
-        raise Exception('%s, not found in:%s' % (mod, self.PATH))
+        raise Exception('%s, not found in:%s' % (mod, self.path))
