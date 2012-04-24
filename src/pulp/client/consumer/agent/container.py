@@ -39,7 +39,6 @@ class Handler:
     def install(self, units, options):
         """
         Install content unit(s).
-        Unit is: {type_id:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         @param options: Unit install options.
@@ -50,7 +49,6 @@ class Handler:
     def update(self, units, options):
         """
         Update content unit(s).
-        Unit is: {type_id:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         @param options: Unit update options.
@@ -61,7 +59,6 @@ class Handler:
     def uninstall(self, units, options):
         """
         Uninstall content unit(s).
-        Unit is: {type_id:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         @param options: Unit uninstall options.

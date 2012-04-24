@@ -35,17 +35,18 @@ class=RpmHandler
 """,
 handler=
 """
+from pulp.client.consumer.agent.dispatcher import HandlerReport
 class RpmHandler:
   def __init__(self, cfg):
     pass
-  def install(units, options):
-    pass
-  def update(units, options):
-    pass
-  def uninstall(units, options):
-    pass
-  def profile():
-    pass
+  def install(self, units, options):
+    return HandlerReport()
+  def update(self, units, options):
+    return HandlerReport()
+  def uninstall(self, units, options):
+    return HandlerReport()
+  def profile(self):
+    {}
 """)
 
 #
