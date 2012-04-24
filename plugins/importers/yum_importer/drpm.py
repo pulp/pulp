@@ -56,7 +56,7 @@ def get_existing_drpm_units(sync_conduit):
 
 def get_new_drpms_and_units(available_drpms, existing_units, sync_conduit):
     """
-    Determines what rpms are new and will initialize new units to match these drpms
+    Determines what drpms are new and will initialize new units to match these drpms
 
     @param available_drpms a dict of available drpms
     @type available_drpms {}

@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.146
+Version: 0.1.2
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -59,8 +59,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Tue Apr 10 2012 John Matthews <jmatthews@redhat.com> 0.0.146-1
-- Bump to Grinder .146 (jmatthews@redhat.com)
+* Tue Apr 24 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.2-1
+- fix the filename in ksfiles to  include relativepath (pkilambi@redhat.com)
+- Adding more details to distro info post preparing trees (pkilambi@redhat.com)
+- 797880 - 'NaN' token in JSON response (jmatthews@redhat.com)
+- Bump version to avoid confusion with pulp_v1.1 branch (jmatthews@redhat.com)
 
 * Tue Apr 10 2012 John Matthews <jmatthews@redhat.com> 0.0.146-1
 - Update error report (jmatthews@redhat.com)

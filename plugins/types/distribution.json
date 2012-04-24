@@ -1,0 +1,11 @@
+{"types": [
+            {
+            "id" : "distribution",
+            "display_name" : "DISTRIBUTION",
+            "description" : "DISTRIBUTION",
+            "unit_key" :
+                ["id",  "family", "variant", "version", "arch"],
+            "search_indexes" :
+                ["id", "family", "variant", "version", "arch"]
+        }
+    ]}

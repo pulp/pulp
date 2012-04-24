@@ -15,8 +15,11 @@ import urlparse
 import yum
 import time
 import os
+import logging
+import gettext
 from M2Crypto import X509
-
+_LOG = logging.getLogger(__name__)
+_ = gettext.gettext
 def get_repomd_filetypes(repomd_path):
     """
     @param repomd_path: path to repomd.xml
@@ -155,3 +158,53 @@ def validate_cert(cert_pem):
         return False
     return True
 
+def verify_exists(file_path, checksum=None, checksum_type="sha256", size=None, verify_options={}):
+    """
+    Verify if the rpm existence; checks include
+     - exists on the filesystem
+     - size match
+     - checksums match
+
+    @param file_path rpm file path on filesystem
+    @type missing_rpms str
+
+    @param checksum checksum value of the rpm
+    @type checksum str
+
+    @param checksum_type type used to calculate checksum
+    @type checksum_type str
+
+    @param size size of the file
+    @type size int
+
+    @param verify_options dict of checksum of size verify options
+    @type size dict
+
+    @return True if all checks pass; else False
+    @rtype bool
+    """
+    _LOG.debug("Verify path [%s] exists" % file_path)
+    if not os.path.exists(file_path):
+        # file path not found
+        return False
+    verify_size = verify_options.get("size") or False
+    # compute the size
+    if verify_size and size is not None:
+        f_stat = os.stat(file_path)
+        if int(size) and f_stat.st_size != int(size):
+            cleanup_file(file_path)
+            return False
+    verify_checksum = verify_options.get("checksum") or False
+    # compute checksum
+    if verify_checksum and checksum is not None:
+        computed_checksum = get_file_checksum(filename=file_path, hashtype=checksum_type)
+        if computed_checksum != checksum:
+            cleanup_file(file_path)
+            return False
+    return True
+
+def cleanup_file(file_path):
+    try:
+        os.remove(file_path)
+    except (OSError, IOError), e:
+        _LOG.info("Error [%s] trying to clean up file path [%s]" % (e, file_path))

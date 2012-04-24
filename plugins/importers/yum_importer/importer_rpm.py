@@ -14,12 +14,13 @@
 import logging
 import os
 import time
-
+import itertools
 from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
 from pulp.server.managers.repo.unit_association_query import Criteria
 import drpm
+import distribution
 from pulp.yum_plugin import util
 
 _LOG = logging.getLogger(__name__)
@@ -129,7 +130,7 @@ def get_missing_rpms_and_units(available_rpms, existing_units, verify_options={}
     for key in available_rpms:
         if key in existing_units:
             rpm_path = existing_units[key].storage_path
-            if not verify_exists(rpm_path, existing_units[key].unit_key.get('checksum'),
+            if not util.verify_exists(rpm_path, existing_units[key].unit_key.get('checksum'),
                 existing_units[key].unit_key.get('checksumtype'), verify_options):
                 _LOG.info("Missing an existing unit: %s.  Will add to resync." % (rpm_path))
                 missing_rpms[key] = available_rpms[key]
@@ -198,72 +199,18 @@ def verify_download(missing_rpms, new_rpms, new_units, verify_options={}):
         rpm = new_rpms[key]
         rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
         _LOG.info("RPM object %s ; KEY : %s" % (rpm, key))
-        if not verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
+        if not util.verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
             not_synced[key] = rpm
             del new_rpms[key]
     for key in missing_rpms.keys():
         rpm = missing_rpms[key]
         rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
-        if not verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
+        if not util.verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
             not_synced[key] = rpm
             del missing_rpms[key]
     for key in not_synced:
         del new_units[key]
     return not_synced
-
-def _verify_exists(file_path):
-    return os.path.exists(file_path)
-
-def verify_exists(file_path, checksum=None, checksum_type="sha256", size=None, verify_options={}):
-    """
-    Verify if the rpm existence; checks include
-     - exists on the filesystem
-     - size match
-     - checksums match
-
-    @param file_path rpm file path on filesystem
-    @type missing_rpms str
-
-    @param checksum checksum value of the rpm
-    @type checksum str
-
-    @param checksum_type type used to calculate checksum
-    @type checksum_type str
-
-    @param size size of the file
-    @type size int
-
-    @param verify_options dict of checksum of size verify options
-    @type size dict
-
-    @return True if all checks pass; else False
-    @rtype bool
-    """
-    _LOG.debug("Verify path [%s] exists" % file_path)
-    if not os.path.exists(file_path):
-        # file path not found
-        return False
-    verify_size = verify_options.get("size") or False
-    # compute the size
-    if verify_size and size is not None:
-        f_stat = os.stat(file_path)
-        if int(size) and f_stat.st_size != int(size):
-            cleanup_file(file_path)
-            return False
-    verify_checksum = verify_options.get("checksum") or False
-    # compute checksum
-    if verify_checksum and checksum is not None:
-        computed_checksum = util.get_file_checksum(filename=file_path, hashtype=checksum_type)
-        if computed_checksum != checksum:
-            cleanup_file(file_path)
-            return False
-    return True
-
-def cleanup_file(file_path):
-    try:
-        os.remove(file_path)
-    except (OSError, IOError), e:
-        _LOG.info("Error [%s] trying to clean up file path [%s]" % (e, file_path))
 
 def get_yumRepoGrinder(repo_id, tmp_path, config):
     """
@@ -511,13 +458,31 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_drpm_units, verify_options)
     _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." % \
                 (repo.id, len(existing_drpm_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
-    # include new drpm units 
+    yumRepoGrinder.setupDistroInfo()
+    distro_items = yumRepoGrinder.getDistroItems()
+    available_distros = distribution.get_available_distributions([distro_items])
+    existing_distro_units = distribution.get_existing_distro_units(sync_conduit)
+    orphaned_distro_units = []
+    end_metadata = time.time()
+    _LOG.info("%s distributions are available in the source repo <%s> for %s, calculated in %s seconds" % \
+                (len(available_distros), feed_url, repo.id, (end_metadata-start_metadata)))
+    new_distro_files, new_distro_units = distribution.get_new_distros_and_units(available_distros, existing_distro_units, sync_conduit)
+    missing_distro_files, missing_distro_units = distribution.get_missing_distros_and_units(available_distros, existing_distro_units, verify_options)
+    _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new distro files, %s missing distro." % \
+                (repo.id, len(existing_distro_units), len(orphaned_distro_units), len(new_distro_files), len(missing_distro_files)))
+
+    # include new drpm units
     new_units.update(new_drpm_units)
+    new_units.update(new_distro_units)
     # Sync the new and missing rpms, drpms
     yumRepoGrinder.addItems(new_rpms.values())
     yumRepoGrinder.addItems(missing_rpms.values())
     yumRepoGrinder.addItems(new_drpms.values())
     yumRepoGrinder.addItems(missing_drpms.values())
+    all_new_distro_files = list(itertools.chain.from_iterable(new_distro_files.values()))
+    yumRepoGrinder.addItems(all_new_distro_files)
+    all_missing_distro_files = list(itertools.chain.from_iterable(missing_distro_files.values()))
+    yumRepoGrinder.addItems(all_missing_distro_files)
     start_download = time.time()
     report = yumRepoGrinder.download()
     end_download = time.time()
@@ -593,6 +558,12 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     summary["num_synced_new_drpms"] = len(new_drpms)
     summary["num_resynced_drpms"] = len(missing_drpms)
     summary["num_orphaned_drpms"] = len(orphaned_drpms)
+
+    # filter out distribution specific data if any
+    summary["num_synced_new_distributions"] = len(new_distro_units)
+    summary["num_synced_new_distributions_files"] = len(all_new_distro_files)
+    summary["num_resynced_distributions"] = len(missing_distro_units)
+    summary["num_resynced_distribution_files"] = len(all_missing_distro_files)
 
     summary["time_total_sec"] = end - start
 
