@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.3
+Version:        1.1.4
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Apr 24 2012 Jeff Ortel <jortel@redhat.com> 1.1.4-1
+- 805086 - Support for packages_dir in repo (pkilambi@redhat.com)
+
 * Wed Apr 18 2012 Jeff Ortel <jortel@redhat.com> 1.1.3-1
 - 802447 - removing wrong unicode encoding of file handler instead of file
   contents (skarmark@redhat.com)
