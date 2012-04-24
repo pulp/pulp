@@ -31,6 +31,7 @@ from importer import YumImporter
 from importer import YUM_IMPORTER_TYPE_ID
 from importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 import importer_rpm
+from pulp.yum_plugin import util
 
 from pulp.server.content.plugins.model import Repository, Unit
 
@@ -38,12 +39,12 @@ class TestRPMs(unittest.TestCase):
 
     def setUp(self):
         super(TestRPMs, self).setUp()
-        self.saved_verify_exists = importer_rpm.verify_exists
+        self.saved_verify_exists = util.verify_exists
         self.init()
 
     def tearDown(self):
         super(TestRPMs, self).tearDown()
-        importer_rpm.verify_exists = self.saved_verify_exists
+        util.verify_exists = self.saved_verify_exists
         self.clean()
 
     def init(self):
@@ -411,8 +412,8 @@ class TestRPMs(unittest.TestCase):
             if arg == "rel_path_b":
                 return False
             return True
-        importer_rpm.verify_exists = mock.Mock()
-        importer_rpm.verify_exists.side_effect = side_effect
+        util.verify_exists = mock.Mock()
+        util.verify_exists.side_effect = side_effect
 
         rpm_a = self.get_simple_rpm("test_value_a")
         rpm_b = self.get_simple_rpm("test_value_b")
