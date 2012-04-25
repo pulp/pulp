@@ -16,18 +16,13 @@ Contains (proxy) classes that represent the pulp agent.
 """
 
 import hashlib
-from pulp.server.gc_agent.rest import Rest as RestImpl
+from pulp.server.gc_agent.rest import Rest
 from pulp.server.gc_agent.client import Agent
+from pulp.server.dispatch import factory
 from logging import getLogger
 
 
 log = getLogger(__name__)
-
-#
-# HTTP/REST transport factory
-#
-def Rest():
-    return RestImpl()
 
 #
 # Agent
@@ -51,8 +46,7 @@ class PulpAgent:
             systemid='pulp',
             method='POST',
             path='/v2/agent/%s/reply/' % context.uuid)
-        context.rest = Rest()
-        context.taskid = taskid
+        context.taskid = factory.context().task_id
         # domain(s)
         self.consumer = Consumer(context)
         self.content = Content(context)
@@ -110,7 +104,7 @@ class Consumer(Domain):
         """
         agent = Agent(
             self.context.uuid,
-            self.context.rest,
+            Rest(),
             secret=self.context.secret,
             async=True)
         return agent
@@ -165,7 +159,7 @@ class Content(Domain):
         taskid = self.context.get('taskid')
         agent = Agent(
             self.context.uuid,
-            self.context.rest,
+            Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
             replyto=self.context.replyto,
@@ -232,7 +226,7 @@ class Profile(Domain):
         rest = Rest()
         agent = Agent(
             self.context.uuid,
-            self.context.rest,
+            Rest(),
             secret=self.context.secret)
         return agent
 
