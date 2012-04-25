@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.284
+Version:        0.0.285
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -516,6 +516,40 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Apr 25 2012 Jeff Ortel <jortel@redhat.com> 0.0.285-1
+- Better gofer/agenthub cross compat. (jortel@redhat.com)
+- Refector gc agent into capabilities. (jortel@redhat.com)
+- Move task context lookup. (jortel@redhat.com)
+- Move GC agent directly under (client) package. (jortel@redhat.com)
+- RHEL 5/6 iniparse compat. (jortel@redhat.com)
+- 814772 - adding i18n repo id encoding when searching through scheduled tasks
+  (skarmark@redhat.com)
+  (jortel@redhat.com)
+- changing the verify_exists mock to use util call (pkilambi@redhat.com)
+- Automatic commit of package [grinder] minor release [0.1.2-1].
+  (pkilambi@redhat.com)
+- first pass at distribution support in yumImporter; also updating grinder
+  version (pkilambi@redhat.com)
+- 800525 - fix paths in /var/lib/pulp-cds/.cds_repo_list to be: repos
+  /<relative-path>. (jortel@redhat.com)
+- Initial add of GC agent content handler framework. (jortel@redhat.com)
+- consumer notes cli input refactoring for admin and consumer register as well
+  as updates (skarmark@redhat.com)
+- YumDistributor: Update to use same method for getting relative_url in
+  conflict detection as used in publishing (jmatthews@redhat.com)
+- YumDistributor: update to account for pulp_configs being a list - Basic
+  functionalty working from Pulp (jmatthews@redhat.com)
+- Rename metadata to: unit_key for content install flows. (jortel@redhat.com)
+- YumDistributor: First pass at adding relative_url uniqueness
+  (jmatthews@redhat.com)
+- Added a number of new importer/distributor config options to the CLI
+  (jason.dobies@redhat.com)
+- adding config option validation to yum distributor (pkilambi@redhat.com)
+- change assumption of cert config values being paths instead of certs
+  themselves (pkilambi@redhat.com)
+- Implemented distributor API and manager call for consumer payload generation
+  (jason.dobies@redhat.com)
+
 * Wed Apr 18 2012 Jeff Ortel <jortel@redhat.com> 0.0.284-1
 - 802447 - removing wrong unicode encoding of file handler instead of file
   contents (skarmark@redhat.com)
