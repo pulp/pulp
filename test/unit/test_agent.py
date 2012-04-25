@@ -70,21 +70,21 @@ class TestPulpAgent(testutil.PulpTest):
         
     def test_install_content(self):
         # Test
-        agent = PulpAgent(CONSUMER, TASKID)
+        agent = PulpAgent(CONSUMER)
         print agent.content.install(UNITS, OPTIONS)
         # Verify
         # TODO:
         
     def test_update_content(self):
         # Test
-        agent = PulpAgent(CONSUMER, TASKID)
+        agent = PulpAgent(CONSUMER)
         print agent.content.update(UNITS, OPTIONS)
         # Verify
         # TODO:
         
     def test_uninstall_content(self):
         # Test
-        agent = PulpAgent(CONSUMER, TASKID)
+        agent = PulpAgent(CONSUMER)
         print agent.content.uninstall(UNITS, OPTIONS)
         # Verify
         # TODO:

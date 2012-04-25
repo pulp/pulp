@@ -24,6 +24,7 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
+
 #
 # Agent
 #
@@ -33,7 +34,7 @@ class PulpAgent:
     Represents a remote pulp agent.
     """
 
-    def __init__(self, consumer, taskid=None):
+    def __init__(self, consumer):
         context = Context()
         context.uuid = consumer['id']
         # secret
@@ -47,10 +48,19 @@ class PulpAgent:
             method='POST',
             path='/v2/agent/%s/reply/' % context.uuid)
         context.taskid = factory.context().task_id
-        # domain(s)
-        self.consumer = Consumer(context)
-        self.content = Content(context)
-        self.profile = Profile(context)
+        self.context = context
+        
+    @property
+    def consumer(self):
+        return Consumer(self.context)
+    
+    @property
+    def content(self):
+        return Content(self.context)
+    
+    @property
+    def profile(self):
+        return Profile(self.context)
 
     def status(self):
         """
@@ -64,57 +74,48 @@ class PulpAgent:
         return reply[1]
 
 #
-# Agent Domain(s)
+# Agent Capability(s)
 #
 
 class Context(dict):
     """
-    The domain context.
+    The capability context.
     """
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
 
-class Domain:
+class Capability:
     """
-    An agent API domain.
-    @ivar context: The content context.
-    @type context: L{Environment}
+    An agent capability.
+    @ivar context: The context.
+    @type context: L{Context}
     """
 
     def __init__(self, context):
         """
-        @param context: The domain context.
+        @param context: The capability context.
         @type context: L{Context}
         """
         self.context = context
 
 
-class Consumer(Domain):
+class Consumer(Capability):
     """
-    The consumer management API domain.
+    The consumer management capability.
     """
-
-    def agent(self):
-        """
-        Get a configured agent proxy.
-        @return: A configured proxy.
-        @rtype: L{Agent}
-        """
-        agent = Agent(
-            self.context.uuid,
-            Rest(),
-            secret=self.context.secret,
-            async=True)
-        return agent
 
     def unregistered(self):
         """
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
         """
-        agent = self.agent()
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            secret=self.context.secret,
+            async=True)
         consumer = agent.Consumer()
         status, result = consumer.unregistered()
         # TODO: process
@@ -126,7 +127,11 @@ class Consumer(Domain):
         @param repo_id: A repository ID.
         @type repo_id: str
         """
-        agent = self.agent()
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            secret=self.context.secret,
+            async=True)
         consumer = agent.Consumer()
         result = consumer.bind(repo_id)
         # TODO: process
@@ -138,33 +143,21 @@ class Consumer(Domain):
         @param repo_id: A repository ID.
         @type repo_id: str
         """
-        agent = self.agent()
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            secret=self.context.secret,
+            async=True)
         consumer = agent.Consumer()
         result = consumer.unbind(repo_id)
         # TODO: process
         return result
 
 
-class Content(Domain):
+class Content(Capability):
     """
-    The content management API domain.
+    The content management capability.
     """
-
-    def agent(self):
-        """
-        Get a configured agent proxy.
-        @return: A configured proxy.
-        @rtype: L{Agent}
-        """
-        taskid = self.context.get('taskid')
-        agent = Agent(
-            self.context.uuid,
-            Rest(),
-            timeout=(10, 90),
-            secret=self.context.secret,
-            replyto=self.context.replyto,
-            any=taskid)
-        return agent
 
     def install(self, units, options):
         """
@@ -175,7 +168,14 @@ class Content(Domain):
         @param options: Install options; based on unit type.
         @type options: dict
         """
-        agent = self.agent()
+        taskid = self.context.get('taskid')
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            timeout=(10, 90),
+            secret=self.context.secret,
+            ctag=self.context.replyto,
+            any=taskid)
         content = agent.Content()
         result = content.install(units, options)
         # TODO: process
@@ -190,7 +190,14 @@ class Content(Domain):
         @param options: Update options; based on unit type.
         @type options: dict
         """
-        agent = self.agent()
+        taskid = self.context.get('taskid')
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            timeout=(10, 90),
+            secret=self.context.secret,
+            ctag=self.context.replyto,
+            any=taskid)
         content = agent.Content()
         result = content.update(units, options)
         # TODO: process
@@ -205,33 +212,30 @@ class Content(Domain):
         @param options: Uninstall options; based on unit type.
         @type options: dict
         """
-        agent = self.agent()
+        taskid = self.context.get('taskid')
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            timeout=(10, 90),
+            secret=self.context.secret,
+            ctag=self.context.replyto,
+            any=taskid)
         content = agent.Content()
         result = content.uninstall(units, options)
         # TODO: process
         return result
 
 
-class Profile(Domain):
+class Profile(Capability):
     """
-    The profile management API domain.
+    The profile management capability.
     """
-
-    def agent(self):
-        """
-        Get a configured agent proxy.
-        @return: A configured proxy.
-        @rtype: L{Agent}
-        """
-        rest = Rest()
-        agent = Agent(
-            self.context.uuid,
-            Rest(),
-            secret=self.context.secret)
-        return agent
 
     def send(self):
-        agent = self.agent()
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            secret=self.context.secret)
         profile = agent.Profile()
         result = profile.send()
         # TODO: process

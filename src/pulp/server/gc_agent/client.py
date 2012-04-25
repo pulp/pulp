@@ -15,9 +15,12 @@ class Agent:
     
     ROOT = '/agenthub/agent/'
     
-    def __init__(self, uuid, rest, **options):
+    def __init__(self, uuid, **options):
         self.uuid = uuid
-        self.rest = rest
+        self.rest = options['rest']
+        ctag = options.pop('ctag', None)
+        if ctag:
+            options['replyto'] = ctag
         self.options = options
     
     def __getattr__(self, name):

@@ -19,7 +19,6 @@ Contains agent management classes
 from pulp.server.managers import factory as managers
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.gc_agent.pulpagent import PulpAgent
-from pulp.server.dispatch import factory
 from logging import getLogger
 
 
@@ -79,7 +78,7 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        agent = PulpAgent(consumer, factory.context().task_id)
+        agent = PulpAgent(consumer)
         agent.content.install(units, options)
 
     def update_content(self, id, units, options):
@@ -95,7 +94,7 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        agent = PulpAgent(consumer, factory.context().task_id)
+        agent = PulpAgent(consumer)
         agent.content.update(units, options)
 
     def uninstall_content(self, id, units, options):
@@ -111,7 +110,7 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        agent = PulpAgent(consumer, factory.context().task_id)
+        agent = PulpAgent(consumer)
         agent.content.uninstall(units, options)
 
     def send_profile(self, id):
