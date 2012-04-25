@@ -203,29 +203,31 @@ class Typedef:
                     ('class', REQUIRED, ANY),
                 ),
              ),)
-        cfg = self.__cfg(cfg, section)
+        cfg = self.__slice(cfg, section)
         validator = Validator(schema)
         validator.validate(cfg)
         self.cfg = cfg
 
-    def __cfg(self, cfg, section):
+    def __slice(self, cfg, *sections):
         """
-        Construct an INIConfig object containing only the specified section.
+        Construct an INIConfig object containing only the specified sections.
         @param cfg: The handler descriptor configuration.
         @type cfg: INIConfig
-        @param section: The section name within the configuration.
-        @type section: str
+        @param sections: A list of sections to slice.
+        @type sections: list
         @return: A configuration object containing only the
-            specfified section.
+            specfified sections.
         @rtype: INIConfig
         """
         slice = INIConfig()
         for s in cfg:
-            if s != section:
+            if s not in sections:
                 continue
-            for p in cfg[s]:
-                v = cfg[s][p]
-                slice[s][p] = v
+            source = cfg[s]
+            target = getattr(slice, s)
+            for p in source:
+                v = source[p]
+                setattr(target, p, v)
         return slice
 
 
