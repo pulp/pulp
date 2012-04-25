@@ -20,6 +20,10 @@ class Agent:
         self.rest = options['rest']
         ctag = options.pop('ctag', None)
         if ctag:
+            ctag = dict(
+                systemid='pulp',
+                method='POST',
+                path='/v2/agent/%s/reply/' % uuid)
             options['replyto'] = ctag
         self.options = options
     

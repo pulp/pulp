@@ -42,11 +42,6 @@ class PulpAgent:
         hash = hashlib.sha256()
         hash.update(certificate.strip())
         context.secret = hash.hexdigest()
-        # replyto
-        context.replyto = dict(
-            systemid='pulp',
-            method='POST',
-            path='/v2/agent/%s/reply/' % context.uuid)
         context.taskid = factory.context().task_id
         self.context = context
         
@@ -174,7 +169,7 @@ class Content(Capability):
             rest=Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
-            ctag=self.context.replyto,
+            ctag='pulp',
             any=taskid)
         content = agent.Content()
         result = content.install(units, options)
@@ -196,7 +191,7 @@ class Content(Capability):
             rest=Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
-            ctag=self.context.replyto,
+            ctag='pulp',
             any=taskid)
         content = agent.Content()
         result = content.update(units, options)
@@ -218,7 +213,7 @@ class Content(Capability):
             rest=Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
-            ctag=self.context.replyto,
+            ctag='pulp',
             any=taskid)
         content = agent.Content()
         result = content.uninstall(units, options)
