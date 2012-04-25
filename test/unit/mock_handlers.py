@@ -18,7 +18,7 @@
 
 import os
 import shutil
-from pulp.client.consumer.agent.dispatcher import HandlerReport
+from pulp.client.agent.dispatcher import HandlerReport
 
 #
 # Handlers to be deployed for loader testing
@@ -36,7 +36,7 @@ class=RpmHandler
 """,
 handler=
 """
-from pulp.client.consumer.agent.dispatcher import HandlerReport
+from pulp.client.agent.dispatcher import HandlerReport
 class RpmHandler:
   def __init__(self, cfg):
     pass

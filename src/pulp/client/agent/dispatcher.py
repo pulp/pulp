@@ -13,7 +13,7 @@
 
 import sys
 import traceback as tb
-from pulp.client.consumer.agent.container import Container
+from pulp.client.agent.container import Container
 
 
 class Dispatcher:
