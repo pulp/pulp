@@ -18,9 +18,10 @@
 
 import os
 import shutil
+from pulp.client.consumer.agent.dispatcher import HandlerReport
 
 #
-# Handlers
+# Handlers to be deployed for loader testing
 #
 
 RPM = dict(
@@ -50,26 +51,26 @@ class RpmHandler:
 """)
 
 #
-# Mock
+# Mock Deployer
 #
 
-class MockInstaller:
+class MockDeployer:
 
     ROOT = '/tmp/etc/agent/handler'
     PATH = ['/tmp/usr/lib/agent/handler',]
 
-    def install(self):
+    def deploy(self):
         for path in (self.ROOT, self.PATH[0]):
             shutil.rmtree(path, ignore_errors=True)
             os.makedirs(path)
         for handler in (RPM,):
-            self.deploy(handler)
+            self.__deploy(handler)
     
     def clean(self):
         for path in (self.ROOT, self.PATH[0]):
             shutil.rmtree(path, ignore_errors=True)
     
-    def deploy(self, handler):
+    def __deploy(self, handler):
         name = handler['name']
         fn = '.'.join((name, 'conf'))
         path = os.path.join(self.ROOT, fn)
@@ -81,3 +82,33 @@ class MockInstaller:
         f = open(path, 'w')
         f.write(handler['handler'])
         f.close()
+
+#
+# Mock Handlers
+#
+
+class RpmHandler:
+
+  def __init__(self, cfg=None):
+    pass
+
+  def install(self, units, options):
+    report = HandlerReport()
+    installed = []
+    details = dict(
+        installed=installed,
+        deps=[],
+        )
+    report.succeeded('rpm', details)
+    return report
+
+  def update(self, units, options):
+    report = HandlerReport()
+    return report
+
+  def uninstall(self, units, options):
+    report = HandlerReport()
+    return report
+
+  def profile(self):
+    {}

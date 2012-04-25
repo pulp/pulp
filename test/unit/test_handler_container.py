@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pprint import pprint
-from mock_handlers import MockInstaller
+from mock_handlers import MockDeployer
 from pulp.client.consumer.agent.container import *
 from pulp.client.consumer.agent.dispatcher import *
 
@@ -32,16 +32,16 @@ class TestHandlerContainer(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-        self.mock = MockInstaller()
-        self.mock.install()
+        self.deployer = MockDeployer()
+        self.deployer.deploy()
 
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
-        self.mock.clean()
+        self.deployer.clean()
         
     def container(self):
-        return Container(MockInstaller.ROOT, MockInstaller.PATH)
+        return Container(MockDeployer.ROOT, MockDeployer.PATH)
 
     def test_loading(self):
         # Setup
@@ -66,16 +66,16 @@ class TestDispatcher(testutil.PulpTest):
 
     def setUp(self):
         testutil.PulpTest.setUp(self)
-        self.mock = MockInstaller()
-        self.mock.install()
+        self.deployer = MockDeployer()
+        self.deployer.deploy()
 
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
-        self.mock.clean()
+        self.deployer.clean()
 
     def container(self):
-        return Container(MockInstaller.ROOT, MockInstaller.PATH)
+        return Container(MockDeployer.ROOT, MockDeployer.PATH)
 
     def test_install(self):
         # Setup
