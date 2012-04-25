@@ -26,6 +26,7 @@ except ImportError:
 from isodate import ISO8601Error
 
 from pulp.common import dateutils
+from pulp.common.util import encode_unicode
 from pulp.server import async, config
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
@@ -150,8 +151,8 @@ def find_scheduled_task(id, method_name):
     # NOTE this is very inefficient in the worst case: DO NOT CALL OFTEN!!
     # the number of sync tasks * (mean # arguments + mean # keyword arguments)
     for task in async.find_async(method_name=method_name):
-        if task.args and id in task.args or \
-                task.kwargs and id in task.kwargs.values():
+        if task.args and encode_unicode(id) in task.args or \
+                task.kwargs and encode_unicode(id) in task.kwargs.values():
             return task
     return None
 
