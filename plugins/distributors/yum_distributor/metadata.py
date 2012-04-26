@@ -61,8 +61,9 @@ def generate_metadata(repo, publish_conduit, config):
         return False
     repo_dir = repo.working_dir
     checksum_type = get_repo_checksum_type(repo, publish_conduit, config)
-    metadata_types = config.get('metadata_types') or {}
-    if metadata_types.has_key("groups") and not metadata_types["groups"]:
+    metadata_types = config.get('skip_content_types') or {}
+    metadata_types = convert_content_to_metadata_type(metadata_types)
+    if 'group' not in metadata_types:
         groups_xml_path = None
     else:
         groups_xml_path = __get_groups_xml_info(repo_dir)
@@ -160,7 +161,7 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
     handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return handle
 
-def create_repo(dir, groups=None, checksum_type="sha256", metadata_types={}):
+def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
     handle = None
     # Lock the lookup and launch of a new createrepo process
     # Lock is released once createrepo is launched
@@ -266,3 +267,19 @@ def cancel_createrepo(repo_dir):
             return False
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+
+def convert_content_to_metadata_type(content_types_list):
+    content_metadata_map = {
+        "drpm"         : "prestodelta",
+        "errata"       : "updateinfo",
+        "packagegroup" : "group",
+    }
+    if not content_types_list:
+        return []
+    metadata_type_list = []
+    for type in content_types_list:
+        if type in content_metadata_map:
+            metadata_type_list.append(content_metadata_map[type])
+        else:
+            metadata_type_list.append(type)
+    return metadata_type_list

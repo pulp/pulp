@@ -84,9 +84,9 @@ def get_new_distros_and_units(available_distros, existing_distro_units, sync_con
             pkg_path = distro["id"]
             new_units[key] = sync_conduit.init_unit(DISTRO_TYPE_ID, unit_key, metadata, pkg_path)
             for ksfile in distro['files']:
-                pkgpath = os.path.join(new_units[key].storage_path, ksfile["fileName"])
+                pkgpath = os.path.join(new_units[key].storage_path, ksfile["relativepath"])
                 ksfile["pkgpath"] = os.path.dirname(pkgpath)
-                ksfile["filename"] = ksfile["fileName"] = os.path.basename(pkgpath)
+                ksfile["filename"] = ksfile["fileName"] #= os.path.basename(pkgpath)
             new_distro_files[key] = distro['files']
     return new_distro_files, new_units
 

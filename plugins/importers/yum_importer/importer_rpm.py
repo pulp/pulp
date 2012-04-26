@@ -245,7 +245,7 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
     remove_old = config.get("remove_old") or False
     purge_orphaned = config.get("purge_orphaned") or True
     num_old_packages = config.get("num_old_packages") or 0
-    skip = config.get("skip")
+    skip = config.get("skip_content_types") or []
     yumRepoGrinder = YumRepoGrinder(repo_label=repo_label, repo_url=repo_url, parallel=num_threads,\
         mirrors=None, newest=newest, cacert=cacert, clicert=clicert, clikey=clikey,\
         proxy_url=proxy_url, proxy_port=proxy_port, proxy_user=proxy_user,\
@@ -411,6 +411,7 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     ####
     start = time.time()
     feed_url = config.get("feed_url")
+    skip_content_types = config.get("skip_content_types")
     verify_checksum = config.get("verify_checksum") or False
     verify_size = config.get("verify_size") or False
     verify_options = {"checksum":verify_checksum, "size":verify_size}

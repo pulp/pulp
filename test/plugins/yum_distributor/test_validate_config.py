@@ -123,19 +123,19 @@ class TestValidateConfig(unittest.TestCase):
         state, msg = self.distributor.validate_config(self.repo, config, [])
         self.assertTrue(state)
 
-    def test_config_metadata_types(self):
+    def test_config_skip_content_types(self):
         http = True
         https = False
         relative_url = "test_path"
-        metadata_types = "fake"
+        skip_content_types = "fake"
         config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https,
-            metadata_types=metadata_types)
+            skip_content_types=skip_content_types)
         state, msg = self.distributor.validate_config(self.repo, config, [])
         self.assertFalse(state)
 
-        metadata_types = {}
+        skip_content_types = []
         config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https,
-            metadata_types=metadata_types)
+            skip_content_types=skip_content_types)
         state, msg = self.distributor.validate_config(self.repo, config, [])
         self.assertTrue(state)
 

@@ -29,12 +29,13 @@ YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
 DRPM_TYPE_ID="drpm"
+DISTRO_TYPE_ID="distribution"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "metadata_types", "https_publish_dir"]
+                        "checksum_type", "skip_content_types", "https_publish_dir"]
 
-SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID]
+SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 ###
 # Config Options Explained
@@ -52,7 +53,8 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 # generate_metadata     - True will run createrepo
 #                         False will not run and uses existing metadata from sync
 # checksum_type         - Checksum type to use for metadata generation
-# metadata_types        - {'groups' : 1, 'updateinfo' : 1, 'prestodelta' : 1}: types to include or skip from metadata generation
+# skip_content_types    - List of what content types to skip during sync, options:
+#                         ["rpm", "drpm", "errata", "distribution", "packagegroup"]
 # https_publish_dir     - Optional parameter to override the HTTPS_PUBLISH_DIR, mainly used for unit tests
 # TODO:  Need to think some more about a 'mirror' option, how do we want to handle
 # mirroring a remote url and not allowing any changes, what we were calling 'preserve_metadata' in v1.
@@ -123,10 +125,10 @@ class YumDistributor(Distributor):
                     msg = _("%s is not a valid checksum type" % checksum_type)
                     _LOG.error(msg)
                     return False, msg
-            if key == 'metadata_types':
-                metadata_types = config.get('metadata_types')
-                if metadata_types is not None and not isinstance(metadata_types, dict):
-                    msg = _("metadata_types should be a dictionary; got %s instead" % metadata_types)
+            if key == 'skip_content_types':
+                metadata_types = config.get('skip_content_types')
+                if metadata_types is not None and not isinstance(metadata_types, list):
+                    msg = _("skip_content_types should be a dictionary; got %s instead" % metadata_types)
                     _LOG.error(msg)
                     return False, msg
             if key == 'auth_cert':
