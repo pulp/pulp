@@ -37,7 +37,7 @@ REQUIRED_CONFIG_KEYS = ['feed_url']
 OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
                         'proxy_url', 'proxy_port', 'proxy_pass', 'proxy_user',
                         'max_speed', 'verify_size', 'verify_checksum', 'num_threads',
-                        'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip', 'checksum_type']
+                        'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip_content_types', 'checksum_type']
 ###
 # Config Options Explained
 ###
@@ -58,7 +58,8 @@ OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_cli
 # remove_old: Boolean option, if True remove old packages
 # num_old_packages: Defaults to 0, controls how many old packages to keep if remove_old is True
 # purge_orphaned: Defaults to True, when True will delete packages no longer available from the source repository
-# skip: Dictionary of what content types to skip during sync, options: {"packages", "distribution"}
+# skip_content_types: List of what content types to skip during sync, options:
+#                     ["rpm", "drpm", "errata", "distribution", "packagegroup"]
 # checksum_type: checksum type to use for repodata; defaults to source checksum type or sha256
 
 class YumImporter(Importer):
@@ -181,10 +182,10 @@ class YumImporter(Importer):
                     _LOG.error(msg)
                     return False, msg
 
-            if key == 'skip':
-                skip = config.get('skip')
-                if skip is not None and not isinstance(skip, dict):
-                    msg = _("skip should be a dictionary; got %s instead" % skip)
+            if key == 'skip_content_types':
+                skip = config.get('skip_content_types')
+                if skip is not None and not isinstance(skip, list):
+                    msg = _("skip_content_types should be a list; got %s instead" % skip)
                     _LOG.error(msg)
                     return False, msg
 
