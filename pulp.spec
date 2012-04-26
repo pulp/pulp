@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.4
+Version:        1.1.5
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 1.1.5-1
+- 814772 - adding i18n repo id encoding when searching through scheduled tasks
+  (skarmark@redhat.com)
+- 800525 - fix paths in /var/lib/pulp-cds/.cds_repo_list to be: repos
+  /<relative-path>. (jortel@redhat.com)
+
 * Tue Apr 24 2012 Jeff Ortel <jortel@redhat.com> 1.1.4-1
 - 805086 - Support for packages_dir in repo (pkilambi@redhat.com)
 
