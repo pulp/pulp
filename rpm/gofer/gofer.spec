@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.67
+Version: 0.68
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -87,7 +87,6 @@ rm -rf %{buildroot}
 
 %post
 chkconfig --add %{name}d
-setfacl -m other::--- %{_var}/log/%{name}
 
 %preun
 if [ $1 = 0 ] ; then
@@ -122,12 +121,7 @@ Contains gofer python lib modules.
 %{python_sitelib}/%{name}/*.py*
 %{python_sitelib}/%{name}/rmi/
 %{python_sitelib}/%{name}/messaging/
-%{_var}/lib/%{name}/journal/watchdog
 %doc LICENSE
-
-%post -n python-%{name}
-setfacl -m other::rwx %{_var}/lib/%{name}/journal/watchdog
-
 
 ###############################################################################
 # ruby lib
@@ -193,6 +187,7 @@ for asynchronous RMI calls.
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/watchdog.conf
 %{_libdir}/%{name}/plugins/watchdog.*
+%{_var}/lib/%{name}/journal/watchdog
 %doc LICENSE
 
 
@@ -242,10 +237,13 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.67-1
-- Automatic commit of package [gofer] minor release [0.66-1].
+* Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 0.68-1
+- Refit watchdog plugin; set journal location; skip directories in journal dir.
   (jortel@redhat.com)
-
+- Make the watchdog journal directory configurable. (jortel@redhat.com)
+- Add Broker.touch() and rename Topic.binding(). (jortel@redhat.com)
+- Better support for durable topic subscription.  Queue bindings to specified
+  exchanges. (jortel@redhat.com)
 * Fri Mar 16 2012 Jeff Ortel <jortel@redhat.com> 0.67-1
 - Add (trace) attribute to propagated exceptions. (jortel@redhat.com)
 - Add traceback info to propagated exceptions as: Exception.trace.
