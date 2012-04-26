@@ -517,6 +517,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.285-2
+- Update .spec for client/agent python package. (jortel@redhat.com)
+
 * Wed Apr 25 2012 Jeff Ortel <jortel@redhat.com> 0.0.285-1
 - Better gofer/agenthub cross compat. (jortel@redhat.com)
 - Refector gc agent into capabilities. (jortel@redhat.com)
