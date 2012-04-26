@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Apr 26 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.3-1
+- bumping grinder (pkilambi@redhat.com)
+
+* Thu Apr 26 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.3-1
 - fixing unit tests (pkilambi@redhat.com)
 - changing the skip from dict to a list and using new skip types
   (pkilambi@redhat.com)
