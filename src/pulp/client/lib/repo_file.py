@@ -13,6 +13,8 @@ from iniparse import ConfigParser
 import os
 import shutil
 
+from pulp.common.util import encode_unicode
+
 class Repo(dict):
     '''
     Holder object for repo data. Upon instantiation, the instance will be populated with
@@ -47,7 +49,7 @@ class Repo(dict):
         @param id: unique identifier for the repo
         @type  id: string
         '''
-        self.id = id
+        self.id = encode_unicode(id)
         for k, d in self.PROPERTIES:
             self[k] = d
 
