@@ -32,6 +32,7 @@ from pulp.client.plugins.consumer import (ConsumerAction, Consumer,
     Bind, Unbind, Unregister, History)
 from pulp.common import dateutils
 from pulp.common.capabilities import AgentCapabilities
+from pulp.common.util import encode_unicode
 from rhsm.profile import get_profile
 
 # base consumer action --------------------------------------------------------
@@ -180,6 +181,8 @@ class ClientBind(Bind, ConsumerClientActionMixIn):
     def bind_repo(self, repoid, bind_data):
         mirror_list_filename = \
             repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
+        for unicode_key in ('id', '_id', 'name'):
+            bind_data['repo'][unicode_key] = encode_unicode(bind_data['repo'][unicode_key])
         repolib.bind(
             self.cfg.client.repo_file,
             mirror_list_filename,
