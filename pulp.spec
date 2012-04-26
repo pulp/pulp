@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.285
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -444,6 +444,7 @@ fi
 %{python_sitelib}/pulp/client/lib
 %{python_sitelib}/pulp/client/pluginlib
 %{python_sitelib}/pulp/client/plugins
+%{python_sitelib}/pulp/client/agent
 %{python_sitelib}/pulp/client/*.py*
 
 # -- files - pulp client -----------------------------------------------------
