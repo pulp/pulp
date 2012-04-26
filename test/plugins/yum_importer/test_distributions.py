@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/"
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
 import importer_mocks
 import importer_rpm
+import distribution
 from importer import YumImporter
 from importer import YUM_IMPORTER_TYPE_ID
 from distribution import DISTRO_UNIT_KEY, DISTRO_TYPE_ID
@@ -57,3 +58,6 @@ class TestDistribution(unittest.TestCase):
         self.assertEquals(summary["num_synced_new_distributions_files"], 3)
         self.assertEquals(summary["num_resynced_distributions"], 0)
         self.assertEquals(summary["num_resynced_distribution_files"], 0)
+
+        distro_tree_files = glob.glob("%s/%s/images/*" % (repo.working_dir, repo.id))
+        self.assertEquals(len(distro_tree_files), 3)
