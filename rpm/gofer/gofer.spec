@@ -238,6 +238,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 0.68-1
+- gofer 0.68. (jortel@redhat.com)
+
+* Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 0.68-1
 - Refit watchdog plugin; set journal location; skip directories in journal dir.
   (jortel@redhat.com)
 - Make the watchdog journal directory configurable. (jortel@redhat.com)
