@@ -82,6 +82,7 @@ class ConsumerSection(PulpCliSection):
         if 'display_name' in kwargs:
             name = kwargs['display_name']
         description = kwargs['description']
+        notes = None
         if 'note' in kwargs.keys():
             if kwargs['note']:
                 notes = self._parse_notes(kwargs['note'])
