@@ -226,13 +226,12 @@ class ContentTest(testutil.PulpV2WebserviceTest):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
 
-
-    def test_update(self):
+    def test_install(self):
         # Setup
         self.populate()
         # Test
-        md = dict(name='gofer', version='0.66')
-        unit = dict(type_id='rpm', metadata=md)
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/update/' % self.CONSUMER_ID
@@ -243,3 +242,35 @@ class ContentTest(testutil.PulpV2WebserviceTest):
         # Verify
         self.assertEquals(status, 200) # TODO: 202 when asynchronous
 
+    def test_update(self):
+        # Setup
+        self.populate()
+        # Test
+        unit_key = dict(name='gofer', version='0.66')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/update/' % self.CONSUMER_ID
+        body = dict(
+            units=units,
+            options=options,)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 200) # TODO: 202 when asynchronous
+
+
+    def test_uninstall(self):
+        # Setup
+        self.populate()
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/uninstall/' % self.CONSUMER_ID
+        body = dict(
+            units=units,
+            options=options,)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 200) # TODO: 202 when asynchronous
