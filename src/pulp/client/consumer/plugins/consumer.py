@@ -131,6 +131,7 @@ class ClientUnbind(Unbind, ConsumerClientActionMixIn):
                 (consumerid, repoid)
 
     def unbind_repo(self, repoid):
+        repoid = encode_unicode(repoid)
         mirror_list_filename = \
             repolib.mirror_list_filename(self.cfg.client.mirror_list_dir, repoid)
         repolib.unbind(
