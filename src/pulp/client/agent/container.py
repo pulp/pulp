@@ -35,6 +35,13 @@ class Handler:
     """
     Content (type) handler.
     """
+    
+    def __init__(self, cfg):
+        """
+        @param cfg: The handler configuration
+        @type cfg: dict
+        """
+        pass
 
     def install(self, units, options):
         """
@@ -81,7 +88,7 @@ class Descriptor:
     @type cfg: INIConfig
     """
     
-    ROOT = '/etc/pulp/consumer/agent/handler'
+    ROOT = '/etc/pulp/handler'
 
     SCHEMA = (
         ('main', REQUIRED,
@@ -203,33 +210,44 @@ class Typedef:
                     ('class', REQUIRED, ANY),
                 ),
              ),)
-        cfg = self.__slice(cfg, section)
+        cfg = self.slice(cfg, section)
         validator = Validator(schema)
         validator.validate(cfg)
-        self.cfg = cfg
+        self.cfg = self.dict(cfg, section)
 
-    def __slice(self, cfg, *sections):
+    def slice(self, cfg, section):
         """
         Construct an INIConfig object containing only the specified sections.
         @param cfg: The handler descriptor configuration.
         @type cfg: INIConfig
-        @param sections: A list of sections to slice.
-        @type sections: list
+        @param section: A section name to slice.
+        @type section: str
         @return: A configuration object containing only the
-            specfified sections.
+            specfified section.
         @rtype: INIConfig
         """
         slice = INIConfig()
-        for s in cfg:
-            if s not in sections:
-                continue
-            source = cfg[s]
-            target = getattr(slice, s)
-            for p in source:
-                v = source[p]
-                setattr(target, p, v)
+        source = cfg[section]
+        target = getattr(slice, section)
+        for p in source:
+            v = source[p]
+            setattr(target, p, v)
         return slice
-
+    
+    def dict(self, cfg, section):
+        """
+        Get dict of typedef configuration.
+        @param cfg: The handler descriptor configuration.
+        @type cfg: INIConfig
+        @return: A dict representation of the configuration.
+        @rtype: dict
+        """
+        d = {}
+        section = cfg[section]
+        for p in section:
+            v = section[p]
+            d[p] = v
+        return d
 
 class Container:
     """
@@ -245,9 +263,9 @@ class Container:
     """
 
     PATH = [
-        '/usr/lib/pulp/agent/handler',
-        '/usr/lib64/pulp/agent/handler',
-        '/opt/pulp/agent/handler',
+        '/usr/lib/pulp/handler',
+        '/usr/lib64/pulp/handler',
+        '/opt/pulp/handler',
     ]
 
     def __init__(self, root=Descriptor.ROOT, path=PATH):
@@ -294,7 +312,7 @@ class Container:
             mod = imp.load_source(mangled, path)
             for type_id in descriptor.types():
                 typedef = Typedef(descriptor.cfg, type_id)
-                hclass = typedef.cfg[type_id]['class']
+                hclass = typedef.cfg['class']
                 hclass = getattr(mod, hclass)
                 handler = hclass(typedef.cfg)
                 self.handlers[type_id] = handler

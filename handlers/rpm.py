@@ -26,84 +26,62 @@ log = getLogger(__name__)
 
 class PackageHandler:
 
-    TYPE = 'rpm'
-
     def __init__(self, cfg):
         self.cfg = cfg
 
     def install(self, units, options):
         pkg = Package()
         report = HandlerReport()
-        names = self.names(units)
-        pkg.install(names)
-        report.succeeded(self.TYPE, details)
+        names = [key['name'] for key in units]
+        details = pkg.install(names)
+        report.succeeded(details)
         return report
 
     def update(self, units, options):
         pkg = Package()
         report = HandlerReport()
-        names = self.names(units)
-        pkg.update(names)
-        report.succeeded(self.TYPE, details)
+        names = [key['name'] for key in units]
+        details = pkg.update(names)
+        report.succeeded(details)
         return report
 
     def uninstall(self, units, options):
         pkg = Package()
         report = HandlerReport()
-        names = self.names(units)
-        pkg.uninstall(names)
-        report.succeeded(self.TYPE, details)
+        names = [key['name'] for key in units]
+        details = pkg.uninstall(names)
+        report.succeeded(details)
         return report
-
-    def names(self, units):
-        names = []
-        for unit in units:
-            if unit['type_id'] != self.TYPE:
-                raise Exception('%s, not supported')
-            key = unit['unit_key']
-            names.append(key['name'])
-        return names
 
 
 class GroupHandler:
 
-    TYPE = 'rpmgrp'
-
     def __init__(self, cfg):
         self.cfg = cfg
 
     def install(self, units, options):
         grp = PackageGroup()
         report = HandlerReport()
-        names = self.names(units)
-        grp.install(names)
-        report.succeeded(self.TYPE, details)
+        names = [key['name'] for key in units]
+        details = grp.install(names)
+        report.succeeded(details)
         return report
 
     def update(self, units, options):
         grp = PackageGroup()
         report = HandlerReport()
-        names = self.names(units)
-        grp.update(names)
-        report.succeeded(self.TYPE, details)
+        names = [key['name'] for key in units]
+        details = grp.update(names)
+        report.succeeded(details)
         return report
 
     def uninstall(self, units, options):
         grp = PackageGroup()
         report = HandlerReport()
-        names = self.names(units)
-        grp.uninstall(names)
-        report.succeeded(self.TYPE, details)
+        names = [key['name'] for key in units]
+        details = grp.uninstall(names)
+        report.succeeded(details)
         return report
-
-    def names(self, units):
-        names = []
-        for unit in units:
-            if unit['type_id'] != self.TYPE:
-                raise Exception('%s, not supported')
-            key = unit['unit_key']
-            names.append(key['name'])
-        return names
 
 
 #

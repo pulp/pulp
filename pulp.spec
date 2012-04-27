@@ -48,7 +48,7 @@ Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.65
+Requires: python-gofer >= 0.68
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.3-3.pulp%{?dist}
@@ -106,8 +106,8 @@ Requires:       python-simplejson
 Requires:       python-isodate >= 0.4.4
 Requires:       m2crypto
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.65
-Requires:       gofer-package >= 0.65
+Requires:       gofer >= 0.68
+Requires:       gofer-package >= 0.68
 %if !0%{?fedora}
 # RHEL
 Requires:       python-hashlib
@@ -161,7 +161,7 @@ Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.65
+Requires:       gofer >= 0.68
 Requires:       grinder >= 0.0.146
 Requires:       httpd
 Requires:       mod_wsgi >= 3.3-3.pulp%{?dist}
@@ -458,6 +458,7 @@ fi
 %{_bindir}/pulp-v2-consumer
 %{_libdir}/gofer/plugins/*.py*
 %{_usr}/lib/yum-plugins/pulp-profile-update.py*
+%{_sysconfdir}/gofer/plugins/pulp.conf
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf

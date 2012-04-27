@@ -19,6 +19,7 @@ Contains recurring actions and remote classes.
 import os
 from hashlib import sha256
 from pulp.client.consumer.credentials import Consumer as ConsumerBundle
+from pulp.client.agent.dispatcher import Dispatcher
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
@@ -118,6 +119,7 @@ class RegistrationMonitor:
 #
 # API
 #
+def secret(): pass
 
 class Consumer:
     """
@@ -133,7 +135,8 @@ class Consumer:
         pass
 
     @remote(secret=secret)
-    def rebind(self, repo_id):
+    @action(days=0x8E94)
+    def rebind(self, repo_id=None):
         pass
 
     @remote(secret=secret)
@@ -141,7 +144,7 @@ class Consumer:
         pass
 
     @remote(secret=secret)
-    @action(minutes=cfg.server.interval)
+    @action(minutes=cfg.profile.minutes)
     def profile(self):
         pass
 
@@ -153,16 +156,21 @@ class Content:
 
     @remote(secret=secret)
     def install(self, units, options):
-        pass
+        dispatcher = Dispatcher()
+        report = dispatcher.install(units, options)
+        return report.dict()
 
     @remote(secret=secret)
     def update(self, units, options):
-        pass
+        dispatcher = Dispatcher()
+        report = dispatcher.update(units, options)
+        return report.dict()
 
     @remote(secret=secret)
     def uninstall(self, units, options):
-        pass
-
+        dispatcher = Dispatcher()
+        report = dispatcher.uninstall(units, options)
+        return report.dict()
 
 class Profile:
 

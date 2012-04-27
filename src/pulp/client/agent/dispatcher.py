@@ -16,6 +16,10 @@ import traceback as tb
 from pulp.client.agent.container import Container
 
 
+class HandlerNotFound(Exception):
+    pass
+
+
 class Dispatcher:
 
     def __init__(self, container=None):
@@ -77,8 +81,8 @@ class Dispatcher:
         for type_id, units in collated.items():
             try:
                 handler = self.__handler(type_id)
-                r = handler.uninstall(units, options)
-                report.update(type_id, r)
+                hr = handler.uninstall(units, options)
+                report.update(type_id, hr)
             except Exception:
                 report.raised(type_id)
         return report
@@ -89,6 +93,8 @@ class Dispatcher:
 
     def __handler(self, type_id):
         handler = self.container.find(type_id)
+        if handler is None:
+            raise HandlerNotFound(type_id)
         return handler
 
     def __collated(self, units):
@@ -153,7 +159,7 @@ class HandlerReport(Report):
     @type details: dict
     """
 
-    def succeeded(self, type_id, details):
+    def succeeded(self, details):
         """
         Called (by handler) on operation succeeded.
         @param type_id: The content type ID.
@@ -162,9 +168,9 @@ class HandlerReport(Report):
         @type details: dict
         """
         self.status = True
-        self.details[type_id] = dict(status=True, details=details)
+        self.details = dict(status=True, details=details)
 
-    def failed(self, type_id, details):
+    def failed(self, details):
         """
         Called (by handler) on operation failed.
         @param type_id: The content type ID.
@@ -173,7 +179,7 @@ class HandlerReport(Report):
         @type details: dict
         """
         self.status = False
-        self.details[type_id] = dict(status=False, details=details)
+        self.details = dict(status=False, details=details)
 
 
 class DispatchReport(Report):
@@ -195,8 +201,8 @@ class DispatchReport(Report):
         @return: self
         @rtype: L{Report}
         """
-        if not isinstance(report, HandlerReport):
-            raise Exception('must be HandlerReport')
+        if not isinstance(report, Report):
+            raise Exception('must be Report')
         if not report.status:
             self.status = False
         if report.reboot_scheduled:
