@@ -204,11 +204,19 @@ class ScheduleManager(object):
 
     # utility methods ----------------------------------------------------------
 
-    def _validate_keys(self, options, valid_keys):
+    def _validate_keys(self, options, valid_keys, all_required=False):
         invalid_keys = []
         for key in options:
             if key not in valid_keys:
                 invalid_keys.append(key)
         if invalid_keys:
             raise pulp_exceptions.InvalidValue(invalid_keys)
+        if not all_required:
+            return
+        missing_keys = []
+        for key in valid_keys:
+            if key not in options:
+                missing_keys.append(key)
+        if missing_keys:
+            raise pulp_exceptions.MissingValue(missing_keys)
 
