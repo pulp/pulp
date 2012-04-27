@@ -50,6 +50,8 @@ class Handler:
         @type units: list
         @param options: Unit install options.
         @type options: dict
+        @return: An install report.
+        @rtype: L{HandlerReport}
         """
         pass
 
@@ -60,6 +62,8 @@ class Handler:
         @type units: list
         @param options: Unit update options.
         @type options: dict
+        @return: An update report.
+        @rtype: L{HandlerReport}
         """
         pass
 
@@ -70,6 +74,8 @@ class Handler:
         @type units: list
         @param options: Unit uninstall options.
         @type options: dict
+        @return: An uninstall report.
+        @rtype: L{HandlerReport}
         """
         pass
 

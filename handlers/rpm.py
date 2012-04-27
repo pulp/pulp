@@ -25,11 +25,29 @@ log = getLogger(__name__)
 #
 
 class PackageHandler:
+    """
+    The package (rpm) content handler.
+    @ivar cfg: configuration
+    @type cfg: dict
+    """
 
     def __init__(self, cfg):
+        """
+        @param cfg: configuration
+        @type cfg: dict
+        """
         self.cfg = cfg
 
     def install(self, units, options):
+        """
+        Install content unit(s).
+        @param units: A list of content unit_keys.
+        @type units: list
+        @param options: Unit install options.
+        @type options: dict
+        @return: An install report.  See: L{Package.install}
+        @rtype: L{HandlerReport}
+        """
         pkg = Package()
         report = HandlerReport()
         names = [key['name'] for key in units]
@@ -38,6 +56,15 @@ class PackageHandler:
         return report
 
     def update(self, units, options):
+        """
+        Update content unit(s).
+        @param units: A list of content unit_keys.
+        @type units: list
+        @param options: Unit update options.
+        @type options: dict
+        @return: An update report.  See: L{Package.update}
+        @rtype: L{HandlerReport}
+        """
         pkg = Package()
         report = HandlerReport()
         names = [key['name'] for key in units]
@@ -46,6 +73,15 @@ class PackageHandler:
         return report
 
     def uninstall(self, units, options):
+        """
+        Uninstall content unit(s).
+        @param units: A list of content unit_keys.
+        @type units: list
+        @param options: Unit uninstall options.
+        @type options: dict
+        @return: An uninstall report.  See: L{Package.uninstall}
+        @rtype: L{HandlerReport}
+        """
         pkg = Package()
         report = HandlerReport()
         names = [key['name'] for key in units]
@@ -55,11 +91,29 @@ class PackageHandler:
 
 
 class GroupHandler:
+    """
+    The package group content handler.
+    @ivar cfg: configuration
+    @type cfg: dict
+    """
 
     def __init__(self, cfg):
+        """
+        @param cfg: configuration
+        @type cfg: dict
+        """
         self.cfg = cfg
 
     def install(self, units, options):
+        """
+        Install content unit(s).
+        @param units: A list of content unit_keys.
+        @type units: list
+        @param options: Unit install options.
+        @type options: dict
+        @return: An install report.
+        @rtype: L{HandlerReport}
+        """
         grp = PackageGroup()
         report = HandlerReport()
         names = [key['name'] for key in units]
@@ -68,6 +122,15 @@ class GroupHandler:
         return report
 
     def update(self, units, options):
+        """
+        Update content unit(s).
+        @param units: A list of content unit_keys.
+        @type units: list
+        @param options: Unit update options.
+        @type options: dict
+        @return: An update report.
+        @rtype: L{HandlerReport}
+        """
         grp = PackageGroup()
         report = HandlerReport()
         names = [key['name'] for key in units]
@@ -76,6 +139,15 @@ class GroupHandler:
         return report
 
     def uninstall(self, units, options):
+        """
+        Uninstall content unit(s).
+        @param units: A list of content unit_keys.
+        @type units: list
+        @param options: Unit uninstall options.
+        @type options: dict
+        @return: An uninstall report.
+        @rtype: L{HandlerReport}
+        """
         grp = PackageGroup()
         report = HandlerReport()
         names = [key['name'] for key in units]
