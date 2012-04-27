@@ -41,6 +41,7 @@ def secret():
     @return: The sha256 for the certificate
     @rtype: str
     """
+    return # TODO: Hacked v1 compat
     bundle = ConsumerBundle()
     content = bundle.read()
     crt = bundle.split(content)[1]

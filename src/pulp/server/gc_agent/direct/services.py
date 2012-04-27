@@ -161,7 +161,7 @@ class ReplyHandler(Listener):
         log.info('Task RMI (succeeded)\n%s', reply)
         taskid = reply.any
         result = reply.retval
-        coordinator = dispatch_factory.coordinator()
+        coordinator = factory.coordinator()
         coordinator.complete_call_success(taskid, result)
 
     def failed(self, reply):
@@ -169,7 +169,8 @@ class ReplyHandler(Listener):
         taskid = reply.any
         exception = reply.exval
         traceback = reply.xstate['trace']
-        coordinator.complete_call_failure(task_id, exception, traceback)
+        coordinator = factory.coordinator()
+        coordinator.complete_call_failure(taskid, exception, traceback)
 
     def status(self, reply):
         pass
