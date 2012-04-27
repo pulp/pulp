@@ -30,6 +30,7 @@ RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
 DRPM_TYPE_ID="drpm"
 DISTRO_TYPE_ID="distribution"
+ERRATA_TYPE_ID="erratum"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey", "generate_metadata",
@@ -295,14 +296,19 @@ class YumDistributor(Distributor):
         details = {}
         # Determine Content in this repo
         unfiltered_units = publish_conduit.get_units()
-        # Remove unsupported units
-        units = filter(lambda u: u.type_id in SUPPORTED_UNIT_TYPES, unfiltered_units)
+        # filter compatible units
+        units = filter(lambda u: u.type_id not in [DISTRO_TYPE_ID, ERRATA_TYPE_ID], unfiltered_units)
         _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
                 % (repo.id, len(unfiltered_units), len(units)))
         # Create symlinks under repo.working_dir
         status, errors = self.handle_symlinks(units, repo.working_dir)
         if not status:
             _LOG.error("Unable to publish %s items" % (len(errors)))
+        # symlink distribution files if any under repo.working_dir
+        distro_units = filter(lambda u: u.type_id == DISTRO_TYPE_ID, unfiltered_units)
+        status, errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir)
+        if not status:
+            _LOG.error("Unable to publish distribution tree %s items" % (len(errors)))
         # update/generate metadata for the published repo
         repo_scratchpad = publish_conduit.get_repo_scratchpad()
         src_working_dir = ''
@@ -349,7 +355,6 @@ class YumDistributor(Distributor):
         _LOG.info("handle_symlinks invoked with %s units to %s dir" % (len(units), symlink_dir))
         errors = []
         for u in units:
-            # Skip errata...it will be published through repo metadata 'updateinfo'
             relpath = self.get_relpath_from_unit(u)
             source_path = u.storage_path
             symlink_path = os.path.join(symlink_dir, relpath)
@@ -474,3 +479,47 @@ class YumDistributor(Distributor):
         _LOG.info("Copied repodata from %s to %s" % (src_working_dir, tgt_working_dir))
         return True
 
+    def symlink_distribution_unit_files(self, units, symlink_dir):
+        """
+        Publishing distriubution unit involves publishing files underneath the unit.
+        Distribution is an aggregate unit with distribution files. This call
+        looksup each distribution unit and symlinks the files from the storage location
+        to working directory.
+
+        @param units
+        @type AssociatedUnit
+
+        @return tuple of status and list of error messages if any occurred
+        @rtype (bool, [str])
+        """
+        _LOG.info("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
+        errors = []
+        for u in units:
+            source_path_dir  = u.storage_path
+            if not u.metadata.has_key('files'):
+                msg = "No distribution files found for unit %s" % u
+                _LOG.error(msg)
+            distro_files =  u.metadata['files']
+            _LOG.info("Found %s distribution files to symlink" % len(distro_files))
+            for dfile in distro_files:
+                source_path = os.path.join(source_path_dir, dfile['relativepath'])
+                symlink_path = os.path.join(symlink_dir, dfile['relativepath'])
+                if not os.path.exists(source_path):
+                    msg = "Source path: %s is missing" % source_path
+                    errors.append((source_path, symlink_path, msg))
+                    continue
+                try:
+                    if not self.create_symlink(source_path, symlink_path):
+                        msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
+                        _LOG.error(msg)
+                        errors.append((source_path, symlink_path, msg))
+                        continue
+                except Exception, e:
+                    tb_info = traceback.format_exc()
+                    _LOG.error("%s" % tb_info)
+                    _LOG.critical(e)
+                    errors.append((source_path, symlink_path, str(e)))
+                    continue
+        if errors:
+            return False, errors
+        return True, []
