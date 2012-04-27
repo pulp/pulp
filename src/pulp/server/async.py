@@ -15,9 +15,6 @@ import traceback
 from gettext import gettext as _
 from logging import getLogger
 
-from gofer.messaging import Queue
-from gofer.rmi.async import ReplyConsumer, Listener
-from gofer.rmi.async import WatchDog
 
 from pulp.server import config
 from pulp.server.agent import Agent
@@ -27,6 +24,7 @@ from pulp.server.tasking.exception import (
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import SnapshotStorage
+from gofer.rmi.async import WatchDog
 
 
 
@@ -385,46 +383,3 @@ class RemoteMethod:
             classobj(*self.cntr[0], **self.cntr[1])
         method = getattr(classobj, self.name)
         return method(*args, **kwargs)
-
-
-class ReplyHandler(Listener):
-    """
-    The async RMI reply handler.
-    @ivar consumer: The reply consumer.
-    @type consumer: L{ReplyConsumer}
-    """
-
-    def __init__(self, url):
-        ctag = RemoteMethod.CTAG
-        queue = Queue(ctag)
-        self.consumer = ReplyConsumer(queue, url=url)
-
-    def start(self, watchdog):
-        self.consumer.start(self, watchdog=watchdog)
-        log.info('Task reply handler, started.')
-
-    def succeeded(self, reply):
-        log.info('Task RMI (succeeded)\n%s', reply)
-        taskid = reply.any
-        task = find_async(id=taskid)
-        if task:
-            sn = reply.sn
-            result = reply.retval
-            task[0].succeeded(result)
-        else:
-            log.warn('Task (%s), not found', taskid)
-
-    def failed(self, reply):
-        log.info('Task RMI (failed)\n%s', reply)
-        taskid = reply.any
-        task = find_async(id=taskid)
-        if task:
-            sn = reply.sn
-            exception = reply.exval
-            tb = repr(exception)
-            task[0].failed(exception, tb)
-        else:
-            log.warn('Task (%s), not found', taskid)
-
-    def status(self, reply):
-        pass

@@ -11,28 +11,22 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+
 class Agent:
-    
+
     ROOT = '/agenthub/agent/'
-    
+
     def __init__(self, uuid, **options):
         self.uuid = uuid
         self.rest = options['rest']
-        ctag = options.pop('ctag', None)
-        if ctag:
-            ctag = dict(
-                systemid='pulp',
-                method='POST',
-                path='/v2/agent/%s/reply/' % uuid)
-            options['replyto'] = ctag
         self.options = options
-    
+
     def __getattr__(self, name):
         return Stub(self, name)
 
 
 class Stub:
-    
+
     def __init__(self, agent, name):
         self.agent = agent
         self.name = name
@@ -40,14 +34,14 @@ class Stub:
 
     def __getattr__(self, name):
         return Method(self, name)
-    
+
     def __call__(self, *args, **kwargs):
         self.cntr = (args, kwargs)
         return self
 
 
 class Method:
-    
+
     def __init__(self, stub, name):
         self.stub = stub
         self.name = name
@@ -65,9 +59,8 @@ class Method:
             }
         }
         path = self.__path()
-        reply = self.__rest().post(path, body)
-        return reply
-    
+        return self.__rest().post(path, body)
+
     def __path(self):
         path = []
         path.append('/agenthub/agent')
@@ -76,6 +69,6 @@ class Method:
         path.append('%s' % self.stub.name)
         path.append('%s/' % self.name)
         return '/'.join(path)
-    
+
     def __rest(self):
         return self.stub.agent.rest

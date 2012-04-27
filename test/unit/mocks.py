@@ -42,13 +42,13 @@ class Consumer(object):
     def unregistered(self):
         pass
 
-    def bind(self, repoid, data):
+    def bind(self, repoid, data=0):
         pass
 
     def unbind(self, repoid):
         pass
 
-    def update(self, repoid, data):
+    def update(self, repoid, data=0):
         pass
 
 

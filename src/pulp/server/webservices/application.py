@@ -46,11 +46,10 @@ db_connection.initialize()
 from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
 from pulp.server import auditing
-from pulp.server.agent import HeartbeatListener
+from pulp.server.gc_agent.direct.services import Services as AgentServices
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync
 from pulp.server.api import repo
-from pulp.server.async import ReplyHandler, WatchDog
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.content import loader as plugin_loader
@@ -67,8 +66,6 @@ from pulp.server.webservices.controllers import (
     dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers, gc_root_actions)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
-
-from gofer.messaging.broker import Broker
 
 # conatants and application globals --------------------------------------------
 
@@ -130,11 +127,6 @@ URLS = (
 _LOG = logging.getLogger(__name__)
 _IS_INITIALIZED = False
 
-BROKER = None
-DISPATCHER = None
-WATCHDOG = None
-REPLY_HANDLER = None
-HEARTBEAT_LISTENER = None
 STACK_TRACER = None
 
 # initialization ---------------------------------------------------------------
@@ -144,8 +136,7 @@ def _initialize_pulp():
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
     # over itself on start up. If you do not know where to add something, ASK!
-    global _IS_INITIALIZED, BROKER, DISPATCHER, WATCHDOG, REPLY_HANDLER, \
-           HEARTBEAT_LISTENER, STACK_TRACER
+    global _IS_INITIALIZED, STACK_TRACER
     if _IS_INITIALIZED:
         return
     _IS_INITIALIZED = True
@@ -158,24 +149,8 @@ def _initialize_pulp():
     ensure_admin()
     # clean up previous runs, if needed
     repo.clear_sync_in_progress_flags()
-    # amqp broker
-    url = config.config.get('messaging', 'url')
-    BROKER = Broker(url)
-    BROKER.cacert = config.config.get('messaging', 'cacert')
-    BROKER.clientcert = config.config.get('messaging', 'clientcert')
-    # event dispatcher
-    if config.config.getboolean('events', 'recv_enabled'):
-        DISPATCHER = EventDispatcher()
-        DISPATCHER.start()
-    # async message timeout watchdog
-    WATCHDOG = WatchDog(url=url)
-    WATCHDOG.start()
-    # async task reply handler
-    REPLY_HANDLER = ReplyHandler(url)
-    REPLY_HANDLER.start(WATCHDOG)
-    # agent heartbeat listener
-    HEARTBEAT_LISTENER = HeartbeatListener(url)
-    HEARTBEAT_LISTENER.start()
+    # agent services
+    AgentServices.start()
     # async subsystem and schedules tasks
     async.initialize()
     # pulp finalization methods, registered via 'atexit'

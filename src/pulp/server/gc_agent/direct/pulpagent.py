@@ -15,10 +15,9 @@
 Contains (proxy) classes that represent the pulp agent.
 """
 
-import hashlib
-from pulp.server.gc_agent.rest import Rest
-from pulp.server.gc_agent.client import Agent
-from pulp.server.dispatch import factory
+from gofer.proxy import Agent
+from pulp.server.gc_agent.context import Context, Capability
+from pulp.server.gc_agent.direct.services import Services
 from logging import getLogger
 
 
@@ -35,66 +34,37 @@ class PulpAgent:
     """
 
     def __init__(self, consumer):
-        context = Context()
-        context.uuid = consumer['id']
-        # secret
-        certificate = consumer.get('certificate')
-        hash = hashlib.sha256()
-        hash.update(certificate.strip())
-        context.secret = hash.hexdigest()
-        context.taskid = factory.context().task_id
+        context = Context(consumer)
+        context.watchdog = Services.watchdog
+        context.ctag = Services.CTAG
         self.context = context
-        
+
     @property
     def consumer(self):
         return Consumer(self.context)
-    
+
     @property
     def content(self):
         return Content(self.context)
-    
+
     @property
     def profile(self):
         return Profile(self.context)
 
-    def status(self):
+    @classmethod
+    def status(self, uuids):
         """
         Get the status of the agent.
         Relies on heartbeat.
+        @param uuids: A list of uuids.
+        @type uuids: list
         @return: {}
         """
-        rest = Rest()
-        path = '/agenthub/agent/%s/' % self.uuid
-        reply = rest.get(path)
-        return reply[1]
+        return Services.heartbeat_listener.status(uuids)
 
 #
 # Agent Capability(s)
 #
-
-class Context(dict):
-    """
-    The capability context.
-    """
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-
-class Capability:
-    """
-    An agent capability.
-    @ivar context: The context.
-    @type context: L{Context}
-    """
-
-    def __init__(self, context):
-        """
-        @param context: The capability context.
-        @type context: L{Context}
-        """
-        self.context = context
-
 
 class Consumer(Capability):
     """
@@ -108,13 +78,10 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        status, result = consumer.unregistered()
-        # TODO: process
-        return result
+        return consumer.unregistered()
 
     def bind(self, repo_id):
         """
@@ -124,13 +91,10 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        result = consumer.bind(repo_id)
-        # TODO: process
-        return result
+        return consumer.bind(repo_id)
 
     def unbind(self, repo_id):
         """
@@ -140,13 +104,10 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        result = consumer.unbind(repo_id)
-        # TODO: process
-        return result
+        return consumer.unbind(repo_id)
 
 
 class Content(Capability):
@@ -163,18 +124,15 @@ class Content(Capability):
         @param options: Install options; based on unit type.
         @type options: dict
         """
-        taskid = self.context.get('taskid')
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
-            ctag='pulp',
-            any=taskid)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.taskid)
         content = agent.Content()
-        result = content.install(units, options)
-        # TODO: process
-        return result
+        return content.install(units, options)
 
     def update(self, units, options):
         """
@@ -185,18 +143,15 @@ class Content(Capability):
         @param options: Update options; based on unit type.
         @type options: dict
         """
-        taskid = self.context.get('taskid')
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
-            ctag='pulp',
-            any=taskid)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.taskid)
         content = agent.Content()
-        result = content.update(units, options)
-        # TODO: process
-        return result
+        return content.update(units, options)
 
     def uninstall(self, units, options):
         """
@@ -207,18 +162,15 @@ class Content(Capability):
         @param options: Uninstall options; based on unit type.
         @type options: dict
         """
-        taskid = self.context.get('taskid')
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             timeout=(10, 90),
             secret=self.context.secret,
-            ctag='pulp',
-            any=taskid)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.taskid)
         content = agent.Content()
-        result = content.uninstall(units, options)
-        # TODO: process
-        return result
+        return content.uninstall(units, options)
 
 
 class Profile(Capability):
@@ -229,9 +181,6 @@ class Profile(Capability):
     def send(self):
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret)
         profile = agent.Profile()
-        result = profile.send()
-        # TODO: process
-        return result
+        return profile.send()

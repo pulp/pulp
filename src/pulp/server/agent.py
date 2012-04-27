@@ -18,13 +18,7 @@ on the agent.
 """
 
 import hashlib
-from threading import RLock
-from datetime import datetime as dt
-from datetime import timedelta
 from gofer import proxy
-from gofer.messaging import Topic
-from gofer.messaging.consumer import Consumer
-from pulp.common import dateutils
 from pulp.server.config import config
 from logging import getLogger
 
@@ -38,15 +32,6 @@ class Agent:
     @ivar __agent: The wrapped gofer agent object.
     @type __agent: Agent
     """
-
-    @classmethod
-    def status(cls, uuids=[]):
-        """
-        Get the agent heartbeat status.
-        @param uuids: An (optional) list of uuids to query.
-        @return: A tuple (status,last-heartbeat)
-        """
-        return HeartbeatListener.status(uuids)
 
     def __init__(self, uuid, **options):
         """
@@ -114,72 +99,3 @@ class CdsAgent(Agent):
         uuid = self.uuid(cds)
         options['secret'] = cds.get('secret')
         Agent.__init__(self, uuid, **options)
-
-
-class HeartbeatListener(Consumer):
-    """
-    Agent heartbeat listener.
-    """
-
-    __status = {}
-    __mutex = RLock()
-
-    @classmethod
-    def status(cls, uuids=[]):
-        """
-        Get the agent heartbeat status.
-        @param uuids: An (optional) list of uuids to query.
-        @return: A tuple (status,last-heartbeat)
-        """
-        cls.__lock()
-        try:
-            now = dt.now(dateutils.utc_tz())
-            if not uuids:
-                uuids = cls.__status.keys()
-            d = {}
-            for uuid in uuids:
-                last = cls.__status.get(uuid)
-                if last:
-                    status = ( last[1] > now )
-                    heartbeat = last[0].isoformat()
-                    any = last[2]
-                else:
-                    status = False
-                    heartbeat = None
-                    any = {}
-                d[uuid] = (status, heartbeat, any)
-            return d
-        finally:
-            cls.__unlock()
-
-    @classmethod
-    def __lock(cls):
-        cls.__mutex.acquire()
-
-    @classmethod
-    def __unlock(cls):
-        cls.__mutex.release()
-
-    def __init__(self, url):
-        topic = Topic('heartbeat')
-        Consumer.__init__(self, topic, url=url)
-
-    def dispatch(self, envelope):
-        try:
-            self.__update(envelope.heartbeat)
-        except:
-            log.error(envelope, exec_info=True)
-        self.ack()
-
-    def __update(self, body):
-        self.__lock()
-        try:
-            log.debug(body)
-            uuid = body.pop('uuid')
-            next = body.pop('next')
-            last = dt.now(dateutils.utc_tz())
-            next = int(next*1.20)
-            next = last+timedelta(seconds=next)
-            self.__status[uuid] = (last, next, body)
-        finally:
-            self.__unlock()

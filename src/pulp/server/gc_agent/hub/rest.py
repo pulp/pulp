@@ -21,7 +21,7 @@ PORT = 443
 
 
 class NoAuth:
-    
+
     def header(self):
         return {}
 
@@ -39,7 +39,7 @@ class Basic:
 
 
 class Rest:
-    
+
     def __init__(self, host=HOST, port=PORT, auth=NoAuth()):
         self.http = httplib.HTTPSConnection(host, port)
         self.auth = auth
@@ -61,19 +61,19 @@ class Rest:
         except:
             pass
         return (response.status, body)
-    
+
     def get(self, path):
         return self.request('GET', path)
-    
+
     def post(self, path, body=None):
         return self.request('POST', path, body)
-    
+
     def put(self, path, body=None):
         return self.request('PUT', path, body)
-    
+
     def delete(self, path, body=None):
         return self.request('DELETE', path, body)
-            
+
     def __body(self, body):
         if body is None:
             return

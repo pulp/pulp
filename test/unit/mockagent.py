@@ -18,17 +18,36 @@
 # as needed.
 #
 
-from pulp.server.gc_agent import pulpagent
+from gofer.rmi import mock
+from pulp.server.gc_agent.direct.services import Services, HeartbeatListener
+from pulp.server.gc_agent.hub import pulpagent as restagent
 from pulp.server.dispatch import factory
 
 
 def install():
-    pulpagent.Rest = MockRest
+    restagent.Rest = MockRest
+    Services.heartbeat_listener = HeartbeatListener(None)
+    mock.install()
+    mock.reset()
+    mock.register(
+        Consumer=Consumer,
+        Content=Content,
+        Profile=Profile)
+
+def reset():
+    mock.reset()
+
+def all():
+    return mock.all()
     
 
 class MockRest:
     
     def get(self, path):
+        # status
+        parts = path.split('/')
+        if len(parts) == 5:
+            return (200, {})
         raise Exception, 'GET: unhandled path: %s' % path
     
     def post(self, path, body):
@@ -56,7 +75,7 @@ class MockRest:
 
     def method(self, path):
         try:
-            Class = path[5]
+            Class = 'Rest'+path[5]
             Method = path[6]
             inst = globals()[Class]()
             return getattr(inst, Method)
@@ -64,11 +83,60 @@ class MockRest:
             raise Exception, '%s, not mocked' % Class
         except AttributeError:
             raise Exception, '%s, not mocked' % Method
-        
-    
+
+#
+# Capabilities
+#
+
+#
+# Direct Impl
+#
+
 class Consumer(object):
     """
-    Mock consumer API domain.
+    Mock consumer capability.
+    """
+
+    def unregistered(self):
+        pass
+
+    def bind(self, repoid):
+        pass
+
+    def unbind(self, repoid):
+        pass
+
+
+class Content(object):
+    """
+    Mock content capability.
+    """
+
+    def install(self, units, options):
+        pass
+
+    def update(self, units, options):
+        pass
+
+    def uninstall(self, units, options):
+        pass
+
+
+class Profile(object):
+    """
+    Mock profile capability.
+    """
+
+    def send(self):
+        pass
+
+#
+# Agenthub Impl
+#
+
+class RestConsumer(object):
+    """
+    Mock consumer capability.
     """
 
     def unregistered(self):
@@ -81,9 +149,9 @@ class Consumer(object):
         return (202, repoid)
 
 
-class Content(object):
+class RestContent(object):
     """
-    Mock content API domain.
+    Mock content capability.
     """
     
     def install(self, units, options):
@@ -96,10 +164,10 @@ class Content(object):
         return (202, (units, options))
 
 
-class Profile(object):
+class RestProfile(object):
     """
-    Mock profile API domain.
+    Mock profile capability.
     """
     
     def send(self):
-        return (200, None)
+        return (202, None)

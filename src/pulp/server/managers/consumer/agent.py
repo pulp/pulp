@@ -18,7 +18,7 @@ Contains agent management classes
 """
 from pulp.server.managers import factory as managers
 from pulp.server.exceptions import InvalidValue, MissingResource
-from pulp.server.gc_agent.pulpagent import PulpAgent
+from pulp.server.gc_agent import PulpAgent
 from logging import getLogger
 
 
