@@ -27,12 +27,18 @@ DIRS = (
     '/etc/pulp/consumer',
     '/etc/pulp/distributor',
     '/etc/pulp/importer',
+    '/etc/pulp/handler',
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
     '/etc/pki/pulp/content',
     '/srv',
     '/srv/pulp',
+    '/usr/lib/pulp/',
+    '/usr/lib/pulp/handler',
+    '/usr/lib/gofer',
+    '/usr/lib/gofer/plugins',
+    '/usr/lib/yum-plugins/',
     '/var/lib/pulp',
     '/var/lib/pulp_client',
     '/var/lib/pulp_client/admin',
@@ -47,9 +53,6 @@ DIRS = (
     '/var/lib/pulp/published',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
-    '/usr/lib/gofer',
-    '/usr/lib/gofer/plugins',
-    '/usr/lib/yum-plugins/',
 )
 
 #
@@ -66,15 +69,18 @@ LINKS = (
     'etc/pulp/admin/v2_admin.conf',
     'etc/pulp/consumer/consumer.conf',
     'etc/pulp/consumer/v2_consumer.conf',
+    'etc/pulp/handler/rpm.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
+    'etc/gofer/plugins/pulp.conf',
     'etc/gofer/plugins/pulpplugin.conf',
     'etc/gofer/plugins/consumer.conf',
     'etc/yum/pluginconf.d/pulp-profile-update.conf',
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/repo_auth.wsgi',
+    ('src/pulp/client/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
     ('src/pulp/client/consumer/goferplugins/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
     ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
     ('src/pulp/client/consumer/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
@@ -95,6 +101,7 @@ LINKS = (
     ('plugins/types/distribution.json', '/var/lib/pulp/plugins/types/distribution.json'),
     ('plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
     ('plugins/distributors/yum_distributor', '/var/lib/pulp/plugins/distributors/yum_distributor'),
+    ('handlers/rpm.py', '/usr/lib/pulp/handler/rpm.py'),
     )
 
 def parse_cmdline():

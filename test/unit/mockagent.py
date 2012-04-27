@@ -103,6 +103,9 @@ class Consumer(object):
     def bind(self, repoid):
         pass
 
+    def rebind(self):
+        pass
+
     def unbind(self, repoid):
         pass
 
@@ -145,6 +148,9 @@ class RestConsumer(object):
     def bind(self, repoid):
         return (202, repoid)
     
+    def rebind(self):
+        return (202, None)
+
     def unbind(self, repoid):
         return (202, repoid)
 

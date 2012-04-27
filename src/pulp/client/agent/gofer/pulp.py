@@ -70,7 +70,7 @@ class Heartbeat:
             cls.__producer = Producer(url=url)
         return cls.__producer
 
-    @action(seconds=HEARTBEAT)
+    #@action(seconds=HEARTBEAT)
     def heartbeat(self):
         return self.send()
 
@@ -92,7 +92,7 @@ class RegistrationMonitor:
     pmon = PathMonitor()
 
     @classmethod
-    @action(days=0x8E94)
+    #@action(days=0x8E94)
     def init(cls):
         """
         Start path monitor to track changes in the
@@ -119,9 +119,8 @@ class RegistrationMonitor:
 #
 # API
 #
-def secret(): pass
 
-class Consumer:
+class ConsumerXXX: # Temporary v1 compat.
     """
     Consumer Management.
     """
@@ -136,16 +135,11 @@ class Consumer:
 
     @remote(secret=secret)
     @action(days=0x8E94)
-    def rebind(self, repo_id=None):
+    def rebind(self):
         pass
 
     @remote(secret=secret)
     def unbind(self, repo_id):
-        pass
-
-    @remote(secret=secret)
-    @action(minutes=cfg.profile.minutes)
-    def profile(self):
         pass
 
 
