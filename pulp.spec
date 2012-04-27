@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.5
+Version:        1.1.6
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,13 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Apr 27 2012 Jeff Ortel <jortel@redhat.com> 1.1.6-1
+- 816808 - fixing consumer unbind through goferplugin failing to delete repo
+  from pulp.repo file due to wrong encoding for i18n repo ids
+  (skarmark@redhat.com)
+- 802447 - consumer and consumergroup bind to be able to bind to repos with
+  i18n id (skarmark@redhat.com)
+
 * Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 1.1.5-1
 - 814772 - adding i18n repo id encoding when searching through scheduled tasks
   (skarmark@redhat.com)
