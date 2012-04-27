@@ -274,6 +274,7 @@ cp -R plugins/distributors/* %{buildroot}/var/lib/pulp/plugins/distributors
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
+cp -R src/pulp/client/agent/gofer/*.py %{buildroot}/%{_libdir}/gofer/plugins
 cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/%{_libdir}/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
@@ -335,6 +336,12 @@ cp -R extensions/rpm_units_search %{buildroot}/var/lib/pulp_client/admin/extensi
 # Consumer Client Extensions
 mkdir -p %{buildroot}/var/lib/pulp_client/consumer/extensions
 cp -R extensions/pulp_consumer %{buildroot}/var/lib/pulp_client/consumer/extensions
+
+# Agent content handlers
+mkdir -p %{buildroot}/%{_libdir}/pulp/handler
+mkdir -p %{buildroot}/%{_sysconfdir}/pulp/handler
+cp -R handlers/* %{buildroot}/%{_libdir}/pulp/handler
+cp -R etc/pulp/handler/* %{buildroot}/%{_sysconfdir}/pulp/handler
 
 # -- clean --------------------------------------------------------------------
 
@@ -456,11 +463,13 @@ fi
 %{python_sitelib}/pulp/client/consumer
 %{_bindir}/pulp-consumer
 %{_bindir}/pulp-v2-consumer
-%{_libdir}/gofer/plugins/*.py*
+%{_libdir}/gofer/plugins/
+%{_libdir}/pulp/handler/
 %{_usr}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulp.conf
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
+%{_sysconfdir}/pulp/handler/
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/pulp/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
