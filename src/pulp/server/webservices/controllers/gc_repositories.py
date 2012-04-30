@@ -21,6 +21,7 @@ import web
 # Pulp
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
+from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
@@ -90,7 +91,7 @@ class RepoCollection(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
         args = [id, display_name, description, notes, importer_type_id, importer_repo_plugin_config, distributors]
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id)]
         call_request = CallRequest(repo_manager.create_and_configure_repo,
                                    args,
                                    resources=resources,
@@ -137,7 +138,7 @@ class RepoResource(JSONController):
     def DELETE(self, id):
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id)]
         call_request = CallRequest(repo_manager.delete_repo,
                                    [id],
                                    resources=resources,
@@ -154,7 +155,7 @@ class RepoResource(JSONController):
 
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id)]
         call_request = CallRequest(repo_manager.update_repo_and_plugins,
                                    [id, delta, importer_config, distributor_configs],
                                    resources=resources,
@@ -196,7 +197,7 @@ class RepoImporters(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [repo_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)]
         call_request = CallRequest(importer_manager.set_importer,
                                    [repo_id, importer_type, importer_config],
                                    resources=resources,
@@ -229,7 +230,8 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [repo_id, importer_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
         call_request = CallRequest(importer_manager.remove_importer,
                                    [repo_id],
                                    resources=resources,
@@ -251,7 +253,8 @@ class RepoImporter(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [repo_id, importer_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
         call_request = CallRequest(importer_manager.update_importer_config,
                                    [repo_id, importer_config],
                                    resources=resources,
@@ -299,9 +302,12 @@ class SyncScheduleCollection(JSONController):
         schedule_manager = manager_factory.schedule_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
         call_request = CallRequest(schedule_manager.create_sync_schedule,
                                    [repo_id, importer_id, sync_options, schedule_options],
                                    resources=resources,
+                                   tags=tags,
                                    archive=True)
         schedule_id = execution.execute_sync(call_request)
 
@@ -329,9 +335,13 @@ class SyncScheduleResource(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
+                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)]
         call_request = CallRequest(schedule_manager.delete_sync_schedule,
                                    [repo_id, importer_id, schedule_id],
                                    resources=resources,
+                                   tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -362,9 +372,13 @@ class SyncScheduleResource(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
+                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)]
         call_request = CallRequest(schedule_manager.update_sync_schedule,
                                    [repo_id, importer_id, schedule_id, sync_updates, schedule_updates],
                                    resources=resources,
+                                   tags=tags,
                                    archive=True)
         execution.execute(call_request)
 
@@ -408,7 +422,7 @@ class RepoDistributors(JSONController):
 
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [repo_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)]
         if distributor_id is not None:
             resources.update({dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}})
             tags.append(distributor_id)
@@ -439,7 +453,8 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [repo_id, distributor_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
         call_request = CallRequest(distributor_manager.remove_distributor,
                                    [repo_id, distributor_id],
                                    resources=resources,
@@ -461,7 +476,8 @@ class RepoDistributor(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [repo_id, distributor_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
         call_request = CallRequest(distributor_manager.update_distributor_config,
                                    [repo_id, distributor_id, distributor_config],
                                    resources=resources,
@@ -504,9 +520,12 @@ class PublishScheduleCollection(JSONController):
         schedule_manager = manager_factory.schedule_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
         call_request = CallRequest(schedule_manager.create_publish_schedule,
                                    [repo_id, distributor_id, publish_options, schedule_options],
                                    resources=resources,
+                                   tags=tags,
                                    archive=True)
         schedule_id = execution.execute_sync(call_request)
 
@@ -534,9 +553,13 @@ class PublishScheduleResource(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)]
         call_request = CallRequest(schedule_manager.delete_publish_schedule,
                                    [repo_id, distributor_id, schedule_id],
                                    resources=resources,
+                                   tags=tags,
                                    archive=True)
         return execution.execute_ok(self, call_request)
 
@@ -568,9 +591,13 @@ class PublishScheduleResource(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)]
         call_request = CallRequest(schedule_manager.update_publish_schedule,
                                    [repo_id, distributor_id, schedule_id, publish_update, schedule_update],
                                    resources=resources,
+                                   tags=tags,
                                    archive=True)
         execution.execute(call_request)
 
@@ -646,7 +673,8 @@ class RepoSync(JSONController):
         repo_sync_manager = manager_factory.repo_sync_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'sync_weight')
-        tags = [repo_id, 'sync']
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                action_tag('sync')]
         call_request = CallRequest(repo_sync_manager.sync,
                                    [repo_id, overrides],
                                    resources=resources,
@@ -674,9 +702,9 @@ class RepoPublish(JSONController):
         # Execute the publish asynchronously
         repo_publish_manager = manager_factory.repo_publish_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        # XXX should there be a publish_weight?
         weight = pulp_config.config.getint('tasks', 'publish_weight')
-        tags = [repo_id, 'publish']
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                action_tag('publish')]
         call_request = CallRequest(repo_publish_manager.publish,
                                    [repo_id, distributor_id, overrides],
                                    resources=resources,
@@ -712,7 +740,9 @@ class RepoAssociate(JSONController):
         association_manager = manager_factory.repo_unit_association_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {source_repo_id: dispatch_constants.RESOURCE_READ_OPERATION,
                                                                    dest_repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [dest_repo_id, source_repo_id, 'associate']
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id),
+                action_tag('associate')]
         call_request = CallRequest(association_manager.associate_from_repo,
                                    [source_repo_id, dest_repo_id],
                                    {'criteria': criteria},
