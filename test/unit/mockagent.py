@@ -21,6 +21,7 @@
 from gofer.rmi import mock
 from pulp.server.gc_agent.direct.services import Services, HeartbeatListener
 from pulp.server.gc_agent.hub import pulpagent as restagent
+from pulp.client.agent.dispatcher import DispatchReport
 from pulp.server.dispatch import factory
 
 
@@ -116,13 +117,22 @@ class Content(object):
     """
 
     def install(self, units, options):
-        pass
+        report = DispatchReport()
+        report.details = \
+            dict(units=units, options=options)
+        return report.dict()
 
     def update(self, units, options):
-        pass
+        report = DispatchReport()
+        report.details = \
+            dict(units=units, options=options)
+        return report.dict()
 
     def uninstall(self, units, options):
-        pass
+        report = DispatchReport()
+        report.details = \
+            dict(units=units, options=options)
+        return report.dict()
 
 
 class Profile(object):
@@ -161,13 +171,22 @@ class RestContent(object):
     """
     
     def install(self, units, options):
-        return (202, (units, options))
+        report = DispatchReport()
+        report.details = \
+            dict(units=units, options=options)
+        return (202, report.dict())
     
     def update(self, units, options):
-        return (202, (units, options))
+        report = DispatchReport()
+        report.details = \
+            dict(units=units, options=options)
+        return (202, report.dict())
     
     def uninstall(self, units, options):
-        return (202, (units, options))
+        report = DispatchReport()
+        report.details = \
+            dict(units=units, options=options)
+        return (202, report.dict())
 
 
 class RestProfile(object):

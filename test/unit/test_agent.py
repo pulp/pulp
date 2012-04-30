@@ -30,7 +30,7 @@ CONSUMER = {
 }
 UNIT = {
     'type_id':'rpm',
-    'metadata':{
+    'unit_key':{
         'name':'zsh',
     }
 }
@@ -53,7 +53,7 @@ class TestRestAgent(testutil.PulpTest):
         for Agent in AGENT_CLASSES:
             # Test
             agent = Agent(CONSUMER)
-            print agent.consumer.unregistered()
+            agent.consumer.unregistered()
             # Verify
             # TODO:
         
@@ -77,25 +77,22 @@ class TestRestAgent(testutil.PulpTest):
         # Test
         for Agent in AGENT_CLASSES:
             agent = Agent(CONSUMER)
-            print agent.content.install(UNITS, OPTIONS)
-            # Verify
-            # TODO:
+            report = agent.content.install(UNITS, OPTIONS)
+            self.validate_succeeded(report)
         
     def test_update_content(self):
         # Test
         for Agent in AGENT_CLASSES:
             agent = Agent(CONSUMER)
-            print agent.content.update(UNITS, OPTIONS)
-            # Verify
-            # TODO:
+            report = agent.content.update(UNITS, OPTIONS)
+            self.validate_succeeded(report)
         
     def test_uninstall_content(self):
         # Test
         for Agent in AGENT_CLASSES:
             agent = Agent(CONSUMER)
-            print agent.content.uninstall(UNITS, OPTIONS)
-            # Verify
-            # TODO:
+            report = agent.content.uninstall(UNITS, OPTIONS)
+            self.validate_succeeded(report)
 
     def test_profile_send(self):
         # Test
@@ -111,3 +108,13 @@ class TestRestAgent(testutil.PulpTest):
             print Agent.status(['A','B'])
             # Verify
             # TODO:
+            
+    def validate_succeeded(self, report):
+        if isinstance(report, tuple):
+            report = report[1]
+        self.assertTrue(report['status'])
+        self.assertTrue('reboot_scheduled' in report)
+        details = report['details']
+        self.assertEqual(details['units'], UNITS)
+        self.assertEqual(details['options'], OPTIONS)
+        
