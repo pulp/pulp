@@ -27,6 +27,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_client_framework_core.py \
        test/unit/test_content_managers.py \
        test/unit/test_content_plugin_loader.py \
+       test/unit/test_content_upload_manager.py \
        test/unit/test_dispatch_call.py \
        test/unit/test_dispatch_coordinator.py \
        test/unit/test_dispatch_scheduler.py \

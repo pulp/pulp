@@ -126,6 +126,62 @@ class Importer(object):
         """
         pass
 
+    # -- actions --------------------------------------------------------------
+
+    def upload_unit(self, type_id, unit_key, metadata, file_path, conduit, config):
+        """
+        Handles a user request to upload a unit into a repository. This call
+        should use the data provided to add the unit as if it were synchronized
+        from an external source. This includes:
+
+        * Initializing the unit through the conduit which populates the final
+          destination of the unit.
+        * Deriving any
+        * Copy the unit from the provided temporary location into the unit's
+          actual path.
+        * Save the unit in Pulp, which both adds the unit to Pulp's database and
+          associates it to the repository.
+
+        This call may be invoked for either units that do not already exist as
+        well as re-uploading an existing unit.
+
+        The metadata parameter is variable in its usage. In some cases, the
+        unit may be almost exclusively metadata driven in which case the contents
+        of this parameter will be used directly as the unit's metadata. In others,
+        it may function to remove the importer's need to derive the unit's metadata
+        from the uploaded unit file. In still others, it may be extraneous
+        user-specified information that should be merged in with any derived
+        unit metadata.
+
+        Depending on the unit type, it is possible that this call will create
+        multiple units within Pulp. It is also possible that this call will
+        create one or more relationships between existing units.
+
+        @param type_id: type of unit being uploaded
+        @type  type_id: str
+
+        @param unit_key: identifier for the unit, specified by the user
+        @type  unit_key: dict
+
+        @param metadata: any user-specified metadata for the unit
+        @type  metadata: dict
+
+        @param file_path: path on the Pulp server's filesystem to the temporary
+               location of the uploaded file; may be None in the event that a
+               unit is comprised entirely of metadata and has no bits associated
+        @type  file_path: str
+
+        @param conduit: provides access to relevant Pulp functionality
+        @type  conduit: L{pulp.server.content.conduits.unit_import.ImportUnitConduit}
+
+        @param config: plugin configuration for the repository
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @return: report of the details of the sync
+        @rtype:  L{pulp.server.content.plugins.model.SyncReport}
+        """
+        raise NotImplementedError()
+
     def import_units(self, source_repo, dest_repo, import_conduit, config, units=None):
         """
         Import content units into the given repository. This method will be
@@ -183,8 +239,6 @@ class Importer(object):
         @type  remove_conduit: ?
         """
         raise NotImplementedError()
-
-    # -- actions --------------------------------------------------------------
 
     def sync_repo(self, repo, sync_conduit, config):
         """
