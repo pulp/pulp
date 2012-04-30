@@ -87,7 +87,7 @@ class ScheduleManager(object):
             schedule_updates['call_request'] = call_request
 
         # update the scheduled sync
-        scheduler.update(schedule_id, schedule_updates)
+        scheduler.update(schedule_id, **schedule_updates)
 
     def delete_sync_schedule(self, repo_id, importer_id, schedule_id):
         """
@@ -106,7 +106,7 @@ class ScheduleManager(object):
         scheduler.remove(schedule_id)
 
         # remove from the importer
-        importer_manager = managers_factory.repo_importer_manager(repo_id)
+        importer_manager = managers_factory.repo_importer_manager()
         importer_manager.remove_sync_schedule(repo_id, schedule_id)
 
     def _validate_importer(self, repo_id, importer_id):
