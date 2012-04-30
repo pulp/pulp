@@ -295,8 +295,15 @@ class SyncScheduleCollection(JSONController):
 
         schedule_options = self.params()
         sync_options = {'override_config': schedule_options.pop('override_config', {})}
+
         schedule_manager = manager_factory.schedule_manager()
-        schedule_id = schedule_manager.create_sync_schedule(repo_id, importer_id, sync_options, schedule_options)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(schedule_manager.create_sync_schedule,
+                                   [repo_id, importer_id, sync_options, schedule_options],
+                                   resources=resources,
+                                   archive=True)
+        schedule_id = execution.execute_sync(call_request)
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
@@ -317,9 +324,16 @@ class SyncScheduleResource(JSONController):
         schedule_list = importer_manager.list_sync_schedules(repo_id)
         if schedule_id not in schedule_list:
             raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+
         schedule_manager = manager_factory.schedule_manager()
-        schedule_manager.delete_sync_schedule(repo_id, importer_id, schedule_id)
-        return self.ok(True)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
+                     dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        call_request = CallRequest(schedule_manager.delete_sync_schedule,
+                                   [repo_id, importer_id, schedule_id],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute_ok(self, call_request)
 
     @auth_required(READ)
     def GET(self, repo_id, importer_id, schedule_id):
@@ -338,12 +352,22 @@ class SyncScheduleResource(JSONController):
         schedule_list = importer_manager.list_sync_schedules(repo_id)
         if schedule_id not in schedule_list:
             raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+
         sync_updates = {}
         schedule_updates = self.params()
         if 'override_config' in schedule_updates:
             sync_updates['override_config'] = schedule_updates.pop('override_config')
+
         schedule_manager = manager_factory.schedule_manager()
-        schedule_manager.update_sync_schedule(repo_id, importer_manager, schedule_id, sync_updates, schedule_updates)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(schedule_manager.update_sync_schedule,
+                                   [repo_id, importer_id, schedule_id, sync_updates, schedule_updates],
+                                   resources=resources,
+                                   archive=True)
+        execution.execute(call_request)
+
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         schedule.update(serialization.link.current_link_obj())
@@ -473,10 +497,19 @@ class PublishScheduleCollection(JSONController):
     def POST(self, repo_id, distributor_id):
         distributor_manager = manager_factory.repo_distributor_manager()
         distributor_manager.get_distributor(repo_id, distributor_id)
+
         schedule_options = self.params()
         publish_options = {'override_config': schedule_options.pop('override_config', {})}
+
         schedule_manager = manager_factory.schedule_manager()
-        schedule_id = schedule_manager.create_publish_schedule(repo_id, distributor_id, publish_options, schedule_options)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(schedule_manager.create_publish_schedule,
+                                   [repo_id, distributor_id, publish_options, schedule_options],
+                                   resources=resources,
+                                   archive=True)
+        schedule_id = execution.execute_sync(call_request)
+
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         schedule.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
@@ -496,9 +529,16 @@ class PublishScheduleResource(JSONController):
         schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
         if schedule_id not in schedule_list:
             raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+
         schedule_manager = manager_factory.schedule_manager()
-        schedule_manager.delete_publish_schedule(repo_id, distributor_id, schedule_id)
-        return self.ok(True)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
+                     dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        call_request = CallRequest(schedule_manager.delete_publish_schedule,
+                                   [repo_id, distributor_id, schedule_id],
+                                   resources=resources,
+                                   archive=True)
+        return execution.execute_ok(self, call_request)
 
     @auth_required(READ)
     def GET(self, repo_id, distributor_id, schedule_id):
@@ -506,6 +546,7 @@ class PublishScheduleResource(JSONController):
         schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
         if schedule_id not in schedule_list:
             raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         schedule.update(serialization.link.current_link_obj())
@@ -517,12 +558,22 @@ class PublishScheduleResource(JSONController):
         schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
         if schedule_id not in schedule_list:
             raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+
         publish_update = {}
         schedule_update = self.params()
         if 'override_config' in schedule_update:
             publish_update['override_config'] = schedule_update.pop('override_config')
+
         schedule_manager = manager_factory.schedule_manager()
-        schedule_manager.update_publish_schedule(repo_id, distributor_id, schedule_id, publish_update, schedule_update)
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_READ_OPERATION},
+                     dispatch_constants.RESOURCE_SCHEDULE_TYPE: {schedule_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        call_request = CallRequest(schedule_manager.update_publish_schedule,
+                                   [repo_id, distributor_id, schedule_id, publish_update, schedule_update],
+                                   resources=resources,
+                                   archive=True)
+        execution.execute(call_request)
+
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         schedule.update(serialization.link.current_link_obj())
