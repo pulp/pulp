@@ -266,20 +266,42 @@ class SyncScheduleCollection(JSONController):
     # GET:   list all scheduled syncs
     # POST:  create new scheduled sync
 
+    @auth_required(READ)
     def GET(self, repo_id, importer_id):
         importer_manager = manager_factory.repo_importer_manager()
         importer = importer_manager.get_importer(repo_id)
         if importer_id != importer['id']:
             raise exceptions.MissingResource(importer=importer_id)
+        scheduler = dispatch_factory.scheduler()
         schedule_objs = []
-        for schedule_id in importer['scheduled_syncs']:
-            obj = {'_id': schedule_id}
-            obj.update(serialization.link.child_link_obj(schedule_id))
-            schedule_objs.append(obj)
+        for schedule_id in importer_manager.list_sync_schedules(repo_id):
+            try:
+                obj = scheduler.get(schedule_id)
+            except exceptions.MissingResource:
+                # TODO: we should probably log these as they represent
+                # inconsistencies between the scheduler and th importer
+                pass
+            else:
+                obj.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
+                schedule_objs.append(obj)
         return self.ok(schedule_objs)
 
+    @auth_required(CREATE)
     def POST(self, repo_id, importer_id):
-        raise exceptions.NotImplemented('create new scheduled sync')
+        importer_manager = manager_factory.repo_importer_manager()
+        importer = importer_manager.get_importer(repo_id)
+        if importer_id != importer['id']:
+            raise exceptions.MissingResource(importer=importer_id)
+
+        schedule_options = self.params()
+        sync_options = {'override_config': schedule_options.pop('override_config', {})}
+        schedule_manager = manager_factory.schedule_manager()
+        schedule_id = schedule_manager.create_sync_schedule(repo_id, importer_id, sync_options, schedule_options)
+
+        scheduler = dispatch_factory.scheduler()
+        schedule = scheduler.get(schedule_id)
+        schedule.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
+        return self.created(schedule['_href'], schedule)
 
 
 class SyncScheduleResource(JSONController):
@@ -289,14 +311,43 @@ class SyncScheduleResource(JSONController):
     # GET:    get a representation of the scheduled sync
     # PUT:    change a scheduled sync
 
+    @auth_required(DELETE)
     def DELETE(self, repo_id, importer_id, schedule_id):
-        raise exceptions.NotImplemented('remove a scheduled sync')
+        importer_manager = manager_factory.repo_importer_manager()
+        schedule_list = importer_manager.list_sync_schedules(repo_id)
+        if schedule_id not in schedule_list:
+            raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+        schedule_manager = manager_factory.schedule_manager()
+        schedule_manager.delete_sync_schedule(repo_id, importer_id, schedule_id)
+        return self.ok(True)
 
+    @auth_required(READ)
     def GET(self, repo_id, importer_id, schedule_id):
-        raise exceptions.NotImplemented('get a representation of a scheduled sync')
+        importer_manager = manager_factory.repo_importer_manager()
+        schedule_list = importer_manager.list_sync_schedules(repo_id)
+        if schedule_id not in schedule_list:
+            raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+        scheduler = dispatch_factory.scheduler()
+        schedule = scheduler.get(schedule_id)
+        schedule.update(serialization.link.current_link_obj())
+        return self.ok(schedule)
 
+    @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id, schedule_id):
-        raise exceptions.NotImplemented('change a scheduled sync')
+        importer_manager = manager_factory.repo_importer_manager()
+        schedule_list = importer_manager.list_sync_schedules(repo_id)
+        if schedule_id not in schedule_list:
+            raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+        sync_updates = {}
+        schedule_updates = self.params()
+        if 'override_config' in schedule_updates:
+            sync_updates['override_config'] = schedule_updates.pop('override_config')
+        schedule_manager = manager_factory.schedule_manager()
+        schedule_manager.update_sync_schedule(repo_id, importer_manager, schedule_id, sync_updates, schedule_updates)
+        scheduler = dispatch_factory.scheduler()
+        schedule = scheduler.get(schedule_id)
+        schedule.update(serialization.link.current_link_obj())
+        return self.ok(schedule)
 
 # -- distributor controllers --------------------------------------------------
 
@@ -401,11 +452,35 @@ class PublishScheduleCollection(JSONController):
     # GET:   list all scheduled publishes
     # POST:  create new scheduled publish
 
+    @auth_required(READ)
     def GET(self, repo_id, distributor_id):
-        raise exceptions.NotImplemented('list all scheduled publishes')
+        scheduler = dispatch_factory.scheduler()
+        distributor_manager = manager_factory.repo_distributor_manager()
+        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
+        schedule_objs = []
+        for schedule_id in schedule_list:
+            try:
+                obj = scheduler.get(schedule_id)
+            except exceptions.MissingResource:
+                # TODO log this as it represents a state inconsistency
+                pass
+            else:
+                obj.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
+                schedule_objs.append(obj)
+        return self.ok(schedule_objs)
 
+    @auth_required(CREATE)
     def POST(self, repo_id, distributor_id):
-        raise exceptions.NotImplemented('create a new scheduled publish')
+        distributor_manager = manager_factory.repo_distributor_manager()
+        distributor_manager.get_distributor(repo_id, distributor_id)
+        schedule_options = self.params()
+        publish_options = {'override_config': schedule_options.pop('override_config', {})}
+        schedule_manager = manager_factory.schedule_manager()
+        schedule_id = schedule_manager.create_publish_schedule(repo_id, distributor_id, publish_options, schedule_options)
+        scheduler = dispatch_factory.scheduler()
+        schedule = scheduler.get(schedule_id)
+        schedule.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
+        return self.created(schedule['_href'], schedule)
 
 
 class PublishScheduleResource(JSONController):
@@ -415,14 +490,43 @@ class PublishScheduleResource(JSONController):
     # GET:    get a representation of the scheduled publish
     # PUT:    change a scheduled publish
 
+    @auth_required(DELETE)
     def DELETE(self, repo_id, distributor_id, schedule_id):
-        raise exceptions.NotImplemented('remove a scheduled publish')
+        distributor_manager = manager_factory.repo_distributor_manager()
+        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
+        if schedule_id not in schedule_list:
+            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+        schedule_manager = manager_factory.schedule_manager()
+        schedule_manager.delete_publish_schedule(repo_id, distributor_id, schedule_id)
+        return self.ok(True)
 
+    @auth_required(READ)
     def GET(self, repo_id, distributor_id, schedule_id):
-        raise exceptions.NotImplemented('get a representation of a scheduled publish')
+        distributor_manager = manager_factory.repo_distributor_manager()
+        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
+        if schedule_id not in schedule_list:
+            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+        scheduler = dispatch_factory.scheduler()
+        schedule = scheduler.get(schedule_id)
+        schedule.update(serialization.link.current_link_obj())
+        return self.ok(schedule)
 
+    @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id, schedule_id):
-        raise exceptions.NotImplemented('change a scheduled publish')
+        distributor_manager = manager_factory.repo_distributor_manager()
+        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
+        if schedule_id not in schedule_list:
+            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+        publish_update = {}
+        schedule_update = self.params()
+        if 'override_config' in schedule_update:
+            publish_update['override_config'] = schedule_update.pop('override_config')
+        schedule_manager = manager_factory.schedule_manager()
+        schedule_manager.update_publish_schedule(repo_id, distributor_id, schedule_id, publish_update, schedule_update)
+        scheduler = dispatch_factory.scheduler()
+        schedule = scheduler.get(schedule_id)
+        schedule.update(serialization.link.current_link_obj())
+        return self.ok(schedule)
 
 # -- history controllers ------------------------------------------------------
 
