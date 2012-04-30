@@ -499,7 +499,6 @@ def _sync(repo, sync_conduit, config, importer_progress_callback=None):
     rpms_with_errors = search_for_errors(new_rpms, missing_rpms)
     drpms_with_errors = search_for_errors(new_drpms, missing_drpms)
     rpms_with_errors.update(drpms_with_errors)
-    # TODO: Re-examine verify_download(), most likely remove and keep this functionality in grinder
     # Verify we synced what we expected, update the passed in dicts to remove non-downloaded items
     not_synced = verify_download(missing_rpms, new_rpms, new_units, verify_options)
     if not_synced:

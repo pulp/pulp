@@ -204,43 +204,70 @@ class YumImporter(Importer):
     def importer_removed(self, repo, config):
         _LOG.info("importer_removed invoked")
 
-    def import_units(self, repo, units, import_conduit, config):
+    def import_units(self, source_repo, dest_repo, import_conduit, config, units=None):
         """
-        Import content units into the given repository. This method will be
-        called in a number of different situations:
-         * A user is attempting to migrate a content unit from one repository
-           into the repository that uses this importer
-         * A user has uploaded a content unit to the Pulp server and is
-           attempting to associate it to a repository that uses this importer
-         * An existing repository is being cloned into a repository that
-           uses this importer
+        @param source_repo: metadata describing the repository containing the
+               units to import
+        @type  source_repo: L{pulp.server.content.plugins.data.Repository}
 
-        In all cases, the expected behavior is that the importer uses this call
-        as an opportunity to perform any changes it needs to its working
-        files for the repository to incorporate the new units.
-
-        The units may or may not exist in Pulp prior to this call. The call to
-        add a unit to Pulp is idempotent and should be made anyway to ensure
-        the case where a new unit is being uploaded to Pulp is handled.
-
-        @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
-
-        @param units: list of objects describing the units to import in
-                      this call
-        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+        @param dest_repo: metadata describing the repository to import units
+               into
+        @type  dest_repo: L{pulp.server.content.plugins.data.Repository}
 
         @param import_conduit: provides access to relevant Pulp functionality
-        @type  import_conduit: ?
+        @type  import_conduit: L{pulp.server.content.conduits.unit_import.ImportUnitConduit}
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @param units: optional list of pre-filtered units to import
+        @type  units: list of L{pulp.server.content.plugins.data.Unit}
         """
-        _LOG.info("import_units invoked")
+        if not units:
+            # If no units are passed in, assume we will use all units from source repo
+            units = import_conduit.get_source_units()
+        _LOG.info("Importing %s units from %s to %s" % (len(units), source_repo.id, dest_repo.id))
+        for u in units:
+            # We are assuming that Pulp is telling us about units which already exist in Pulp
+            # therefore they have already been downloaded and written to the correct location on the filesystem
+            # i.e. we are assuming unit.storage_path is correct and points to the actual unit if appropriate (non-errata, etc).
+            #
+            if u.unit_key.has_key("filename") and u.storage_path:
+                sym_link = os.path.join(dest_repo.working_dir, dest_repo.id, u.unit_key["filename"])
+                if os.path.lexists(sym_link):
+                    remove_link = True
+                    if os.path.islink(sym_link):
+                        existing_link_target = os.readlink(sym_link)
+                        if os.path.samefile(existing_link_target, u.storage_path):
+                            remove_link = False
+                    if remove_link:
+                        # existing symlink is wrong, remove it
+                        os.unlink(sym_link)
+                dirpath = os.path.dirname(sym_link)
+                if not os.path.exists(dirpath):
+                    os.makedirs(dirpath)
+                os.symlink(u.storage_path, sym_link)
+            import_conduit.associate_unit(u)
+        _LOG.info("%s units from %s have been associated to %s" % (len(units), source_repo.id, dest_repo.id))
+
 
     def remove_units(self, repo, units, remove_conduit):
-        _LOG.info("remove_units invoked for %s units" % (len(units)))
+        """
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
 
+        @param units: list of objects describing the units to import in this call
+        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+
+        @param remove_conduit: provides access to relevant Pulp functionality
+        @type  remove_conduit: ?
+        """
+        _LOG.info("remove_units invoked for %s units" % (len(units)))
+        for u in units:
+            # Assuming Pulp will delete u.storage_path from filesystem
+            sym_link = os.path.join(repo.working_dir, repo.id, u.unit_key["filename"])
+            if os.path.lexists(sym_link):
+                os.unlink(sym_link)
     # -- actions --------------------------------------------------------------
 
     def sync_repo(self, repo, sync_conduit, config):

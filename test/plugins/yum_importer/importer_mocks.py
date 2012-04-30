@@ -13,9 +13,9 @@
 import os
 import mock
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
+from pulp.server.content.conduits.unit_import import ImportUnitConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import Unit
-
 
 def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
     def side_effect(type_id, key, metadata, rel_path):
@@ -39,6 +39,13 @@ def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
     sync_conduit.get_units.side_effect = get_units
     return sync_conduit
 
+def get_import_conduit(source_units=None):
+    def get_source_units(criteria=None):
+        return source_units
+
+    import_conduit = mock.Mock(spec=ImportUnitConduit)
+    import_conduit.get_source_units.side_effect = get_source_units
+    return import_conduit
 
 def get_basic_config(*arg, **kwargs):
     plugin_config = {}
