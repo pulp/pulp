@@ -269,7 +269,6 @@ class YumDistributor(Distributor):
             # the repo/relative_url occupying this space when a conflict is detected.
             temp_lookup["repo_id"] = r.id
             temp_lookup["url"] = rel_url
-        _LOG.info("Formed lookup map of: %s" % (lookup))
         return lookup
 
     def get_https_publish_dir(self, config=None):
@@ -425,9 +424,6 @@ class YumDistributor(Distributor):
         if not self.create_dirs(os.path.dirname(symlink_path)):
             return False
         _LOG.debug("creating symlink %s pointing to %s" % (symlink_path, source_path))
-        # TODO:
-        #  Need to handle conflicts when a subdirectory already exists
-        #  Or what happens if another repo has published into this path already
         os.symlink(source_path, symlink_path)
         return True
 
