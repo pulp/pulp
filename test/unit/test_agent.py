@@ -79,6 +79,7 @@ class TestRestAgent(testutil.PulpTest):
             agent = Agent(CONSUMER)
             report = agent.content.install(UNITS, OPTIONS)
             self.validate_succeeded(report)
+            print report
         
     def test_update_content(self):
         # Test
@@ -86,6 +87,7 @@ class TestRestAgent(testutil.PulpTest):
             agent = Agent(CONSUMER)
             report = agent.content.update(UNITS, OPTIONS)
             self.validate_succeeded(report)
+            print report
         
     def test_uninstall_content(self):
         # Test
@@ -93,6 +95,7 @@ class TestRestAgent(testutil.PulpTest):
             agent = Agent(CONSUMER)
             report = agent.content.uninstall(UNITS, OPTIONS)
             self.validate_succeeded(report)
+            print report
 
     def test_profile_send(self):
         # Test
@@ -110,7 +113,12 @@ class TestRestAgent(testutil.PulpTest):
             # TODO:
             
     def validate_succeeded(self, report):
+        # The (direct) implementation returns literal mock method
+        # return values (even for asynchronous RMI).
+        # The (hub)
+        # return (httpcode, mock_return)
         if isinstance(report, tuple):
+            # hub
             report = report[1]
         self.assertTrue(report['status'])
         self.assertTrue('reboot_scheduled' in report)

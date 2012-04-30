@@ -23,7 +23,6 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
-
 #
 # Agent
 #
@@ -41,14 +40,29 @@ class PulpAgent:
 
     @property
     def consumer(self):
+        """
+        Access to I{consumer} capability.
+        @return: Consumer API.
+        @rtype: L{Consumer}
+        """
         return Consumer(self.context)
 
     @property
     def content(self):
+        """
+        Access to I{content} capability.
+        @return: Content API.
+        @rtype: L{Content}
+        """
         return Content(self.context)
 
     @property
     def profile(self):
+        """
+        Access to I{profile} capability.
+        @return: Profile API.
+        @rtype: L{Profile}
+        """
         return Profile(self.context)
 
     @classmethod
@@ -75,6 +89,8 @@ class Consumer(Capability):
         """
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -88,6 +104,8 @@ class Consumer(Capability):
         Bind a consumer to the specified repository.
         @param repo_id: A repository ID.
         @type repo_id: str
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -101,6 +119,8 @@ class Consumer(Capability):
         Unbind a consumer from the specified repository.
         @param repo_id: A repository ID.
         @type repo_id: str
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -123,6 +143,8 @@ class Content(Capability):
             { type_id:<str>, unit_key:<dict> }
         @param options: Install options; based on unit type.
         @type options: dict
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -142,6 +164,8 @@ class Content(Capability):
             { type_id:<str>, unit_key:<dict> }
         @param options: Update options; based on unit type.
         @type options: dict
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -161,6 +185,8 @@ class Content(Capability):
             { type_id:<str>, unit_key:<dict> }
         @param options: Uninstall options; based on unit type.
         @type options: dict
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -179,6 +205,11 @@ class Profile(Capability):
     """
 
     def send(self):
+        """
+        Request the agent to send the package profile.
+        @return: The RMI request serial number.
+        @rtype: str
+        """
         agent = Agent(
             self.context.uuid,
             secret=self.context.secret)
