@@ -14,7 +14,7 @@
 from gettext import gettext as _
 import time
 
-from pulp.gc_client.framework.extensions import PulpCliCommand
+from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliSection
 
 # -- constants ----------------------------------------------------------------
 
@@ -39,6 +39,7 @@ def initialize(context):
     # Override the repo sync command
     repo_section = context.cli.find_section('repo')
     sync_section = repo_section.find_subsection('sync')
+    sync_section.add_subsection(SchedulingSection(context))
     sync_section.remove_command('run')
 
     # Add in new commands from this extension
@@ -293,3 +294,61 @@ class RunSyncCommand(PulpCliCommand):
             self.prompt.write(_('... failed'))
             self.prompt.render_spacer()
             self.errata_last_state = STATE_FAILED
+
+
+class SchedulingSection(PulpCliSection):
+
+    def __init__(self, context):
+        PulpCliSection.__init__(
+            self,
+            _('schedule'),
+            _('repository synchronization scheduling'))
+        for Command in (ListScheduled, AddScheduled, DeleteScheduled):
+            command = Command(context)
+            command.create_option(
+                '--repo_id',
+                _('identifies the repository'),
+                required=True)
+            self.add_command(command)
+
+
+class ListScheduled(PulpCliCommand):
+
+    def __init__(self, context):
+        PulpCliCommand.__init__(
+            self,
+            _('list'),
+            _('list scheduled synchronizations'),
+            self.list)
+        self.context = context
+
+    def list(self, **kwargs):
+        pass
+
+
+class AddScheduled(PulpCliCommand):
+
+    def __init__(self, context):
+        PulpCliCommand.__init__(
+            self,
+            _('add'),
+            _('add a scheduled synchronization'),
+            self.add)
+        self.context = context
+
+    def add(self, **kwargs):
+        pass
+
+
+class DeleteScheduled(PulpCliCommand):
+
+    def __init__(self, context):
+        PulpCliCommand.__init__(
+            self,
+            _('delete'),
+            _('delete a scheduled synchronization'),
+            self.delete)
+        self.context = context
+
+    def delete(self, **kwargs):
+        pass
