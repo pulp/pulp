@@ -149,7 +149,7 @@ class ScheduleManager(object):
         schedule_id = scheduler.add(call_request, **schedule_data)
         distributor_manager = managers_factory.repo_distributor_manager()
         distributor_manager.add_publish_schedule(repo_id, distributor_id, schedule_id)
-
+        return schedule_id
 
     def update_publish_schedule(self, repo_id, distributor_id, schedule_id, publish_options, schedule_data):
         """
