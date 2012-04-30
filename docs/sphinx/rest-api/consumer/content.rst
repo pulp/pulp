@@ -29,11 +29,11 @@ are automatically installed or updated as needed and reflected in the installati
  [
   {
     "type_id":"rpm",
-    "metadata": {"name":"zsh"}
+    "unit_key": {"name":"zsh"}
   },
   {
     "type_id":"rpm",
-    "metadata": {"name":"gofer-0.66"}
+    "unit_key": {"name":"gofer-0.66"}
   },
  ]
  
@@ -72,11 +72,11 @@ are automatically installed or updated as needed and reflected in the installati
  [
   {
     "type_id":"rpm",
-    "metadata": {"name":"zsh"}
+    "unit_key": {"name":"zsh"}
   },
   {
     "type_id":"rpm",
-    "metadata": {"name":"gofer-0.66"}
+    "unit_key": {"name":"gofer-0.66"}
   },
  ]
  
@@ -113,11 +113,11 @@ and idempotent.  If a unit is not installed, no action is taken.
  [
   {
     "type_id":"rpm",
-    "metadata": {"name":"zsh"}
+    "unit_key": {"name":"zsh"}
   },
   {
     "type_id":"rpm",
-    "metadata": {"name":"gofer-0.66"}
+    "unit_key": {"name":"gofer-0.66"}
   },
  ]
  
