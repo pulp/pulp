@@ -166,4 +166,70 @@ class ScheduledSyncTests(ScheduleTests):
         self.assertTrue(new_schedule_data['schedule'] == schedule_report['schedule'])
         self.assertTrue(new_schedule_data['failure_threshold'] == schedule_report['failure_threshold'])
 
+# publish schedule tests -------------------------------------------------------
+
+class ScheduledPublishTests(ScheduleTests):
+
+    def test_create_schedule(self):
+        publish_options = {'override_config': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+        schedule_id = self.schedule_manager.create_publish_schedule(self.repo_id,
+                                                                    self.distributor_id,
+                                                                    publish_options,
+                                                                    schedule_data)
+        collection = ScheduledCall.get_collection()
+        schedule = collection.find_one(ObjectId(schedule_id))
+        self.assertFalse(schedule is None)
+        self.assertTrue(schedule_id == str(schedule['_id']))
+
+        schedule_list = self._distributor_manager.list_publish_schedules(self.repo_id,
+                                                                         self.distributor_id)
+        self.assertTrue(schedule_id in schedule_list)
+
+    def test_delete_schedule(self):
+        publish_options = {'override_config': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+        schedule_id = self.schedule_manager.create_publish_schedule(self.repo_id,
+                                                                    self.distributor_id,
+                                                                    publish_options,
+                                                                    schedule_data)
+        collection = ScheduledCall.get_collection()
+        schedule = collection.find_one(ObjectId(schedule_id))
+        self.assertFalse(schedule is None)
+
+        self.schedule_manager.delete_publish_schedule(self.repo_id,
+                                                      self.distributor_id,
+                                                      schedule_id)
+        schedule = collection.find_one(ObjectId(schedule_id))
+        self.assertTrue(schedule is None)
+
+        schedule_list = self._distributor_manager.list_publish_schedules(self.repo_id,
+                                                                         self.distributor_id)
+        self.assertFalse(schedule_id in schedule_list)
+
+    def test_update_schedule(self):
+        publish_options = {'override_config': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+        schedule_id = self.schedule_manager.create_publish_schedule(self.repo_id,
+                                                                    self.distributor_id,
+                                                                    publish_options,
+                                                                    schedule_data)
+        scheduler = dispatch_factory.scheduler()
+        schedule_report = scheduler.get(schedule_id)
+        self.assertTrue(schedule_id == schedule_report['_id'])
+        self.assertTrue(publish_options['override_config'] == schedule_report['call_request'].kwargs['publish_config_override'])
+        self.assertTrue(schedule_data['schedule'] == schedule_report['schedule'])
+
+        new_publish_options = {'override_config': {'option_1': 'new_option'}}
+        new_schedule_data = {'schedule': 'R4/PT24H', 'failure_threshold': 4}
+        self.schedule_manager.update_publish_schedule(self.repo_id,
+                                                      self.distributor_id,
+                                                      schedule_id,
+                                                      new_publish_options,
+                                                      new_schedule_data)
+        schedule_report = scheduler.get(schedule_id)
+        self.assertTrue(schedule_id == schedule_report['_id'])
+        self.assertTrue(new_publish_options['override_config'] == schedule_report['call_request'].kwargs['publish_config_override'])
+        self.assertTrue(new_schedule_data['schedule'] == schedule_report['schedule'])
+        self.assertTrue(new_schedule_data['failure_threshold'] == schedule_report['failure_threshold'])
 
