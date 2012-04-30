@@ -153,6 +153,6 @@ SCHEDULED_TAG = 'scheduled'
 SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
 SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
                            'remaining_runs', 'enabled')
-SCHEDULE_REPORT_FIELDS = ('_id', 'schedule', 'consecutive_failures',
+SCHEDULE_REPORT_FIELDS = ('schedule', 'consecutive_failures', 'failure_threshold',
                           'first_run', 'last_run', 'next_run', 'remaining_runs',
                           'enabled')
