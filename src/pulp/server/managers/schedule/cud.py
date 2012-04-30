@@ -172,11 +172,11 @@ class ScheduleManager(object):
             report = scheduler.get(schedule_id)
             call_request = report['call_request']
             if 'override_config' in publish_options:
-                call_request.kwargs = {'publish_override_config': publish_options['override_config']}
+                call_request.kwargs = {'publish_config_override': publish_options['override_config']}
             schedule_updates['call_request'] = call_request
 
         # update the scheduled publish
-        scheduler.update(schedule_id, schedule_updates)
+        scheduler.update(schedule_id, **schedule_updates)
 
     def delete_publish_schedule(self, repo_id, distributor_id, schedule_id):
         """
