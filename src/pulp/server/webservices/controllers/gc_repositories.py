@@ -302,11 +302,13 @@ class SyncScheduleCollection(JSONController):
         schedule_manager = manager_factory.schedule_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
         call_request = CallRequest(schedule_manager.create_sync_schedule,
                                    [repo_id, importer_id, sync_options, schedule_options],
                                    resources=resources,
+                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         schedule_id = execution.execute_sync(call_request)
@@ -520,11 +522,13 @@ class PublishScheduleCollection(JSONController):
         schedule_manager = manager_factory.schedule_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
         call_request = CallRequest(schedule_manager.create_publish_schedule,
                                    [repo_id, distributor_id, publish_options, schedule_options],
                                    resources=resources,
+                                   weight=weight,
                                    tags=tags,
                                    archive=True)
         schedule_id = execution.execute_sync(call_request)
