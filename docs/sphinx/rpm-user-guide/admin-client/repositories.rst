@@ -36,6 +36,29 @@ Basic
   URL where the repository's content will be synchronized from. This can be either
   an HTTP URL or a location on disk represented as a file URL.
 
+Synchronization
+^^^^^^^^^^^^^^^
+
+``--only_newest``
+  Flag indicating if only the newest version of each package should be downloaded
+  during synchronization.
+
+``--skip_types``
+  Comma-separated list of types to omit when synchronizing from the source. If
+  unspecified, all types will be synchronized. Valid values are: packages,
+  distributions, errata. Example usage to only synchronize packages:
+  ``--skip_types distributions,errata``
+
+``--verify_size``
+  If true, as the repository is synchronized the size of each file will be verified
+  against the metadata's expectation. Valid values to this option are ``true``
+  and ``false``.
+
+``--verify_checksum``
+  If true, as the repository is synchronized the checksum of each file will be
+  verified against the metadata's expectation. Valid values to this option are
+  ``true`` and ``false``.
+
 Publishing
 ^^^^^^^^^^
 
@@ -60,6 +83,10 @@ Publishing
   GPG key used to sign RPMs in this repository. This key will be made available
   to consumers to use in verifying content in the repository. The value to this
   option must be the full path to the GPG key file to upload to the server.
+
+``--regenerate_metadata``
+  Flag indicating the repository metadata should be regenerated rather than
+  reused from the external source.
 
 Feed Authentication
 ^^^^^^^^^^^^^^^^^^^
@@ -121,18 +148,16 @@ Proxy
 ``--proxy_pass``
   Password to use for proxy server authentication.
 
-Content Verification
-^^^^^^^^^^^^^^^^^^^^
+Throttling
+^^^^^^^^^^
 
-``--verify_size``
-  If true, as the repository is synchronized the size of each file will be verified
-  against the metadata's expectation. Valid values to this option are ``true``
-  and ``false``.
+``--max_speed``
+  Maximum bandwidth used per download thread in KB/sec.
 
-``--verify_checksum``
-  If true, as the repository is synchronized the checksum of each file will be
-  verified against the metadata's expectation. Valid values to this option are
-  ``true`` and ``false``.
+``--num_threads``
+  Number of threads used when synchronizing the repository. This count controls
+  the download threads themselves and has no bearing on the number of operations
+  the Pulp server can execute at a given time.
 
 Update
 ------
