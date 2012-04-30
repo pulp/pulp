@@ -353,7 +353,8 @@ def scheduled_call_to_report_dict(scheduled_call):
     @return: report dict
     @rtype:  dict
     """
-    call_request = call.CallRequest.deserialize(scheduled_call['serialized_call_request'])
     report = subdict(scheduled_call, dispatch_constants.SCHEDULE_REPORT_FIELDS)
+    call_request = call.CallRequest.deserialize(scheduled_call['serialized_call_request'])
     report['call_request'] = call_request
+    report['_id'] = str(scheduled_call['_id'])
     return report
