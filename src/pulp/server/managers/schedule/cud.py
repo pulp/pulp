@@ -42,7 +42,7 @@ class ScheduleManager(object):
         # validate the input
         self._validate_importer(repo_id, importer_id)
         self._validate_keys(sync_options, _SYNC_OPTION_KEYS)
-        if 'schedule' not in sync_options:
+        if 'schedule' not in schedule_data:
             raise pulp_exceptions.MissingValue(['schedule'])
 
         # build the sync call request
@@ -131,7 +131,7 @@ class ScheduleManager(object):
         # validate the input
         self._validate_distributor(repo_id, distributor_id)
         self._validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
-        if 'schedule' not in publish_options:
+        if 'schedule' not in schedule_data:
             raise pulp_exceptions.MissingValue(['schedule'])
 
         # build the publish call
