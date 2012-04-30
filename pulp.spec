@@ -18,8 +18,8 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.285
-Release:        2%{?dist}
+Version:        0.0.286
+Release:        1%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -527,6 +527,33 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Apr 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.286-1
+- (hack) disabled agent authentication on GC Agent for v1 compat.
+  (jortel@redhat.com)
+- update perms. (jortel@redhat.com)
+- Fixing notes referenced before assignment when not provided by user at the
+  registration time (skarmark@redhat.com)
+- v1 compat; updated pulp-dev for content handlers (jortel@redhat.com)
+- symlink distribution files publishing in distributor (pkilambi@redhat.com)
+- updated epydocs. (jortel@redhat.com)
+- Update pulp.spec to install agent content handlers. (jortel@redhat.com)
+- Refined handler dispatching and rpm handler. (jortel@redhat.com)
+- Refactor agent proxy into hub/direct; initial add of rpm handler.
+  (jortel@redhat.com)
+- 816808 - fixing consumer unbind through goferplugin failing to delete repo
+  from pulp.repo file due to wrong encoding for i18n repo ids
+  (skarmark@redhat.com)
+- 802447 - consumer and consumergroup bind to be able to bind to repos with
+  i18n id (skarmark@redhat.com)
+- updating spec with new grinder needed for skip list changes
+  (pkilambi@redhat.com)
+- Automatic commit of package [grinder] minor release [0.1.3-1].
+  (pkilambi@redhat.com)
+- bumping grinder (pkilambi@redhat.com)
+- Automatic commit of package [gofer] minor release [0.68-2].
+  (jortel@redhat.com)
+- unifying the skip list between importer and distributor (pkilambi@redhat.com)
+- Add missing gofer 0.68 tarball. (jortel@redhat.com)
 * Thu Apr 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.285-2
 - Update .spec for client/agent python package. (jortel@redhat.com)
 
