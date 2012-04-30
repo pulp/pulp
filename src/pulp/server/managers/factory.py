@@ -43,6 +43,7 @@ TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
 TYPE_REPO_PUBLISH           = 'repo-publish-manager'
 TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
+TYPE_SCHEDULE               = 'schedule-manager'
 TYPE_USER                   = 'user-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
@@ -171,6 +172,12 @@ def repo_sync_manager():
     """
     return get_manager(TYPE_REPO_SYNC)
 
+def schedule_manager():
+    """
+    @rtype: L{pulp.server.manager.schedule.cud.ScheduleManager}
+    """
+    return get_manager(TYPE_SCHEDULE)
+
 def user_manager():
     """
     @rtype: L{pulp.server.managers.user.UserManager}
@@ -201,6 +208,7 @@ def initialize():
     from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
+    from pulp.server.managers.schedule.cud import ScheduleManager
     from pulp.server.managers.user import UserManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
@@ -222,6 +230,7 @@ def initialize():
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
+        TYPE_SCHEDULE: ScheduleManager,
         TYPE_USER : UserManager,
     }
     _CLASSES.update(builtins)
