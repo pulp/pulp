@@ -34,10 +34,12 @@ ERRATA_TYPE_ID="erratum"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "skip_content_types", "https_publish_dir"]
+                        "checksum_type", "skip_content_types", "https_publish_dir", "http_publish_dir"]
 
 SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
-HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
+HTTP_PUBLISH_DIR="/var/lib/pulp/published/http"
+HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https"
+
 ###
 # Config Options Explained
 ###
@@ -57,6 +59,7 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 # skip_content_types    - List of what content types to skip during sync, options:
 #                         ["rpm", "drpm", "errata", "distribution", "packagegroup"]
 # https_publish_dir     - Optional parameter to override the HTTPS_PUBLISH_DIR, mainly used for unit tests
+# http_publish_dir      - Optional parameter to override the HTTP_PUBLISH_DIR, mainly used for unit tests
 # TODO:  Need to think some more about a 'mirror' option, how do we want to handle
 # mirroring a remote url and not allowing any changes, what we were calling 'preserve_metadata' in v1.
 #
@@ -64,11 +67,11 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published"
 
 #
 # TODO:
+#   - Need an unpublish to remove a link, think when a repo is deleted we still keep the symlink under the published dir
 #   - Is this really a YumDistributor or should it be a HttpsDistributor?
-#   - What if the relative_url changes between invocations, 
+#   - What if the relative_url changes between invocations,
 #    - How will we handle cleanup of the prior publish path/symlink
 class YumDistributor(Distributor):
-
 
     @classmethod
     def metadata(cls):
@@ -81,7 +84,8 @@ class YumDistributor(Distributor):
     def validate_config(self, repo, config, related_repos):
         _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
         for key in REQUIRED_CONFIG_KEYS:
-            if key not in config.repo_plugin_config:
+            value = config.get(key)
+            if value is None:
                 msg = _("Missing required configuration key: %(key)s" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
@@ -103,7 +107,12 @@ class YumDistributor(Distributor):
                     msg = _("https should be a boolean; got %s instead" % config_https)
                     _LOG.error(msg)
                     return False, msg
-        for key in config.repo_plugin_config:
+            if not config.get('http') and not config.get('https'):
+                msg = _("Either 'http' and/or 'https' needs to be True for publishing. Current settings http=<%s>, https=<%s>" % \
+                        (config.get('http'), config.get('https')))
+                _LOG.error(msg)
+                return False, msg
+        for key in config.keys():
             if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
@@ -145,13 +154,21 @@ class YumDistributor(Distributor):
                     _LOG.error(msg)
                     return False, msg
         # If overriding https publish dir, be sure it exists and we can write to it
-        if config.repo_plugin_config.has_key("https_publish_dir"):
-            publish_dir = config.repo_plugin_config["https_publish_dir"]
+        publish_dir = config.get("https_publish_dir")
+        if publish_dir:
             if not os.path.exists(publish_dir) or not os.path.isdir(publish_dir):
                 msg = _("Value for 'https_publish_dir' is not an existing directory: %(publish_dir)s" % {"publish_dir":publish_dir})
                 return False, msg
             if not os.access(publish_dir, os.R_OK) or not os.access(publish_dir, os.W_OK):
                 msg = _("Unable to read & write to specified 'https_publish_dir': %(publish_dir)s" % {"publish_dir":publish_dir})
+                return False, msg
+        publish_dir = config.get("http_publish_dir")
+        if publish_dir:
+            if not os.path.exists(publish_dir) or not os.path.isdir(publish_dir):
+                msg = _("Value for 'http_publish_dir' is not an existing directory: %(publish_dir)s" % {"publish_dir":publish_dir})
+                return False, msg
+            if not os.access(publish_dir, os.R_OK) or not os.access(publish_dir, os.W_OK):
+                msg = _("Unable to read & write to specified 'http_publish_dir': %(publish_dir)s" % {"publish_dir":publish_dir})
                 return False, msg
         rel_url =  config.get("relative_url")
         if rel_url:
@@ -188,8 +205,6 @@ class YumDistributor(Distributor):
         for piece in current_url_pieces:
             if not temp_lookup.has_key(piece):
                 break
-            if temp_lookup.has_key("repo_id"):
-                conflict = True
             temp_lookup = temp_lookup[piece]
         if temp_lookup.has_key("repo_id"):
             msg = _("Relative url '%(rel_url)s' conflicts with existing relative_url of '%(conflict_rel_url)s' from repo '%(conflict_repo_id)s'" \
@@ -281,15 +296,26 @@ class YumDistributor(Distributor):
             temp_lookup["url"] = rel_url
         return lookup
 
+    def get_http_publish_dir(self, config=None):
+        """
+        @param config
+        @type pulp.server.content.plugins.config.PluginCallConfiguration
+        """
+        if config:
+            publish_dir = config.get("http_publish_dir")
+            if publish_dir:
+                _LOG.info("Override HTTP publish directory from passed in config value to: %s" % (publish_dir))
+                return publish_dir
+        return HTTP_PUBLISH_DIR
+
     def get_https_publish_dir(self, config=None):
         """
         @param config
         @type pulp.server.content.plugins.config.PluginCallConfiguration
-
         """
         if config:
-            if config.repo_plugin_config.has_key("https_publish_dir"):
-                publish_dir = config.repo_plugin_config["https_publish_dir"]
+            publish_dir = config.get("https_publish_dir")
+            if publish_dir:
                 _LOG.info("Override HTTPS publish directory from passed in config value to: %s" % (publish_dir))
                 return publish_dir
         return HTTPS_PUBLISH_DIR
@@ -337,22 +363,24 @@ class YumDistributor(Distributor):
             src_working_dir = repo_scratchpad['importer_working_dir']
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
         metadata.generate_metadata(repo, publish_conduit, config, progress_callback)
-        # Publish for HTTPS 
-        #  Create symlink for repo.working_dir where HTTPS gets served
-        #  Should we consider HTTP?
-        https_publish_dir = self.get_https_publish_dir(config)
+
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
             relpath = relpath[1:]
-        _LOG.info("Using https_publish_dir: %s, relative path: %s" % (https_publish_dir, relpath))
-        repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
-        _LOG.info("Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
-        self.create_symlink(repo.working_dir, repo_publish_dir)
-
-        # TODO: RepoAuth:
-        #  Where do we store RepoAuth credentials?
-        #
-        summary["repo_publish_dir"] = repo_publish_dir
+        if config.get("https"):
+            # Publish for HTTPS
+            https_publish_dir = self.get_https_publish_dir(config)
+            repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
+            _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
+            self.create_symlink(repo.working_dir, repo_publish_dir)
+            summary["https_publish_dir"] = repo_publish_dir
+        if config.get("http"):
+            # Publish for HTTP
+            http_publish_dir = self.get_http_publish_dir(config)
+            repo_publish_dir = os.path.join(http_publish_dir, "repos", relpath)
+            _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
+            self.create_symlink(repo.working_dir, repo_publish_dir)
+            summary["http_publish_dir"] = repo_publish_dir
         summary["num_units_attempted"] = len(units)
         summary["num_units_published"] = len(units) - len(errors)
         summary["num_units_errors"] = len(errors)

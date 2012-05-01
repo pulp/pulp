@@ -49,8 +49,12 @@ class TestDistributor(unittest.TestCase):
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         os.makedirs(self.pkg_dir)
         #publish_dir simulates /var/lib/pulp/published
-        self.publish_dir = os.path.join(self.temp_dir, "publish")
-        os.makedirs(self.publish_dir)
+        self.http_publish_dir = os.path.join(self.temp_dir, "publish", "http")
+        os.makedirs(self.http_publish_dir)
+
+        self.https_publish_dir = os.path.join(self.temp_dir, "publish", "https")
+        os.makedirs(self.https_publish_dir)
+
         self.repo_working_dir = os.path.join(self.temp_dir, "repo_working_dir")
         os.makedirs(self.repo_working_dir)
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
@@ -108,6 +112,17 @@ class TestDistributor(unittest.TestCase):
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
         # Test that config fails when a bad value for non_existing_dir is used
+        optional_kwargs["http_publish_dir"] = "non_existing_dir"
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+        # Test config succeeds with a good value of https_publish_dir
+        optional_kwargs["http_publish_dir"] = self.temp_dir
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+        del optional_kwargs["http_publish_dir"]
+        # Test that config fails when a bad value for non_existing_dir is used
         optional_kwargs["https_publish_dir"] = "non_existing_dir"
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config, [])
@@ -137,6 +152,18 @@ class TestDistributor(unittest.TestCase):
         state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
         self.assertTrue("relative_url" in msg)
+
+    def test_validate_config_http_or_https_needs_to_be_specified(self):
+        repo = mock.Mock(spec=Repository)
+        distributor = YumDistributor()
+        # Confirm that required keys are successful
+        req_kwargs = {}
+        req_kwargs['http'] = False
+        req_kwargs['https'] = False
+        req_kwargs['relative_url'] = "sample_value"
+        config = distributor_mocks.get_basic_config(**req_kwargs)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
 
     def test_handle_symlinks(self):
         distributor = YumDistributor()
@@ -244,7 +271,8 @@ class TestDistributor(unittest.TestCase):
         repo.id = "test_empty_publish"
         existing_units = []
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http_publish_dir=self.http_publish_dir,
+                http=True, https=True)
         distributor = YumDistributor()
         report = distributor.publish_repo(repo, publish_conduit, config)
         self.assertTrue(report.success_flag)
@@ -252,8 +280,10 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(summary["num_units_attempted"], 0)
         self.assertEqual(summary["num_units_published"], 0)
         self.assertEqual(summary["num_units_errors"], 0)
-        expected_repo_publish_dir = os.path.join(self.publish_dir, "repos", repo.id)
-        self.assertEqual(summary["repo_publish_dir"], expected_repo_publish_dir)
+        expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, "repos", repo.id)
+        expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, "repos", repo.id)
+        self.assertEqual(summary["https_publish_dir"], expected_repo_https_publish_dir)
+        self.assertEqual(summary["http_publish_dir"], expected_repo_http_publish_dir)
         details = report.details
         self.assertEqual(len(details["errors"]), 0)
 
@@ -266,30 +296,38 @@ class TestDistributor(unittest.TestCase):
         relative_url = "rel_a/rel_b/rel_c/"
         existing_units = self.get_units(count=num_units)
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir, relative_url=relative_url)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, relative_url=relative_url,
+                http=False, https=True)
         distributor = YumDistributor()
+        status, msg = distributor.validate_config(repo, config, None)
+        self.assertTrue(status)
         report = distributor.publish_repo(repo, publish_conduit, config)
         self.assertTrue(report.success_flag)
         summary = report.summary
         self.assertEqual(summary["num_units_attempted"], num_units)
         self.assertEqual(summary["num_units_published"], num_units)
         self.assertEqual(summary["num_units_errors"], 0)
-        expected_repo_publish_dir = os.path.join(self.publish_dir, "repos", relative_url)
-        self.assertEqual(summary["repo_publish_dir"], expected_repo_publish_dir)
+        # Verify we did not attempt to publish to http
+        expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, "repos", relative_url)
+        self.assertFalse(os.path.exists(expected_repo_http_publish_dir))
+
+        expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, "repos", relative_url)
+        self.assertEqual(summary["https_publish_dir"], expected_repo_https_publish_dir)
+        self.assertTrue(os.path.exists(expected_repo_https_publish_dir))
         details = report.details
         self.assertEqual(len(details["errors"]), 0)
         #
         # Add a verification of the publish directory
         #
-        self.assertTrue(os.path.exists(summary["repo_publish_dir"]))
-        self.assertTrue(os.path.islink(summary["repo_publish_dir"].rstrip("/")))
-        source_of_link = os.readlink(expected_repo_publish_dir.rstrip("/"))
+        self.assertTrue(os.path.exists(summary["https_publish_dir"]))
+        self.assertTrue(os.path.islink(summary["https_publish_dir"].rstrip("/")))
+        source_of_link = os.readlink(expected_repo_https_publish_dir.rstrip("/"))
         self.assertEquals(source_of_link, repo.working_dir)
         #
         # Verify the expected units
         #
         for u in existing_units:
-            expected_link = os.path.join(expected_repo_publish_dir, u.metadata["relativepath"])
+            expected_link = os.path.join(expected_repo_https_publish_dir, u.metadata["relativepath"])
             self.assertTrue(os.path.exists(expected_link))
             actual_target = os.readlink(expected_link)
             expected_target = u.storage_path
@@ -435,7 +473,7 @@ class TestDistributor(unittest.TestCase):
         repo.id = "test_basic_repo_publish_rel_path_conflict"
         num_units = 10
         relative_url = "rel_a/rel_b/rel_a/"
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir, 
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, 
                 relative_url=relative_url, http=False, https=True)
 
         url_a = relative_url
@@ -523,7 +561,8 @@ class TestDistributor(unittest.TestCase):
             progress_status = progress
         PROGRESS_FIELDS = ["num_success", "num_error", "items_left", "items_total", "error_details"]
         publish_conduit = distributor_mocks.get_publish_conduit(pkg_dir=self.pkg_dir)
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir, relative_url="rel_temp/",
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http_publish_dir=self.http_publish_dir,
+                relative_url="rel_temp/",
             generate_metadata=True, http=True, https=False)
         distributor = YumDistributor()
         repo = mock.Mock(spec=Repository)

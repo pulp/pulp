@@ -51,6 +51,8 @@ DIRS = (
     '/var/lib/pulp/plugins/profilers',
     '/var/lib/pulp/plugins/types',
     '/var/lib/pulp/published',
+    '/var/lib/pulp/published/http',
+    '/var/lib/pulp/published/https',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
