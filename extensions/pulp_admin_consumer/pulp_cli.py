@@ -66,9 +66,15 @@ class AdminConsumerSection(PulpCliSection):
         # List Command
         list_command = PulpCliCommand('list', 'lists summary of consumers registered to the Pulp server', self.list)
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the consumer information is displayed'))
-
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
+
+        # Install Command
+        install_command = PulpCliCommand('install', 'installs content units on a consumer', self.install)
+        install_command.add_option(id_option)
+        install_command.add_option(PulpCliOption('--name', 'identifies content units to be installed', required=True))
+        self.add_command(install_command)
+
 
     def update(self, **kwargs):
 
@@ -119,6 +125,20 @@ class AdminConsumerSection(PulpCliSection):
         # manually based on the CLI flags.
         for c in consumer_list:
             self.prompt.render_document(c, filters=filters, order=order)
+
+
+    def install(self, **kwargs):
+        id = kwargs['id']
+        name = kwargs['name']
+        unit_key = dict(name=name)
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit]
+        try:
+            self.context.server.consumer_content.install(id, units=units)
+            self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' %(name, id))
+        except NotFoundException:
+            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
+
 
 
     def _parse_notes(self, notes_list):
