@@ -374,7 +374,10 @@ class YumDistributor(Distributor):
 
         @param symlink_dir where to create symlinks 
         @type symlink_dir str
-        
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+
         @return tuple of status and list of error messages if any occurred 
         @rtype (bool, [str])
         """
@@ -527,6 +530,12 @@ class YumDistributor(Distributor):
 
         @param units
         @type AssociatedUnit
+
+        @param symlink_dir: path of where we want the symlink to reside
+        @type symlink_dir str
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
 
         @return tuple of status and list of error messages if any occurred
         @rtype (bool, [str])

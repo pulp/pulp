@@ -57,6 +57,9 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
       @param config: plugin configuration
       @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
+      @param progress_callback: callback to report progress info to publish_conduit
+      @type  progress_callback: function
+
       @return True on success, False on error
       @rtype bool
     """
