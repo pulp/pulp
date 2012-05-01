@@ -51,6 +51,17 @@ class PluginCallConfiguration:
         self.repo_plugin_config = repo_plugin_config or {}
         self.override_config = override_config or {}
 
+    def keys(self):
+        """
+        @rtype []
+        @return a single list representing all possible keys available
+        """
+        keys = set()
+        keys.update(self.plugin_config.keys())
+        keys.update(self.repo_plugin_config.keys())
+        keys.update(self.override_config.keys())
+        return list(keys)
+
     def get(self, key, default=None):
         """
         Returns the value for the given key searching through the possible
