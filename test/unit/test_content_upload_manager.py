@@ -14,14 +14,16 @@
 
 # Python
 import os
+import shutil
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock_plugins
 
-from pulp.server.db.model.gc_repository import Repo, RepoImporter
-from pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
+import pulp.server.constants as pulp_constants
+from   pulp.server.db.model.gc_repository import Repo, RepoImporter
+from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
 
 class ContentUploadManagerTests(testutil.PulpTest):
@@ -34,14 +36,96 @@ class ContentUploadManagerTests(testutil.PulpTest):
         self.repo_manager = manager_factory.repo_manager()
         self.importer_manager = manager_factory.repo_importer_manager()
 
+        self.original_local_storage = pulp_constants.LOCAL_STORAGE
+        pulp_constants.LOCAL_STORAGE = '/tmp/pulp-content-upload-manager-test'
+
+        upload_storage_dir = self.upload_manager._upload_storage_dir()
+
+        if os.path.exists(upload_storage_dir):
+            shutil.rmtree(upload_storage_dir)
+        os.makedirs(upload_storage_dir)
+
     def tearDown(self):
         testutil.PulpTest.tearDown(self)
         mock_plugins.reset()
+
+        if os.path.exists(pulp_constants.LOCAL_STORAGE):
+            shutil.rmtree(pulp_constants.LOCAL_STORAGE)
+
+        pulp_constants.LOCAL_STORAGE = self.original_local_storage
 
     def clean(self):
         testutil.PulpTest.clean(self)
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
+
+    # -- uploading bits functionality -----------------------------------------
+
+    def test_save_data_string(self):
+
+        # Test
+        upload_id = self.upload_manager.initialize_upload()
+
+        write_us = ['abc', 'de', 'fghi', 'jkl']
+        offset = 0
+        for w in write_us:
+            self.upload_manager.save_data(upload_id, offset, w)
+            offset += len(w)
+
+        # Verify
+        uploaded_filename = self.upload_manager._upload_file_path(upload_id)
+        self.assertTrue(os.path.exists(uploaded_filename))
+
+        written = self.upload_manager.read_upload(upload_id)
+        self.assertEqual(written, ''.join(write_us))
+
+    def test_save_data_rpm(self):
+
+        # Setup
+        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + '/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
+        self.assertTrue(os.path.exists(test_rpm_filename))
+
+        # Test
+        upload_id = self.upload_manager.initialize_upload()
+
+        f = open(test_rpm_filename)
+        offset = 0
+        chunk_size = 256
+        while True:
+            f.seek(offset)
+            data = f.read(chunk_size)
+            if data:
+                self.upload_manager.save_data(upload_id, offset, data)
+            else:
+                break
+            offset += chunk_size
+        f.close()
+
+        # Verify
+        uploaded_filename = self.upload_manager._upload_file_path(upload_id)
+        self.assertTrue(os.path.exists(uploaded_filename))
+
+        expected_size = os.path.getsize(test_rpm_filename)
+        found_size = os.path.getsize(uploaded_filename)
+
+        self.assertEqual(expected_size, found_size)
+
+    def test_delete_upload(self):
+
+        # Setup
+        upload_id = self.upload_manager.initialize_upload()
+        self.upload_manager.save_data(upload_id, 0, 'fus ro dah')
+
+        uploaded_filename = self.upload_manager._upload_file_path(upload_id)
+        self.assertTrue(os.path.exists(uploaded_filename))
+
+        # Test
+        self.upload_manager.delete_upload(upload_id)
+
+        # Verify
+        self.assertTrue(not os.path.exists(uploaded_filename))
+
+    # -- import functionality -------------------------------------------------
 
     def test_is_valid_upload(self):
         # Setup
