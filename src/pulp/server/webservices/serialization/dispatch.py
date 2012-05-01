@@ -44,6 +44,4 @@ def scheduled_call_obj(scheduled_call):
     obj['_last_run'] = last_run
     next_run = dateutils.format_iso8601_datetime(scheduled_call['next_run'].replace(tzinfo=dateutils.utc_tz()))
     obj['_next_run'] = next_run
-    call_request = CallRequest.deserialize(scheduled_call['serialized_call_request'])
-    obj['overrides'] = call_request.args[1] # XXX this is making an assumption
     return obj
