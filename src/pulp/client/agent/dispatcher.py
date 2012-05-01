@@ -226,4 +226,4 @@ class DispatchReport(Report):
         raised = dict(
             message=str(inst),
             trace=trace)
-        self.details[type_id] = dict(status=False, exception=raised)
+        self.details[type_id] = dict(status=False, details=raised)
