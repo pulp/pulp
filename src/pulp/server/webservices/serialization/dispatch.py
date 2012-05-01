@@ -45,3 +45,15 @@ def scheduled_call_obj(scheduled_call):
     next_run = dateutils.format_iso8601_datetime(scheduled_call['next_run'].replace(tzinfo=dateutils.utc_tz()))
     obj['_next_run'] = next_run
     return obj
+
+
+def scheduled_sync_obj(scheduled_call):
+    obj = scheduled_call_obj(scheduled_call)
+    obj['override_config'] = scheduled_call['call_request'].kwargs['sync_config_override']
+    return obj
+
+
+def scheduled_publish_obj(scheduled_call):
+    obj = scheduled_call_obj(scheduled_call)
+    obj['override_config'] = scheduled_call['call_request'].kwargs['publish_config_override']
+    return obj
