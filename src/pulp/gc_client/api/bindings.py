@@ -32,6 +32,7 @@ class Bindings(object):
         self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
 
         self.consumer = ConsumerAPI(pulp_connection)
+        self.consumer_content = ConsumerContentAPI(pulp_connection)
 
         self.server_info = ServerInfoAPI(pulp_connection)
 
