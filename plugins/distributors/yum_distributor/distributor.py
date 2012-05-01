@@ -369,18 +369,32 @@ class YumDistributor(Distributor):
             relpath = relpath[1:]
         if config.get("https"):
             # Publish for HTTPS
-            https_publish_dir = self.get_https_publish_dir(config)
-            repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
-            _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
-            self.create_symlink(repo.working_dir, repo_publish_dir)
-            summary["https_publish_dir"] = repo_publish_dir
+            self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
+            try:
+                https_publish_dir = self.get_https_publish_dir(config)
+                repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
+                _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
+                self.create_symlink(repo.working_dir, repo_publish_dir)
+                summary["https_publish_dir"] = repo_publish_dir
+                self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
+            except:
+                self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
+        else:
+            self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
         if config.get("http"):
             # Publish for HTTP
-            http_publish_dir = self.get_http_publish_dir(config)
-            repo_publish_dir = os.path.join(http_publish_dir, "repos", relpath)
-            _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
-            self.create_symlink(repo.working_dir, repo_publish_dir)
-            summary["http_publish_dir"] = repo_publish_dir
+            self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
+            try:
+                http_publish_dir = self.get_http_publish_dir(config)
+                repo_publish_dir = os.path.join(http_publish_dir, "repos", relpath)
+                _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
+                self.create_symlink(repo.working_dir, repo_publish_dir)
+                summary["http_publish_dir"] = repo_publish_dir
+                self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
+            except:
+                self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
+        else:
+            self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)
         summary["num_units_attempted"] = len(units)
         summary["num_units_published"] = len(units) - len(errors)
         summary["num_units_errors"] = len(errors)

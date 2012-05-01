@@ -589,10 +589,10 @@ class TestDistributor(unittest.TestCase):
         self.assertTrue(progress_status["metadata"].has_key("state"))
         self.assertEqual(progress_status["metadata"]["state"], "FINISHED")
 
-#        self.assertTrue("publish_http" in progress_status)
-#        self.assertEqual(progress_status["publish_http"]["state"], "FINISHED")
-#        self.assertTrue("publish_https" in progress_status)
-#        self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")
+        self.assertTrue("publish_http" in progress_status)
+        self.assertEqual(progress_status["publish_http"]["state"], "FINISHED")
+        self.assertTrue("publish_https" in progress_status)
+        self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")
 
 
 
