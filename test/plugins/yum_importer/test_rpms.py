@@ -238,13 +238,6 @@ class TestRPMs(unittest.TestCase):
         state, msg = importer.validate_config(repo, config, [])
         self.assertTrue(state)
 
-        # Ensure if we are missing a required argument validate fails and the missing 
-        # config parameter is mentioned in the message
-        config = importer_mocks.get_basic_config()
-        state, msg = importer.validate_config(repo, config, [])
-        self.assertFalse(state)
-        self.assertTrue("feed_url" in msg)
-
         # Test that an unknown argument in the config throws an error 
         # and the unknown arg is identified in the message
         config = importer_mocks.get_basic_config(feed_url=feed_url, bad_unknown_arg="blah")

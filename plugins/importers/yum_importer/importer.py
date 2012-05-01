@@ -33,8 +33,8 @@ _LOG = logging.getLogger(__name__)
 
 YUM_IMPORTER_TYPE_ID="yum_importer"
 
-REQUIRED_CONFIG_KEYS = ['feed_url']
-OPTIONAL_CONFIG_KEYS = ['ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
+REQUIRED_CONFIG_KEYS = []
+OPTIONAL_CONFIG_KEYS = ['feed_url', 'ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
                         'proxy_url', 'proxy_port', 'proxy_pass', 'proxy_user',
                         'max_speed', 'verify_size', 'verify_checksum', 'num_threads',
                         'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip_content_types', 'checksum_type']
@@ -75,8 +75,14 @@ class YumImporter(Importer):
     def validate_config(self, repo, config, related_repos):
         _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
         for key in REQUIRED_CONFIG_KEYS:
-            if key not in config.repo_plugin_config:
+            if key not in config.keys():
                 msg = _("Missing required configuration key: %(key)s" % {"key":key})
+                _LOG.error(msg)
+                return False, msg
+
+        for key in config.keys():
+            if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
+                msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
             if key == 'feed_url':
@@ -85,12 +91,6 @@ class YumImporter(Importer):
                     msg = _("feed_url [%s] does not start with a valid protocol" % feed_url)
                     _LOG.error(msg)
                     return False, msg
-
-        for key in config.repo_plugin_config:
-            if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
-                msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
-                _LOG.error(msg)
-                return False, msg
             if key == 'ssl_verify':
                 ssl_verify = config.get('ssl_verify')
                 if ssl_verify is not None and not isinstance(ssl_verify, bool) :
@@ -288,7 +288,7 @@ class YumImporter(Importer):
         progress_status = {
                 "metadata": {"state": "NOT_STARTED"},
                 "content": {"state": "NOT_STARTED"},
-                "errata": {"state": "NOT_STARTED", "num_errata":0}
+                "errata": {"state": "NOT_STARTED"}
                 }
         def progress_callback(type_id, status):
             if type_id == "content":
@@ -297,6 +297,7 @@ class YumImporter(Importer):
             progress_status[type_id] = status
             sync_conduit.set_progress(progress_status)
 
+        sync_conduit.set_progress(progress_status)
         # sync rpms
         rpm_status, rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config, progress_callback)
         progress_status["content"]["state"] = "FINISHED"
