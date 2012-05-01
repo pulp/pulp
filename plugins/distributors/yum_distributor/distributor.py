@@ -367,7 +367,7 @@ class YumDistributor(Distributor):
         if progress_callback:
             progress_callback(type_id, status)
 
-    def handle_symlinks(self, units, symlink_dir, progress_callback):
+    def handle_symlinks(self, units, symlink_dir, progress_callback=None):
         """
         @param units list of units that belong to the repo and should be published
         @type units [AssociatedUnit]
@@ -518,7 +518,7 @@ class YumDistributor(Distributor):
         _LOG.info("Copied repodata from %s to %s" % (src_working_dir, tgt_working_dir))
         return True
 
-    def symlink_distribution_unit_files(self, units, symlink_dir, progress_callback):
+    def symlink_distribution_unit_files(self, units, symlink_dir, progress_callback=None):
         """
         Publishing distriubution unit involves publishing files underneath the unit.
         Distribution is an aggregate unit with distribution files. This call

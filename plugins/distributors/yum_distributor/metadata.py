@@ -47,7 +47,7 @@ def set_progress(type_id, status, progress_callback):
     if progress_callback:
         progress_callback(type_id, status)
 
-def generate_metadata(repo, publish_conduit, config, progress_callback):
+def generate_metadata(repo, publish_conduit, config, progress_callback=None):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
