@@ -43,7 +43,11 @@ class ModifyRepoError(CreateRepoError):
 class CancelException(Exception):
     pass
 
-def generate_metadata(repo, publish_conduit, config):
+def set_progress(type_id, status, progress_callback):
+    if progress_callback:
+        progress_callback(type_id, status)
+
+def generate_metadata(repo, publish_conduit, config, progress_callback):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
@@ -56,9 +60,14 @@ def generate_metadata(repo, publish_conduit, config):
       @return True on success, False on error
       @rtype bool
     """
+
     if not config.get('generate_metadata'):
+        metadata_progress_status = {"state" : "SKIPPED"}
+        set_progress("metadata", metadata_progress_status, progress_callback)
         log.info('skip metadata generation for repo %s' % repo.id)
         return False
+    metadata_progress_status = {"state" : "IN_PROGRESS"}
+    set_progress("metadata", metadata_progress_status, progress_callback)
     repo_dir = repo.working_dir
     checksum_type = get_repo_checksum_type(repo, publish_conduit, config)
     metadata_types = config.get('skip_content_types') or {}
@@ -69,9 +78,16 @@ def generate_metadata(repo, publish_conduit, config):
         groups_xml_path = __get_groups_xml_info(repo_dir)
     log.info("Running createrepo, this may take a few minutes to complete.")
     start = time.time()
-    create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type, metadata_types=metadata_types)
+    try:
+        create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type, metadata_types=metadata_types)
+    except CreateRepoError, cre:
+        metadata_progress_status = {"state" : "FAILED"}
+        set_progress("metadata", metadata_progress_status, progress_callback)
+        return False
     end = time.time()
     log.info("Createrepo finished in %s seconds" % (end - start))
+    metadata_progress_status = {"state" : "FINISHED"}
+    set_progress("metadata", metadata_progress_status, progress_callback)
     return True
 
 def get_repo_checksum_type(repo, publish_conduit, config):

@@ -161,6 +161,16 @@ class YumDistributor(Distributor):
                 return False, conflict_msg
         return True, None
 
+    def init_progress(self):
+        return  {
+            "state": "IN_PROGRESS",
+            "num_success" : 0,
+            "num_error" : 0,
+            "items_left" : 0,
+            "items_total" : 0,
+            "error_details" : [],
+        }
+
     def does_rel_url_conflict(self, rel_url, related_repos):
         """
         @param rel_url
@@ -293,6 +303,18 @@ class YumDistributor(Distributor):
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
         details = {}
+        progress_status = {
+            "packages":           {"state": "NOT_STARTED"},
+            "distribution":       {"state": "NOT_STARTED"},
+            "metadata":           {"state": "NOT_STARTED"},
+            "publish_http":       {"state": "NOT_STARTED"},
+            "publish_https":      {"state": "NOT_STARTED"},
+            }
+
+        def progress_callback(type_id, status):
+            progress_status[type_id] = status
+            publish_conduit.set_progress(progress_status)
+
         # Determine Content in this repo
         unfiltered_units = publish_conduit.get_units()
         # filter compatible units
@@ -300,12 +322,12 @@ class YumDistributor(Distributor):
         _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
                 % (repo.id, len(unfiltered_units), len(units)))
         # Create symlinks under repo.working_dir
-        status, errors = self.handle_symlinks(units, repo.working_dir)
+        status, errors = self.handle_symlinks(units, repo.working_dir, progress_callback)
         if not status:
             _LOG.error("Unable to publish %s items" % (len(errors)))
         # symlink distribution files if any under repo.working_dir
         distro_units = filter(lambda u: u.type_id == DISTRO_TYPE_ID, unfiltered_units)
-        status, errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir)
+        status, errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
         if not status:
             _LOG.error("Unable to publish distribution tree %s items" % (len(errors)))
         # update/generate metadata for the published repo
@@ -314,7 +336,7 @@ class YumDistributor(Distributor):
         if repo_scratchpad.has_key("importer_working_dir"):
             src_working_dir = repo_scratchpad['importer_working_dir']
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
-        metadata.generate_metadata(repo, publish_conduit, config)
+        metadata.generate_metadata(repo, publish_conduit, config, progress_callback)
         # Publish for HTTPS 
         #  Create symlink for repo.working_dir where HTTPS gets served
         #  Should we consider HTTP?
@@ -338,9 +360,14 @@ class YumDistributor(Distributor):
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
         if errors:
             return publish_conduit.build_failure_report(summary, details)
+#        _LOG.info("Publish progress information %s" % publish_conduit.progress_report)
         return publish_conduit.build_success_report(summary, details)
 
-    def handle_symlinks(self, units, symlink_dir):
+    def set_progress(self, type_id, status, progress_callback=None):
+        if progress_callback:
+            progress_callback(type_id, status)
+
+    def handle_symlinks(self, units, symlink_dir, progress_callback):
         """
         @param units list of units that belong to the repo and should be published
         @type units [AssociatedUnit]
@@ -351,15 +378,22 @@ class YumDistributor(Distributor):
         @return tuple of status and list of error messages if any occurred 
         @rtype (bool, [str])
         """
+        packages_progress_status = self.init_progress()
         _LOG.info("handle_symlinks invoked with %s units to %s dir" % (len(units), symlink_dir))
+        self.set_progress("packages", packages_progress_status, progress_callback)
         errors = []
+        packages_progress_status["items_total"] = len(units)
+        packages_progress_status["items_left"] =  len(units)
         for u in units:
+            self.set_progress("packages", packages_progress_status, progress_callback)
             relpath = self.get_relpath_from_unit(u)
             source_path = u.storage_path
             symlink_path = os.path.join(symlink_dir, relpath)
             if not os.path.exists(source_path):
                 msg = "Source path: %s is missing" % (source_path)
                 errors.append((source_path, symlink_path, msg))
+                packages_progress_status["num_error"] += 1
+                packages_progress_status["items_left"] -= 1
                 continue
             _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
             try:
@@ -367,15 +401,24 @@ class YumDistributor(Distributor):
                     msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
                     _LOG.error(msg)
                     errors.append((source_path, symlink_path, msg))
+                    packages_progress_status["num_error"] += 1
+                    packages_progress_status["items_left"] -= 1
                     continue
+                packages_progress_status["num_success"] += 1
             except Exception, e:
                 tb_info = traceback.format_exc()
                 _LOG.error("%s" % (tb_info))
                 _LOG.critical(e)
                 errors.append((source_path, symlink_path, str(e)))
+                packages_progress_status["num_error"] += 1
+                packages_progress_status["items_left"] -= 1
                 continue
+            packages_progress_status["items_left"] -= 1
         if errors:
+            packages_progress_status["error_details"] = errors
             return False, errors
+        packages_progress_status["state"] = "FINISHED"
+        self.set_progress("packages", packages_progress_status, progress_callback)
         return True, []
 
     def get_relpath_from_unit(self, unit):
@@ -475,7 +518,7 @@ class YumDistributor(Distributor):
         _LOG.info("Copied repodata from %s to %s" % (src_working_dir, tgt_working_dir))
         return True
 
-    def symlink_distribution_unit_files(self, units, symlink_dir):
+    def symlink_distribution_unit_files(self, units, symlink_dir, progress_callback):
         """
         Publishing distriubution unit involves publishing files underneath the unit.
         Distribution is an aggregate unit with distribution files. This call
@@ -488,6 +531,8 @@ class YumDistributor(Distributor):
         @return tuple of status and list of error messages if any occurred
         @rtype (bool, [str])
         """
+        distro_progress_status = self.init_progress()
+        self.set_progress("distribution", distro_progress_status, progress_callback)
         _LOG.info("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
         errors = []
         for u in units:
@@ -497,25 +542,39 @@ class YumDistributor(Distributor):
                 _LOG.error(msg)
             distro_files =  u.metadata['files']
             _LOG.info("Found %s distribution files to symlink" % len(distro_files))
+            distro_progress_status['items_total'] = len(distro_files)
+            distro_progress_status['items_left'] = len(distro_files)
             for dfile in distro_files:
+                self.set_progress("distribution", distro_progress_status, progress_callback)
                 source_path = os.path.join(source_path_dir, dfile['relativepath'])
                 symlink_path = os.path.join(symlink_dir, dfile['relativepath'])
                 if not os.path.exists(source_path):
                     msg = "Source path: %s is missing" % source_path
                     errors.append((source_path, symlink_path, msg))
+                    distro_progress_status['num_error'] += 1
+                    distro_progress_status["items_left"] -= 1
                     continue
                 try:
                     if not self.create_symlink(source_path, symlink_path):
                         msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
                         _LOG.error(msg)
                         errors.append((source_path, symlink_path, msg))
+                        distro_progress_status['num_error'] += 1
+                        distro_progress_status["items_left"] -= 1
                         continue
+                    distro_progress_status['num_success'] += 1
                 except Exception, e:
                     tb_info = traceback.format_exc()
                     _LOG.error("%s" % tb_info)
                     _LOG.critical(e)
                     errors.append((source_path, symlink_path, str(e)))
+                    distro_progress_status['num_error'] += 1
+                    distro_progress_status["items_left"] -= 1
                     continue
+                distro_progress_status["items_left"] -= 1
         if errors:
+            distro_progress_status["error_details"] = errors
             return False, errors
+        distro_progress_status["state"] = "FINISHED"
+        self.set_progress("distribution", distro_progress_status, progress_callback)
         return True, []

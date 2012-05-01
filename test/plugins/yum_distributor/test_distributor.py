@@ -513,3 +513,47 @@ class TestDistributor(unittest.TestCase):
         status, msg = distributor.validate_config(repo, config, related_repos)
         self.assertTrue(status)
         self.assertEqual(msg, None)
+
+    def test_publish_progress(self):
+        global progress_status
+        progress_status = None
+
+        def set_progress(progress):
+            global progress_status
+            progress_status = progress
+        PROGRESS_FIELDS = ["num_success", "num_error", "items_left", "items_total", "error_details"]
+        publish_conduit = distributor_mocks.get_publish_conduit(pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.publish_dir, relative_url="rel_temp/",
+            generate_metadata=True, http=True, https=False)
+        distributor = YumDistributor()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "test_progress_sync"
+        publish_conduit.set_progress = mock.Mock()
+        publish_conduit.set_progress.side_effect = set_progress
+        distributor.publish_repo(repo, publish_conduit, config)
+
+        self.assertTrue(progress_status is not None)
+        self.assertTrue("packages" in progress_status)
+        self.assertTrue(progress_status["packages"].has_key("state"))
+        self.assertEqual(progress_status["packages"]["state"], "FINISHED")
+        for field in PROGRESS_FIELDS:
+            self.assertTrue(field in progress_status["packages"])
+
+        self.assertTrue("distribution" in progress_status)
+        self.assertTrue(progress_status["distribution"].has_key("state"))
+        self.assertEqual(progress_status["distribution"]["state"], "FINISHED")
+        for field in PROGRESS_FIELDS:
+            self.assertTrue(field in progress_status["distribution"])
+
+        self.assertTrue("metadata" in progress_status)
+        self.assertTrue(progress_status["metadata"].has_key("state"))
+        self.assertEqual(progress_status["metadata"]["state"], "FINISHED")
+
+#        self.assertTrue("publish_http" in progress_status)
+#        self.assertEqual(progress_status["publish_http"]["state"], "FINISHED")
+#        self.assertTrue("publish_https" in progress_status)
+#        self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")
+
+
+
