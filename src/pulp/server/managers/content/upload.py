@@ -14,7 +14,7 @@
 import logging
 import sys
 
-from   pulp.server.content.conduits.repo_sync import RepoSyncConduit
+from   pulp.server.content.conduits.unit_add import UnitAddConduit
 import pulp.server.content.loader as content_loader
 from   pulp.server.content.plugins.config import PluginCallConfiguration
 from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
@@ -102,7 +102,7 @@ class ContentUploadManager(object):
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
-        conduit = RepoSyncConduit(repo_id, repo_importer['id'])
+        conduit = UnitAddConduit(repo_id, repo_importer['id'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)

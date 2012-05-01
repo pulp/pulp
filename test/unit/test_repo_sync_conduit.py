@@ -21,7 +21,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mock_plugins
 
-from pulp.server.content.conduits.repo_sync import RepoSyncConduit, RepoSyncConduitException
+from pulp.server.content.conduits._base import ImporterConduitException
+from pulp.server.content.conduits.repo_sync import RepoSyncConduit
 from pulp.server.content.plugins.model import SyncReport
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
@@ -270,44 +271,44 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
     def test_get_units_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__association_query_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__association_query_manager.get_units_across_types.side_effect = Exception()
+        self.conduit._association_query_manager = mock.Mock()
+        self.conduit._association_query_manager.get_units_across_types.side_effect = Exception()
 
         # Test
         try:
             self.conduit.get_units()
             self.fail('Exception expected')
-        except RepoSyncConduitException, e:
+        except ImporterConduitException, e:
             print(e) # for coverage
 
     def test_init_unit_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__content_query_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__content_query_manager.request_content_unit_file_path.side_effect = Exception()
+        self.conduit._content_query_manager = mock.Mock()
+        self.conduit._content_query_manager.request_content_unit_file_path.side_effect = Exception()
 
         # Test
-        self.assertRaises(RepoSyncConduitException, self.conduit.init_unit, 't', {}, {}, 'p')
+        self.assertRaises(ImporterConduitException, self.conduit.init_unit, 't', {}, {}, 'p')
 
     def test_save_unit_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__content_query_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__content_query_manager.request_content_unit_file_path.side_effect = Exception()
+        self.conduit._content_query_manager = mock.Mock()
+        self.conduit._content_query_manager.request_content_unit_file_path.side_effect = Exception()
 
         # Test
-        self.assertRaises(RepoSyncConduitException, self.conduit.save_unit, None)
+        self.assertRaises(ImporterConduitException, self.conduit.save_unit, None)
 
     def test_remove_unit_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__association_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__association_manager.unassociate_unit_by_id.side_effect = Exception()
+        self.conduit._association_manager = mock.Mock()
+        self.conduit._association_manager.unassociate_unit_by_id.side_effect = Exception()
 
         # Test
-        self.assertRaises(RepoSyncConduitException, self.conduit.remove_unit, None)
+        self.assertRaises(ImporterConduitException, self.conduit.remove_unit, None)
 
     def test_link_unit_with_error(self):
         # Setup
-        self.conduit._RepoSyncConduit__content_manager = mock.Mock()
-        self.conduit._RepoSyncConduit__content_manager.link_referenced_content_units.side_effect = Exception()
+        self.conduit._content_manager = mock.Mock()
+        self.conduit._content_manager.link_referenced_content_units.side_effect = Exception()
 
         # Test
-        self.assertRaises(RepoSyncConduitException, self.conduit.link_unit, None, None)
+        self.assertRaises(ImporterConduitException, self.conduit.link_unit, None, None)

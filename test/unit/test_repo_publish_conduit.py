@@ -23,7 +23,8 @@ import testutil
 import mock_plugins
 
 from pulp.common import dateutils
-from pulp.server.content.conduits.repo_publish import RepoPublishConduit, RepoPublishConduitException
+from pulp.server.content.conduits._base import DistributorConduitException
+from pulp.server.content.conduits.repo_publish import RepoPublishConduit
 from pulp.server.content.plugins.model import Unit, PublishReport
 import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
@@ -146,20 +147,20 @@ class RepoSyncConduitTests(testutil.PulpTest):
 
     def test_get_units_with_error(self):
         # Setup
-        self.conduit._RepoPublishConduit__association_query_manager = mock.Mock()
-        self.conduit._RepoPublishConduit__association_query_manager.get_units_across_types.side_effect = Exception()
+        self.conduit._association_query_manager = mock.Mock()
+        self.conduit._association_query_manager.get_units_across_types.side_effect = Exception()
 
         # Test
         try:
             self.conduit.get_units()
             self.fail('Exception expected')
-        except RepoPublishConduitException, e:
+        except DistributorConduitException, e:
             print(e) # for coverage
 
     def test_last_publish_with_error(self):
         # Setup
-        self.conduit._RepoPublishConduit__repo_publish_manager = mock.Mock()
-        self.conduit._RepoPublishConduit__repo_publish_manager.last_publish.side_effect = Exception()
+        self.conduit._repo_publish_manager = mock.Mock()
+        self.conduit._repo_publish_manager.last_publish.side_effect = Exception()
 
         # Test
-        self.assertRaises(RepoPublishConduitException, self.conduit.last_publish)
+        self.assertRaises(DistributorConduitException, self.conduit.last_publish)

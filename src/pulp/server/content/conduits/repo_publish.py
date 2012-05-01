@@ -31,15 +31,6 @@ import pulp.server.managers.factory as manager_factory
 
 _LOG = logging.getLogger(__name__)
 
-# -- exceptions --------------------------------------------------------------
-
-class RepoPublishConduitException(DistributorConduitException):
-    """
-    General exception that wraps any server exception coming out of a conduit
-    call.
-    """
-    pass
-
 # -- classes -----------------------------------------------------------------
 
 class RepoPublishConduit(BaseDistributorConduit):
@@ -55,10 +46,7 @@ class RepoPublishConduit(BaseDistributorConduit):
     the instance will take care of it itself.
     """
 
-    def __init__(self,
-                 repo_id,
-                 distributor_id,
-                 base_progress_report=None):
+    def __init__(self, repo_id, distributor_id, base_progress_report=None):
         """
         @param repo_id: identifies the repo being published
         @type  repo_id: str
@@ -76,12 +64,12 @@ class RepoPublishConduit(BaseDistributorConduit):
         else:
             self.progress_report = {}
 
-        self.__repo_manager = manager_factory.repo_manager()
-        self.__repo_publish_manager = manager_factory.repo_publish_manager()
-        self.__repo_distributor_manager = manager_factory.repo_distributor_manager()
-        self.__association_manager = manager_factory.repo_unit_association_manager()
-        self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
-        self.__content_query_manager = manager_factory.content_manager()
+        self._repo_manager = manager_factory.repo_manager()
+        self._repo_publish_manager = manager_factory.repo_publish_manager()
+        self._repo_distributor_manager = manager_factory.repo_distributor_manager()
+        self._association_manager = manager_factory.repo_unit_association_manager()
+        self._association_query_manager = manager_factory.repo_unit_association_query_manager()
+        self._content_query_manager = manager_factory.content_manager()
 
     def __str__(self):
         return _('RepoPublishConduit for repository [%(r)s]' % {'r' : self.repo_id})
@@ -110,7 +98,7 @@ class RepoPublishConduit(BaseDistributorConduit):
                 # Best effort to print this, but if its that grossly unserializable
                 # the log will tank and we don't want that exception to bubble up
                 pass
-            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def last_publish(self):
         """
@@ -122,11 +110,11 @@ class RepoPublishConduit(BaseDistributorConduit):
         @rtype:  datetime or None
         """
         try:
-            last = self.__repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
+            last = self._repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
             return last
         except Exception, e:
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
-            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def get_units(self, criteria=None):
         """
@@ -141,7 +129,7 @@ class RepoPublishConduit(BaseDistributorConduit):
         """
 
         try:
-            units = self.__association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
+            units = self._association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
             all_units = []
 
@@ -161,7 +149,7 @@ class RepoPublishConduit(BaseDistributorConduit):
             return all_units
         except Exception, e:
             _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
-            raise RepoPublishConduitException(e), None, sys.exc_info()[2]
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def build_success_report(self, summary, details):
         """
