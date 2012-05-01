@@ -15,8 +15,10 @@ Glossary
     of any asynchronous task being executed by Pulp.
     Fields:
 
+     * _href - uri path to retrieve subsequent call reports for this task.
      * response - a response from Pulp's tasking system: accepted, postponed, or rejected
      * reasons - a list of reasons for postponed or rejected responses
+     * state - the current state of the task
      * task_id - the unique id of the task that is executing the asynchronous call
      * job_id - the unique id of the job the task is a part of
      * schedule_id - the unique id of the schedule if the call is scheduled
