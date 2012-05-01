@@ -72,7 +72,8 @@ class AdminConsumerSection(PulpCliSection):
         # Install Command
         install_command = PulpCliCommand('install', 'installs content units on a consumer', self.install)
         install_command.add_option(id_option)
-        install_command.add_option(PulpCliOption('--name', 'identifies content units to be installed', required=True))
+        install_command.add_option(PulpCliOption('--name', 'identifies content unit names to be installed; multiple units can be installed by specifying the option multiple times',
+                                                 required=True, allow_multiple=True))
         self.add_command(install_command)
 
 
@@ -129,13 +130,16 @@ class AdminConsumerSection(PulpCliSection):
 
     def install(self, **kwargs):
         id = kwargs['id']
-        name = kwargs['name']
-        unit_key = dict(name=name)
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit]
+        units = []
+        for name in kwargs['name']:
+            unit_key = dict(name=name)
+            unit = dict(type_id='rpm', unit_key=unit_key)
+            units.append(unit)
         try:
-            self.context.server.consumer_content.install(id, units=units)
-            self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' %(name, id))
+            task = self.context.server.consumer_content.install(id, units=units)
+            self.prompt.render_success_message('Install task created with id [%s]' % task.task_id)
+            # Wait for task to finish
+            self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' % (kwargs['name'], id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
 
