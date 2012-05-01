@@ -14,6 +14,7 @@ Glossary
     A JSON object describing metadata, progress information, and the final result
     of any asynchronous task being executed by Pulp.
     Fields:
+
      * response - a response from Pulp's tasking system: accepted, postponed, or rejected
      * reasons - a list of reasons for postponed or rejected responses
      * task_id - the unique id of the task that is executing the asynchronous call
@@ -48,6 +49,20 @@ Glossary
     external source and importing that content into the Pulp server. Importers
     are added to repositories to define the supported functionality of that
     repository.
+
+  iso8601 interval
+    ISO Date format that is able to specify an optional number of recurrences,
+    an optional start time, and a time interval. There are a number of
+    equivalent formats.
+    Pulp supports: R<optional recurrences>/<optional start time>/P<interval>
+    Examples:
+
+    * simple daily interval: P1DT
+    * 6 hour interval with 3 recurrences: R3/PT6H
+    * 10 minute interval with start time: 2012-06-22T12:00:00Z/PT10M
+
+    Further reading and more examples:
+    http://en.wikipedia.org/wiki/ISO_8601#Time_intervals
 
   repository
     A collection of content units. A repository's supported types is dictated
