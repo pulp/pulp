@@ -11,10 +11,16 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
 from gettext import gettext as _
 
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.gc_client.api.exceptions import NotFoundException
+
+from pulp.gc_client.consumer.config import ConsumerConfig
+from pulp.gc_client.consumer.credentials import ConsumerBundle
+from pulp.common.capabilities import AgentCapabilities
+
 
 # -- framework hook -----------------------------------------------------------
 
@@ -78,6 +84,9 @@ class ConsumerSection(PulpCliSection):
 
         # Collect input
         id = kwargs['id']
+        if self.consumerid():
+            self.prompt.write("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid())
+
         name = id
         if 'display_name' in kwargs:
             name = kwargs['display_name']
@@ -87,8 +96,19 @@ class ConsumerSection(PulpCliSection):
             if kwargs['note']:
                 notes = self._parse_notes(kwargs['note'])
 
+        # Check and create cert bundle
+        self.check_bundle_path()
+        bundle = ConsumerBundle()
+
+        # Set agent capabilities
+        capabilities = dict(AgentCapabilities.default())
+
         # Call the server
-        self.context.server.consumer.register(id, name, description, notes)
+        consumer = self.context.server.consumer.register(id, name, description, notes).response_body
+
+        # Write consumer cert
+        bundle.write(consumer['certificate'])
+
         self.prompt.render_success_message('Consumer [%s] successfully registered' % id)
 
     def update(self, **kwargs):
@@ -119,12 +139,9 @@ class ConsumerSection(PulpCliSection):
     def _parse_notes(self, notes_list):
         """
         Extracts notes information from the user-specified options and puts them in a dictionary
-
         @return: dict of notes
-
         @raises InvalidConfig: if one or more of the notes is malformed
         """
-
         notes_dict = {}
         for note in notes_list:
             pieces = note.split('=', 1)
@@ -146,3 +163,30 @@ class ConsumerSection(PulpCliSection):
 
         return notes_dict
 
+
+    def consumerid(self):
+        """
+        Get the consumer ID from the identity certificate.
+        @return: The consumer id.  Returns (None) when not registered.
+        @rtype: str
+        """
+        bundle = ConsumerBundle()
+        return bundle.getid()
+
+    def check_write_perms(self, path):
+        """
+        Check that write permissions are present for the given path.  If parts
+        of the path do not yet exist, check if it can be created.
+        """
+        if os.path.exists(path):
+            if not os.access(path, os.W_OK):
+                self.prompt.write(_("Write permission is required for %s to perform this operation." %
+                                    path))
+            else:
+                return True
+        else:
+            self.check_write_perms(os.path.split(path)[0])
+
+    def check_bundle_path(self):
+        bundle = ConsumerBundle()
+        return self.check_write_perms(bundle.crtpath())
