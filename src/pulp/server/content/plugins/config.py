@@ -53,8 +53,11 @@ class PluginCallConfiguration:
 
     def keys(self):
         """
-        @rtype []
-        @return a single list representing all possible keys available
+        Aggregates configuration keys across all three configuration sources
+        and returns the list of them (duplicates are removed).
+
+        @return: a single list representing all possible keys available
+        @rtype:  list
         """
         keys = set()
         keys.update(self.plugin_config.keys())
@@ -72,6 +75,16 @@ class PluginCallConfiguration:
 
         If the key is not found in any of the sources, the specified default
         value is returned. If there is no default provided, None is returned.
+
+        @param key: configuration parameter to look up
+        @type  key: str
+
+        @param default: if the key is not present in any of the configuration
+               sources, this value is returned
+        @type  default: object
+
+        @return: value for the configuration key
+        @rtype:  object
         """
 
         if key in self.override_config:
