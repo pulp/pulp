@@ -14,6 +14,7 @@
 # Python
 import logging
 import sys
+from gettext import gettext as _
 
 # 3rd Party
 import web
@@ -279,12 +280,12 @@ class SyncScheduleCollection(JSONController):
         schedule_objs = []
         for schedule_id in importer_manager.list_sync_schedules(repo_id):
             try:
-                obj = scheduler.get(schedule_id)
+                schedule = scheduler.get(schedule_id)
             except exceptions.MissingResource:
-                # TODO: we should probably log these as they represent
-                # inconsistencies between the scheduler and the importer
-                pass
+                msg = _('Repository %(r)s; Importer %(i)s: scheduled sync does not exist: %(s)s')
+                _LOG.warn(msg % {'r': repo_id, 'i': importer_id, 's': schedule_id})
             else:
+                obj = serialization.dispatch.scheduled_sync_obj(schedule)
                 obj.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
                 schedule_objs.append(obj)
         return self.ok(schedule_objs)
@@ -315,8 +316,9 @@ class SyncScheduleCollection(JSONController):
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
-        schedule.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
-        return self.created(schedule['_href'], schedule)
+        obj = serialization.dispatch.scheduled_sync_obj(schedule)
+        obj.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
+        return self.created(obj['_href'], obj)
 
 
 class SyncScheduleResource(JSONController):
@@ -355,8 +357,9 @@ class SyncScheduleResource(JSONController):
             raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
-        schedule.update(serialization.link.current_link_obj())
-        return self.ok(schedule)
+        obj = serialization.dispatch.scheduled_sync_obj(schedule)
+        obj.update(serialization.link.current_link_obj())
+        return self.ok(obj)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id, schedule_id):
@@ -386,8 +389,9 @@ class SyncScheduleResource(JSONController):
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
-        schedule.update(serialization.link.current_link_obj())
-        return self.ok(schedule)
+        obj = serialization.dispatch.scheduled_sync_obj(schedule)
+        obj.update(serialization.link.current_link_obj())
+        return self.ok(obj)
 
 # -- distributor controllers --------------------------------------------------
 
@@ -502,11 +506,12 @@ class PublishScheduleCollection(JSONController):
         schedule_objs = []
         for schedule_id in schedule_list:
             try:
-                obj = scheduler.get(schedule_id)
+                scheduled_call = scheduler.get(schedule_id)
             except exceptions.MissingResource:
-                # TODO log this as it represents a state inconsistency
-                pass
+                msg = _('Repository %(r)s; Distributor %(d)s: scheduled publish does not exist: %(s)s')
+                _LOG.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
             else:
+                obj = serialization.dispatch.scheduled_publish_obj(scheduled_call)
                 obj.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
                 schedule_objs.append(obj)
         return self.ok(schedule_objs)
@@ -535,8 +540,9 @@ class PublishScheduleCollection(JSONController):
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
-        schedule.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
-        return self.created(schedule['_href'], schedule)
+        obj = serialization.dispatch.scheduled_publish_obj(schedule)
+        obj.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
+        return self.created(obj['_href'], obj)
 
 
 class PublishScheduleResource(JSONController):
@@ -576,8 +582,9 @@ class PublishScheduleResource(JSONController):
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
-        schedule.update(serialization.link.current_link_obj())
-        return self.ok(schedule)
+        obj = serialization.dispatch.scheduled_publish_obj(schedule)
+        obj.update(serialization.link.current_link_obj())
+        return self.ok(obj)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id, schedule_id):
@@ -607,8 +614,9 @@ class PublishScheduleResource(JSONController):
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
-        schedule.update(serialization.link.current_link_obj())
-        return self.ok(schedule)
+        obj = serialization.dispatch.scheduled_publish_obj(schedule)
+        obj.update(serialization.link.current_link_obj())
+        return self.ok(obj)
 
 # -- history controllers ------------------------------------------------------
 
