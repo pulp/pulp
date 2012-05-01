@@ -282,7 +282,7 @@ class SyncScheduleCollection(JSONController):
                 obj = scheduler.get(schedule_id)
             except exceptions.MissingResource:
                 # TODO: we should probably log these as they represent
-                # inconsistencies between the scheduler and th importer
+                # inconsistencies between the scheduler and the importer
                 pass
             else:
                 obj.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
