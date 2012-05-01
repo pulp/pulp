@@ -10,6 +10,23 @@ Glossary
     :term:`distributor` for the purpose of installing :term:`content units <content unit>`
     on the specified consumer.
 
+  call report
+    A JSON object describing metadata, progress information, and the final result
+    of any asynchronous task being executed by Pulp.
+    Fields:
+     * response - a response from Pulp's tasking system: accepted, postponed, or rejected
+     * reasons - a list of reasons for postponed or rejected responses
+     * task_id - the unique id of the task that is executing the asynchronous call
+     * job_id - the unique id of the job the task is a part of
+     * schedule_id - the unique id of the schedule if the call is scheduled
+     * progress - arbitrary progress information, usually in the form of an object
+     * result - the return value of the call, if any
+     * exception - the error exception value, if any
+     * traceback - the resulting traceback if an exception was raised
+     * start_time - the time the call started executing
+     * finish_time - the time the call stopped executing
+     * tags - arbitrary tags useful for looking up the call report
+
   consumer
     A managed system that is the consumer of content.  Consumption refers
     to the installation of software contained within a :term:`repository` and
