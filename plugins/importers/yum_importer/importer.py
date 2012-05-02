@@ -105,6 +105,20 @@ class YumImporter(Importer):
                         msg = _("ssl_ca_cert is not a valid certificate")
                         _LOG.error(msg)
                         return False, msg
+                    # ssl_ca_cert is valid, proceed to store it in our repo.working_dir
+                    ssl_ca_cert_filename = os.path.join(repo.working_dir, "ssl_ca_cert")
+                    try:
+                        try:
+                            ssl_ca_cert_file = open(ssl_ca_cert_filename, "w")
+                            ssl_ca_cert_file.write(ssl_ca_cert)
+                        finally:
+                            if ssl_ca_cert_file:
+                                ssl_ca_cert_file.close()
+                    except Exception, e:
+                        msg = _("Unable to write ssl_ca_cert to %s" % ssl_ca_cert_filename)
+                        _LOG.error(e)
+                        _LOG.error(msg)
+                        return False, msg
 
             if key == 'ssl_client_cert':
                 ssl_client_cert = config.get('ssl_client_cert')
@@ -113,6 +127,37 @@ class YumImporter(Importer):
                         msg = _("ssl_client_cert is not a valid certificate")
                         _LOG.error(msg)
                         return False, msg
+                    # ssl_client_cert is valid, proceed to store it in our repo.working_dir
+                    ssl_client_cert_filename = os.path.join(repo.working_dir, "ssl_client_cert")
+                    try:
+                        try:
+                            ssl_client_cert_file = open(ssl_client_cert_filename, "w")
+                            ssl_client_cert_file.write(ssl_client_cert)
+                        finally:
+                            if ssl_client_cert_file:
+                                ssl_client_cert_file.close()
+                    except Exception, e:
+                        msg = _("Unable to write ssl_client_cert to %s" % ssl_client_cert_filename)
+                        _LOG.error(e)
+                        _LOG.error(msg)
+                        return False, msg
+
+            if key == 'ssl_client_key':
+                ssl_client_key = config.get('ssl_client_key')
+                ssl_client_key_filename = os.path.join(repo.working_dir, "ssl_client_key")
+                try:
+                    try:
+                        ssl_client_key_file = open(ssl_client_key_filename, "w")
+                        ssl_client_key_file.write(ssl_client_key)
+                    finally:
+                        if ssl_client_key_file:
+                            ssl_client_key_file.close()
+                except Exception, e:
+                    msg = _("Unable to write ssl_client_cert to %s" % ssl_client_cert_filename)
+                    _LOG.error(e)
+                    _LOG.error(msg)
+                    return False, msg
+
             if key == 'proxy_url':
                 proxy_url = config.get('proxy_url')
                 if proxy_url is not None and not util.validate_feed(proxy_url):

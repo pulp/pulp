@@ -10,12 +10,15 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import mock
 import os
+import shutil
 import sys
+import tempfile
+import unittest
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-import mock
-import unittest
 from importer import YumImporter
 import importer_mocks
 from pulp.server.content.plugins.model import Repository
@@ -25,12 +28,16 @@ class TestValidateConfig(unittest.TestCase):
 
     def setUp(self):
         super(TestValidateConfig, self).setUp()
+        self.temp_dir = tempfile.mkdtemp()
         self.repo = mock.Mock(spec=Repository)
+        self.repo.working_dir = os.path.join(self.temp_dir, "repo_working_dir")
+        os.makedirs(self.repo.working_dir)
         self.importer = YumImporter()
         self.init()
 
     def tearDown(self):
         super(TestValidateConfig, self).tearDown()
+        shutil.rmtree(self.temp_dir)
 
     def init(self):
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
@@ -75,6 +82,11 @@ class TestValidateConfig(unittest.TestCase):
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertTrue(state)
 
+        ssl_ca_cert_filename = os.path.join(self.repo.working_dir, "ssl_ca_cert")
+        self.assertTrue(os.path.exists(ssl_ca_cert_filename))
+        ca_cert_data = open(ssl_ca_cert_filename).read()
+        self.assertEqual(ca_cert_data, ssl_ca_cert)
+
     def test_config_ssl_client_cert(self):
         if not M2CRYPTO_HAS_CRL_SUPPORT:
             return
@@ -88,6 +100,11 @@ class TestValidateConfig(unittest.TestCase):
         config = importer_mocks.get_basic_config(feed_url=feed_url, ssl_client_cert=ssl_client_cert)
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertTrue(state)
+        
+        ssl_client_cert_filename = os.path.join(self.repo.working_dir, "ssl_client_cert")
+        self.assertTrue(os.path.exists(ssl_client_cert_filename))
+        client_cert_data = open(ssl_client_cert_filename).read()
+        self.assertEqual(client_cert_data, ssl_client_cert)
 
     def test_config_proxy_url(self):
         feed_url = "http://example.redhat.com/"

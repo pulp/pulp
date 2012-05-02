@@ -212,7 +212,7 @@ def verify_download(missing_rpms, new_rpms, new_units, verify_options={}):
         del new_units[key]
     return not_synced
 
-def get_yumRepoGrinder(repo_id, tmp_path, config):
+def get_yumRepoGrinder(repo_id, repo_working_dir, config):
     """
     @param repo_id repo id
     @type repo_id str
@@ -234,13 +234,18 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
     proxy_user = config.get("proxy_user")
     proxy_pass = config.get("proxy_pass")
     sslverify = config.get("ssl_verify")
-    cacert = config.get("ssl_ca_cert")
-    clicert = config.get("ssl_client_cert")
-    clikey = config.get("ssl_client_key")
+    # Note ssl_ca_cert, ssl_client_cert, and ssl_client_key are all written in the main importer
+    # int the validate_config method
+    cacert = None
+    if config.get("ssl_ca_cert"):
+        cacert = os.path.join(repo_working_dir, "ssl_ca_cert")
+    clicert = None
+    if config.get("ssl_client_cert"):
+        clicert = os.path.join(repo_working_dir, "ssl_client_cert")
+    clikey = None
+    if config.get("ssl_client_key"):
+        clikey = os.path.join(repo_working_dir, "ssl_client_key")
     max_speed = config.get("max_speed")
-    verify_checksum = config.get("verify_checksum") or False
-    verify_size = config.get("verify_size") or False
-    verify_options = {"checksum":verify_checksum, "size":verify_size}
     newest = config.get("newest") or False
     remove_old = config.get("remove_old") or False
     purge_orphaned = config.get("purge_orphaned") or True
@@ -251,7 +256,7 @@ def get_yumRepoGrinder(repo_id, tmp_path, config):
         proxy_url=proxy_url, proxy_port=proxy_port, proxy_user=proxy_user,\
         proxy_pass=proxy_pass, sslverify=sslverify, packages_location="./",\
         remove_old=remove_old, numOldPackages=num_old_packages, skip=skip, max_speed=max_speed,\
-        purge_orphaned=purge_orphaned, distro_location=None, tmp_path=tmp_path)
+        purge_orphaned=purge_orphaned, distro_location=None, tmp_path=repo_working_dir)
     return yumRepoGrinder
 
 def _search_for_error(rpm_dict):

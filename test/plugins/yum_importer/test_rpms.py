@@ -541,9 +541,9 @@ class TestRPMs(unittest.TestCase):
         proxy_user = "username"
         proxy_pass = "password"
         ssl_verify = True
-        ssl_ca_cert = "path_ca_cert"
-        ssl_client_cert = "path_client_cert"
-        ssl_client_key = "path_client_key"
+        ssl_ca_cert = "ca_cert_data"
+        ssl_client_cert = "client_cert_data"
+        ssl_client_key = "client_key_data"
         newest = True
         remove_old = True
         num_old_packages = 99
@@ -554,7 +554,6 @@ class TestRPMs(unittest.TestCase):
                 ssl_verify=ssl_verify, 
                 ssl_ca_cert=ssl_ca_cert, ssl_client_cert=ssl_client_cert, ssl_client_key=ssl_client_key,
                 newest=newest, remove_old=remove_old, num_old_packages=num_old_packages)
-
         yumRepoGrinder = importer_rpm.get_yumRepoGrinder(repo_label, tmp_path, config)
         self.assertEquals(yumRepoGrinder.repo_label, repo_label)
         self.assertEquals(yumRepoGrinder.repo_url, feed_url)
@@ -565,9 +564,6 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(yumRepoGrinder.proxy_user, proxy_user)
         self.assertEquals(yumRepoGrinder.proxy_pass, proxy_pass)
         self.assertEquals(yumRepoGrinder.sslverify, ssl_verify)
-        self.assertEquals(yumRepoGrinder.sslcacert, ssl_ca_cert)
-        self.assertEquals(yumRepoGrinder.sslclientcert, ssl_client_cert)
-        self.assertEquals(yumRepoGrinder.sslclientkey, ssl_client_key)
         self.assertEquals(yumRepoGrinder.newest, newest)
         self.assertEquals(yumRepoGrinder.remove_old, remove_old)
         self.assertEquals(yumRepoGrinder.numOldPackages, num_old_packages)
