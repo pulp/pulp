@@ -65,7 +65,7 @@ class RepoSyncConduitTests(testutil.PulpTest):
         self.query_manager = query_manager.ContentQueryManager()
 
         self.repo_manager.create_repo('repo-1')
-        self.conduit = RepoSyncConduit('repo-1', 'test-importer')
+        self.conduit = RepoSyncConduit('repo-1', 'test-importer', 'importer', 'importer-id')
 
     def test_str(self):
         """

@@ -16,6 +16,7 @@ import os
 import sys
 from uuid import uuid4
 
+import pulp.server.auth.principal as pulp_principal
 import pulp.server.constants as pulp_constants
 from   pulp.server.content.conduits.unit_add import UnitAddConduit
 import pulp.server.content.loader as content_loader
@@ -23,6 +24,10 @@ from   pulp.server.content.plugins.config import PluginCallConfiguration
 from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as repo_common_utils
+
+# TODO: This needs to change because managers shouldn't reach into each other
+# or else we'll run back into circular imports again.
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
 
 # -- constants ----------------------------------------------------------------
 
@@ -198,7 +203,7 @@ class ContentUploadManager(object):
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
-        conduit = UnitAddConduit(repo_id, repo_importer['id'])
+        conduit = UnitAddConduit(repo_id, repo_importer['id'], OWNER_TYPE_USER, pulp_principal.get_principal()['login'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)

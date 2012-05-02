@@ -68,8 +68,8 @@ class RepoSyncConduit(UnitAddConduit):
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, importer_id):
-        UnitAddConduit.__init__(self, repo_id, importer_id)
+    def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
+        UnitAddConduit.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
 
         self.progress_report = {}
 

@@ -37,6 +37,11 @@ import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 
+# TODO: This needs to change because managers shouldn't reach into each other
+# or else we'll run back into circular imports again.
+from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
+
+
 # -- constants ----------------------------------------------------------------
 
 REPO_STORAGE_DIR = os.path.join(pulp_constants.LOCAL_STORAGE, 'repos')
@@ -96,7 +101,7 @@ class RepoSyncManager(object):
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
-        conduit = RepoSyncConduit(repo_id, repo_importer['id'])
+        conduit = RepoSyncConduit(repo_id, repo_importer['id'], OWNER_TYPE_IMPORTER, repo_importer['id'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], sync_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)

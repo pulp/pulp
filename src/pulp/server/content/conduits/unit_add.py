@@ -51,13 +51,21 @@ class UnitAddConduit(BaseImporterConduit):
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, importer_id):
+    def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
         """
         @param repo_id: identifies the repo being synchronized
         @type  repo_id: str
 
         @param importer_id: identifies the importer performing the sync
         @type  importer_id: str
+
+        @param association_owner_type: type used when creating associations;
+               set to either importer or user depending on what call is being
+               made into the importer
+        @type  association_owner_type: str
+
+        @param association_owner_id: ID of the association owner
+        @type  association_owner_id: str
         """
         BaseImporterConduit.__init__(self, repo_id, importer_id)
 
@@ -71,6 +79,9 @@ class UnitAddConduit(BaseImporterConduit):
 
         self._added_count = 0
         self._updated_count = 0
+
+        self._association_owner_type = association_owner_type
+        self._association_owner_id = association_owner_id
 
     def __str__(self):
         return _('UnitAddConduit for repository [%(r)s]') % {'r' : self.repo_id}
