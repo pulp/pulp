@@ -6,3 +6,4 @@ Repository APIs
 
    create-and-configure
    retrieval
+   sync
