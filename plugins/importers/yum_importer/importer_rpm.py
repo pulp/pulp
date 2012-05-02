@@ -233,18 +233,18 @@ def get_yumRepoGrinder(repo_id, repo_working_dir, config):
     proxy_port = config.get("proxy_port")
     proxy_user = config.get("proxy_user")
     proxy_pass = config.get("proxy_pass")
-    sslverify = config.get("ssl_verify")
+    sslverify = config.get("ssl_verify") or 0
     # Note ssl_ca_cert, ssl_client_cert, and ssl_client_key are all written in the main importer
     # int the validate_config method
     cacert = None
     if config.get("ssl_ca_cert"):
-        cacert = os.path.join(repo_working_dir, "ssl_ca_cert")
+        cacert = os.path.join(repo_working_dir, "ssl_ca_cert").encode('utf-8')
     clicert = None
     if config.get("ssl_client_cert"):
-        clicert = os.path.join(repo_working_dir, "ssl_client_cert")
+        clicert = os.path.join(repo_working_dir, "ssl_client_cert").encode('utf-8')
     clikey = None
     if config.get("ssl_client_key"):
-        clikey = os.path.join(repo_working_dir, "ssl_client_key")
+        clikey = os.path.join(repo_working_dir, "ssl_client_key").encode('utf-8')
     max_speed = config.get("max_speed")
     newest = config.get("newest") or False
     remove_old = config.get("remove_old") or False
