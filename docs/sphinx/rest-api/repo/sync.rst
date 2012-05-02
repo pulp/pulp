@@ -4,7 +4,7 @@ Synchronization
 Sync a Repository
 -----------------
 
-Syncs content into a repository form an feed source using the repository's
+Syncs content into a repository from a feed source using the repository's
 :term:`importer`. This call always executes asynchronously and will return a
 :term:`call report`.
 
@@ -25,8 +25,8 @@ Syncs content into a repository form an feed source using the repository's
 :sample_request:`_` ::
 
  {
-   "override_config: {"verify_checksum": false,
-                      "verify_size": false},
+   "override_config": {"verify_checksum": false,
+                       "verify_size": false},
  }
 
 :sample_response:`202` ::
@@ -52,7 +52,7 @@ Syncs content into a repository form an feed source using the repository's
 
 Scheduling a Sync
 -----------------
-A repository can be synced on automatically using an :term:`iso8601 interval`.
+A repository can be synced automatically using an :term:`iso8601 interval`.
 To create a scheduled sync, the interval, sync override config, and other
 schedule options must be set on the repository's :term:`importer`.
 
@@ -85,7 +85,7 @@ schedule options must be set on the repository's :term:`importer`.
 
  {
   "_id": "4fa0208461577710b2000000",
-  "_href": "/pulp/api/v2/repositories/<repo_id>/importers/<impoter_id>/sync_schedules/4fa0208461577710b2000000/",
+  "_href": "/pulp/api/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/4fa0208461577710b2000000/",
   "schedule": "00:00:00Z/P1DT",
   "failure_threshold": 3,
   "consecutive_failures": 0,
@@ -135,7 +135,7 @@ Listing All Scheduled Syncs
 All of the scheduled syncs for a given importer may be listed.
 
 | :method:`get`
-| :path:`/v2/repositories/<repo_id>/importers/<impoter_id>/sync_schedules/`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/`
 | :permission:`read`
 | :return:`list of schedule reports for all scheduled syncs defined (see sample response of Scheduling a Sync for details)`
 
