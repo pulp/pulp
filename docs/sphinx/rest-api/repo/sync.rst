@@ -11,12 +11,9 @@ Syncs content into a repository form an feed source using the repository's
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/sync/`
 | :permission:`update`
-| :param_list:`post` The body of the request is a JSON document with a root
-  element called "override_config". The override_config is itself a JSON object
-  that contains fields representing importer configuration values that are
-  overrides for the importer's default configuration used for this sync.
+| :param_list:`post`
 
-* :param:`override_config,,`
+* :param:`override_config,object,importer configuration values that override the importer's default configuration for this sync`
 
 | :response_list:`_`
 
@@ -28,7 +25,8 @@ Syncs content into a repository form an feed source using the repository's
 :sample_request:`_` ::
 
  {
-   "override_config: {},
+   "override_config: {"verify_checksum": false,
+                      "verify_size": false},
  }
 
 :sample_response:`202` ::
@@ -63,8 +61,8 @@ schedule options must be set on the repository's :term:`importer`.
 | :permission:`create`
 | :param_list:`post`
 
-* :param:`override_config,object,the overridden configuration for the importer to be used on the scheduled sync`
 * :param:`schedule,string,the schedule as an iso8601 interval`
+* :param:`?override_config,object,the overridden configuration for the importer to be used on the scheduled sync`
 * :param:`?failure_threshold,number,consecutive failures allowed before this scheduled sync is disabled`
 * :param:`?enabled,boolean,whether the scheduled sync is initially enabled (defaults to true)`
 
@@ -90,11 +88,11 @@ schedule options must be set on the repository's :term:`importer`.
   "_href": "/pulp/api/v2/repositories/<repo_id>/importers/<impoter_id>/sync_schedules/4fa0208461577710b2000000/",
   "schedule": "00:00:00Z/P1DT",
   "failure_threshold": 3,
-  "_consecutive_failures": 0,
-  "_first_run": null,
-  "_last_run": null,
-  "_next_run": "2012-07-13T00:00:00Z",
-  "_remaining_runs": null,
+  "consecutive_failures": 0,
+  "first_run": null,
+  "last_run": null,
+  "next_run": "2012-07-13T00:00:00Z",
+  "remaining_runs": null,
   "enabled": true,
   "override_config": {},
  }
@@ -109,8 +107,8 @@ The same parameters used to create a scheduled sync may be updated at any point.
 | :permission:`create`
 | :param_list:`put`
 
-* :param:`?override_config,object,new overridden configuration for the importer to be used on the scheduled sync`
 * :param:`?schedule,string,new schedule as an iso8601 interval`
+* :param:`?override_config,object,new overridden configuration for the importer to be used on the scheduled sync`
 * :param:`?failure_threshold,number,new consecutive failures allowed before this scheduled sync is disabled`
 * :param:`?enabled,boolean,whether the scheduled sync is enabled`
 
@@ -119,7 +117,7 @@ The same parameters used to create a scheduled sync may be updated at any point.
 * :response_code:`200,if the schedule was successfully updated`
 * :response_code:`503,if there is a conflicting operation in progress`
 
-| :return:`schedule report representing the current state of the scheduled call`
+| :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Sync for details)`
 
 
 Deleting a Scheduled Sync
@@ -139,7 +137,7 @@ All of the scheduled syncs for a given importer may be listed.
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/importers/<impoter_id>/sync_schedules/`
 | :permission:`read`
-| :return:`list of schedule reports for all scheduled syncs defined`
+| :return:`list of schedule reports for all scheduled syncs defined (see sample response of Scheduling a Sync for details)`
 
 
 Listing a Single Scheduled Sync
@@ -149,4 +147,4 @@ Each scheduled sync may be inspected.
 | :method:`get`
 | :permission:`read`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/<schedule_id>/`
-| :return:`a schedule report for the scheduled sync`
+| :return:`a schedule report for the scheduled sync (see sample response of Scheduling a Sync for details)`
