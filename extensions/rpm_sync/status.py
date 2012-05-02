@@ -84,9 +84,6 @@ class StatusRenderer(object):
             self.render_publish_https_step(progress_report)
 
     def render_metadata_step(self, progress_report):
-        """
-        Displays the details of the importer's metadata download step.
-        """
 
         # Example Data:
         # "metadata": {
@@ -99,9 +96,6 @@ class StatusRenderer(object):
         self._render_general_spinner_step(self.metadata_spinner, current_state, self.metadata_last_state, _('Downloading metadata...'), update_func)
 
     def render_download_step(self, progress_report):
-        """
-        Displays the details of the importer's downloading of packages.
-        """
 
         # Example Data:
         # "content": {
@@ -245,9 +239,6 @@ class StatusRenderer(object):
             self.download_last_state = STATE_FAILED
 
     def render_errata_step(self, progress_report):
-        """
-        Displays the details of the importer's errata import step.
-        """
 
         # Example Data:
         # "errata": {
@@ -261,9 +252,6 @@ class StatusRenderer(object):
         self._render_general_spinner_step(self.errata_spinner, current_state, self.errata_last_state, _('Importing errata...'), update_func)
 
     def render_packages_step(self, progress_report):
-        """
-        Renders the distributor's package publish step.
-        """
 
         # Example Data:
         # "packages": {
@@ -304,9 +292,6 @@ class StatusRenderer(object):
             self.packages_last_state = STATE_FAILED
 
     def render_distributions_step(self, progress_report):
-        """
-        Renders the distributor's distribution publish step.
-        """
 
         # Example Data:
         # "distribution": {
@@ -383,6 +368,29 @@ class StatusRenderer(object):
         self._render_general_spinner_step(self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
 
     def _render_general_spinner_step(self, spinner, current_state, last_state, start_text, state_update_func):
+        """
+        There are a number of steps that are simply running or finished. This
+        method will apply a standard display for those situations.
+
+        @param spinner: spinner instance to use to show progress; should be
+               different per call and not reused
+        @type  spinner: Spinner
+
+        @param current_state: state of the step taken from the progress report
+        @type  current_state: str
+
+        @param last_state: last state for the step as stored in this instance
+        @type  last_state: str
+
+        @param start_text: text to describe the step; only displayed the first
+               time the step begins; should be i18n'd before this call
+        @type  start_text: str
+
+        @param state_update_func: function to call into to change the state for
+               this step
+        @type  state_update_func: func
+        """
+
         # Render nothing if we haven't begun yet
         if current_state == STATE_NOT_STARTED:
             return
