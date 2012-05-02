@@ -636,23 +636,3 @@ class TestComps(testutil.PulpAsyncTest):
         yum_group_ids = [x.groupid for x in comps.groups]
         self.assertEqual(len(yum_group_ids), target_group_count)
 
-    def test_comps_with_i18n_repoid(self):
-        def get_random_unicode():
-            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
-        self.test_basic_comps(get_random_unicode())
-        self.clean()
-        self.test_comps_resync_with_group_changes(get_random_unicode())
-        self.clean()
-        self.test_delete_group_category(get_random_unicode())
-        self.clean()
-        self.test_full_read_parse_write_to_xml(get_random_unicode())
-        self.clean()
-        self.test_immutable_groups(get_random_unicode())
-        self.clean()
-        self.test_metadata_regen_with_group_changes(get_random_unicode())
-        self.clean()
-        self.test_multiple_package_group_additions(get_random_unicode())
-        self.clean()
-        self.test_sync_groups_data(get_random_unicode())
-        self.clean()
-        self.test_update_repomd_xml_file_called_with_no_change_to_comps_data(get_random_unicode())

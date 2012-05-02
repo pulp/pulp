@@ -192,15 +192,3 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
         clone_repo = self.repo_api.repository(clone_id2)
         self.assertEquals(clone_repo['publish'], True)
 
-    def test_repo_clone_with_i18n_id(self):
-        id = u'\u0938\u093e\u092f\u0932\u0940'
-        clone_id = u'\u0938\u093e\u092f\u0932'
-        clone_id1 = u'\u0938\u093e\u092f'
-        clone_id2 = u'\u0938\u093e'
-        self.test_clone(id, clone_id, clone_id1, clone_id2)
-        self.clean()
-        self.test_clone_repo_with_same_id(id, clone_id)
-        self.clean()
-        self.test_clone_non_existent_repo(id, clone_id)
-        self.clean()
-        self.test_clone_publish(id, clone_id, clone_id1, clone_id2)

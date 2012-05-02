@@ -130,14 +130,6 @@ class TestRepoSync(testutil.PulpAsyncTest):
             running_clone = self.check_if_running_clone('testrepocln_clone')
             print "Clone still running"
 
-    def test_repo_sync_with_i18n_id(self):
-        id = u'\u0938\u093e\u092f\u0932\u0940'
-        self.test_clone(id)
-        self.clean()
-        self.test_sync_local(id)
-        self.clean()
-        self.test_sync_remote(id)
-
     def test_repo_sync_local_read_only_source(self):
         read_only_dir = os.path.join(self.test_data_dir, "repo_no_write_perms")
         r_id = "test_repo_sync_local_read_only_source"

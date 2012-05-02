@@ -160,11 +160,11 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertRaises(PulpException, repo_sync.clone, 'valid-id', 'valid-clone-id', 'valid-clone-id', relative_path=clone_id)
 
     def test_i18n_repo_relative_path(self):
-        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
-        repo = self.repo_api.create(repo_id, 'some name', 'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/',
-                                    relative_path=repo_id)
+        relative_path = u'\u0938\u093e\u092f\u0932\u0940'
+        repo = self.repo_api.create('some-id', 'some name', 'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/',
+                                    relative_path=relative_path)
         assert(repo is not None)
-        repo_sync._sync(repo_id)
+        repo_sync._sync('some-id')
 
     def test_repo_create_with_notes(self, repo_id = 'some-repo-with-notes-id'):
         notes = {'key':'value','k':'v'}
@@ -1576,75 +1576,6 @@ class TestRepoApi(testutil.PulpAsyncTest):
         assert(repo is not None)
         self.assertEquals(repo['publish'], True)
 
-    def test_repo_create_with_i18n_id(self):
-        def get_random_unicode():
-            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
-        self.test_repo_create(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_create_bad_arch(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_create_conflicting_relative_path(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_create_feedless(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_create_with_checksum_type(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_create_with_feed_certs(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_create_with_notes(get_random_unicode())
-        self.deleteRepos()
-
-    def test_repo_delete_with_i18n_id(self):
-        def get_random_unicode():
-            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
-        self.test_delete(get_random_unicode())
-        self.deleteRepos()
-        self.test_delete_feedless(get_random_unicode())
-        self.deleteRepos()
-        self.test_delete_non_existing_clone_id(get_random_unicode())
-        self.deleteRepos()
-        self.test_delete_note(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_delete_with_consumer_certs(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_delete_with_feed_certs(get_random_unicode())
-        self.deleteRepos()
-
-    def test_repo_update_with_i18n_id(self):
-        def get_random_unicode():
-            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
-        self.test_update_repo_notes(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_update(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_update_checksum_type(get_random_unicode())
-        self.deleteRepos()
-        self.test_repo_update_with_feed_certs(get_random_unicode())
-        self.deleteRepos()
-
-    def test_repo_with_i18n_id(self):
-        def get_random_unicode():
-            return unichr(random.choice((0x300, 0x2000)) + random.randint(0, 0xff))
-        self.cancel_task(get_random_unicode())
-        self.deleteRepos()
-        #self.resync_removes_deleted_package(get_random_unicode())
-        #self.deleteRepos()
-        self.test_add_2_pkg_same_nevra_same_repo(get_random_unicode())
-        self.deleteRepos()
-        self.test_add_note(get_random_unicode())
-        self.deleteRepos()
-        self.test_associate_packages(get_random_unicode())
-        self.deleteRepos()
-        self.test_clean(get_random_unicode())
-        self.deleteRepos()
-        self.test_consumer_errata(get_random_unicode())
-        self.deleteRepos()
-        self.test_consumerwithpackage(get_random_unicode())
-        self.deleteRepos()
-        self.test_duplicate_syncs(get_random_unicode())
-        self.deleteRepos()
-        self.test_empty_repo(get_random_unicode())
-        self.deleteRepos()
 
     def test_repo_delete_updates_repoids_under_objects(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
