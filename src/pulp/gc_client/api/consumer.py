@@ -47,6 +47,7 @@ class ConsumerAPI(PulpAPI):
         body = {'delta' : delta}
         return self.server.PUT(path, body)
 
+
 class ConsumerContentAPI(PulpAPI):
     """
     Connection class to access consumer content install/uninstall/update calls
@@ -55,8 +56,20 @@ class ConsumerContentAPI(PulpAPI):
         super(ConsumerContentAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/consumers/%s/actions/content/"
 
-    def install(self, id, units, options=None):
+    def install(self, id, units, options={}):
         path = self.base_path % id + "install/"
+        data = {"units": units,
+                "options": options,}
+        return self.server.POST(path, data)
+
+    def update(self, id, units, options={}):
+        path = self.base_path % id + "update/"
+        data = {"units": units,
+                "options": options,}
+        return self.server.POST(path, data)
+
+    def uninstall(self, id, units, options={}):
+        path = self.base_path % id + "uninstall/"
         data = {"units": units,
                 "options": options,}
         return self.server.POST(path, data)
