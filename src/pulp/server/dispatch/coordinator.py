@@ -263,12 +263,14 @@ class Coordinator(object):
                 postponing_tasks.add(task_resource['task_id'])
                 reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
                 reason['operation'] = current_operation
-                postponing_reasons.append(reason)
+                if reason not in postponing_reasons:
+                    postponing_reasons.append(reason)
             if current_operation in rejecting_operations:
                 rejecting_tasks.add(task_resource['task_id'])
                 reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
                 reason['operation'] = current_operation
-                rejecting_reasons.append(reason)
+                if reason not in rejecting_reasons:
+                    rejecting_reasons.append(reason)
 
         if rejecting_tasks:
             return dispatch_constants.CALL_REJECTED_RESPONSE, rejecting_tasks, rejecting_reasons, task_resources
