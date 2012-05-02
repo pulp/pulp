@@ -13,6 +13,8 @@
 
 import copy
 
+from pulp.common.tags import resource_tag
+
 from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.dispatch import constants as dispatch_constants
@@ -52,7 +54,8 @@ class ScheduleManager(object):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'sync_weight')
-        tags = [repo_id, importer_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
         call_request = CallRequest(sync_manager.sync, args, kwargs, resources, weight, tags, archive=True)
 
         # schedule the sync
@@ -141,7 +144,8 @@ class ScheduleManager(object):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
                      dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'publish_weight')
-        tags = [repo_id, distributor_id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
         call_request = CallRequest(publish_manager.publish, args, kwargs, resources, weight, tags, archive=True)
 
         # schedule the publish
