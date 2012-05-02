@@ -261,7 +261,7 @@ class Scheduler(object):
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
-        self.scheduled_call_collection.update({'_id': schedule_id}, schedule_updates, safe=True)
+        self.scheduled_call_collection.update({'_id': schedule_id}, {'$set': schedule_updates}, safe=True)
 
     def remove(self, schedule_id):
         """
