@@ -91,8 +91,8 @@ class YumDistributor(Distributor):
                 return False, msg
             if key == 'relative_url':
                 relative_path = config.get('relative_url')
-                if relative_path is not None and not isinstance(relative_path, str):
-                    msg = _("relative_url should be a string; got %s instead" % relative_path)
+                if relative_path is not None and not isinstance(relative_path, basestring):
+                    msg = _("relative_url should be a basestring; got %s instead" % relative_path)
                     _LOG.error(msg)
                     return False, msg
             if key == 'http':
