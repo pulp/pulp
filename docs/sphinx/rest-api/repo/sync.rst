@@ -133,7 +133,7 @@ Delete a scheduled sync to remove it permanently from the importer.
 
 
 Listing All Scheduled Syncs
---------------------------
+---------------------------
 All of the scheduled syncs for a given importer may be listed.
 
 | :method:`get`
