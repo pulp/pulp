@@ -22,8 +22,8 @@ version = 41
 
 CONFLICT_MESSAGE = '''
 ID for repositories %s contains characters which are not supported by Yum as a repository title in a '.repo' file.
-Because of this, you may see an error when installing a package from these repositories. You can either manually update
-consumer .repo files to update title, or delete and create a new repository that follows new ID restriction. 
+Because of this, you may see an error when installing a package from these repositories on a consumer. You can either 
+manually update consumer's .repo file to update title, or delete and create a new repository that follows new ID restriction. 
 Repository ID may now contain only numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)
 '''
 
