@@ -14,8 +14,11 @@
 
 # Python
 import datetime
+import httplib
+import itertools
 import os
 import sys
+import traceback
 from pprint import pformat
 
 import mock
@@ -27,8 +30,10 @@ import dummy_plugins
 
 from pulp.common import dateutils
 from pulp.server.content import loader as plugin_loader
+from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.gc_repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.unit_association_query import Criteria
 
@@ -1027,3 +1032,96 @@ class RepoAssociateTests(RepoControllersTests):
 
         # Verify
         self.assertEqual(400, status)
+
+# scheduled sync rest api ------------------------------------------------------
+
+class ScheduledSyncTests(RepoPluginsTests):
+
+    def setUp(self):
+        super(ScheduledSyncTests, self).setUp()
+
+        self.repo_id = 'scheduled-repo'
+        self.repo_manager.create_repo(self.repo_id)
+        self.importer_manager.set_importer(self.repo_id, 'dummy-importer', {})
+
+    def clean(self):
+        super(ScheduledSyncTests, self).clean()
+        ScheduledCall.get_collection().remove(safe=True)
+
+    def tearDown(self):
+        super(ScheduledSyncTests, self).tearDown()
+
+    @property
+    def collection_uri_path(self):
+        return '/v2/repositories/%s/importers/dummy-importer/sync_schedules/' % self.repo_id
+
+    def resource_uri_path(self, schedule_id):
+        return self.collection_uri_path + schedule_id + '/'
+
+    def test_get_empty_sync_schedules(self):
+        try:
+            self.get(self.collection_uri_path)
+        except:
+            self.fail(traceback.format_exc())
+
+    def test_create_sync_schedule(self):
+        params = {'schedule': 'P1DT'}
+        status, body = self.post(self.collection_uri_path, params)
+        self.assertTrue(status == httplib.CREATED, '\n'.join((str(status), pformat(body))))
+        for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
+                      '_consecutive_failures', '_remaining_runs', '_first_run',
+                      '_last_run', '_next_run', 'override_config'):
+            self.assertTrue(field in body, 'missing field: %s' % field)
+
+    def test_create_missing_schedule(self):
+        status, body = self.post(self.collection_uri_path, {})
+        self.assertTrue(status == httplib.BAD_REQUEST)
+
+    def test_delete_schedule(self):
+        status, body = self.post(self.collection_uri_path, {'schedule': 'P1DT'})
+        self.assertTrue(status == httplib.CREATED)
+        schedule_id = body['_id']
+
+        status, body = self.delete(self.resource_uri_path(schedule_id))
+        self.assertTrue(status == httplib.OK)
+        self.assertTrue(body is None)
+
+    def test_delete_non_existent(self):
+        status, body = self.delete(self.resource_uri_path('not-there'))
+        self.assertTrue(status == httplib.NOT_FOUND)
+
+    def test_update_schedule(self):
+        schedule = {'schedule': 'PT1H',
+                    'failure_threshold': 2,
+                    'enabled': True}
+        status, body = self.post(self.collection_uri_path, schedule)
+        self.assertTrue(status == httplib.CREATED)
+        for key in schedule:
+            self.assertTrue(schedule[key] == body[key], key)
+
+        schedule_id = body['_id']
+        updates = {'schedule': 'PT2H',
+                   'failure_threshold': 3,
+                   'enabled': False,
+                   'override_config': {'key': 'value'}}
+        status, body = self.put(self.resource_uri_path(schedule_id), updates)
+        self.assertTrue(status == httplib.OK, '\n'.join((str(status), pformat(body))))
+        self.assertTrue(schedule_id == body['_id'])
+        for key in updates:
+            self.assertTrue(updates[key] == body[key], key)
+
+# scheduled publish api --------------------------------------------------------
+
+class ScheduledPublishTests(RepoPluginsTests):
+
+    def setUp(self):
+        super(ScheduledPublishTests, self).setUp()
+
+    def clean(self):
+        super(ScheduledPublishTests, self).clean()
+        manager_factory.reset()
+        ScheduledCall.get_collection().remove(safe=True)
+
+    def tearDown(self):
+        super(ScheduledPublishTests, self).tearDown()
+
