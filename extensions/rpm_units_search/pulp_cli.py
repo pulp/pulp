@@ -23,7 +23,9 @@ TYPE_RPM = 'rpm'
 TYPE_SRPM = 'srpm'
 TYPE_DRPM = 'drpm'
 TYPE_ERRATUM = 'erratum'
+TYPE_DISTRIBUTION = 'distribution'
 
+# Intentionally does not include distributions; they should be looked up specifically
 ALL_TYPES = (TYPE_RPM, TYPE_SRPM, TYPE_DRPM, TYPE_ERRATUM)
 
 # List of all fields that the user can elect to display for each supported type
@@ -109,12 +111,14 @@ def initialize(context):
     srpm_command = GeneralUnitSearchCommand(context, 'srpm', _('search for SRPMs in a repository'), _('Repository SRPMs'), [TYPE_SRPM])
     drpm_command = GeneralUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
     errata_command = ErrataCommand(context, 'errata', _('search errata in a repository'))
+    distro_command = DistributionCommand(context, 'distribution', _('list distributions in a repository'))
 
     units_section.add_command(all_command)
     units_section.add_command(rpm_command)
     units_section.add_command(srpm_command)
     units_section.add_command(drpm_command)
     units_section.add_command(errata_command)
+    units_section.add_command(distro_command)
 
 # -- commands -----------------------------------------------------------------
 
@@ -234,7 +238,7 @@ class ErrataCommand(PulpCliCommand):
         repo_id = kwargs.pop('repo_id')
         try:
             criteria = args_to_criteria_doc(kwargs, [TYPE_ERRATUM])
-            LOG.debug('Criteria for unit search')
+            LOG.debug('Criteria for errata search')
             LOG.debug(criteria)
         except InvalidCriteria, e:
             self.context.prompt.render_failure_message(e[0])
@@ -333,6 +337,74 @@ class ErrataCommand(PulpCliCommand):
             display = SINGLE_ERRATUM_TEMPLATE % template_data
             self.context.prompt.write(display, skip_wrap=True)
 
+class DistributionCommand(PulpCliCommand):
+
+    def __init__(self, context, name, description):
+        PulpCliCommand.__init__(self, name, description, self.run)
+
+        self.context = context
+
+        add_required_group(self)
+
+    def run(self, **kwargs):
+        self.context.prompt.render_title(_('Repository Distributions'))
+
+        # Collect data
+        repo_id = kwargs.pop('repo_id')
+        try:
+            criteria = args_to_criteria_doc(kwargs, [TYPE_DISTRIBUTION])
+            LOG.debug('Criteria for distribution searc')
+            LOG.debug(criteria)
+        except InvalidCriteria, e:
+            self.context.prompt.render_failure_message(e[0])
+            return
+
+        # Query the server
+        all_distros = self.context.server.repo_search.search(repo_id, criteria).response_body
+
+        # For the immediate future, there will be either 0 or 1 distributions,
+        # but it's just as easy to loop here
+        for d in all_distros:
+            distro = d['metadata']
+
+            # Distro Metadata
+            # id, family, arch, variant, _storage_path
+
+            data = {
+                'id'      : distro['id'],
+                'family'  : distro['family'],
+                'arch'    : distro['arch'],
+                'variant' : distro['variant'],
+                'path'    : distro['_storage_path'],
+            }
+
+            self.context.prompt.write(_('Id:            %(id)s') % data)
+            self.context.prompt.write(_('Family:        %(family)s') % data)
+            self.context.prompt.write(_('Architecture:  %(arch)s') % data)
+            self.context.prompt.write(_('Variant:       %(variant)s') % data)
+            self.context.prompt.write(_('Storage Path:  %(path)s') % data)
+            self.context.prompt.render_spacer()
+
+            # Files
+            # filename, relativepath, checksum, checksumtype, size
+            self.context.prompt.write(_('Files:'))
+            for f in distro['files']:
+                data = {
+                    'filename' : f['filename'],
+                    'path'     : f['relativepath'],
+                    'size'     : f['size'],
+                    'type'     : f['checksumtype'],
+                    'checksum' : f['checksum'],
+                }
+
+                self.context.prompt.write(_('  Filename:       %(filename)s') % data)
+                self.context.prompt.write(_('  Relative Path:  %(path)s') % data)
+                self.context.prompt.write(_('  Size:           %(size)s') % data)
+                self.context.prompt.write(_('  Checksum Type:  %(type)s') % data)
+
+                checksum = self.context.prompt.wrap(_('  Checksum:       %(checksum)s') % data, remaining_line_indent=18)
+                self.context.prompt.write(checksum, skip_wrap=True)
+                self.context.prompt.render_spacer()
 
 # -- utility ------------------------------------------------------------------
 
