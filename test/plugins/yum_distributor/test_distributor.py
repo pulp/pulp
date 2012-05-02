@@ -280,8 +280,8 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(summary["num_units_attempted"], 0)
         self.assertEqual(summary["num_units_published"], 0)
         self.assertEqual(summary["num_units_errors"], 0)
-        expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, "repos", repo.id)
-        expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, "repos", repo.id)
+        expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, repo.id).rstrip('/')
+        expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, repo.id).rstrip('/')
         self.assertEqual(summary["https_publish_dir"], expected_repo_https_publish_dir)
         self.assertEqual(summary["http_publish_dir"], expected_repo_http_publish_dir)
         details = report.details
@@ -308,10 +308,10 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(summary["num_units_published"], num_units)
         self.assertEqual(summary["num_units_errors"], 0)
         # Verify we did not attempt to publish to http
-        expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, "repos", relative_url)
+        expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, relative_url)
         self.assertFalse(os.path.exists(expected_repo_http_publish_dir))
 
-        expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, "repos", relative_url)
+        expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, relative_url).rstrip('/')
         self.assertEqual(summary["https_publish_dir"], expected_repo_https_publish_dir)
         self.assertTrue(os.path.exists(expected_repo_https_publish_dir))
         details = report.details
@@ -332,6 +332,21 @@ class TestDistributor(unittest.TestCase):
             actual_target = os.readlink(expected_link)
             expected_target = u.storage_path
             self.assertEqual(actual_target, expected_target)
+        #
+        # Now test flipping so https is disabled and http is enabled
+        #
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, 
+                http_publish_dir=self.http_publish_dir, relative_url=relative_url, http=True, https=False)
+        report = distributor.publish_repo(repo, publish_conduit, config)
+        self.assertTrue(report.success_flag)
+        # Verify we did publish to http
+        self.assertTrue(os.path.exists(expected_repo_http_publish_dir))
+
+        # Verify we did not publish to https
+        self.assertFalse(os.path.exists(expected_repo_https_publish_dir))
+
+        # Verify we cleaned up the misc dirs under the https dir
+        self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)
 
     def test_split_path(self):
         distributor = YumDistributor()
@@ -595,4 +610,16 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")
 
 
+    def test_remove_symlink(self):
 
+        pub_dir = self.http_publish_dir
+        link_path = os.path.join(pub_dir, "a", "b", "c", "d", "e")
+        os.makedirs(link_path)
+        link_path = os.path.join(link_path, "temp_link").rstrip('/')
+        os.symlink(self.https_publish_dir, link_path)
+        self.assertTrue(os.path.exists(link_path))
+
+        distributor = YumDistributor()
+        distributor.remove_symlink(pub_dir, link_path)
+        self.assertFalse(os.path.exists(link_path))
+        self.assertEqual(len(os.listdir(pub_dir)), 0)

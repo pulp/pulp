@@ -37,8 +37,8 @@ OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
                         "checksum_type", "skip_content_types", "https_publish_dir", "http_publish_dir"]
 
 SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
-HTTP_PUBLISH_DIR="/var/lib/pulp/published/http"
-HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https"
+HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
+HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/repos"
 
 ###
 # Config Options Explained
@@ -367,34 +367,47 @@ class YumDistributor(Distributor):
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
             relpath = relpath[1:]
+        #
+        # Handle publish link for HTTPS
+        #
+        https_publish_dir = self.get_https_publish_dir(config)
+        https_repo_publish_dir = os.path.join(https_publish_dir, relpath).rstrip('/')
         if config.get("https"):
             # Publish for HTTPS
             self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
-                https_publish_dir = self.get_https_publish_dir(config)
-                repo_publish_dir = os.path.join(https_publish_dir, "repos", relpath)
-                _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
-                self.create_symlink(repo.working_dir, repo_publish_dir)
-                summary["https_publish_dir"] = repo_publish_dir
+                _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, https_repo_publish_dir))
+                self.create_symlink(repo.working_dir, https_repo_publish_dir)
+                summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
             except:
                 self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
         else:
             self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
+            if os.path.lexists(https_repo_publish_dir):
+                _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
+                self.remove_symlink(https_publish_dir, https_repo_publish_dir)
+        #
+        # Handle publish link for HTTP
+        #
+        http_publish_dir = self.get_http_publish_dir(config)
+        http_repo_publish_dir = os.path.join(http_publish_dir, relpath).rstrip('/')
         if config.get("http"):
             # Publish for HTTP
             self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
-                http_publish_dir = self.get_http_publish_dir(config)
-                repo_publish_dir = os.path.join(http_publish_dir, "repos", relpath)
-                _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, repo_publish_dir))
-                self.create_symlink(repo.working_dir, repo_publish_dir)
-                summary["http_publish_dir"] = repo_publish_dir
+                _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, http_repo_publish_dir))
+                self.create_symlink(repo.working_dir, http_repo_publish_dir)
+                summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
             except:
                 self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:
             self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)
+            if os.path.lexists(http_repo_publish_dir):
+                _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
+                self.remove_symlink(http_publish_dir, http_repo_publish_dir)
+
         summary["num_units_attempted"] = len(units)
         summary["num_units_published"] = len(units) - len(errors)
         summary["num_units_errors"] = len(errors)
@@ -465,6 +478,36 @@ class YumDistributor(Distributor):
         packages_progress_status["state"] = "FINISHED"
         self.set_progress("packages", packages_progress_status, progress_callback)
         return True, []
+
+    def remove_symlink(self, publish_dir, link_path):
+        """
+        @param publish_dir: full http/https publish directory for all repos
+        @type publish_dir: str
+
+        @param link_path: full publish path for this specific repo
+        @type link_path: str
+
+        Intent is to remove all the specific link and all unique sub directories used to create it
+        """
+        # Remove the symlink from filesystem
+        link_path = link_path.rstrip('/')
+        os.unlink(link_path)
+
+        # Adjust the link_path and removal the symlink from it
+        link_path = os.path.split(link_path)[0]
+        common_pieces = [x for x in publish_dir.split('/') if x] # remove empty pieces
+        link_pieces = [x for x in link_path.split('/') if x]
+        # Determine what are the non shared pieces from this link
+        potential_to_remove = link_pieces[len(common_pieces):]
+        num_pieces = len(potential_to_remove)
+        # Start removing the end pieces of the path and work our way back
+        # If we encounter a non-empty directory stop removal and return
+        for index in range(num_pieces, 0, -1):
+            path_to_remove = os.path.join(publish_dir, *potential_to_remove[:index])  #Start with all then work back
+            if len(os.listdir(path_to_remove)):
+                # Directory is not empty so stop removal quit
+                break
+            os.rmdir(path_to_remove)
 
     def get_relpath_from_unit(self, unit):
         """
