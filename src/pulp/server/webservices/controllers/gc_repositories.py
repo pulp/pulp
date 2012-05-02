@@ -286,7 +286,7 @@ class SyncScheduleCollection(JSONController):
                 _LOG.warn(msg % {'r': repo_id, 'i': importer_id, 's': schedule_id})
             else:
                 obj = serialization.dispatch.scheduled_sync_obj(schedule)
-                obj.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
+                obj.update(serialization.link.child_link_obj(schedule_id))
                 schedule_objs.append(obj)
         return self.ok(schedule_objs)
 
@@ -317,7 +317,7 @@ class SyncScheduleCollection(JSONController):
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         obj = serialization.dispatch.scheduled_sync_obj(schedule)
-        obj.update(serialization.link.child_link_obj('sync_schedules', schedule_id))
+        obj.update(serialization.link.child_link_obj(schedule_id))
         return self.created(obj['_href'], obj)
 
 
@@ -512,7 +512,7 @@ class PublishScheduleCollection(JSONController):
                 _LOG.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
             else:
                 obj = serialization.dispatch.scheduled_publish_obj(scheduled_call)
-                obj.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
+                obj.update(serialization.link.child_link_obj(schedule_id))
                 schedule_objs.append(obj)
         return self.ok(schedule_objs)
 
@@ -541,7 +541,7 @@ class PublishScheduleCollection(JSONController):
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         obj = serialization.dispatch.scheduled_publish_obj(schedule)
-        obj.update(serialization.link.child_link_obj('publish_schedules', schedule_id))
+        obj.update(serialization.link.child_link_obj(schedule_id))
         return self.created(obj['_href'], obj)
 
 
