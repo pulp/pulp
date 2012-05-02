@@ -78,7 +78,6 @@ def clear_sync_in_progress_flags():
     for r in repos:
         collection.update({"id":r["id"]}, {"$set": {"sync_in_progress":False}})
 
-
 class RepoApi(BaseApi):
     """
     API for create/delete/syncing of Repo objects
@@ -224,7 +223,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
-        self.check_for_whitespace(id)
+        self.check_id(id)
         if relative_path:
             self.check_for_whitespace(relative_path, "relative_path")
             relative_path = encode_unicode(relative_path)

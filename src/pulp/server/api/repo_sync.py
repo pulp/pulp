@@ -63,7 +63,7 @@ def clone(id, clone_id, clone_name, feed='parent', groupid=[], relative_path=Non
             on failure None is returned
     @return
     """
-    repo_api.check_for_whitespace(clone_id, "clone_id")
+    repo_api.check_id(clone_id)
     if relative_path:
         repo_api.check_for_whitespace(relative_path, "relative_path")
     repo = repo_api.repository(id)
