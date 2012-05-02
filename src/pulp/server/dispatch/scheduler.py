@@ -241,7 +241,7 @@ class Scheduler(object):
 
     def update(self, schedule_id, **schedule_updates):
         """
-        Update a scheduled call reqeust
+        Update a scheduled call request
         Valid schedule updates:
          * call_request
          * schedule
