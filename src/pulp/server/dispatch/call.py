@@ -262,7 +262,10 @@ class CallReport(object):
             data['exception'] = None
         tb = getattr(self, 'traceback')
         if tb is not None:
-            data['traceback'] = traceback.format_tb(tb)
+            if isinstance(tb, (str, list, tuple)):
+                data['traceback'] = str(tb)
+            else:
+                data['traceback'] = traceback.format_tb(tb)
         else:
             data['traceback'] = None
         for field in ('start_time', 'finish_time'):
