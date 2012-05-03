@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.6
+Version:        1.1.7
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu May 03 2012 Jay Dobies <jason.dobies@redhat.com> 1.1.7-1
+- 817914 - adding restriction on repo id as yum does not support multibyte
+  characters inside .repo file in repo title, this fix also contains migrate
+  script to let users know if they have any such repos and possible approaches
+  of fixing them (skarmark@redhat.com)
+
 * Fri Apr 27 2012 Jeff Ortel <jortel@redhat.com> 1.1.6-1
 - 816808 - fixing consumer unbind through goferplugin failing to delete repo
   from pulp.repo file due to wrong encoding for i18n repo ids
