@@ -192,7 +192,8 @@ class ContentSection(PulpCliSection):
                 '--name',
                 _('content unit key (name)'),
                 required=True,
-                allow_multiple=True)
+                allow_multiple=True,
+                aliases=['-n'])
             self.add_command(command)
 
 
