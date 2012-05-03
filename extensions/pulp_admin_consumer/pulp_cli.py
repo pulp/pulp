@@ -289,13 +289,30 @@ class InstallContent(PulpCliCommand):
 
     def succeeded(self, id, response):
         prompt = self.context.prompt
-        # reported as failed
-        if not response.result['status']:
-            msg = 'Install failed'
+        # overall status
+        if response.result['status']:
+            msg = 'Install Succeeded'
+            prompt.render_success_message(_(msg))
+        else:
+            msg = 'Install Failed'
             prompt.render_failure_message(_(msg))
-        # reported as succeeded
-        prompt.render_title('Install Result')
-        prompt.render_document(response.result)
+        # detailed status
+        prompt.render_title('Report Details')
+        details = response.result['details']
+        for type_id, report in details.items():
+            status = report['status']
+            if status:
+                d = dict(
+                    status=status,
+                    details=report['details'])
+                order = ['status', 'details']
+                prompt.render_document(d, order=order)
+            else:
+                d = dict(
+                    status=status,
+                    message=report['details']['message'])
+                order = ['status', 'message']
+                prompt.render_document(d, order=order)
 
     def failed(self, id, response):
         prompt = self.context.prompt
@@ -401,13 +418,30 @@ class UpdateContent(PulpCliCommand):
 
     def succeeded(self, id, response):
         prompt = self.context.prompt
-        # reported as failed
-        if not response.result['status']:
-            msg = 'Install failed'
+        # overall status
+        if response.result['status']:
+            msg = 'Update Succeeded'
+            prompt.render_success_message(_(msg))
+        else:
+            msg = 'Update Failed'
             prompt.render_failure_message(_(msg))
-        # reported as succeeded
-        prompt.render_title('Update Result')
-        prompt.render_document(response.result)
+        # detailed status
+        prompt.render_title('Report Details')
+        details = response.result['details']
+        for type_id, report in details.items():
+            status = report['status']
+            if status:
+                d = dict(
+                    status=status,
+                    details=report['details'])
+                order = ['status', 'details']
+                prompt.render_document(d, order=order)
+            else:
+                d = dict(
+                    status=status,
+                    message=report['details']['message'])
+                order = ['status', 'message']
+                prompt.render_document(d, order=order)
 
     def failed(self, id, response):
         prompt = self.context.prompt
@@ -513,13 +547,30 @@ class UninstallContent(PulpCliCommand):
 
     def succeeded(self, id, response):
         prompt = self.context.prompt
-        # reported as failed
-        if not response.result['status']:
-            msg = 'Install failed'
+        # overall status
+        if response.result['status']:
+            msg = 'Uninstall Succeeded'
+            prompt.render_success_message(_(msg))
+        else:
+            msg = 'Uninstall Failed'
             prompt.render_failure_message(_(msg))
-        # reported as succeeded
-        prompt.render_title('Uninstall Result')
-        prompt.render_document(response.result)
+        # detailed status
+        prompt.render_title('Report Details')
+        details = response.result['details']
+        for type_id, report in details.items():
+            status = report['status']
+            if status:
+                d = dict(
+                    status=status,
+                    details=report['details'])
+                order = ['status', 'details']
+                prompt.render_document(d, order=order)
+            else:
+                d = dict(
+                    status=status,
+                    message=report['details']['message'])
+                order = ['status', 'message']
+                prompt.render_document(d, order=order)
 
     def failed(self, id, response):
         prompt = self.context.prompt

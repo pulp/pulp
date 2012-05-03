@@ -152,11 +152,16 @@ class InstallContent(PulpCliCommand):
         # reported as succeeded
         details = response.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
-        prompt.render_title('Installed')
-        prompt.render_document_list(
-            details['resolved'],
-            order=filter,
-            filters=filter)
+        resolved = details['resolved']
+        if resolved:
+            prompt.render_title('Installed')
+            prompt.render_document_list(
+                resolved,
+                order=filter,
+                filters=filter)
+        else:
+            msg = 'Packages already installed'
+            prompt.render_success_message(_(msg))
         deps = details['deps']
         if deps:
             prompt.render_title('Installed for dependency')
@@ -277,11 +282,16 @@ class UpdateContent(PulpCliCommand):
         # reported as succeeded
         details = response.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
-        prompt.render_title('Updated')
-        prompt.render_document_list(
-            details['resolved'],
-            order=filter,
-            filters=filter)
+        resolved = details['resolved']
+        if resolved:
+            prompt.render_title('Updated')
+            prompt.render_document_list(
+                resolved,
+                order=filter,
+                filters=filter)
+        else:
+            msg = 'No updates needed'
+            prompt.render_success_message(_(msg))
         deps = details['deps']
         if deps:
             prompt.render_title('Installed for dependency')
@@ -402,11 +412,16 @@ class UninstallContent(PulpCliCommand):
         # reported as succeeded
         details = response.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
-        prompt.render_title('Uninstalled')
-        prompt.render_document_list(
-            details['resolved'],
-            order=filter,
-            filters=filter)
+        resolved = details['resolved']
+        if resolved:
+            prompt.render_title('Uninstalled')
+            prompt.render_document_list(
+                resolved,
+                order=filter,
+                filters=filter)
+        else:
+            msg = 'No matching packages found to uninstall'
+            prompt.render_success_message(_(msg))
         deps = details['deps']
         if deps:
             prompt.render_title('Uninstalled for dependency')

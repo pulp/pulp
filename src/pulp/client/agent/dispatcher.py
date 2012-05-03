@@ -17,7 +17,19 @@ from pulp.client.agent.container import Container
 
 
 class HandlerNotFound(Exception):
-    pass
+    """
+    Handler not found.
+    """
+    
+    def __init__(self, type_id):
+        """
+        @param type_id: The type ID.
+        @type type_id: str
+        """
+        Exception.__init__(self, type_id)
+
+    def __str__(self):
+        return 'No handler for: (%s)' % self.args[0]
 
 
 class Dispatcher:
