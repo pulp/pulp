@@ -20,155 +20,14 @@ from pulp.gc_client.api.exceptions import NotFoundException
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    consumer_section = AdminConsumerSection(context)
+    consumer_section = context.cli.find_section('consumer')
     consumer_section.add_subsection(ContentSection(context))
-    context.cli.add_section(consumer_section)
-    
-# -- common exceptions --------------------------------------------------------
 
-class InvalidConfig(Exception):
-    """
-    During parsing of the user supplied arguments, this will indicate a
-    malformed set of values. The message in the exception (e[0]) is formatted
-    and i18n'ed to be displayed directly to the user.
-    """
-    pass
+# -- constants --------------------------------------------------------
 
-# -- sections -----------------------------------------------------------------
+TYPE_ID = 'rpm'
 
-class AdminConsumerSection(PulpCliSection):
-
-    def __init__(self, context):
-        PulpCliSection.__init__(self, 'consumer', 'consumer lifecycle (list, update, etc.) commands')
-
-        self.context = context
-        self.prompt = context.prompt # for easier access
-
-        # Common Options
-        id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
-        name_option = PulpCliOption('--display_name', '(optional) user-readable display name for the consumer', required=False)
-        description_option = PulpCliOption('--description', '(optional) user-readable description for the consumer', required=False)
-
-        # Update Command
-        update_command = PulpCliCommand('update', 'changes metadata on an existing consumer', self.update)
-        update_command.add_option(id_option)
-        update_command.add_option(name_option)
-        update_command.add_option(description_option)
-        d =  '(optional) adds/updates/deletes notes to programmtically identify the consumer; '
-        d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
-        d += 'be changed by specifying this option multiple times; notes are deleted by '
-        d += 'specifying "" as the value'
-        update_command.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
-        self.add_command(update_command)
-
-        # Delete Command
-        unregister_command = PulpCliCommand('unregister', 'unregisters a consumer', self.unregister)
-        unregister_command.add_option(PulpCliOption('--id', 'identifies the consumer to be unregistered', required=True))
-        self.add_command(unregister_command)
-
-        # List Command
-        list_command = PulpCliCommand('list', 'lists summary of consumers registered to the Pulp server', self.list)
-        list_command.add_option(PulpCliFlag('--details', 'if specified, all the consumer information is displayed'))
-        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
-        self.add_command(list_command)
-
-    def update(self, **kwargs):
-
-        # Assemble the delta for all options that were passed in
-        delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('id') # not needed in the delta
-        if 'note' in kwargs.keys():
-            if kwargs['note']:
-                delta['notes'] = self._parse_notes(kwargs['note'])
-            delta.pop('note')
-
-        try:
-            self.context.server.consumer.update(kwargs['id'], delta)
-            self.prompt.render_success_message('Consumer [%s] successfully updated' % kwargs['id'])
-        except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % kwargs['id'], tag='not-found')
-
-    def unregister(self, **kwargs):
-        id = kwargs['id']
-
-        try:
-            self.context.server.consumer.unregister(id)
-            self.prompt.render_success_message('Consumer [%s] successfully unregistered' % id)
-        except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
-
-    def list(self, **kwargs):
-
-        self.prompt.render_title('Consumers')
-
-        consumer_list = self.context.server.consumer.consumers().response_body
-
-        # Default flags to render_document_list
-        filters = ['id', 'display_name', 'description', 'bindings', 'notes']
-        order = filters
-
-        if kwargs['details'] is True:
-            filters = None
-            order = ['id', 'display_name']
-        elif kwargs['fields'] is not None:
-            filters = kwargs['fields'].split(',')
-            if 'id' not in filters:
-                filters.append('id')
-            order = ['id']
-
-        # Manually loop over the repositories so we can interject the plugins
-        # manually based on the CLI flags.
-        for c in consumer_list:
-            self.prompt.render_document(c, filters=filters, order=order)
-
-
-    def install(self, **kwargs):
-        id = kwargs['id']
-        units = []
-        for name in kwargs['name']:
-            unit_key = dict(name=name)
-            unit = dict(type_id='rpm', unit_key=unit_key)
-            units.append(unit)
-        try:
-            task = self.context.server.consumer_content.install(id, units=units)
-            self.prompt.render_success_message('Install task created with id [%s]' % task.task_id)
-            # Wait for task to finish
-            self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' % (kwargs['name'], id))
-        except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
-
-
-
-    def _parse_notes(self, notes_list):
-        """
-        Extracts notes information from the user-specified options and puts them in a dictionary
-
-        @return: dict of notes
-
-        @raises InvalidConfig: if one or more of the notes is malformed
-        """
-
-        notes_dict = {}
-        for note in notes_list:
-            pieces = note.split('=', 1)
-
-            if len(pieces) < 2:
-                raise InvalidConfig(_('Notes must be specified in the format key=value'))
-
-            key = pieces[0]
-            value = pieces[1]
-
-            if value in (None, '', '""'):
-                value = None
-
-            if key in notes_dict.keys():
-                self.prompt.write('Multiple values entered for a note with key [%s]. All except first value will be ignored.' % key)
-                continue
-
-            notes_dict[key] = value
-
-        return notes_dict
-
+# -- sections --------------------------------------------------------
 
 
 class ContentSection(PulpCliSection):
@@ -176,8 +35,8 @@ class ContentSection(PulpCliSection):
     def __init__(self, context):
         PulpCliSection.__init__(
             self,
-            'content',
-            _('content unit installation management'))
+            'package',
+            _('package installation management'))
         for Command in (InstallContent, UpdateContent, UninstallContent):
             command = Command(context)
             command.create_option(
@@ -185,12 +44,8 @@ class ContentSection(PulpCliSection):
                 _('identifies the consumer'),
                 required=True)
             command.create_option(
-                '--type',
-                _('content unit type ID'),
-                required=True)
-            command.create_option(
                 '--name',
-                _('content unit key (name)'),
+                _('package name; may repeat for multiple packages'),
                 required=True,
                 allow_multiple=True)
             self.add_command(command)
@@ -198,22 +53,20 @@ class ContentSection(PulpCliSection):
 
 class InstallContent(PulpCliCommand):
 
-    def __init__(self, context, **options):
+    def __init__(self, context):
         PulpCliCommand.__init__(
             self,
             'install',
-            _('install content units'),
-            self.run,
-            **options)
+            _('install packages'),
+            self.run)
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
-        type_id = kwargs['type']
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
-            unit = dict(type_id=type_id, unit_key=unit_key)
+            unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
         self.install(id, units, {})
 
@@ -292,10 +145,25 @@ class InstallContent(PulpCliCommand):
         # reported as failed
         if not response.result['status']:
             msg = 'Install failed'
+            details = response.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
+            prompt.render_failure_message(details['message'])
+            return
         # reported as succeeded
-        prompt.render_title('Install Result')
-        prompt.render_document(response.result)
+        details = response.result['details'][TYPE_ID]['details']
+        filter = ['name', 'version', 'arch', 'repoid']
+        prompt.render_title('Installed')
+        prompt.render_document_list(
+            details['resolved'],
+            order=filter,
+            filters=filter)
+        deps = details['deps']
+        if deps:
+            prompt.render_title('Installed for dependency')
+            prompt.render_document_list(
+                deps,
+                order=filter,
+                filters=filter)
 
     def failed(self, id, response):
         prompt = self.context.prompt
@@ -310,22 +178,20 @@ class InstallContent(PulpCliCommand):
 
 class UpdateContent(PulpCliCommand):
 
-    def __init__(self, context, **options):
+    def __init__(self, context):
         PulpCliCommand.__init__(
             self,
             'update',
-            _('update (installed) content units'),
-            self.run,
-            **options)
+            _('update (installed) packages'),
+            self.run)
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
-        type_id = kwargs['type']
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
-            unit = dict(type_id=type_id, unit_key=unit_key)
+            unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
         self.update(id, units, {})
 
@@ -404,10 +270,25 @@ class UpdateContent(PulpCliCommand):
         # reported as failed
         if not response.result['status']:
             msg = 'Install failed'
+            details = response.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
+            prompt.render_failure_message(details['message'])
+            return
         # reported as succeeded
-        prompt.render_title('Update Result')
-        prompt.render_document(response.result)
+        details = response.result['details'][TYPE_ID]['details']
+        filter = ['name', 'version', 'arch', 'repoid']
+        prompt.render_title('Updated')
+        prompt.render_document_list(
+            details['resolved'],
+            order=filter,
+            filters=filter)
+        deps = details['deps']
+        if deps:
+            prompt.render_title('Installed for dependency')
+            prompt.render_document_list(
+                deps,
+                order=filter,
+                filters=filter)
 
     def failed(self, id, response):
         prompt = self.context.prompt
@@ -422,22 +303,20 @@ class UpdateContent(PulpCliCommand):
 
 class UninstallContent(PulpCliCommand):
 
-    def __init__(self, context, **options):
+    def __init__(self, context):
         PulpCliCommand.__init__(
             self,
             'uninstall',
-            _('uninstall content units'),
-            self.run,
-            **options)
+            _('uninstall packages'),
+            self.run)
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
-        type_id = kwargs['type']
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
-            unit = dict(type_id=type_id, unit_key=unit_key)
+            unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
         self.uninstall(id, units, {})
 
@@ -516,10 +395,25 @@ class UninstallContent(PulpCliCommand):
         # reported as failed
         if not response.result['status']:
             msg = 'Install failed'
+            details = response.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
+            prompt.render_failure_message(details['message'])
+            return
         # reported as succeeded
-        prompt.render_title('Uninstall Result')
-        prompt.render_document(response.result)
+        details = response.result['details'][TYPE_ID]['details']
+        filter = ['name', 'version', 'arch', 'repoid']
+        prompt.render_title('Uninstalled')
+        prompt.render_document_list(
+            details['resolved'],
+            order=filter,
+            filters=filter)
+        deps = details['deps']
+        if deps:
+            prompt.render_title('Uninstalled for dependency')
+            prompt.render_document_list(
+                deps,
+                order=filter,
+                filters=filter)
 
     def failed(self, id, response):
         prompt = self.context.prompt
