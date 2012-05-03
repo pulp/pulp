@@ -529,6 +529,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu May 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.287-2
+- move gc_client to client-lib. (jortel@redhat.com)
+
 * Thu May 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.287-1
 - Support -n alias for GC content install CLI. (jortel@redhat.com)
 - Add support for str|list|tuple tracebacks. (jortel@redhat.com)
