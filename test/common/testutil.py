@@ -370,10 +370,10 @@ class PulpWebserviceTest(PulpAsyncTest):
     def delete(self, uri, params=None, additional_headers=None):
         return self._do_request('delete', uri, params, additional_headers)
 
-    def put(self, uri, params=None, additional_headers=None):
-        return self._do_request('put', uri, params, additional_headers)
+    def put(self, uri, params=None, additional_headers=None, serialize_json=True):
+        return self._do_request('put', uri, params, additional_headers, serialize_json=serialize_json)
 
-    def _do_request(self, request_type, uri, params, additional_headers):
+    def _do_request(self, request_type, uri, params, additional_headers, serialize_json=True):
         """
         The calls and their pre/post processing are so similar, do it all in
         here and use magic to make the right call.
@@ -387,7 +387,9 @@ class PulpWebserviceTest(PulpAsyncTest):
         # Serialize the parameters if any are specified
         if params is None:
             params = {}
-        params = json.dumps(params)
+
+        if serialize_json:
+            params = json.dumps(params)
 
         # Invoke the API
         f = getattr(PulpWebserviceTest.TEST_APP, request_type)
@@ -406,7 +408,7 @@ class PulpWebserviceTest(PulpAsyncTest):
 class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
     # utilize multiple inheritance to override setup_async and teardown_async
 
-    def _do_request(self, request_type, uri, params, additional_headers):
+    def _do_request(self, request_type, uri, params, additional_headers, serialize_json=True):
         """
         Override the base class controller to allow for less deterministic
         responses due to integration with the dispatch package.
@@ -422,7 +424,7 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
                 return status, body['exception']
             return status, body['result']
 
-        status, body = PulpWebserviceTest._do_request(self, request_type, uri, params, additional_headers)
+        status, body = PulpWebserviceTest._do_request(self, request_type, uri, params, additional_headers, serialize_json=serialize_json)
         if status == httplib.ACCEPTED:
             return _poll_async_request(status, body)
         return status, body

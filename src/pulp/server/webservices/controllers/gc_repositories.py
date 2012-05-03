@@ -763,6 +763,29 @@ class RepoAssociate(JSONController):
                                    archive=True)
         return execution.execute_async(self, call_request)
 
+class RepoImportUpload(JSONController):
+
+    @auth_required(UPDATE)
+    def POST(self, repo_id):
+
+        # Collect user input
+        params = self.params()
+        upload_id = params['upload_id']
+        unit_type_id = params['unit_type_id']
+        unit_key = params['unit_key']
+        unit_metadata = params['unit_metadata']
+
+        # Coordinator configuration
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE:
+                        {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)]
+
+        upload_manager = manager_factory.content_upload_manager()
+        call_request = CallRequest(upload_manager.import_uploaded_unit,
+            [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
+            resources=resources, tags=tags, archive=True)
+
+        return execution.execute_ok(self, call_request)
 
 class RepoUnitAdvancedSearch(JSONController):
 
@@ -822,6 +845,7 @@ urls = (
     '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
     '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
     '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
+    '/([^/]+)/actions/import_upload/$', 'RepoImportUpload', # resource action
 
     '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
 )

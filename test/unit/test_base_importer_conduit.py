@@ -46,7 +46,6 @@ class BaseImporterConduitTests(testutil.PulpTest):
         self.importer_manager = RepoImporterManager()
 
         self.repo_id = 'repo-1'
-        # self.repo_id = u'\u0938\u093e\u092f\u0932\u0940'
         self.repo_manager.create_repo(self.repo_id)
         self.conduit = BaseImporterConduit(self.repo_id, 'test-importer')
 

@@ -15,17 +15,16 @@ from gettext import gettext as _
 
 import web
 
-from pulp.server.auth.authorization import (
-    CREATE, READ, UPDATE, DELETE, EXECUTE)
+from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 from pulp.server.webservices import serialization
-from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
 # controller classes -----------------------------------------------------------
 
-class ContentCollections(JSONController):
+class ContentTypesCollection(JSONController):
 
     @auth_required(READ)
     def GET(self):
@@ -90,51 +89,6 @@ class ContentTypeResource(JSONController):
         Update a content type.
         """
         return self.not_implemented()
-
-
-class ContentTypeActionsCollection(JSONController):
-
-    @auth_required(READ)
-    def GET(self, type_id):
-        collection = []
-        for action in ContentTypeActionResource.actions_map:
-            link = serialization.link.child_link_obj(action)
-            link.update({'action': action})
-            # NOTE would be cool to add the POST parameters here
-            collection.append(link)
-        return self.ok(collection)
-
-    def OPTIONS(self, type_id):
-        link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET']})
-        return self.ok(link)
-
-
-class ContentTypeActionResource(JSONController):
-
-    actions_map = {
-        'upload': 'upload_content_unit',
-    }
-
-    # XXX currently unimplemented
-    def _upload_content_unit(self, type_id):
-        pass
-
-    def OPTIONS(self, type_id, action):
-        link = serialization.link.current_link_obj()
-        link.update({'methods': ['POST']})
-        return self.ok(link)
-
-    @auth_required(EXECUTE)
-    def POST(self, type_id, action):
-        if action not in self.actions_map:
-            return self.not_found(_('Action not defined for %(t)s: %(a)s') %
-                                  {'t': type_id, 'a': action})
-        method = getattr(self, self.actions_map[action], None)
-        if method is None:
-            return self.not_implemented(_('Action not implemented for %(t)s: %(a)s') %
-                                        {'t': type_id, 'a': action})
-        return method(type_id)
 
 
 class ContentUnitsCollection(JSONController):
@@ -203,13 +157,70 @@ class ContentUnitResource(JSONController):
         """
         return self.not_implemented()
 
+
+class UploadsCollection(JSONController):
+
+    # Scope: Collection
+    # GET:   Retrieve all upload request IDs
+    # POST:  Create a new upload request (and return the ID)
+
+    @auth_required(READ)
+    def GET(self):
+        upload_manager = factory.content_upload_manager()
+        upload_ids = upload_manager.list_upload_ids()
+
+        return self.ok({'upload_ids' : upload_ids})
+
+    @auth_required(CREATE)
+    def POST(self):
+        upload_manager = factory.content_upload_manager()
+        upload_id = upload_manager.initialize_upload()
+        location = serialization.link.child_link_obj(upload_id)
+        return self.created(location['_href'], {'_href' : location['_href'], 'upload_id' : upload_id})
+
+class UploadResource(JSONController):
+
+    # Scope:  Resource
+    # DELETE: Delete an uploaded file
+
+    @auth_required(DELETE)
+    def DELETE(self, upload_id):
+        upload_manager = factory.content_upload_manager()
+        upload_manager.delete_upload(upload_id)
+
+        return self.ok({})
+
+class UploadSegmentResource(JSONController):
+
+    # Scope: Sub-Resource
+    # PUT:   Upload bits into a file upload
+
+    @auth_required(UPDATE)
+    def PUT(self, upload_id, offset):
+
+        # If the upload ID doesn't exists, either because it was not initialized
+        # or was deleted, the call to the manager will raise missing resource
+
+        try:
+            offset = int(offset)
+        except ValueError:
+            raise InvalidValue(['offset'])
+
+        upload_manager = factory.content_upload_manager()
+        data = self.data()
+        upload_manager.save_data(upload_id, offset, data)
+
+        return self.ok({})
+
 # wsgi application -------------------------------------------------------------
 
-_URLS = ('/$', ContentCollections,
-         '/([^/]+)/$', ContentTypeResource,
-         '/([^/]+)/actions/$', ContentTypeActionsCollection,
-         '/([^/]+)/actions/(%s)/$' % '|'.join(ContentTypeActionResource.actions_map), ContentTypeActionResource,
-         '/([^/]+)/units/$', ContentUnitsCollection,
-         '/([^/]+)/units/([^/]+)/$', ContentUnitResource,)
+_URLS = ('/types/$', ContentTypesCollection,
+         '/types/([^/]+)/$', ContentTypeResource,
+         '/units/([^/]+)/$', ContentUnitsCollection,
+         '/units/([^/]+)/([^/]+)/$', ContentUnitResource,
+         '/uploads/$', UploadsCollection,
+         '/uploads/([^/]+)/$', UploadResource,
+         '/uploads/([^/]+)/([^/]+)/$', UploadSegmentResource,
+        )
 
 application = web.application(_URLS, globals())

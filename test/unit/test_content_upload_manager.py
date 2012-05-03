@@ -110,6 +110,15 @@ class ContentUploadManagerTests(testutil.PulpTest):
 
         self.assertEqual(expected_size, found_size)
 
+    def test_save_no_init(self):
+
+        # Test
+        try:
+            self.upload_manager.save_data('foo', 0, 'bar')
+            self.fail('Expected exception')
+        except MissingResource, e:
+            self.assertEqual(e.resources['upload_request'], 'foo')
+
     def test_delete_upload(self):
 
         # Setup
@@ -124,6 +133,21 @@ class ContentUploadManagerTests(testutil.PulpTest):
 
         # Verify
         self.assertTrue(not os.path.exists(uploaded_filename))
+
+    def test_list_upload_ids(self):
+
+        # Test - Empty
+        ids = self.upload_manager.list_upload_ids()
+        self.assertEqual(0, len(ids))
+
+        # Test - Non-empty
+        id1 = self.upload_manager.initialize_upload()
+        id2 = self.upload_manager.initialize_upload()
+
+        ids = self.upload_manager.list_upload_ids()
+        self.assertEqual(2, len(ids))
+        self.assertTrue(id1 in ids)
+        self.assertTrue(id2 in ids)
 
     # -- import functionality -------------------------------------------------
 
@@ -161,13 +185,15 @@ class ContentUploadManagerTests(testutil.PulpTest):
 
         key = {'key' : 'value'}
         metadata = {'k1' : 'v1'}
-        file_path = '/foo/bar'
 
         importer_return_report = object()
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = importer_return_report
 
+        upload_id = self.upload_manager.initialize_upload()
+        file_path = self.upload_manager._upload_file_path(upload_id)
+
         # Test
-        report = self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata, file_path)
+        report = self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata, upload_id)
 
         # Verify
         self.assertEqual(report, importer_return_report)
@@ -184,7 +210,7 @@ class ContentUploadManagerTests(testutil.PulpTest):
 
     def test_import_uploaded_unit_missing_repo(self):
         # Test
-        self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake', 'mock-type', {}, {}, '/tmp')
+        self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake', 'mock-type', {}, {}, 'irrelevant')
 
     def test_import_uploaded_unit_importer_error(self):
         # Setup
@@ -193,5 +219,7 @@ class ContentUploadManagerTests(testutil.PulpTest):
 
         mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = Exception()
 
+        upload_id = self.upload_manager.initialize_upload()
+
         # Test
-        self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, '/tmp')
+        self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)

@@ -85,6 +85,11 @@ class ContentUploadManager(object):
         """
 
         file_path = self._upload_file_path(upload_id)
+
+        # Make sure the upload was initialized first and hasn't been deleted
+        if not os.path.exists(file_path):
+            raise MissingResource(upload_request=upload_id)
+
         f = open(file_path, 'r+')
         f.seek(offset)
         f.write(data)
@@ -128,6 +133,17 @@ class ContentUploadManager(object):
 
         return contents
 
+    def list_upload_ids(self):
+        """
+        Returns a list of IDs for all in progress uploads.
+
+        @return: list of IDs
+        @rtype:  list
+        """
+        upload_dir = self._upload_storage_dir()
+        upload_ids = os.listdir(upload_dir)
+        return upload_ids
+
     # -- import functionality -------------------------------------------------
 
     def is_valid_upload(self, repo_id, unit_type_id):
@@ -158,7 +174,7 @@ class ContentUploadManager(object):
 
         return True
 
-    def import_uploaded_unit(self, repo_id, unit_type_id, unit_key, unit_metadata, file_path):
+    def import_uploaded_unit(self, repo_id, unit_type_id, unit_key, unit_metadata, upload_id):
         """
         Called to trigger the importer's handling of an uploaded unit. This
         should not be called until the bits have finished uploading. The
@@ -182,10 +198,8 @@ class ContentUploadManager(object):
         @param unit_metadata: any user-specified information about the unit
         @type  unit_metadata: dict
 
-        @param file_path: path to the location on the server's filesystem where
-               the uploaded file is stored; may be None in the event a unit is
-               purely defined by metadata
-        @type  file_path: str
+        @param upload_id: upload being imported
+        @type  upload_id: str
         """
 
         # If it doesn't raise an exception, it's good to go
@@ -202,12 +216,14 @@ class ContentUploadManager(object):
         except content_loader.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
-        # Assemble the data needed for the sync
+        # Assemble the data needed for the import
         conduit = UnitAddConduit(repo_id, repo_importer['id'], OWNER_TYPE_USER, pulp_principal.get_principal()['login'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = repo_common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
+
+        file_path = self._upload_file_path(upload_id)
 
         # Invoke the importer
         try:
