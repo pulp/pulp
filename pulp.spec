@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.286
+Version:        0.0.287
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -529,6 +529,118 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu May 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.287-1
+- Support -n alias for GC content install CLI. (jortel@redhat.com)
+- Add support for str|list|tuple tracebacks. (jortel@redhat.com)
+- Enhanced gc & rpm content install CLI. (jortel@redhat.com)
+- Better error handling in generic content install CLI. (jortel@redhat.com)
+- Refactor admin cli to split generic content unit vs. rpm install.
+  (jortel@redhat.com)
+- YumImporter:  Fix for rhel5 issue with itertools.chain.from_iterable
+  (jmatthews@redhat.com)
+- Added REST APIs for content upload (jason.dobies@redhat.com)
+- publish added to index (jason.connor@gmail.com)
+- publish api documentation (jason.connor@gmail.com)
+- corrected a number of typos (jason.connor@gmail.com)
+- fixes to sync doc (jconnor@redhat.com)
+- no longer recording duplicate reasons for postponed and rejected
+  (jconnor@redhat.com)
+- updated tags to use new resource_tag generation (jconnor@redhat.com)
+- replaced spaces in resource types with underscores (jconnor@redhat.com)
+- removed leading underscores for scheduled call object fields
+  (jconnor@redhat.com)
+- removed superfluous part of child path for sync/publish schedules
+  (jconnor@redhat.com)
+- fixed typo in docstring (jconnor@redhat.com)
+- Render content install,update,uninstall results. (jortel@redhat.com)
+- YumDistributor:  Update to remove http/https link if no longer set to True in
+  config (jmatthews@redhat.com)
+- convert the cert strings to utf-8 before passing to grinder; also fixed
+  default sslverify value if not specified (pkilambi@redhat.com)
+- Differentiate association owner for uploaded v. syncced units
+  (jason.dobies@redhat.com)
+- YumImporter:  First pass at handling sync of a protected repo
+  (jmatthews@redhat.com)
+- Added distribution support for repo units display (jason.dobies@redhat.com)
+- Docs cleanup (jason.dobies@redhat.com)
+- YumDistributor:  Fix for unicode relative_url validation
+  (jmatthews@redhat.com)
+- forgot to use $set, so I was completely overwriting the fields instead of
+  just setting a sub-set of them (jason.connor@gmail.com)
+- fixed too short underline (jason.connor@gmail.com)
+- repo sync documentation (jason.connor@gmail.com)
+- fixed up scheduled call serialization (jason.connor@gmail.com)
+- added sync to index (jason.connor@gmail.com)
+- changed all scheduled sync and publish controllers to use new serialization
+  (jason.connor@gmail.com)
+- added specific serialization for scheduled sync and publish
+  (jason.connor@gmail.com)
+- fixed comment typo (jason.connor@gmail.com)
+- added more fields to call report (jason.connor@gmail.com)
+- removed assumptions and generalized scheduled call object
+  (jason.connor@gmail.com)
+- added iso8601 interval to gloassary (jason.connor@gmail.com)
+- added call report to glossary (jason.connor@gmail.com)
+- Added publish progress support to sync status. (jason.dobies@redhat.com)
+- Adding multiple content unit install support (skarmark@redhat.com)
+- Ensure report contains 'details' on exceptoin as well. (jortel@redhat.com)
+- Refactored out the progress report rendering (jason.dobies@redhat.com)
+- client extension for a consumer content unit install (skarmark@redhat.com)
+- Docs cleanup (jason.dobies@redhat.com)
+- including http/https publish progress info in report (pkilambi@redhat.com)
+- Implementation of v2 storage of uploaded files (jason.dobies@redhat.com)
+- YumDistributor:  Implementation of 'http' publishing option
+  (jmatthews@redhat.com)
+- Added 'keys()' method to return a set of all keys available from the
+  underlying dicts (jmatthews@redhat.com)
+- YumImporter:  Made feed_url optional and ensure we invoke progress report for
+  NOT_STARTED as first step (jmatthews@redhat.com)
+- Client bindings for consumer content unit install (skarmark@redhat.com)
+- updating doc strings to  include progress callback description
+  (pkilambi@redhat.com)
+- default progress arg to None (pkilambi@redhat.com)
+- first pass at changes to support Yum Distributor publish progress reporting
+  (pkilambi@redhat.com)
+- Base unit addition/linking conduit (jason.dobies@redhat.com)
+- Refactored out base unit add conduit support to better scope the upload
+  conduit (jason.dobies@redhat.com)
+- Adding consumer credential support from v1 to v2 (skarmark@redhat.com)
+- Added ability to store consumer cert bundle for v2 consumers
+  (skarmark@redhat.com)
+- schedule creation using configured create_weight (jconnor@redhat.com)
+- converted all tags to use new generic tags functions (jconnor@redhat.com)
+- adding tag generating functions to common (jconnor@redhat.com)
+- changed scheduled sync/publish to use controller (jason.connor@gmail.com)
+- re-implementation of sync and publish schedule controllers using schedule
+  manager (jason.connor@gmail.com)
+- added schedule_manager to managers factory (jason.connor@gmail.com)
+- fixed override config keyword argument publish schedule update fixed schedule
+  update keyword arguments (jason.connor@gmail.com)
+- added return of schedule_id to publish create (jason.connor@gmail.com)
+- fixed schedule update keyword arguments fixed repo importer manager
+  constructor arguments (jason.connor@gmail.com)
+- converting _id to string in schedule report (jason.connor@gmail.com)
+- removed _id that needed more processing, added failure_threshold
+  (jason.connor@gmail.com)
+- fixed check for schedule (jason.connor@gmail.com)
+- added required flag for dict validation (jconnor@redhat.com)
+- add/remove/list publish schedule functionality (jconnor@redhat.com)
+- add/remove/list sync schedule functionality (jconnor@redhat.com)
+- finished implementation of scheduled sync/publish cud operations
+  (jconnor@redhat.com)
+- removed old import (jconnor@redhat.com)
+- schedule managers skeletons (jconnor@redhat.com)
+- sync schedule method place holders (jconnor@redhat.com)
+- sync schedule collection list (jconnor@redhat.com)
+- Add TODO: in consumer controller. (jortel@redhat.com)
+- Initial add of repo sync 'schedule' subsection. (jortel@redhat.com)
+- Added importer API for upload and manager to call into it
+  (jason.dobies@redhat.com)
+- Updated epydocs. (jortel@redhat.com)
+- YumImporter:  implementation for import_units (jmatthews@redhat.com)
+- YumDistributor:  Reduce logging output (jmatthews@redhat.com)
+- Correct API docs. (jortel@redhat.com)
+
 * Mon Apr 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.286-1
 - (hack) disabled agent authentication on GC Agent for v1 compat.
   (jortel@redhat.com)
