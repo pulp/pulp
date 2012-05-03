@@ -11,10 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-
+import os
 from yum import YumBase
 from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
+from pulp.client.agent.container import Handler
 from pulp.client.agent.dispatcher import HandlerReport
 from logging import getLogger, Logger
 
@@ -24,19 +25,37 @@ log = getLogger(__name__)
 # Handlers
 #
 
-class PackageHandler:
+class Linux(Handler):
+    """
+    Linux content handler
+    """
+
+    def reboot(self, options):
+        """
+        Schedule a system reboot.
+        @param options: An options dictionary
+          - apply : apply the transaction
+          - reboot : Reboot after installed 
+        @type options: dict
+        @return: True if scheduled
+        @rtype: bool
+        """
+        scheduled = False
+        opt = Options(options, apply=True, reboot=False)
+        if opt.reboot:
+            if opt.apply:
+                os.system('shutdown -r +%d', minutes)
+                log.info('rebooting in: %d minutes', minutes)
+            scheduled = True
+        return scheduled
+            
+
+class PackageHandler(Linux):
     """
     The package (rpm) content handler.
     @ivar cfg: configuration
     @type cfg: dict
     """
-
-    def __init__(self, cfg):
-        """
-        @param cfg: configuration
-        @type cfg: dict
-        """
-        self.cfg = cfg
 
     def install(self, units, options):
         """
@@ -44,15 +63,20 @@ class PackageHandler:
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit install options.
+          - apply : apply the transaction
+          - importkeys : import GPG keys
+          - reboot : Reboot after installed
         @type options: dict
         @return: An install report.  See: L{Package.install}
         @rtype: L{HandlerReport}
         """
-        pkg = Package()
         report = HandlerReport()
+        opt = Options(options, apply=True, importkeys=False)
+        pkg = Package(**opt)
         names = [key['name'] for key in units]
         details = pkg.install(names)
         report.succeeded(details)
+        report.reboot_scheduled = self.reboot(options)
         return report
 
     def update(self, units, options):
@@ -61,15 +85,20 @@ class PackageHandler:
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit update options.
+          - apply : apply the transaction
+          - importkeys : import GPG keys
+          - reboot : Reboot after installed
         @type options: dict
         @return: An update report.  See: L{Package.update}
         @rtype: L{HandlerReport}
         """
-        pkg = Package()
         report = HandlerReport()
+        opt = Options(options, apply=True, importkeys=False)
+        pkg = Package(**opt)
         names = [key['name'] for key in units]
         details = pkg.update(names)
         report.succeeded(details)
+        report.reboot_scheduled = self.reboot(options)
         return report
 
     def uninstall(self, units, options):
@@ -78,31 +107,28 @@ class PackageHandler:
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit uninstall options.
+          - apply : apply the transaction
+          - reboot : Reboot after installed
         @type options: dict
         @return: An uninstall report.  See: L{Package.uninstall}
         @rtype: L{HandlerReport}
         """
-        pkg = Package()
         report = HandlerReport()
+        opt = Options(options, apply=True)
+        pkg = Package(**opt)
         names = [key['name'] for key in units]
         details = pkg.uninstall(names)
         report.succeeded(details)
+        report.reboot_scheduled = self.reboot(options)
         return report
 
 
-class GroupHandler:
+class GroupHandler(Linux):
     """
     The package group content handler.
     @ivar cfg: configuration
     @type cfg: dict
     """
-
-    def __init__(self, cfg):
-        """
-        @param cfg: configuration
-        @type cfg: dict
-        """
-        self.cfg = cfg
 
     def install(self, units, options):
         """
@@ -114,11 +140,13 @@ class GroupHandler:
         @return: An install report.
         @rtype: L{HandlerReport}
         """
-        grp = PackageGroup()
         report = HandlerReport()
+        opt = Options(options, apply=True, importkeys=False)
+        grp = PackageGroup(**opt)
         names = [key['name'] for key in units]
         details = grp.install(names)
         report.succeeded(details)
+        report.reboot_scheduled = self.reboot(options)
         return report
 
     def update(self, units, options):
@@ -131,11 +159,13 @@ class GroupHandler:
         @return: An update report.
         @rtype: L{HandlerReport}
         """
-        grp = PackageGroup()
         report = HandlerReport()
+        opt = Options(options, apply=True, importkeys=False)
+        grp = PackageGroup(**opt)
         names = [key['name'] for key in units]
         details = grp.update(names)
         report.succeeded(details)
+        report.reboot_scheduled = self.reboot(options)
         return report
 
     def uninstall(self, units, options):
@@ -148,13 +178,39 @@ class GroupHandler:
         @return: An uninstall report.
         @rtype: L{HandlerReport}
         """
-        grp = PackageGroup()
         report = HandlerReport()
+        opt = Options(options, apply=True)
+        grp = PackageGroup(**opt)
         names = [key['name'] for key in units]
         details = grp.uninstall(names)
         report.succeeded(details)
+        report.reboot_scheduled = self.reboot(options)
         return report
 
+#
+# options
+#
+
+class Options(dict):
+    """
+    Special dict capable of subsetting and defaulting.
+    Also provides (.) notation accessors.
+    """
+    __getattr__ = dict.__getitem__
+
+    def __init__(self, d, **subset):
+        """
+        @param d: A source dictionary.
+        @type d: dict
+        @param subset: keywords where keys specify
+            the subset of keys and it's values define
+            the default values.
+            all keys.
+        """
+        dict.__init__(self)
+        for k,v in subset.items():
+            opt = d.get(k,v)
+            self[k] = opt
 
 #
 # Implementation

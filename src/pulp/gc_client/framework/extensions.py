@@ -80,7 +80,7 @@ class PulpCliSection(Section):
 
 class PulpCliCommand(Command):
 
-    def create_option(self, name, description, aliases=None, required=True, allow_multiple=False):
+    def create_option(self, name, description, aliases=None, required=True, allow_multiple=False, default=None):
         """
         Creates a new option for this command. An option is an argument to the
         command line call that accepts a value.
@@ -115,11 +115,14 @@ class PulpCliCommand(Command):
         :param allow_multiple: if true, the value of this option when parsed
                will be a list of values in the order in which the user entered them
         :type  allow_multiple: bool
+        
+        :param default: The default value for optional options
+        :type  default: None
 
         :return: instance representing the option
         :rtype:  PulpCliOption
         """
-        option = PulpCliOption(name, description, required=required, allow_multiple=allow_multiple, aliases=aliases)
+        option = PulpCliOption(name, description, required=required, allow_multiple=allow_multiple, aliases=aliases, default=default)
         self.add_option(option)
         return option
 

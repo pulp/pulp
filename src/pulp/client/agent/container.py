@@ -41,7 +41,7 @@ class Handler:
         @param cfg: The handler configuration
         @type cfg: dict
         """
-        pass
+        self.cfg = cfg
 
     def install(self, units, options):
         """

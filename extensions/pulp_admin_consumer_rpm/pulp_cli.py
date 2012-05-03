@@ -47,7 +47,14 @@ class ContentSection(PulpCliSection):
                 '--name',
                 _('package name; may repeat for multiple packages'),
                 required=True,
-                allow_multiple=True)
+                allow_multiple=True,
+                aliases=['-n'])
+            command.create_flag(
+                '--no-commit',
+                _('Transaction not committed'))
+            command.create_flag(
+                '--reboot',
+                _('Reboot after successful transaction'))
             self.add_command(command)
 
 
@@ -59,16 +66,29 @@ class InstallContent(PulpCliCommand):
             'install',
             _('install packages'),
             self.run)
+        self.create_option(
+            '--importkeys',
+            _('import GPG keys as needed (False)'),
+            required=False,
+            default=False)
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
+        apply = (not kwargs['no-commit'])
+        importkeys = kwargs['importkeys']
+        reboot = kwargs['reboot']
         units = []
+        options = dict(
+            apply=apply,
+            importkeys=importkeys,
+            reboot=reboot,)
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
-        self.install(id, units, {})
+        
+        self.install(id, units, options)
 
     def install(self, id, units, options):
         prompt = self.context.prompt
@@ -149,6 +169,8 @@ class InstallContent(PulpCliCommand):
             prompt.render_failure_message(_(msg))
             prompt.render_failure_message(details['message'])
             return
+        msg = 'Install Succeeded'
+        prompt.render_success_message(_(msg))
         # reported as succeeded
         details = response.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
@@ -189,16 +211,28 @@ class UpdateContent(PulpCliCommand):
             'update',
             _('update (installed) packages'),
             self.run)
+        self.create_option(
+            '--importkeys',
+            _('import GPG keys as needed (False)'),
+            required=False,
+            default=False)
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
+        apply = (not kwargs['no-commit'])
+        importkeys = kwargs['importkeys']
+        reboot = kwargs['reboot']
         units = []
+        options = dict(
+            apply=apply,
+            importkeys=importkeys,
+            reboot=reboot,)
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
-        self.update(id, units, {})
+        self.update(id, units, options)
 
     def update(self, id, units, options):
         prompt = self.context.prompt
@@ -279,6 +313,8 @@ class UpdateContent(PulpCliCommand):
             prompt.render_failure_message(_(msg))
             prompt.render_failure_message(details['message'])
             return
+        msg = 'Install Succeeded'
+        prompt.render_success_message(_(msg))
         # reported as succeeded
         details = response.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
@@ -323,12 +359,17 @@ class UninstallContent(PulpCliCommand):
 
     def run(self, **kwargs):
         id = kwargs['id']
+        apply = (not kwargs['no-commit'])
+        reboot = kwargs['reboot']
         units = []
+        options = dict(
+            apply=apply,
+            reboot=reboot,)
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
-        self.uninstall(id, units, {})
+        self.uninstall(id, units, options)
 
     def uninstall(self, id, units, options):
         prompt = self.context.prompt
@@ -404,11 +445,13 @@ class UninstallContent(PulpCliCommand):
         prompt = self.context.prompt
         # reported as failed
         if not response.result['status']:
-            msg = 'Install failed'
+            msg = 'Install Failed'
             details = response.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
             prompt.render_failure_message(details['message'])
             return
+        msg = 'Install Succeeded'
+        prompt.render_success_message(_(msg))
         # reported as succeeded
         details = response.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
