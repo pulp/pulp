@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.287
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -455,6 +455,7 @@ fi
 %{python_sitelib}/pulp/client/plugins
 %{python_sitelib}/pulp/client/agent
 %{python_sitelib}/pulp/client/*.py*
+%{python_sitelib}/pulp/gc_client/
 
 # -- files - pulp client -----------------------------------------------------
 
@@ -487,7 +488,6 @@ fi
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/client/admin
-%{python_sitelib}/pulp/gc_client
 %{_bindir}/pulp-admin
 %{_bindir}/pulp-v2-admin
 %config(noreplace) %{_sysconfdir}/pulp/admin/admin.conf
