@@ -1069,8 +1069,8 @@ class ScheduledSyncTests(RepoPluginsTests):
         status, body = self.post(self.collection_uri_path, params)
         self.assertTrue(status == httplib.CREATED, '\n'.join((str(status), pformat(body))))
         for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
-                      '_consecutive_failures', '_remaining_runs', '_first_run',
-                      '_last_run', '_next_run', 'override_config'):
+                      'consecutive_failures', 'remaining_runs', 'first_run',
+                      'last_run', 'next_run', 'override_config'):
             self.assertTrue(field in body, 'missing field: %s' % field)
 
     def test_create_missing_schedule(self):
@@ -1151,8 +1151,8 @@ class ScheduledPublishTests(RepoPluginsTests):
         self.assertTrue(status == httplib.CREATED, '\n'.join((str(status), pformat(body))))
         self.assertTrue(params['schedule'] == body['schedule'])
         for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
-                      '_consecutive_failures', '_remaining_runs', '_first_run',
-                      '_last_run', '_next_run', 'override_config'):
+                      'consecutive_failures', 'remaining_runs', 'first_run',
+                      'last_run', 'next_run', 'override_config'):
             self.assertTrue(field in body, 'missing field: %s' % field)
 
     def test_create_missing_schedule(self):
