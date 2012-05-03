@@ -19,6 +19,7 @@ import pycurl
 import shutil
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -783,3 +784,78 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(len(pkgs), 3)
         for link in sym_links:
             self.assertTrue(os.path.islink(link))
+
+
+    def test_proxy_sync(self):
+        global data_received, num_bytes_received_in_proxy
+        data_received = False
+        num_bytes_received_in_proxy = 0
+        skip_proxy = False
+        try:
+            from twisted.web import http, proxy
+            from twisted.internet import reactor
+            from twisted.internet.error import ReactorNotRunning
+            class UnitTestProxyProtocol(proxy.Proxy):
+                def dataReceived(self, data):
+                    global data_received, num_bytes_received_in_proxy
+                    data_received = True
+                    num_bytes_received_in_proxy += len(data)
+                    #print "Data = %s" % (data)
+                    return proxy.Proxy.dataReceived(self, data)
+            class ProxyFactory(http.HTTPFactory):
+                protocol = UnitTestProxyProtocol
+            class ProxyServerThread(threading.Thread):
+                def __init__(self, proxy_port, proxy_user=None, proxy_pass=None):
+                    threading.Thread.__init__(self)
+                    self.proxy_port = proxy_port
+                    self.proxy_user = proxy_user
+                    self.proxy_pass = proxy_pass
+                def stop(self):
+                    try:
+                        reactor.stop()
+                    except ReactorNotRunning, e:
+                        pass
+                def run(self):
+                    reactor.listenTCP(proxy_port, ProxyFactory())
+                    reactor.run(installSignalHandlers=0)
+        except Exception, e:
+            print e
+            skip_proxy = True
+        if skip_proxy:
+            print "********************************************************************"
+            print "Test Skipped!"
+            print "Skipping the proxy test sync since Twisted modules are not available"
+            print "To enable these tests run the below"
+            print "  yum install python-twisted"
+            print "********************************************************************"
+            return
+
+        proxy_url = "http://127.0.0.1"
+        proxy_port = 8539
+        proxy_user = "unit_test_username"
+        proxy_pass = "unit_test_password"
+        proxy_server = ProxyServerThread(proxy_port=proxy_port, proxy_user=proxy_user, 
+                proxy_pass=proxy_pass)
+        try:
+            proxy_server.start()
+            feed_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest'
+            repo = mock.Mock(spec=Repository)
+            repo.working_dir = self.working_dir
+            repo.id = "test_proxy_sync"
+            sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+            config = importer_mocks.get_basic_config(feed_url=feed_url, 
+                    proxy_url=proxy_url, proxy_port=proxy_port,
+                    proxy_user=proxy_user, proxy_pass=proxy_pass)
+            status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+            #print "Status = %s" % (status)
+            #print "Summary = %s" % (summary)
+            #print "Details = %s" % (details)
+        finally:
+            proxy_server.stop()
+        self.assertTrue(status)
+        self.assertTrue(data_received)
+        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(summary["num_resynced_rpms"], 0)
+        self.assertEquals(summary["num_not_synced_rpms"], 0)
+        self.assertEquals(summary["num_orphaned_rpms"], 0)
+        self.assertEquals(details["size_total"], 6868)
