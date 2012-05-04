@@ -148,7 +148,7 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -169,7 +169,7 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -190,7 +190,7 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
