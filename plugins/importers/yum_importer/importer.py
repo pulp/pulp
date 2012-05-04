@@ -99,7 +99,7 @@ class YumImporter(Importer):
                     return False, msg
 
             if key == 'ssl_ca_cert':
-                ssl_ca_cert = config.get('ssl_ca_cert')
+                ssl_ca_cert = config.get('ssl_ca_cert').encode('utf-8')
                 if ssl_ca_cert is not None:
                     if not util.validate_cert(ssl_ca_cert) :
                         msg = _("ssl_ca_cert is not a valid certificate")
@@ -121,7 +121,7 @@ class YumImporter(Importer):
                         return False, msg
 
             if key == 'ssl_client_cert':
-                ssl_client_cert = config.get('ssl_client_cert')
+                ssl_client_cert = config.get('ssl_client_cert').encode('utf-8')
                 if ssl_client_cert is not None:
                     if not util.validate_cert(ssl_client_cert) :
                         msg = _("ssl_client_cert is not a valid certificate")
@@ -143,7 +143,7 @@ class YumImporter(Importer):
                         return False, msg
 
             if key == 'ssl_client_key':
-                ssl_client_key = config.get('ssl_client_key')
+                ssl_client_key = config.get('ssl_client_key').encode('utf-8')
                 ssl_client_key_filename = os.path.join(repo.working_dir, "ssl_client_key")
                 try:
                     try:

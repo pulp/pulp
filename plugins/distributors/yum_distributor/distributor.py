@@ -142,13 +142,13 @@ class YumDistributor(Distributor):
                     _LOG.error(msg)
                     return False, msg
             if key == 'auth_cert':
-                auth_pem = config.get('auth_cert')
+                auth_pem = config.get('auth_cert').encode('utf-8')
                 if auth_pem is not None and not util.validate_cert(auth_pem):
                     msg = _("auth_cert is not a valid certificate")
                     _LOG.error(msg)
                     return False, msg
             if key == 'auth_ca':
-                auth_ca = config.get('auth_ca')
+                auth_ca = config.get('auth_ca').encode('utf-8')
                 if auth_ca is not None and not util.validate_cert(auth_ca):
                     msg = _("auth_ca is not a valid certificate")
                     _LOG.error(msg)
