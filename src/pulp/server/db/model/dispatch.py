@@ -14,7 +14,9 @@
 from datetime import datetime
 
 from pulp.common import dateutils
+from pulp.common.tags import resource_tag
 from pulp.server.db.model.gc_base import Model
+from pulp.server.dispatch import constants as dispatch_constants
 
 
 class QueuedCall(Model):
@@ -43,7 +45,8 @@ class ScheduledCall(Model):
     def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
 
-        call_request.tags.append(str(self._id)) # schedule_id tag
+        schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
+        call_request.tags.append(schedule_tag)
         interval, start, runs = dateutils.parse_iso8601_interval(schedule)
         start = start and dateutils.to_naive_utc_datetime(start)
 

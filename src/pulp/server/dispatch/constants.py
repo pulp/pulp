@@ -148,8 +148,6 @@ RESOURCE_OPERATIONS_MATRIX = {
 
 # schedule tags and fields -----------------------------------------------------
 
-SCHEDULED_TAG = 'scheduled'
-
 SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
 SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
                            'remaining_runs', 'enabled')

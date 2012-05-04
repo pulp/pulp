@@ -24,6 +24,7 @@ except ImportError:
     from pymongo.objectid import ObjectId
 
 from pulp.common import dateutils
+from pulp.common.tags import _NAMESPACE_DELIMITER, resource_tag
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
@@ -205,9 +206,15 @@ class Scheduler(object):
         """
         Call back for task (call_request) results and rescheduling
         """
-        index = call_request.tags.index(dispatch_constants.SCHEDULED_TAG)
-        schedule_id = call_request.tags[index + 1]
-        scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
+        tag_prefix = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, '')
+        index = 0
+        for i, tag in enumerate(call_request.tags):
+            if not tag.startswith(tag_prefix):
+                continue
+            index = i
+            break
+        schedule_id = call_request.tags[index][len(tag_prefix):]
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.update_last_run(scheduled_call, call_report)
         self.update_next_run(scheduled_call)
 
@@ -230,7 +237,6 @@ class Scheduler(object):
         @rtype:  str or None
         """
         validate_keys(schedule_options, dispatch_constants.SCHEDULE_OPTIONS_FIELDS)
-        call_request.tags.append(dispatch_constants.SCHEDULED_TAG)
         scheduled_call = ScheduledCall(call_request, schedule, **schedule_options)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
