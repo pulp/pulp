@@ -160,6 +160,9 @@ class RepoSyncManager(object):
                                                removed_count, summary, details, result_code)
         sync_result_coll.save(result, safe=True)
 
+        if result_code == RepoSyncResult.RESULT_FAILED:
+            raise PulpExecutionException(_('Importer indicated a failed response'))
+
         # Request any auto-distributors publish (if we're here, the sync was successful)
         publish_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_PUBLISH)
         try:
