@@ -142,6 +142,17 @@ class YumRepoCreateCommand(PulpCliCommand):
                 relative_path = url_parse[2]
             distributor_config['relative_url'] = relative_path
 
+        # Both http and https must be specified in the distributor config, so
+        # make sure they are initiall set here (default to only https)
+        if 'http' not in distributor_config and 'https' not in distributor_config:
+            distributor_config['https'] = True
+            distributor_config['http'] = False
+
+        # Make sure both are referenced
+        for k in ('http', 'https'):
+            if k not in distributor_config:
+                distributor_config[k] = False
+
         # Likely a temporary hack as we continue to refine how metadata generation
         # is done on the distributor
         distributor_config['generate_metadata'] = True
@@ -344,8 +355,8 @@ def add_repo_options(command, is_update):
 
     # Publish Options
     publish_group.add_option(PulpCliOption('--relative_url', 'relative path the repository will be served from; defaults to relative path of the feed URL', required=False))
-    publish_group.add_option(PulpCliOption('--serve_http', 'if "true", the repository will be served over HTTP; defaults to false', required=False, default='false'))
-    publish_group.add_option(PulpCliOption('--serve_https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False, default='true'))
+    publish_group.add_option(PulpCliOption('--serve_http', 'if "true", the repository will be served over HTTP; defaults to false', required=False))
+    publish_group.add_option(PulpCliOption('--serve_https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False))
     publish_group.add_option(PulpCliOption('--checksum_type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg_key', 'GPG key used to sign and verify packages in the repository', required=False))
     publish_group.add_option(PulpCliOption('--regenerate_metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed', required=False))
