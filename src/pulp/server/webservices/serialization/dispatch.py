@@ -41,15 +41,11 @@ def scheduled_call_obj(scheduled_call):
         'last_run': None,
         'next_run': None,
     }
-    first_run = scheduled_call['first_run']
-    if isinstance(first_run, datetime):
-        obj['first_run'] = dateutils.format_iso8601_datetime(first_run.replace(tzinfo=dateutils.utc_tz()))
-    last_run = scheduled_call['last_run']
-    if isinstance(last_run, datetime):
-        obj['last_run'] = dateutils.format_iso8601_datetime(last_run.replace(tzinfo=dateutils.utc_tz()))
-    next_run = scheduled_call['next_run']
-    if isinstance(next_run, datetime):
-        obj['next_run'] = dateutils.format_iso8601_datetime(next_run.replace(tzinfo=dateutils.utc_tz()))
+    for run_time_field in ('first_run', 'last_run', 'next_run'):
+        run_time = scheduled_call[run_time_field]
+        if isinstance(run_time, datetime):
+            utc_run_time = run_time.replace(tzinfo=dateutils.utc_tz())
+            obj[run_time_field] = dateutils.format_iso8601_datetime(utc_run_time)
     return obj
 
 
