@@ -194,6 +194,9 @@ class ContentSection(PulpCliSection):
                 required=True,
                 allow_multiple=True,
                 aliases=['-n'])
+            command.create_flag(
+                '--no-commit',
+                _('Transaction not committed'))
             self.add_command(command)
 
 
@@ -211,12 +214,15 @@ class InstallContent(PulpCliCommand):
     def run(self, **kwargs):
         id = kwargs['id']
         type_id = kwargs['type']
+        apply = (not kwargs['no-commit'])
+        options = dict(
+            apply=apply,)
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id=type_id, unit_key=unit_key)
             units.append(unit)
-        self.install(id, units, {})
+        self.install(id, units, options)
 
     def install(self, id, units, options):
         prompt = self.context.prompt
@@ -340,12 +346,15 @@ class UpdateContent(PulpCliCommand):
     def run(self, **kwargs):
         id = kwargs['id']
         type_id = kwargs['type']
+        apply = (not kwargs['no-commit'])
+        options = dict(
+            apply=apply,)
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id=type_id, unit_key=unit_key)
             units.append(unit)
-        self.update(id, units, {})
+        self.update(id, units, options)
 
     def update(self, id, units, options):
         prompt = self.context.prompt
@@ -469,12 +478,15 @@ class UninstallContent(PulpCliCommand):
     def run(self, **kwargs):
         id = kwargs['id']
         type_id = kwargs['type']
+        apply = (not kwargs['no-commit'])
+        options = dict(
+            apply=apply,)
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id=type_id, unit_key=unit_key)
             units.append(unit)
-        self.uninstall(id, units, {})
+        self.uninstall(id, units, options)
 
     def uninstall(self, id, units, options):
         prompt = self.context.prompt
