@@ -442,7 +442,7 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
 
         # _do_request actually starts here
         status, body = PulpWebserviceTest._do_request(self, request_type, uri, params, additional_headers, serialize_json=serialize_json)
-        if status == httplib.ACCEPTED or (status == httplib.OK and 'reasons' in body and 'state' in body):
+        if status == httplib.ACCEPTED or (status == httplib.OK and body is not None and 'reasons' in body and 'state' in body):
             return _poll_async_request(status, body)
         return status, body
 
