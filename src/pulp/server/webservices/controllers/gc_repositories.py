@@ -773,7 +773,7 @@ class RepoImportUpload(JSONController):
         upload_id = params['upload_id']
         unit_type_id = params['unit_type_id']
         unit_key = params['unit_key']
-        unit_metadata = params['unit_metadata']
+        unit_metadata = params.pop(['unit_metadata'], None)
 
         # Coordinator configuration
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE:
