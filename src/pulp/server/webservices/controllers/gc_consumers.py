@@ -334,7 +334,7 @@ class Content(JSONController):
             args,
             resources=resources,
             weight=0,
-            asynchronous=False, # TODO: (True) when jconnor fixes
+            asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
         return result
@@ -368,7 +368,7 @@ class Content(JSONController):
             args,
             resources=resources,
             weight=0,
-            asynchronous=False, # TODO: (True) when jconnor fixes
+            asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
         return result
@@ -402,7 +402,7 @@ class Content(JSONController):
             args,
             resources=resources,
             weight=0,
-            asynchronous=False, # TODO: (True) when jconnor fixes
+            asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
         return result
