@@ -421,6 +421,16 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
         Override the base class controller to allow for less deterministic
         responses due to integration with the dispatch package.
         """
+
+        def _is_not_error(status):
+            return status in (httplib.OK, httplib.ACCEPTED)
+
+        def _is_task_response(body):
+            return body is not None and 'reasons' in body and 'state' in body
+
+        def _is_not_finished(body):
+            return body['state'] not in dispatch_constants.CALL_COMPLETE_STATES
+
         def _poll_async_request(status, body):
             if self.success_failure is not None and body['state'] == dispatch_constants.CALL_RUNNING_STATE:
                 task_id = body['_href'].split('/')[-2]
@@ -430,7 +440,7 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
                     self.coordinator.complete_call_failure(task_id, self.exception, self.traceback)
                 self._reset_success_failure()
 
-            while status in (httplib.ACCEPTED, httplib.OK) and body['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+            while _is_not_error(status) and _is_task_response(body) and _is_not_finished(body):
                 uri = body['_href'][9:]
                 status, body = self.get(uri) # cool recursive call
 
@@ -442,7 +452,7 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
 
         # _do_request actually starts here
         status, body = PulpWebserviceTest._do_request(self, request_type, uri, params, additional_headers, serialize_json=serialize_json)
-        if status == httplib.ACCEPTED or (status == httplib.OK and body is not None and 'reasons' in body and 'state' in body):
+        if _is_not_error(status) and _is_task_response(body):
             return _poll_async_request(status, body)
         return status, body
 
