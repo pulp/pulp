@@ -91,4 +91,36 @@ Delete an Upload Request
 ------------------------
 
 Once the uploaded file has been successfully imported and no further operations
-are desired, the caller should delete the upload request
+are desired, the caller should delete the upload request from the server.
+
+| :method:`delete`
+| :path:`/v2/content/uploads/<upload_id>`
+| :permission:`delete`
+| :param_list:`delete` None
+| :response_list:`_`
+
+* :response_code:`200,if the upload was successfully deleted`
+* :response_code:`404,if the given upload ID is not found`
+
+| :return:`None`
+
+List All Upload Requests
+------------------------
+
+Returns a list of IDs for all upload requests currently in the server.
+
+| :method:`get`
+| :path:`/v2/content/uploads/`
+| :permission:`read`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`200,for a successful lookup`
+
+| :return:`list of IDs for all upload requests on the server; empty list if there are none`
+
+:sample_response:`200` ::
+
+ {
+  "upload_ids': ["cfb1fed0-752b-439e-aa68-fba68eababa3"]
+ }
