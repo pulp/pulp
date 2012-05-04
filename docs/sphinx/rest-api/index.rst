@@ -9,6 +9,7 @@ APIs
 
    consumer/index
    repo/index
+   content/index
 
 Documentation
 -------------

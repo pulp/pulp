@@ -53,6 +53,7 @@ DIRS = (
     '/var/lib/pulp/published',
     '/var/lib/pulp/published/http',
     '/var/lib/pulp/published/https',
+    '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )

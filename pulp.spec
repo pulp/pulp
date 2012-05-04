@@ -261,6 +261,7 @@ mkdir -p %{buildroot}/var/lib/pulp/plugins/types
 mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/lib/pulp/published/http
 mkdir -p %{buildroot}/var/lib/pulp/published/https
+mkdir -p %{buildroot}/var/lib/pulp/uploads
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 

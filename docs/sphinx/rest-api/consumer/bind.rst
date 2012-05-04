@@ -38,7 +38,7 @@ of consuming published content.
   "consumer_id":"A consumer ID"
  }
  
- 
+
 
 Unbind a Consumer
 -----------------

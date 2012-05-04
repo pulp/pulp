@@ -210,6 +210,8 @@ The details of the added distributor are returned from the call.
 * :response_code:`404,if there is no repository with the given ID`
 * :response_code:`500,if the distributor raises an error during initialization`
 
+| :return:`database representation of the distributor (not the full repository details, just the distributor)`
+
 :sample_request:`_` ::
 
  {
