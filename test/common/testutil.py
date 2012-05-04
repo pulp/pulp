@@ -444,11 +444,12 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
                 uri = body['_href'][9:]
                 status, body = self.get(uri) # cool recursive call
 
-            if status != httplib.OK:
-                return status, None
-            if body['state'] == dispatch_constants.CALL_ERROR_STATE:
-                return status, body['exception']
-            return status, body['result']
+            if _is_task_response(body):
+                if body['state'] == dispatch_constants.CALL_ERROR_STATE:
+                    return status, body['exception']
+                if _is_not_error(status):
+                    return status, body['result']
+            return status, body
 
         # _do_request actually starts here
         status, body = PulpWebserviceTest._do_request(self, request_type, uri, params, additional_headers, serialize_json=serialize_json)
