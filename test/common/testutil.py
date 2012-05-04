@@ -408,12 +408,33 @@ class PulpWebserviceTest(PulpAsyncTest):
 class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
     # utilize multiple inheritance to override setup_async and teardown_async
 
+    def setUp(self):
+        super(PulpV2WebserviceTest, self).setUp()
+        self.coordinator = dispatch_factory.coordinator()
+        self.success_failure = None
+        self.result = None
+        self.exception = None
+        self.traceback = None
+
+    def tearDown(self):
+        super(PulpV2WebserviceTest, self).tearDown()
+        self.success_failure = None
+        self.result = None
+        self.exception = None
+        self.traceback = None
+
     def _do_request(self, request_type, uri, params, additional_headers, serialize_json=True):
         """
         Override the base class controller to allow for less deterministic
         responses due to integration with the dispatch package.
         """
         def _poll_async_request(status, body):
+            if self.success_failure is not None:
+                task_id = body['_href'].split('/')[-2]
+                if self.success_failure == 'success':
+                    self.coordinator.complete_call_success(task_id, self.result)
+                else:
+                    self.coordinator.complete_call_failure(task_id, self.exception, self.traceback)
             while status in (httplib.ACCEPTED, httplib.OK) and \
                   body['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
                 uri = body['_href'][9:]
@@ -428,6 +449,15 @@ class PulpV2WebserviceTest(PulpCoordinatorTest, PulpWebserviceTest):
         if status == httplib.ACCEPTED:
             return _poll_async_request(status, body)
         return status, body
+
+    def set_success(self, result=None):
+        self.success_failure = 'success'
+        self.result = result
+
+    def set_failure(self, exception=None, traceback=None):
+        self.success_failure = 'failure'
+        self.exception = exception
+        self.traceback = traceback
 
 
 class PulpV2ClientTest(unittest.TestCase):
