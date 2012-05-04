@@ -66,11 +66,9 @@ class InstallContent(PulpCliCommand):
             'install',
             _('install packages'),
             self.run)
-        self.create_option(
+        self.create_flag(
             '--importkeys',
-            _('import GPG keys as needed (False)'),
-            required=False,
-            default=False)
+            _('import GPG keys as needed'))
         self.context = context
 
     def run(self, **kwargs):
@@ -211,11 +209,9 @@ class UpdateContent(PulpCliCommand):
             'update',
             _('update (installed) packages'),
             self.run)
-        self.create_option(
+        self.create_flag(
             '--importkeys',
-            _('import GPG keys as needed (False)'),
-            required=False,
-            default=False)
+            _('import GPG keys as needed'))
         self.context = context
 
     def run(self, **kwargs):
