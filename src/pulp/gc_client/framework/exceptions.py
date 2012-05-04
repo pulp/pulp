@@ -107,8 +107,12 @@ class ExceptionHandler:
             msg = 'The following properties are required but were not provided: %(p)s'
             msg = _(msg) % {'p' : ', '.join(e.extra_data['missing_property_names'])}
         else:
-            msg = 'The server indicated one or more values were incorrect. More ' \
-                  'information can be found in the client log file %(l)s.'
+            msg = 'The server indicated one or more values were incorrect. The server ' \
+                  'provided the following error message:'
+            self.prompt.render_failure_message(_(msg))
+
+            self.prompt.render_failure_message('   %s' % e.error_message)
+            msg = 'More information can be found in the client log file %(l)s.'
             msg = _(msg) % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
