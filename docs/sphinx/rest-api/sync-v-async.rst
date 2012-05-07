@@ -28,21 +28,21 @@ is Pulp's standard exception format, including the *reasons* for the response.
 Serialization
 -------------
 
-A 202 ACCEPTED response returns a **call report** response body that includes
-the following fields:
+A 202 ACCEPTED response returns **call report** JSON object as the response body
+that has the following fields:
 
-* _href - uri path to retrieve subsequent call reports for this task.
-* response - a response from Pulp's tasking system: accepted, postponed, or rejected
-* reasons - a list of reasons for postponed or rejected responses
-* state - the current state of the task
-* task_id - the unique id of the task that is executing the asynchronous call
-* job_id - the unique id of the job the task is a part of
-* schedule_id - the unique id of the schedule if the call is scheduled
-* progress - arbitrary progress information, usually in the form of an object
-* result - the return value of the call, if any
-* exception - the error exception value, if any
-* traceback - the resulting traceback if an exception was raised
-* start_time - the time the call started executing
-* finish_time - the time the call stopped executing
-* tags - arbitrary tags useful for looking up the call report
+* **_href** *(string)* - uri path to retrieve subsequent call reports for this task.
+* **response** *(string)* - a response from Pulp's tasking system: accepted, postponed, or rejected
+* **reasons** *(array)* - a list of reasons for postponed or rejected responses
+* **state** *(string)* - the current state of the task
+* **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
+* **job_id** *(null or string)* - the unique id of the job the task is a part of
+* **schedule_id** *(null or string)* - the unique id of the schedule if the call is scheduled
+* **progress** *(object)* - arbitrary progress information, usually in the form of an object
+* **result** *(any)* - the return value of the call, if any
+* **exception** *(null or string)* - the error exception value, if any
+* **traceback** *(null or array)* - the resulting traceback if an exception was raised
+* **start_time** *(null or string)* - the time the call started executing
+* **finish_time** *(null or string)* - the time the call stopped executing
+* **tags** *(array)* - arbitrary tags useful for looking up the call report
 
