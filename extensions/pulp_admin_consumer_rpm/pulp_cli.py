@@ -22,6 +22,7 @@ from pulp.gc_client.api.exceptions import NotFoundException
 def initialize(context):
     consumer_section = context.cli.find_section('consumer')
     consumer_section.add_subsection(ContentSection(context))
+    consumer_section.remove_subsection('content')
 
 # -- constants --------------------------------------------------------
 
