@@ -166,7 +166,9 @@ def _add_repo_scheduled_sync_task(repo):
     # hack to avoid circular imports
     from repo_sync import (_sync, get_synchronizer,
                            local_progress_callback, yum_rhn_progress_callback)
-    task = RepoSyncTask(_sync, [repo['id']], kwargs=repo['sync_options'])
+    # make sure the keys for the kwargs dict are strings!
+    kwargs = dict((str(k), v) for k, v in repo['sync_options'].items())
+    task = RepoSyncTask(_sync, [repo['id']], kwargs=kwargs)
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     # if no start time is provided, fallback to the last successful sync
     # otherwise start immediately
