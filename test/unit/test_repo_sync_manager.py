@@ -26,6 +26,7 @@ import mock_plugins
 from pulp.common import dateutils
 from pulp.server.content.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
+from pulp.server.exceptions import PulpExecutionException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as repo_importer_manager
@@ -146,7 +147,7 @@ class RepoSyncManagerTests(testutil.PulpTest):
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = SyncReport(False, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
 
         # Test
-        self.sync_manager.sync('repo-1')
+        self.assertRaises(PulpExecutionException, self.sync_manager.sync, 'repo-1')
 
         # Verify
         history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
