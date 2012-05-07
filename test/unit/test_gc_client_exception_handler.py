@@ -42,7 +42,7 @@ class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
 
         code = self.exception_handler.handle_exception(exceptions.BadRequestException({}))
         self.assertEqual(code, handler.CODE_BAD_REQUEST)
-        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(3, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
