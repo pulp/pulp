@@ -225,7 +225,7 @@ def parse_iso8601_interval(interval_str):
             recurrences = int(match.group('num'))
         elif part.startswith('P'):
             if interval is not None:
-                raise isodate.ISO8601Error('Multiple interval durartions specified')
+                raise isodate.ISO8601Error('Multiple interval durations specified')
             interval = parse_iso8601_duration(part)
         else:
             if start_time is not None:
@@ -234,13 +234,11 @@ def parse_iso8601_interval(interval_str):
     # the interval is the only required part
     if interval is None:
         raise isodate.ISO8601Error('No interval specification found')
-    # isodate will automatically parse durations into its own internal Duration
-    # class if the duration contains years and months, we want to convert it
-    # back to a datetime.timedelta instance, if possible
-    if isinstance(interval, isodate.Duration):
-        if start_time is None:
-            raise isodate.ISO8601Error('Intervals with year and month values are not valid without a start time')
-        interval = interval.todatetime(start=start_time)
+    # if the interval contains months or years, isodate will use it's own
+    # internal Duration class instead of timedelta
+    # pulp cannot handle Duration instances if a start_time is not provided
+    if isinstance(interval, isodate.Duration) and start_time is None:
+        raise isodate.ISO8601Error('Intervals with year and month values are not valid without a start time')
     return (interval, start_time, recurrences)
 
 
