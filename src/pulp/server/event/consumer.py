@@ -27,12 +27,12 @@ class EventConsumer(Consumer):
     An AMQP event consumer.
     """
 
-    def __init__(self, subject=None, name=None, **other):
+    def __init__(self, subject=None, **other):
         """
         @param subject: An (optional) event subject.
         @type subject: str
         """
-        topic = Topic('event', subject, name)
+        topic = Topic('event', subject)
         Consumer.__init__(self, topic, **other)
 
     def dispatch(self, envelope):

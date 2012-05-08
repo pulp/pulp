@@ -16,6 +16,7 @@ import logging
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
+from pulp.server.event.dispatcher import event 
 from pulp.server.exceptions import PulpException
 
 log = logging.getLogger(__name__)
@@ -48,7 +49,17 @@ class ErrataApi(BaseApi):
                 reboot_suggested, references, pkglist, severity, rights,
                 summary, solution, repo_defined, immutable, repoids)
         self.collection.insert(e, safe=True)
+        self.__created(e)
         return e
+    
+    @event(subject='errata.created')
+    def __created(self, errata):
+        """
+        Notification an errata has been created.
+        @param errata: The created object.
+        @type errata: L{Errata}
+        """
+        pass
 
     @audit()
     def update(self, id, delta):
@@ -75,7 +86,17 @@ class ErrataApi(BaseApi):
             raise Exception, \
                   'update keyword "%s", not-supported' % key
         self.collection.save(erratum, safe=True)
+        self.__updated(erratum)
         return erratum
+    
+    @event(subject='errata.updated')
+    def __updated(self, errata):
+        """
+        Notification an errata has been updated.
+        @param errata: The created object.
+        @type errata: L{Errata}
+        """
+        pass
 
     @audit()
     def delete(self, id):
