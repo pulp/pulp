@@ -10,6 +10,7 @@ APIs
    consumer/index
    repo/index
    content/index
+   dispatch/index
 
 Documentation
 -------------
