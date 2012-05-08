@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.7
+Version:        1.1.8
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue May 08 2012 Jeff Ortel <jortel@redhat.com> 1.1.8-1
+- 818663 - add support for errata.created & errata.updated events.
+  (jortel@redhat.com)
+
 * Thu May 03 2012 Jay Dobies <jason.dobies@redhat.com> 1.1.7-1
 - 817914 - adding restriction on repo id as yum does not support multibyte
   characters inside .repo file in repo title, this fix also contains migrate
