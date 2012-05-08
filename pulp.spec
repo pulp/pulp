@@ -18,8 +18,8 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.287
-Release:        2%{?dist}
+Version:        0.0.288
+Release:        1%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -530,6 +530,35 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue May 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.288-1
+- 819589 - casting all kwarg keys to str (jason.connor@gmail.com)
+- removed cast to timedelta from isodate.Duration (jason.connor@gmail.com)
+- Consumer 'rpm' extension replaces generic 'content' extension when installed.
+  (jortel@redhat.com)
+- some json v python corrections and start of new section on iso8601
+  (jason.connor@gmail.com)
+- Add --no-commit to GC content extension. (jortel@redhat.com)
+- Changed handling of http/https flags so they are only defaulted in create
+  (jason.dobies@redhat.com)
+- changed _do_request to allow multiple polls to be sent to task url
+  (jason.connor@gmail.com)
+- changed aynchronous support to only set success or failure if the task is
+  actually running changed asynchronous support to guaruntee only 1 call into
+  coordinator changed asynchronous support to allow multiple calls into
+  controllers per unittest so long as set_success or set_failure is called
+  before each asynchronous controller is called (jason.connor@gmail.com)
+- Unit metadata is optional for unit import (jason.dobies@redhat.com)
+- Create the necessary directories for content uploads
+  (jason.dobies@redhat.com)
+- convert the ssl certs queried from mongo to utf8 before passing to m2crypto
+  (pkilambi@redhat.com)
+- GC agent; enable authorization. (jortel@redhat.com)
+- CallRequest(asynchronous=True); Simulate agent reply in GC consumer
+  controller unit test. (jortel@redhat.com)
+- make --importkeys a flag. (jortel@redhat.com)
+- removed generic scheduled tag and added schedule resource tag
+  (jason.connor@gmail.com)
+
 * Thu May 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.287-2
 - move gc_client to client-lib. (jortel@redhat.com)
 
