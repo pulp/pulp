@@ -52,10 +52,10 @@ class ContentSection(PulpCliSection):
                 aliases=['-n'])
             command.create_flag(
                 '--no-commit',
-                _('Transaction not committed'))
+                _('transaction not committed'))
             command.create_flag(
                 '--reboot',
-                _('Reboot after successful transaction'))
+                _('reboot after successful transaction'))
             self.add_command(command)
 
 

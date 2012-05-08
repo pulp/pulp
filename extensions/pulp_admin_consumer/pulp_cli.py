@@ -196,7 +196,7 @@ class ContentSection(PulpCliSection):
                 aliases=['-n'])
             command.create_flag(
                 '--no-commit',
-                _('Transaction not committed'))
+                _('transaction not committed'))
             self.add_command(command)
 
 
