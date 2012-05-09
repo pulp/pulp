@@ -21,12 +21,16 @@ asynchronous *task*. The response body is a serialized **call report**
 (see below) that contains metadata about the call, its progress, and resolution
 as well as an href that can be used to poll for updates to this information.
 
+Details on :ref:`task_management`
+
 A conflict response means that a conflict was detected that causes the call to
 be unserviceable now or at any point in the future. The body of this response
 is Pulp's standard exception format, including the *reasons* for the response.
 
-Serialization
--------------
+.. _call_report:
+
+Call Report
+-----------
 
 A 202 ACCEPTED response returns **call report** JSON object as the response body
 that has the following fields:

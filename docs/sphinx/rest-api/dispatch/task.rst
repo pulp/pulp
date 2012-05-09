@@ -1,3 +1,5 @@
+.. _task_management:
+
 Task Management
 ===============
 
@@ -10,7 +12,7 @@ Polling Task Progress
 ---------------------
 
 Poll a task for progress and result information for the asynchronous call it is
-executing.
+executing. Polling returns a :ref:`call_report`
 
 | :method:`get`
 | :path:`/v2/tasks/<task_id>/`
@@ -66,8 +68,8 @@ must have support for the cancel.
 Listing Tasks
 -------------
 
-All currently running and waiting tasks may be listed. The list can be filtered
-by tags.
+All currently running and waiting tasks may be listed. This returns a list of
+:ref:`call_report` instances. The list can be filtered by tags.
 
 | :method:`get`
 | :path:`/v2/tasks/`
