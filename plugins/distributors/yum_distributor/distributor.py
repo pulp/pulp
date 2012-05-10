@@ -17,9 +17,10 @@ import os
 import shutil
 import traceback
 import metadata
+from pulp.repo_auth import repo_cert_utils, protected_repo_utils
 from pulp.yum_plugin import util
 from pulp.server.content.plugins.distributor import Distributor
-from pulp.server.content.plugins.model import PublishReport
+from ConfigParser import SafeConfigParser
 
 # -- constants ----------------------------------------------------------------
 _LOG = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
 SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/repos"
-
+CONFIG_REPO_AUTH="/etc/pulp/repo_auth.conf"
 ###
 # Config Options Explained
 ###
@@ -83,6 +84,7 @@ class YumDistributor(Distributor):
 
     def validate_config(self, repo, config, related_repos):
         _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
+        auth_cert_bundle = {}
         for key in REQUIRED_CONFIG_KEYS:
             value = config.get(key)
             if value is None:
@@ -147,12 +149,19 @@ class YumDistributor(Distributor):
                     msg = _("auth_cert is not a valid certificate")
                     _LOG.error(msg)
                     return False, msg
+                auth_cert_bundle['cert'] = auth_pem
             if key == 'auth_ca':
                 auth_ca = config.get('auth_ca').encode('utf-8')
                 if auth_ca is not None and not util.validate_cert(auth_ca):
                     msg = _("auth_ca is not a valid certificate")
                     _LOG.error(msg)
                     return False, msg
+                auth_cert_bundle['ca'] = auth_ca
+        # process auth certs
+        repo_relative_path = self.get_repo_relative_path(repo, config)
+        if repo_relative_path.startswith("/"):
+            repo_relative_path = repo_relative_path[1:]
+        self.process_repo_auth_certificate_bundle(repo.id, repo_relative_path, auth_cert_bundle)
         # If overriding https publish dir, be sure it exists and we can write to it
         publish_dir = config.get("https_publish_dir")
         if publish_dir:
@@ -187,6 +196,34 @@ class YumDistributor(Distributor):
             "items_total" : 0,
             "error_details" : [],
         }
+
+    def process_repo_auth_certificate_bundle(self, repo_id, repo_relative_path, cert_bundle):
+        """
+        Write the cert bundle to location specified in the repo_auth.conf;
+        also updates the protected_repo_listings file with repo info. If
+        no cert bundle, delete any orphaned repo info from listings.
+
+        @param repo_id: repository id
+        @type repo_id: str
+
+        @param repo_relative_path: repo relative path
+        @type  repo_relative_path: str
+
+        @param cert_bundle: mapping of item to its PEM encoded contents
+        @type  cert_bundle: dict {str, str}
+        """
+
+        repo_auth_config = load_config()
+        repo_cert_utils_obj = repo_cert_utils.RepoCertUtils(repo_auth_config)
+        protected_repo_utils_obj = protected_repo_utils.ProtectedRepoUtils(repo_auth_config)
+
+        if cert_bundle:
+            repo_cert_utils_obj.write_consumer_cert_bundle(repo_id, cert_bundle)
+            # add repo to protected list
+            protected_repo_utils_obj.add_protected_repo(repo_relative_path, repo_id)
+        else:
+            # remove stale info, if any
+            protected_repo_utils_obj.delete_protected_repo(repo_relative_path)
 
     def does_rel_url_conflict(self, rel_url, related_repos):
         """
@@ -417,6 +454,17 @@ class YumDistributor(Distributor):
             return publish_conduit.build_failure_report(summary, details)
 #        _LOG.info("Publish progress information %s" % publish_conduit.progress_report)
         return publish_conduit.build_success_report(summary, details)
+
+    def distributor_removed(self, repo, config):
+        # clean up any repo specific data
+        repo_auth_config = load_config()
+        repo_cert_utils_obj = repo_cert_utils.RepoCertUtils(repo_auth_config)
+        protected_repo_utils_obj = protected_repo_utils.ProtectedRepoUtils(repo_auth_config)
+        repo_relative_path = self.get_repo_relative_path(repo, config)
+        if repo_relative_path.startswith("/"):
+            repo_relative_path = repo_relative_path[1:]
+        repo_cert_utils_obj.delete_for_repo(repo.id)
+        protected_repo_utils_obj.delete_protected_repo(repo_relative_path)
 
     def set_progress(self, type_id, status, progress_callback=None):
         if progress_callback:
@@ -672,3 +720,8 @@ class YumDistributor(Distributor):
         distro_progress_status["state"] = "FINISHED"
         self.set_progress("distribution", distro_progress_status, progress_callback)
         return True, []
+
+def load_config(config_file=CONFIG_REPO_AUTH):
+    config = SafeConfigParser()
+    config.read(config_file)
+    return config
