@@ -17,8 +17,10 @@ import datetime
 import httplib
 import itertools
 import os
+import re
 import sys
 import traceback
+import unittest
 from pprint import pformat
 
 import mock
@@ -33,10 +35,9 @@ from pulp.server.content import loader as plugin_loader
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.gc_repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.unit_association_query import Criteria
-
+import pulp.server.webservices.queries.repo as repo_query_utils
 
 class RepoControllersTests(testutil.PulpV2WebserviceTest):
 
@@ -1199,3 +1200,48 @@ class ScheduledPublishTests(RepoPluginsTests):
         for key in updates:
             self.assertTrue(updates[key] == body[key], key)
 
+class UnitCriteriaTests(unittest.TestCase):
+
+    def test_parse_criteria(self):
+
+        # Setup
+        query = {
+            'type_ids' : ['rpm'],
+            'filters' : {
+                'unit' : {'$and' : [
+                    {'$regex' : '^p.*'},
+                    {'$not' : 'ython$'},
+                ]},
+                'association' : {'created' : {'$gt' : 'now'}},
+            },
+
+            'limit' : 100,
+            'skip' : 200,
+            'fields' : {
+                'unit' : ['name', 'version'],
+                'association' : ['created'],
+            },
+            'remove_duplicates' : True,
+        }
+
+        # Test
+        criteria = repo_query_utils.unit_association_criteria(query)
+
+        # Verify
+        self.assertEqual(criteria.type_ids, ['rpm'])
+        self.assertEqual(criteria.association_filters, {'created' : {'$gt' : 'now'}})
+        self.assertEqual(criteria.limit, 100)
+        self.assertEqual(criteria.skip, 200)
+        self.assertEqual(criteria.unit_fields, ['name', 'version'])
+        self.assertEqual(criteria.association_fields, ['created', 'unit_id', 'unit_type_id'])
+        self.assertEqual(criteria.remove_duplicates, True)
+
+        #   Check the special $not handling in the unit filter
+        self.assertTrue('$and' in criteria.unit_filters)
+        and_list = criteria.unit_filters['$and']
+
+        self.assertTrue('$regex' in and_list[0])
+        self.assertEqual(and_list[0]['$regex'], '^p.*')
+
+        self.assertTrue('$not' in and_list[1])
+        self.assertEqual(and_list[1]['$not'], re.compile('ython$'))

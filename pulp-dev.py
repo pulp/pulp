@@ -96,6 +96,7 @@ LINKS = (
     ('extensions/pulp_tasks', '/var/lib/pulp_client/admin/extensions/pulp_tasks'),
     ('extensions/rpm_repo', '/var/lib/pulp_client/admin/extensions/rpm_repo'),
     ('extensions/rpm_sync', '/var/lib/pulp_client/admin/extensions/rpm_sync'),
+    ('extensions/rpm_units_copy', '/var/lib/pulp_client/admin/extensions/rpm_units_copy'),
     ('extensions/rpm_units_search', '/var/lib/pulp_client/admin/extensions/rpm_units_search'),
     ('extensions/pulp_consumer', '/var/lib/pulp_client/consumer/extensions/pulp_consumer'),
     ('plugins/types/rpm.json', '/var/lib/pulp/plugins/types/rpm.json'),

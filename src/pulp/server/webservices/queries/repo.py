@@ -15,6 +15,8 @@
 Repo module containing repo queries based on HTTP query parameters.
 """
 
+import re
+
 from pulp.server.db.model.resource import Repo
 from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.webservices import http
@@ -136,8 +138,42 @@ def unit_association_criteria(query):
     if skip: skip = int(skip)
     if remove_duplicates: remove_duplicates = bool(remove_duplicates)
 
+    # $not is not supported for regular expressions specified using the
+    # {$regex: ...} syntax, so check for all $not entries and if the value
+    # is a string, compile it into a native pattern and pass that in.
+
+    if unit_filters:
+        _recursive_check_not(unit_filters)
+
+    if association_filters:
+        _recursive_check_not(association_filters)
+
     c = Criteria(type_ids=type_ids, association_filters=association_filters, unit_filters=unit_filters,
                  association_sort=association_sort, unit_sort=unit_sort, limit=limit, skip=skip,
                  association_fields=association_fields, unit_fields=unit_fields, remove_duplicates=remove_duplicates)
     return c
+
+def _recursive_check_not(root_dict):
+    """
+    Recursively checks through a nested dictionary structure looking for all
+    keys that are the $not operator. If it is found and the value is a string,
+    compile the string to a native regular expression and replace it in the
+    dictionary.
+
+    @param root_dict: base dictionary to strat checking
+    """
+
+    for key, value in root_dict.items():
+        # Check for $not
+        if key == '$not' and isinstance(value, str):
+            root_dict[key] = re.compile(value)
+
+        # Recurse if necessary
+        if isinstance(value, dict):
+            _recursive_check_not(value)
+
+        if isinstance(value, (list, tuple)):
+            for v in value:
+                if isinstance(v, dict):
+                    _recursive_check_not(v)
 
