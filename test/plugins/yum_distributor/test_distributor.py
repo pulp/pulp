@@ -90,7 +90,9 @@ class TestDistributor(unittest.TestCase):
 
     def test_validate_config(self):
         repo = mock.Mock(spec=Repository)
+        repo.id = "testrepo"
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
         # Confirm that required keys are successful
         req_kwargs = {}
         req_kwargs['http'] = True
@@ -155,7 +157,9 @@ class TestDistributor(unittest.TestCase):
 
     def test_validate_config_http_or_https_needs_to_be_specified(self):
         repo = mock.Mock(spec=Repository)
+        repo.id = "testrepo"
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
         # Confirm that required keys are successful
         req_kwargs = {}
         req_kwargs['http'] = False
@@ -299,6 +303,7 @@ class TestDistributor(unittest.TestCase):
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, relative_url=relative_url,
                 http=False, https=True)
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
         status, msg = distributor.validate_config(repo, config, None)
         self.assertTrue(status)
         report = distributor.publish_repo(repo, publish_conduit, config)
@@ -498,6 +503,7 @@ class TestDistributor(unittest.TestCase):
         # Simple check of direct conflict of a duplicate
         related_repos = [repo_a]
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
         status, msg = distributor.validate_config(repo, config, related_repos)
         self.assertFalse(status)
         expected_msg = "Relative url '%s' conflicts with existing relative_url of '%s' from repo '%s'" % (relative_url, url_a, repo_a.id)
@@ -509,6 +515,7 @@ class TestDistributor(unittest.TestCase):
         repo_b = RelatedRepository("repo_b_id", [config_b])
         related_repos = [repo_b]
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
         status, msg = distributor.validate_config(repo, config, related_repos)
         self.assertFalse(status)
         expected_msg = "Relative url '%s' conflicts with existing relative_url of '%s' from repo '%s'" % (relative_url, url_b, repo_b.id)
@@ -533,6 +540,8 @@ class TestDistributor(unittest.TestCase):
 
         related_repos = [repo_c, repo_d, repo_e, repo_f]
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
+
         status, msg = distributor.validate_config(repo, config, related_repos)
         self.assertTrue(status)
         self.assertEqual(msg, None)
@@ -563,6 +572,7 @@ class TestDistributor(unittest.TestCase):
             test_repos.append(r)
         related_repos = test_repos
         distributor = YumDistributor()
+        distributor.process_repo_auth_certificate_bundle = mock.Mock()
         status, msg = distributor.validate_config(repo, config, related_repos)
         self.assertTrue(status)
         self.assertEqual(msg, None)
