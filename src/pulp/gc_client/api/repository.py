@@ -258,3 +258,19 @@ class RepositoryUnitSearchAPI(PulpAPI):
         path = self.base_path % repo_id
         data = {'query': query,}
         return self.server.POST(path, data)
+
+class RepositoryUnitAssociationAPI(PulpAPI):
+    """
+    Connection class to manipulate repository unit associations.
+    """
+
+    def __init__(self, pulp_connection):
+        super(RepositoryUnitAssociationAPI, self).__init__(pulp_connection)
+
+    def copy_units(self, source_repo_id, destination_repo_id, criteria):
+        url = '/v2/repositories/%s/actions/associate/' % destination_repo_id
+        body = {
+            'source_repo_id' : source_repo_id,
+            'criteria' : criteria
+        }
+        return self.server.POST(url, body)

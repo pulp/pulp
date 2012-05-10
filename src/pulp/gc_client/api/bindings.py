@@ -24,15 +24,16 @@ class Bindings(object):
 
         self.actions = ActionsAPI(pulp_connection)
 
+        self.consumer = ConsumerAPI(pulp_connection)
+        self.consumer_content = ConsumerContentAPI(pulp_connection)
+
         self.repo = RepositoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
         self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
         self.repo_history = RepositoryHistoryAPI(pulp_connection)
         self.repo_actions = RepositoryActionsAPI(pulp_connection)
         self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
-
-        self.consumer = ConsumerAPI(pulp_connection)
-        self.consumer_content = ConsumerContentAPI(pulp_connection)
+        self.repo_unit_associations = RepositoryUnitAssociationAPI(pulp_connection)
 
         self.server_info = ServerInfoAPI(pulp_connection)
 
