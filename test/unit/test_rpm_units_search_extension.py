@@ -29,7 +29,7 @@ class GeneralUnitSearchCommandTests(testutil.PulpV2ClientTest):
         self.server_mock.request.return_value = (200, {})
 
         # Test
-        command.search(repo_id='repo-1')
+        command.search(**{'repo-id' : 'repo-1'})
 
         # Verify
         # TODO: ran out of time, revisit in the future
