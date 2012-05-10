@@ -49,11 +49,11 @@ class RunSyncCommand(PulpCliCommand):
         self.context = context
         self.prompt = context.prompt # for ease in accessing
 
-        self.create_option('--repo_id', 'identifies the repository to sync', required=True)
+        self.create_option('--repo-id', 'identifies the repository to sync', required=True)
 
 
     def sync(self, **kwargs):
-        repo_id = kwargs['repo_id']
+        repo_id = kwargs['repo-id']
         self.context.prompt.render_title('Synchronizing Repository [%s]' % repo_id)
 
         # Trigger the actual sync
@@ -124,10 +124,7 @@ class SchedulingSection(PulpCliSection):
         PulpCliSection.__init__(self, 'schedule', _('repository synchronization scheduling'))
         for Command in (ListScheduled, AddScheduled, DeleteScheduled):
             command = Command(context)
-            command.create_option(
-                '--repo_id',
-                _('identifies the repository'),
-                required=True)
+            command.create_option('--repo-id', _('identifies the repository'), required=True)
             self.add_command(command)
 
 

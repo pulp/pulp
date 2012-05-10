@@ -46,7 +46,7 @@ class AdminConsumerSection(PulpCliSection):
 
         # Common Options
         id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
-        name_option = PulpCliOption('--display_name', '(optional) user-readable display name for the consumer', required=False)
+        name_option = PulpCliOption('--display-name', '(optional) user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', '(optional) user-readable description for the consumer', required=False)
 
         # Update Command
@@ -104,12 +104,12 @@ class AdminConsumerSection(PulpCliSection):
         consumer_list = self.context.server.consumer.consumers().response_body
 
         # Default flags to render_document_list
-        filters = ['id', 'display_name', 'description', 'bindings', 'notes']
+        filters = ['id', 'display-name', 'description', 'bindings', 'notes']
         order = filters
 
         if kwargs['details'] is True:
             filters = None
-            order = ['id', 'display_name']
+            order = ['id', 'display-name']
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
             if 'id' not in filters:
@@ -136,7 +136,6 @@ class AdminConsumerSection(PulpCliSection):
             self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' % (kwargs['name'], id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
-
 
 
     def _parse_notes(self, notes_list):
@@ -170,14 +169,10 @@ class AdminConsumerSection(PulpCliSection):
         return notes_dict
 
 
-
 class ContentSection(PulpCliSection):
 
     def __init__(self, context):
-        PulpCliSection.__init__(
-            self,
-            'content',
-            _('content unit installation management'))
+        PulpCliSection.__init__(self, 'content', _('content unit installation management'))
         for Command in (InstallContent, UpdateContent, UninstallContent):
             command = Command(context)
             command.create_option(
@@ -254,7 +249,6 @@ class InstallContent(PulpCliCommand):
     def postponed(self, response):
         postponed = response.is_postponed()
         if postponed:
-            prompt = self.context.prompt
             msg  = \
                 'The request to install content was accepted but postponed ' \
                 'due to one or more previous requests against the consumer.' \
@@ -264,8 +258,6 @@ class InstallContent(PulpCliCommand):
 
     def process(self, id, response):
         prompt = self.context.prompt
-        server = self.context.server
-        cfg = self.context.client_config
         m = 'This command may be exited via CTRL+C without affecting the install.'
         prompt.render_paragraph(_(m))
         try:
@@ -335,12 +327,8 @@ class InstallContent(PulpCliCommand):
 class UpdateContent(PulpCliCommand):
 
     def __init__(self, context, **options):
-        PulpCliCommand.__init__(
-            self,
-            'update',
-            _('update (installed) content units'),
-            self.run,
-            **options)
+        PulpCliCommand.__init__(self, 'update', _('update (installed) content units'),
+                                self.run, **options)
         self.context = context
 
     def run(self, **kwargs):
@@ -386,7 +374,6 @@ class UpdateContent(PulpCliCommand):
     def postponed(self, response):
         postponed = response.is_postponed()
         if postponed:
-            prompt = self.context.prompt
             msg  = \
                 'The request to update content was accepted but postponed ' \
                 'due to one or more previous requests against the consumer.' \
@@ -396,8 +383,6 @@ class UpdateContent(PulpCliCommand):
 
     def process(self, id, response):
         prompt = self.context.prompt
-        server = self.context.server
-        cfg = self.context.client_config
         m = 'This command may be exited via CTRL+C without affecting the install.'
         prompt.render_paragraph(_(m))
         try:
@@ -467,12 +452,8 @@ class UpdateContent(PulpCliCommand):
 class UninstallContent(PulpCliCommand):
 
     def __init__(self, context, **options):
-        PulpCliCommand.__init__(
-            self,
-            'uninstall',
-            _('uninstall content units'),
-            self.run,
-            **options)
+        PulpCliCommand.__init__(self, 'uninstall', _('uninstall content units'),
+                                self.run, **options)
         self.context = context
 
     def run(self, **kwargs):
@@ -518,7 +499,6 @@ class UninstallContent(PulpCliCommand):
     def postponed(self, response):
         postponed = response.is_postponed()
         if postponed:
-            prompt = self.context.prompt
             msg  = \
                 'The request to uninstall content was accepted but postponed ' \
                 'due to one or more previous requests against the consumer.' \
@@ -528,8 +508,6 @@ class UninstallContent(PulpCliCommand):
 
     def process(self, id, response):
         prompt = self.context.prompt
-        server = self.context.server
-        cfg = self.context.client_config
         m = 'This command may be exited via CTRL+C without affecting the install.'
         prompt.render_paragraph(_(m))
         try:

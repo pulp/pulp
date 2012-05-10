@@ -169,7 +169,7 @@ class GeneralUnitSearchCommand(PulpCliCommand):
         """
 
         # Data collection
-        repo_id = kwargs.pop('repo_id')
+        repo_id = kwargs.pop('repo-id')
 
         try:
             criteria = args_to_criteria_doc(kwargs, self.type_ids)
@@ -223,7 +223,7 @@ class ErrataCommand(PulpCliCommand):
         the full list.
         """
 
-        if kwargs['erratum_id'] is None:
+        if kwargs['erratum-id'] is None:
             self.list(**kwargs)
         else:
             self.details(**kwargs)
@@ -235,7 +235,7 @@ class ErrataCommand(PulpCliCommand):
         self.context.prompt.render_title(_('Repository Errata'))
 
         # Collect data
-        repo_id = kwargs.pop('repo_id')
+        repo_id = kwargs.pop('repo-id')
         try:
             criteria = args_to_criteria_doc(kwargs, [TYPE_ERRATUM])
             LOG.debug('Criteria for errata search')
@@ -261,8 +261,8 @@ class ErrataCommand(PulpCliCommand):
         Displays the details of an individual erratum.
         """
         # Collect data
-        repo_id = kwargs.pop('repo_id')
-        erratum_id = kwargs.pop('erratum_id')
+        repo_id = kwargs.pop('repo-id')
+        erratum_id = kwargs.pop('erratum-id')
 
         criteria = {
             'type_ids' : [TYPE_ERRATUM],
@@ -350,7 +350,7 @@ class DistributionCommand(PulpCliCommand):
         self.context.prompt.render_title(_('Repository Distributions'))
 
         # Collect data
-        repo_id = kwargs.pop('repo_id')
+        repo_id = kwargs.pop('repo-id')
         try:
             criteria = args_to_criteria_doc(kwargs, [TYPE_DISTRIBUTION])
             LOG.debug('Criteria for distribution searc')
@@ -470,7 +470,7 @@ def add_required_group(command):
     Adds the required group and all of its options to the given command.
     """
     required_group = PulpCliOptionGroup(_('Required'))
-    required_group.add_option(PulpCliOption('--repo_id', _('identifies the repository to search within'), required=True))
+    required_group.add_option(PulpCliOption('--repo-id', _('identifies the repository to search within'), required=True))
     command.add_option_group(required_group)
 
 def add_erratum_group(command):
@@ -478,7 +478,7 @@ def add_erratum_group(command):
     Adds the erratum group and all of its options to the given command.
     """
     erratum_group = PulpCliOptionGroup(_('Erratum'))
-    erratum_group.add_option(PulpCliOption('--erratum_id', _('if specified, the full details of an individual erratum are displayed'), required=False))
+    erratum_group.add_option(PulpCliOption('--erratum-id', _('if specified, the full details of an individual erratum are displayed'), required=False))
     command.add_option_group(erratum_group)
 
 def add_display_group(command, default_fields):

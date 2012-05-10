@@ -90,7 +90,7 @@ LINKS = (
     ('etc/pulp/logging', '/etc/pulp/logging'),
     ('extensions/pulp_admin_auth', '/var/lib/pulp_client/admin/extensions/pulp_admin_auth'),
     ('extensions/pulp_admin_consumer', '/var/lib/pulp_client/admin/extensions/pulp_admin_consumer'),
-    ('extensions/pulp_admin_consumer_rpm', '/var/lib/pulp_client/admin/extensions/pulp_admin_consumer_rpm'),
+    ('extensions/rpm_admin_consumer', '/var/lib/pulp_client/admin/extensions/rpm_admin_consumer'),
     ('extensions/pulp_repo', '/var/lib/pulp_client/admin/extensions/pulp_repo'),
     ('extensions/pulp_server_info', '/var/lib/pulp_client/admin/extensions/pulp_server_info'),
     ('extensions/pulp_tasks', '/var/lib/pulp_client/admin/extensions/pulp_tasks'),

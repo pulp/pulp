@@ -13,8 +13,7 @@
 
 import time
 from gettext import gettext as _
-from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, \
-    PulpCliOption, PulpCliFlag, UnknownArgsParser
+from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand
 from pulp.gc_client.api.exceptions import NotFoundException
 
 # -- framework hook -----------------------------------------------------------
@@ -119,7 +118,6 @@ class InstallContent(PulpCliCommand):
     def postponed(self, response):
         postponed = response.is_postponed()
         if postponed:
-            prompt = self.context.prompt
             msg  = \
                 'The request to install content was accepted but postponed ' \
                 'due to one or more previous requests against the consumer.' \
@@ -129,8 +127,6 @@ class InstallContent(PulpCliCommand):
 
     def process(self, id, response):
         prompt = self.context.prompt
-        server = self.context.server
-        cfg = self.context.client_config
         m = 'This command may be exited via CTRL+C without affecting the install.'
         prompt.render_paragraph(_(m))
         try:
@@ -211,14 +207,14 @@ class UpdateContent(PulpCliCommand):
             _('update (installed) packages'),
             self.run)
         self.create_flag(
-            '--importkeys',
+            '--import-keys',
             _('import GPG keys as needed'))
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
         apply = (not kwargs['no-commit'])
-        importkeys = kwargs['importkeys']
+        importkeys = kwargs['import-keys']
         reboot = kwargs['reboot']
         units = []
         options = dict(
@@ -261,7 +257,6 @@ class UpdateContent(PulpCliCommand):
     def postponed(self, response):
         postponed = response.is_postponed()
         if postponed:
-            prompt = self.context.prompt
             msg  = \
                 'The request to update content was accepted but postponed ' \
                 'due to one or more previous requests against the consumer.' \
@@ -271,8 +266,6 @@ class UpdateContent(PulpCliCommand):
 
     def process(self, id, response):
         prompt = self.context.prompt
-        server = self.context.server
-        cfg = self.context.client_config
         m = 'This command may be exited via CTRL+C without affecting the install.'
         prompt.render_paragraph(_(m))
         try:
@@ -398,7 +391,6 @@ class UninstallContent(PulpCliCommand):
     def postponed(self, response):
         postponed = response.is_postponed()
         if postponed:
-            prompt = self.context.prompt
             msg  = \
                 'The request to uninstall content was accepted but postponed ' \
                 'due to one or more previous requests against the consumer.' \
@@ -408,8 +400,6 @@ class UninstallContent(PulpCliCommand):
 
     def process(self, id, response):
         prompt = self.context.prompt
-        server = self.context.server
-        cfg = self.context.client_config
         m = 'This command may be exited via CTRL+C without affecting the install.'
         prompt.render_paragraph(_(m))
         try:

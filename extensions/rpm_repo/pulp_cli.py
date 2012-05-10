@@ -121,7 +121,7 @@ class YumRepoCreateCommand(PulpCliCommand):
         # Gather data
         repo_id = kwargs.pop('id')
         description = kwargs.pop('description', None)
-        display_name = kwargs.pop('display_name', None)
+        display_name = kwargs.pop('display-name', None)
 
         try:
             notes = args_to_notes_dict(kwargs, include_none=False)
@@ -323,7 +323,7 @@ def add_repo_options(command, is_update):
     feed_url_dest.add_option(PulpCliOption('--feed', 'URL of the external source repository to sync', required=not is_update))
 
     # Metadata Options
-    basic_group.add_option(PulpCliOption('--display_name', 'user-readable display name for the repository', required=False))
+    basic_group.add_option(PulpCliOption('--display-name', 'user-readable display name for the repository', required=False))
     basic_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
     d =  'adds/updates/deletes key-value pairs to programmtically identify the repository; '
     d += 'pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
@@ -332,39 +332,39 @@ def add_repo_options(command, is_update):
     basic_group.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
 
     # Synchronization Options
-    sync_group.add_option(PulpCliOption('--only_newest', 'if "true", only the newest version of a given package is downloaded', required=False))
-    sync_group.add_option(PulpCliOption('--skip_types', 'comma-separated list of types to synchronize, if omitted all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
-    sync_group.add_option(PulpCliOption('--verify_size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
-    sync_group.add_option(PulpCliOption('--verify_checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    sync_group.add_option(PulpCliOption('--only-newest', 'if "true", only the newest version of a given package is downloaded', required=False))
+    sync_group.add_option(PulpCliOption('--skip-types', 'comma-separated list of types to synchronize, if omitted all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
+    sync_group.add_option(PulpCliOption('--verify-size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    sync_group.add_option(PulpCliOption('--verify-checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
 
     # Proxy Options
-    proxy_group.add_option(PulpCliOption('--proxy_url', 'URL to the proxy server to use', required=False))
-    proxy_group.add_option(PulpCliOption('--proxy_port', 'port on the proxy server to make requests', required=False))
-    proxy_group.add_option(PulpCliOption('--proxy_user', 'username used to authenticate with the proxy server', required=False))
-    proxy_group.add_option(PulpCliOption('--proxy_pass', 'password used to authenticate with the proxy server', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy-url', 'URL to the proxy server to use', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy-port', 'port on the proxy server to make requests', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy-user', 'username used to authenticate with the proxy server', required=False))
+    proxy_group.add_option(PulpCliOption('--proxy-pass', 'password used to authenticate with the proxy server', required=False))
 
     # Throttling Options
-    throttling_group.add_option(PulpCliOption('--max_speed', 'maximum bandwidth used per download thread, in KB/sec, when synchronizing the repo', required=False))
-    throttling_group.add_option(PulpCliOption('--num_threads', 'number of threads that will be used to synchronize the repo', required=False))
+    throttling_group.add_option(PulpCliOption('--max-speed', 'maximum bandwidth used per download thread, in KB/sec, when synchronizing the repo', required=False))
+    throttling_group.add_option(PulpCliOption('--num-threads', 'number of threads that will be used to synchronize the repo', required=False))
 
     # SSL Options
-    ssl_group.add_option(PulpCliOption('--feed_ca_cert', 'full path to the CA certificate that should be used to verify the external repo server\'s SSL certificate', required=False))
-    ssl_group.add_option(PulpCliOption('--verify_feed_ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert', required=False))
-    ssl_group.add_option(PulpCliOption('--feed_cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
-    ssl_group.add_option(PulpCliOption('--feed_key', 'full path to the private key for feed_cert', required=False))
+    ssl_group.add_option(PulpCliOption('--feed-ca-cert', 'full path to the CA certificate that should be used to verify the external repo server\'s SSL certificate', required=False))
+    ssl_group.add_option(PulpCliOption('--verify-feed-ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert', required=False))
+    ssl_group.add_option(PulpCliOption('--feed-cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
+    ssl_group.add_option(PulpCliOption('--feed-key', 'full path to the private key for feed_cert', required=False))
 
     # Publish Options
-    publish_group.add_option(PulpCliOption('--relative_url', 'relative path the repository will be served from; defaults to relative path of the feed URL', required=False))
-    publish_group.add_option(PulpCliOption('--serve_http', 'if "true", the repository will be served over HTTP; defaults to false', required=False))
-    publish_group.add_option(PulpCliOption('--serve_https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False))
-    publish_group.add_option(PulpCliOption('--checksum_type', 'type of checksum to use during metadata generation', required=False))
-    publish_group.add_option(PulpCliOption('--gpg_key', 'GPG key used to sign and verify packages in the repository', required=False))
-    publish_group.add_option(PulpCliOption('--regenerate_metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed', required=False))
+    publish_group.add_option(PulpCliOption('--relative-url', 'relative path the repository will be served from; defaults to relative path of the feed URL', required=False))
+    publish_group.add_option(PulpCliOption('--serve-http', 'if "true", the repository will be served over HTTP; defaults to false', required=False))
+    publish_group.add_option(PulpCliOption('--serve-https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False))
+    publish_group.add_option(PulpCliOption('--checksum-type', 'type of checksum to use during metadata generation', required=False))
+    publish_group.add_option(PulpCliOption('--gpg-key', 'GPG key used to sign and verify packages in the repository', required=False))
+    publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed', required=False))
 
     # Publish Security Options
-    repo_auth_group.add_option(PulpCliOption('--host_ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
-    repo_auth_group.add_option(PulpCliOption('--auth_ca', 'full path to the CA certificate that should be used to verify client authentication certificates; setting this turns on client authentication for the repository', required=False))
-    repo_auth_group.add_option(PulpCliOption('--auth_cert', 'full path to the entitlement certificate that will be given to bound consumers to grant access to this repository', required=False))
+    repo_auth_group.add_option(PulpCliOption('--host-ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
+    repo_auth_group.add_option(PulpCliOption('--auth-ca', 'full path to the CA certificate that should be used to verify client authentication certificates; setting this turns on client authentication for the repository', required=False))
+    repo_auth_group.add_option(PulpCliOption('--auth-cert', 'full path to the entitlement certificate that will be given to bound consumers to grant access to this repository', required=False))
 
 def args_to_notes_dict(kwargs, include_none=True):
     """
@@ -490,6 +490,13 @@ def _prep_config(kwargs, plugin_config_keys):
     @param plugin_config_keys: one of the *_CONFIG_KEYS constants
     @return: dictionary to use as the basis for the config
     """
+
+    # User-specified flags use hyphens but the importer/distributor want
+    # underscores, so do a quick translation here before anything else.
+    for k in kwargs.keys():
+        v = kwargs.pop(k)
+        new_key = k.replace('-', '_')
+        kwargs[new_key] = v
 
     # Populate the plugin config with the plugin-relevant keys in the user args
     user_arg_keys = [k[1] for k in plugin_config_keys]

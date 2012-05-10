@@ -31,7 +31,7 @@ class RepoSection(PulpCliSection):
 
         # Common Options
         id_option = PulpCliOption('--id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True)
-        name_option = PulpCliOption('--display_name', '(optional) user-readable display name for the repository', required=False)
+        name_option = PulpCliOption('--display-name', '(optional) user-readable display name for the repository', required=False)
         description_option = PulpCliOption('--description', '(optional) user-readable description for the repository', required=False)
 
         # Create Command
@@ -75,8 +75,8 @@ class RepoSection(PulpCliSection):
         # Collect input
         id = kwargs['id']
         name = id
-        if 'display_name' in kwargs:
-            name = kwargs['display_name']
+        if 'display-name' in kwargs:
+            name = kwargs['display-name']
         description = kwargs['description']
         notes = None # TODO: add support later
 
@@ -118,10 +118,10 @@ class RepoSection(PulpCliSection):
 
         # Default flags to render_document_list
         filters = None
-        order = ['id', 'display_name', 'description', 'content_unit_count']
+        order = ['id', 'display-name', 'description', 'content_unit_count']
 
         if kwargs['summary'] is True:
-            filters = ['id', 'display_name']
+            filters = ['id', 'display-name']
             order = filters
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')

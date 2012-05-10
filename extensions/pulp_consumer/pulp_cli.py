@@ -37,7 +37,6 @@ class InvalidConfig(Exception):
     """
     pass
 
-
 # -- sections -----------------------------------------------------------------
 
 class ConsumerSection(PulpCliSection):
@@ -50,7 +49,7 @@ class ConsumerSection(PulpCliSection):
 
         # Common Options
         id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
-        name_option = PulpCliOption('--display_name', '(optional) user-readable display name for the consumer', required=False)
+        name_option = PulpCliOption('--display-name', '(optional) user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', '(optional) user-readable description for the consumer', required=False)
         d =  '(optional) adds/updates/deletes notes to programmtically identify the consumer; '
         d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
@@ -88,8 +87,8 @@ class ConsumerSection(PulpCliSection):
             self.prompt.write("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid())
 
         name = id
-        if 'display_name' in kwargs:
-            name = kwargs['display_name']
+        if 'display-name' in kwargs:
+            name = kwargs['display-name']
         description = kwargs['description']
         notes = None
         if 'note' in kwargs.keys():
