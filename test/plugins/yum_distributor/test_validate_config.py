@@ -26,7 +26,9 @@ class TestValidateConfig(unittest.TestCase):
     def setUp(self):
         super(TestValidateConfig, self).setUp()
         self.repo = mock.Mock(spec=Repository)
+        self.repo.id = "testrepo"
         self.distributor = YumDistributor()
+        self.distributor.process_repo_auth_certificate_bundle = mock.Mock()
         self.init()
 
     def tearDown(self):
