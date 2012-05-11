@@ -129,6 +129,8 @@ class PulpConnection(object):
     def _build_url(self, path, queries=()):
         # build the request url from the path and queries dict or tuple
         if not path.startswith(self.path_prefix):
+            if path.startswith('/'):
+                path = path[1:]
             path = '/'.join((self.path_prefix, path))
             # Check if path is ascii and uses appropriate characters, else convert to binary or unicode as necessary.
         try:
