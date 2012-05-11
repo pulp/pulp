@@ -44,7 +44,7 @@ IMPORTER_CONFIG_KEYS = [
     ('max_speed', 'max_speed'),
     ('num_threads', 'num_threads'),
     ('newest', 'only_newest'),
-    ('skip', 'skip_types'),
+    ('skip', 'skip_content_types'),
 
     # Not part of the CLI yet; may be removed entirely
     ('remove_old', 'remove_old'),
@@ -62,7 +62,7 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('auth_cert', 'auth_cert'),
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
-    ('metadata_types', 'skip_types'),
+    ('metadata_types', 'skip_content_types'),
 ]
 
 VALID_SKIP_TYPES = ['packages', 'distributions', 'errata']
