@@ -19,7 +19,7 @@ Basic
   "pulp" and "Pulp" are two separate repositories. An ID is required at repository
   creation time.
 
-``--display_name``
+``--display-name``
   User-friendly name for the repository.
 
 ``--description``
@@ -39,22 +39,22 @@ Basic
 Synchronization
 ^^^^^^^^^^^^^^^
 
-``--only_newest``
+``--only-newest``
   Flag indicating if only the newest version of each package should be downloaded
   during synchronization.
 
-``--skip_types``
+``--skip-types``
   Comma-separated list of types to omit when synchronizing from the source. If
   unspecified, all types will be synchronized. Valid values are: packages,
   distributions, errata. Example usage to only synchronize packages:
-  ``--skip_types distributions,errata``
+  ``--skip-types distributions,errata``
 
-``--verify_size``
+``--verify-size``
   If true, as the repository is synchronized the size of each file will be verified
   against the metadata's expectation. Valid values to this option are ``true``
   and ``false``.
 
-``--verify_checksum``
+``--verify-checksum``
   If true, as the repository is synchronized the checksum of each file will be
   verified against the metadata's expectation. Valid values to this option are
   ``true`` and ``false``.
@@ -62,71 +62,71 @@ Synchronization
 Publishing
 ^^^^^^^^^^
 
-``--relative_url``
+``--relative-url``
   Relative path at which the repository will be served. If this is not specified,
   the relative path is derived from the ``feed`` option.
 
-``--serve_http``
+``--serve-http``
   Flag indicating if the repository will be served over a non-SSL connection.
   Valid values to this option are ``true`` and ``false``.
 
-``--serve_https``
+``--serve-https``
   Flag indicating if the repository will be served over an SSL connection. If
-  this is set to true, the ``host_ca`` option should also be specified to ensure
+  this is set to true, the ``host-ca`` option should also be specified to ensure
   consumers bound to this repository have the necessary certificate to validate
   the SSL connection. Valid values to this option are ``true`` and ``false``.
 
-``--checksum_type``
+``--checksum-type``
   Specifies the type of checksum to use during metadata generation.
 
-``--gpg_key``
+``--gpg-key``
   GPG key used to sign RPMs in this repository. This key will be made available
   to consumers to use in verifying content in the repository. The value to this
   option must be the full path to the GPG key file to upload to the server.
 
-``--regenerate_metadata``
+``--regenerate-metadata``
   Flag indicating the repository metadata should be regenerated rather than
   reused from the external source.
 
 Feed Authentication
 ^^^^^^^^^^^^^^^^^^^
 
-``--feed_ca_cert``
+``--feed-ca-cert``
   CA certificate used to validate the feed source's SSL certificate (for feeds
   exposed over HTTPS). This option is ignored if ``verify_feed_ssl`` is false.
 
-``--verify_feed_ssl``
+``--verify-feed-ssl``
   Indicates if the server's SSL certificate is verified against the CA certificate
-  uploaded using ``feed_ca_cert``. Has no effect for non-SSL feeds. Valid values
+  uploaded using ``feed-ca-cert``. Has no effect for non-SSL feeds. Valid values
   to this option are ``true`` and ``false``.
 
-``--feed_cert``
+``--feed-cert``
   Certificate used as the client certificate when synchronizing the repository.
   This is used to communicate authentication information to the feed source.
   The value to this option must be the full path to the certificate to upload.
   The specified file may be the certificate itself or a single file containing
   both the certificate and private key.
 
-``--feed_key``
-  Private key to the certificate specified in ``feed_cert``, assuming it is not
+``--feed-key``
+  Private key to the certificate specified in ``feed-cert``, assuming it is not
   included in the certificate file itself.
 
 Client Authentication
 ^^^^^^^^^^^^^^^^^^^^^
 
-``--host_ca``
+``--host-ca``
   CA certificate used to sign the SSL certificate the server is using to host
   this repository. This certificate will be made available to bound consumers so
   they can verify the server's identity. The value to this option must be the
   full path to the certificate.
 
-``--auth_ca``
-  CA certificate that was used to sign the certificate specified in ``auth_cert``.
+``--auth-ca``
+  CA certificate that was used to sign the certificate specified in ``auth-cert``.
   The server will use this CA to verify that the incoming request's client certificate
   is signed by the correct source and is not forged. The value to this option
   must be the full path to the CA certificate file to upload.
 
-``--auth_cert``
+``--auth-cert``
   Certificate that will be provided to consumers bound to this repository. This
   certificate should contain entitlement information to grant access to this
   repository, assuming the repository is protected. The value to this option must
@@ -136,25 +136,25 @@ Client Authentication
 Proxy
 ^^^^^
 
-``--proxy_url``
+``--proxy-url``
   Indicates the URL to use as a proxy server when synchronizing this repository.
 
-``--proxy_port``
+``--proxy-port``
   Port to connect to on the proxy server.
 
-``--proxy_user``
+``--proxy-user``
   Username to pass to the proxy server if it requires authentication.
 
-``--proxy_pass``
+``--proxy-pass``
   Password to use for proxy server authentication.
 
 Throttling
 ^^^^^^^^^^
 
-``--max_speed``
+``--max-speed``
   Maximum bandwidth used per download thread in KB/sec.
 
-``--num_threads``
+``--num-threads``
   Number of threads used when synchronizing the repository. This count controls
   the download threads themselves and has no bearing on the number of operations
   the Pulp server can execute at a given time.
@@ -167,7 +167,7 @@ All values may be updated except for the repository's ID. Configuration values
 can be removed (and thus reset to the default) by omitting a value or specifying
 ``""`` as the value. For example::
 
- repo update --id demo --verify_checksum "" --proxy_url=
+ repo update --id demo --verify-checksum "" --proxy-url=
 
 See the documentation for :ref:`repository create <repo-create>` for more
 information on the possible configuration.
