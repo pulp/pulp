@@ -5,4 +5,4 @@ Admin Client User Guide
    :maxdepth: 2
 
    introduction
-   repositories
+   repo/index

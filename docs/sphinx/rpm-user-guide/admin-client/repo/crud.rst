@@ -1,10 +1,10 @@
-Repositories
-============
+Repository Lifecycle
+====================
 
 .. _repo-create:
 
-Create
-------
+Create a New Repository
+-----------------------
 New repositories are created through the ``repo create`` command.
 
 The following options are available to the create repository command. The ID
@@ -159,8 +159,8 @@ Throttling
   the download threads themselves and has no bearing on the number of operations
   the Pulp server can execute at a given time.
 
-Update
-------
+Update an Existing Repository
+-----------------------------
 
 Configuration for a repository is updated using the ``repo update`` command.
 All values may be updated except for the repository's ID. Configuration values
@@ -172,18 +172,9 @@ can be removed (and thus reset to the default) by omitting a value or specifying
 See the documentation for :ref:`repository create <repo-create>` for more
 information on the possible configuration.
 
-Delete
-------
+Delete a Repository
+-------------------
 
-List
-----
-
-Unit Search
------------
-
-Synchronize
------------
-
-Sync Schedules
---------------
+List All Repositories
+---------------------
 

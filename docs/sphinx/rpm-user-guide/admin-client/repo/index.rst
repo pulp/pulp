@@ -1,0 +1,8 @@
+Repositories
+============
+
+.. toctree::
+   :maxdepth: 2
+
+   crud
+   sync-publish
