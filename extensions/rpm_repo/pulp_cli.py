@@ -133,7 +133,7 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         # During create (but not update), if the relative path isn't specified
         # it is derived from the feed_url
-        if 'relative_url' not in distributor_config:
+        if 'relative_url' not in distributor_config and 'feed_url' in importer_config:
             url_parse = urlparse(encode_unicode(importer_config['feed_url']))
 
             if url_parse[2] in ('', '/'):
@@ -314,15 +314,8 @@ def add_repo_options(command, is_update):
     # Required Options
     required_group.add_option(PulpCliOption('--id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
 
-    # Feed URL is special: required for create, optional for update
-    if not is_update:
-        feed_url_dest = required_group
-    else:
-        feed_url_dest = basic_group
-
-    feed_url_dest.add_option(PulpCliOption('--feed', 'URL of the external source repository to sync', required=not is_update))
-
     # Metadata Options
+    basic_group.add_option(PulpCliOption('--feed', 'URL of the external source repository to sync', required=False))
     basic_group.add_option(PulpCliOption('--display-name', 'user-readable display name for the repository', required=False))
     basic_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
     d =  'adds/updates/deletes key-value pairs to programmtically identify the repository; '
