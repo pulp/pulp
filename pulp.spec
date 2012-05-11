@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.288
+Version:        0.0.289
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -530,6 +530,28 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri May 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.289-1
+- Updated to correct importer/distributor config values
+  (jason.dobies@redhat.com)
+- Corrected _ to - in the user guide (jason.dobies@redhat.com)
+- Unit tests for unit copy (jason.dobies@redhat.com)
+- Added gt, gte, lt, lte, after, and before functionality to unit copy
+  (jason.dobies@redhat.com)
+- Added unit copy API to client bindings (jason.dobies@redhat.com)
+- fix test districutor to use mock (pkilambi@redhat.com)
+- fix tests to use a mock object (pkilambi@redhat.com)
+- Initial implementation of the unit copy extension (jason.dobies@redhat.com)
+- Protected Repos: - support for writing consumer cert to specific location
+  based on repo_auth.conf - update protected_repo_listings file - implement
+  distributor_remove hook to clean up on repo delete (pkilambi@redhat.com)
+- Renamed underscore CLI flags to use the hyphens convention
+  (jason.dobies@redhat.com)
+- added cross references for asynchronous call reports and the task dispatch
+  api (jason.connor@gmail.com)
+- initial placeholder for orphan manager (jason.connor@gmail.com)
+- added dispatch to index (jason.connor@gmail.com)
+- start of dispatch apis (jason.connor@gmail.com)
+
 * Tue May 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.288-1
 - 819589 - casting all kwarg keys to str (jason.connor@gmail.com)
 - removed cast to timedelta from isodate.Duration (jason.connor@gmail.com)
