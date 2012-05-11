@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
+from pulp.gc_client.framework.extensions import PulpCliCommand
 
 # -- constants ----------------------------------------------------------------
 
@@ -32,17 +32,22 @@ def initialize(context):
     repo_section = context.cli.find_section('repo')
     copy_section = repo_section.create_subsection('copy', _('copy packages and errata between repositories'))
 
-    copy_section.add_command(CopyCommand(context, 'rpms', _('copies RPMs from one repository into another'), TYPE_RPM))
+    rpm_usage_desc = 'Packages to copy from the source repository are determined by ' \
+    'applying regular expressions for inclusion (match) and exclusion (not). ' \
+    'Criteria are specified in the format "field=regex", for example "name=python.*". ' \
+    'Valid fields are: name, epoch, version, release, arch, buildhost, checksum, ' \
+    'description, filename, license, and vendor.'
+    copy_section.add_command(CopyCommand(context, 'rpms', _('copies RPMs from one repository into another'), _(rpm_usage_desc), TYPE_RPM))
 
 # -- commands -----------------------------------------------------------------
 
 class CopyCommand(PulpCliCommand):
 
-    def __init__(self, context, name, description, type_id):
+    def __init__(self, context, name, description, usage_description, type_id):
         self.context = context
         self.type_id = type_id
 
-        PulpCliCommand.__init__(self, name, description, self.copy)
+        PulpCliCommand.__init__(self, name, description, self.copy, usage_description=usage_description)
 
         # General Options
         self.create_option('--from-repo-id', _('source repository from which units will be copied'), ['-f'], required=True)
@@ -77,8 +82,11 @@ class CopyCommand(PulpCliCommand):
             matching_units = self.context.server.repo_search.search(from_repo, criteria).response_body
             matching_units_metadata = [u['metadata'] for u in matching_units]
 
-            self.context.prompt.render_document_list(matching_units_metadata, filters=['name', 'version'])
-
+            self.context.prompt.render_title(_('Matching Units'))
+            self.context.prompt.render_document_list(matching_units_metadata, filters=['filename'], num_separator_spaces=0)
+        else:
+            self.context.server.repo_unit_associations.copy_units(from_repo, to_repo, criteria)
+            self.context.prompt.render_success_message(_('Successfully copied matching units'))
 # -- utility ------------------------------------------------------------------
 
 class InvalidCriteria(Exception):
@@ -128,6 +136,26 @@ def args_to_criteria(type_id, kwargs):
     return criteria
 
 def _parse(args, mongo_func):
+    """
+    Parses a list of user supplied key value pairs and creates the appropriate
+    mongo syntax based on the type of relationship being defined.
+
+    The provided function must accept two parameters, the field name and value,
+    and return the corresponding mongo clause that should be added to the
+    criteria.
+
+    If any of the arguments cannot correctly be parsed an exception is raised
+    describing the issue.
+
+    @param args: list of unparsed key/value pairs, expressed as "field=value"
+    @type  args: list
+
+    @param mongo_func: function to apply to the value
+    @type  mongo_func: func
+
+    @return: list of mongo syntax clauses to add to the criteria
+    """
+
     # Consolidate multiple match calls with the same field into a single list
     clauses = []
     for user_opt in args:

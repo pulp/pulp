@@ -202,7 +202,8 @@ class PulpPrompt(Prompt):
 
     def render_document_list(self, items, filters=None, order=None,
                              spaces_between_cols=1, indent=0, step=2,
-                             omit_hidden=True, header_func=None):
+                             omit_hidden=True, header_func=None,
+                             num_separator_spaces=1):
         """
         Prints a list of JSON documents retrieved from the REST bindings (more
         generally, will print any list of dicts). The data will be output as
@@ -240,6 +241,10 @@ class PulpPrompt(Prompt):
         :param header_func: function to be applied to the item before it is
                rendered; the results will be printed prior to rendering the item
         :type  header_func: function
+
+        :param num_separator_spaces: number of blank lines to include after each
+               item in the list
+        :type  num_separator_spaces: int
         """
 
         # Punch out early if the items list is empty; we access the first
@@ -355,7 +360,7 @@ class PulpPrompt(Prompt):
 
             # Only add a space if we're at the highest level of the rendering
             if indent is 0:
-                self.render_spacer()
+                self.render_spacer(lines=num_separator_spaces)
 
         # Only add a space if we're at the highest level of the rendering
         if indent is 0:
