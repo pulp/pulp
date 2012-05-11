@@ -18,6 +18,8 @@ from pulp.gc_client.framework.extensions import PulpCliCommand
 # -- constants ----------------------------------------------------------------
 
 TYPE_RPM = 'rpm'
+TYPE_SRPM = 'srpm'
+TYPE_DRPM = 'drpm'
 TYPE_ERRATA = 'errata'
 
 LOG = None # set by context
@@ -35,9 +37,15 @@ def initialize(context):
     rpm_usage_desc = 'Packages to copy from the source repository are determined by ' \
     'applying regular expressions for inclusion (match) and exclusion (not). ' \
     'Criteria are specified in the format "field=regex", for example "name=python.*". ' \
+    'Except for the date checks, all arguments may be specified multiple times to further ' \
+    'refine the matching criteria. ' \
     'Valid fields are: name, epoch, version, release, arch, buildhost, checksum, ' \
     'description, filename, license, and vendor.'
-    copy_section.add_command(CopyCommand(context, 'rpms', _('copies RPMs from one repository into another'), _(rpm_usage_desc), TYPE_RPM))
+    rpm_usage_desc = _(rpm_usage_desc)
+
+    copy_section.add_command(CopyCommand(context, 'rpms', _('copies RPMs from one repository into another'), rpm_usage_desc, TYPE_RPM))
+    copy_section.add_command(CopyCommand(context, 'srpms', _('copies SRPMs from one repository into another'), rpm_usage_desc, TYPE_SRPM))
+    copy_section.add_command(CopyCommand(context, 'drpms', _('copies DRPMs from one repository into another'), rpm_usage_desc, TYPE_DRPM))
 
 # -- commands -----------------------------------------------------------------
 
@@ -55,28 +63,41 @@ class CopyCommand(PulpCliCommand):
         self.create_flag('--dry-run', _('display the units that will be copied without performing the actual copy'), ['-d'])
 
         # Criteria Options
-        general = 'specified in the format "field=value"; '\
-                  'the value may be either a literal value or a regular expression; '\
-                  'multiple match expressions may be passed in by specifying the '\
-                  'flag multiple times'
-        general = _(general)
+        m = 'field and expression to match when determining units for inclusion'
+        self.create_option('--match', _(m), ['-m'], required=False, allow_multiple=True)
 
-        m = 'field and expression to match when determining units for inclusion, '
-        m = _(m) + general
+        m = 'field and expression to omit when determining units for inclusion'
+        self.create_option('--not', _(m), ['-n'], required=False, allow_multiple=True)
 
-        self.create_option('--match', m, ['-m'], required=False, allow_multiple=True)
+        m = 'matches units whose value for the specified field is greater than the given value'
+        self.create_option('--gt', _(m), required=False, allow_multiple=True)
 
-        n = 'field and expression to omit when determining units for includion, '
-        n = _(n) + general
+        m = 'matches units whose value for the specified field is greater than or equal to the given value'
+        self.create_option('--gte', _(m), required=False, allow_multiple=True)
 
-        self.create_option('--not', n, ['-n'], required=False, allow_multiple=True)
+        m = 'matches units whose value for the specified field is less than the given value'
+        self.create_option('--lt', _(m), required=False, allow_multiple=True)
 
+        m = 'matches units whose value for the specified field is less than or equal to the given value'
+        self.create_option('--lte', _(m), required=False, allow_multiple=True)
+
+        m = 'matches units added to the source repository on or after the given time; ' \
+            'specified as a timestamp in iso8601 format'
+        self.create_option('--after', _(m), ['-a'], required=False, allow_multiple=False)
+
+        m = 'matches units added to the source repository on or before the given time; '\
+            'specified as a timestamp in iso8601 format'
+        self.create_option('--before', _(m), ['-b'], required=False, allow_multiple=False)
 
     def copy(self, **kwargs):
         from_repo = kwargs['from-repo-id']
         to_repo = kwargs['to-repo-id']
 
-        criteria = args_to_criteria(self.type_id, kwargs)
+        try:
+            criteria = args_to_criteria(self.type_id, kwargs)
+        except InvalidCriteria, e:
+            self.context.prompt.render_failure_message(_(e[0]))
+            return
 
         if 'dry-run' in kwargs and kwargs['dry-run']:
             matching_units = self.context.server.repo_search.search(from_repo, criteria).response_body
@@ -87,6 +108,7 @@ class CopyCommand(PulpCliCommand):
         else:
             self.context.server.repo_unit_associations.copy_units(from_repo, to_repo, criteria)
             self.context.prompt.render_success_message(_('Successfully copied matching units'))
+
 # -- utility ------------------------------------------------------------------
 
 class InvalidCriteria(Exception):
@@ -113,25 +135,56 @@ def args_to_criteria(type_id, kwargs):
     # Simple part  :)
     criteria = {'type_ids' : [type_id]}
 
-    match_clauses = []
-    not_clauses = []
+    # -- Unit Filters --
 
-    # Convert all "match" pairs into mongo syntax
-    if 'match' in kwargs and kwargs['match'] is not None:
-        match_clauses = _parse(kwargs['match'], lambda x, y: {x : {'$regex' : y}})
+    unit_clauses = []
 
-    # Convert all "not" pairs into mongo syntax
-    if 'not' in kwargs and kwargs['not'] is not None:
-        not_clauses = _parse(kwargs['not'], lambda x, y: {x : {'$not' : y}})
+    # Look for each item in [0] of the tuple and if found, make mongo clauses
+    # using [1] as the mongo keyword.
+    unit_arg_to_mongo_map = [
+        ('match', '$regex'),
+        ('not', '$not'),
+        ('gt', '$gt'),
+        ('gte', '$gte'),
+        ('lt', '$lt'),
+        ('lte', '$lte'),
+    ]
+
+    for k, m in unit_arg_to_mongo_map:
+        if k in kwargs and kwargs[k] is not None:
+            clauses = _parse(kwargs[k], lambda x, y: {x : {m : y}})
+            unit_clauses += clauses
 
     # Concatenate all of them into an $and clause
-    all_clauses = match_clauses + not_clauses
-    if len(all_clauses) > 0:
-        if len(all_clauses) > 1:
-            unit_filters_clause = {'$and' : all_clauses}
+    if len(unit_clauses) > 0:
+        if len(unit_clauses) > 1:
+            unit_filters_clause = {'$and' : unit_clauses}
         else:
-            unit_filters_clause = all_clauses[0]
-        criteria['filters'] = {'unit' : unit_filters_clause}
+            unit_filters_clause = unit_clauses[0]
+        filters = criteria.setdefault('filters', {})
+        filters['unit'] = unit_filters_clause
+
+    # -- Association Filters --
+
+    association_clauses = []
+
+    ass_arg_to_mongo_map = [
+        ('after', '$gte'),
+        ('before', '$lte'),
+    ]
+
+    for k, m in ass_arg_to_mongo_map:
+        if k in kwargs and kwargs[k] is not None:
+            clause = {'created' : {m : kwargs[k]}}
+            association_clauses.append(clause)
+
+    if len(association_clauses) > 0:
+        if len(association_clauses) > 1:
+            association_filters_clause = {'$and' : association_clauses}
+        else:
+            association_filters_clause = association_clauses[0]
+        filters = criteria.setdefault('filters', {})
+        filters['association'] = association_filters_clause
 
     return criteria
 
@@ -159,24 +212,17 @@ def _parse(args, mongo_func):
     # Consolidate multiple match calls with the same field into a single list
     clauses = []
     for user_opt in args:
-        field, value = _split(user_opt)
+
+        pieces = user_opt.split('=', 1)
+        if len(pieces) != 2:
+            raise InvalidCriteria('Criteria values must be specified in the format "field=value"')
+
+        field = pieces[0]
+        value = pieces[1]
+
         clause = mongo_func(field, value)
         clauses.append(clause)
 
     return clauses
-
-def _split(opt):
-    """
-    Splits the user given option into a field/value tuple and returns it,
-    raising an exception if the option is malformed.
-
-    @param opt: value the user passed in as a criteria option; expected to
-                be in the format key=value
-    @return: tuple of key and value
-    """
-    pieces = opt.split('=')
-    if len(pieces) != 2:
-        raise InvalidCriteria('Criteria values must be specified in the format "field=value"')
-    return pieces[0], pieces[1]
 
 
