@@ -5,10 +5,13 @@ Repository Lifecycle
 
 Create a New Repository
 -----------------------
+
 New repositories are created through the ``repo create`` command.
 
-The following options are available to the create repository command. The ID
-and feed options are required; all others are optional.
+The following options are available to the create repository command. All
+arguments, with the exception of ID, are optional. In the event a repository
+does not have a feed, the relative path is also required. If a feed is specified,
+the relative path will be derived from it unless otherwise overridden.
 
 Basic
 ^^^^^
@@ -167,7 +170,7 @@ All values may be updated except for the repository's ID. Configuration values
 can be removed (and thus reset to the default) by omitting a value or specifying
 ``""`` as the value. For example::
 
- repo update --id demo --verify-checksum "" --proxy-url=
+ $ repo update --id demo --verify-checksum "" --proxy-url=
 
 See the documentation for :ref:`repository create <repo-create>` for more
 information on the possible configuration.
@@ -175,6 +178,76 @@ information on the possible configuration.
 Delete a Repository
 -------------------
 
+Repositories are deleted using the ``repo delete`` command. The only argument
+to this call is the ID of the repository to delete and is required.
+
+Deleting a repository removes the repository and its association to any packages
+from the Pulp server. The published repository, served over HTTP and/or HTTPS,
+is also deleted.
+
+The individual packages themselves are not deleted from the Pulp server. The
+documentation for that process can be found under the
+:ref:`Orphaned Packages <orphaned-packages>` section.
+
 List All Repositories
 ---------------------
 
+The ``repo list`` command displays a list of all repositories in the Pulp server.
+By default, only a summary view of the repository is displayed, including ID,
+name, description, notes, and number of units in the repository.
+
+Notably missing from the summary view is the full configuration for the
+repository. This can be displayed by passing the ``--details`` flag to the
+list command.
+
+Summary view example::
+
+ $ pulp-v2-admin repo list
+ +----------------------------------------------------------------------+
+                               Repositories
+ +----------------------------------------------------------------------+
+
+ Id:                 ks
+ Display Name:       ks
+ Description:        None
+ Content Unit Count: 56
+ Notes:
+
+ Id:                 pulp-rhel6-i386
+ Display Name:       Pulp RHEL 6 i386
+ Description:        None
+ Content Unit Count: 18
+ Notes:
+
+Details view example::
+
+ $ pulp-v2-admin repo list --details
+ +----------------------------------------------------------------------+
+                               Repositories
+ +----------------------------------------------------------------------+
+
+ Id:                 ks
+ Display Name:       ks
+ Description:        None
+ Content Unit Count: 56
+ Notes:
+ Sync Config:
+   Feed: http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/
+ Publish Config:
+   Generate Metadata: True
+   Http:              False
+   Https:             True
+   Relative URL:      /repos/pulp/pulp/demo_repos/pulp_unittest/
+
+ Id:                 pulp-rhel6-i386
+ Display Name:       Pulp RHEL 6 i386
+ Description:        None
+ Content Unit Count: 18
+ Notes:
+ Sync Config:
+   Feed: http://repos.fedorapeople.org/repos/pulp/pulp/dev/stable/6Server/i386/
+ Publish Config:
+   Generate Metadata: True
+   Http:              True
+   Https:             False
+   Relative URL:      /repos/pulp/pulp/dev/stable/6Server/i386/
