@@ -9,3 +9,4 @@ Pulp+RPM User Guide
    admin-client/index
    consumer-client/index
    general
+   glossary
