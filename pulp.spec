@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon May 14 2012 Jeff Ortel <jortel@redhat.com> 1.1.8-2
+- Remove {?dist} from Requires: (jortel@redhat.com)
+- Change brew branches for 1.1 builds. (jortel@redhat.com)
+
 * Tue May 08 2012 Jeff Ortel <jortel@redhat.com> 1.1.8-1
 - 818663 - add support for errata.created & errata.updated events.
   (jortel@redhat.com)
