@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        1.1.8
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -39,9 +39,9 @@ Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson >= 2.0.9
-Requires: python-oauth2 >= 1.5.170-2.pulp%{?dist}
+Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
-Requires: python-isodate >= 0.4.4-3.pulp%{?dist}
+Requires: python-isodate >= 0.4.4-3.pulp
 Requires: python-BeautifulSoup
 Requires: grinder >= 0.0.147
 Requires: httpd
@@ -51,14 +51,14 @@ Requires: python-ldap
 Requires: python-gofer >= 0.66
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi >= 3.3-3.pulp%{?dist}
+Requires: mod_wsgi >= 3.3-3.pulp
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
 %if 0%{?rhel} == 5
 Requires: m2crypto
 %else
-Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
+Requires: m2crypto >= 0.21.1.pulp-7
 %endif
 
 %if %{pulp_selinux}
@@ -162,12 +162,12 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.66
 Requires:       grinder >= 0.0.147
 Requires:       httpd
-Requires:       mod_wsgi >= 3.3-3.pulp%{?dist}
+Requires:       mod_wsgi >= 3.3-3.pulp
 Requires:       mod_ssl
 %if 0%{?rhel} == 5
 Requires: m2crypto
 %else
-Requires: m2crypto >= 0.21.1.pulp-7%{?dist}
+Requires: m2crypto >= 0.21.1.pulp-7
 %endif
 %if %{pulp_selinux}
 Requires: %{name}-selinux-server = %{version}-%{release}
