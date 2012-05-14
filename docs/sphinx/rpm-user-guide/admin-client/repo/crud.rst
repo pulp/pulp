@@ -162,6 +162,8 @@ Throttling
   the download threads themselves and has no bearing on the number of operations
   the Pulp server can execute at a given time.
 
+.. _repo-update:
+
 Update an Existing Repository
 -----------------------------
 
@@ -251,9 +253,3 @@ Details view example::
    Http:              True
    Https:             False
    Relative URL:      /repos/pulp/pulp/dev/stable/6Server/i386/
-
-Global Repository Authentication
---------------------------------
-
-Repository authentication may be configured globally across all the repositories in pulp server. To enable global authentication, place the global ca cert under ``/etc/pki/pulp/content/``. If individual repository is configured to use its own ca, only individual repository check will take effect.
-

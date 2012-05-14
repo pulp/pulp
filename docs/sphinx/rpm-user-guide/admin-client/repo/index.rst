@@ -7,3 +7,4 @@ Repositories
    crud
    sync-publish
    units
+   protected-repos
