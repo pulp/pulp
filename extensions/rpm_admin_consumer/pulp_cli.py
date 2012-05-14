@@ -43,12 +43,6 @@ class ContentSection(PulpCliSection):
                 '--id',
                 _('identifies the consumer'),
                 required=True)
-            command.create_option(
-                '--name',
-                _('package name; may repeat for multiple packages'),
-                required=True,
-                allow_multiple=True,
-                aliases=['-n'])
             command.create_flag(
                 '--no-commit',
                 _('transaction not committed'))
@@ -66,6 +60,12 @@ class InstallContent(PulpCliCommand):
             'install',
             _('install packages'),
             self.run)
+        self.create_option(
+            '--name',
+            _('package name; may repeat for multiple packages'),
+            required=True,
+            allow_multiple=True,
+            aliases=['-n'])
         self.create_flag(
             '--importkeys',
             _('import GPG keys as needed'))
@@ -206,22 +206,41 @@ class UpdateContent(PulpCliCommand):
             'update',
             _('update (installed) packages'),
             self.run)
+        self.create_option(
+            '--name',
+            _('package name; may repeat for multiple packages'),
+            required=False,
+            allow_multiple=True,
+            aliases=['-n'])
         self.create_flag(
             '--import-keys',
             _('import GPG keys as needed'))
+        self.create_flag(
+            '--all',
+            _('update all packages'),
+            aliases=['-a'])
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
+        all = kwargs['all']
+        names = kwargs['name']
         apply = (not kwargs['no-commit'])
         importkeys = kwargs['import-keys']
         reboot = kwargs['reboot']
         units = []
         options = dict(
+            all=all,
             apply=apply,
             importkeys=importkeys,
             reboot=reboot,)
-        for name in kwargs['name']:
+        if all: # ALL
+            unit = dict(type_id=TYPE_ID, unit_key=None)
+            self.update(id, [unit], options)
+            return
+        if names is None:
+            names = []
+        for name in names:
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
@@ -230,9 +249,13 @@ class UpdateContent(PulpCliCommand):
     def update(self, id, units, options):
         prompt = self.context.prompt
         server = self.context.server
+        if not units:
+            msg = 'No packages specified'
+            prompt.render_failure_message(_(msg))
+            return
         try:
             task = server.consumer_content.update(id, units=units, options=options)
-            msg = _('Install task created with id [%s]') % task.task_id
+            msg = _('Update task created with id [%s]') % task.task_id
             prompt.render_success_message(msg)
             response = server.tasks.get_task(task.task_id)
             if self.rejected(response):
@@ -345,6 +368,12 @@ class UninstallContent(PulpCliCommand):
             'uninstall',
             _('uninstall packages'),
             self.run)
+        self.create_option(
+            '--name',
+            _('package name; may repeat for multiple packages'),
+            required=True,
+            allow_multiple=True,
+            aliases=['-n'])
         self.context = context
 
     def run(self, **kwargs):

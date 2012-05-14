@@ -15,40 +15,58 @@ import os
 from yum import YumBase
 from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
-from pulp.client.agent.container import Handler
-from pulp.client.agent.dispatcher import HandlerReport
+from pulp.client.agent.handler import Handler
+from pulp.client.agent.report import ProfileReport, RebootReport, HandlerReport
 from logging import getLogger, Logger
 
 log = getLogger(__name__)
 
-#
-# Handlers
-#
+
+class PackageReport(HandlerReport):
+    """
+    Package (install|update|uninstall) report.
+    Calculates the chgcnt.
+    """
+
+    def succeeded(self, details):
+        chgcnt = \
+            len(details['resolved'])+ \
+            len(details['deps'])
+        HandlerReport.succeeded(self, details, chgcnt)
+
+
+class GroupReport(HandlerReport):
+    """
+    Package Group (install|update|uninstall) report.
+    Calculates the chgcnt.
+    """
+
+    def succeeded(self, details):
+        chgcnt = \
+            len(details[0])+ \
+            len(details[1])
+        HandlerReport.succeeded(self, details, chgcnt)
+
 
 class Linux(Handler):
     """
     Linux content handler
     """
 
-    def reboot(self, options):
+    def reboot(self, options={}):
         """
         Schedule a system reboot.
-        @param options: An options dictionary
-          - apply : apply the transaction
-          - reboot : Reboot after installed 
-        @type options: dict
-        @return: True if scheduled
-        @rtype: bool
         """
-        scheduled = False
-        opt = Options(options, apply=True, reboot=False)
-        if opt.reboot:
-            if opt.apply:
-                os.system('shutdown -r +%d', minutes)
-                log.info('rebooting in: %d minutes', minutes)
-            scheduled = True
-        return scheduled
-            
+        report = RebootReport()
+        apply = options.get('apply', True)
+        if apply:
+            minutes = options.get('minutes', 1)
+            command = 'shutdown -r +%d' % minutes
+            log.info(command)
+            os.system(command)
+        report.succeeded()
+        return report
+
 
 class PackageHandler(Linux):
     """
@@ -70,18 +88,18 @@ class PackageHandler(Linux):
         @return: An install report.  See: L{Package.install}
         @rtype: L{HandlerReport}
         """
-        report = HandlerReport()
-        opt = Options(options, apply=True, importkeys=False)
-        pkg = Package(**opt)
+        report = PackageReport()
+        pkg = self.__impl(options)
         names = [key['name'] for key in units]
         details = pkg.install(names)
         report.succeeded(details)
-        report.reboot_scheduled = self.reboot(options)
         return report
 
     def update(self, units, options):
         """
         Update content unit(s).
+        Unit key of {} or None indicates updates update all
+        but only if (all) option is True.
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit update options.
@@ -92,13 +110,13 @@ class PackageHandler(Linux):
         @return: An update report.  See: L{Package.update}
         @rtype: L{HandlerReport}
         """
-        report = HandlerReport()
-        opt = Options(options, apply=True, importkeys=False)
-        pkg = Package(**opt)
-        names = [key['name'] for key in units]
-        details = pkg.update(names)
-        report.succeeded(details)
-        report.reboot_scheduled = self.reboot(options)
+        report = PackageReport()
+        all = options.get('all', False)
+        pkg = self.__impl(options)
+        names = [key['name'] for key in units if key]
+        if names or all:
+            details = pkg.update(names)
+            report.succeeded(details)
         return report
 
     def uninstall(self, units, options):
@@ -113,14 +131,25 @@ class PackageHandler(Linux):
         @return: An uninstall report.  See: L{Package.uninstall}
         @rtype: L{HandlerReport}
         """
-        report = HandlerReport()
-        opt = Options(options, apply=True)
-        pkg = Package(**opt)
+        report = PackageReport()
+        pkg = self.__impl(options)
         names = [key['name'] for key in units]
         details = pkg.uninstall(names)
         report.succeeded(details)
-        report.reboot_scheduled = self.reboot(options)
         return report
+
+    def __impl(self, options):
+        """
+        Get package implementation.
+        @param options: Passed options.
+        @type options: dict
+        @return: A package object.
+        @rtype: L{Package}
+        """
+        apply = options.get('apply', True)
+        importkeys = options.get('importkeys', False)
+        impl = Package(apply=apply, importkeys=importkeys)
+        return impl
 
 
 class GroupHandler(Linux):
@@ -140,13 +169,11 @@ class GroupHandler(Linux):
         @return: An install report.
         @rtype: L{HandlerReport}
         """
-        report = HandlerReport()
-        opt = Options(options, apply=True, importkeys=False)
-        grp = PackageGroup(**opt)
+        report = GroupReport()
+        grp = self.__impl(options)
         names = [key['name'] for key in units]
         details = grp.install(names)
         report.succeeded(details)
-        report.reboot_scheduled = self.reboot(options)
         return report
 
     def update(self, units, options):
@@ -159,13 +186,11 @@ class GroupHandler(Linux):
         @return: An update report.
         @rtype: L{HandlerReport}
         """
-        report = HandlerReport()
-        opt = Options(options, apply=True, importkeys=False)
-        grp = PackageGroup(**opt)
+        report = GroupReport()
+        grp = self.__impl(options)
         names = [key['name'] for key in units]
         details = grp.update(names)
         report.succeeded(details)
-        report.reboot_scheduled = self.reboot(options)
         return report
 
     def uninstall(self, units, options):
@@ -178,39 +203,26 @@ class GroupHandler(Linux):
         @return: An uninstall report.
         @rtype: L{HandlerReport}
         """
-        report = HandlerReport()
-        opt = Options(options, apply=True)
-        grp = PackageGroup(**opt)
+        report = GroupReport()
+        grp = self.__impl(options)
         names = [key['name'] for key in units]
         details = grp.uninstall(names)
         report.succeeded(details)
-        report.reboot_scheduled = self.reboot(options)
         return report
 
-#
-# options
-#
-
-class Options(dict):
-    """
-    Special dict capable of subsetting and defaulting.
-    Also provides (.) notation accessors.
-    """
-    __getattr__ = dict.__getitem__
-
-    def __init__(self, d, **subset):
+    def __impl(self, options):
         """
-        @param d: A source dictionary.
-        @type d: dict
-        @param subset: keywords where keys specify
-            the subset of keys and it's values define
-            the default values.
-            all keys.
+        Get package group implementation.
+        @param options: Passed options.
+        @type options: dict
+        @return: A package object.
+        @rtype: L{Package}
         """
-        dict.__init__(self)
-        for k,v in subset.items():
-            opt = d.get(k,v)
-            self[k] = opt
+        apply = options.get('apply', True)
+        importkeys = options.get('importkeys', False)
+        impl = PackageGroup(apply=apply, importkeys=importkeys)
+        return impl
+
 
 #
 # Implementation
@@ -391,7 +403,7 @@ class Package:
             yb.close()
         return dict(resolved=resolved, deps=deps)
 
-    def update(self, names=None):
+    def update(self, names=[]):
         """
         Update installed packages.
         When (names) is not specified, all packages are updated.

@@ -80,28 +80,57 @@ class TestDispatcher(testutil.PulpTest):
     def test_install(self):
         # Setup
         dispatcher = Dispatcher(self.container())
+        units = []
         unit = dict(
             type_id='rpm',
             unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
         options = {}
         # Test
-        report = dispatcher.install([unit], options)
+        report = dispatcher.install(units, options)
         pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 2)
+        self.assertFalse(report.reboot['scheduled'])
         # Verify
         # TODO: verify
 
-    def test_update(self):
+    def test_install_reboot(self):
         # Setup
         dispatcher = Dispatcher(self.container())
         unit = dict(
             type_id='rpm',
             unit_key=dict(name='zsh'))
+        options = dict(reboot=True)
+        # Test
+        report = dispatcher.install([unit], options)
+        pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 1)
+        self.assertTrue(report.reboot['scheduled'])
+
+    def test_update(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
         options = {}
         # Test
-        report = dispatcher.update([unit], options)
+        report = dispatcher.update(units, options)
         pprint(report.dict())
-        # Verify
-        # TODO: verify
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 2)
 
     def test_uninstall(self):
         # Setup
@@ -113,14 +142,23 @@ class TestDispatcher(testutil.PulpTest):
         # Test
         report = dispatcher.uninstall([unit], options)
         pprint(report.dict())
-        # Verify
-        # TODO: verify
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 1)
 
     def test_profile(self):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        profile = dispatcher.profile('rpm')
-        pprint(profile)
-        # Verify
-        # TODO: verify
+        report = dispatcher.profile(['rpm'])
+        pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 0)
+
+    def test_reboot(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        # Test
+        report = dispatcher.reboot()
+        pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 0)

@@ -11,9 +11,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-import sys
-import traceback as tb
+from pulp.client.agent.handler import Handler
 from pulp.client.agent.container import Container
+from pulp.client.agent.report import *
 
 
 class HandlerNotFound(Exception):
@@ -21,15 +21,15 @@ class HandlerNotFound(Exception):
     Handler not found.
     """
     
-    def __init__(self, type_id):
+    def __init__(self, **criteria):
         """
-        @param type_id: The type ID.
-        @type type_id: str
+        @param criteria: The handler criteria.
+        @type criteria: dict
         """
-        Exception.__init__(self, type_id)
+        Exception.__init__(self, criteria)
 
     def __str__(self):
-        return 'No handler for: (%s)' % self.args[0]
+        return 'No handler for: %s' % self.args[0]
 
 
 class Dispatcher:
@@ -41,201 +41,176 @@ class Dispatcher:
     def install(self, units, options):
         """
         Install content unit(s).
-        Unit is: {type_id:<str>, unit_key:<dict>}
+        Unit is: {typeid:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         @param options: Unit install options.
         @type options: dict
+        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        collated = self.__collated(units)
-        for type_id, units in collated.items():
+        collated = Collated(units)
+        for typeid, units in collated.items():
             try:
-                handler = self.__handler(type_id)
-                r = handler.install(units, options)
-                report.update(type_id, r)
+                handler = self.__handler(typeid)
+                r = handler.install(units, dict(options))
+                r.typeid = typeid
+                report.update(r)
             except Exception:
-                report.raised(type_id)
+                r = HandlerReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
+        rr = self.__reboot(report, options)
+        report.update(rr)
         return report
-
 
     def update(self, units, options):
         """
         Update content unit(s).
-        Unit is: {type_id:<str>, unit_key:<dict>}
+        Unit is: {typeid:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         @param options: Unit update options.
         @type options: dict
+        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        collated = self.__collated(units)
-        for type_id, units in collated.items():
+        collated = Collated(units)
+        for typeid, units in collated.items():
             try:
-                handler = self.__handler(type_id)
-                r = handler.update(units, options)
-                report.update(type_id, r)
+                handler = self.__handler(typeid)
+                r = handler.update(units, dict(options))
+                r.typeid = typeid
+                report.update(r)
             except Exception:
-                report.raised(type_id)
+                r = HandlerReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
+        rr = self.__reboot(report, options)
+        report.update(rr)
         return report
 
     def uninstall(self, units, options):
         """
         Uninstall content unit(s).
-        Unit is: {type_id:<str>, unit_key:<dict>}
+        Unit is: {typeid:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         @param options: Unit uninstall options.
         @type options: dict
+        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        collated = self.__collated(units)
-        for type_id, units in collated.items():
+        collated = Collated(units)
+        for typeid, units in collated.items():
             try:
-                handler = self.__handler(type_id)
-                hr = handler.uninstall(units, options)
-                report.update(type_id, hr)
+                handler = self.__handler(typeid)
+                r = handler.uninstall(units, dict(options))
+                r.typeid = typeid
+                report.update(r)
             except Exception:
-                report.raised(type_id)
+                r = HandlerReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
+        rr = self.__reboot(report, options)
+        report.update(rr)
         return report
 
-    def profile(self, type_id):
-        handler = self.__handler(type_id)
-        return handler.profile()
+    def profile(self, types):
+        """
+        Request the installed content profile be sent
+        to the pulp server.
+        @param types: A list of content type IDs.
+        @type types: list
+        @raise HandlerNotFound: When hanlder not found.
+        """
+        report = DispatchReport()
+        for typeid in types:
+            handler = self.__handler(typeid)
+            try:
+                r = handler.profile()
+                r.typeid = typeid
+                report.update(r)
+            except Exception:
+                r = ProfileReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
+        return report
 
-    def __handler(self, type_id):
-        handler = self.container.find(type_id)
+    def reboot(self, options={}):
+        """
+        Schedule a reboot.
+        @param options: reboot options.
+        @type options: dict
+        Find the 1st handler that implements reboot() and
+        dispatch to that handler.
+        @raise HandlerNotFound: When hanlder not found.
+        """
+        NAME = 'reboot'
+        for handler in self.container.all():
+            method = getattr(handler, NAME, 0)
+            if not callable(method):
+                continue
+            try:
+                return handler.reboot(options)
+            except Exception:
+                r = RebootReport()
+                r.failed(ExceptionReport())
+                return r
+        report = RebootReport()
+        report.failed(dict(message='handler not found'))
+        return report
+
+    def __reboot(self, report, options):
+        """
+        Schedule a reboot based on I{options} and reported progress.
+        @param report: A dispatch report.
+        @type report: L{DispatchReport}
+        @param options: reboot options.
+        @type options: dict
+        @raise HandlerNotFound: When hanlder not found.
+        """
+        reboot = options.get('reboot', 0)
+        if reboot:
+            if report.chgcnt:
+                return self.reboot(options)
+        return RebootReport()
+
+    def __handler(self, typeid):
+        """
+        Find a handler by type ID.
+        @param typeid: A content type ID.
+        @type typeid: str
+        @return: The found handler.
+        @rtype: L{Handler}
+        @raise HandlerNotFound: When not found.
+        """
+        handler = self.container.find(typeid)
         if handler is None:
-            raise HandlerNotFound(type_id)
-        return handler
+            raise HandlerNotFound(type=typeid)
+        else:
+            return handler
 
-    def __collated(self, units):
+
+class Collated(dict):
+    """
+    Collated content units
+    """
+
+    def __init__(self, units):
         """
-        Get collated units.
-        Unit is: {type_id:<str>, unit_key:<dict>}
-        @param units: A list of content units
+        Unit is: {typeid:<str>, unit_key:<dict>}
+        @param units: A list of content units.
         @type units: list
-        @return: A dict of units collated by type_id.
-        @rtype: dict
         """
-        collated = {}
         for unit in units:
-            type_id = unit['type_id']
-            lst = collated.get(type_id)
+            typeid = unit['type_id']
+            lst = self.get(typeid)
             if lst is None:
                 lst = []
-                collated[type_id] = lst
+                self[typeid] = lst
             lst.append(unit['unit_key'])
-        return collated
-
-
-class Report:
-    """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
-    @ivar reboot_scheduled: Indicates reboot was scheduled.
-    @type reboot_scheduled: bool
-    @ivar details: operation details keyed by type_id.
-    @type details: dict
-    """
-
-    def __init__(self):
-        self.status = True
-        self.reboot_scheduled = False
-        self.details = {}
-
-    def __str__(self):
-        return str(self.dict())
-
-    def dict(self):
-        """
-        Dictionary representation.
-        @return: A dict.
-        @rtype: dict
-        """
-        return dict(
-            status=self.status,
-            reboot_scheduled=self.reboot_scheduled,
-            details=self.details)
-
-
-class HandlerReport(Report):
-    """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
-    @ivar reboot_scheduled: Indicates reboot was scheduled.
-    @type reboot_scheduled: bool
-    @ivar details: operation details keyed by type_id.
-    @type details: dict
-    """
-
-    def succeeded(self, details):
-        """
-        Called (by handler) on operation succeeded.
-        @param type_id: The content type ID.
-        @type type_id: str
-        @param details: The details of the operation.
-        @type details: dict
-        """
-        self.status = True
-        self.details = dict(status=True, details=details)
-
-    def failed(self, details):
-        """
-        Called (by handler) on operation failed.
-        @param type_id: The content type ID.
-        @type type_id: str
-        @param details: The details of the operation.
-        @type details: dict
-        """
-        self.status = False
-        self.details = dict(status=False, details=details)
-
-
-class DispatchReport(Report):
-    """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
-    @ivar reboot_scheduled: Indicates reboot was scheduled.
-    @type reboot_scheduled: bool
-    @ivar details: operation details keyed by type_id.
-    @type details: dict
-    """
-
-    def update(self, type_id, report):
-        """
-        Update using the specified report.
-        @param report: A handler report.
-        @type report: L{Report}
-        @return: self
-        @rtype: L{Report}
-        """
-        if not isinstance(report, Report):
-            raise Exception('must be Report')
-        if not report.status:
-            self.status = False
-        if report.reboot_scheduled:
-            self.reboot_scheduled = True
-        self.details[type_id] = report.details
-        return self
-
-    def raised(self, type_id):
-        """
-        The handler raised an exception.
-        Used by L{Dispatcher} only.
-        @param type_id: The content type ID.
-        @type type_id: str
-        @param details: The details of the operation.
-        @type details: dict
-        """
-        self.status = False
-        info = sys.exc_info()
-        inst = info[1]
-        trace = '\n'.join(tb.format_exception(*info))
-        raised = dict(
-            message=str(inst),
-            trace=trace)
-        self.details[type_id] = dict(status=False, details=raised)

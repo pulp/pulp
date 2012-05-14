@@ -15,72 +15,10 @@ import imp
 import os
 from iniparse import INIConfig
 from pulp.common.config import Validator, REQUIRED, BOOL, ANY
+from pulp.client.agent.handler import Handler
 from logging import getLogger
 
 log = getLogger(__name__)
-
-#
-# Handler descriptor:
-#
-# [main]
-# enabled=(0|1)
-# types=(type_id,)
-#
-# [<type_id>]
-# class=<str>
-# <other>
-#
-
-class Handler:
-    """
-    Content (type) handler.
-    """
-    
-    def __init__(self, cfg):
-        """
-        @param cfg: The handler configuration
-        @type cfg: dict
-        """
-        self.cfg = cfg
-
-    def install(self, units, options):
-        """
-        Install content unit(s).
-        @param units: A list of content units.
-        @type units: list
-        @param options: Unit install options.
-        @type options: dict
-        @return: An install report.
-        @rtype: L{HandlerReport}
-        """
-        pass
-
-    def update(self, units, options):
-        """
-        Update content unit(s).
-        @param units: A list of content units.
-        @type units: list
-        @param options: Unit update options.
-        @type options: dict
-        @return: An update report.
-        @rtype: L{HandlerReport}
-        """
-        pass
-
-    def uninstall(self, units, options):
-        """
-        Uninstall content unit(s).
-        @param units: A list of content units.
-        @type units: list
-        @param options: Unit uninstall options.
-        @type options: dict
-        @return: An uninstall report.
-        @rtype: L{HandlerReport}
-        """
-        pass
-
-    def profile(self):
-        pass
 
 
 class Descriptor:
@@ -311,7 +249,22 @@ class Container:
         """
         return self.handlers.get(type_id)
 
+    def all(self):
+        """
+        All handlers.
+        @return: A list of handlers.
+        @rtype: list
+        """
+        return self.handlers.values()
+
     def __import(self, name, descriptor):
+        """
+        Import the handler defined by the name and descriptor.
+        @param name: The handler name.
+        @type name: str
+        @param descriptor: A handler descriptor.
+        @type descriptor: L{Descriptor}
+        """
         try:
             path = self.__findimpl(name)
             mangled = self.__mangled(name)

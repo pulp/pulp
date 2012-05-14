@@ -121,7 +121,7 @@ class TestRestAgent(testutil.PulpTest):
             # hub
             report = report[1]
         self.assertTrue(report['status'])
-        self.assertTrue('reboot_scheduled' in report)
+        self.assertTrue('reboot' in report)
         details = report['details']
         self.assertEqual(details['units'], UNITS)
         self.assertEqual(details['options'], OPTIONS)

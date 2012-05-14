@@ -18,7 +18,7 @@
 
 import os
 import shutil
-from pulp.client.agent.dispatcher import HandlerReport
+from pulp.client.agent.report import *
 
 #
 # Handlers to be deployed for loader testing
@@ -36,18 +36,28 @@ class=RpmHandler
 """,
 handler=
 """
-from pulp.client.agent.dispatcher import HandlerReport
+from pulp.client.agent.report import *
 class RpmHandler:
   def __init__(self, cfg):
     pass
   def install(self, units, options):
-    return HandlerReport()
+    report = HandlerReport()
+    report.succeeded({}, len(units))
+    return report
   def update(self, units, options):
-    return HandlerReport()
+    report = HandlerReport()
+    report.succeeded({}, len(units))
+    return report
   def uninstall(self, units, options):
-    return HandlerReport()
+    report = HandlerReport()
+    report.succeeded({}, len(units))
+    return report
   def profile(self):
-    {}
+    return ProfileReport()
+  def reboot(self, options):
+    report = RebootReport()
+    report.succeeded()
+    return report
 """)
 
 #
@@ -94,21 +104,24 @@ class RpmHandler:
 
   def install(self, units, options):
     report = HandlerReport()
-    installed = []
-    details = dict(
-        installed=installed,
-        deps=[],
-        )
-    report.succeeded('rpm', details)
+    report.succeeded({}, len(units))
     return report
 
   def update(self, units, options):
     report = HandlerReport()
+    report.succeeded({}, len(units))
     return report
 
   def uninstall(self, units, options):
     report = HandlerReport()
+    report.succeeded({}, len(units))
     return report
 
   def profile(self):
-    {}
+    report = ProfileReport()
+    return report
+
+  def reboot(self, options={}):
+    report = RebootReport()
+    report.succeeded()
+    return report
