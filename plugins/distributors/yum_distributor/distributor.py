@@ -721,6 +721,41 @@ class YumDistributor(Distributor):
         self.set_progress("distribution", distro_progress_status, progress_callback)
         return True, []
 
+    def create_consumer_payload(self, repo, config):
+        payload = {}
+        ##TODO for jdob: load the pulp.conf and make it accessible to distributor
+        pulp_conf = load_config(config_file="/etc/pulp/pulp.conf")
+        payload['server_name'] = pulp_conf.get('server', 'server_name')
+        payload['path_prefix'] = pulp_conf.get('server', 'relative_url')
+        ssl_ca_path = pulp_conf.get('security', 'ssl_ca_certificate')
+        if os.path.exists(ssl_ca_path):
+            payload['ssl_ca_certificate'] = open(pulp_conf.get('security', 'ssl_ca_certificate')).read()
+        else:
+            payload['ssl_ca_certificate'] = config.get('https_ca')
+        payload['relative_url'] = self.get_repo_relative_path(repo, config)
+        payload['protocols'] = []
+        if config.get('http'):
+            payload['protocols'].append('http')
+        if config.get('https'):
+            payload['protocols'].append('https')
+        if config.get('gpgkey') is not None:
+            payload['gpgkey'] = config.get('gpgkey')
+        if config.get('auth_cert') and config.get('auth_ca'):
+            payload['consumer_auth_cert'] = config.get('auth_cert')
+            payload['consumer_auth_ca'] = config.get('auth_ca')
+        else:
+            # load the global auth if enabled
+            repo_auth_config = load_config()
+            global_cert_dir =  repo_auth_config.get('repos', 'global_cert_location')
+            global_auth_cert = os.path.join(global_cert_dir, 'pulp-global-repo.cert')
+            global_auth_key = os.path.join(global_cert_dir, 'pulp-global-repo.key')
+            global_auth_ca = os.path.join(global_cert_dir, 'pulp-global-repo.ca')
+            if os.path.exists(global_auth_ca) and os.path.exists(global_auth_cert):
+                payload['global_auth_cert'] = open(global_auth_cert).read()
+                payload['global_auth_key'] = open(global_auth_key).read()
+                payload['global_auth_ca'] = open(global_auth_ca).read()
+        return payload
+
 def load_config(config_file=CONFIG_REPO_AUTH):
     config = SafeConfigParser()
     config.read(config_file)
