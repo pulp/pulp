@@ -15,8 +15,8 @@ import os
 from yum import YumBase
 from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
-from pulp.client.agent.handler import Handler
-from pulp.client.agent.report import ProfileReport, RebootReport, HandlerReport
+from pulp.gc_client.agent.handler import Handler
+from pulp.gc_client.agent.report import ProfileReport, RebootReport, HandlerReport
 from logging import getLogger, Logger
 
 log = getLogger(__name__)
