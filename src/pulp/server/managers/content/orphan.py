@@ -11,21 +11,114 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import logging
+import os
+from gettext import gettext as _
+
+from pulp.server import exceptions as pulp_exceptions
+from pulp.server.content.types import database as content_types_db
+from pulp.server.db.model.gc_repository import RepoContentUnit
+from pulp.server.managers import factory as manager_factory
+
+
+_LOG = logging.getLogger(__name__)
+
 
 class OrphanManager(object):
 
     def list_all_orphans(self):
-        pass
+        """
+        List all content units that are not associated with a repository.
+        @return: list of content units
+        @rtype:  list
+        """
+
+        # iterate through all types and get the orphaned units for each
+        orphaned_units = []
+        content_query_manager = manager_factory.content_query_manager()
+        content_types = content_query_manager.list_content_types()
+        for content_type in content_types:
+            orphaned_units_of_type = self.list_orphans_by_type(content_type)
+            orphaned_units.extend(orphaned_units_of_type)
+        return orphaned_units
 
     def list_orphans_by_type(self, content_type):
-        pass
+        """
+        List all content units of a given type that are not associated with a repository.
+        @param content_type: content type of orphaned units
+        @type  content_type: str
+        @return: list of content units of the given type
+        @rtype:  list
+        """
+
+        # find units of this type that are associated with one or more repositories
+        associated_collection = RepoContentUnit.get_collection()
+        associated_units = associated_collection.find({'unit_type_id': content_type}, fields=['unit_id'])
+        associated_unit_ids = set(d['unit_id'] for d in associated_units)
+
+        # find units that are not associated with any repositories
+        units_collection = content_types_db.type_units_collection(content_type)
+        spec = {'id': {'$nin': list(associated_unit_ids)}}
+        orphaned_units = units_collection.find(spec)
+        return list(orphaned_units)
 
     def delete_all_orphans(self):
-        pass
+        """
+        Delete all orphaned content units.
+        """
+
+        # iterate through the types and delete all orphans of each type
+        content_query_manager = manager_factory.content_query_manager()
+        content_types = content_query_manager.list_content_types()
+        for content_type in content_types:
+            self.delete_orphans_by_type(content_type)
 
     def delete_orphans_by_type(self, content_type):
-        pass
+        """
+        Delete all orphaned content units of the given content type.
+        @param content_type: content type of the orphans to delete
+        @type  content_type: str
+        """
+
+        orphaned_units = self.list_orphans_by_type(content_type)
+        if not orphaned_units:
+            return
+        collection = content_types_db.type_units_collection(content_type)
+        spec = {'_id': {'$in': [o['_id'] for o in orphaned_units]}}
+        collection.remove(spec, safe=True)
+        orphaned_paths = [o['_storage_path'] for o in orphaned_units if o['_storage_path'] is not None]
+        for path in orphaned_paths:
+            self.delete_orphaned_file(path)
 
     def delete_orphans_by_id(self, orphan_ids):
-        pass
+        """
+        Delete a list of orphaned content units by their id.
+        @param orphan_ids: list of content unit ids.
+        @type  orphan_ids: list
+        """
+        # TODO how do we handle invalid ids?
+        # 'id' may not be unique, so list must be of '_id's?
+        # how do I determine the content unit type of each package?
+        raise pulp_exceptions.NotImplemented('delete_orphans_by_id')
+
+    def delete_orphaned_file(self, path):
+        """
+        Delete an orphaned file and any parent directories that become empty.
+        @param path: absolute path to the file to delete
+        @type  path: str
+        """
+        assert os.path.isabs(path)
+        assert os.access(path, os.F_OK | os.W_OK)
+
+        os.unlink(path)
+
+        while True:
+            path = os.path.dirname(path)
+            if path == '/':
+                break
+            contents = os.listdir(path)
+            if not contents and os.access(path, os.W_OK):
+                os.rmdir(path)
+
+        _LOG.debug(_('Deleted orphaned file: %(p)s') % {'p': path})
 
