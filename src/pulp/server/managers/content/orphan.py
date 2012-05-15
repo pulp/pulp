@@ -90,16 +90,37 @@ class OrphanManager(object):
         for path in orphaned_paths:
             self.delete_orphaned_file(path)
 
-    def delete_orphans_by_id(self, orphan_ids):
+    def delete_orphans_by_id(self, orphans):
         """
-        Delete a list of orphaned content units by their id.
-        @param orphan_ids: list of content unit ids.
-        @type  orphan_ids: list
+        Delete a list of orphaned content units by their content type and unit ids.
+        @param orphans: list of documents with 'content_type_id' and 'content_unit_id' keys
+        @type  orphans: list
         """
-        # TODO how do we handle invalid ids?
-        # 'id' may not be unique, so list must be of '_id's?
-        # how do I determine the content unit type of each package?
-        raise pulp_exceptions.NotImplemented('delete_orphans_by_id')
+        # XXX this does no validation of the orphans
+
+        # munge the orphans into something more programmatic-ly convenient
+        orphans_by_id = {}
+        for o in orphans:
+            id_list = orphans_by_id.setdefault(o['content_type_id'], [])
+            id_list.append(o['content_unit_id'])
+
+        content_query_manager = manager_factory.content_query_manager()
+        for content_type_id, content_unit_id_list in orphans_by_id:
+            # build a list of the on-disk contents
+            orphaned_paths = []
+            for unit_id in content_unit_id_list:
+                content_unit = content_query_manager.get_content_unit_by_id(content_type_id, unit_id, model_fields=['_storage_path'])
+                if content_unit['_storage_path'] is not None:
+                    orphaned_paths.append(content_unit['_storage_path'])
+
+            # remove the orphans from the db
+            collection = content_types_db.type_units_collection(content_type_id)
+            spec = {'id': {'$in': content_unit_id_list}}
+            collection.remove(spec, safe=True)
+
+            # delete the on-disk contents
+            for path in orphaned_paths:
+                self.delete_orphaned_file(path)
 
     def delete_orphaned_file(self, path):
         """
