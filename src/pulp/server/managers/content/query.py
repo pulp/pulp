@@ -53,7 +53,7 @@ class ContentQueryManager(object):
         @param model_fields: fields of each content unit to report,
                              None means all fields
         @type model_fields: None or list of str's
-        @param start: offset from the beginnig of the results to return as the
+        @param start: offset from the beginning of the results to return as the
                       first element
         @type start: non-negative int
         @param limit: the maximum number of results to return,
@@ -143,7 +143,7 @@ class ContentQueryManager(object):
         @raise ValueError if any of the keys dictionaries are invalid
         """
         collection = content_types_db.type_units_collection(content_type)
-        spec = _build_muti_keys_spec(content_type, unit_keys_dicts)
+        spec = _build_multi_keys_spec(content_type, unit_keys_dicts)
         cursor = collection.find(spec, fields=model_fields)
         return tuple(cursor)
 
@@ -204,7 +204,7 @@ class ContentQueryManager(object):
         """
         assert units_keys
         collection = content_types_db.type_units_collection(content_type)
-        spec = _build_muti_keys_spec(content_type, units_keys)
+        spec = _build_multi_keys_spec(content_type, units_keys)
         fields = ['_id']
         fields.extend(units_keys[0].keys()) # requires assertion
         cursor = collection.find(spec, fields=fields)
@@ -254,7 +254,7 @@ class ContentQueryManager(object):
 def _flatten_keys(flat_keys, nested_keys):
     """
     Take list of string keys and (possibly) nested sub-lists and flatten it out
-    into an unested list of string keys.
+    into an un-nested list of string keys.
     @param flat_keys: the flat list to store all of the keys in
     @type flat_keys: list
     @param nested_keys: possibly nested list of string keys
@@ -269,8 +269,7 @@ def _flatten_keys(flat_keys, nested_keys):
             _flatten_keys(flat_keys, key)
 
 
-
-def _build_muti_keys_spec(content_type, unit_keys_dicts):
+def _build_multi_keys_spec(content_type, unit_keys_dicts):
     """
     Build a mongo db spec document for a query on the given content_type
     collection out of multiple content unit key dictionaries.
