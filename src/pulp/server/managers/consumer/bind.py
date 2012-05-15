@@ -169,16 +169,21 @@ class BindManager(object):
         cursor = collection.find({})
         return list(cursor)
 
-    def find_by_consumer(self, id):
+    def find_by_consumer(self, id, repo_id=None):
         """
         Find all binds by Consumer ID.
         @param id: A consumer ID.
         @type id: str
+        @param repo_id: An (optional) repository ID.
+        @type repo_id: str
         @return: A list of Bind.
         @rtype: list
         """
         collection = Bind.get_collection()
-        query = dict(consumer_id=id)
+        if repo_id:
+            query = dict(consumer_id=id, repo_id=repo_id)
+        else:
+            query = dict(consumer_id=id)
         cursor = collection.find(query)
         return list(cursor)
 

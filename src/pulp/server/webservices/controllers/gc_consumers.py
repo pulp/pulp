@@ -140,7 +140,7 @@ class Bindings(JSONController):
     """
 
     @auth_required(READ)
-    def GET(self, consumer_id):
+    def GET(self, consumer_id, repo_id=None):
         """
         Fetch all bind objects referencing the
         specified I{consumer_id}.
@@ -154,7 +154,7 @@ class Bindings(JSONController):
         @rtype: dict
         """
         manager = managers.consumer_bind_manager()
-        bindings = manager.find_by_consumer(consumer_id)
+        bindings = manager.find_by_consumer(consumer_id, repo_id)
         bindings = [Binding.serialized(b) for b in bindings]
         return self.ok(bindings)
 
@@ -415,6 +415,7 @@ urls = (
     '/$', 'ConsumersCollection',
     '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
+    '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
 )

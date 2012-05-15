@@ -73,3 +73,24 @@ class ConsumerContentAPI(PulpAPI):
         data = {"units": units,
                 "options": options,}
         return self.server.POST(path, data)
+
+
+
+class BindingsAPI(PulpAPI):
+
+    BASE_PATH = '/v2/consumers/%s/bindings/'
+
+    def find_by_id(self, id, repoid=None):
+        """
+        Find bindings by consumer ID.
+        @param id: A consumer ID.
+        @type id: str
+        @param repoid: An (optional) repository ID.
+        @type repoid: str
+        @return: A list of bindings.
+        @rtype: list
+        """
+        path = self.BASE_PATH % id
+        if repoid:
+            path += '%s/' % repo_id
+        return self.server.GET(path)
