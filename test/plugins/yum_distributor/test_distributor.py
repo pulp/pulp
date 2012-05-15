@@ -635,11 +635,11 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(len(os.listdir(pub_dir)), 0)
 
     def test_consumer_payload(self):
-        PAYLOAD_FIELDS = ['server_name', 'ssl_ca_certificate', 'relative_path',
-                          'protocols', 'gpgkey', 'consumer_auth_cert', 'consumer_auth_ca',
-                          'distributor_type_id']
+        PAYLOAD_FIELDS = ['repo', 'server_name', 'relative_path',
+                          'protocols', 'gpg_keys', 'clientcert', 'cacert',
+                          'distributor_type_id', 'host_urls']
         http = True
-        https = False
+        https = True
         relative_url = "/pub/content/"
         gpgkey = ["test_gpg_key",]
         auth_cert = open(os.path.join(self.data_dir, "cert.crt")).read()
@@ -655,5 +655,5 @@ class TestDistributor(unittest.TestCase):
             self.assertTrue(field in payload)
 
         self.assertTrue('http' in payload['protocols'])
-        self.assertTrue('https' not in payload['protocols'])
+        self.assertTrue('https' in payload['protocols'])
         print payload
