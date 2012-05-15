@@ -110,6 +110,8 @@ class OrphanManager(object):
         assert os.path.isabs(path)
         assert os.access(path, os.F_OK | os.W_OK)
 
+        _LOG.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
+
         os.unlink(path)
 
         while True:
@@ -119,6 +121,4 @@ class OrphanManager(object):
             contents = os.listdir(path)
             if not contents and os.access(path, os.W_OK):
                 os.rmdir(path)
-
-        _LOG.debug(_('Deleted orphaned file: %(p)s') % {'p': path})
 
