@@ -726,13 +726,13 @@ class YumDistributor(Distributor):
         ##TODO for jdob: load the pulp.conf and make it accessible to distributor
         pulp_conf = load_config(config_file="/etc/pulp/pulp.conf")
         payload['server_name'] = pulp_conf.get('server', 'server_name')
-        payload['path_prefix'] = pulp_conf.get('server', 'relative_url')
+        payload['distributor_type_id'] = YUM_DISTRIBUTOR_TYPE_ID
         ssl_ca_path = pulp_conf.get('security', 'ssl_ca_certificate')
         if os.path.exists(ssl_ca_path):
             payload['ssl_ca_certificate'] = open(pulp_conf.get('security', 'ssl_ca_certificate')).read()
         else:
             payload['ssl_ca_certificate'] = config.get('https_ca')
-        payload['relative_url'] = self.get_repo_relative_path(repo, config)
+        payload['relative_path'] = pulp_conf.get('server', 'relative_url') + self.get_repo_relative_path(repo, config)
         payload['protocols'] = []
         if config.get('http'):
             payload['protocols'].append('http')

@@ -635,12 +635,13 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(len(os.listdir(pub_dir)), 0)
 
     def test_consumer_payload(self):
-        PAYLOAD_FIELDS = ['server_name', 'path_prefix', 'ssl_ca_certificate', 'relative_url',
-                          'protocols', 'gpgkey', 'consumer_auth_cert', 'consumer_auth_ca',]
+        PAYLOAD_FIELDS = ['server_name', 'ssl_ca_certificate', 'relative_path',
+                          'protocols', 'gpgkey', 'consumer_auth_cert', 'consumer_auth_ca',
+                          'distributor_type_id']
         http = True
         https = False
         relative_url = "/pub/content/"
-        gpgkey = "test_gpg_key"
+        gpgkey = ["test_gpg_key",]
         auth_cert = open(os.path.join(self.data_dir, "cert.crt")).read()
         auth_ca = open(os.path.join(self.data_dir, "ca.key")).read()
         config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https, auth_cert=auth_cert, auth_ca=auth_ca, gpgkey=gpgkey)
@@ -650,6 +651,7 @@ class TestDistributor(unittest.TestCase):
         repo.id = "test_payload"
         payload = distributor.create_consumer_payload(repo, config)
         for field in PAYLOAD_FIELDS:
+            print field
             self.assertTrue(field in payload)
 
         self.assertTrue('http' in payload['protocols'])
