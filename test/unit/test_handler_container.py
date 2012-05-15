@@ -23,8 +23,8 @@ import testutil
 
 from pprint import pprint
 from mock_handlers import MockDeployer
-from pulp.client.agent.container import *
-from pulp.client.agent.dispatcher import *
+from pulp.gc_client.agent.container import *
+from pulp.gc_client.agent.dispatcher import *
 
 
 

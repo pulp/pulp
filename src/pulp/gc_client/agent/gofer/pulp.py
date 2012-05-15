@@ -18,8 +18,8 @@ Contains recurring actions and remote classes.
 
 import os
 from hashlib import sha256
-from pulp.client.consumer.credentials import Consumer as ConsumerBundle
-from pulp.client.agent.dispatcher import Dispatcher
+from pulp.gc_client.consumer.credentials import Consumer as ConsumerBundle
+from pulp.gc_client.agent.dispatcher import Dispatcher
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
