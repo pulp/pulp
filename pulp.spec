@@ -277,7 +277,7 @@ cp -R plugins/distributors/* %{buildroot}/var/lib/pulp/plugins/distributors
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp -R src/pulp/client/agent/gofer/*.py %{buildroot}/%{_libdir}/gofer/plugins
+cp -R src/pulp/gc_client/agent/gofer/*.py %{buildroot}/%{_libdir}/gofer/plugins
 cp -R src/pulp/client/consumer/goferplugins/*.py %{buildroot}/%{_libdir}/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
@@ -454,7 +454,6 @@ fi
 %{python_sitelib}/pulp/client/lib
 %{python_sitelib}/pulp/client/pluginlib
 %{python_sitelib}/pulp/client/plugins
-%{python_sitelib}/pulp/client/agent
 %{python_sitelib}/pulp/client/*.py*
 %{python_sitelib}/pulp/gc_client/
 
