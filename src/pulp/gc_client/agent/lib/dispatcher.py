@@ -11,9 +11,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-from pulp.gc_client.agent.handler import Handler
-from pulp.gc_client.agent.container import Container
-from pulp.gc_client.agent.report import *
+from pulp.gc_client.agent.lib.handler import Handler
+from pulp.gc_client.agent.lib.container import Container
+from pulp.gc_client.agent.lib.report import *
 
 
 class HandlerNotFound(Exception):

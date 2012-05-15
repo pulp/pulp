@@ -18,7 +18,7 @@
 
 import os
 import shutil
-from pulp.gc_client.agent.report import *
+from pulp.gc_client.agent.lib.report import *
 
 #
 # Handlers to be deployed for loader testing
@@ -36,7 +36,7 @@ class=RpmHandler
 """,
 handler=
 """
-from pulp.gc_client.agent.report import *
+from pulp.gc_client.agent.lib.report import *
 class RpmHandler:
   def __init__(self, cfg):
     pass

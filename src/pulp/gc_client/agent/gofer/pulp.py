@@ -18,14 +18,14 @@ Contains recurring actions and remote classes.
 
 import os
 from hashlib import sha256
-from pulp.gc_client.consumer.credentials import ConsumerBundle
-from pulp.gc_client.agent.dispatcher import Dispatcher
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
 from gofer.decorators import *
-
+from pulp.gc_client.agent.lib.dispatcher import Dispatcher
+from pulp.gc_client.agent.bindings import PulpBindings
+from pulp.gc_client.consumer.credentials import ConsumerBundle
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -130,17 +130,32 @@ class ConsumerXXX: # Temporary v1 compat.
         pass
 
     @remote(secret=secret)
-    def bind(self, repo_id):
-        pass
+    def bind(self, repoid):
+        bindings = PulpBindings()
+        bundle = ConsumerBundle()
+        myid = bundle.getid()
+        binds = bindings.bind.find_by_id(myid, repoid)
+        # TODO: process bind.
+        return binds
 
     @remote(secret=secret)
     @action(days=0x8E94)
     def rebind(self):
-        pass
+        bindings = PulpBindings()
+        bundle = ConsumerBundle()
+        myid = bundle.getid()
+        binds = bindings.bind.find_by_id(myid)
+        # TODO: process bind.
+        return binds
 
     @remote(secret=secret)
-    def unbind(self, repo_id):
-        pass
+    def unbind(self, repoid):
+        bindings = PulpBindings()
+        bundle = ConsumerBundle()
+        myid = bundle.getid()
+        binds = bindings.bind.find_by_id(myid, repoid)
+        # TODO: process unbind.
+        return binds
 
 
 class Content:

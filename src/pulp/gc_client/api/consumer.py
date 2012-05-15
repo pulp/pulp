@@ -92,5 +92,5 @@ class BindingsAPI(PulpAPI):
         """
         path = self.BASE_PATH % id
         if repoid:
-            path += '%s/' % repo_id
+            path += '%s/' % repoid
         return self.server.GET(path)
