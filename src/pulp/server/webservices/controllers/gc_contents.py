@@ -223,8 +223,7 @@ class OrphanCollection(JSONController):
     def GET(self):
         orphan_manager = factory.content_orphan_manager()
         orphans = orphan_manager.list_all_orphans()
-        # XXX how do I glean the content type to add the _href?
-        #map(lambda o: o.update(serialization.link.child_link_obj(o['id'])), orphans)
+        map(lambda o: o.update(serialization.link.child_link_obj(o['_content_type_id'], o['_id'])), orphans)
         return self.ok(orphans)
 
     def DELETE(self):
@@ -238,7 +237,7 @@ class OrphanTypeSubCollection(JSONController):
     def GET(self, content_type):
         orphan_manager = factory.content_orphan_manager()
         orphans = orphan_manager.list_orphans_by_type(content_type)
-        map(lambda o: o.update(serialization.link.child_link_obj(o['id'])), orphans)
+        map(lambda o: o.update(serialization.link.child_link_obj(o['_id'])), orphans)
         return self.ok(orphans)
 
     def DELETE(self, content_type):

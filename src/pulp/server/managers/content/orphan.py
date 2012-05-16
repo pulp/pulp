@@ -58,7 +58,7 @@ class OrphanManager(object):
 
         # find units that are not associated with any repositories
         units_collection = content_types_db.type_units_collection(content_type)
-        spec = {'id': {'$nin': list(associated_unit_ids)}}
+        spec = {'_id': {'$nin': list(associated_unit_ids)}}
         orphaned_units = units_collection.find(spec)
         return list(orphaned_units)
 
@@ -72,7 +72,7 @@ class OrphanManager(object):
         """
         orphans = self.list_orphans_by_type(content_type)
         for orphan in orphans:
-            if content_id != orphan['id']:
+            if content_id != orphan['_id']:
                 continue
             return orphan
         raise pulp_exceptions.MissingResource(content_type=content_type, content_id=content_id)
@@ -132,7 +132,7 @@ class OrphanManager(object):
 
             # remove the orphans from the db
             collection = content_types_db.type_units_collection(content_type)
-            spec = {'id': {'$in': content_id_list}}
+            spec = {'_id': {'$in': content_id_list}}
             collection.remove(spec, safe=True)
 
             # delete the on-disk contents
