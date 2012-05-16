@@ -266,7 +266,13 @@ class OrphanResource(JSONController):
 class DeleteOrphansAction(JSONController):
 
     def POST(self):
-        raise pulp_exceptions.NotImplemented('delete_orphans')
+        orphans = self.params()
+        for o in orphans:
+            if 'content_type' not in o or 'content_id' not in o:
+                raise pulp_exceptions.InvalidValue(['content_type', 'content_id'])
+        orphan_manager = factory.content_orphan_manager()
+        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans])
+        return execution.execute_async(self, call_request)
 
 # wsgi application -------------------------------------------------------------
 
