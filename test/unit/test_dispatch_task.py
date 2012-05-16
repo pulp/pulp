@@ -23,9 +23,7 @@ import mock
 import testutil
 
 from pulp.common import dateutils
-from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 
@@ -213,22 +211,4 @@ class AsyncTaskTests(testutil.PulpTest):
         self.task.run()
         self.task._failed()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_ERROR_STATE)
-
-# task archival tests ----------------------------------------------------------
-
-class TaskArchivalTests(testutil.PulpTest):
-
-    def tearDown(self):
-        super(TaskArchivalTests, self).tearDown()
-        ArchivedCall.get_collection().drop()
-
-    def test_task_archival(self):
-        task = Task(CallRequest(call_without_callbacks, archive=True))
-        try:
-            task.run()
-        except:
-            self.fail(traceback.format_exc())
-        collection = ArchivedCall.get_collection()
-        archived_call = collection.find_one({'serialized_call_report.task_id': task.id})
-        self.assertFalse(archived_call is None)
 
