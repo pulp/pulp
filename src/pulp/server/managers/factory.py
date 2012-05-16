@@ -33,6 +33,7 @@ TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
 TYPE_CONSUMER_HISTORY       = 'consumer-history-manager'
 TYPE_CONSUMER_QUERY         = 'consumer-query-manager'
 TYPE_CONTENT                = 'content-manager'
+TYPE_CONTENT_ORPHAN         = 'content-orphan-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
@@ -112,6 +113,12 @@ def content_manager():
     @rtype: L{pulp.server.managers.content.cud.ContentManager}
     """
     return get_manager(TYPE_CONTENT)
+
+def content_orphan_manager():
+    """
+    @rtype: L{pulp.server.managers.content.orphan.OrphanManager}
+    """
+    return get_manager(TYPE_CONTENT_ORPHAN)
 
 def content_query_manager():
     """
@@ -205,6 +212,7 @@ def initialize():
     from pulp.server.managers.consumer.history import ConsumerHistoryManager
     from pulp.server.managers.consumer.query import ConsumerQueryManager
     from pulp.server.managers.content.cud import ContentManager
+    from pulp.server.managers.content.orphan import OrphanManager
     from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.plugin import PluginManager
@@ -228,6 +236,7 @@ def initialize():
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
         TYPE_CONSUMER_QUERY: ConsumerQueryManager,
         TYPE_CONTENT: ContentManager,
+        TYPE_CONTENT_ORPHAN: OrphanManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
@@ -243,6 +252,7 @@ def initialize():
         TYPE_USER : UserManager,
     }
     _CLASSES.update(builtins)
+
 
 def get_manager(type_key):
     """
@@ -275,6 +285,7 @@ def get_manager(type_key):
 
     return manager
 
+
 def register_manager(type_key, manager_class):
     """
     Sets the manager class for the given type key, either replacing the existing
@@ -290,6 +301,7 @@ def register_manager(type_key, manager_class):
 
     _CLASSES[type_key] = manager_class
 
+
 def reset():
     """
     Resets the type to class mappings back to the defaults. This should be called
@@ -302,3 +314,4 @@ def reset():
     global _CLASSES
     _CLASSES = {}
     initialize()
+
