@@ -11,11 +11,31 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+# -- constants ----------------------------------------------------------------
 
 _NAMESPACE_DELIMITER = ':'
 _PULP_NAMESPACE = 'pulp'
 _ACTION_NAMESPACE = 'action'
 
+# These are duplicated from pulp.server.dispatch.constants. We can't import
+# those directly as this module lives in common and will run on the client.
+# I didn't change dispatch to import from here because it just felt dirty.
+
+RESOURCE_CDS_TYPE = 'cds'
+RESOURCE_CONSUMER_TYPE = 'consumer'
+RESOURCE_CONSUMER_BINDING_TYPE = 'consumer_binding'
+RESOURCE_CONTENT_UNIT_TYPE = 'content_unit'
+RESOURCE_REPOSITORY_TYPE = 'repository'
+RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE = 'repository_distributor'
+RESOURCE_REPOSITORY_IMPORTER_TYPE = 'repository_importer'
+RESOURCE_ROLE_TYPE = 'role'
+RESOURCE_SCHEDULE_TYPE = 'schedule'
+RESOURCE_USER_TYPE = 'user'
+
+ACTION_SYNC_TYPE = 'sync'
+ACTION_PUBLISH_TYPE = 'publish'
+
+# -- public -------------------------------------------------------------------
 
 def action_tag(action_name):
     """
