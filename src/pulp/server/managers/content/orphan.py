@@ -62,6 +62,21 @@ class OrphanManager(object):
         orphaned_units = units_collection.find(spec)
         return list(orphaned_units)
 
+    def get_orphan(self, content_type, content_id):
+        """
+        Get a single orphaned content unit.
+        @param content_type: content type of the orphan
+        @type  content_type: str
+        @param content_id: content id of the orphan
+        @type  content_id: str
+        """
+        orphans = self.list_orphans_by_type(content_type)
+        for orphan in orphans:
+            if content_id != orphan['id']:
+                continue
+            return orphan
+        raise pulp_exceptions.MissingResource(content_type=content_type, content_id=content_id)
+
     def delete_all_orphans(self):
         """
         Delete all orphaned content units.
