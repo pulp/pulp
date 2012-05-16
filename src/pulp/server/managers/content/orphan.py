@@ -104,8 +104,10 @@ class OrphanManager(object):
             id_list = orphans_by_id.setdefault(o['content_type_id'], [])
             id_list.append(o['content_unit_id'])
 
+        # iterate through the types and ids
         content_query_manager = manager_factory.content_query_manager()
         for content_type_id, content_unit_id_list in orphans_by_id:
+
             # build a list of the on-disk contents
             orphaned_paths = []
             for unit_id in content_unit_id_list:
