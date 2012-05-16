@@ -220,12 +220,14 @@ class UploadSegmentResource(JSONController):
 
 class OrphanCollection(JSONController):
 
+    @auth_required(READ)
     def GET(self):
         orphan_manager = factory.content_orphan_manager()
         orphans = orphan_manager.list_all_orphans()
         map(lambda o: o.update(serialization.link.child_link_obj(o['_content_type_id'], o['_id'])), orphans)
         return self.ok(orphans)
 
+    @auth_required(DELETE)
     def DELETE(self):
         orphan_manager = factory.content_orphan_manager()
         call_request = CallRequest(orphan_manager.delete_all_orphans)
@@ -234,12 +236,14 @@ class OrphanCollection(JSONController):
 
 class OrphanTypeSubCollection(JSONController):
 
+    @auth_required(READ)
     def GET(self, content_type):
         orphan_manager = factory.content_orphan_manager()
         orphans = orphan_manager.list_orphans_by_type(content_type)
         map(lambda o: o.update(serialization.link.child_link_obj(o['_id'])), orphans)
         return self.ok(orphans)
 
+    @auth_required(DELETE)
     def DELETE(self, content_type):
         orphan_manager = factory.content_orphan_manager()
         call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type])
@@ -247,12 +251,14 @@ class OrphanTypeSubCollection(JSONController):
 
 class OrphanResource(JSONController):
 
+    @auth_required(READ)
     def GET(self, content_type, content_id):
         orphan_manager = factory.content_orphan_manager()
         orphan = orphan_manager.get_orphan(content_type, content_id)
         orphan.update(serialization.link.current_link_obj())
         return self.ok(orphan)
 
+    @auth_required(DELETE)
     def DELETE(self, content_type, content_id):
         orphan_manager = factory.content_orphan_manager()
         orphan_manager.get_orphan(content_type, content_id)
@@ -264,6 +270,7 @@ class OrphanResource(JSONController):
 
 class DeleteOrphansAction(JSONController):
 
+    @auth_required(DELETE)
     def POST(self):
         orphans = self.params()
         for o in orphans:
