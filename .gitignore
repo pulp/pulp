@@ -14,4 +14,4 @@ dist
 .coverage
 cover
 */sphinx/*/_build
-
+.DS_Store
