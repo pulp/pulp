@@ -16,7 +16,7 @@ import locale
 import logging
 from M2Crypto import SSL, httpslib
 import urllib
-from pulp.gc_client.api.responses import Response, AsyncResponse
+from pulp.gc_client.api.responses import Response, Task
 
 try:
     import json
@@ -110,9 +110,11 @@ class PulpConnection(object):
         if response_code >= 300:
             self._handle_exceptions(response_code, response_body)
         elif response_code == 200 or response_code == 201:
-            return Response(response_code, response_body)
+            body = response_body
         elif response_code == 202:
-            return AsyncResponse(response_code, response_body)
+            body = Task(response_body)
+
+        return Response(response_code, body)
 
     def _handle_exceptions(self, response_code, response_body):
 

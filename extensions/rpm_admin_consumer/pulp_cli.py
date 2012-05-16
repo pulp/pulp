@@ -92,10 +92,10 @@ class InstallContent(PulpCliCommand):
         prompt = self.context.prompt
         server = self.context.server
         try:
-            task = server.consumer_content.install(id, units=units, options=options)
-            msg = _('Install task created with id [%s]') % task.task_id
+            response = server.consumer_content.install(id, units=units, options=options)
+            msg = _('Install task created with id [%s]') % response.response_body.task_id
             prompt.render_success_message(msg)
-            response = server.tasks.get_task(task.task_id)
+            response = server.tasks.get_task(response.response_body.task_id)
             if self.rejected(response):
                 return
             if self.postponed(response):
@@ -106,7 +106,7 @@ class InstallContent(PulpCliCommand):
             prompt.write(msg, tag='not-found')
 
     def rejected(self, response):
-        rejected = response.is_rejected()
+        rejected = response.response_body.is_rejected()
         if rejected:
             prompt = self.context.prompt
             msg = 'The request was rejected by the server'
@@ -116,7 +116,7 @@ class InstallContent(PulpCliCommand):
         return rejected
 
     def postponed(self, response):
-        postponed = response.is_postponed()
+        postponed = response.response_body.is_postponed()
         if postponed:
             msg  = \
                 'The request to install content was accepted but postponed ' \
@@ -131,12 +131,12 @@ class InstallContent(PulpCliCommand):
         prompt.render_paragraph(_(m))
         try:
             response = self.poll(response)
-            if response.was_successful():
-                self.succeeded(id, response)
-            if response.was_failure():
-                self.failed(id, response)
+            if response.response_body.was_successful():
+                self.succeeded(id, response.response_body)
+            if response.response_body.was_failure():
+                self.failed(id, response.response_body)
             if response.was_cancelled():
-                self.cancelled(id, response)
+                self.cancelled(id, response.response_body)
         except KeyboardInterrupt:
             # graceful interrupt
             pass
@@ -146,21 +146,21 @@ class InstallContent(PulpCliCommand):
         cfg = self.context.client_config
         spinner = self.context.prompt.create_spinner()
         interval = cfg.getfloat('output', 'poll_frequency_in_seconds')
-        while not response.is_completed():
-            if response.is_waiting():
+        while not response.response_body.is_completed():
+            if response.response_body.is_waiting():
                 spinner.next(_('Waiting to begin'))
             else:
                 spinner.next()
             time.sleep(interval)
-            response = server.tasks.get_task(response.task_id)
+            response = server.tasks.get_task(response.response_body.task_id)
         return response
 
     def succeeded(self, id, response):
         prompt = self.context.prompt
         # reported as failed
-        if not response.result['status']:
+        if not response.response_body.result['status']:
             msg = 'Install failed'
-            details = response.result['details'][TYPE_ID]['details']
+            details = response.response_body.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
             prompt.render_failure_message(details['message'])
             return
@@ -191,7 +191,7 @@ class InstallContent(PulpCliCommand):
         prompt = self.context.prompt
         msg = 'Install failed'
         prompt.render_failure_message(_(msg))
-        prompt.render_failure_message(response.exception)
+        prompt.render_failure_message(response.response_body.exception)
 
     def cancelled(self, id, response):
         prompt = self.context.prompt
@@ -254,10 +254,10 @@ class UpdateContent(PulpCliCommand):
             prompt.render_failure_message(_(msg))
             return
         try:
-            task = server.consumer_content.update(id, units=units, options=options)
-            msg = _('Update task created with id [%s]') % task.task_id
+            response = server.consumer_content.update(id, units=units, options=options)
+            msg = _('Update task created with id [%s]') % response.response_body.task_id
             prompt.render_success_message(msg)
-            response = server.tasks.get_task(task.task_id)
+            response = server.tasks.get_task(response.response_body.task_id)
             if self.rejected(response):
                 return
             if self.postponed(response):
@@ -268,7 +268,7 @@ class UpdateContent(PulpCliCommand):
             prompt.write(msg, tag='not-found')
 
     def rejected(self, response):
-        rejected = response.is_rejected()
+        rejected = response.response_body.is_rejected()
         if rejected:
             prompt = self.context.prompt
             msg = 'The request was rejected by the server'
@@ -278,7 +278,7 @@ class UpdateContent(PulpCliCommand):
         return rejected
 
     def postponed(self, response):
-        postponed = response.is_postponed()
+        postponed = response.response_body.is_postponed()
         if postponed:
             msg  = \
                 'The request to update content was accepted but postponed ' \
@@ -293,11 +293,11 @@ class UpdateContent(PulpCliCommand):
         prompt.render_paragraph(_(m))
         try:
             response = self.poll(response)
-            if response.was_successful():
+            if response.response_body.was_successful():
                 self.succeeded(id, response)
-            if response.was_failure():
+            if response.response_body.was_failure():
                 self.failed(id, response)
-            if response.was_cancelled():
+            if response.response_body.was_cancelled():
                 self.cancelled(id, response)
         except KeyboardInterrupt:
             # graceful interrupt
@@ -308,28 +308,28 @@ class UpdateContent(PulpCliCommand):
         cfg = self.context.client_config
         spinner = self.context.prompt.create_spinner()
         interval = cfg.getfloat('output', 'poll_frequency_in_seconds')
-        while not response.is_completed():
-            if response.is_waiting():
+        while not response.response_body.is_completed():
+            if response.response_body.is_waiting():
                 spinner.next(_('Waiting to begin'))
             else:
                 spinner.next()
             time.sleep(interval)
-            response = server.tasks.get_task(response.task_id)
+            response = server.tasks.get_task(response.response_body.task_id)
         return response
 
     def succeeded(self, id, response):
         prompt = self.context.prompt
         # reported as failed
-        if not response.result['status']:
+        if not response.response_body.result['status']:
             msg = 'Install failed'
-            details = response.result['details'][TYPE_ID]['details']
+            details = response.response_body.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
             prompt.render_failure_message(details['message'])
             return
         msg = 'Install Succeeded'
         prompt.render_success_message(_(msg))
         # reported as succeeded
-        details = response.result['details'][TYPE_ID]['details']
+        details = response.response_body.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
         resolved = details['resolved']
         if resolved:
@@ -353,7 +353,7 @@ class UpdateContent(PulpCliCommand):
         prompt = self.context.prompt
         msg = 'Update failed'
         prompt.render_failure_message(_(msg))
-        prompt.render_failure_message(response.exception)
+        prompt.render_failure_message(response.response_body.exception)
 
     def cancelled(self, id, response):
         prompt = self.context.prompt
@@ -408,7 +408,7 @@ class UninstallContent(PulpCliCommand):
             prompt.write(msg, tag='not-found')
 
     def rejected(self, response):
-        rejected = response.is_rejected()
+        rejected = response.response_body.is_rejected()
         if rejected:
             prompt = self.context.prompt
             msg = 'The request was rejected by the server'
@@ -418,7 +418,7 @@ class UninstallContent(PulpCliCommand):
         return rejected
 
     def postponed(self, response):
-        postponed = response.is_postponed()
+        postponed = response.response_body.is_postponed()
         if postponed:
             msg  = \
                 'The request to uninstall content was accepted but postponed ' \
@@ -433,11 +433,11 @@ class UninstallContent(PulpCliCommand):
         prompt.render_paragraph(_(m))
         try:
             response = self.poll(response)
-            if response.was_successful():
+            if response.response_body.was_successful():
                 self.succeeded(id, response)
-            if response.was_failure():
+            if response.response_body.was_failure():
                 self.failed(id, response)
-            if response.was_cancelled():
+            if response.response_body.was_cancelled():
                 self.cancelled(id, response)
         except KeyboardInterrupt:
             # graceful interrupt
@@ -448,28 +448,28 @@ class UninstallContent(PulpCliCommand):
         cfg = self.context.client_config
         spinner = self.context.prompt.create_spinner()
         interval = cfg.getfloat('output', 'poll_frequency_in_seconds')
-        while not response.is_completed():
-            if response.is_waiting():
+        while not response.response_body.is_completed():
+            if response.response_body.is_waiting():
                 spinner.next(_('Waiting to begin'))
             else:
                 spinner.next()
             time.sleep(interval)
-            response = server.tasks.get_task(response.task_id)
+            response = server.tasks.get_task(response.response_body.task_id)
         return response
 
     def succeeded(self, id, response):
         prompt = self.context.prompt
         # reported as failed
-        if not response.result['status']:
+        if not response.response_body.result['status']:
             msg = 'Install Failed'
-            details = response.result['details'][TYPE_ID]['details']
+            details = response.response_body.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
             prompt.render_failure_message(details['message'])
             return
         msg = 'Install Succeeded'
         prompt.render_success_message(_(msg))
         # reported as succeeded
-        details = response.result['details'][TYPE_ID]['details']
+        details = response.response_body.result['details'][TYPE_ID]['details']
         filter = ['name', 'version', 'arch', 'repoid']
         resolved = details['resolved']
         if resolved:
@@ -493,7 +493,7 @@ class UninstallContent(PulpCliCommand):
         prompt = self.context.prompt
         msg = 'Uninstall failed'
         prompt.render_failure_message(_(msg))
-        prompt.render_failure_message(response.exception)
+        prompt.render_failure_message(response.response_body.exception)
 
     def cancelled(self, id, response):
         prompt = self.context.prompt

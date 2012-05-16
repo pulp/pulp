@@ -15,7 +15,6 @@ from gettext import gettext as _
 from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
-from pulp.gc_client.api.responses import Response
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
 
 # -- constants ----------------------------------------------------------------
@@ -177,7 +176,7 @@ class YumRepoDeleteCommand(PulpCliCommand):
         repo_id = kwargs['id']
         response = self.context.server.repo.delete(repo_id)
 
-        if isinstance(response, Response):
+        if not response.is_async():
             self.context.prompt.render_success_message(_('Repository [%(r)s] successfully deleted') % {'r' : repo_id})
         else:
             self.context.prompt.render_paragraph('Repository delete postponed due to other operation (eventually we\'ll show how to look this up later')
@@ -216,7 +215,7 @@ class YumRepoUpdateCommand(PulpCliCommand):
         response = self.context.server.repo.update_repo_and_plugins(repo_id, display_name,
                    description, notes, importer_config, distributor_configs)
 
-        if isinstance(response, Response):
+        if not response.is_async():
             self.context.prompt.render_success_message(_('Repository [%(r)s] successfully updated') % {'r' : repo_id})
         else:
             self.context.prompt.render_paragraph('Repository update postponed due to other operation (eventually we\'ll show how to look this up later')

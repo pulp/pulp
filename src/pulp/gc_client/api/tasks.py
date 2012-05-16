@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.gc_client.api.base import PulpAPI
-from pulp.gc_client.api.responses import AsyncResponse
+from pulp.gc_client.api.responses import Task
 
 class TasksAPI(PulpAPI):
 
@@ -21,20 +21,33 @@ class TasksAPI(PulpAPI):
 
     def get_task(self, task_id):
         """
-        Unlike other retrieval calls, instead of returning a Response object,
-        an AsyncResponse object is returned instead. This is to facilitate
-        a single block of code that handles both the original async response
-        from a call that returns it and subsequent calls to this method to
-        poll the task.
 
-        @rtype: AsyncResponse
         """
         path = '/v2/tasks/%s/' % task_id
-        normal_response = self.server.GET(path)
-        async_response = AsyncResponse(normal_response.response_code, normal_response.response_body)
-        return async_response
+        response = self.server.GET(path)
+
+        # Since it was a 200, the connection parsed the response body into a
+        # Document. We know this will be task data, so convert the object here.
+        response.response_body = Task(response.response_body)
+        return response
 
     def get_all_tasks(self):
-        path = '/v2/tasks/'
-        normal_response = self.server.GET(path)
+        """
+        Returns a list of all queued tasks in the server. Each task is described
 
+        """
+        path = '/v2/tasks/'
+        response = self.server.GET(path)
+
+        tasks = []
+        for doc in response.response_body:
+            tasks.append(Task(doc))
+
+        response.response_body = tasks
+        return response
+
+    def get_repo_tasks(self, repo_id):
+        """
+
+        """
+        pass

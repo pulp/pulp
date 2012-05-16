@@ -40,19 +40,29 @@ class Response(object):
     def __str__(self):
         return _("Response: code [%(c)s] body [%(b)s]") % {'c' : self.response_code, 'b' : self.response_body}
 
+    def is_async(self):
+        """
+        Returns if the response indicated an asynchronous task has been queued
+        on the server. If this returns true, the response_body will be a Task.
+        Otherwise, the response body will be a Document.
 
-class AsyncResponse(object):
+        @return: true if the request did not immediately execute and complete
+                 but rather was queued to be run asynchronously
+        @rtype:  bool
+        """
+        return isinstance(self.response_body, Task)
+
+class Task(object):
     """
-    Contains the data received from a call to the server that indicates an
-    asynchronous task was kicked off.
+    Contains the data received from a call to the server that describes an
+    asynchronous call queued or running on the server.
 
     This class provides a number of utility methods for interpretting the state
     of the task which should be used whenever possible instead of manually
     interpretting the structure of the data within.
     """
 
-    def __init__(self, response_code, response_body):
-        self.response_code = response_code
+    def __init__(self, response_body):
 
         # Tasking identity information
         if '_href' in response_body:
@@ -152,7 +162,7 @@ class AsyncResponse(object):
         return self.state == STATE_CANCELED
 
     def __str__(self):
-        return _('AsyncResponse: task_id [%(i)s] state [%(s)s]') % {'i' : self.task_id, 's' : self.state}
+        return _('Task: task_id [%(i)s] state [%(s)s]') % {'i' : self.task_id, 's' : self.state}
 
 class BlockingReason(object):
     """

@@ -59,7 +59,7 @@ class RunSyncCommand(PulpCliCommand):
         # Trigger the actual sync
         response = self.context.server.repo_actions.sync(repo_id, None)
 
-        self.display_status(response.task_id)
+        self.display_status(response.response_body.task_id)
 
     def display_status(self, task_id):
 
@@ -70,7 +70,7 @@ class RunSyncCommand(PulpCliCommand):
         self.context.prompt.render_paragraph(_(m))
 
         # Handle the cases where we don't want to honor the foreground request
-        if response.is_rejected():
+        if response.response_body.is_rejected():
             announce = _('The request to synchronize repository was rejected')
             description = _('This is likely due to an impending delete request for the repository.')
 
@@ -78,7 +78,7 @@ class RunSyncCommand(PulpCliCommand):
             self.context.prompt.render_paragraph(description)
             return
 
-        if response.is_postponed():
+        if response.response_body.is_postponed():
             a  = 'The request to synchronize the repository was accepted but postponed ' \
                  'due to one or more previous requests against the repository. The sync will ' \
                  'take place at the earliest possible time.'
@@ -90,15 +90,15 @@ class RunSyncCommand(PulpCliCommand):
         poll_frequency_in_seconds = self.context.client_config.getfloat('output', 'poll_frequency_in_seconds')
 
         try:
-            while not response.is_completed():
-                if response.is_waiting():
+            while not response.response_body.is_completed():
+                if response.response_body.is_waiting():
                     begin_spinner.next(_('Waiting to begin'))
                 else:
-                    renderer.display_report(response.progress)
+                    renderer.display_report(response.response_body.progress)
 
                 time.sleep(poll_frequency_in_seconds)
 
-                response = self.context.server.tasks.get_task(response.task_id)
+                response = self.context.server.tasks.get_task(response.response_body.task_id)
 
         except KeyboardInterrupt:
             # If the user presses ctrl+C, don't let the error bubble up, just
@@ -110,13 +110,13 @@ class RunSyncCommand(PulpCliCommand):
         # package download and when the task itself reports as finished. We
         # don't want to leave the UI in that half-finished state so this final
         # call is to clean up and render the completed report.
-        renderer.display_report(response.progress)
+        renderer.display_report(response.response_body.progress)
 
-        if response.was_successful():
+        if response.response_body.was_successful():
             self.context.prompt.render_success_message('Successfully synchronized repository')
         else:
             self.context.prompt.render_failure_message('Error during repository synchronization')
-            self.context.prompt.render_failure_message(response.exception)
+            self.context.prompt.render_failure_message(response.response_body.exception)
 
 class SchedulingSection(PulpCliSection):
 
