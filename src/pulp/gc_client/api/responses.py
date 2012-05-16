@@ -72,6 +72,10 @@ class Task(object):
 
         self.task_id = response_body['task_id']
         self.job_id = response_body['job_id']
+        self.tags = response_body['tags']
+
+        self.start_time = response_body['start_time']
+        self.finish_time = response_body['finish_time']
 
         # Task acceptance data
         self.response = response_body['response']

@@ -129,7 +129,7 @@ class ExceptionHandler:
 
         # There are no further classifications for this error type
 
-        msg = _('The following resource(s) could not be found: %(r)s')
+        msg = _('The following resource(s) could not be found:')
         self.prompt.render_failure_message(msg)
 
         msg = ''

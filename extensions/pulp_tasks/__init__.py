@@ -11,4 +11,4 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-PRIORITY = 3
+PRIORITY = 3.1 # the .1 is because it needs to run after pulp_repo

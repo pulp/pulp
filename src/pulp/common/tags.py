@@ -47,6 +47,16 @@ def action_tag(action_name):
     """
     return _NAMESPACE_DELIMITER.join((_PULP_NAMESPACE, _ACTION_NAMESPACE, action_name))
 
+def is_action_tag(tag):
+    """
+    Indicates if a tag represents an action tag.
+    @param tag: tag to test
+    @type  tag: str
+    @return: true if the tag is an action, false otherwise
+    """
+    indicator = _NAMESPACE_DELIMITER.join((_PULP_NAMESPACE, _ACTION_NAMESPACE))
+    return tag.startswith(indicator)
+
 def resource_tag(resource_type, resource_id):
     """
     Generate a pulp name-spaced tag for a give resource.
@@ -58,3 +68,37 @@ def resource_tag(resource_type, resource_id):
     @rtype:  str
     """
     return _NAMESPACE_DELIMITER.join((_PULP_NAMESPACE, resource_type, resource_id))
+
+def is_resource_tag(tag):
+    """
+    Indicates if a tag represents a resource tag.
+    @param tag: tag to test
+    @type  tag: str
+    @return: true if the tag is a resource, false otherwise
+    """
+    # Ghetto implementation but it was the quickest; might be in trouble if we
+    # add a third tag type.
+    return not is_action_tag(tag)
+
+def parse_value(tag):
+    """
+    Strips off the namespace information from the tag and returns its value.
+    @param tag: tag to parse
+    @type  tag: str
+    @return: value of the tag
+    @rtype:  str
+    """
+    pieces = tag.split(_NAMESPACE_DELIMITER, 2)
+    return pieces[2]
+
+def parse_resource_tag(tag):
+    """
+    Parses a resource tag returning a tuple of resource type and ID.
+    @param tag: tag to parse; must pass the is_resource_tag check
+    @return: tuple of resource type to resource ID
+    @rtype: (str, str)
+    """
+    if not is_resource_tag(tag):
+        raise ValueError('Tag [%s] must be a valid resource tag' % tag)
+    pieces = tag.split(_NAMESPACE_DELIMITER, 2)
+    return pieces[1], pieces[2]

@@ -21,6 +21,19 @@ class TasksAPI(PulpAPI):
     def __init__(self, pulp_connection):
         super(TasksAPI, self).__init__(pulp_connection)
 
+    def cancel_task(self, task_id):
+        """
+        Cancels the given task. The task must either be an operation on the
+        server that supports cancelling or it must not have begun to execute
+        yet.
+
+        @param task_id: ID retrieved
+        @return:
+        """
+        path = '/v2/tasks/%s/' % task_id
+        response = self.server.DELETE(path)
+        return response
+
     def get_task(self, task_id):
         """
         Retrieves the status of the given task if it exists.
@@ -38,7 +51,7 @@ class TasksAPI(PulpAPI):
         response.response_body = Task(response.response_body)
         return response
 
-    def get_all_tasks(self, tags=None):
+    def get_all_tasks(self, tags=()):
         """
         Retrieves all tasks in the system. If tags are specified, only tasks
         that contain all of the given tags are returned. All tasks will be
@@ -53,7 +66,9 @@ class TasksAPI(PulpAPI):
         @rtype:  Response
         """
         path = '/v2/tasks/'
-        response = self.server.GET(path)
+        tags = [('tag', t) for t in tags]
+
+        response = self.server.GET(path, queries=tags)
 
         tasks = []
         for doc in response.response_body:
