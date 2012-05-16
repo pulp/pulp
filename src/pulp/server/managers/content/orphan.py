@@ -108,7 +108,7 @@ class OrphanManager(object):
     def delete_orphans_by_id(self, orphans):
         """
         Delete a list of orphaned content units by their content type and unit ids.
-        @param orphans: list of documents with 'content_type_id' and 'content_unit_id' keys
+        @param orphans: list of documents with 'content_type' and 'content_id' keys
         @type  orphans: list
         """
         # XXX this does no validation of the orphans
@@ -116,23 +116,23 @@ class OrphanManager(object):
         # munge the orphans into something more programmatic-ly convenient
         orphans_by_id = {}
         for o in orphans:
-            id_list = orphans_by_id.setdefault(o['content_type_id'], [])
-            id_list.append(o['content_unit_id'])
+            id_list = orphans_by_id.setdefault(o['content_type'], [])
+            id_list.append(o['content_id'])
 
         # iterate through the types and ids
         content_query_manager = manager_factory.content_query_manager()
-        for content_type_id, content_unit_id_list in orphans_by_id:
+        for content_type, content_id_list in orphans_by_id:
 
             # build a list of the on-disk contents
             orphaned_paths = []
-            for unit_id in content_unit_id_list:
-                content_unit = content_query_manager.get_content_unit_by_id(content_type_id, unit_id, model_fields=['_storage_path'])
+            for unit_id in content_id_list:
+                content_unit = content_query_manager.get_content_unit_by_id(content_type, unit_id, model_fields=['_storage_path'])
                 if content_unit['_storage_path'] is not None:
                     orphaned_paths.append(content_unit['_storage_path'])
 
             # remove the orphans from the db
-            collection = content_types_db.type_units_collection(content_type_id)
-            spec = {'id': {'$in': content_unit_id_list}}
+            collection = content_types_db.type_units_collection(content_type)
+            spec = {'id': {'$in': content_id_list}}
             collection.remove(spec, safe=True)
 
             # delete the on-disk contents
