@@ -29,34 +29,67 @@ name='RPM Handler',
 descriptor="""
 [main]
 enabled=1
-types=rpm
+
+[types]
+content=rpm
+distributor=yum
 
 [rpm]
 class=RpmHandler
+
+[yum]
+class=BindHandler
 """,
 handler=
 """
 from pulp.gc_client.agent.lib.report import *
+
 class RpmHandler:
+
   def __init__(self, cfg):
     pass
+
   def install(self, units, options):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
+
   def update(self, units, options):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
+
   def uninstall(self, units, options):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
+
   def profile(self):
     return ProfileReport()
+
   def reboot(self, options):
     report = RebootReport()
     report.succeeded()
+    return report
+
+class BindHandler:
+
+  def __init__(self, cfg):
+    pass
+
+  def bind(self, info):
+    report = BindReport()
+    report.succeeded({}, 1)
+    return report
+
+  def rebind(self, info):
+    report = BindReport()
+    report.succeeded({}, 1)
+    return report
+
+  def unbind(self, info):
+    report = BindReport()
+    report.succeeded({}, 1)
     return report
 """)
 
@@ -125,3 +158,12 @@ class RpmHandler:
     report = RebootReport()
     report.succeeded()
     return report
+
+  def bind(self, info):
+    return BindReport()
+
+  def rebind(self, info):
+    return BindReport()
+
+  def unbind(self, info):
+    return BindReport()

@@ -20,6 +20,10 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
+# handler roles
+CONTENT = 0
+DISTRIBUTOR = 1
+
 
 class Descriptor:
     """
@@ -38,7 +42,12 @@ class Descriptor:
         ('main', REQUIRED,
             (
                 ('enabled', REQUIRED, BOOL),
-                ('types', REQUIRED, ANY),
+            ),
+        ),
+        ('types', REQUIRED,
+            (
+                ('content', REQUIRED, ANY),
+                ('distributor', REQUIRED, ANY),
             ),
         ),
     )
@@ -121,14 +130,19 @@ class Descriptor:
         """
         Get a list of supported content types.
         @return: A list of supported content type IDs.
-        @rtype: list
+        @rtype: tuple ([content],[distributor])
         """
-        types = []
-        listed = self.cfg.main.types
+        types = ([],[])
+        listed = self.cfg.types.content
         for t in listed.split(','):
             t = t.strip()
             if t:
-                types.append(t)
+                types[CONTENT].append(t)
+        listed = self.cfg.types.distributor
+        for t in listed.split(','):
+            t = t.strip()
+            if t:
+                types[DISTRIBUTOR].append(t)
         return types
 
 
@@ -193,17 +207,20 @@ class Typedef:
             d[p] = v
         return d
 
+
 class Container:
     """
     A content handler container.
     Loads and maintains a collection of content handlers
-    mapped by type_id.
+    mapped by typeid.
     @cvar PATH: A list of directories containing handlers.
     @type PATH: list
     @ivar root: The descriptor root directory.
     @type root: str
     @ivar path: The list of directories to search for handlers.
     @type path: list
+    @ivar handlers: A mapping of typeid to handler.
+    @type handlers: tuple (content={},distributor={})
     """
 
     PATH = [
@@ -227,7 +244,7 @@ class Container:
         """
         Reset (empty) the container.
         """
-        self.handlers = {}
+        self.handlers = ({},{})
 
     def load(self):
         """
@@ -237,17 +254,17 @@ class Container:
         for name, descriptor in Descriptor.list(self.root):
             self.__import(name, descriptor)
 
-    def find(self, type_id):
+    def find(self, typeid, role=CONTENT):
         """
         Find and return a content handler for the specified
         content type ID.
-        @param type_id: A content type ID.
-        @type type_id: str
+        @param typeid: A content type ID.
+        @type typeid: str
         @return: The content type handler registered to
             handle the specified type ID.
         @rtype: L{Handler}
         """
-        return self.handlers.get(type_id)
+        return self.handlers[role].get(typeid)
 
     def all(self):
         """
@@ -255,7 +272,10 @@ class Container:
         @return: A list of handlers.
         @rtype: list
         """
-        return self.handlers.values()
+        all = []
+        for d in self.handlers:
+            all += d.values()
+        return all
 
     def __import(self, name, descriptor):
         """
@@ -269,12 +289,19 @@ class Container:
             path = self.__findimpl(name)
             mangled = self.__mangled(name)
             mod = imp.load_source(mangled, path)
-            for type_id in descriptor.types():
-                typedef = Typedef(descriptor.cfg, type_id)
+            content, distributor = descriptor.types()
+            for typeid in content:
+                typedef = Typedef(descriptor.cfg, typeid)
                 hclass = typedef.cfg['class']
                 hclass = getattr(mod, hclass)
                 handler = hclass(typedef.cfg)
-                self.handlers[type_id] = handler
+                self.handlers[CONTENT][typeid] = handler
+            for typeid in distributor:
+                typedef = Typedef(descriptor.cfg, typeid)
+                hclass = typedef.cfg['class']
+                hclass = getattr(mod, hclass)
+                handler = hclass(typedef.cfg)
+                self.handlers[DISTRIBUTOR][typeid] = handler
         except Exception:
             log.exception('handler "%s", import failed', name)
 

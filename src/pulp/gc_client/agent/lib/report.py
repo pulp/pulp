@@ -129,6 +129,13 @@ class ProfileReport(HandlerReport):
     pass
 
 
+class BindReport(HandlerReport):
+    """
+    A Bind Report
+    """
+    pass
+
+
 class DispatchReport(Report):
     """
     Content install/update/uninstall report.

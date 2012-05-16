@@ -13,6 +13,7 @@
 
 from pulp.gc_client.agent.lib.handler import Handler
 from pulp.gc_client.agent.lib.container import Container
+from pulp.gc_client.agent.lib.container import CONTENT, DISTRIBUTOR
 from pulp.gc_client.agent.lib.report import *
 
 
@@ -33,8 +34,17 @@ class HandlerNotFound(Exception):
 
 
 class Dispatcher:
+    """
+    Dispatch (delegate) requests to handlers.
+    @ivar container: A handler container.
+    @type container: L{Container}
+    """
 
     def __init__(self, container=None):
+        """
+        @param container: A handler container.
+        @type container: L{Container}
+        """
         self.container = container or Container()
         self.container.load()
 
@@ -46,13 +56,15 @@ class Dispatcher:
         @type units: list
         @param options: Unit install options.
         @type options: dict
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
         @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        collated = Collated(units)
+        collated = Units(units)
         for typeid, units in collated.items():
             try:
-                handler = self.__handler(typeid)
+                handler = self.__handler(typeid, CONTENT)
                 r = handler.install(units, dict(options))
                 r.typeid = typeid
                 report.update(r)
@@ -73,13 +85,15 @@ class Dispatcher:
         @type units: list
         @param options: Unit update options.
         @type options: dict
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
         @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        collated = Collated(units)
+        collated = Units(units)
         for typeid, units in collated.items():
             try:
-                handler = self.__handler(typeid)
+                handler = self.__handler(typeid, CONTENT)
                 r = handler.update(units, dict(options))
                 r.typeid = typeid
                 report.update(r)
@@ -100,13 +114,15 @@ class Dispatcher:
         @type units: list
         @param options: Unit uninstall options.
         @type options: dict
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
         @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        collated = Collated(units)
+        collated = Units(units)
         for typeid, units in collated.items():
             try:
-                handler = self.__handler(typeid)
+                handler = self.__handler(typeid, CONTENT)
                 r = handler.uninstall(units, dict(options))
                 r.typeid = typeid
                 report.update(r)
@@ -125,12 +141,14 @@ class Dispatcher:
         to the pulp server.
         @param types: A list of content type IDs.
         @type types: list
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
         @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
         for typeid in types:
-            handler = self.__handler(typeid)
             try:
+                handler = self.__handler(typeid, CONTENT)
                 r = handler.profile()
                 r.typeid = typeid
                 report.update(r)
@@ -148,6 +166,8 @@ class Dispatcher:
         @type options: dict
         Find the 1st handler that implements reboot() and
         dispatch to that handler.
+        @return: A reboot report.
+        @rtype: L{RebootReport}
         @raise HandlerNotFound: When hanlder not found.
         """
         NAME = 'reboot'
@@ -165,6 +185,52 @@ class Dispatcher:
         report.failed(dict(message='handler not found'))
         return report
 
+    def bind(self, info):
+        """
+        Bind a repository.
+        @param info: The bind informataion.
+        @type info: dict
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
+        @raise HandlerNotFound: When hanlder not found.
+        """
+        report = DispatchReport()
+        try:
+            typeid = info['type_id']
+            handler = self.__handler(typeid, DISTRIBUTOR)
+            r = handler.bind(info)
+            r.typeid = typeid
+            report.update(r)
+        except Exception:
+            r = ProfileReport()
+            r.typeid = typeid
+            r.failed(ExceptionReport())
+            report.update(r)
+        return report
+
+    def unbind(self, info):
+        """
+        Unbind a repository.
+        @param info: The bind informataion.
+        @type info: dict
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
+        @raise HandlerNotFound: When hanlder not found.
+        """
+        report = DispatchReport()
+        try:
+            typeid = info['type_id']
+            handler = self.__handler(typeid, DISTRIBUTOR)
+            r = handler.bind(info)
+            r.typeid = typeid
+            report.update(r)
+        except Exception:
+            r = ProfileReport()
+            r.typeid = typeid
+            r.failed(ExceptionReport())
+            report.update(r)
+        return report
+
     def __reboot(self, report, options):
         """
         Schedule a reboot based on I{options} and reported progress.
@@ -180,23 +246,25 @@ class Dispatcher:
                 return self.reboot(options)
         return RebootReport()
 
-    def __handler(self, typeid):
+    def __handler(self, typeid, role):
         """
         Find a handler by type ID.
         @param typeid: A content type ID.
         @type typeid: str
+        @param role: The handler role requested.
+        @type role: int
         @return: The found handler.
         @rtype: L{Handler}
         @raise HandlerNotFound: When not found.
         """
-        handler = self.container.find(typeid)
+        handler = self.container.find(typeid, role)
         if handler is None:
             raise HandlerNotFound(type=typeid)
         else:
             return handler
 
 
-class Collated(dict):
+class Units(dict):
     """
     Collated content units
     """

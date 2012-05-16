@@ -16,7 +16,10 @@
 #
 # [main]
 # enabled=(0|1)
-# types=(type_id,)
+#
+# [types]
+# content=(type_id,)
+# distributor=(type_id,)
 #
 # [<type_id>]
 # class=<str>
@@ -38,7 +41,7 @@ class Handler:
     def install(self, units, options):
         """
         Install content unit(s).
-        @param units: A list of content units.
+        @param units: A list of content unit (keys).
         @type units: list
         @param options: Unit install options.
         @type options: dict
@@ -50,7 +53,7 @@ class Handler:
     def update(self, units, options):
         """
         Update content unit(s).
-        @param units: A list of content units.
+        @param units: A list of content unit (keys).
         @type units: list
         @param options: Unit update options.
         @type options: dict
@@ -62,7 +65,7 @@ class Handler:
     def uninstall(self, units, options):
         """
         Uninstall content unit(s).
-        @param units: A list of content units.
+        @param units: A list of content unit (keys).
         @type units: list
         @param options: Unit uninstall options.
         @type options: dict
@@ -71,19 +74,41 @@ class Handler:
         """
         pass
 
-    def profile(self, types):
+    def profile(self):
         """
         Request the installed content profile be sent
         to the pulp server.
-        @param types: A list of content type IDs.
-        @type types: list
         """
         pass
 
-    def reboot(self, minutes=1):
+    def reboot(self, options={}):
         """
         Schedule system reboot.
-        @param minutes: Delay in minutes.
-        @type minutes: int
+        @param options: Reboot options.
+        @type options: dict
+        """
+        pass
+
+    def bind(self, info):
+        """
+        Bind a repository.
+        @param info: Bind infomation.
+        @type info: dict
+        """
+        pass
+
+    def rebind(self, info):
+        """
+        Bind a repository.
+        @param info: Bind infomation.
+        @type info: list of dict
+        """
+        pass
+
+    def unbind(self, info):
+        """
+        Unbind a repository.
+        @param info: Bind infomation.
+        @type info: dict
         """
         pass
