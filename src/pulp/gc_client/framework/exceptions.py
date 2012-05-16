@@ -129,10 +129,15 @@ class ExceptionHandler:
 
         # There are no further classifications for this error type
 
-        msg = 'The following resource could not be found: %(r)s'
-        msg = _(msg) % {'r' : e.extra_data['resource_id']}
+        msg = _('The following resource(s) could not be found: %(r)s')
+        self.prompt.render_failure_message(msg)
+
+        msg = ''
+        for resource_type, resource_id in e.extra_data['resources'].items():
+            msg += '  %s (%s)\n' % (resource_id, resource_type)
 
         self.prompt.render_failure_message(msg)
+
         return CODE_NOT_FOUND
 
     def handle_conflict(self, e):
