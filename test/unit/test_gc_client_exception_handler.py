@@ -58,9 +58,9 @@ class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
-        code = self.exception_handler.handle_exception(exceptions.NotFoundException({'resource_id' : 'foo'}))
+        code = self.exception_handler.handle_exception(exceptions.NotFoundException({'resources' : {'repo_id' : 'foo'}}))
         self.assertEqual(code, handler.CODE_NOT_FOUND)
-        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(2, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
@@ -127,12 +127,12 @@ class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
     def test_not_found(self):
 
         # Test
-        e = exceptions.NotFoundException({'resource_id' : 'foo'})
+        e = exceptions.NotFoundException({'resources' : {'repo_id' : 'foo'}})
         code = self.exception_handler.handle_not_found(e)
 
         # Verify
         self.assertEqual(code, handler.CODE_NOT_FOUND)
-        self.assertTrue('foo' in self.recorder.lines[0])
+        self.assertTrue('foo' in self.recorder.lines[2])
 
     def test_conflict_resource(self):
         """
