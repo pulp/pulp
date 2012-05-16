@@ -15,14 +15,16 @@ from gettext import gettext as _
 
 import web
 
+from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.dispatch.call import CallRequest
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
-from pulp.server.webservices import serialization
+from pulp.server.webservices import execution, serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-# controller classes -----------------------------------------------------------
+# content types controller classes ---------------------------------------------
 
 class ContentTypesCollection(JSONController):
 
@@ -90,6 +92,7 @@ class ContentTypeResource(JSONController):
         """
         return self.not_implemented()
 
+# content units controller classes ---------------------------------------------
 
 class ContentUnitsCollection(JSONController):
 
@@ -157,6 +160,7 @@ class ContentUnitResource(JSONController):
         """
         return self.not_implemented()
 
+# content uploads controller classes -------------------------------------------
 
 class UploadsCollection(JSONController):
 
@@ -212,6 +216,58 @@ class UploadSegmentResource(JSONController):
 
         return self.ok({})
 
+# content orphans controller classes -------------------------------------------
+
+class OrphanCollection(JSONController):
+
+    def GET(self):
+        orphan_manager = factory.content_orphan_manager()
+        orphans = orphan_manager.list_all_orphans()
+        # XXX how do I glean the content type to add the _href?
+        #map(lambda o: o.update(serialization.link.child_link_obj(o['id'])), orphans)
+        return self.ok(orphans)
+
+    def DELETE(self):
+        orphan_manager = factory.content_orphan_manager()
+        call_request = CallRequest(orphan_manager.delete_all_orphans)
+        return execution.execute_async(self, call_request)
+
+
+class OrphanTypeSubCollection(JSONController):
+
+    def GET(self, content_type):
+        orphan_manager = factory.content_orphan_manager()
+        orphans = orphan_manager.list_orphans_by_type(content_type)
+        map(lambda o: o.update(serialization.link.child_link_obj(o['id'])), orphans)
+        return self.ok(orphans)
+
+    def DELETE(self, content_type):
+        orphan_manager = factory.content_orphan_manager()
+        call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type])
+        return execution.execute_async(self, call_request)
+
+class OrphanResource(JSONController):
+
+    def GET(self, content_type, content_id):
+        orphan_manager = factory.content_orphan_manager()
+        orphan = orphan_manager.get_orphan(content_type, content_id)
+        orphan.update(serialization.link.current_link_obj())
+        return self.ok(orphan)
+
+    def DELETE(self, content_type, content_id):
+        orphan_manager = factory.content_orphan_manager()
+        orphan_manager.get_orphan(content_type, content_id)
+        ids = [{'content_type_id': content_type, 'content_unit_id': content_id}]
+        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids])
+        return execution.execute_async(self, call_request)
+
+# content actions controller classes -------------------------------------------
+
+class DeleteOrphansAction(JSONController):
+
+    def POST(self):
+        raise pulp_exceptions.NotImplemented('delete_orphans')
+
 # wsgi application -------------------------------------------------------------
 
 _URLS = ('/types/$', ContentTypesCollection,
@@ -221,6 +277,9 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/uploads/$', UploadsCollection,
          '/uploads/([^/]+)/$', UploadResource,
          '/uploads/([^/]+)/([^/]+)/$', UploadSegmentResource,
-        )
+         '/orphans/$', OrphanCollection,
+         '/orphans/([^/]+)/$', OrphanTypeSubCollection,
+         '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
+         '/actions/delete_orphans/$', DeleteOrphansAction,)
 
 application = web.application(_URLS, globals())
