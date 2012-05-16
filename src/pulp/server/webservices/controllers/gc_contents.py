@@ -230,7 +230,7 @@ class OrphanCollection(JSONController):
     @auth_required(DELETE)
     def DELETE(self):
         orphan_manager = factory.content_orphan_manager()
-        call_request = CallRequest(orphan_manager.delete_all_orphans)
+        call_request = CallRequest(orphan_manager.delete_all_orphans, archive=True)
         return execution.execute_async(self, call_request)
 
 
@@ -246,7 +246,7 @@ class OrphanTypeSubCollection(JSONController):
     @auth_required(DELETE)
     def DELETE(self, content_type):
         orphan_manager = factory.content_orphan_manager()
-        call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type])
+        call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type], archive=True)
         return execution.execute_async(self, call_request)
 
 class OrphanResource(JSONController):
@@ -263,7 +263,7 @@ class OrphanResource(JSONController):
         orphan_manager = factory.content_orphan_manager()
         orphan_manager.get_orphan(content_type, content_id)
         ids = [{'content_type': content_type, 'content_id': content_id}]
-        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids])
+        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids], archive=True)
         return execution.execute_async(self, call_request)
 
 # content actions controller classes -------------------------------------------
@@ -277,7 +277,7 @@ class DeleteOrphansAction(JSONController):
             if 'content_type' not in o or 'content_id' not in o:
                 raise pulp_exceptions.InvalidValue(['content_type', 'content_id'])
         orphan_manager = factory.content_orphan_manager()
-        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans])
+        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans], archive=True)
         return execution.execute_async(self, call_request)
 
 # wsgi application -------------------------------------------------------------
