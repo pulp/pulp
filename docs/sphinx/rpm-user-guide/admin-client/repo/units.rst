@@ -36,7 +36,7 @@ All commands under the copy section require the following arguments:
 
 ``--dry-run, -d``
   If specified, a list of the packages that match the given criteria will be
-  displayed but the copy is performed. This argument is meant to provide a way
+  displayed but the copy is not performed. This argument is meant to provide a way
   to verify the packages before committing the change to the server.
 
 The following arguments can be passed to the package related (RPM, SRPM, DRPM)
