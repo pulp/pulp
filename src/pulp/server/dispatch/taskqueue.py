@@ -352,6 +352,6 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            return itertools.chain(self.__waiting_tasks[:], self.__running_tasks[:])
+            return itertools.chain(self.__running_tasks[:], self.__waiting_tasks[:])
         finally:
             self.__lock.release()
