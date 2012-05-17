@@ -151,7 +151,9 @@ class Bindings(JSONController):
             {consumer_id:<str>,
              repo_id:<str>,
              distributor_id:<str>,
-             distributor:<RepoDistributor>}
+             href:<str>,
+             type_id:<str>,
+             details:<dict>}
         @rtype: dict
         """
         manager = managers.consumer_bind_manager()
@@ -217,19 +219,37 @@ class Binding(JSONController):
         @param bind: A bind model/SON object.
         @type bind: dict/SON
         @return: A bind REST object.
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>,
+             href:<str>,
+             type_id:<str>,
+             details:<dict>}
         @rtype: dict
         """
+        # bind
+        serialized = dict(bind)
+        # href
         link = serialization.link.child_link_obj(
             bind['consumer_id'],
             bind['repo_id'],
             bind['distributor_id'])
-        serialized = dict(bind)
         serialized.update(link)
+        # repository
+        manager = managers.repo_query_manager()
+        repo = manager.get_repository(bind['repo_id'])
+        serialized['repository'] = dict(repo)
+        # type_id
         manager = managers.repo_distributor_manager()
         distributor = manager.get_distributor(
             bind['repo_id'],
             bind['distributor_id'])
-        serialized['distributor'] = distributor
+        serialized['type_id'] = distributor['distributor_type_id']
+        # details
+        details = manager.create_bind_payload(
+            bind['repo_id'],
+            bind['distributor_id'])
+        serialized['details'] = details
         return serialized
 
     @auth_required(READ)
@@ -247,7 +267,9 @@ class Binding(JSONController):
             {consumer_id:<str>,
              repo_id:<str>,
              distributor_id:<str>,
-             distributor:<RepoDistributor>}
+             href:<str>,
+             type_id:<str>,
+             details:<dict>}
         @rtype: dict
         """
         manager = managers.consumer_bind_manager()

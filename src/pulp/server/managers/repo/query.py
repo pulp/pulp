@@ -17,6 +17,7 @@ Contains the manager class and exceptions for searching for repositories.
 
 import logging
 
+from pulp.server.exceptions import MissingResource
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
 
 # -- constants ----------------------------------------------------------------
@@ -45,6 +46,20 @@ class RepoQueryManager(object):
         """
         all_repos = list(Repo.get_collection().find())
         return all_repos
+
+    def get_repository(self, repo_id):
+        """
+        Get a repository by ID.
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        @return: serialized data describing the repository
+        @rtype:  dict
+        @raise MissingResource: when not found
+        """
+        repo = self.find_by_id(repo_id)
+        if repo is None:
+            raise MissingResource(repo_id=repo_id)
+        return repo
 
     def find_by_id(self, repo_id):
         """

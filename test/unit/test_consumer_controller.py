@@ -34,12 +34,19 @@ class BindTest(testutil.PulpV2WebserviceTest):
     
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'test-distributor'
+    DISTRIBUTOR_ID = 'dist-1'
+    DISTRIBUTOR_TYPE_ID = 'mock-distributor'
     QUERY = dict(
         consumer_id=CONSUMER_ID,
         repo_id=REPO_ID,
         distributor_id=DISTRIBUTOR_ID,
     )
+    PAYLOAD = dict(
+        server_name='pulp.redhat.com',
+        gpg_keys=['key1',],
+        host_urls=[
+            'http://pulp.redhat.com/repos/content/repoA',
+            'https://pulp.redhat.com/repos/content/repoB',])
 
     def setUp(self):
         testutil.PulpV2WebserviceTest.setUp(self)
@@ -60,16 +67,16 @@ class BindTest(testutil.PulpV2WebserviceTest):
         mock_plugins.reset()
     
     def populate(self):
-        config = {'key1' : 'value1', 'key2' : None}
         manager = factory.repo_manager()
         repo = manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
-            'mock-distributor',
-            config,
+            self.DISTRIBUTOR_TYPE_ID,
+            {},
             True,
             distributor_id=self.DISTRIBUTOR_ID)
+        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value=self.PAYLOAD
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         
@@ -108,12 +115,8 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertTrue('_href' in bind)
-        manager = factory.repo_distributor_manager()
-        distributor = manager.get_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        for k in ('distributor_type_id', 'config'):
-            self.assertEquals(
-                bind['distributor'][k],
-                distributor[k])
+        self.assertEquals(bind['details'], self.PAYLOAD)
+        self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
     def test_get_bind_by_consumer_and_repo(self):
         # Setup
@@ -131,12 +134,8 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertTrue('_href' in bind)
-        manager = factory.repo_distributor_manager()
-        distributor = manager.get_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        for k in ('distributor_type_id', 'config'):
-            self.assertEquals(
-                bind['distributor'][k],
-                distributor[k])
+        self.assertEquals(bind['details'], self.PAYLOAD)
+        self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
     def test_bind(self):
         # Setup
