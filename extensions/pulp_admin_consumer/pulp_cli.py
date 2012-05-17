@@ -72,6 +72,21 @@ class AdminConsumerSection(PulpCliSection):
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
 
+        # History Retrieval Command
+        history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
+        history_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
+        d = '(optional) limits displayed history entries to the given type;'
+        d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
+        d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
+        d += '"removed_from_group")'
+        history_command.add_option(PulpCliOption('--event_type', d, required=False))
+        history_command.add_option(PulpCliOption('--limit', 'limits displayed history entries to the given amount (must be greater than zero)', required=False))
+        history_command.add_option(PulpCliOption('--sort', 'indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp', required=False))
+        history_command.add_option(PulpCliOption('--start_date', 'only return entries that occur on or after the given date (format: yyyy-mm-dd)', required=False))
+        history_command.add_option(PulpCliOption('--end_date', 'only return entries that occur on or before the given date (format: yyyy-mm-dd)', required=False))
+        self.add_command(history_command)
+
+
     def update(self, **kwargs):
 
         # Assemble the delta for all options that were passed in
@@ -120,6 +135,14 @@ class AdminConsumerSection(PulpCliSection):
         # manually based on the CLI flags.
         for c in consumer_list:
             self.prompt.render_document(c, filters=filters, order=order)
+
+    def history(self, **kwargs):
+        self.prompt.render_title('Consumers History for consumer :' + kwargs['id'])
+
+        history_list = self.context.server.consumer_history.history(kwargs['id'], kwargs['event_type'], kwargs['limit'], kwargs['sort'],
+                                                            kwargs['start_date'], kwargs['end_date']).response_body
+        for history in history_list:
+            self.prompt.render_document(history)
 
 
     def install(self, **kwargs):

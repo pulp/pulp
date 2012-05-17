@@ -11,7 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import datetime
+
 from pulp.server.db.model.gc_base import Model
+from pulp.common import dateutils
 
 # -- classes -----------------------------------------------------------------
 
@@ -87,3 +90,35 @@ class Bind(Model):
         self.consumer_id = consumer_id
         self.repo_id = repo_id
         self.distributor_id = distributor_id
+
+
+class ConsumerHistoryEvent(Model):
+    """
+    Represents a consumer history event.
+
+    @ivar consumer_id: identifies the consumer
+    @type id: str
+
+    @ivar originator: 'consumer' or username of the admin who initiated the event
+    @type originator: str
+
+    @param type: event type
+                 current supported event types: 'consumer_registered', 'consumer_unregistered', 'repo_bound', 'repo_unbound',
+                 'content_unit_installed', 'content_unit_uninstalled', 'unit_profile_changed', 'added_to_group', 'removed_from_group'
+    @type type: str
+
+    @param details: event details
+    @type details: dict
+    """
+    collection_name = 'gc_consumer_history'
+    search_indices = ('consumer_id', 'originator', 'type', )
+
+    def __init__(self, consumer_id, originator, type, details):
+        super(ConsumerHistoryEvent, self).__init__()
+
+        self.consumer_id = consumer_id
+        self.originator = originator
+        self.type = type
+        self.details = details
+        now = datetime.datetime.now(dateutils.utc_tz())
+        self.timestamp = dateutils.format_iso8601_datetime(now)

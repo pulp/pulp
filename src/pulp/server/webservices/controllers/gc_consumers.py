@@ -18,6 +18,7 @@ import logging
 import web
 
 # Pulp
+from pulp.common import dateutils
 from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
@@ -407,6 +408,38 @@ class Content(JSONController):
         result = execution.execute_async(self, call_request)
         return result
 
+class ConsumerHistory(JSONController):
+
+    @auth_required(READ)
+    def POST(self, id):
+        """
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        event_type = data.get('event_type', None)
+        limit = data.get('limit', None)
+        sort = data.get('sort', None)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
+
+        if sort is None:
+            sort = 'descending'
+
+        if limit:
+            limit = int(limit)
+
+        if start_date:
+            start_date = dateutils.parse_datetime(start_date + '-00-00-00')
+            start_date = dateutils.to_local_datetime(start_date)
+
+        if end_date:
+            end_date = dateutils.parse_datetime(end_date + '-23-59-59')
+            end_date = dateutils.to_local_datetime(end_date)
+
+        results = managers.consumer_history_manager().query(consumer_id=id, event_type=event_type, limit=limit,
+                                    sort=sort, start_date=start_date, end_date=end_date)
+        return self.ok(results)
 
 # -- web.py application -------------------------------------------------------
 
@@ -418,6 +451,7 @@ urls = (
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
+    '/([^/]+)/history/$', 'ConsumerHistory',
 )
 
 application = web.application(urls, globals())

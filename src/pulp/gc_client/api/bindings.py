@@ -27,6 +27,7 @@ class Bindings(object):
         self.bind = BindingsAPI(pulp_connection)
         self.consumer = ConsumerAPI(pulp_connection)
         self.consumer_content = ConsumerContentAPI(pulp_connection)
+        self.consumer_history = ConsumerHistoryAPI(pulp_connection)
         self.repo = RepositoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
         self.repo_distributor = RepositoryDistributorAPI(pulp_connection)

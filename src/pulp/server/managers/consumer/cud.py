@@ -88,6 +88,7 @@ class ConsumerManager(object):
         create_me = Consumer(id, display_name, description, notes, capabilities, certificate=crt.strip())
         Consumer.get_collection().save(create_me, safe=True)
 
+        factory.consumer_history_manager().record_event(id, 'consumer_registered')
         create_me.certificate = Bundle.join(key, crt)
         return create_me
 
@@ -122,9 +123,9 @@ class ConsumerManager(object):
             _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
             raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
 
-        # To do - Update consumergroups after we add consumergroup support in V2
-        # To do - Consumer history update
+        factory.consumer_history_manager().record_event(id, 'consumer_unregistered')
 
+        # To do - Update consumergroups after we add consumergroup support in V2
 
     def update(self, id, delta):
         """

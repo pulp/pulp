@@ -94,3 +94,21 @@ class BindingsAPI(PulpAPI):
         if repoid:
             path += '%s/' % repoid
         return self.server.GET(path)
+
+
+class ConsumerHistoryAPI(PulpAPI):
+    """
+    Connection class to access consumer history retrieval calls
+    """
+    def __init__(self, pulp_connection):
+        super(ConsumerHistoryAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/consumers/%s/history/"
+
+    def history(self, consumer_id, event_type=None, limit=None, sort=None, start_date=None, end_date=None):
+        path = self.base_path % consumer_id
+        data = {'event_type' : event_type,
+                'limit' : limit,
+                'sort' : sort,
+                'start_date' : start_date,
+                'end_date' : end_date,}
+        return self.server.POST(path, data)
