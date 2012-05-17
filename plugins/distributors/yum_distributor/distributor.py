@@ -716,6 +716,8 @@ class YumDistributor(Distributor):
                 distro_progress_status["items_left"] -= 1
         if errors:
             distro_progress_status["error_details"] = errors
+            distro_progress_status["state"] = "FAILED"
+            self.set_progress("distribution", distro_progress_status, progress_callback)
             return False, errors
         distro_progress_status["state"] = "FINISHED"
         self.set_progress("distribution", distro_progress_status, progress_callback)
