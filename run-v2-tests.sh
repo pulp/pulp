@@ -21,6 +21,7 @@ PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_contents"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_plugins"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_repositories"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_root_actions"
+PACKAGES="$PACKAGES,pulp_tasks"
 PACKAGES="$PACKAGES,rpm_units_copy"
 
 TESTS="test/unit/test_base_distributor_conduit.py \
@@ -38,6 +39,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_gc_client_exception_handler.py \
        test/unit/test_extensions_loader.py \
        test/unit/test_manager_factory.py \
+       test/unit/test_pulp_tasks_extension.py \
        test/unit/test_repo_controller.py \
        test/unit/test_repo_importer_manager.py \
        test/unit/test_repo_manager.py \

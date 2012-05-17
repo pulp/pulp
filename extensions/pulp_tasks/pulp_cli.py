@@ -20,6 +20,7 @@ from pulp.gc_client.framework.exceptions import PulpServerException
 
 # -- constants ----------------------------------------------------------------
 
+# Guidance for render_document_list on how to display task info
 TASK_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time', 'result', 'task_id']
 
 # -- framework hooks ----------------------------------------------------------
@@ -50,6 +51,9 @@ class BaseTasksSection(PulpCliSection):
         PulpCliSection.__init__(self, name, description)
         self.context = context
 
+        # Store the command instances as instance variables so the subclasses
+        # can manipulate them if necessary
+
         self.list_command = self.create_command('list', _('lists tasks queued or running in the server'), self.list)
 
         self.cancel_command = self.create_command('cancel', _('cancel one or more tasks'), self.cancel)
@@ -59,16 +63,24 @@ class BaseTasksSection(PulpCliSection):
         self.details_command.create_option('--task-id', _('identifies the task'), required=True)
 
     def list(self, **kwargs):
+        """
+        Displays a list of tasks. The list of tasks is driven by the
+        retrieve_tasks method which should be overridden to provide the
+        correct behavior.
+        """
+
         self.context.prompt.render_title('Tasks')
 
         response = self.retrieve_tasks(**kwargs)
-
         task_objects = response.response_body
 
+        # Easy out clause
         if len(task_objects) is 0:
             self.context.prompt.render_paragraph('No tasks found')
             return
 
+        # Parse each task object into a document to be displayed using the
+        # prompt utilities
         task_documents = []
         for task in response.response_body:
 
@@ -91,6 +103,11 @@ class BaseTasksSection(PulpCliSection):
         self.context.prompt.render_document_list(task_documents, order=TASK_DOC_ORDER)
 
     def details(self, **kwargs):
+        """
+        Displays detailed information about a single task. The task ID must
+        be in kwargs under "task-id".
+        """
+
         self.context.prompt.render_title('Task Details')
 
         task_id = kwargs['task-id']
@@ -123,6 +140,15 @@ class BaseTasksSection(PulpCliSection):
         self.context.prompt.render_document(task_doc, order=TASK_DOC_ORDER)
 
     def cancel(self, **kwargs):
+        """
+        Attempts to cancel a task. Only unstarted tasks and those that support
+        cancellation (sync, publish) can be canceled. If a task does not support
+        cancelling, a not implemented error (501) will be raised from the server.
+        We should handle that gracefully to explain to the user what happend.
+        Otherwise, all other errors should bubble up to the exception middleware
+        as usual.
+        """
+
         task_id = kwargs['task-id']
 
         try:
@@ -141,6 +167,16 @@ class BaseTasksSection(PulpCliSection):
     # -- rendering utilities --------------------------------------------------
 
     def parse_state(self, task):
+        """
+        Uses the state of the task to return user-friendly descriptions of the
+        state and task timing values.
+
+        @param task: object representation of the task
+        @type  task: Task
+
+        @return: tuple of state, start time, and finish time
+        @rtype: (str, str, str)
+        """
         state = _('Unknown')
         start_time = _('Unstarted')
         finish_time = _('Incomplete')
@@ -164,6 +200,17 @@ class BaseTasksSection(PulpCliSection):
         return state, start_time, finish_time
 
     def parse_tags(self, task):
+        """
+        Uses the tags entry in the task to render a user-friendly display of
+        the actions and resources involved in the task.
+
+        @param task: object representation of the task
+        @type  task: Task
+
+        @return: tuple of list of actions and list of resources involved
+        @rtype:  ([], [])
+        """
+
         actions = []
         resources = []
 
@@ -178,6 +225,15 @@ class BaseTasksSection(PulpCliSection):
         return actions, resources
 
     def parse_result(self, task):
+        """
+        Converts the result of the task into a user-friendly explanation.
+
+        @param task: object representation of the task
+        @type  task: Task
+
+        @return: tuple of list of actions and list of resources involved
+        @rtype:  ([], [])
+        """
         return task.result or _('Incomplete')
 
 # -- override below -------------------------------------------------------
@@ -206,4 +262,3 @@ class RepoTasksSection(BaseTasksSection):
         repo_id = kwargs['repo-id']
         response = self.context.server.tasks.get_repo_tasks(repo_id)
         return response
-
