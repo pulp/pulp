@@ -635,9 +635,8 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(len(os.listdir(pub_dir)), 0)
 
     def test_consumer_payload(self):
-        PAYLOAD_FIELDS = ['repo', 'server_name', 'relative_path',
-                          'protocols', 'gpg_keys', 'clientcert', 'cacert',
-                          'distributor_type_id', 'host_urls']
+        PAYLOAD_FIELDS = [ 'server_name', 'relative_path',
+                          'protocols', 'gpg_keys', 'client_cert', 'ca_cert']
         http = True
         https = True
         relative_url = "/pub/content/"

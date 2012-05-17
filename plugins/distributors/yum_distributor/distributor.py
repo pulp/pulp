@@ -727,28 +727,22 @@ class YumDistributor(Distributor):
         payload = {}
         ##TODO for jdob: load the pulp.conf and make it accessible to distributor
         pulp_conf = load_config(config_file="/etc/pulp/pulp.conf")
-        payload['repo'] = repo.id
         payload['server_name'] = pulp_conf.get('server', 'server_name')
-        payload['distributor_type_id'] = YUM_DISTRIBUTOR_TYPE_ID
         ssl_ca_path = pulp_conf.get('security', 'ssl_ca_certificate')
         if os.path.exists(ssl_ca_path):
-            payload['cacert'] = open(pulp_conf.get('security', 'ssl_ca_certificate')).read()
+            payload['ca_cert'] = open(pulp_conf.get('security', 'ssl_ca_certificate')).read()
         else:
-            payload['cacert'] = config.get('https_ca')
+            payload['ca_cert'] = config.get('https_ca')
         payload['relative_path'] = pulp_conf.get('server', 'relative_url') + self.get_repo_relative_path(repo, config)
         payload['protocols'] = []
         if config.get('http'):
             payload['protocols'].append('http')
         if config.get('https'):
             payload['protocols'].append('https')
-        payload['host_urls'] = []
-        for proto in payload['protocols']:
-            host_url = urlparse.urljoin("%s://%s" % (proto, payload['server_name']), payload['relative_path'])
-            payload['host_urls'].append(host_url)
         if config.get('gpgkey') is not None:
             payload['gpg_keys'] = config.get('gpgkey')
         if config.get('auth_cert') and config.get('auth_ca'):
-            payload['clientcert'] = config.get('auth_cert')
+            payload['client_cert'] = config.get('auth_cert')
         else:
             # load the global auth if enabled
             repo_auth_config = load_config()
