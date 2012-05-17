@@ -25,11 +25,25 @@ class RunSyncCommand(PulpCliCommand):
         PulpCliCommand.__init__(self, name, description, self.sync)
         self.context = context
 
-        self.create_option('--repo-id', 'identifies the repository to sync', required=True)
+        self.create_option('--repo-id', _('identifies the repository to sync'), required=True)
+
+        # I originally wrote this when the flag was for foreground. In case we
+        # move back to that model, I've left the developer the description already.
+        # You're welcome.
+        #
+        # d = 'if specified, the progress for the sync will be continually displayed ' \
+        #     'on screen and the CLI process will not end until it is completed; the ' \
+        #    'progress can be viewed later using the status command if this is not specified'
+
+        d = 'if specified, the CLI process will end but the sync will continue on ' \
+            'the server; the progress can be later displayed using the status command'
+        self.create_flag('--bg', _(d))
 
     def sync(self, **kwargs):
         repo_id = kwargs['repo-id']
-        self.context.prompt.render_title('Synchronizing Repository [%s]' % repo_id)
+        foreground = not kwargs['bg']
+
+        self.context.prompt.render_title(_('Synchronizing Repository [%(r)s]') % {'r' : repo_id})
 
         # See if an existing sync is running for the repo. If it is, resume
         # progress tracking.
@@ -37,9 +51,11 @@ class RunSyncCommand(PulpCliCommand):
         if len(existing_sync_tasks) > 0:
             task_id = relevant_existing_task_id(existing_sync_tasks)
 
-            msg = 'An existing sync has already been triggered for this repository. '\
-                  'Its progress will be tracked below.'
-            self.context.prompt.write(_(msg))
+            msg = _('An existing sync has already been triggered for this repository. ')
+
+            if foreground:
+                msg += _('Its progress will be tracked below.')
+            self.context.prompt.write(msg)
             self.context.prompt.render_spacer()
 
         else:
@@ -47,7 +63,12 @@ class RunSyncCommand(PulpCliCommand):
             response = self.context.server.repo_actions.sync(repo_id, None)
             task_id = response.response_body.task_id
 
-        display_status(self.context, task_id)
+        if foreground:
+            display_status(self.context, task_id)
+        else:
+            msg = 'The status of this sync can be displayed using the status command.'
+            self.context.prompt.write(_(msg))
+            self.context.prompt.render_spacer()
 
 class StatusCommand(PulpCliCommand):
     def __init__(self, context, name, description):
