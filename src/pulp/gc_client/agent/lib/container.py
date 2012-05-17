@@ -266,15 +266,20 @@ class Container:
         """
         return self.handlers[role].get(typeid)
 
-    def all(self):
+    def all(self, roles=[]):
         """
         All handlers.
-        @return: A list of handlers.
+        @param roles: A list of roles to include.
+            Empty list = ALL
+        @type roles: list
+        @return: A list of (<typeid>,<handler>).
         @rtype: list
         """
         all = []
-        for d in self.handlers:
-            all += d.values()
+        for i in range(0, len(self.handlers)):
+            if roles and i not in roles:
+                continue
+            all += self.handlers[i].items()
         return all
 
     def __import(self, name, descriptor):

@@ -190,8 +190,18 @@ class TestDispatcher(testutil.PulpTest):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        info = dict(type_id='yum', repo={})
-        report = dispatcher.bind(info)
+        definition = dict(type_id='yum', repo={})
+        report = dispatcher.bind([definition,])
+        pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 1)
+
+    def test_rebind(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        # Test
+        definition = dict(type_id='yum', repo={})
+        report = dispatcher.rebind([definition,])
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -200,8 +210,16 @@ class TestDispatcher(testutil.PulpTest):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        info = dict(type_id='yum', repo={})
-        report = dispatcher.unbind(info)
+        report = dispatcher.unbind('repo-1')
+        pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, 1)
+
+    def test_clean(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        # Test
+        report = dispatcher.clean()
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)

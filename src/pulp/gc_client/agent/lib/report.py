@@ -135,6 +135,12 @@ class BindReport(HandlerReport):
     """
     pass
 
+class CleanReport(HandlerReport):
+    """
+    A Clean Report
+    """
+    pass
+
 
 class DispatchReport(Report):
     """
@@ -166,10 +172,12 @@ class DispatchReport(Report):
                 self.status = False
         if isinstance(report, HandlerReport):
             self.details[report.typeid] = report.details
+            return
         if isinstance(report, RebootReport):
             self.reboot = dict(
                 scheduled=report.scheduled,
                 details=report.details)
+            return
         log.info('report: %s, ignored' % report)
         return self
 

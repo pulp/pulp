@@ -58,7 +58,6 @@ class Dispatcher:
         @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
-        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
         collated = Units(units)
@@ -73,7 +72,8 @@ class Dispatcher:
                 r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
-        rr = self.__reboot(report, options)
+        mgr = RebootManager(self, options)
+        rr = mgr.reboot(report.chgcnt)
         report.update(rr)
         return report
 
@@ -87,7 +87,6 @@ class Dispatcher:
         @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
-        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
         collated = Units(units)
@@ -102,7 +101,8 @@ class Dispatcher:
                 r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
-        rr = self.__reboot(report, options)
+        mgr = RebootManager(self, options)
+        rr = mgr.reboot(report.chgcnt)
         report.update(rr)
         return report
 
@@ -116,7 +116,6 @@ class Dispatcher:
         @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
-        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
         collated = Units(units)
@@ -131,7 +130,8 @@ class Dispatcher:
                 r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
-        rr = self.__reboot(report, options)
+        mgr = RebootManager(self, options)
+        rr = mgr.reboot(report.chgcnt)
         report.update(rr)
         return report
 
@@ -143,7 +143,6 @@ class Dispatcher:
         @type types: list
         @return: A dispatch report.
         @rtype: L{DispatchReport}
-        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
         for typeid in types:
@@ -164,87 +163,138 @@ class Dispatcher:
         Schedule a reboot.
         @param options: reboot options.
         @type options: dict
-        Find the 1st handler that implements reboot() and
-        dispatch to that handler.
-        @return: A reboot report.
-        @rtype: L{RebootReport}
-        @raise HandlerNotFound: When hanlder not found.
+        Find the 1st handler that implements reboot()
+        and dispatch to that handler.
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
         """
         NAME = 'reboot'
-        for handler in self.container.all():
+        found = 0
+        report = DispatchReport()
+        for typeid, handler in self.container.all():
             method = getattr(handler, NAME, 0)
             if not callable(method):
                 continue
             try:
-                return handler.reboot(options)
+                found += 1
+                r = handler.reboot(options)
+                r.typeid = typeid
+                report.update(r)
             except Exception:
                 r = RebootReport()
                 r.failed(ExceptionReport())
-                return r
-        report = RebootReport()
-        report.failed(dict(message='handler not found'))
+                report.update(r)
+        if not found:
+            r = RebootReport()
+            r.failed(dict(message='handler not found'))
+            report.update(r)
         return report
 
-    def bind(self, info):
+    def bind(self, definitions):
         """
         Bind a repository.
-        @param info: The bind informataion.
-        @type info: dict
+        @param definitions: The list of bind definitions.
+        Definition:
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>,
+             href:<str>,
+             type_id:<str>,
+             details:<dict>}
+        @type definitions: list
         @return: A dispatch report.
         @rtype: L{DispatchReport}
-        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        try:
-            typeid = info['type_id']
-            handler = self.__handler(typeid, DISTRIBUTOR)
-            r = handler.bind(info)
-            r.typeid = typeid
-            report.update(r)
-        except Exception:
-            r = ProfileReport()
-            r.typeid = typeid
-            r.failed(ExceptionReport())
-            report.update(r)
+        collated = Binds(definitions)
+        for typeid, definition in collated.items():
+            try:
+                handler = self.__handler(typeid, DISTRIBUTOR)
+                r = handler.bind(definition)
+                r.typeid = typeid
+                report.update(r)
+            except Exception:
+                r = ProfileReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
         return report
 
-    def unbind(self, info):
+    def rebind(self, definitions):
+        """
+        (Re)bind a repository.
+        @param definitions: The list of bind definitions.
+        Definition:
+            {consumer_id:<str>,
+             repo_id:<str>,
+             distributor_id:<str>,
+             href:<str>,
+             type_id:<str>,
+             details:<dict>}
+        @type definitions: list
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
+        """
+        report = DispatchReport()
+        collated = Binds(definitions)
+        for typeid, definition in collated.items():
+            try:
+                handler = self.__handler(typeid, DISTRIBUTOR)
+                r = handler.rebind(definition)
+                r.typeid = typeid
+                report.update(r)
+            except Exception:
+                r = ProfileReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
+        return report
+
+    def unbind(self, repoid):
         """
         Unbind a repository.
-        @param info: The bind informataion.
-        @type info: dict
+        Dispatch unbind() to all DISTRIBUTOR handlers.
+        @param repoid: A repository ID.
+        @type repoid: str
         @return: A dispatch report.
         @rtype: L{DispatchReport}
-        @raise HandlerNotFound: When hanlder not found.
         """
         report = DispatchReport()
-        try:
-            typeid = info['type_id']
-            handler = self.__handler(typeid, DISTRIBUTOR)
-            r = handler.bind(info)
-            r.typeid = typeid
-            report.update(r)
-        except Exception:
-            r = ProfileReport()
-            r.typeid = typeid
-            r.failed(ExceptionReport())
-            report.update(r)
+        roles = [DISTRIBUTOR,]
+        for typeid, handler in self.container.all(roles):
+            try:
+                r = handler.unbind(repoid)
+                r.typeid = typeid
+                report.update(r)
+            except Exception:
+                r = ProfileReport()
+                r.typeid = typeid
+                r.failed(ExceptionReport())
+                report.update(r)
         return report
 
-    def __reboot(self, report, options):
+    def clean(self):
         """
-        Schedule a reboot based on I{options} and reported progress.
-        @param report: A dispatch report.
-        @type report: L{DispatchReport}
-        @param options: reboot options.
-        @type options: dict
-        @raise HandlerNotFound: When hanlder not found.
+        Notify all handlers to clean up artifacts.
+        Dispatch clean() to ALL handlers.
+        @return: A dispatch report.
+        @rtype: L{DispatchReport}
         """
-        reboot = options.get('reboot', 0)
-        if reboot:
-            if report.chgcnt:
-                return self.reboot(options)
-        return RebootReport()
+        NAME = 'clean'
+        report = DispatchReport()
+        for typeid, handler in self.container.all():
+            method = getattr(handler, NAME, 0)
+            if not callable(method):
+                continue
+            try:
+                r = method()
+                r.typeid = typeid
+                report.update(r)
+            except Exception:
+                r = CleanReport()
+                r.failed(ExceptionReport())
+                report.update(r)
+        return report
 
     def __handler(self, typeid, role):
         """
@@ -264,6 +314,42 @@ class Dispatcher:
             return handler
 
 
+class RebootManager:
+    """
+    Reboot Manager
+    @ivar dispatcher: A dispatcher.
+    @type dispatcher: L{Dispatcher}
+    """
+
+    def __init__(self, dispatcher, options):
+        """
+        @param dispatcher: A dispatcher.
+        @type dispatcher: L{Dispatcher}
+        """
+        self.dispatcher = dispatcher
+        self.options = options
+
+    def reboot(self, chgcnt):
+        """
+        Request a reboot be scheduled.
+        @param chgcnt: The current change count.
+        @type chgcnt: int
+        @return: A reboot report.
+        @rtype: L{RebootReport}
+        """
+        report = RebootReport()
+        requested = self.options.get('reboot', 0)
+        if requested and chgcnt > 0:
+            dr = self.dispatcher.reboot(self.options)
+            scheduled = dr.reboot['scheduled']
+            details = dr.reboot['details']
+            if dr.status:
+                report.succeeded(scheduled, details)
+            else:
+                report.failed(details)
+        return report
+
+
 class Units(dict):
     """
     Collated content units
@@ -271,7 +357,7 @@ class Units(dict):
 
     def __init__(self, units):
         """
-        Unit is: {typeid:<str>, unit_key:<dict>}
+        Unit is: {type_id:<str>, unit_key:<dict>}
         @param units: A list of content units.
         @type units: list
         """
@@ -282,3 +368,22 @@ class Units(dict):
                 lst = []
                 self[typeid] = lst
             lst.append(unit['unit_key'])
+
+
+class Binds(dict):
+    """
+    Collated bind definitions
+    """
+
+    def __init__(self, definitions):
+        """
+        @param definitions: A list of bind definitions.
+        @type definitions: list
+        """
+        for definition in definitions:
+            typeid = definition.pop('type_id')
+            lst = self.get(typeid)
+            if lst is None:
+                lst = []
+                self[typeid] = lst
+            lst.append(definition)

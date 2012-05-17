@@ -91,6 +91,11 @@ class BindHandler:
     report = BindReport()
     report.succeeded({}, 1)
     return report
+
+  def clean(self):
+    report = CleanReport()
+    report.succeeded({}, 1)
+    return report
 """)
 
 #

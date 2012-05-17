@@ -127,35 +127,44 @@ class ConsumerXXX: # Temporary v1 compat.
 
     @remote(secret=secret)
     def unregistered(self):
-        pass
+        bundle = ConsumerBundle()
+        bundle.delete()
+        dispatcher = Dispatcher()
+        report = dispatcher.clean()
+        return report.dict()
 
-    @remote(secret=secret)
+    @remote #(secret=secret)
     def bind(self, repoid):
         bindings = PulpBindings()
         bundle = ConsumerBundle()
         myid = bundle.getid()
-        binds = bindings.bind.find_by_id(myid, repoid)
-        # TODO: process bind.
-        return binds
+        http = bindings.bind.find_by_id(myid, repoid)
+        if http.response_code == 200:
+            dispatcher = Dispatcher()
+            report = dispatcher.bind(http.response_body)
+            return report.dict()
+        else:
+            raise Exception('rebind failed, http:%d', http.response_code)
 
-    @remote(secret=secret)
+    @remote#(secret=secret)
     @action(days=0x8E94)
     def rebind(self):
         bindings = PulpBindings()
         bundle = ConsumerBundle()
         myid = bundle.getid()
-        binds = bindings.bind.find_by_id(myid)
-        # TODO: process bind.
-        return binds
+        http = bindings.bind.find_by_id(myid)
+        if http.response_code == 200:
+            dispatcher = Dispatcher()
+            report = dispatcher.rebind(http.response_body)
+            return report.dict()
+        else:
+            raise Exception('rebind failed, http:%d', http.response_code)
 
-    @remote(secret=secret)
+    @remote#(secret=secret)
     def unbind(self, repoid):
-        bindings = PulpBindings()
-        bundle = ConsumerBundle()
-        myid = bundle.getid()
-        binds = bindings.bind.find_by_id(myid, repoid)
-        # TODO: process unbind.
-        return binds
+        dispatcher = Dispatcher()
+        report = dispatcher.unbind(repoid)
+        return report.dict()
 
 
 class Content:

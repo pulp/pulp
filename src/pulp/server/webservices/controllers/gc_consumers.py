@@ -140,7 +140,7 @@ class Bindings(JSONController):
     is idempotent.
     """
 
-    @auth_required(READ)
+    #@auth_required(READ)
     def GET(self, consumer_id, repo_id=None):
         """
         Fetch all bind objects referencing the

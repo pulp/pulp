@@ -78,6 +78,8 @@ class Handler:
         """
         Request the installed content profile be sent
         to the pulp server.
+        @return: A profile report.
+        @rtype: L{ProfileReport}
         """
         pass
 
@@ -86,29 +88,45 @@ class Handler:
         Schedule system reboot.
         @param options: Reboot options.
         @type options: dict
+        @return: An reboot report.
+        @rtype: L{HandlerReport}
         """
         pass
 
-    def bind(self, info):
+    def bind(self, details):
         """
         Bind a repository.
-        @param info: Bind infomation.
-        @type info: dict
+        @param binds: A list of bind details.
+        @type binds: list
+        @return: An bind report.
+        @rtype: L{BindReport}
         """
         pass
 
-    def rebind(self, info):
+    def rebind(self, details):
         """
         Bind a repository.
-        @param info: Bind infomation.
-        @type info: list of dict
+        @param binds: A list of bind details.
+        @type binds: list
+        @return: An rebind report.
+        @rtype: L{BindReport}
         """
         pass
 
-    def unbind(self, info):
+    def unbind(self, repoid):
         """
         Unbind a repository.
-        @param info: Bind infomation.
-        @type info: dict
+        @param repoid: The repo ID.
+        @type repoid: str
+        @return: An inbind report.
+        @rtype: L{BindReport}
+        """
+        pass
+
+    def clean(self):
+        """
+        Clean up all artifacts.
+        @return: An bind report.
+        @rtype: L{CleanReport}
         """
         pass
