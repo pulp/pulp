@@ -479,6 +479,7 @@ class StatusRenderer(object):
                     if message_data["traceback"]:
                         template += 'Traceback:\n'
                         template += '%(traceback)s'
+                    template = _(template)
 
                     message = template % message_data
 
