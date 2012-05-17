@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.8
+Version:        1.1.9
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu May 17 2012 Jeff Ortel <jortel@redhat.com> 1.1.9-1
+- Reset release=1. (jortel@redhat.com)
+- 820352 - encode the rpm description correctly before passing metadata to POST
+  call (pkilambi@redhat.com)
+
 * Mon May 14 2012 Jeff Ortel <jortel@redhat.com> 1.1.8-2
 - Remove {?dist} from Requires: (jortel@redhat.com)
 - Change brew branches for 1.1 builds. (jortel@redhat.com)
