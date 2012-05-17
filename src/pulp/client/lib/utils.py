@@ -320,7 +320,7 @@ def processFile(filename, relativeDir=None):
         nvrea.append(h['arch'])
 
     hash['nvrea'] = tuple(nvrea)
-    hash['description'] = h['description']
+    hash['description'] = encode_string_to_utf8(h['description'])
     #
     # pulp server expect requires/provides to be list of
     # list/tuple like yum provides.
@@ -334,6 +334,19 @@ def processFile(filename, relativeDir=None):
     hash['group'] = h['group']
     hash['vendor'] = h['vendor']
     return hash
+
+def encode_string_to_utf8(data):
+    ENCODING_LIST = ['iso-8859-1', ]
+    encoded_data = None
+    for code in ENCODING_LIST:
+        try:
+            encoded_data = data.decode(code).encode('utf8')
+            return encoded_data
+        except UnicodeDecodeError:
+            # try others
+            continue
+    if not encoded_data:
+        return data
 
 def getChecksumType(header):
     if header[rpm.RPMTAG_FILEDIGESTALGO] \
