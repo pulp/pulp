@@ -66,7 +66,7 @@ Viewing the Status of a Repository Sync Operation
 
 The ``repo sync status`` command is used to determine is a repository is in the
 process of synchronizing. If the repository is being synchronized, the progress
-will be displayed.
+will be displayed (:ref:`example output <repo-sync-progress-output>` below).
 
 The ``repo sync status`` command accepts a single required argument:
 
