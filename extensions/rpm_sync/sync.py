@@ -55,8 +55,7 @@ class RunSyncCommand(PulpCliCommand):
 
             if foreground:
                 msg += _('Its progress will be tracked below.')
-            self.context.prompt.write(msg)
-            self.context.prompt.render_spacer()
+            self.context.prompt.render_paragraph(msg)
 
         else:
             # Trigger the actual sync
@@ -67,8 +66,7 @@ class RunSyncCommand(PulpCliCommand):
             display_status(self.context, task_id)
         else:
             msg = 'The status of this sync can be displayed using the status command.'
-            self.context.prompt.write(_(msg))
-            self.context.prompt.render_spacer()
+            self.context.prompt.render_paragraph(_(msg))
 
 class StatusCommand(PulpCliCommand):
     def __init__(self, context, name, description):
@@ -92,13 +90,11 @@ class StatusCommand(PulpCliCommand):
             task_id = relevant_existing_task_id(existing_sync_tasks)
 
             msg = 'A sync task is queued on the server. Its progress will be tracked below.'
-            self.context.prompt.write(_(msg))
-            self.context.prompt.render_spacer()
+            self.context.prompt.render_paragraph(_(msg))
             display_status(self.context, task_id)
 
         else:
-            self.context.prompt.write(_('There are no sync tasks currently queued in the server.'))
-            self.context.prompt.render_spacer()
+            self.context.prompt.render_paragraph(_('There are no sync tasks currently queued in the server.'))
 
 # -- utility ------------------------------------------------------------------
 
@@ -141,7 +137,7 @@ def display_status(context, task_id):
     response = context.server.tasks.get_task(task_id)
     renderer = status.StatusRenderer(context)
 
-    m = 'This command may be exited via CTRL+C without affecting the actual sync operation.'
+    m = 'This command may be exited by pressing ctrl+c without affecting the actual sync operation on the server.'
     context.prompt.render_paragraph(_(m))
 
     # Handle the cases where we don't want to honor the foreground request
@@ -176,7 +172,7 @@ def display_status(context, task_id):
             response = context.server.tasks.get_task(response.response_body.task_id)
 
     except KeyboardInterrupt:
-        # If the user presses ctrl+C, don't let the error bubble up, just
+        # If the user presses ctrl+c, don't let the error bubble up, just
         # exit gracefully
         return
 
