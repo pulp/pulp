@@ -1,10 +1,10 @@
-Repository Synchronization and Publish
-======================================
+Repository Synchronize and Publish
+==================================
 
 .. _repo-sync:
 
-Synchronization
----------------
+Synchronize
+-----------
 
 Synchronization is the process of downloading repository content (packages,
 errata, kickstart trees) into the Pulp server and associating that content
