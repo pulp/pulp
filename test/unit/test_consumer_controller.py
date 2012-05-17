@@ -43,10 +43,11 @@ class BindTest(testutil.PulpV2WebserviceTest):
     )
     PAYLOAD = dict(
         server_name='pulp.redhat.com',
+        relative_path='/repos/content/repoA',
+        protocols=['https',],
         gpg_keys=['key1',],
-        host_urls=[
-            'http://pulp.redhat.com/repos/content/repoA',
-            'https://pulp.redhat.com/repos/content/repoB',])
+        ca_cert='MY-CA',
+        client_cert='MY-CLIENT-CERT')
 
     def setUp(self):
         testutil.PulpV2WebserviceTest.setUp(self)
