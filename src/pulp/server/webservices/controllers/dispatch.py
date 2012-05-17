@@ -73,7 +73,7 @@ class TaskCollection(JSONController):
     def GET(self):
         valid_filters = ['tag']
         filters = self.filters(valid_filters)
-        criteria = {'tags': filters.get('tags', [])}
+        criteria = {'tags': filters.get('tag', [])}
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(**criteria)
         serialized_call_reports = [c.serialize() for c in call_reports]
