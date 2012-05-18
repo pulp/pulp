@@ -274,7 +274,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
         self.queue.dequeue(task_1)
         self.assertFalse(task_1.id in task_2.blocking_tasks)
 
-    def test_task_archival(self):
+    def __test_task_archival(self):
         task = self.gen_task()
         task.call_request.archive = True
         self.queue.enqueue(task)
