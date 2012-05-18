@@ -109,11 +109,6 @@ class YumDistributor(Distributor):
                     msg = _("https should be a boolean; got %s instead" % config_https)
                     _LOG.error(msg)
                     return False, msg
-            if not config.get('http') and not config.get('https'):
-                msg = _("Either 'http' and/or 'https' needs to be True for publishing. Current settings http=<%s>, https=<%s>" % \
-                        (config.get('http'), config.get('https')))
-                _LOG.error(msg)
-                return False, msg
         for key in config.keys():
             if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
@@ -739,8 +734,10 @@ class YumDistributor(Distributor):
             payload['protocols'].append('http')
         if config.get('https'):
             payload['protocols'].append('https')
+        payload['gpg_keys'] = []
         if config.get('gpgkey') is not None:
             payload['gpg_keys'] = config.get('gpgkey')
+        payload['client_cert'] = None
         if config.get('auth_cert') and config.get('auth_ca'):
             payload['client_cert'] = config.get('auth_cert')
         else:

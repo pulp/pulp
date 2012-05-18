@@ -155,20 +155,6 @@ class TestDistributor(unittest.TestCase):
         self.assertFalse(state)
         self.assertTrue("relative_url" in msg)
 
-    def test_validate_config_http_or_https_needs_to_be_specified(self):
-        repo = mock.Mock(spec=Repository)
-        repo.id = "testrepo"
-        distributor = YumDistributor()
-        distributor.process_repo_auth_certificate_bundle = mock.Mock()
-        # Confirm that required keys are successful
-        req_kwargs = {}
-        req_kwargs['http'] = False
-        req_kwargs['https'] = False
-        req_kwargs['relative_url'] = "sample_value"
-        config = distributor_mocks.get_basic_config(**req_kwargs)
-        state, msg = distributor.validate_config(repo, config, [])
-        self.assertFalse(state)
-
     def test_handle_symlinks(self):
         distributor = YumDistributor()
         units = []
