@@ -32,7 +32,7 @@ def convert_removed_options(args):
     example:
 
     --foo=
-    or
+      or
     --foo=""
 
     This method is intended to be run on the kwargs dict given to the method
@@ -45,21 +45,19 @@ def convert_removed_options(args):
     * Convert any keys whose value was "" into None. This represents the case
       that the user is explicitly removing the value for the option.
 
-    The args parameter is not modified as part of this call; a new dict is
-    created and returned.
+    This call will modify the specified args dict in place.
 
     @param args: key-value pairs to apply removal conventions on.
     @type  args: dict
-
-    @return: cleaned up key-value pairs
-    @rtype:  dict
     """
 
     # Strip out anything with a None value. The way the parser works, all of
     # the possible options will be present with None as the value. Strip out
     # everything with a None value now as it means it hasn't been specified
     # by the user (removals are done by specifying ''.
-    args = dict([(k, v) for k, v in args.items() if v is not None])
+    for k, v in args.items():
+        if v is None:
+            args.pop(k)
 
     # Now convert any "" strings into None. This should be safe in all cases and
     # is the mechanic used to get "remove config option" semantics.
@@ -75,6 +73,8 @@ def convert_boolean_arguments(boolean_keys, args):
     key is not present or is None, this method does nothing for that key. If the
     value for a key isn't parsable into a boolean, an InvalidConfig exception
     is raised with a pre-formatted message indicating such.
+
+    This call will modify the specified args dict in place.
 
     @param boolean_keys: list of keys to convert in the given config
     @type  boolean_keys: list or tuple
@@ -106,6 +106,8 @@ def convert_file_contents(file_keys, args):
     present or is None, this method does nothing for that key. If the value for
     the key cannot be read in as a file, an InvalidConfig exception is raised
     with a pre-formatted message indicating such.
+
+    This call will modify the specified args dict in place.
 
     @param file_keys: list of keys to read in as files
     @type  file_keys: list or tuple
