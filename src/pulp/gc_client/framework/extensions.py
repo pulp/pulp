@@ -15,6 +15,8 @@
 Classes used in the writing of Pulp client extensions.
 """
 
+from gettext import gettext as _
+
 from okaara.cli import Section, Command, Option, Flag, OptionGroup
 from okaara.cli import UnknownArgsParser # shadow here so extensions can import it from this module
 
@@ -22,7 +24,7 @@ from okaara.cli import UnknownArgsParser # shadow here so extensions can import 
 
 class PulpCliSection(Section):
 
-    def create_command(self, name, description, method, parser=None):
+    def create_command(self, name, description, method, usage_description=None, parser=None):
         """
         Creates a new command in this section. The given name must be
         unique across all commands and subsections within this section.
@@ -79,6 +81,9 @@ class PulpCliSection(Section):
 
 
 class PulpCliCommand(Command):
+
+    REQUIRED_OPTION_PREFIX = _('(required) ')
+    OPTIONAL_OPTION_PREFIX = ''
 
     def create_option(self, name, description, aliases=None, required=True, allow_multiple=False, default=None):
         """
