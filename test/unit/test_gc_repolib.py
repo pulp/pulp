@@ -17,9 +17,9 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.gc_client.lib import repolib
-from pulp.gc_client.lib.lock import Lock
-from pulp.gc_client.lib.repo_file import MirrorListFile, RepoFile, Repo
+from pulp.client.lib import repolib
+from pulp.client.lib.lock import Lock
+from pulp.client.lib.repo_file import MirrorListFile, RepoFile, Repo
 
 # -- constants ------------------------------------------------------------------------
 
@@ -34,10 +34,9 @@ CLIENTCERT = 'MY-CLIENT-KEY-AND-CERTIFICATE'
 # from the Pulp server
 REPO = {
     'id'        : 'repo-1',
-    'display_name'      : 'Repository 1',
+    'name'      : 'Repository 1',
+    'publish'   : 'True',
 }
-
-ENABLED = True
 
 # Lock that doesn't require root privileges
 LOCK = Lock('/tmp/test_repolib_lock.pid')
@@ -86,7 +85,7 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Test
         url_list = ['http://pulpserver']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, CACERT, CLIENTCERT, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, CACERT, CLIENTCERT, LOCK)
 
         # Verify
         self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
@@ -99,7 +98,7 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         loaded = repo_file.get_repo(REPO['id'])
         self.assertTrue(loaded is not None)
-        self.assertEqual(loaded['name'], REPO['display_name'])
+        self.assertEqual(loaded['name'], REPO['name'])
         self.assertTrue(loaded['enabled'])
         self.assertEqual(loaded['gpgcheck'], '0')
         self.assertEqual(loaded['gpgkey'], None)
@@ -132,7 +131,7 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Test
         url_list = ['http://pulpserver']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, LOCK)
 
         # Verify
         self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
@@ -150,20 +149,20 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Setup
         url_list = ['http://pulp1', 'http://pulp2']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, LOCK)
 
         # Test
         updated_repo = dict(REPO)
-        updated_repo['display_name'] = 'Updated'
+        updated_repo['name'] = 'Updated'
 
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], updated_repo, None, None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], updated_repo, None, None, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.load()
 
         loaded = repo_file.get_repo(REPO['id'])
-        self.assertEqual(loaded['name'], updated_repo['display_name'])
+        self.assertEqual(loaded['name'], updated_repo['name'])
 
     def test_bind_update_host_urls(self):
         '''
@@ -174,12 +173,12 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Setup
         url_list = ['http://pulp1', 'http://pulp2']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, LOCK)
 
         self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
 
         # Test
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], None, ['http://pulpx'], None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], None, ['http://pulpx'], None, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -197,11 +196,11 @@ class TestRepolib(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['https://pulpx'], None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['https://pulpx'], None, None, None, LOCK)
 
         # Test
         url_list = ['http://pulp1', 'http://pulp2']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -218,10 +217,10 @@ class TestRepolib(testutil.PulpAsyncTest):
         '''
         # Setup
         url_list = ['http://pulp1', 'http://pulp2']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, None, None, None, LOCK)
 
         # Test
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulpx'], None, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulpx'], None, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -238,11 +237,11 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Setup
         keys = {'key1' : 'KEY1', 'key2' : 'KEY2'}
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulp'], keys, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulp'], keys, None, None, LOCK)
 
         # Test
         new_keys = {'key1' : 'KEYX'}
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], None, None, new_keys, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], None, None, new_keys, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -267,10 +266,10 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Setup
         keys = {'key1' : 'KEY1', 'key2' : 'KEY2'}
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulp'], keys, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulp'], keys, None, None, LOCK)
 
         # Test
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], None, None, {}, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], None, None, {}, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -293,8 +292,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             CACERT, 
-            CLIENTCERT,
-            ENABLED,
+            CLIENTCERT, 
             LOCK)
         repolib.bind(
             TEST_REPO_FILENAME,
@@ -306,8 +304,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             None, 
-            CLIENTCERT,
-            ENABLED,
+            CLIENTCERT, 
             LOCK)
         repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.load()
@@ -334,8 +331,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             CACERT, 
-            CLIENTCERT,
-            ENABLED,
+            CLIENTCERT, 
             LOCK)
         repolib.bind(
             TEST_REPO_FILENAME,
@@ -347,8 +343,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             CACERT, 
-            None,
-            ENABLED,
+            None, 
             LOCK)
         repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.load()
@@ -376,8 +371,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             CACERT, 
-            CLIENTCERT,
-            ENABLED,
+            CLIENTCERT, 
             LOCK)
         repolib.bind(
             TEST_REPO_FILENAME,
@@ -389,8 +383,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             NEWCACERT, 
-            CLIENTCERT,
-            ENABLED,
+            CLIENTCERT, 
             LOCK)
         repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.load()
@@ -423,8 +416,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'],
             [], 
             CACERT, 
-            CLIENTCERT,
-            ENABLED,
+            CLIENTCERT, 
             LOCK)
         repolib.bind(
             TEST_REPO_FILENAME,
@@ -436,8 +428,7 @@ class TestRepolib(testutil.PulpAsyncTest):
             ['http://pulp'], 
             [],
             CACERT, 
-            NEWCLIENTCRT,
-            ENABLED,
+            NEWCLIENTCRT, 
             LOCK)
         repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.load()
@@ -464,7 +455,7 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Test
         url_list = ['http://pulpserver']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, LOCK)
 
         # Verify
         self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
@@ -485,7 +476,7 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Test
         url_list = ['http://pulpserver', 'http://otherserver']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, LOCK)
 
         # Verify
         self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
@@ -513,7 +504,7 @@ class TestRepolib(testutil.PulpAsyncTest):
         url_list = ['http://pulpserver']
         keys = {'key1' : 'KEY1', 'key2' : 'KEY2'}
 
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, keys, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, keys, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -557,7 +548,7 @@ class TestRepolib(testutil.PulpAsyncTest):
 
         # Setup
         url_list = ['http://pulp1', 'http://pulp2', 'http://pulp3']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, {}, None, None, LOCK)
         self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
 
         # Test
@@ -579,7 +570,7 @@ class TestRepolib(testutil.PulpAsyncTest):
         url_list = ['http://pulp1']
         keys = {'key1' : 'KEY1', 'key2' : 'KEY2'}
 
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, keys, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, url_list, keys, None, None, LOCK)
 
         self.assertTrue(os.path.exists(os.path.join(TEST_KEYS_DIR, REPO['id'])))
 
@@ -611,7 +602,7 @@ class TestRepolib(testutil.PulpAsyncTest):
         '''
 
         # Setup
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulp'], {}, None, None, ENABLED, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, REPO['id'], REPO, ['http://pulp'], {}, None, None, LOCK)
 
         # Test
         repolib.unbind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, TEST_CERT_DIR, 'fake-repo', LOCK)

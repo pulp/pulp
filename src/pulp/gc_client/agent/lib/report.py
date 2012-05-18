@@ -59,7 +59,7 @@ class HandlerReport(Report):
     @type details: dict
     """
 
-    def succeeded(self, details, chgcnt=0):
+    def succeeded(self, details={}, chgcnt=0):
         """
         Called (by handler) on operation succeeded.
         @param typeid: The content type ID.
