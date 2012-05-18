@@ -101,8 +101,8 @@ class PulpCollection(Collection):
                       'drop_index', 'drop_indexes', 'group', 'rename',
                       'map_reduce')
 
-    def __init__(self, database, name, options=None, create=False, retries=0, **kwargs):
-        super(PulpCollection, self).__init__(database, name, options, create, **kwargs)
+    def __init__(self, database, name, create=False, retries=0, **kwargs):
+        super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
         self.retries = retries
         for m in self._retry_methods:
             setattr(self, m, _retry_decorator(getattr(self, m)))
