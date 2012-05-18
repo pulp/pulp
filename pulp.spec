@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.289
+Version:        0.0.290
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -529,6 +529,85 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri May 18 2012 Jeff Ortel <jortel@redhat.com> 0.0.290-1
+- Fix broken GC package install CLI. (jortel@redhat.com)
+- Utilities for handling CLI argument conventions (jason.dobies@redhat.com)
+- removing checks to support no pulishing (pkilambi@redhat.com)
+- GC bind: hook up handler and repolib. (jortel@redhat.com)
+- Upgraded okaara to 1.0.18 (jason.dobies@redhat.com)
+- Updated base command class to use okaara's option description prefixing
+  (jason.dobies@redhat.com)
+- temp disablement of task archival task until race condition can be resolved
+  (jason.connor@gmail.com)
+- Disable all tasks view by default (enabled in .conf)
+  (jason.dobies@redhat.com)
+- orphan manager unit tests (jason.connor@gmail.com)
+- fixed missing .items() while iterating over dictionary
+  (jason.connor@gmail.com)
+- removed unused options argument to collection constructor which just went
+  away in pymongo 2.2 anyway (jason.connor@gmail.com)
+- place running tasks before waiting tasks when returning all tasks to maintain
+  a closer representation of the enqueue time total ordering on the task set
+  (jason.connor@gmail.com)
+- added archive to all delete requests (jason.connor@gmail.com)
+- added auth_required decorators to all orphan controllers
+  (jason.connor@gmail.com)
+- added mac special dir to ignore (jason.connor@gmail.com)
+- moved archival test to task queue tests (jason.connor@gmail.com)
+- removed archival from task tests (jason.connor@gmail.com)
+- moved call archival from task into task queue to prevent race condition in
+  task queries (jason.connor@gmail.com)
+- converted to _id for unit ids (jason.connor@gmail.com)
+- initial implementation of delete orphans action (jason.connor@gmail.com)
+- utilizing changed field names (jason.connor@gmail.com)
+- changed fields to more managable content_type and content_id
+  (jason.connor@gmail.com)
+- initial implementation of orphan collections and resources
+  (jason.connor@gmail.com)
+- added get_orphan method (jason.connor@gmail.com)
+- added orphan manager to factory (jason.connor@gmail.com)
+- added comment (jason.connor@gmail.com)
+- Add yum repo (bind) handler; more bind plumbing. (jortel@redhat.com)
+- Update mock distributor bind payload. (jortel@redhat.com)
+- Updated bind (GET) to include distributor payload. (jortel@redhat.com)
+- updating payload info (pkilambi@redhat.com)
+- Last docs tweak for today, I swear (jason.dobies@redhat.com)
+- Added background functionality to repo sync run (jason.dobies@redhat.com)
+- fix for updating the state when a distribution symlink step fails
+  (pkilambi@redhat.com)
+- Consumer history manager layer, controller and adminclient extension
+  (skarmark@redhat.com)
+- Added a status call to the repo to see if it is synccing
+  (jason.dobies@redhat.com)
+- Added ability to resume tracking an in progress sync and refactored extension
+  to separate sync running and scheduling commands (jason.dobies@redhat.com)
+- Fixed tags lookup from query parameters (jason.dobies@redhat.com)
+- Tasks extension unit tests and code cleanup (jason.dobies@redhat.com)
+- Update GC content handler framework to support bind(). (jortel@redhat.com)
+- Implementation of task list, details, and delete commands
+  (jason.dobies@redhat.com)
+- Flushed out client-side task API (jason.dobies@redhat.com)
+- Refactored response object structure in client API (jason.dobies@redhat.com)
+- Updated 404 exception handling to handle new data dict format
+  (jason.dobies@redhat.com)
+- moved log file to get full path into message (jason.connor@gmail.com)
+- implementation of orphan manager (jason.connor@gmail.com)
+- fixed some spelling errors (jason.connor@gmail.com)
+- Move GC agent lib under (lib); Add pulp bindings to agent.
+  (jortel@redhat.com)
+- Update RPM handler and gofer plugin for GC agent move to gc_client.
+  (jortel@redhat.com)
+- Update pulp.spec for GC agent moved to gc_client. (jortel@redhat.com)
+- Move GC agent under gc_client. (jortel@redhat.com)
+- Add bindings query by consumer/repo in API; Add binding query to GC client
+  API. (jortel@redhat.com)
+- adding host_urls and renaming few keys in payload (pkilambi@redhat.com)
+- minor changes to payload structure (pkilambi@redhat.com)
+- implement the consumer payload in distributor (pkilambi@redhat.com)
+- Fix GC agent & rpm handler reboot logic; support update ALL.
+  (jortel@redhat.com)
+- Ported v1 protected repositories into the v2 documentation
+  (jason.dobies@redhat.com)
 * Fri May 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.289-1
 - Updated to correct importer/distributor config values
   (jason.dobies@redhat.com)
