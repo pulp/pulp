@@ -152,6 +152,7 @@ def update_repomd_xml_string(repomd_xml, compsxml_path, compsxml_checksum,
         elem.setAttribute("href", compsxml_path)
         elem = group_elems[0].getElementsByTagName("checksum")[0]
         elem.childNodes[0].data = compsxml_checksum
+        elem.setAttribute("type", "sha")
         elem = group_elems[0].getElementsByTagName("timestamp")[0]
         elem.childNodes[0].data = compsxml_timestamp
     else:
@@ -167,7 +168,7 @@ def update_repomd_xml_string(repomd_xml, compsxml_path, compsxml_checksum,
         data_elem.appendChild(loc_elem)
 
         checksum_elem = dom.createElement("checksum")
-        checksum_elem.setAttribute("type", "sha256")
+        checksum_elem.setAttribute("type", "sha")
         checksum_value = dom.createTextNode(compsxml_checksum)
         checksum_elem.appendChild(checksum_value)
         data_elem.appendChild(checksum_elem)
@@ -187,6 +188,7 @@ def update_repomd_xml_string(repomd_xml, compsxml_path, compsxml_checksum,
             elem.setAttribute("href", compsxml_gz_path)
             elem = group_gz_elems[0].getElementsByTagName("checksum")[0]
             elem.childNodes[0].data = compsxml_gz_checksum
+            elem.setAttribute("type", "sha")
             elem = group_gz_elems[0].getElementsByTagName("open-checksum")[0]
             elem.childNodes[0].data = open_compsxml_gz_checksum
             elem = group_gz_elems[0].getElementsByTagName("timestamp")[0]
@@ -204,7 +206,7 @@ def update_repomd_xml_string(repomd_xml, compsxml_path, compsxml_checksum,
             data_elem.appendChild(loc_elem)
 
             checksum_elem = dom.createElement("checksum")
-            checksum_elem.setAttribute("type", "sha256")
+            checksum_elem.setAttribute("type", "sha")
             checksum_value = dom.createTextNode(compsxml_gz_checksum)
             checksum_elem.appendChild(checksum_value)
             data_elem.appendChild(checksum_elem)
@@ -233,7 +235,7 @@ def update_repomd_xml_file(repomd_path, comps_path):
 
     # Copy comps_f to a new file name prepending the sha256sum to the file name
     comps_orig = comps_path
-    compsxml_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
+    compsxml_checksum = pulp.server.util.get_file_checksum(hashtype="sha",
             filename=comps_orig)
     comps_path = os.path.join(os.path.split(comps_orig)[0],
         "%s-%s" % (compsxml_checksum, os.path.split(comps_orig)[1]))
@@ -248,7 +250,7 @@ def update_repomd_xml_file(repomd_path, comps_path):
     finally:
         f_in.close()
         f_out.close()
-    compsxml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
+    compsxml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha",
         filename=comps_gz_path_orig)
     comps_gz_path = os.path.join(os.path.split(comps_orig)[0],
         "%s-%s.gz" % (compsxml_gz_checksum, os.path.split(comps_orig)[1]))

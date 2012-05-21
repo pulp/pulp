@@ -1649,17 +1649,12 @@ class RepoApi(BaseApi):
             xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                                             repo['packagegroups'])
             if repo["group_xml_path"] == "":
-                repo["group_xml_path"] = os.path.dirname(repo["repomd_xml_path"])
                 repo["group_xml_path"] = os.path.join(os.path.dirname(repo["repomd_xml_path"]),
                                                       "comps.xml")
                 self.collection.save(repo, safe=True)
             f = open(repo["group_xml_path"], "w")
             f.write(xml.encode("utf-8"))
             f.close()
-            #if repo["group_gz_xml_path"]:
-            #    gz = gzip.open(repo["group_gz_xml_path"], "wb")
-            #    gz.write(xml.encode("utf-8"))
-            #    gz.close()
             return comps_util.update_repomd_xml_file(encode_unicode(repo["repomd_xml_path"]), encode_unicode(repo["group_xml_path"]))
         except Exception, e:
             log.warn("_update_groups_metadata exception caught: %s" % (e))
