@@ -35,6 +35,12 @@ from pulp.server.util import subdict
 
 _LOG = logging.getLogger(__name__)
 
+SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
+SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold',
+                           'remaining_runs', 'enabled')
+SCHEDULE_REPORT_FIELDS = ('schedule', 'consecutive_failures', 'failure_threshold',
+                          'first_run', 'last_run', 'next_run', 'remaining_runs',
+                          'enabled')
 # scheduler --------------------------------------------------------------------
 
 class Scheduler(object):
@@ -236,7 +242,7 @@ class Scheduler(object):
         @return: schedule id if successfully scheduled or None otherwise
         @rtype:  str or None
         """
-        validate_keys(schedule_options, dispatch_constants.SCHEDULE_OPTIONS_FIELDS)
+        validate_keys(schedule_options, SCHEDULE_OPTIONS_FIELDS)
         scheduled_call = ScheduledCall(call_request, schedule, **schedule_options)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
@@ -263,7 +269,7 @@ class Scheduler(object):
             schedule_id = ObjectId(schedule_id)
         if self.scheduled_call_collection.find_one(schedule_id) is None:
             raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
-        validate_keys(schedule_updates, dispatch_constants.SCHEDULE_MUTABLE_FIELDS)
+        validate_keys(schedule_updates, SCHEDULE_MUTABLE_FIELDS)
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
@@ -359,7 +365,7 @@ def scheduled_call_to_report_dict(scheduled_call):
     @return: report dict
     @rtype:  dict
     """
-    report = subdict(scheduled_call, dispatch_constants.SCHEDULE_REPORT_FIELDS)
+    report = subdict(scheduled_call, SCHEDULE_REPORT_FIELDS)
     call_request = call.CallRequest.deserialize(scheduled_call['serialized_call_request'])
     report['call_request'] = call_request
     report['_id'] = str(scheduled_call['_id'])
