@@ -12,9 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
-import itertools
 import logging
 import threading
+import sys
 from gettext import gettext as _
 from pprint import pformat
 
@@ -22,6 +22,8 @@ try:
     from bson.objectid import ObjectId
 except ImportError:
     from pymongo.objectid import ObjectId
+
+import isodate
 
 from pulp.common import dateutils
 from pulp.common.tags import _NAMESPACE_DELIMITER, resource_tag
@@ -270,6 +272,12 @@ class Scheduler(object):
         if self.scheduled_call_collection.find_one(schedule_id) is None:
             raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
         validate_keys(schedule_updates, SCHEDULE_MUTABLE_FIELDS)
+        schedule = schedule_updates.get('schedule', None)
+        if schedule is not None:
+            try:
+                dateutils.parse_iso8601_interval(schedule)
+            except isodate.ISO8601Error:
+                raise pulp_exceptions.InvalidValue(['schedule']), None, sys.exc_info()[2]
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
