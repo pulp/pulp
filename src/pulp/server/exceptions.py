@@ -236,6 +236,27 @@ class MissingValue(PulpDataException):
         return {'missing_property_names': self.property_names}
 
 
+class UnsupportedValue(PulpDataException):
+    """
+    Base class of exceptions raised due to unsupported data. The names of all
+    the properties that are unsupported are specified in the constructor.
+    """
+
+    def __init__(self, property_names):
+        PulpDataException.__init__(self, property_names)
+
+        if not isinstance(property_names, (list, tuple)):
+            property_names = [property_names]
+        self.property_names = property_names
+
+    def __str__(self):
+        msg = _('Unsupported properties: %(v)s') % {'v': pformat(self.property_names)}
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'unsupported_property_names': self.property_names}
+
+
 class DuplicateResource(PulpDataException):
     """
     Bass class of exceptions raised due to duplicate resource ids.
