@@ -14,7 +14,7 @@
 from gettext import gettext as _
 
 from sync import RunSyncCommand, StatusCommand
-from schedule import SchedulingSection
+from sync_schedule import RepoSyncSchedulingSection
 
 # -- framework hook -----------------------------------------------------------
 
@@ -36,5 +36,5 @@ def initialize(context):
     sync_section.add_command(StatusCommand(context, 'status', _('displays the status of a repository\'s sync operations')))
 
     # Schedule Commands
-    sync_section.add_subsection(SchedulingSection(context))
-
+    sync_schedule_subsection = RepoSyncSchedulingSection(context, 'schedules', _('manage sync schedules for a repository'))
+    sync_section.add_subsection(sync_schedule_subsection)

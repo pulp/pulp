@@ -70,13 +70,13 @@ ABORT = okaara.prompt.ABORT
 
 class PulpPrompt(Prompt):
 
-    # Shadowed for another alternative to referencing it
-    ABORT = ABORT
-
     def __init__(self, input=sys.stdin, output=sys.stdout, enable_color=True,
                  wrap_width=80, record_tags=False):
         Prompt.__init__(self, input=input, output=output, enable_color=enable_color,
                         wrap_width=wrap_width, record_tags=record_tags)
+
+        # Shadowed for another alternative to referencing it
+        self.ABORT = ABORT
 
     def render_spacer(self, lines=1):
         """

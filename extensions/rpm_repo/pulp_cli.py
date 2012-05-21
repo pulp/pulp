@@ -16,6 +16,7 @@ from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
+from pulp.gc_client.util.arg_utils import InvalidConfig, convert_boolean_arguments, convert_file_contents, convert_removed_options
 
 # -- constants ----------------------------------------------------------------
 
@@ -93,14 +94,6 @@ def initialize(context):
     repo_section.add_command(YumRepoListCommand(context))
 
 # -- command implementations --------------------------------------------------
-
-class InvalidConfig(Exception):
-    """
-    During parsing of the user supplied arguments, this will indicate a
-    malformed set of values. The message in the exception (e[0]) is formatted
-    and i18n'ed to be displayed directly to the user.
-    """
-    pass
 
 class YumRepoCreateCommand(PulpCliCommand):
     def __init__(self, context):
@@ -408,11 +401,11 @@ def args_to_importer_config(kwargs):
 
     # Parsing of true/false
     boolean_arguments = ('ssl_verify', 'verify_size', 'verify_checksum', 'newest')
-    _convert_boolean_arguments(boolean_arguments, importer_config)
+    convert_boolean_arguments(boolean_arguments, importer_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key')
-    _convert_file_contents(file_arguments, importer_config)
+    convert_file_contents(file_arguments, importer_config)
 
     # Handle skip types
     if 'skip' in importer_config:
@@ -436,11 +429,11 @@ def args_to_distributor_config(kwargs):
 
     # Parsing of true/false
     boolean_arguments = ('http', 'https', 'generate_metadata')
-    _convert_boolean_arguments(boolean_arguments, distributor_config)
+    convert_boolean_arguments(boolean_arguments, distributor_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('auth_cert', 'auth_ca', 'https_ca', 'gpgkey')
-    _convert_file_contents(file_arguments, distributor_config)
+    convert_file_contents(file_arguments, distributor_config)
 
     # Handle skip types
     if 'metadata_types' in distributor_config:
@@ -498,17 +491,8 @@ def _prep_config(kwargs, plugin_config_keys):
     for plugin_key, cli_key in plugin_config_keys:
         plugin_config[plugin_key] = plugin_config.pop(cli_key, None)
 
-    # Strip out anything with a None value. The way the parser works, all of
-    # the possible options will be present with None as the value. Strip out
-    # everything with a None value now as it means it hasn't been specified
-    # by the user (removals are done by specifying ''.
-    plugin_config = dict([(k, v) for k, v in plugin_config.items() if v is not None])
-
-    # Now convert any "" strings into None. This should be safe in all cases and
-    # is the mechanic used to get "remove config option" semantics.
-    convert_keys = [k for k in plugin_config if plugin_config[k] == '']
-    for k in convert_keys:
-        plugin_config[k] = None
+    # Apply option removal conventions
+    plugin_config = convert_removed_options(plugin_config)
 
     return plugin_config
 
@@ -526,52 +510,4 @@ def _convert_skip_types(skip_types):
         raise InvalidConfig(_('Types must be a comma-separated list using only the following values: %s' % ', '.join(VALID_SKIP_TYPES)))
 
     return parsed
-
-def _convert_boolean_arguments(boolean_keys, config):
-    """
-    For each given key, if it is in the config this call will attempt to convert
-    the user-provided text for true/false into an actual boolean. The boolean
-    value is stored directly in the config and replaces the text version. If the
-    key is not present or is None, this method does nothing for that key. If the
-    value for a key isn't parsable into a boolean, an InvalidConfig exception
-    is raised with a pre-formatted message indicating such.
-
-    @param boolean_keys: list of keys to convert in the given config
-    """
-
-    for key in boolean_keys:
-        if key not in config or config[key] is None:
-            continue
-        v = config.pop(key)
-        if v.strip().lower() == 'true':
-            config[key] = True
-            continue
-        if v.strip().lower() == 'false':
-            config[key] = False
-            continue
-        raise InvalidConfig(_('Value for %(f)s must be either true or false' % {'f' : key}))
-
-def _convert_file_contents(file_keys, config):
-    """
-    For each given key, if it is in the config this call will attempt to read
-    the file indicated by the key value. The contents of the file are stored
-    directly in the config and replaces the filename itself. If the key is not
-    present or is None, this method does nothing for that key. If the value for
-    the key cannot be read in as a file, an InvalidConfig exception is raised
-    with a pre-formatted message indicating such.
-
-    @param file_keys: list of keys to read in as files
-    """
-
-    for key in file_keys:
-        if key in config and config[key] is not None:
-            filename = config[key]
-            try:
-                f = open(filename)
-                contents = f.read()
-                f.close()
-
-                config[key] = contents
-            except:
-                raise InvalidConfig(_('File [%(f)s] cannot be read' % {'f' : filename}))
 
