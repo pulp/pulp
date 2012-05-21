@@ -334,7 +334,7 @@ class TestComps(testutil.PulpAsyncTest):
                 (tmp_comps_path, tmp_repomd_path))
         # Copy original repomd to temp file so we can modify it
         shutil.copy(repomd_path, tmp_repomd_path)
-        # Modify temp comps.xml so we know the sha256 is different
+        # Modify temp comps.xml so we know the sha is different
         dom = xml.dom.minidom.parse(comps_path)
         dom.getElementsByTagName("id")[0].childNodes[0].data = "MODIFIED %s" % (time.time())
         f_comps.write(dom.toxml().encode("UTF-8"))
@@ -348,7 +348,7 @@ class TestComps(testutil.PulpAsyncTest):
         checksum_elems = group_elems[0].getElementsByTagName("checksum")
         self.assertTrue(len(checksum_elems) == 1)
         actualChecksum = checksum_elems[0].childNodes[0].data
-        expectedChecksum = pulp.server.util.get_file_checksum(hashtype="sha256", filename=tmp_comps_path)
+        expectedChecksum = pulp.server.util.get_file_checksum(hashtype="sha", filename=tmp_comps_path)
         self.assertTrue(actualChecksum == expectedChecksum)
         # Timestamp test
         timestamp_elems = group_elems[0].getElementsByTagName("timestamp")
@@ -635,4 +635,3 @@ class TestComps(testutil.PulpAsyncTest):
         comps.add(group_path)
         yum_group_ids = [x.groupid for x in comps.groups]
         self.assertEqual(len(yum_group_ids), target_group_count)
-
