@@ -40,7 +40,7 @@ from pulp.gc_client.util.arg_utils import convert_boolean_arguments, convert_rem
 
 # Order for render_document_list
 SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'consecutive_failures', 'last_run', 'next_run']
-DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enablied', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
+DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
 
 SCHEDULE_DESCRIPTION = _('time to execute (with optional recurrence) in iso8601 format (yyyy-mm-ddThh:mm:ssZ/PiuT')
 FAILURE_THRESHOLD_DESCRIPTION = _('number of failures before the schedule is automatically disabled; unspecified '\
@@ -64,6 +64,10 @@ class ListScheduleCommand(PulpCliCommand):
         self.context.prompt.render_title(_('Schedules'))
 
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
+
+        if len(schedules) is 0:
+            self.context.prompt.render_paragraph(_('There are no schedules defined for this operation.'))
+            return
 
         # Need to convert _id into id in each document
         for s in schedules:
