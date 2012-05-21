@@ -22,6 +22,7 @@ PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_plugins"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_repositories"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_root_actions"
 PACKAGES="$PACKAGES,pulp_tasks"
+PACKAGES="$PACKAGES,rpm_sync"
 PACKAGES="$PACKAGES,rpm_units_copy"
 
 TESTS="test/unit/test_base_distributor_conduit.py \
@@ -54,6 +55,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_rpm_units_copy_extension.py \
        test/unit/test_root_actions_controller.py \
        test/unit/test_schedule_cud_manager.py \
+       test/unit/test_schedule_commands.py \
        test/unit/test_types_database.py \
        test/unit/test_types_parser.py \
        test/unit/test_unit_import_conduit.py \

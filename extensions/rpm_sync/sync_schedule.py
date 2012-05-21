@@ -82,6 +82,6 @@ class RepoSyncSchedulingStrategy(ScheduleStrategy):
         repo_id = kwargs[REPO_ID_ARG]
         return self.api.list_schedules(repo_id, YUM_IMPORTER_ID)
 
-    def update_schedules(self, schedule_id, **kwargs):
+    def update_schedule(self, schedule_id, **kwargs):
         repo_id = kwargs.pop(REPO_ID_ARG)
         return self.api.update_schedule(repo_id, YUM_IMPORTER_ID, schedule_id, **kwargs)

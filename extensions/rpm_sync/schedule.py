@@ -21,6 +21,11 @@ to properly scope the calls.
 In other words, this module should never contain any references to a specific
 resource (e.g. repositories) or operation (e.g. sync).
 
+When using the generic commands below, extra options may be added to them that
+are related to the specific functionality being worked with. Those values
+will be passed through to the strategy in keyword arguments for use in the
+underlying API calls.
+
 Eventually this will move to a more general location outside of repositories
 directly, we just need to figure out what that looks like first.
 """
@@ -35,7 +40,7 @@ from pulp.gc_client.util.arg_utils import convert_boolean_arguments, convert_rem
 
 # Order for render_document_list
 SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'consecutive_failures', 'last_run', 'next_run']
-DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
+DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enablied', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
 
 SCHEDULE_DESCRIPTION = _('time to execute (with optional recurrence) in iso8601 format (yyyy-mm-ddThh:mm:ssZ/PiuT')
 FAILURE_THRESHOLD_DESCRIPTION = _('number of failures before the schedule is automatically disabled; unspecified '\
@@ -103,18 +108,10 @@ class DeleteScheduleCommand(PulpCliCommand):
         self.context = context
         self.strategy = strategy
 
-        d = 'if specified, the given schedule will be deleted; if omitted a menu ' \
-            'will be displayed to select one or more schedules to delete'
+        d = 'identifies the schedule to delete'
         self.create_option('--schedule-id', _(d), required=True)
 
     def delete(self, **kwargs):
-        schedules = self.strategy.retrieve_schedules(kwargs).response_body
-
-        # Easy out clause
-        if len(schedules) is 0:
-            self.context.prompt.render_paragraph(_('There are matching schedules.'))
-            return
-
         schedule_id = kwargs['schedule-id']
 
         response = self.strategy.delete_schedule(schedule_id, kwargs)
@@ -135,14 +132,14 @@ class UpdateScheduleCommand(PulpCliCommand):
 
     def update(self, **kwargs):
         schedule_id = kwargs.pop('schedule-id')
-        ft = kwargs.pop('failure_threshold', None)
+        ft = kwargs.pop('failure-threshold', None)
         if ft:
             kwargs['failure_threshold'] = ft
 
         convert_removed_options(kwargs)
         convert_boolean_arguments(['enabled'], kwargs)
 
-        response = self.strategy.update_schedules(schedule_id, **kwargs)
+        response = self.strategy.update_schedule(schedule_id, **kwargs)
         self.context.prompt.render_success_message(_('Successfully updated schedule'))
 
 class NextRunCommand(PulpCliCommand):
@@ -252,7 +249,7 @@ class ScheduleStrategy(object):
         """
         raise NotImplementedError()
 
-    def update_schedules(self, schedule_id, **kwargs):
+    def update_schedule(self, schedule_id, **kwargs):
         """
         Updates the given schedule with any changes specified. Only values to
         be changed will be included as keyword arguments, therefore None as
