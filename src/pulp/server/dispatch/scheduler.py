@@ -348,6 +348,14 @@ class Scheduler(object):
 
 # utility functions ------------------------------------------------------------
 
+def validate_schedule_options(options):
+    pass
+
+
+def validate_schedule_updates(updates):
+    pass
+
+
 def validate_keys(dictionary, valid_keys):
     """
     Check that the key of a passed in dictionary are valid.
@@ -363,6 +371,34 @@ def validate_keys(dictionary, valid_keys):
             invalid_keys.append(key)
     if invalid_keys:
         raise pulp_exceptions.InvalidValue(invalid_keys)
+
+
+def is_valid_schedule(schedule):
+    try:
+        dateutils.parse_iso8601_interval(schedule)
+    except isodate.ISO8601Error:
+        return False
+    return True
+
+
+def is_valid_failure_threshold(failure_threshold):
+    if failure_threshold is None:
+        return True
+    if isinstance(failure_threshold, int) and failure_threshold > 0:
+        return True
+    return False
+
+
+def is_valid_remaining_runs(remaining_runs):
+    if remaining_runs is None:
+        return True
+    if isinstance(remaining_runs, int) and remaining_runs >= 0:
+        return True
+    return False
+
+
+def is_valid_enabled(enabled):
+    return isinstance(enabled, bool)
 
 
 def scheduled_call_to_report_dict(scheduled_call):
