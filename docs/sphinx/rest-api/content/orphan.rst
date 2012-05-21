@@ -1,10 +1,10 @@
 Orphaned Content
 ================
-:term:`Content units` in Pulp are brought in as part of repository sync and
-content upload operations. However, because content can be associated with more
-than one repository, content is not removed when the repositories it is
-associated with are removed or when the content is disassociated with
-repositories.
+Content units (see :term:`content unit`) in Pulp are brought in as part of
+repository sync and content upload operations. However, because content can be
+associated with more than one repository, content is not removed when the
+repositories it is associated with are removed or when the content is
+disassociated with repositories.
 
 Instead, if content is no longer associated with any repositories, it is
 considered **orphaned**.
@@ -18,7 +18,7 @@ Content types are defined by type definitions.
 Viewing Orphaned Content
 ------------------------
 
-Viewing all orphaned content
+View all orphaned content
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 List all orphaned content, regardless of type.
 
@@ -97,7 +97,7 @@ sample is provided as a demonstration only and does not necessarily reflect the
 exact return types of all calls. However all fields beginning with a **_** will
 be available in all content units, regardless of type.
 
-Viewing orphaned content by type
+View orphaned content by type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 List all the orphaned content of a particular content type.
 
@@ -132,7 +132,7 @@ Removing orphans may entail deleting contents from disk and, as such, may
 possibly be long-running process, so all these calls run asynchronously and
 return a :ref:`call_report`
 
-Removing all orphaned content
+Remove all orphaned content
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove all orphaned content units, regardless of type.
 
@@ -145,7 +145,7 @@ Remove all orphaned content units, regardless of type.
 
 | :return:`call report representing the current state of the delete`
 
-Removing orphaned content by type
+Remove orphaned content by type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove all the orphaned content of a particular content type.
 
@@ -158,7 +158,7 @@ Remove all the orphaned content of a particular content type.
 
 | :return:`call report representing the current state of the delete`
 
-Removing an individual orphaned content unit
+Remove an individual orphaned content unit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove and individual orphaned content unit by content type and content id.
 
@@ -172,7 +172,7 @@ Remove and individual orphaned content unit by content type and content id.
 
 | :return:`call report representing the current state of the delete`
 
-Removing orphaned content units by type and id
+Remove orphaned content units by type and id
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Individual content units across types may be deleted by this call. The body of
 the call consists of a list of JSON objects with the fields:
