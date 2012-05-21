@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
 import mock
 import testutil
 
-from pulp.server.db.model.dispatch import ArchivedCall, QueuedCall
+from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallRequest
@@ -94,7 +94,6 @@ class TaskQueueTests(testutil.PulpTest):
 
     def tearDown(self):
         super(TaskQueueTests, self).tearDown()
-        ArchivedCall.get_collection().drop()
         QueuedCall.get_collection().drop()
         self.queue = None
 
@@ -273,16 +272,6 @@ class TaskQueueControlFlowTests(TaskQueueTests):
         self.assertTrue(task_1.id in task_2.blocking_tasks)
         self.queue.dequeue(task_1)
         self.assertFalse(task_1.id in task_2.blocking_tasks)
-
-    def test_task_archival(self):
-        task = self.gen_task()
-        task.call_request.archive = True
-        self.queue.enqueue(task)
-        self.queue._run_ready_task(task)
-        self.wait_for_task_to_complete(task)
-        collection = ArchivedCall.get_collection()
-        archived_call = collection.find_one({'serialized_call_report.task_id': task.id})
-        self.assertFalse(archived_call is None)
 
 # task queue query tests -------------------------------------------------------
 
