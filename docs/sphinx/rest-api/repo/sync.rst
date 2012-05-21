@@ -115,6 +115,7 @@ The same parameters used to create a scheduled sync may be updated at any point.
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was successfully updated`
+* :response_code:`202,if the schedule is in use and the update is postponed`
 * :response_code:`503,if there is a conflicting operation in progress`
 
 | :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Sync for details)`
@@ -127,6 +128,13 @@ Delete a scheduled sync to remove it permanently from the importer.
 | :method:`delete`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/<schedule_id>/`
 | :permission:`delete`
+
+| :response_list:`_`
+
+* response_code:`200,if the schedule was deleted successfully`
+* response_code:`202,if the schedule is in use and the delete is postponed`
+* response_code:`503,if the schedule is already in the processes of being deleted`
+
 | :return:`null`
 
 
