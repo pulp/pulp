@@ -115,7 +115,7 @@ class BindHandler(Handler):
         # TODO: revist this **
         report.succeeded()
         return report
-    
+
     def __urls(self, details):
         """
         Construct a list of URLs.
@@ -137,7 +137,7 @@ class BindHandler(Handler):
             url = '://'.join((protocol, host))
             urls.append(url+path)
         return urls
-    
+
     def __protocol(self, details):
         """
         Select the protcol based on preferences.

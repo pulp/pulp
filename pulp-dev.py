@@ -73,7 +73,7 @@ LINKS = (
     'etc/pulp/consumer/consumer.conf',
     'etc/pulp/consumer/v2_consumer.conf',
     'etc/pulp/handler/rpm.conf',
-    'etc/pulp/handler/yum.conf',
+    'etc/pulp/handler/bind.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
@@ -108,7 +108,7 @@ LINKS = (
     ('plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
     ('plugins/distributors/yum_distributor', '/var/lib/pulp/plugins/distributors/yum_distributor'),
     ('handlers/rpm.py', '/usr/lib/pulp/handler/rpm.py'),
-    ('handlers/yum.py', '/usr/lib/pulp/handler/yum.py'),
+    ('handlers/bind.py', '/usr/lib/pulp/handler/bind.py'),
     )
 
 def parse_cmdline():
