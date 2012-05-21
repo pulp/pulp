@@ -1,0 +1,8 @@
+To run the script:
+------------------
+* symlink the auth_token.conf under /etc/httpd/conf.d/
+
+* restart apache
+
+* python mod_auth_token_prototype.py <filename>
+
