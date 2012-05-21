@@ -26,6 +26,7 @@ from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import context as dispatch_context
 from pulp.server.dispatch import exceptions as dispatch_exceptions
+from pulp.server.dispatch import history as dispatch_history
 
 
 _LOG = logging.getLogger(__name__)
@@ -143,9 +144,14 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        self.call_report.state = state
         self._call_complete_callback()
+        # don't set the state to complete until the task is actually complete
+        self.call_report.state = state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
+        if not self.call_request.archive:
+            return
+        # archive the completed call
+        dispatch_history.archive_call(self.call_request, self.call_report)
 
     def _call_complete_callback(self):
         """

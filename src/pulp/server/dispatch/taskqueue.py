@@ -22,7 +22,6 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import history as dispatch_history
 
 
 _LOG = logging.getLogger(__name__)
@@ -275,11 +274,6 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             self.__running_weight -= task.call_request.weight
-            # task archival is here to prevent a race condition between the task
-            # being dequeued and being archived, in other words, a query looking
-            # up a task should always be able to find it
-            if task.call_request.archive:
-                dispatch_history.archive_call(task.call_request, task.call_report)
             self.dequeue(task)
             self.__completed_tasks.append(task)
         finally:
