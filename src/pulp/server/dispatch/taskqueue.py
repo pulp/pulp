@@ -16,8 +16,10 @@ import logging
 import sys
 import threading
 import traceback
+from datetime import datetime, timedelta
 from gettext import gettext as _
 
+from pulp.common import dateutils
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import history as dispatch_history
@@ -35,17 +37,24 @@ class TaskQueue(object):
     @type concurrency_threshold: int
     @ivar dispatch_interval: time, in seconds, between checks for ready tasks
     @type dispatch_interval: float
+    @ivar completed_task_cache_life: time, in seconds, to cache completed tasks
+    @type completed_task_cache_life: float
     """
 
-    def __init__(self, concurrency_threshold, dispatch_interval=0.5):
+    def __init__(self,
+                 concurrency_threshold,
+                 dispatch_interval=0.5,
+                 completed_task_cache_life=20.0):
 
         self.concurrency_threshold = concurrency_threshold
         self.dispatch_interval = dispatch_interval
+        self.completed_task_cache_life = timedelta(seconds=completed_task_cache_life)
         self.queued_call_collection = QueuedCall.get_collection()
 
         self.__waiting_tasks = []
         self.__running_tasks = []
         self.__canceled_tasks = []
+        self.__completed_tasks = []
 
         self.__running_weight = 0
         self.__exit = False
@@ -71,6 +80,7 @@ class TaskQueue(object):
                 for task in ready_tasks:
                     self._run_ready_task(task)
                 self._cancel_tasks()
+                self._clear_completed_task_cache()
             except Exception, e:
                 msg = _('Exception in task queue dispatcher thread:\n%(e)s')
                 _LOG.critical(msg % {'e': traceback.format_exception(*sys.exc_info())})
@@ -125,6 +135,18 @@ class TaskQueue(object):
                     _LOG.exception(e)
         finally:
             self.__lock.release()
+
+    def _clear_completed_task_cache(self):
+        """
+        Clear expired tasks from the completed tasks cache.
+        """
+        expired_cutoff = datetime.now(dateutils.utc_tz()) - self.completed_task_cache_life
+        index = 0 # index of the first non-expired cached task
+        for i, task in enumerate(self.__completed_tasks):
+            if task.call_report.finish_time > expired_cutoff:
+                index = i
+                break
+        self.__completed_tasks = self.__completed_tasks[index:]
 
     # queue control methods ----------------------------------------------------
 
@@ -200,7 +222,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             valid_blocking_tasks = set()
-            for potential_blocking_task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
+            for potential_blocking_task in itertools.chain(self.__running_tasks, self.__waiting_tasks):
                 if potential_blocking_task.id not in task.blocking_tasks:
                     continue
                 valid_blocking_tasks.add(potential_blocking_task.id)
@@ -259,6 +281,7 @@ class TaskQueue(object):
             if task.call_request.archive:
                 dispatch_history.archive_call(task.call_request, task.call_report)
             self.dequeue(task)
+            self.__completed_tasks.append(task)
         finally:
             self.__lock.release()
 
@@ -291,7 +314,9 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            for task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
+            for task in itertools.chain(self.__completed_tasks,
+                                        self.__running_tasks,
+                                        self.__waiting_tasks):
                 if task.id != task_id:
                     continue
                 return task
@@ -310,7 +335,9 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             tasks = []
-            for task in itertools.chain(self.__waiting_tasks, self.__running_tasks):
+            for task in itertools.chain(self.__completed_tasks,
+                                        self.__running_tasks,
+                                        self.__waiting_tasks):
                 for tag in tags:
                     if tag not in task.call_request.tags:
                         break
