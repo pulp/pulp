@@ -204,7 +204,7 @@ list command.
 
 Summary view example::
 
- $ pulp-v2-admin repo list
+ $ pulp-admin repo list
  +----------------------------------------------------------------------+
                                Repositories
  +----------------------------------------------------------------------+
@@ -223,7 +223,7 @@ Summary view example::
 
 Details view example::
 
- $ pulp-v2-admin repo list --details
+ $ pulp-admin repo list --details
  +----------------------------------------------------------------------+
                                Repositories
  +----------------------------------------------------------------------+

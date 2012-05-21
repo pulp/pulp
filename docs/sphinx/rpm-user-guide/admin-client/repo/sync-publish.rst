@@ -1,5 +1,5 @@
-Repository Synchronize and Publish
-==================================
+Repository Synchronize
+======================
 
 .. _repo-sync:
 
@@ -73,13 +73,6 @@ The ``repo sync status`` command accepts a single required argument:
 ``--repo-id``
   Identifies the repository being displayed.
 
-.. _repo-sync-scheduling:
-
-Scheduling
-^^^^^^^^^^
-
-*TBD*
-
 .. _repo-sync-progress-output:
 
 Output
@@ -134,5 +127,167 @@ The following is a sample output for the progress of a repository sync operation
 
  Successfully synchronized repository
 
-Publish
--------
+.. _repo-sync-scheduling:
+
+Scheduling
+----------
+
+A repository can be configured to synchronize itself in the future and
+continue to do so at a specified interval. Schedules are specified in the
+ISO8601 specification which is :ref:`described in the conventions section <date-and-time>`
+of the user guide.
+
+A schedule is made up of one of the following combinations of elements:
+
+* Interval
+* Start Date and Time + Interval
+* Recurrence Count + Interval
+* Recurrence Count + Start Date and Time + Interval
+
+In the event a start date and time is not specified, the server will default
+these values to the moment the server receives the request. In all cases,
+an :ref:`interval <date-and-time-interval>` is required.
+
+A repository may have multiple sync schedules in the event a desired schedule
+cannot be achieved through intervals alone. For example, in order to synchronize
+a repository on the 7th and 21st of every month, two separate schedules with a
+one month interval and the appropriate start dates would be defined to meet
+these needs.
+
+If a :ref:`recurrence <date-and-time-recurrence>` is specified in the schedule,
+only the specified number of sync operations will be triggered from that
+schedule. Once all of the runs have been exhausted, regardless of the success or
+failure of each run, the schedule will delete itself.
+
+A one-time run in the future (akin to ``at`` system-level functionality) can be
+achieved by specifying a recurrence of one. At that point, while the interval
+is still required to be specified, it will have no effect and the schedule will
+delete itself after its sole execution.
+
+The ``repo sync schedules`` section is the root of all sync schedule related
+functionality. The following commands are provided.
+
+.. _repo-sync-schedules-list:
+
+Listing Schedules
+^^^^^^^^^^^^^^^^^
+
+All sync schedules for a repository can be displayed using the ``repo sync schedules list``
+command. This command takes the following arguments:
+
+``--repo-id``
+  Required to identify the repository.
+
+``--details``
+  By default only a subset of information about a schedule is displayed. This
+  flag will result in more detailed information about each schedule including
+  failure threshold and number remaining runs if applicable.
+
+The majority of the information displayed about a sync schedule is self-explanatory.
+Below are a few noteworthy items:
+
+* "Remaining Runs" only applies for schedules that are defined with a recurrence
+  value. This will indicate not applicable for schedules that do not define a recurrence.
+
+* "Consecutive Failures" works in conjunction with the failure threshold of a
+  schedule. Once this value equals the failure threshold, the schedule will
+  be disable. If there is no failure threshold configured, this number will still
+  continue to reflect the number of consecutive failures.
+
+.. _repo-sync-schedules-create:
+
+Creating a Schedule
+^^^^^^^^^^^^^^^^^^^
+
+A new schedule for a repository's sync operation is created through the
+``repo sync schedules create`` command which accepts the following arguments:
+
+``--repo-id``
+  Required to identify the repository for which to create the schedule
+
+``--schedule``
+  ISO8601 string describing the recurrence, start time, and interval. This is
+  required when creating a new schedule.
+
+``--failure-threshold``
+  If the number of consecutive failures equals this value, the schedule will
+  automatically be disabled. If omitted the sync will be allowed to fail
+  indefinitely. The schedule may be reenabled later using the :ref:`update command <repo-sync-schedules-update>`.
+
+All schedules are enabled by default when they are created. They may be disabled
+using the :ref:`update command <repo-sync-schedules-update>`.
+
+.. _repo-sync-schedules-update:
+
+Updating a Schedule
+^^^^^^^^^^^^^^^^^^^
+
+Existing schedules can be edited, both the schedule timings themselves as well
+as whether or not the schedule is enabled. The command ``repo sync schedules update``
+is used for this purpose.
+
+The following arguments are required when editing a schedule:
+
+``--repo-id``
+  Identifies the repository to which the schedule applies.
+
+``--schedule-id``
+  Schedule being edited. The ID is found in the :ref:`list schedules command <repo-sync-schedules-list>`.
+
+One or more of the following arguments can be specified to change the schedule:
+
+``--schedule``
+  ISO8601 string describing the new schedule timings to use.
+
+``--failure-threshold``
+  New failure threshold to use for the schedule. If this value is lower than the
+  current consecutive failures count, the sync will still run one more time
+  before the failures count is compared against this new value and the schedule
+  is disabled.
+
+``--enabled``
+  Used to enable or disable the schedule. The value to this argument should be
+  either ``true`` or ``false``.
+
+If the repository is currently in the middle of a sync run, the schedule update
+will be postponed until after the running sync completes.
+
+Deleting a Schedule
+^^^^^^^^^^^^^^^^^^^
+
+Schedules are deleted using the ``repo sync schedules delete`` command. This
+command requires the following two arguments:
+
+``--repo-id``
+  Repository in which the schedule resides.
+
+``--schedule-id``
+  Schedule to delete.
+
+If the repository is currently in the middle of a sync run, the schedule delete
+will be postponed until after the running sync completes.
+
+Displaying the Next Scheduled Sync
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When viewing the list of sync schedules for a repository, one of the displayed
+fields indicates the next time that schedule will run. If there are multiple
+schedules, the client will resolve the next time the sync will run across all
+of the schedules through the ``repo sync schedules next`` command.
+
+This command requires the following argument:
+
+``--repo-id``
+  Identifies the repository.
+
+The output will indicate both the next schedule sync time and the schedule that
+provided that time::
+
+ $ pulp-admin repo sync schedules next --repo-id demo
+ The next scheduled run is at 2012-05-31T00:00:00Z driven by the schedule 2012-05-31T00:00:00Z/P1M
+
+For programmatic access to the ISO8601 string indicating the next run time, the
+``--quiet`` option may be specified to remove the user-friendly verbiage::
+
+ $ pulp-v2-admin repo sync schedules next --repo-id demo --quiet
+ 2012-05-31T00:00:00Z

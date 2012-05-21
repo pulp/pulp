@@ -24,6 +24,8 @@ example, 1:45 is represented as ``01:45Z``.
 These two pieces can be combined with a capital T as the delimiter. Using the
 above two examples, the full date expression is ``2005-05-28T01:45Z``.
 
+.. _date-and-time-interval:
+
 Intervals
 ^^^^^^^^^
 
@@ -58,6 +60,8 @@ every month, if added in mid-April, will execute for its first time on May 1st.
 The interval is appended after the start time, separated by a front slash. For
 example, an interval of one day starting on October 10th is represented as
 ``2011-10-10/P1D``.
+
+.. _date-and-time-recurrence:
 
 Recurrence
 ^^^^^^^^^^
