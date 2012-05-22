@@ -329,19 +329,28 @@ class Property:
 class Config(dict):
     """
     A dictionary constructed of INI files.
-    The president is defined by the path ordering.  Each file loaded
+    The president is defined by the input ordering.  Each file loaded
     is merged into the dict in the order loaded.
     """
 
-    def __init__(self, paths=[], sections=[]):
+    def __init__(self, *inputs, **options):
         """
-        @param paths: A path or list of paths to .conf files
-        @type paths: str|list
-        @param sections: A list of sections used for filtering.
+        @param input: A path or list of paths to .conf files
+        @type input: str|dict|fp
+        @param options: Options see: keywords
+        @type sections: dict
+        @keyword section: A list of sections used for filtering.
             An empty indicates ALL sections.
-        @type sections: list
         """
-        self.open(paths, sections)
+        sections = options.get('sections', [])
+        for input in inputs:
+            if isinstance(input, basestring):
+                self.open(paths, sections)
+                continue
+            if isinstance(input, dict):
+                self.update(input)
+                continue
+            self.read(input, sections)
 
     def open(self, paths, sections=[]):
         """

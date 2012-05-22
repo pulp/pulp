@@ -179,7 +179,6 @@ class TestConfigValidator(testutil.PulpAsyncTest):
         self.assertEquals(v, {})
 
     def read(self, s):
-        cfg = Config()
         fp = StringIO(s)
-        cfg.read(fp)
+        cfg = Config(fp)
         return cfg
