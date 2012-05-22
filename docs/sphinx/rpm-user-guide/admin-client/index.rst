@@ -6,3 +6,4 @@ Admin Client User Guide
 
    introduction
    repo/index
+   package/index
