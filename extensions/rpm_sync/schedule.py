@@ -39,8 +39,8 @@ from pulp.gc_client.util.arg_utils import convert_boolean_arguments, convert_rem
 # -- constants ----------------------------------------------------------------
 
 # Order for render_document_list
-SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'consecutive_failures', 'last_run', 'next_run']
-DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
+SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'last_run', 'next_run']
+DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
 
 SCHEDULE_DESCRIPTION = _('time to execute (with optional recurrence) in iso8601 format (yyyy-mm-ddThh:mm:ssZ/PiuT')
 FAILURE_THRESHOLD_DESCRIPTION = _('number of failures before the schedule is automatically disabled; unspecified '\
@@ -69,9 +69,12 @@ class ListScheduleCommand(PulpCliCommand):
             self.context.prompt.render_paragraph(_('There are no schedules defined for this operation.'))
             return
 
-        # Need to convert _id into id in each document
         for s in schedules:
+            # Need to convert _id into id in each document
             s['id'] = s.pop('_id')
+
+            if s['remaining_runs'] is None:
+                s['remaining_runs'] = _('N/A')
 
         if kwargs['details']:
             order = filters = DETAILED_SCHEDULE_ORDER
