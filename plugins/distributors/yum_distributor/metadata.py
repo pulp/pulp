@@ -63,12 +63,12 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
       @return True on success, False on error
       @rtype bool
     """
-
+    errors = []
     if not config.get('generate_metadata'):
         metadata_progress_status = {"state" : "SKIPPED"}
         set_progress("metadata", metadata_progress_status, progress_callback)
         log.info('skip metadata generation for repo %s' % repo.id)
-        return False
+        return False, []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     set_progress("metadata", metadata_progress_status, progress_callback)
     repo_dir = repo.working_dir
@@ -86,12 +86,12 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
     except CreateRepoError, cre:
         metadata_progress_status = {"state" : "FAILED"}
         set_progress("metadata", metadata_progress_status, progress_callback)
-        return False
+        return False, errors.append(cre)
     end = time.time()
     log.info("Createrepo finished in %s seconds" % (end - start))
     metadata_progress_status = {"state" : "FINISHED"}
     set_progress("metadata", metadata_progress_status, progress_callback)
-    return True
+    return True, []
 
 def get_repo_checksum_type(repo, publish_conduit, config):
     """

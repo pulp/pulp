@@ -15,6 +15,7 @@ import gettext
 import logging
 import os
 import shutil
+import time
 import traceback
 import urlparse
 import metadata
@@ -385,17 +386,18 @@ class YumDistributor(Distributor):
             _LOG.error("Unable to publish %s items" % (len(errors)))
         # symlink distribution files if any under repo.working_dir
         distro_units = filter(lambda u: u.type_id == DISTRO_TYPE_ID, unfiltered_units)
-        status, errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
-        if not status:
+        distro_status, distro_errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
+        if not distro_status:
             _LOG.error("Unable to publish distribution tree %s items" % (len(errors)))
         # update/generate metadata for the published repo
         repo_scratchpad = publish_conduit.get_repo_scratchpad()
         src_working_dir = ''
         if repo_scratchpad.has_key("importer_working_dir"):
             src_working_dir = repo_scratchpad['importer_working_dir']
+        metadata_start_time = time.time()
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
-        metadata.generate_metadata(repo, publish_conduit, config, progress_callback)
-
+        metadata_status, metadata_errors = metadata.generate_metadata(repo, publish_conduit, config, progress_callback)
+        metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
             relpath = relpath[1:]
@@ -440,10 +442,20 @@ class YumDistributor(Distributor):
                 _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
                 self.remove_symlink(http_publish_dir, http_repo_publish_dir)
 
-        summary["num_units_attempted"] = len(units)
-        summary["num_units_published"] = len(units) - len(errors)
-        summary["num_units_errors"] = len(errors)
-        details["errors"] = errors
+        summary["num_package_units_attempted"] = len(units)
+        summary["num_package_units_published"] = len(units) - len(errors)
+        summary["num_package_units_errors"] = len(errors)
+        summary["num_distribution_units_attempted"] = len(distro_units)
+        summary["num_distribution_units_published"] = len(distro_units) - len(distro_errors)
+        summary["num_distribution_units_errors"] = len(distro_errors)
+        summary["relative_path"] = relpath
+        if metadata_status is False and not len(metadata_errors):
+            summary["skip_metadata_update"] = True
+        else:
+            summary["skip_metadata_update"] = False
+        details["errors"] = errors + distro_errors + metadata_errors
+        details['time_metadata_sec'] = metadata_end_time - metadata_start_time
+        # metadata generate skipped vs run
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
         if errors:
             return publish_conduit.build_failure_report(summary, details)

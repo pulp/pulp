@@ -267,9 +267,9 @@ class TestDistributor(unittest.TestCase):
         report = distributor.publish_repo(repo, publish_conduit, config)
         self.assertTrue(report.success_flag)
         summary = report.summary
-        self.assertEqual(summary["num_units_attempted"], 0)
-        self.assertEqual(summary["num_units_published"], 0)
-        self.assertEqual(summary["num_units_errors"], 0)
+        self.assertEqual(summary["num_package_units_attempted"], 0)
+        self.assertEqual(summary["num_package_units_published"], 0)
+        self.assertEqual(summary["num_package_units_errors"], 0)
         expected_repo_https_publish_dir = os.path.join(self.https_publish_dir, repo.id).rstrip('/')
         expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, repo.id).rstrip('/')
         self.assertEqual(summary["https_publish_dir"], expected_repo_https_publish_dir)
@@ -295,9 +295,9 @@ class TestDistributor(unittest.TestCase):
         report = distributor.publish_repo(repo, publish_conduit, config)
         self.assertTrue(report.success_flag)
         summary = report.summary
-        self.assertEqual(summary["num_units_attempted"], num_units)
-        self.assertEqual(summary["num_units_published"], num_units)
-        self.assertEqual(summary["num_units_errors"], 0)
+        self.assertEqual(summary["num_package_units_attempted"], num_units)
+        self.assertEqual(summary["num_package_units_published"], num_units)
+        self.assertEqual(summary["num_package_units_errors"], 0)
         # Verify we did not attempt to publish to http
         expected_repo_http_publish_dir = os.path.join(self.http_publish_dir, relative_url)
         self.assertFalse(os.path.exists(expected_repo_http_publish_dir))

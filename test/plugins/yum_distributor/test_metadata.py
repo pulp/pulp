@@ -61,12 +61,12 @@ class TestMetadata(unittest.TestCase):
         optional_kwargs = {"generate_metadata" :  1}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status = metadata.generate_metadata(mock_repo, mock_publish_conduit, config)
+        status, errors = metadata.generate_metadata(mock_repo, mock_publish_conduit, config)
         self.assertEquals(status, True)
         optional_kwargs = {"generate_metadata" :  0}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status = metadata.generate_metadata(mock_repo, mock_publish_conduit, config)
+        status, errors = metadata.generate_metadata(mock_repo, mock_publish_conduit, config)
         self.assertEquals(status, False)
 
     def test_get_checksum_type(self):
