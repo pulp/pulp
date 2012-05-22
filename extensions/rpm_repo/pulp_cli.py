@@ -492,7 +492,7 @@ def _prep_config(kwargs, plugin_config_keys):
         plugin_config[plugin_key] = plugin_config.pop(cli_key, None)
 
     # Apply option removal conventions
-    plugin_config = convert_removed_options(plugin_config)
+    convert_removed_options(plugin_config)
 
     return plugin_config
 
