@@ -15,6 +15,7 @@ import os
 from yum import YumBase
 from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
+from rhsm.profile import get_profile
 from pulp.gc_client.agent.lib.handler import Handler
 from pulp.gc_client.agent.lib.report import ProfileReport, RebootReport, HandlerReport
 from logging import getLogger, Logger
@@ -137,6 +138,18 @@ class PackageHandler(Linux):
         details = pkg.uninstall(names)
         report.succeeded(details)
         return report
+    
+    def profile(self):
+        """
+        Get package profile.
+        @return: An profile report.
+        @rtype: L{ProfileReport}
+        """
+        report = ProfileReport()
+        details = get_profile("rpm").collect()
+        report.succeeded(details)
+        return report
+        
 
     def __impl(self, options):
         """

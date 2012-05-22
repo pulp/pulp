@@ -89,7 +89,7 @@ class Heartbeat:
             cls.__producer = Producer(url=url)
         return cls.__producer
 
-    @action(seconds=HEARTBEAT)
+    #@action(seconds=HEARTBEAT) # DISABLED
     def heartbeat(self):
         return self.send()
 
@@ -111,7 +111,7 @@ class RegistrationMonitor:
     pmon = PathMonitor()
     
     @classmethod
-    @action(days=0x8E94)
+    #@action(days=0x8E94) # DISABLED
     def init(cls):
         """
         Start path monitor to track changes in the

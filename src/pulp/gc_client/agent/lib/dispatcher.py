@@ -11,7 +11,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-from pulp.gc_client.agent.lib.handler import Handler
+from pulp.gc_client.agent.lib.handler import Handler, implemented
 from pulp.gc_client.agent.lib.container import Container
 from pulp.gc_client.agent.lib.container import CONTENT, DISTRIBUTOR
 from pulp.gc_client.agent.lib.report import *
@@ -135,25 +135,25 @@ class Dispatcher:
         report.update(rr)
         return report
 
-    def profile(self, types):
+    def profile(self):
         """
         Request the installed content profile be sent
         to the pulp server.
-        @param types: A list of content type IDs.
-        @type types: list
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
+        NAME = 'profile'
         report = DispatchReport()
-        for typeid in types:
+        for typeid, handler in self.container.all(CONTENT):
+            method = getattr(handler, NAME, 0)
+            if not implemented(method):
+                continue
             try:
-                handler = self.__handler(typeid, CONTENT)
-                r = handler.profile()
+                r = method()
                 r.typeid = typeid
                 report.update(r)
             except Exception:
                 r = ProfileReport()
-                r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
         return report
@@ -173,7 +173,7 @@ class Dispatcher:
         report = DispatchReport()
         for typeid, handler in self.container.all():
             method = getattr(handler, NAME, 0)
-            if not callable(method):
+            if not implemented(method):
                 continue
             try:
                 found += 1
@@ -284,7 +284,7 @@ class Dispatcher:
         report = DispatchReport()
         for typeid, handler in self.container.all():
             method = getattr(handler, NAME, 0)
-            if not callable(method):
+            if not implemented(method):
                 continue
             try:
                 r = method()

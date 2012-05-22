@@ -133,7 +133,7 @@ class ConsumerApi(BaseApi):
             
         # notify agent
         agent = PulpAgent(consumer, async=True)
-        agent_consumer = agent.Consumer()
+        agent_consumer = agent.ConsumerXXX()
         agent_consumer.unregistered()
 
         self.collection.remove(dict(id=id), safe=True)
@@ -368,7 +368,7 @@ class ConsumerApi(BaseApi):
         capabilities = AgentCapabilities(consumer['capabilities'])
         if capabilities.bind():
             agent = PulpAgent(consumer, async=True, timeout=None)
-            agent_consumer = agent.Consumer()
+            agent_consumer = agent.ConsumerXXX()
             agent_consumer.bind(repoid, bind_data)
 
         # Return the bind data to the caller
@@ -408,7 +408,7 @@ class ConsumerApi(BaseApi):
         capabilities = AgentCapabilities(consumer['capabilities'])
         if capabilities.bind():
             agent = PulpAgent(consumer, async=True, timeout=None)
-            agent_consumer = agent.Consumer()
+            agent_consumer = agent.ConsumerXXX()
             agent_consumer.unbind(repo_id)
 
         self.consumer_history_api.repo_unbound(id, repo_id)

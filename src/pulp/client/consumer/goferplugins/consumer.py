@@ -25,7 +25,7 @@ from pulp.client.consumer.plugins.consumer import ConsumerClientPlugin
 
 log = getLogger(__name__)
 
-class Consumer(PulpGoferPlugin):
+class ConsumerXXX(PulpGoferPlugin):
     """
     Pulp (pulp.repo) yum repository object.
     """

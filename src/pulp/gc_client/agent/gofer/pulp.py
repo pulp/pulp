@@ -71,7 +71,7 @@ class Heartbeat:
             cls.__producer = Producer(url=url)
         return cls.__producer
 
-    #@action(seconds=HEARTBEAT)
+    @action(seconds=HEARTBEAT)
     def heartbeat(self):
         return self.send()
 
@@ -93,7 +93,7 @@ class RegistrationMonitor:
     pmon = PathMonitor()
 
     @classmethod
-    #@action(days=0x8E94)
+    @action(days=0x8E94)
     def init(cls):
         """
         Start path monitor to track changes in the
@@ -121,7 +121,7 @@ class RegistrationMonitor:
 # API
 #
 
-class ConsumerXXX: # Temporary v1 compat.
+class Consumer:
     """
     Consumer Management.
     """
@@ -133,7 +133,7 @@ class ConsumerXXX: # Temporary v1 compat.
         report = dispatcher.clean()
         return report.dict()
 
-    @remote #(secret=secret)
+    @remote(secret=secret)
     def bind(self, repoid):
         bindings = PulpBindings()
         bundle = ConsumerBundle()
@@ -145,7 +145,7 @@ class ConsumerXXX: # Temporary v1 compat.
         else:
             raise Exception('rebind failed, http:%d', http.response_code)
 
-    @remote#(secret=secret)
+    @remote(secret=secret)
     @action(days=0x8E94)
     def rebind(self):
         bindings = PulpBindings()
@@ -158,7 +158,7 @@ class ConsumerXXX: # Temporary v1 compat.
         else:
             raise Exception('rebind failed, http:%d', http.response_code)
 
-    @remote#(secret=secret)
+    @remote(secret=secret)
     def unbind(self, repoid):
         report = dispatcher.unbind(repoid)
         return report.dict()
@@ -184,8 +184,16 @@ class Content:
         report = dispatcher.uninstall(units, options)
         return report.dict()
 
+
 class Profile:
+    """
+    Profile Management
+    """
 
     @remote(secret=secret)
+    @action(minutes=cfg.profile.minutes)
     def send(self):
-        pass
+        report = dispatcher.profile()
+        # TODO: send profiles
+        log.info('profile: %s' % report)
+        return report.dict()
