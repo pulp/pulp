@@ -94,12 +94,16 @@ class ConsumerHistoryManager(object):
         if not existing_consumer and event_type != TYPE_CONSUMER_UNREGISTERED:
             raise MissingResource(consumer=consumer_id)
 
+        invalid_values = []
         if event_type not in TYPES:
-            raise InvalidValue(event_type)
-
+            invalid_values.append('event_type')
+            
         if event_details is not None and not isinstance(event_details, dict):
-            raise InvalidValue(event_details)
-
+            invalid_values.append('event_details')
+            
+        if invalid_values:
+            raise InvalidValue(invalid_values)
+            
         event = ConsumerHistoryEvent(consumer_id, self._originator(), event_type, event_details)
         ConsumerHistoryEvent.get_collection().save(event, safe=True)
 
@@ -142,16 +146,20 @@ class ConsumerHistoryManager(object):
         if not existing_consumer:
             raise MissingResource(consumer=consumer_id)
 
+        invalid_values = []
         if event_type is not None and event_type not in TYPES:
-            raise InvalidValue(event_type)
+            invalid_values.append('event_type')
 
         # Verify the limit makes sense
         if limit is not None and limit < 1:
-            raise InvalidValue(limit)
+            invalid_values.append('limit')
 
         # Verify the sort direction was valid
         if not sort in SORT_DIRECTION:
-            raise InvalidValue(sort)
+            invalid_values.append('sort')
+            
+        if invalid_values:
+            raise InvalidValue(invalid_values)
 
         # Assemble the mongo search parameters
         search_params = {}
