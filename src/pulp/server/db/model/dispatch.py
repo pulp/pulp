@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,14 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import sys
 from datetime import datetime
-
-import isodate
 
 from pulp.common import dateutils
 from pulp.common.tags import resource_tag
-from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.gc_base import Model
 from pulp.server.dispatch import constants as dispatch_constants
 
@@ -51,10 +47,7 @@ class ScheduledCall(Model):
 
         schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
         call_request.tags.append(schedule_tag)
-        try:
-            interval, start, runs = dateutils.parse_iso8601_interval(schedule)
-        except isodate.ISO8601Error:
-            raise pulp_exceptions.InvalidValue(['schedule']), None, sys.exc_info()[2]
+        interval, start, runs = dateutils.parse_iso8601_interval(schedule)
         start = start and dateutils.to_naive_utc_datetime(start)
 
         self.serialized_call_request = call_request.serialize()
