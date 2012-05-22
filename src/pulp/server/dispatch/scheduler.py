@@ -244,7 +244,7 @@ class Scheduler(object):
         @return: schedule id if successfully scheduled or None otherwise
         @rtype:  str or None
         """
-        validate_keys(schedule_options, SCHEDULE_OPTIONS_FIELDS)
+        validate_schedule_options(schedule, schedule_options)
         scheduled_call = ScheduledCall(call_request, schedule, **schedule_options)
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
@@ -271,13 +271,7 @@ class Scheduler(object):
             schedule_id = ObjectId(schedule_id)
         if self.scheduled_call_collection.find_one(schedule_id) is None:
             raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
-        validate_keys(schedule_updates, SCHEDULE_MUTABLE_FIELDS)
-        schedule = schedule_updates.get('schedule', None)
-        if schedule is not None:
-            try:
-                dateutils.parse_iso8601_interval(schedule)
-            except isodate.ISO8601Error:
-                raise pulp_exceptions.InvalidValue(['schedule']), None, sys.exc_info()[2]
+        validate_schedule_updates(schedule_updates)
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
@@ -348,32 +342,79 @@ class Scheduler(object):
 
 # utility functions ------------------------------------------------------------
 
-def validate_schedule_options(options):
-    pass
+def validate_schedule_options(schedule, options):
+    """
+    Validate the options for a new schedule.
+    @param schedule: new schedule
+    @type  schedule: basestring
+    @param options: new schedule options
+    @type  options: dict
+    @raise: L{pulp_exceptions.UnsupportedValue}
+    @raise: L{pulp_exceptions.InvalidValue}
+    """
+    invalid_keys = get_invalid_keys(options, SCHEDULE_OPTIONS_FIELDS)
+    if invalid_keys:
+        raise pulp_exceptions.UnsupportedValue(invalid_keys)
+    invalid_values = []
+    if not is_valid_schedule(schedule):
+        invalid_values.append('schedule')
+    if 'failure_threshold' in options and not is_valid_failure_threshold(options['failure_threshold']):
+        invalid_values.append('failure_threshold')
+    if 'enabled' in options and not is_valid_enabled(options['enabled']):
+        invalid_values.append('enabled')
+    if invalid_values:
+        raise pulp_exceptions.InvalidValue(invalid_values)
 
 
 def validate_schedule_updates(updates):
-    pass
-
-
-def validate_keys(dictionary, valid_keys):
     """
-    Check that the key of a passed in dictionary are valid.
+    Validate the updates to an existing schedule
+    @param updates:
+    @return:
+    """
+    invalid_keys = get_invalid_keys(updates, SCHEDULE_MUTABLE_FIELDS)
+    if invalid_keys:
+        raise pulp_exceptions.UnsupportedValue(invalid_keys)
+    invalid_values = []
+    if 'schedule' in updates and not is_valid_schedule(updates['schedule']):
+        invalid_values.append('schedule')
+    if 'failure_threshold' in updates and not is_valid_failure_threshold(updates['failure_threshold']):
+        invalid_values.append('failure_threshold')
+    if 'remaining_runs' in updates and not is_valid_remaining_runs(updates['remaining_runs']):
+        invalid_values.append('remaining_runs')
+    if 'enabled' in updates and not is_valid_enabled(updates['enabled']):
+        invalid_values.append('enabled')
+    if invalid_values:
+        raise pulp_exceptions.InvalidValue(invalid_values)
+
+
+def get_invalid_keys(dictionary, valid_keys):
+    """
+    Check that the key of a passed in dictionary are valid and return any
+    invalid keys.
     @param dictionary: dictionary to validate
     @type  dictionary: dict
     @param valid_keys: valid dictionary keys
     @type  valid_keys: iterable
-    @raise pulp_exceptions.InvalidValue: if the dictionary contains keys not in the valid keys
+    @return: (possibly empty) list of invalid keys
+    @rtype:  list
     """
     invalid_keys = []
     for key in dictionary:
         if key not in valid_keys:
             invalid_keys.append(key)
-    if invalid_keys:
-        raise pulp_exceptions.InvalidValue(invalid_keys)
+    return invalid_keys
 
 
 def is_valid_schedule(schedule):
+    """
+    Validate an iso8601 interval schedule.
+    @param schedule: schedule string to validate
+    @return: True if the schedule is valid, False otherwise
+    @rtype:  bool
+    """
+    if not isinstance(schedule, basestring):
+        return False
     try:
         dateutils.parse_iso8601_interval(schedule)
     except isodate.ISO8601Error:
@@ -382,6 +423,12 @@ def is_valid_schedule(schedule):
 
 
 def is_valid_failure_threshold(failure_threshold):
+    """
+    Validate the failure threshold parameter.
+    @param failure_threshold: parameter to validate
+    @return: True if the parameter is valid, False otherwise
+    @rtype:  bool
+    """
     if failure_threshold is None:
         return True
     if isinstance(failure_threshold, int) and failure_threshold > 0:
@@ -390,6 +437,12 @@ def is_valid_failure_threshold(failure_threshold):
 
 
 def is_valid_remaining_runs(remaining_runs):
+    """
+    Validate the remaining runs parameter.
+    @param remaining_runs: parameter to validate
+    @return: True if the parameter is valid, False otherwise
+    @rtype:  bool
+    """
     if remaining_runs is None:
         return True
     if isinstance(remaining_runs, int) and remaining_runs >= 0:
@@ -398,6 +451,12 @@ def is_valid_remaining_runs(remaining_runs):
 
 
 def is_valid_enabled(enabled):
+    """
+    Validate the enabled flag.
+    @param enabled: flag to validate
+    @return: True if the flag is valid, False otherwise
+    @rtype:  bool
+    """
     return isinstance(enabled, bool)
 
 
