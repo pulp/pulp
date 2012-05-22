@@ -323,7 +323,7 @@ class Property:
             raise PropertyNotValid(self.name, value, self.pattern)
 
 #
-# Configuration Classes
+# Configuration
 #
 
 class Config(dict):
@@ -391,29 +391,19 @@ class Config(dict):
             else:
                 self[k] = v
 
-    def graph(self):
+    def graph(self, strict=False):
         """
         Get an object representation of the dict (graph).
         Access using object attribute (.) dot notation.
+        @param strict: Indicates that KeyError should be raised when
+            undefined sections or properties are accessed.  When
+            false, undefined sections are returned as empty dict and
+            undefined properties are returned as (None).
+        @type strict: bool
         @return: An object representation
         @rtype: cfg
         """
-        class Section:
-            def __init__(self, dict):
-                self.dict = dict
-            def __getattr__(self, name):
-                if name.startswith('__') and name.endswith('__'):
-                    return getattr(self.dict, name)
-                return self.dict.get(name)
-        class Graph:
-            def __init__(self, dict):
-                self.dict = dict
-            def __getattr__(self, name):
-                if name.startswith('__') and name.endswith('__'):
-                    return getattr(self.dict, name)
-                s = self.dict.get(name, {})
-                return Section(s)
-        return Graph(self)
+        return Graph(self, strict)
 
     def __setitem__(self, name, value):
         """
@@ -427,3 +417,69 @@ class Config(dict):
             dict.__setitem__(self, name, value)
         else:
             raise ValueError('must be <dict>')
+
+
+class Graph:
+    """
+    An object graph representation of a Config.
+    Provides access using object attribute (.) dot notation.
+    @ivar __dict: The wrapped config.
+    @type __dict: dict
+    @ivar __strict: Indicates that KeyError should be raised when
+        undefined sections are accessed.  When false, undefined 
+        sections are returned as empty dict
+    @type __strict: bool
+    """
+
+    def __init__(self, dict, strict=False):
+        """
+        @param dict: The wrapped config.
+        @type dict: dict
+        @param strict: Indicates that KeyError should be raised when
+            undefined sections are accessed.  When false, undefined 
+            sections are returned as empty dict.
+        @type strict: bool
+        """
+        self.__dict = dict
+        self.__strict = strict
+
+    def __getattr__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            return getattr(self.__dict, name)
+        if self.__strict:
+            s = self[name]
+        else:
+            s = self.__dict.get(name, {})
+        return GraphSection(s, self.__strict)
+
+
+class GraphSection:
+    """
+    An object graph representation of a section.
+    @ivar __dict: The wrapped section.
+    @type __dict: dict
+    @ivar __strict: Indicates that KeyError should be raised when
+        undefined properties are accessed.  When false, undefined 
+        properties are returned as (None).
+    @type __strict: bool
+    """
+
+    def __init__(self, dict, strict=False):
+        """
+        @param dict: The wrapped section.
+        @type dict: dict
+        @param strict: Indicates that KeyError should be raised when
+            undefined properties are accessed.  When false, undefined 
+            properties are returned as (None).
+        @type strict: bool
+        """        
+        self.__dict = dict
+        self.__strict = strict
+
+    def __getattr__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            return getattr(self.__dict, name)
+        if self.__strict:
+            return self.__dict[name]
+        else:
+            return self.__dict.get(name)

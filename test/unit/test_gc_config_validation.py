@@ -162,11 +162,9 @@ class TestConfigValidator(testutil.PulpAsyncTest):
         self.assertEqual(sorted(p), sorted(['limits.cpu', 'limits.color']))
 
     def test_util(self):
-        cfg = self.read(VALID).graph()
+        cfg = self.read(VALID).graph(True)
         # getbool()
         v = getbool(cfg.limits.posix)
-        self.assertTrue(isinstance(v, bool))
-        v = getbool(cfg.limits.foo)
         self.assertTrue(isinstance(v, bool))
 
     def test_graph(self):
