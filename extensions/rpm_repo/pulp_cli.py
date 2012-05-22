@@ -188,7 +188,7 @@ class YumRepoUpdateCommand(PulpCliCommand):
         # Gather data
         repo_id = kwargs.pop('id')
         description = kwargs.pop('description', None)
-        display_name = kwargs.pop('display_name', None)
+        display_name = kwargs.pop('display-name', None)
 
         try:
             notes = args_to_notes_dict(kwargs, include_none=True)
