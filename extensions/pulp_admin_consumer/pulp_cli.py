@@ -75,15 +75,15 @@ class AdminConsumerSection(PulpCliSection):
         # History Retrieval Command
         history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
         history_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
-        d = '(optional) limits displayed history entries to the given type;'
+        d = 'limits displayed history entries to the given type;'
         d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
         d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
         d += '"removed_from_group")'
-        history_command.add_option(PulpCliOption('--event_type', d, required=False))
+        history_command.add_option(PulpCliOption('--event-type', d, required=False))
         history_command.add_option(PulpCliOption('--limit', 'limits displayed history entries to the given amount (must be greater than zero)', required=False))
         history_command.add_option(PulpCliOption('--sort', 'indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp', required=False))
-        history_command.add_option(PulpCliOption('--start_date', 'only return entries that occur on or after the given date (format: yyyy-mm-dd)', required=False))
-        history_command.add_option(PulpCliOption('--end_date', 'only return entries that occur on or before the given date (format: yyyy-mm-dd)', required=False))
+        history_command.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date (format: yyyy-mm-dd)', required=False))
+        history_command.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date (format: yyyy-mm-dd)', required=False))
         self.add_command(history_command)
 
 
@@ -139,8 +139,8 @@ class AdminConsumerSection(PulpCliSection):
     def history(self, **kwargs):
         self.prompt.render_title('Consumers History for consumer :' + kwargs['id'])
 
-        history_list = self.context.server.consumer_history.history(kwargs['id'], kwargs['event_type'], kwargs['limit'], kwargs['sort'],
-                                                            kwargs['start_date'], kwargs['end_date']).response_body
+        history_list = self.context.server.consumer_history.history(kwargs['id'], kwargs['event-type'], kwargs['limit'], kwargs['sort'],
+                                                            kwargs['start-date'], kwargs['end-date']).response_body
         for history in history_list:
             self.prompt.render_document(history)
 

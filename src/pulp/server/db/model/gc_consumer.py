@@ -99,7 +99,7 @@ class ConsumerHistoryEvent(Model):
     @ivar consumer_id: identifies the consumer
     @type id: str
 
-    @ivar originator: 'consumer' or username of the admin who initiated the event
+    @ivar originator: consumer or username of the admin who initiated the event
     @type originator: str
 
     @param type: event type

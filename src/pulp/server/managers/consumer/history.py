@@ -92,7 +92,7 @@ class ConsumerHistoryManager(object):
         # Check that consumer exists for all except registration event
         existing_consumer = Consumer.get_collection().find_one({'id' : consumer_id})
         if not existing_consumer and event_type != TYPE_CONSUMER_UNREGISTERED:
-            raise MissingResource(consumer_id)
+            raise MissingResource(consumer=consumer_id)
 
         if event_type not in TYPES:
             raise InvalidValue(event_type)
@@ -140,7 +140,7 @@ class ConsumerHistoryManager(object):
         # Verify the consumer ID represents a valid consumer
         existing_consumer = Consumer.get_collection().find_one({'id' : consumer_id})
         if not existing_consumer:
-            raise MissingResource(consumer_id)
+            raise MissingResource(consumer=consumer_id)
 
         if event_type is not None and event_type not in TYPES:
             raise InvalidValue(event_type)
