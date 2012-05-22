@@ -30,6 +30,7 @@ import logging
 import os
 
 from pulp.gc_client.api.exceptions import *
+from pulp.gc_client.util.arg_utils import InvalidConfig
 
 # -- constants ----------------------------------------------------------------
 
@@ -40,6 +41,7 @@ CODE_PULP_SERVER_EXCEPTION = os.EX_SOFTWARE
 CODE_CONNECTION_EXCEPTION = os.EX_IOERR
 CODE_PERMISSIONS_EXCEPTION = os.EX_NOPERM
 CODE_UNEXPECTED = os.EX_SOFTWARE
+CODE_INVALID_CONFIG = os.EX_DATAERR
 
 LOG = logging.getLogger(__name__)
 
@@ -74,6 +76,7 @@ class ExceptionHandler:
             (PulpServerException,  self.handle_server_error),
             (ConnectionException,  self.handle_connection_error),
             (PermissionsException, self.handle_permission),
+            (InvalidConfig,        self.handle_invalid_config),
         )
 
         handle_func = self.handle_unexpected
@@ -232,6 +235,18 @@ class ExceptionHandler:
         self.prompt.render_paragraph(_(desc))
 
         return CODE_PERMISSIONS_EXCEPTION
+
+    def handle_invalid_config(self, e):
+        """
+        Handles a client-side argument parsing exception.
+
+        @return: appropriate exit code for this error
+        """
+
+        self._log_client_exception(e)
+
+        self.prompt.render_failure_message(e[0])
+        return CODE_INVALID_CONFIG
 
     def handle_unexpected(self, e):
         """

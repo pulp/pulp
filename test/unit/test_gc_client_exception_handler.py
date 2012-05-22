@@ -21,6 +21,7 @@ import testutil
 from pulp.gc_client.framework.core import TAG_FAILURE, TAG_PARAGRAPH
 import pulp.gc_client.framework.exceptions as handler
 import pulp.gc_client.api.exceptions as exceptions
+from pulp.gc_client.util.arg_utils import InvalidConfig
 
 class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
     """
@@ -73,6 +74,12 @@ class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
 
         code = self.exception_handler.handle_exception(exceptions.PulpServerException({}))
         self.assertEqual(code, handler.CODE_PULP_SERVER_EXCEPTION)
+        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
+        code = self.exception_handler.handle_exception(InvalidConfig('Test Message'))
+        self.assertEqual(code, handler.CODE_INVALID_CONFIG)
         self.assertEqual(1, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
@@ -219,6 +226,20 @@ class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.assertTrue('certificate' in self.recorder.lines[2]) # skip blank line
         self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
+
+    def test_invalid_config(self):
+        """
+        Tests a client-side argument parsing errror.
+        """
+
+        # Test
+        e = InvalidConfig('Expected')
+        code = self.exception_handler.handle_invalid_config(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_INVALID_CONFIG)
+        self.assertEqual('Expected', self.recorder.lines[0].strip())
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
 
     def test_unexpected(self):
         """
