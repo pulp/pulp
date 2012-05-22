@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.9
+Version:        1.1.10
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon May 21 2012 Jeff Ortel <jortel@redhat.com> 1.1.10-1
+- 821041 - packagegroup install of custom groups seems to be failing
+  (jmatthews@redhat.com)
+
 * Thu May 17 2012 Jeff Ortel <jortel@redhat.com> 1.1.9-1
 - Reset release=1. (jortel@redhat.com)
 - 820352 - encode the rpm description correctly before passing metadata to POST
