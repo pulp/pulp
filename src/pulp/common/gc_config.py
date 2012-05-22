@@ -413,6 +413,18 @@ class Config(dict):
         @rtype: cfg
         """
         return Graph(self, strict)
+    
+    def validate(self, schema):
+        """
+        Perform validation.
+        @param schema: A schema object.
+        @type schema: Schema
+        @return: Two list: undefined sections and properties.
+        @rtype: tuple
+        @raise ValidationException: Not valid.
+        """
+        v = Validator(schema)
+        return v.validate(self)
 
     def __setitem__(self, name, value):
         """

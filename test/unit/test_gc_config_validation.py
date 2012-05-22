@@ -154,9 +154,8 @@ class TestConfigValidator(testutil.PulpAsyncTest):
             self.assertRaises(ValidationException, validator.validate, cfg)
 
     def test_extras(self):
-        validator = Validator(SCHEMA)
         cfg = self.read(EXTRA_SECTIONS_AND_PROPERTIES)
-        s,p = validator.validate(cfg)
+        s,p = cfg.validate(SCHEMA)
         self.assertEqual(len(s), 1)
         self.assertEqual(s, ['wtf'])
         self.assertEqual(sorted(p), sorted(['limits.cpu', 'limits.color']))
