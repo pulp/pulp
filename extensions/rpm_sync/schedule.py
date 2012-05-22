@@ -42,7 +42,7 @@ from pulp.gc_client.util.arg_utils import convert_boolean_arguments, convert_rem
 SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'last_run', 'next_run']
 DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
 
-SCHEDULE_DESCRIPTION = _('time to execute (with optional recurrence) in iso8601 format (yyyy-mm-ddThh:mm:ssZ/PiuT')
+SCHEDULE_DESCRIPTION = _('time to execute (with optional recurrence) in iso8601 format (yyyy-mm-ddThh:mm:ssZ/PiuT)')
 FAILURE_THRESHOLD_DESCRIPTION = _('number of failures before the schedule is automatically disabled; unspecified '\
                                   'means the schedule will never be automatically disabled')
 ENABLED_DESCRIPTION = _('controls whether or not the operation will execute at its scheduled time')
