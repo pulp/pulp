@@ -221,7 +221,7 @@ class UpdateContent(PollingCommand):
             allow_multiple=True,
             aliases=['-n'])
         self.create_flag(
-            '--import-keys',
+            '--importkeys',
             _('import GPG keys as needed'))
         self.create_flag(
             '--all',
@@ -234,7 +234,7 @@ class UpdateContent(PollingCommand):
         all = kwargs['all']
         names = kwargs['name']
         apply = (not kwargs['no-commit'])
-        importkeys = kwargs['import-keys']
+        importkeys = kwargs['importkeys']
         reboot = kwargs['reboot']
         units = []
         options = dict(
