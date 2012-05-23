@@ -16,6 +16,7 @@ from pulp.gc_client.api.repository import *
 from pulp.gc_client.api.consumer import *
 from pulp.gc_client.api.server_info import ServerInfoAPI
 from pulp.gc_client.api.tasks import TasksAPI
+from pulp.gc_client.api.upload import UploadAPI
 
 
 class Bindings(object):
@@ -38,3 +39,4 @@ class Bindings(object):
         self.repo_unit_associations = RepositoryUnitAssociationAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
+        self.uploads = UploadAPI(pulp_connection)
