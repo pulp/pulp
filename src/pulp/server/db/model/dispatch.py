@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pulp.common import dateutils
 from pulp.common.tags import resource_tag
@@ -49,6 +49,7 @@ class ScheduledCall(Model):
         call_request.tags.append(schedule_tag)
         interval, start, runs = dateutils.parse_iso8601_interval(schedule)
         now = datetime.utcnow()
+        zero = timedelta(seconds=0)
         start = start and dateutils.to_naive_utc_datetime(start)
 
         self.serialized_call_request = call_request.serialize()
@@ -56,7 +57,8 @@ class ScheduledCall(Model):
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
         self.first_run = start or now
-        while self.first_run <= now: # always schedule the firs run in the future
+        while interval > zero and self.first_run <= now:
+            # try to schedule the first run in the future
             self.first_run += interval
         self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
         self.next_run = None # will calculated and set by the scheduler
