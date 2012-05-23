@@ -273,9 +273,6 @@ class DeleteOrphansAction(JSONController):
     @auth_required(DELETE)
     def POST(self):
         orphans = self.params()
-        for o in orphans:
-            if 'content_type' not in o or 'content_id' not in o:
-                raise pulp_exceptions.InvalidValue(['content_type', 'content_id'])
         orphan_manager = factory.content_orphan_manager()
         call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans], archive=True)
         return execution.execute_async(self, call_request)

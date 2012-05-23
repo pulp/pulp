@@ -116,6 +116,8 @@ class OrphanManager(object):
         # munge the orphans into something more programmatic-ly convenient
         orphans_by_id = {}
         for o in orphans:
+            if 'content_type' not in o or 'content_id' not in o:
+                raise pulp_exceptions.InvalidValue(['content_type', 'content_id'])
             id_list = orphans_by_id.setdefault(o['content_type'], [])
             id_list.append(o['content_id'])
 
