@@ -5,34 +5,38 @@ Overview
 --------
 
 Pulp uses an advanced task queueing system that detects and avoids concurrent
-operations that conflict. It utilizes this system to manage all REST API calls.
-This means that any REST API will return one of three responses:
+operations that conflict. All REST API calls are managed through this system.
+Any REST API will return one of three responses:
 
-* A success response. This is usually in the form of a 200 OK or a 201 CREATED.
-* A postponed response. This is in the form of a 202 ACCEPTED.
-* A conflict response. This is in the form of a 409 CONFLICT.
+* Success Response - 200 OK or a 201 CREATED
+* Postponed Response - 202 ACCEPTED
+* Conflict Response - 409 CONFLICT
 
-The success response means that no conflicts were detected and the REST call
-proceeded. This is what is typically expected from a REST API call.
+A success response indicates no conflicts were detected and the REST call
+executed. This is what is typically expected from a REST API call.
 
-A postponed response means that a conflict was detected, but the call can be
+A postponed response indicates a conflict was detected, however the call can be
 executed at a later point in time. The call will be carried out by an
-asynchronous *task*. The response body is a serialized **call report**
-(see below) that contains metadata about the call, its progress, and resolution
-as well as an href that can be used to poll for updates to this information.
+asynchronous task on the server. The response body to such a call is a
+serialized call report (see below) that contains metadata about the call,
+its progress, and resolution. Additionally, an href is provided that can be used
+to poll for updates to this information.
 
-Details on :ref:`task_management`
+More information on retrieving and displaying task information can be found
+:ref:`in the Task Management API documentation <task_management>`.
 
-A conflict response means that a conflict was detected that causes the call to
-be unserviceable now or at any point in the future. The body of this response
-is Pulp's standard exception format, including the *reasons* for the response.
+A conflict response indicates that a conflict was detected that causes the call to
+be unserviceable now or at any point in the future. An example of such a situation
+is the case where an update operation is requested after a delete operation has
+been queued for the resource. The body of this response is Pulp's standard
+exception format including the reasons for the response.
 
 .. _call_report:
 
 Call Report
 -----------
 
-A 202 ACCEPTED response returns **call report** JSON object as the response body
+A 202 ACCEPTED response returns a **call report** JSON object as the response body
 that has the following fields:
 
 * **_href** *(string)* - uri path to retrieve subsequent call reports for this task.
@@ -49,4 +53,26 @@ that has the following fields:
 * **start_time** *(null or string)* - the time the call started executing
 * **finish_time** *(null or string)* - the time the call stopped executing
 * **tags** *(array)* - arbitrary tags useful for looking up the call report
+
+Example Call Report::
+
+ {
+  "exception": null,
+  "job_id": null,
+  "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
+  "tags": [
+    "pulp:repository:f16",
+    "pulp:action:sync"
+  ],
+  "reasons": [],
+  "start_time": "2012-05-17T16:48:00Z",
+  "traceback": null,
+  "state": "running",
+  "finish_time": null,
+  "schedule_id": null,
+  "result": null,
+  "progress": { <contents depend on the operation> },
+  "response": "accepted",
+  "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/"
+ }
 
