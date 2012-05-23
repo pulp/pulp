@@ -262,7 +262,7 @@ class OrphanResource(JSONController):
     def DELETE(self, content_type, content_id):
         orphan_manager = factory.content_orphan_manager()
         orphan_manager.get_orphan(content_type, content_id)
-        ids = [{'content_type': content_type, 'content_id': content_id}]
+        ids = [{'content_type_id': content_type, 'unit_id': content_id}]
         call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids], archive=True)
         return execution.execute_async(self, call_request)
 

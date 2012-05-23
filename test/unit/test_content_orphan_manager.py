@@ -182,8 +182,8 @@ class OrphanManagerTests(testutil.PulpTest):
 
     def test_delete_by_id(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        json_obj = {'content_type': unit['_content_type_id'],
-                    'content_id': unit['_id']}
+        json_obj = {'content_type_id': unit['_content_type_id'],
+                    'unit_id': unit['_id']}
         self.orphan_manager.delete_orphans_by_id([json_obj])
         orphans = self.orphan_manager.list_all_orphans()
         self.assertTrue(len(orphans) == 0)
