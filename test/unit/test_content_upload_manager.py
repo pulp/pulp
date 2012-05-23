@@ -22,6 +22,7 @@ import testutil
 import mock_plugins
 
 import pulp.server.constants as pulp_constants
+from   pulp.server.content.plugins.model import Repository
 from   pulp.server.db.model.gc_repository import Repo, RepoImporter
 from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
@@ -199,11 +200,12 @@ class ContentUploadManagerTests(testutil.PulpTest):
         self.assertEqual(report, importer_return_report)
 
         call_args = mock_plugins.MOCK_IMPORTER.upload_unit.call_args[0]
-        self.assertEqual(call_args[0], 'mock-type')
-        self.assertEqual(call_args[1], key)
-        self.assertEqual(call_args[2], metadata)
-        self.assertEqual(call_args[3], file_path)
-        self.assertEqual(call_args[4].repo_id, 'repo-u')
+        self.assertTrue(isinstance(call_args[0], Repository))
+        self.assertEqual(call_args[1], 'mock-type')
+        self.assertEqual(call_args[2], key)
+        self.assertEqual(call_args[3], metadata)
+        self.assertEqual(call_args[4], file_path)
+        self.assertEqual(call_args[5].repo_id, 'repo-u')
 
         # Clean up
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = None

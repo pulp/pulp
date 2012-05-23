@@ -128,7 +128,7 @@ class Importer(object):
 
     # -- actions --------------------------------------------------------------
 
-    def upload_unit(self, type_id, unit_key, metadata, file_path, conduit, config):
+    def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
         """
         Handles a user request to upload a unit into a repository. This call
         should use the data provided to add the unit as if it were synchronized
@@ -157,6 +157,9 @@ class Importer(object):
         multiple units within Pulp. It is also possible that this call will
         create one or more relationships between existing units.
 
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
         @param type_id: type of unit being uploaded
         @type  type_id: str
 
@@ -172,7 +175,7 @@ class Importer(object):
         @type  file_path: str
 
         @param conduit: provides access to relevant Pulp functionality
-        @type  conduit: L{pulp.server.content.conduits.unit_import.ImportUnitConduit}
+        @type  conduit: L{pulp.server.content.conduits.unit_add.UnitAddConduit}
 
         @param config: plugin configuration for the repository
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}

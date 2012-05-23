@@ -228,7 +228,7 @@ class ContentUploadManager(object):
         # Invoke the importer
         try:
             # def upload_unit(self, type_id, unit_key, metadata, file_path, conduit, config):
-            report = importer_instance.upload_unit(unit_type_id, unit_key, unit_metadata, file_path, conduit, call_config)
+            report = importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key, unit_metadata, file_path, conduit, call_config)
         except Exception, e:
             _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
             raise PulpExecutionException(e), None, sys.exc_info()[2]
