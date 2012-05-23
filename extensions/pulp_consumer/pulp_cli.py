@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+from M2Crypto import X509
 from gettext import gettext as _
 
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
@@ -80,15 +81,18 @@ class ConsumerSection(PulpCliSection):
 
     def register(self, **kwargs):
 
-        # Collect input
+        # Get consumer id
         id = kwargs['id']
 
         # Read path of consumer cert from config and check if consumer is already registered
         consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
         bundle = Bundle(consumer_cert_path)
-        if self.consumerid(bundle):
-            self.prompt.write("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid())
+        existing_consumer = self.consumerid(bundle)
+        if existing_consumer:
+            self.prompt.render_failure_message("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % existing_consumer)
+            return
 
+        # Get other consumer parameters
         name = id
         if 'display-name' in kwargs:
             name = kwargs['display-name']
@@ -117,7 +121,7 @@ class ConsumerSection(PulpCliSection):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop('id') # not needed in the delta
-        if 'note' in kwargs.keys():
+        if 'note' in delta.keys():
             if kwargs['note']:
                 delta['notes'] = self._parse_notes(kwargs['note'])
             delta.pop('note')
@@ -202,7 +206,7 @@ class ConsumerSection(PulpCliSection):
         """
         if os.path.exists(path):
             if not os.access(path, os.W_OK):
-                self.prompt.write(_("Write permission is required for %s to perform this operation." %
+                self.prompt.render_failure_message(_("Write permission is required for %s to perform this operation." %
                                     path))
             else:
                 return True
