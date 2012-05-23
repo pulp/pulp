@@ -31,6 +31,7 @@ except ImportError:
 
 from pulp.server.content.plugins.distributor import Distributor
 from pulp.server.content.plugins.importer import Importer
+from pulp.server.content.plugins.profiler import Profiler
 from pulp.server.content.types import database, parser
 from pulp.server.content.types.model import TypeDescriptor
 from pulp.server.exceptions import PulpException
@@ -67,7 +68,7 @@ class PluginLoaderException(PulpException):
 
 class PluginLoadError(PluginLoaderException):
     """
-    Raised when error are encounterd while loading plugins.
+    Raised when error are encountered while loading plugins.
     """
     pass
 
@@ -109,7 +110,7 @@ def initialize(validate=True):
     @type validate: bool
     """
     global _LOADER
-    # pre-ininitialzation validation
+    # pre-initialization validation
     assert not _is_initialized()
     _check_path(_PLUGINS_ROOT)
     # initialization
@@ -390,7 +391,8 @@ class PluginLoader(object):
         @type path: str
         """
         _check_path(path)
-        _LOG.warn(_('Profilers load called, but not implemented'))
+        _add_path_to_sys_path(path)
+        _load_plugins_from_path(path, Profiler, self.__profilers)
 
     def remove_distributor(self, id):
         """
@@ -426,7 +428,7 @@ class PluginLoader(object):
 
     def get_distributors_by_type(self, content_type):
         """
-        @param content_tyep: content type
+        @param content_type: content type
         @type content_type: str
         @return: list of tuples of distributor (class, configuration)
         @rtype: list [(L{Distributor}, dict)]
@@ -495,7 +497,7 @@ class PluginLoader(object):
 
 class _PluginMap(object):
     """
-    Convience class for managing plugins of a homogeneous type.
+    Convenience class for managing plugins of a homogeneous type.
     @ivar configs: dict of associated configurations
     @ivar plugins: dict of associated classes
     @ivar types: dict of supported types the plugins operate on
