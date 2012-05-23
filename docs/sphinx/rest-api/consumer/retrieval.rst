@@ -22,7 +22,18 @@ general consumer details.
 :sample_response:`200` ::
 
  {
-
+   "display_name": "test-consumer",
+   "description": null,
+   "certificate": "-----BEGIN CERTIFICATE-----\nMIICHDCCAQQCATowDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0\nMB4XDTEyMDUyMzE5MDY0MFoXDTIyMDUyMTE5MDY0MFowGDEWMBQGA1UEAxMNdGVz\ndC1jb25zdW1lcjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA7XNQasWOzu0B\nmIr4ByA91GOXXdL1ygxg1iI7XLt3cKyIl7UiJuVDVqjW4/UJ7In3vZYVgGE4hfye\n9/tTxkcYcFqddMclSHmkYTL5LTB564ToJN3XBUFWoqQgi3/tn9GPHiM8u0BQiqFF\nCL+B8trz/F7oh0CuwwCbh7YSZCYSJjMCAwEAATANBgkqhkiG9w0BAQUFAAOCAQEA\nOiaWBqBU5ye8RkOjNg2H8t5EeH5aUi0sQLNd5ER0RKL3hGv7lOaDi2JrEVYefBLW\ntHS7oOKcl1Naf1VI0xoG775fSph+SuHokJkwhqMCZFV+YK5838Rzt46i1s9+EOZn\ncFwn8AUc6f5hlf59OevRzDxzYxd2tFldmlR/mOhIezkpQe/C1bPvYRqu+rNyJNCZ\neoUQkTf/NOQjwYp1u+jyksWGvHctORHPt6OMJwpKu1mhIbmAcNPWvLqvG8kAdU47\nPk3Hipuj/HpjHurn7C6Gm1zb5mgRKaYke6LTf6Hd3/txjBo7gqkwoP3QvPmgV3Dn\n8Y3PoRxp7uq32ogr9j+I1g==\n-----END CERTIFICATE-----",
+   "_ns": "gc_consumers",
+   "notes": {"arch":"i386"},
+   "capabilities": {},
+   "unit_profile": [],
+   "bindings": [],
+   "_id": {
+     "$oid": "4fbd3540e5e7102dae000015"
+   },
+   "id": "test-consumer"
  }
 
 
@@ -61,7 +72,7 @@ where there are no consumers.
     },
     "id": "test-consumer"
   },
-    {
+  {
     "display_name": "test-consumer1",
     "description": null,
     "certificate": "-----BEGIN CERTIFICATE-----\nMIICHDCCAQQCATowDQYJKoZIhvcNApCEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0\nMB4XDTEyMDUyMzE5MDY0MFoXDTIyMDUyMTE5MDY0MFowGDEWMBQGA1UEAxMNdGVz\ndC1jb25zdW1lcjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA7XNQasWOzu0B\nmIr4ByA91GOXXdL1ygxg1iI7XLt3cKyIl7UiJuVDVqjW4/UJ7In3vZYVgGE4hfye\n9/tTxkcYcFqddMclSHmkYTL5LTB564ToJN3XBUFWoqQgi3/tn9GPHiM8u0BQiqFF\nCL+B8trz/F7oh0CuwwCbh7YSZCYSJjMCAwEAATANBgkqhkiG9w0BAQUFAAOCAQEA\nOiaWBqBU5ye8RkOjNg2H8t5EeH5aUi0sQLNd5ER0RKL3hGv7lOaDi2JrEVYefBLW\ntHS7oOKcl1Naf1VI0xoG775fSph+SuHokJkwhqMCZFV+YK5838Rzt46i1s9+EOZn\ncFwn8AUc6f5hlf59OevRzDxzYxd2tFldmlR/mOhIezkpQe/C1bPvYRqu+rNyJNCZ\neoUQkTf/NOQjwYp1u+jyksWGvHctORHPt6OMJwpKu1mhIbmAcNPWvLqvG8kAdU47\nPk3Hipuj/HpjHurn7C6Gm1zb5mgRKaYke6LTf6Hd3/txjBo7gqkwoP3QvPmgV3Dn\n8Y3PoRxp7uq32ogr9j+I1g==\n-----END CERTIFICATE-----",
@@ -75,5 +86,5 @@ where there are no consumers.
     },
     "id": "test-consumer1"
   }
-]
+ ]
 
