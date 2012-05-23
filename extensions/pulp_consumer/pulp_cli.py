@@ -17,8 +17,7 @@ from gettext import gettext as _
 from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.gc_client.api.exceptions import NotFoundException
 
-from pulp.gc_client.consumer.config import ConsumerConfig
-from pulp.gc_client.consumer.credentials import ConsumerBundle
+from pulp.common.bundle import Bundle
 from pulp.common.capabilities import AgentCapabilities
 
 
@@ -83,7 +82,11 @@ class ConsumerSection(PulpCliSection):
 
         # Collect input
         id = kwargs['id']
-        if self.consumerid():
+
+        # Read path of consumer cert from config and check if consumer is already registered
+        consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
+        bundle = Bundle(consumer_cert_path)
+        if self.consumerid(bundle):
             self.prompt.write("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % self.consumerid())
 
         name = id
@@ -95,9 +98,8 @@ class ConsumerSection(PulpCliSection):
             if kwargs['note']:
                 notes = self._parse_notes(kwargs['note'])
 
-        # Check and create cert bundle
-        self.check_bundle_path()
-        bundle = ConsumerBundle()
+        # Check write permissions to cert directory
+        self.check_write_perms(consumer_cert_path)
 
         # Set agent capabilities
         capabilities = dict(AgentCapabilities.default())
@@ -163,14 +165,35 @@ class ConsumerSection(PulpCliSection):
         return notes_dict
 
 
-    def consumerid(self):
+    def consumerid(self, bundle):
         """
-        Get the consumer ID from the identity certificate.
-        @return: The consumer id.  Returns (None) when not registered.
+        Get the consumer ID.
+        @return: The consumer ID.
         @rtype: str
         """
-        bundle = ConsumerBundle()
-        return bundle.getid()
+        if bundle.valid():
+            content = bundle.read()
+            x509 = X509.load_cert_string(content)
+            subject = self.subject(x509)
+            return subject['CN']
+
+    def subject(self, x509):
+        """
+        Get the certificate subject.
+        note: Missing NID mapping for UID added to patch openssl.
+        @return: A dictionary of subject fields.
+        @rtype: dict
+        """
+        d = {}
+        subject = x509.get_subject()
+        subject.nid['UID'] = 458
+        for key, nid in subject.nid.items():
+            entry = subject.get_entries_by_nid(nid)
+            if len(entry):
+                asn1 = entry[0].get_data()
+                d[key] = str(asn1)
+                continue
+        return d
 
     def check_write_perms(self, path):
         """
@@ -186,6 +209,3 @@ class ConsumerSection(PulpCliSection):
         else:
             self.check_write_perms(os.path.split(path)[0])
 
-    def check_bundle_path(self):
-        bundle = ConsumerBundle()
-        return self.check_write_perms(bundle.crtpath())
