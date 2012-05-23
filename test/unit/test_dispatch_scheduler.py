@@ -180,7 +180,7 @@ class SchedulerSchedulingTests(SchedulerTests):
         self.scheduler.update_last_run(scheduled_call)
         updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
-        self.assertTrue(updated_next_run == interval + updated_scheduled_call['last_run'])
+        self.assertTrue(updated_next_run == updated_scheduled_call['last_run'])
 
 # query tests ------------------------------------------------------------------
 
