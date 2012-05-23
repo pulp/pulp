@@ -46,15 +46,15 @@ class AdminConsumerSection(PulpCliSection):
 
         # Common Options
         id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
-        name_option = PulpCliOption('--display-name', '(optional) user-readable display name for the consumer', required=False)
-        description_option = PulpCliOption('--description', '(optional) user-readable description for the consumer', required=False)
+        name_option = PulpCliOption('--display-name', 'user-readable display name for the consumer', required=False)
+        description_option = PulpCliOption('--description', 'user-readable description for the consumer', required=False)
 
         # Update Command
         update_command = PulpCliCommand('update', 'changes metadata on an existing consumer', self.update)
         update_command.add_option(id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
-        d =  '(optional) adds/updates/deletes notes to programmtically identify the consumer; '
+        d =  'adds/updates/deletes notes to programmtically identify the consumer; '
         d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
         d += 'be changed by specifying this option multiple times; notes are deleted by '
         d += 'specifying "" as the value'

@@ -51,7 +51,7 @@ class ConsumerSection(PulpCliSection):
         id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
         name_option = PulpCliOption('--display-name', '(optional) user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', '(optional) user-readable description for the consumer', required=False)
-        d =  '(optional) adds/updates/deletes notes to programmtically identify the consumer; '
+        d =  'adds/updates/deletes notes to programmtically identify the consumer; '
         d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
         d += 'be changed by specifying this option multiple times; notes are deleted by '
         d += 'specifying "" as the value'
