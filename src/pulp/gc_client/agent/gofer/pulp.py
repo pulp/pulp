@@ -23,9 +23,10 @@ from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
-from pulp.gc_client.agent.lib.dispatcher import Dispatcher
-from pulp.gc_client.agent.bindings import PulpBindings
 from pulp.common.bundle import Bundle as BundleImpl
+from pulp.gc_client.agent.lib.dispatcher import Dispatcher
+from pulp.gc_client.api.server import PulpConnection
+from pulp.gc_client.api.bindings import Bindings
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -61,6 +62,19 @@ class Bundle(BundleImpl):
 
     def __init__(self):
         BundleImpl.__init__(self, cfg.messaging.clientcert)
+        
+
+class PulpBindings(Bindings):
+    """
+    Pulp (REST) API.
+    """
+    
+    def __init__(self):
+        host = cfg.rest.host
+        port = int(cfg.rest.port)
+        cert = cfg.rest.clientcert
+        connection = PulpConnection(host, port, cert_filename=cert)
+        Bindings.__init__(self, connection)
 
 #
 # Actions

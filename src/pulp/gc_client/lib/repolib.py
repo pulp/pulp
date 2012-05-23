@@ -22,8 +22,8 @@ import os
 import shutil
 
 # Pulp
+from logging import getLogger
 from pulp.gc_client.lib.lock import Lock
-from pulp.gc_client.lib.logutil import getLogger
 from pulp.gc_client.lib.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 from pulp.common.util import encode_unicode, decode_unicode
 
