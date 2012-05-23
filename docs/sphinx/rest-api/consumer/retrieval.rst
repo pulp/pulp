@@ -77,38 +77,3 @@ where there are no consumers.
   }
 ]
 
-Retrieve Importers Associated with a Repository
------------------------------------------------
-
-Retrieves the :term:`importer` (if any) associated with a repository. The list
-will either be empty (no importer configured) or contain a single entry.
-
-| :method:`get`
-| :path:`/v2/repositories/<repo_id>/importers/`
-| :permission:`read`
-| :param_list:`get` None
-| :response_list:`_`
-
-* :response_code:`200,containing a list of importers`
-* :response_code:`404,if there is no repository with the given ID; this will not occur if the repository exists but has no associated importers`
-
-| :return:`database representation of the repository's importer or an empty list`
-
-:sample_response:`200` ::
-
- [
-  {
-    "scratchpad": 1,
-    "_ns": "gc_repo_importers",
-    "importer_type_id": "harness_importer",
-    "last_sync": "2012-01-25T15:26:32-05:00",
-    "repo_id": "harness_repo_1",
-    "sync_in_progress": false,
-    "_id": "bbe81308-ef7c-4c0c-b684-385fd627d99e",
-    "config": {
-      "num_units": "5",
-      "write_files": "true"
-    },
-    "id": "harness_importer"
-  }
- ]
