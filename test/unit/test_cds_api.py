@@ -927,7 +927,7 @@ class CdsApiTests(testutil.PulpAsyncTest):
         #   expected bind data
         for uuid in CONSUMERIDS:
             agent = Agent(uuid)
-            repoproxy = agent.Consumer()
+            repoproxy = agent.ConsumerXXX()
             updatecalls = repoproxy.update.history()
             lastupdate = updatecalls[-1]
             repoid = lastupdate[0][0]

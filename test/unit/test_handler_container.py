@@ -172,7 +172,7 @@ class TestDispatcher(testutil.PulpTest):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        report = dispatcher.profile(['rpm'])
+        report = dispatcher.profile()
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 0)

@@ -25,7 +25,7 @@ def install():
     mock.install()
     mock.reset()
     mock.register(
-        Consumer=Consumer,
+        ConsumerXXX=ConsumerXXX,
         Packages=Packages,
         PackageGroups=PackageGroups,
         cdsplugin=cdsplugin,)
@@ -37,7 +37,7 @@ def all():
     return mock.all()
 
 
-class Consumer(object):
+class ConsumerXXX(object):
 
     def unregistered(self):
         pass
