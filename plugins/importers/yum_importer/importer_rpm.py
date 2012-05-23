@@ -212,6 +212,12 @@ def verify_download(missing_rpms, new_rpms, new_units, verify_options={}):
         del new_units[key]
     return not_synced
 
+def force_ascii(value):
+    retval = value
+    if isinstance(value, unicode):
+        retval = value.encode('ascii', 'ignore')
+    return retval
+
 def get_yumRepoGrinder(repo_id, repo_working_dir, config):
     """
     @param repo_id repo id
@@ -229,10 +235,10 @@ def get_yumRepoGrinder(repo_id, repo_working_dir, config):
     repo_label = repo_id
     repo_url = config.get("feed_url")
     num_threads = config.get("num_threads") or 5
-    proxy_url = config.get("proxy_url")
-    proxy_port = config.get("proxy_port")
-    proxy_user = config.get("proxy_user")
-    proxy_pass = config.get("proxy_pass")
+    proxy_url = force_ascii(config.get("proxy_url"))
+    proxy_port = force_ascii(config.get("proxy_port"))
+    proxy_user = force_ascii(config.get("proxy_user"))
+    proxy_pass = force_ascii(config.get("proxy_pass"))
     sslverify = config.get("ssl_verify") or 0
     # Note ssl_ca_cert, ssl_client_cert, and ssl_client_key are all written in the main importer
     # int the validate_config method
