@@ -15,7 +15,6 @@ from gettext import gettext as _
 
 import web
 
-from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.exceptions import MissingResource, InvalidValue
