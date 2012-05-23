@@ -16,7 +16,7 @@ the relative path will be derived from it unless otherwise overridden.
 Basic
 ^^^^^
 
-``--id``
+``--repo-id``
   Unique identifier for the repository. Valid characters include letters,
   numbers, hyphen (``-``) and underscore (``_``). The ID is case sensitive;
   "pulp" and "Pulp" are two separate repositories. An ID is required at repository
@@ -172,7 +172,7 @@ All values may be updated except for the repository's ID. Configuration values
 can be removed (and thus reset to the default) by omitting a value or specifying
 ``""`` as the value. For example::
 
- $ repo update --id demo --verify-checksum "" --proxy-url=
+ $ repo update --repo-id demo --verify-checksum "" --proxy-url=
 
 See the documentation for :ref:`repository create <repo-create>` for more
 information on the possible configuration.

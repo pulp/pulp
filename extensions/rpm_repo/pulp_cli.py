@@ -111,7 +111,7 @@ class YumRepoCreateCommand(PulpCliCommand):
         # to handle.
 
         # Gather data
-        repo_id = kwargs.pop('id')
+        repo_id = kwargs.pop('repo-id')
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display-name', None)
 
@@ -163,10 +163,10 @@ class YumRepoDeleteCommand(PulpCliCommand):
         PulpCliCommand.__init__(self, 'delete', desc, self.delete)
         self.context = context
 
-        self.add_option(PulpCliOption('--id', 'identifies the repository to delete', required=True))
+        self.add_option(PulpCliOption('--repo-id', 'identifies the repository to delete', required=True))
 
     def delete(self, **kwargs):
-        repo_id = kwargs['id']
+        repo_id = kwargs['repo-id']
         response = self.context.server.repo.delete(repo_id)
 
         if not response.is_async():
@@ -186,7 +186,7 @@ class YumRepoUpdateCommand(PulpCliCommand):
     def update(self, **kwargs):
 
         # Gather data
-        repo_id = kwargs.pop('id')
+        repo_id = kwargs.pop('repo-id')
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display-name', None)
 
@@ -304,7 +304,7 @@ def add_repo_options(command, is_update):
     command.add_option_group(throttling_group)
 
     # Required Options
-    required_group.add_option(PulpCliOption('--id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
+    required_group.add_option(PulpCliOption('--repo-id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
 
     # Metadata Options
     basic_group.add_option(PulpCliOption('--feed', 'URL of the external source repository to sync', required=False))
