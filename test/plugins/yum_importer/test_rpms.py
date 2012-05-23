@@ -754,7 +754,7 @@ class TestRPMs(unittest.TestCase):
         self.assertEqual(error["filename"], "pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
         self.assertEqual(error["value"], 
             '(37, "Couldn\'t open file %s")' % (test_rpm_with_error))
-        self.assertEqual(error["error_type"], "<class 'pycurl.error'>")
+        self.assertTrue('pycurl.error' in error["error_type"])
         self.assertTrue(isinstance(error["exception"], basestring)) 
         self.assertTrue(len(error["traceback"]) > 0)
 
