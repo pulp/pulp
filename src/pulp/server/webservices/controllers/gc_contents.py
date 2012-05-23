@@ -15,7 +15,9 @@ from gettext import gettext as _
 
 import web
 
+from pulp.common.tags import action_tag, resource_tag
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
@@ -229,7 +231,8 @@ class OrphanCollection(JSONController):
     @auth_required(DELETE)
     def DELETE(self):
         orphan_manager = factory.content_orphan_manager()
-        call_request = CallRequest(orphan_manager.delete_all_orphans, archive=True)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        call_request = CallRequest(orphan_manager.delete_all_orphans, tags=tags, archive=True)
         return execution.execute_async(self, call_request)
 
 
@@ -245,7 +248,8 @@ class OrphanTypeSubCollection(JSONController):
     @auth_required(DELETE)
     def DELETE(self, content_type):
         orphan_manager = factory.content_orphan_manager()
-        call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type], archive=True)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type], tags=tags, archive=True)
         return execution.execute_async(self, call_request)
 
 class OrphanResource(JSONController):
@@ -262,7 +266,8 @@ class OrphanResource(JSONController):
         orphan_manager = factory.content_orphan_manager()
         orphan_manager.get_orphan(content_type, content_id)
         ids = [{'content_type_id': content_type, 'unit_id': content_id}]
-        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids], archive=True)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids], tags=tags, archive=True)
         return execution.execute_async(self, call_request)
 
 # content actions controller classes -------------------------------------------
@@ -273,7 +278,9 @@ class DeleteOrphansAction(JSONController):
     def POST(self):
         orphans = self.params()
         orphan_manager = factory.content_orphan_manager()
-        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans], archive=True)
+        tags = [action_tag('delete_orphans'),
+                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans], tags=tags, archive=True)
         return execution.execute_async(self, call_request)
 
 # wsgi application -------------------------------------------------------------
