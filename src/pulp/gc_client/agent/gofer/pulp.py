@@ -18,14 +18,14 @@ Contains recurring actions and remote classes.
 
 import os
 from hashlib import sha256
+from gofer.decorators import *
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
-from gofer.decorators import *
 from pulp.gc_client.agent.lib.dispatcher import Dispatcher
 from pulp.gc_client.agent.bindings import PulpBindings
-from pulp.gc_client.consumer.credentials import ConsumerBundle
+from pulp.common.bundle import Bundle as BundleImpl
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -33,8 +33,9 @@ plugin = Plugin.find(__name__)
 dispatcher = Dispatcher()
 cfg = plugin.cfg()
 
-HEARTBEAT = cfg.heartbeat.seconds
-
+#
+# Utils
+#
 
 def secret():
     """
@@ -42,7 +43,7 @@ def secret():
     @return: The sha256 for the certificate
     @rtype: str
     """
-    bundle = ConsumerBundle()
+    bundle = Bundle()
     content = bundle.read()
     crt = bundle.split(content)[1]
     if content:
@@ -51,6 +52,15 @@ def secret():
         return hash.hexdigest()
     else:
         return None
+
+
+class Bundle(BundleImpl):
+    """
+    Consumer certificate (bundle)
+    """
+
+    def __init__(self):
+        BundleImpl.__init__(self, cfg.messaging.clientcert)
 
 #
 # Actions
@@ -71,16 +81,16 @@ class Heartbeat:
             cls.__producer = Producer(url=url)
         return cls.__producer
 
-    @action(seconds=HEARTBEAT)
+    @action(seconds=cfg.heartbeat.seconds)
     def heartbeat(self):
         return self.send()
 
     @remote
     def send(self):
         topic = Topic('heartbeat')
-        delay = int(HEARTBEAT)
-        bundle = ConsumerBundle()
-        myid = bundle.getid()
+        delay = int(cfg.heartbeat.seconds)
+        bundle = Bundle()
+        myid = bundle.cn()
         if myid:
             p = self.producer()
             body = dict(uuid=myid, next=delay)
@@ -99,8 +109,7 @@ class RegistrationMonitor:
         Start path monitor to track changes in the
         pulp identity certificate.
         """
-        bundle = ConsumerBundle()
-        path = bundle.crtpath()
+        path = '/etc/pki/pulp/consumer/cert.pem'
         cls.pmon.add(path, cls.changed)
         cls.pmon.start()
 
@@ -114,8 +123,9 @@ class RegistrationMonitor:
         @type path: str
         """
         log.info('changed: %s', path)
-        bundle = ConsumerBundle()
-        plugin.setuuid(bundle.getid())
+        bundle = Bundle()
+        myid = bundle.cn()
+        plugin.setuuid(myid)
 
 #
 # API
@@ -128,7 +138,7 @@ class Consumer:
 
     @remote(secret=secret)
     def unregistered(self):
-        bundle = ConsumerBundle()
+        bundle = Bundle()
         bundle.delete()
         report = dispatcher.clean()
         return report.dict()
@@ -136,8 +146,8 @@ class Consumer:
     @remote(secret=secret)
     def bind(self, repoid):
         bindings = PulpBindings()
-        bundle = ConsumerBundle()
-        myid = bundle.getid()
+        bundle = Bundle()
+        myid = bundle.cn()
         http = bindings.bind.find_by_id(myid, repoid)
         if http.response_code == 200:
             report = dispatcher.bind(http.response_body)
@@ -149,8 +159,8 @@ class Consumer:
     @action(days=0x8E94)
     def rebind(self):
         bindings = PulpBindings()
-        bundle = ConsumerBundle()
-        myid = bundle.getid()
+        bundle = Bundle()
+        myid = bundle.cn()
         http = bindings.bind.find_by_id(myid)
         if http.response_code == 200:
             report = dispatcher.rebind(http.response_body)

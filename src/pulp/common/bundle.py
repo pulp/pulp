@@ -11,6 +11,7 @@
 
 import os
 import re
+from M2Crypto import X509
 
 
 EXMSG = \
@@ -155,21 +156,13 @@ class Bundle:
         """
         self.path = os.path.expanduser(path)
 
-    def crtpath(self):
-        """
-        Get the absolute path to the certificate file.
-        @return: absolute path to certificate.
-        @rtype: str
-        """
-        return self.path
-
     def valid(self):
         """
         Validate the bundle.
         @return: True if exists & valid.
         @rtype: bool
         """
-        if os.path.exists(self.crtpath()):
+        if os.path.exists(self.path):
             s = self.read()
             return self.hasboth(s)
         else:
@@ -181,11 +174,10 @@ class Bundle:
         @return: A string containing the PEM encoded key & cert.
         @rtype: str
         """
-        path = self.crtpath()
-        f = open(path)
+        f = open(self.path)
         bundle = f.read()
         f.close()
-        self.assertvalid(bundle, path)
+        self.assertvalid(bundle, self.path)
         return bundle
 
     def write(self, bundle):
@@ -196,7 +188,7 @@ class Bundle:
         """
         self.mkdir()
         self.assertvalid(bundle)
-        f = open(self.crtpath(), 'w')
+        f = open(self.path, 'w')
         f.write(bundle)
         f.close()
 
@@ -204,10 +196,9 @@ class Bundle:
         """
         Delete the certificate.
         """
-        path = self.crtpath()
         try:
-            if path and os.path.exists(path):
-                os.unlink(path)
+            if path and os.path.exists(self.path):
+                os.unlink(self.path)
         except IOError:
             log.error(path, exc_info=1)
 
@@ -215,9 +206,39 @@ class Bundle:
         """
         Ensure I{root} directory exists.
         """
-        path = os.path.dirname(self.crtpath())
+        path = os.path.dirname(self.path)
         if not os.path.exists(path):
             os.makedirs(path)
 
+    def cn(self):
+        """
+        Get the subject (CN) Common Name
+        @return: The subject CN
+        @rtype: str
+        """
+        if self.valid():
+            subject = self.subject()
+            return subject['CN']
+
+    def subject(self):
+        """
+        Get the certificate subject.
+        note: Missing NID mapping for UID added to patch openssl.
+        @return: A dictionary of subject fields.
+        @rtype: dict
+        """
+        d = {}
+        content = self.read()
+        x509 = X509.load_cert_string(content)
+        subject = x509.get_subject()
+        subject.nid['UID'] = 458
+        for key, nid in subject.nid.items():
+            entry = subject.get_entries_by_nid(nid)
+            if len(entry):
+                asn1 = entry[0].get_data()
+                d[key] = str(asn1)
+                continue
+        return d
+
     def __str__(self):
-        return 'bundle: %s' % self.crtpath()
+        return 'bundle: %s' % self.path

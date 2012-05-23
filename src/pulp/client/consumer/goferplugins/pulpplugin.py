@@ -142,7 +142,7 @@ class ProfileUpdateAction:
     registered consumer
     """
     @remote(secret=getsecret)
-    @action(minutes=cfg.server.interval)
+    #@action(minutes=cfg.server.interval) # DISABLED
     def perform(self):
         """
         Looks up the consumer id and latest pkg profile info and cals
