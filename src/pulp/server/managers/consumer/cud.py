@@ -131,7 +131,7 @@ class ConsumerManager(object):
         """
         Updates metadata about the given consumer. Only the following
         fields may be updated through this call:
-        * display_name
+        * display-name
         * description
         * notes
 
@@ -159,8 +159,8 @@ class ConsumerManager(object):
             else:
                 consumer['notes'] = update_notes(consumer['notes'], delta['notes'])
 
-        if 'display_name' in delta:
-            consumer['display_name'] = delta['display_name']
+        if 'display-name' in delta:
+            consumer['display_name'] = delta['display-name']
 
         if 'description' in delta:
             consumer['description'] = delta['description']
@@ -182,7 +182,7 @@ class ConsumerManager(object):
         consumer_coll = Consumer.get_collection()
         consumer = consumer_coll.find_one({'id' : id})
         if not consumer:
-            raise MissingResource(id)
+            raise MissingResource(consumer=id)
         return consumer
 
 
