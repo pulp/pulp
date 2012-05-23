@@ -177,18 +177,25 @@ Remove orphaned content units by type and id
 Individual content units across types may be deleted by this call. The body of
 the call consists of a list of JSON objects with the fields:
 
-* content_type: also known as the content_type_id
-* content_id: also known as the content_unit_id
+* content_type_id: also known as the content_type_id
+* unit_id: also known as the content_unit_id
 
 | :method:`post`
 | :path:`/v2/content/actions/delete_orphans/`
 | :permission:`delete`
 | :param_list:`post`
 
-* :param:`,array,JSON object containing the content_type and content_id fields`
+* :param:`,array,JSON object containing the content_type_id and unit_id fields`
 
 | :response_list:`_`
 
 * :response_code:`202,even if not content is to be deleted`
 
 | :return:`call report representing the current state of the delete`
+
+:sample_request:`post` ::
+
+ {
+  [{'content_type_id': 'rpm', 'unit_id': 'd0dc2044-1edc-4298-bf10-a472ea943fe1'},
+   {'content_type_id': 'rpm', 'unit_id': '228762de-9762-4384-b41a-4ccc594467f9'}]
+ }
