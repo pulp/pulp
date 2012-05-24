@@ -13,9 +13,7 @@ in the result as well.
 | :permission:`read`
 | :param_list:`get`
 
-* :param:`?event_type,str,type of event to retrieve - supported types ('consumer_registered', 'consumer_unregistered', 
-  'repo_bound', 'repo_unbound', 'content_unit_installed', 'content_unit_uninstalled', 'unit_profile_changed', 
-  'added_to_group', 'removed_from_group'`
+* :param:`?event_type,str,type of event to retrieve; supported types: 'consumer_registered','consumer_unregistered','repo_bound','repo_unbound','content_unit_installed','content_unit_uninstalled','unit_profile_changed','added_to_group','removed_from_group'`
 * :param:`?limit,str,maximum number of results to retrieve
 * :param:`?sort,str,direction of sort by event timestamp; possible values: 'ascending', 'descending'
 * :param:`?start_date,str,earliest date of events that will be retrieved; format: yyyy-mm-dd
