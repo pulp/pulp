@@ -93,8 +93,8 @@ class AdminConsumerSection(PulpCliSection):
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop('id') # not needed in the delta
         if 'note' in delta.keys():
-            if kwargs['note']:
-                delta['notes'] = self._parse_notes(kwargs['note'])
+            if delta['note']:
+                delta['notes'] = self._parse_notes(delta['note'])
             delta.pop('note')
 
         try:

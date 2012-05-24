@@ -175,7 +175,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.unregister('fake consumer')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake consumer' == e.resources['resource_id'])
+            self.assertTrue('fake consumer' == e.resources['consumer'])
 
 
     def test_update_consumer(self):
@@ -187,7 +187,7 @@ class ConsumerManagerTests(testutil.PulpTest):
         self.manager.register('update-me', display_name='display_name_1', description='description_1', notes={'a' : 'a'})
 
         delta = {
-            'display_name' : 'display_name_2',
+            'display-name' : 'display_name_2',
             'description'  : 'description_2',
             'disregard'    : 'ignored',
         }
@@ -197,10 +197,10 @@ class ConsumerManagerTests(testutil.PulpTest):
 
         # Verify
         consumer = Consumer.get_collection().find_one({'id' : 'update-me'})
-        self.assertEqual(consumer['display_name'], delta['display_name'])
+        self.assertEqual(consumer['display_name'], delta['display-name'])
         self.assertEqual(consumer['description'], delta['description'])
 
-        self.assertEqual(updated['display_name'], delta['display_name'])
+        self.assertEqual(updated['display_name'], delta['display-name'])
         self.assertEqual(updated['description'], delta['description'])
 
     def test_update_missing_consumer(self):
@@ -213,7 +213,7 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.update('not-there', {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('not-there' == e.resources['resource_id'])
+            self.assertTrue('not-there' == e.resources['consumer'])
 
     def test_add_notes(self):
         """
@@ -299,8 +299,8 @@ class ConsumerManagerTests(testutil.PulpTest):
             self.manager.update(id, delta={'notes':notes})
             self.fail('Missing Consumer did not raise an exception')
         except exceptions.MissingResource, e:
-            self.assertTrue(id == e.resources['resource_id'])
-            print(e)
+            print e
+            self.assertTrue(id == e.resources['consumer'])
 
 
     def test_add_update_remove_notes_with_invalid_notes(self):

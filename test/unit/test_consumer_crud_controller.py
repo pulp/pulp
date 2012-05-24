@@ -80,7 +80,7 @@ class ConsumerCollectionTests(ConsumerControllersTests):
         # Setup
         body = {
             'id' : 'consumer1',
-            'display_name' : 'Consumer 1',
+            'display-name' : 'Consumer 1',
             'description' : 'Test Consumer',
         }
 
@@ -166,6 +166,7 @@ class ConsumerResourceTests(ConsumerControllersTests):
         status, body = self.delete('/v2/consumers/doomed/')
 
         # Verify
+        print body
         self.assertEqual(200, status)
 
         consumer = Consumer.get_collection().find_one({'id' : 'doomed'})
@@ -190,7 +191,7 @@ class ConsumerResourceTests(ConsumerControllersTests):
         # Setup
         self.consumer_manager.register('turkey', display_name='hungry')
 
-        req_body = {'delta' : {'display_name' : 'thanksgiving'}}
+        req_body = {'delta' : {'display-name' : 'thanksgiving'}}
 
         # Test
         status, body = self.put('/v2/consumers/turkey/', params=req_body)
@@ -198,10 +199,10 @@ class ConsumerResourceTests(ConsumerControllersTests):
         # Verify
         self.assertEqual(200, status)
 
-        self.assertEqual(body['display_name'], req_body['delta']['display_name'])
+        self.assertEqual(body['display_name'], req_body['delta']['display-name'])
 
         consumer = Consumer.get_collection().find_one({'id' : 'turkey'})
-        self.assertEqual(consumer['display_name'], req_body['delta']['display_name'])
+        self.assertEqual(consumer['display_name'], req_body['delta']['display-name'])
 
     def test_put_invalid_body(self):
         """
