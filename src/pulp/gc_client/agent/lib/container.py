@@ -46,7 +46,7 @@ class Descriptor:
     @type cfg: INIConfig
     """
     
-    ROOT = '/etc/pulp/handler'
+    ROOT = '/etc/pulp/agent/handler'
 
     SCHEMA = (
         ('main', REQUIRED,
@@ -233,9 +233,8 @@ class Container:
     """
 
     PATH = [
-        '/usr/lib/pulp/handler',
-        '/usr/lib64/pulp/handler',
-        '/opt/pulp/handler',
+        '/usr/lib/pulp/agent/handler',
+        '/usr/lib64/pulp/agent/handler',
     ]
 
     def __init__(self, root=Descriptor.ROOT, path=PATH):
