@@ -77,7 +77,7 @@ class UploadManagerTests(unittest.TestCase):
 
         # Verify
         self.assertTrue(self.upload_manager.is_initialized)
-        self.assertEqual(0, len(self.upload_manager.list_upload_requests()))
+        self.assertEqual(0, len(self.upload_manager.list_uploads()))
 
     def test_initialize_with_trackers(self):
         # Setup
@@ -93,11 +93,20 @@ class UploadManagerTests(unittest.TestCase):
         self.upload_manager.initialize()
 
         # Verify
-        trackers = self.upload_manager.list_upload_requests()
+
+        # Verify list of all trackers
+        trackers = self.upload_manager.list_uploads()
         self.assertEqual(len(all_ids), len(trackers))
         tracker_ids = [t.upload_id for t in trackers]
         for id in all_ids:
             self.assertTrue(id in tracker_ids)
+
+        # Verify get returns a copy
+        tracker1 = self.upload_manager.get_upload(tracker_ids[0])
+        tracker2 = self.upload_manager.get_upload(tracker_ids[0])
+        self.assertEqual(tracker1.upload_id, tracker_ids[0])
+        self.assertEqual(tracker2.upload_id, tracker_ids[0])
+        self.assertTrue(tracker1 is not tracker2)
 
     def test_initialize_upload(self):
         # Setup
@@ -339,7 +348,7 @@ class UploadManagerTests(unittest.TestCase):
         self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.initialize_upload, 'f', 'r', 't', {'k' : 'v'}, 'm')
         self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.upload, 'i')
         self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.import_upload, 'i')
-        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.list_upload_requests)
+        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.list_uploads)
         self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.delete_upload, 'i')
 
     def test_missing_upload_requests(self):

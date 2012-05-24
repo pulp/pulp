@@ -23,6 +23,8 @@ import os
 import pickle
 import sys
 
+from pulp.gc_client.lib.lock import LockFile
+
 # -- constants ----------------------------------------------------------------
 
 DEFAULT_CHUNKSIZE = 1048576 # 1 MB per upload call
@@ -291,7 +293,7 @@ class UploadManager(object):
         # to clean up
         self.delete_upload(upload_id)
 
-    def list_upload_requests(self):
+    def list_uploads(self):
         """
         Returns all upload requests known to this instance.
 
@@ -303,6 +305,21 @@ class UploadManager(object):
         cached_trackers = self._all_tracker_files()
         copies = [copy.copy(t) for t in cached_trackers] # copy for safety
         return copies
+
+    def get_upload(self, upload_id):
+        """
+        Returns a copy of the upload tracker for the given ID.
+
+        @param upload_id: upload to return
+        @type  upload_id: str
+
+        @return: copy of the upload tracker if it exists; None otherwise
+        @rtype:  UploadTracker
+        """
+        tracker = self._get_tracker_file_by_id(upload_id)
+        if tracker:
+            tracker = copy.copy(tracker) # copy for safety
+        return tracker
 
     def delete_upload(self, upload_id, force=False):
         """
@@ -391,15 +408,40 @@ class UploadTracker(object):
         self.is_finished_uploading = False
 
     def save(self):
+        """
+        Saves the current state of the tracker file. This will lock on the file
+        to prevent multiple processes from editing it at once, even though that
+        probably won't happen if the above code for upload works correctly.
+        """
+
+        # Can't lock if it doesn't exist, but this should be good enough. The
+        # filenames are UUIDs and should be reasonably unique, so the chance
+        # that two files with the same name are saved for the first time is
+        # really remote.
+        lock_file = None
+        if os.path.exists(self.filename):
+            lock_file = LockFile(self.filename)
+            lock_file.acquire()
+
         f = open(self.filename, 'w')
         pickle.dump(self, f)
         f.close()
+
+        if lock_file:
+            lock_file.release()
 
     def delete(self):
         os.remove(self.filename)
 
     @classmethod
     def load(cls, filename):
+        """
+        Loads the given tracker file. The file must exist and be readable; the
+        caller should ensure that before loading.
+
+        @return: tracker instance
+        @rtype:  UploadTracker
+        """
         f = open(filename, 'r')
         status_file = pickle.load(f)
         f.close()
