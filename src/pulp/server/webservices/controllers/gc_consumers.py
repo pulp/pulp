@@ -433,7 +433,7 @@ class Content(JSONController):
 class ConsumerHistory(JSONController):
 
     @auth_required(READ)
-    def POST(self, id):
+    def GET(self, id):
         """
         @type id: str
         @param id: consumer id
@@ -448,17 +448,22 @@ class ConsumerHistory(JSONController):
 
         if sort is None:
             sort = 'descending'
+        else:
+            sort = sort[0]
 
         if limit:
-            limit = int(limit)
+            limit = int(limit[0])
 
         if start_date:
-            start_date = dateutils.parse_datetime(start_date + '-00-00-00')
+            start_date = dateutils.parse_datetime(start_date[0] + '-00-00-00')
             start_date = dateutils.to_local_datetime(start_date)
 
         if end_date:
-            end_date = dateutils.parse_datetime(end_date + '-23-59-59')
+            end_date = dateutils.parse_datetime(end_date[0] + '-23-59-59')
             end_date = dateutils.to_local_datetime(end_date)
+            
+        if event_type:
+            event_type = event_type[0]
 
         results = managers.consumer_history_manager().query(consumer_id=id, event_type=event_type, limit=limit,
                                     sort=sort, start_date=start_date, end_date=end_date)
@@ -474,7 +479,7 @@ urls = (
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
-    '/([^/]+)/history/$', 'ConsumerHistory',
+    '/([^/]+)/history/$', 'ConsumerHistory',  
 )
 
 application = web.application(urls, globals())

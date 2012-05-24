@@ -106,10 +106,15 @@ class ConsumerHistoryAPI(PulpAPI):
 
     def history(self, consumer_id, event_type=None, limit=None, sort=None, start_date=None, end_date=None):
         path = self.base_path % consumer_id
-        queries = []
-        queries.append(('event_type',event_type))
-        queries.append(('limit',limit))
-        queries.append(('sort',sort))
-        queries.append(('start_date',start_date))
-        queries.append(('end_date',end_date))
+        queries = {}
+        if event_type:
+            queries['event_type'] = event_type
+        if limit:
+            queries['limit'] = limit
+        if sort:
+            queries['sort'] = sort
+        if start_date:
+            queries['start_date'] = start_date
+        if end_date:
+            queries['end_date'] = end_date
         return self.server.GET(path, queries)
