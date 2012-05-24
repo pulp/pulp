@@ -266,7 +266,7 @@ class Container:
         """
         return self.handlers[role].get(typeid)
 
-    def all(self, roles=[]):
+    def all(self, *roles):
         """
         All handlers.
         @param roles: A list of roles to include.

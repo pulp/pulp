@@ -12,18 +12,29 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import os
-from pulp.gc_client.agent.lib.handler import Handler
+from iniparse import INIConfig
+from pulp.gc_client.agent.lib.handler import BindHandler
 from pulp.gc_client.agent.lib.report import BindReport, CleanReport
 from pulp.gc_client.lib import repolib
-from pulp.gc_client.consumer.config import ConsumerConfig
 from logging import getLogger, Logger
 
 log = getLogger(__name__)
 
 
-class BindHandler(Handler):
+# TODO: Pass-in instaed of hard code
+class ConsumerConfig(INIConfig):
+    def __init__(self):
+        path = '/etc/pulp/consumer/v2_consumer.conf'
+        fp = open(path)
+        try:
+            INIConfig.__init__(self, fp)
+        finally:
+            fp.close()
+
+
+class RepoHandler(BindHandler):
     """
-    The bind request handler.
+    A yum repository bind request handler.
     Manages the /etc/yum.repos.d/pulp.repo based on bind requests.
     """
 

@@ -11,6 +11,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
+"""
+Content handler interfaces.
+"""
+
 #
 # Handler descriptor:
 #
@@ -27,27 +31,6 @@
 #
 
 
-def abstract(fn):
-    """
-    Decorator used to mark abstract methods.
-    @param fn: A function.
-    @type fn: function
-    """
-    fn.abstract=1
-
-
-def implemented(method):
-    """
-    Verify method is callable and implemented
-    @return: True if callable and implemented
-    @rtype: bool
-    """
-    try:
-        return callable(method) and (not method.im_func.abstract)
-    except AttributeError:
-        return 1
-
-
 class Handler:
     """
     Content (type) handler.
@@ -59,8 +42,15 @@ class Handler:
         @type cfg: dict
         """
         self.cfg = cfg
+        
+        
+class ContentHandler(Handler):
+    """
+    Content (type) handler.
+    Defines the interface for handler objects designed
+    to implement CONTENT management requests.
+    """
 
-    @abstract
     def install(self, units, options):
         """
         Install content unit(s).
@@ -71,9 +61,8 @@ class Handler:
         @return: An install report.
         @rtype: L{HandlerReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def update(self, units, options):
         """
         Update content unit(s).
@@ -84,9 +73,8 @@ class Handler:
         @return: An update report.
         @rtype: L{HandlerReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def uninstall(self, units, options):
         """
         Uninstall content unit(s).
@@ -97,9 +85,8 @@ class Handler:
         @return: An uninstall report.
         @rtype: L{HandlerReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def profile(self):
         """
         Request the installed content profile be sent
@@ -107,9 +94,8 @@ class Handler:
         @return: A profile report.
         @rtype: L{ProfileReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def reboot(self, options={}):
         """
         Schedule system reboot.
@@ -118,9 +104,16 @@ class Handler:
         @return: An reboot report.
         @rtype: L{HandlerReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
+
+class BindHandler(Handler):
+    """
+    Content (type) handler.
+    Defines the interface for handler objects designed
+    to implement BIND management requests.
+    """
+
     def bind(self, details):
         """
         Bind a repository.
@@ -129,9 +122,8 @@ class Handler:
         @return: An bind report.
         @rtype: L{BindReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def rebind(self, details):
         """
         Bind a repository.
@@ -140,9 +132,8 @@ class Handler:
         @return: An rebind report.
         @rtype: L{BindReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def unbind(self, repoid):
         """
         Unbind a repository.
@@ -151,13 +142,12 @@ class Handler:
         @return: An inbind report.
         @rtype: L{BindReport}
         """
-        pass
+        raise NotImplementedError()
 
-    @abstract
     def clean(self):
         """
         Clean up all artifacts.
         @return: An bind report.
         @rtype: L{CleanReport}
         """
-        pass
+        raise NotImplementedError()

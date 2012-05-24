@@ -11,7 +11,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-from pulp.gc_client.agent.lib.handler import Handler, implemented
+from pulp.gc_client.agent.lib.handler import Handler
 from pulp.gc_client.agent.lib.container import Container
 from pulp.gc_client.agent.lib.container import CONTENT, DISTRIBUTOR
 from pulp.gc_client.agent.lib.report import *
@@ -146,12 +146,15 @@ class Dispatcher:
         report = DispatchReport()
         for typeid, handler in self.container.all(CONTENT):
             method = getattr(handler, NAME, 0)
-            if not implemented(method):
+            if not callable(method):
                 continue
             try:
                 r = method()
                 r.typeid = typeid
                 report.update(r)
+            except NotImplementedError:
+                # optional
+                pass
             except Exception:
                 r = ProfileReport()
                 r.failed(ExceptionReport())
@@ -173,13 +176,16 @@ class Dispatcher:
         report = DispatchReport()
         for typeid, handler in self.container.all():
             method = getattr(handler, NAME, 0)
-            if not implemented(method):
+            if not callable(method):
                 continue
             try:
-                found += 1
                 r = handler.reboot(options)
                 r.typeid = typeid
                 report.update(r)
+                found += 1
+            except NotImplementedError:
+                # optional
+                pass
             except Exception:
                 r = RebootReport()
                 r.failed(ExceptionReport())
@@ -260,8 +266,7 @@ class Dispatcher:
         @rtype: L{DispatchReport}
         """
         report = DispatchReport()
-        roles = [DISTRIBUTOR,]
-        for typeid, handler in self.container.all(roles):
+        for typeid, handler in self.container.all(DISTRIBUTOR):
             try:
                 r = handler.unbind(repoid)
                 r.typeid = typeid
@@ -284,12 +289,15 @@ class Dispatcher:
         report = DispatchReport()
         for typeid, handler in self.container.all():
             method = getattr(handler, NAME, 0)
-            if not implemented(method):
+            if not callable(method):
                 continue
             try:
                 r = method()
                 r.typeid = typeid
                 report.update(r)
+            except NotImplementedError:
+                # optional
+                pass
             except Exception:
                 r = CleanReport()
                 r.failed(ExceptionReport())

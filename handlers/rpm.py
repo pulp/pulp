@@ -16,7 +16,7 @@ from yum import YumBase
 from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
 from rhsm.profile import get_profile
-from pulp.gc_client.agent.lib.handler import Handler
+from pulp.gc_client.agent.lib.handler import ContentHandler
 from pulp.gc_client.agent.lib.report import ProfileReport, RebootReport, HandlerReport
 from logging import getLogger, Logger
 
@@ -49,7 +49,7 @@ class GroupReport(HandlerReport):
         HandlerReport.succeeded(self, details, chgcnt)
 
 
-class Linux(Handler):
+class Linux(ContentHandler):
     """
     Linux content handler
     """
