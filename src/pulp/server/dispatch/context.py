@@ -31,10 +31,6 @@ class Context(local):
     @type job_id: str or None
     @ivar report_progress: callback to pass progress information into
     @type report_progress: callable
-    @ivar succeeded: callback to report success from an asynchronous call
-    @type succeeded: callable
-    @ivar failed: callback to report failure from an asynchronous call
-    @type failed: callable
     """
 
     def __init__(self):
