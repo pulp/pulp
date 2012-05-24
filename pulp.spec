@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.290
+Version:        0.0.291
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -529,6 +529,85 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu May 24 2012 Jeff Ortel <jortel@redhat.com> 0.0.291-1
+- yum_importer proxy fix to force config values to be in ascii
+  (jmatthews@redhat.com)
+- minor fix in consumer history retrieval (skarmark@redhat.com)
+- converting consumer history query call to GET from POST (skarmark@redhat.com)
+- added skeleton Profiler loading support (jason.connor@gmail.com)
+- added skeleton Profiler class (jason.connor@gmail.com)
+- Added sample response for retrieving a single consumer api
+  (skarmark@redhat.com)
+- Removing importer retrieval doc pasted by mistake in consumer docs
+  (skarmark@redhat.com)
+- For consistency, use repo-id in all cases (jason.dobies@redhat.com)
+- updating display_name argument coming from client extension to display-name
+  and updating argument to MissingResource exception (skarmark@redhat.com)
+- removing (optional) from cli arguments (skarmark@redhat.com)
+- Add the repo to the upload_unit API (jason.dobies@redhat.com)
+- Fixing minor errors in consumer extensions and correcting rendering methods
+  for failure cases (skarmark@redhat.com)
+- Remove unused files from gc_client/. (jortel@redhat.com)
+- Factor out references to: credentials/config in: gc_client/consumer and
+  gc_client/lib. (jortel@redhat.com)
+- Added call report example (jason.dobies@redhat.com)
+- Added client upload manager and unit tests (jason.dobies@redhat.com)
+- added tags to delete operations (jason.connor@gmail.com)
+- changed field names and provided sample request (jason.connor@gmail.com)
+- remove unicode indicators from sample response (jason.connor@gmail.com)
+- changed content_type to content_type_id and content_id to unit_id for
+  consistency across apis (jason.connor@gmail.com)
+- moved key checking to manager (jason.connor@gmail.com)
+- updated copyright (jason.connor@gmail.com)
+- changed new schedules to always have their "first run" in the future
+  (jason.connor@gmail.com)
+- moved schedule validation out of db model (jason.connor@gmail.com)
+- much more comprehensive parameter validation in for additions and updates
+  (jason.connor@gmail.com)
+- added unsupported value exception class (jason.connor@gmail.com)
+- Using consumer config loaded by launcher instead of using hardcoded config in
+  ConsumerBundle and ConsumerConfig classes (skarmark@redhat.com)
+- move heartbeat and registration detection to GC agent (jortel@redhat.com)
+- Add rpm admin consumer extension unit test. (jortel@redhat.com)
+- Add package install UG pages. (jortel@redhat.com)
+- combining all consumer history record and query invalid values together to
+  raise an exception with a list of all invalid values instead of separate
+  exceptions for each invalid value (skarmark@redhat.com)
+- Changing consumer history query extension arguments from '_' to '-' according
+  to v2 coding standard; updating input to MissingResource exceptions
+  (skarmark@redhat.com)
+- support veriety of input on construction. (jortel@redhat.com)
+- Fixed incorrect lookup for display-name in update (jason.dobies@redhat.com)
+- adding new fields to publish report (pkilambi@redhat.com)
+- Display remaining runs for a schedule (jason.dobies@redhat.com)
+- Added middleware support for arg parsing exception (jason.dobies@redhat.com)
+- Add strict vs. non-strict flag on config graph. (jortel@redhat.com)
+- Add dict-like configuration object and updated validation.
+  (jortel@redhat.com)
+- Added repo sync schedule user guide documentation (jason.dobies@redhat.com)
+- Load content handlers on gofer plugin loading. (jortel@redhat.com)
+- validation placeholders (jason.connor@gmail.com)
+- couple of tweaks (jason.connor@gmail.com)
+- orphan rest api docs (jason.connor@gmail.com)
+- added schedule validation for updates (jason.connor@gmail.com)
+- moved scheduler constants back into scheduler module and absolutely no one
+  else uses them... (jason.connor@gmail.com)
+- added missing coordinator reponses for updated and delete sync/publish
+  schedules (jason.connor@gmail.com)
+- bz 798281 add status call to service pulp-cds (whayutin@redhat.com)
+- 821041 - packagegroup install of custom groups seems to be failing
+  (jmatthews@redhat.com)
+- Flushed out date/time conventions in the user guide (jason.dobies@redhat.com)
+- Added cleaner message when no schedules are present (jason.dobies@redhat.com)
+- mod auth token prototype (pkilambi@redhat.com)
+- Added generic schedule commands and repo sync schedule usage of them
+  (jason.dobies@redhat.com)
+- re-captured isodate parsing and raising InvalidValue error instead for proper
+  handling in the middleware (jason.connor@gmail.com)
+- re-introduced v1 task queue feature of caching completed tasks
+  (jason.connor@gmail.com)
+- added orphan manager unittests (jason.connor@gmail.com)
+
 * Fri May 18 2012 Jeff Ortel <jortel@redhat.com> 0.0.290-1
 - Fix broken GC package install CLI. (jortel@redhat.com)
 - Utilities for handling CLI argument conventions (jason.dobies@redhat.com)
