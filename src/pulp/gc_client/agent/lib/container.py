@@ -23,12 +23,12 @@ log = getLogger(__name__)
 # handler roles
 SYSTEM = 0
 CONTENT = 1
-DISTRIBUTOR = 2
+BIND = 2
 # (ROLE, property)
 ROLE_PROPERTY = (
     (SYSTEM, 'system'),
     (CONTENT, 'content'),
-    (DISTRIBUTOR, 'distributor'))
+    (BIND, 'bind'))
 # ALL roles
 ROLES = [r[0] for r in ROLE_PROPERTY]
 

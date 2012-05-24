@@ -33,7 +33,7 @@ enabled=1
 [types]
 system=Linux
 content=rpm
-distributor=yum
+bind=yum
 
 [rpm]
 class=RpmHandler

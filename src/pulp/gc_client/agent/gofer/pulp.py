@@ -198,7 +198,7 @@ class Consumer:
             report = dispatcher.bind(http.response_body)
             return report.dict()
         else:
-            raise Exception('rebind failed, http:%d', http.response_code)
+            raise Exception('bind failed, http:%d', http.response_code)
 
     @remote(secret=secret)
     @action(days=0x8E94)

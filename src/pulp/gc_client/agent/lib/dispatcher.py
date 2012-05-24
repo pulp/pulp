@@ -14,7 +14,7 @@
 import os
 from pulp.gc_client.agent.lib.handler import Handler
 from pulp.gc_client.agent.lib.container import Container
-from pulp.gc_client.agent.lib.container import SYSTEM, CONTENT, DISTRIBUTOR
+from pulp.gc_client.agent.lib.container import SYSTEM, CONTENT, BIND
 from pulp.gc_client.agent.lib.report import *
 
 
@@ -203,7 +203,7 @@ class Dispatcher:
         collated = Binds(definitions)
         for typeid, definition in collated.items():
             try:
-                handler = self.__handler(typeid, DISTRIBUTOR)
+                handler = self.__handler(typeid, BIND)
                 r = handler.bind(definition)
                 r.typeid = typeid
                 report.update(r)
@@ -233,7 +233,7 @@ class Dispatcher:
         collated = Binds(definitions)
         for typeid, definition in collated.items():
             try:
-                handler = self.__handler(typeid, DISTRIBUTOR)
+                handler = self.__handler(typeid, BIND)
                 r = handler.rebind(definition)
                 r.typeid = typeid
                 report.update(r)
@@ -247,14 +247,14 @@ class Dispatcher:
     def unbind(self, repoid):
         """
         Unbind a repository.
-        Dispatch unbind() to all DISTRIBUTOR handlers.
+        Dispatch unbind() to all BIND handlers.
         @param repoid: A repository ID.
         @type repoid: str
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
         report = DispatchReport()
-        for typeid, handler in self.container.all(DISTRIBUTOR):
+        for typeid, handler in self.container.all(BIND):
             try:
                 r = handler.unbind(repoid)
                 r.typeid = typeid
