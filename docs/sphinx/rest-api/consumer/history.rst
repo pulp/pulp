@@ -1,5 +1,8 @@
-Listing Tasks
--------------
+Consumer History
+================
+
+Retrieve history of Consumer events
+-----------------------------------
 
 Retrieves history of events that occurred on a consumer. The list can be filtered by event_type, start_date
 and end_date. Few additional parameters like sort, limit etc. can be passed in order to sort or limit entries 
