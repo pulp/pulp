@@ -197,7 +197,7 @@ class Bundle:
         Delete the certificate.
         """
         try:
-            if path and os.path.exists(self.path):
+            if os.path.exists(self.path):
                 os.unlink(self.path)
         except IOError:
             log.error(path, exc_info=1)
