@@ -23,7 +23,7 @@ class Report(object):
     """
     Content install/update/uninstall report.
     @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
+    @type status: bool
     @ivar details: operation details.
     @type details: dict
     @ivar chgcnt: The change count.
@@ -89,7 +89,7 @@ class RebootReport(Report):
     """
     Reboot report.
     @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
+    @type status: bool
     @ivar scheduled: Indicates whether a reboot has been scheduled.
     @type scheduled: bool
     @ivar details: reboot details.
@@ -146,7 +146,7 @@ class DispatchReport(Report):
     """
     Content install/update/uninstall report.
     @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
+    @type status: bool
     @ivar reboot: Reboot status & details.
     @type reboot: dict
     @ivar details: operation details keyed by typeid.
