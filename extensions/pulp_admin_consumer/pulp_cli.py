@@ -137,7 +137,7 @@ class AdminConsumerSection(PulpCliSection):
             self.prompt.render_document(c, filters=filters, order=order)
 
     def history(self, **kwargs):
-        self.prompt.render_title('Consumers History for consumer :' + kwargs['id'])
+        self.prompt.render_title(_('Consumer History [%(i)s]') % {'i' : kwargs['id']})
 
         history_list = self.context.server.consumer_history.history(kwargs['id'], kwargs['event-type'], kwargs['limit'], kwargs['sort'],
                                                             kwargs['start-date'], kwargs['end-date']).response_body
