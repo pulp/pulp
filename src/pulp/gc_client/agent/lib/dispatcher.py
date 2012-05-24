@@ -11,9 +11,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
+import os
 from pulp.gc_client.agent.lib.handler import Handler
 from pulp.gc_client.agent.lib.container import Container
-from pulp.gc_client.agent.lib.container import CONTENT, DISTRIBUTOR
+from pulp.gc_client.agent.lib.container import SYSTEM, CONTENT, DISTRIBUTOR
 from pulp.gc_client.agent.lib.report import *
 
 
@@ -164,35 +165,22 @@ class Dispatcher:
     def reboot(self, options={}):
         """
         Schedule a reboot.
+        Uses os.uname()[0] as typeid.  For linux this would be: 'Linux'
         @param options: reboot options.
         @type options: dict
-        Find the 1st handler that implements reboot()
-        and dispatch to that handler.
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        NAME = 'reboot'
-        found = 0
         report = DispatchReport()
-        for typeid, handler in self.container.all():
-            method = getattr(handler, NAME, 0)
-            if not callable(method):
-                continue
-            try:
-                r = handler.reboot(options)
-                r.typeid = typeid
-                report.update(r)
-                found += 1
-            except NotImplementedError:
-                # optional
-                pass
-            except Exception:
-                r = RebootReport()
-                r.failed(ExceptionReport())
-                report.update(r)
-        if not found:
+        try:
+            typeid = os.uname()[0]
+            handler = self.__handler(typeid, SYSTEM)
+            r = handler.reboot(options)
+            r.typeid = typeid
+            report.update(r)
+        except Exception:
             r = RebootReport()
-            r.failed(dict(message='handler not found'))
+            r.failed(ExceptionReport())
             report.update(r)
         return report
 

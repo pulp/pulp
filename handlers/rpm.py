@@ -11,13 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-import os
 from yum import YumBase
 from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
 from rhsm.profile import get_profile
 from pulp.gc_client.agent.lib.handler import ContentHandler
-from pulp.gc_client.agent.lib.report import ProfileReport, RebootReport, HandlerReport
+from pulp.gc_client.agent.lib.report import ProfileReport, HandlerReport
 from logging import getLogger, Logger
 
 log = getLogger(__name__)
@@ -49,27 +48,7 @@ class GroupReport(HandlerReport):
         HandlerReport.succeeded(self, details, chgcnt)
 
 
-class Linux(ContentHandler):
-    """
-    Linux content handler
-    """
-
-    def reboot(self, options={}):
-        """
-        Schedule a system reboot.
-        """
-        report = RebootReport()
-        apply = options.get('apply', True)
-        if apply:
-            minutes = options.get('minutes', 1)
-            command = 'shutdown -r +%d' % minutes
-            log.info(command)
-            os.system(command)
-        report.succeeded()
-        return report
-
-
-class PackageHandler(Linux):
+class PackageHandler(ContentHandler):
     """
     The package (rpm) content handler.
     @ivar cfg: configuration
@@ -165,7 +144,7 @@ class PackageHandler(Linux):
         return impl
 
 
-class GroupHandler(Linux):
+class GroupHandler(ContentHandler):
     """
     The package group content handler.
     @ivar cfg: configuration

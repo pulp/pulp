@@ -14,15 +14,23 @@
 import imp
 import os
 from iniparse import INIConfig
-from pulp.common.config import Validator, REQUIRED, BOOL, ANY
+from pulp.common.config import Validator, REQUIRED, OPTIONAL, BOOL, ANY
 from pulp.gc_client.agent.lib.handler import Handler
 from logging import getLogger
 
 log = getLogger(__name__)
 
 # handler roles
-CONTENT = 0
-DISTRIBUTOR = 1
+SYSTEM = 0
+CONTENT = 1
+DISTRIBUTOR = 2
+# (ROLE, property)
+ROLE_PROPERTY = (
+    (SYSTEM, 'system'),
+    (CONTENT, 'content'),
+    (DISTRIBUTOR, 'distributor'))
+# ALL roles
+ROLES = [r[0] for r in ROLE_PROPERTY]
 
 
 class Descriptor:
@@ -30,6 +38,8 @@ class Descriptor:
     Content handler descriptor and configuration.
     @cvar ROOT: The default directory contining descriptors.
     @type ROOT: str
+    @cvar SCHEMA: The descriptor schema
+    @type SCHEMA: schema
     @ivar name: The content unit name
     @type name: str
     @ivar cfg: The raw INI configuration object.
@@ -46,8 +56,9 @@ class Descriptor:
         ),
         ('types', REQUIRED,
             (
-                ('content', REQUIRED, ANY),
-                ('distributor', REQUIRED, ANY),
+                ('system', OPTIONAL, ANY),
+                ('content', OPTIONAL, ANY),
+                ('distributor', OPTIONAL, ANY),
             ),
         ),
     )
@@ -129,20 +140,18 @@ class Descriptor:
     def types(self):
         """
         Get a list of supported content types.
-        @return: A list of supported content type IDs.
-        @rtype: tuple ([content],[distributor])
+        @return: A dict of supported type IDs.
+            {role=[types,]}
+        @rtype: dict
         """
-        types = ([],[])
-        listed = self.cfg.types.content
-        for t in listed.split(','):
-            t = t.strip()
-            if t:
-                types[CONTENT].append(t)
-        listed = self.cfg.types.distributor
-        for t in listed.split(','):
-            t = t.strip()
-            if t:
-                types[DISTRIBUTOR].append(t)
+        types = {}
+        section = self.cfg.types
+        for role, property in ROLE_PROPERTY:
+            if property not in section:
+                continue
+            listed = getattr(section, property)
+            split = [t.strip() for t in listed.split(',')]
+            types[role] = [t for t in split if t]
         return types
 
 
@@ -238,13 +247,17 @@ class Container:
         """
         self.root = root
         self.path = path
+        self.handlers = {}
         self.reset()
 
     def reset(self):
         """
         Reset (empty) the container.
         """
-        self.handlers = ({},{})
+        d = {}
+        for r in ROLES:
+            d[r] = {}
+        self.handlers = d
 
     def load(self):
         """
@@ -264,7 +277,8 @@ class Container:
             handle the specified type ID.
         @rtype: L{Handler}
         """
-        return self.handlers[role].get(typeid)
+        role = self.handlers.get(role, {})
+        return role.get(typeid)
 
     def all(self, *roles):
         """
@@ -276,10 +290,8 @@ class Container:
         @rtype: list
         """
         all = []
-        for i in range(0, len(self.handlers)):
-            if roles and i not in roles:
-                continue
-            all += self.handlers[i].items()
+        for role in (roles or ROLES):
+            all += self.handlers[role].items()
         return all
 
     def __import(self, name, descriptor):
@@ -294,19 +306,14 @@ class Container:
             path = self.__findimpl(name)
             mangled = self.__mangled(name)
             mod = imp.load_source(mangled, path)
-            content, distributor = descriptor.types()
-            for typeid in content:
-                typedef = Typedef(descriptor.cfg, typeid)
-                hclass = typedef.cfg['class']
-                hclass = getattr(mod, hclass)
-                handler = hclass(typedef.cfg)
-                self.handlers[CONTENT][typeid] = handler
-            for typeid in distributor:
-                typedef = Typedef(descriptor.cfg, typeid)
-                hclass = typedef.cfg['class']
-                hclass = getattr(mod, hclass)
-                handler = hclass(typedef.cfg)
-                self.handlers[DISTRIBUTOR][typeid] = handler
+            provided = descriptor.types()
+            for role, types in provided.items():
+                for typeid in types:
+                    typedef = Typedef(descriptor.cfg, typeid)
+                    hclass = typedef.cfg['class']
+                    hclass = getattr(mod, hclass)
+                    handler = hclass(typedef.cfg)
+                    self.handlers[role][typeid] = handler
         except Exception:
             log.exception('handler "%s", import failed', name)
 

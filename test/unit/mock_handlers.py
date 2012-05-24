@@ -31,6 +31,7 @@ descriptor="""
 enabled=1
 
 [types]
+system=Linux
 content=rpm
 distributor=yum
 
@@ -38,16 +39,17 @@ distributor=yum
 class=RpmHandler
 
 [yum]
-class=BindHandler
+class=YumHandler
+
+[Linux]
+class=LinuxHandler
 """,
 handler=
 """
+from pulp.gc_client.agent.lib.handler import *
 from pulp.gc_client.agent.lib.report import *
 
-class RpmHandler:
-
-  def __init__(self, cfg):
-    pass
+class RpmHandler(ContentHandler):
 
   def install(self, units, options):
     report = HandlerReport()
@@ -67,15 +69,7 @@ class RpmHandler:
   def profile(self):
     return ProfileReport()
 
-  def reboot(self, options):
-    report = RebootReport()
-    report.succeeded()
-    return report
-
-class BindHandler:
-
-  def __init__(self, cfg):
-    pass
+class YumHandler(BindHandler):
 
   def bind(self, info):
     report = BindReport()
@@ -95,6 +89,13 @@ class BindHandler:
   def clean(self):
     report = CleanReport()
     report.succeeded({}, 1)
+    return report
+
+class LinuxHandler(SystemHandler):
+
+  def reboot(self, options):
+    report = RebootReport()
+    report.succeeded()
     return report
 """)
 

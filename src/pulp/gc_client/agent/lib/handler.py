@@ -22,6 +22,7 @@ Content handler interfaces.
 # enabled=(0|1)
 #
 # [types]
+# system=(type_id,)
 # content=(type_id,)
 # distributor=(type_id,)
 #
@@ -42,6 +43,24 @@ class Handler:
         @type cfg: dict
         """
         self.cfg = cfg
+
+
+class SystemHandler(Handler):
+    """
+    System (type) handler.
+    Defines the interface for handler objects designed
+    to implement SYSTEM management requests.
+    """
+
+    def reboot(self, options={}):
+        """
+        Schedule system reboot.
+        @param options: Reboot options.
+        @type options: dict
+        @return: An reboot report.
+        @rtype: L{RebootReport}
+        """
+        raise NotImplementedError()
         
         
 class ContentHandler(Handler):
@@ -93,16 +112,6 @@ class ContentHandler(Handler):
         to the pulp server.
         @return: A profile report.
         @rtype: L{ProfileReport}
-        """
-        raise NotImplementedError()
-
-    def reboot(self, options={}):
-        """
-        Schedule system reboot.
-        @param options: Reboot options.
-        @type options: dict
-        @return: An reboot report.
-        @rtype: L{HandlerReport}
         """
         raise NotImplementedError()
 
