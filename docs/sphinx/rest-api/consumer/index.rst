@@ -8,3 +8,4 @@ Consumer APIs
    retrieval
    bind
    content
+   history
