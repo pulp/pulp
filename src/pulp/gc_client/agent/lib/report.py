@@ -54,12 +54,12 @@ class HandlerReport(Report):
     """
     Content install/update/uninstall report.
     @ivar status: Overall status (succeeded|failed).
-    @type status: bool, True=succeeded
+    @type status: bool
     @ivar details: operation details.
     @type details: dict
     """
 
-    def succeeded(self, details={}, chgcnt=0):
+    def succeeded(self, details=None, chgcnt=0):
         """
         Called (by handler) on operation succeeded.
         @param typeid: The content type ID.
@@ -70,7 +70,7 @@ class HandlerReport(Report):
         @type chgcnt: int
         """
         self.status = True
-        self.details = dict(status=True, details=details)
+        self.details = dict(status=True, details=(details or {}))
         self.chgcnt += chgcnt
 
     def failed(self, details):
@@ -100,7 +100,7 @@ class RebootReport(Report):
         Report.__init__(self)
         self.scheduled = False
 
-    def succeeded(self, scheduled=True, details={}):
+    def succeeded(self, scheduled=True, details=None):
         """
         Reboot requested and succeeded.
         @param scheduled: Indicates whether a reboot has been scheduled.
@@ -109,7 +109,7 @@ class RebootReport(Report):
         @type details: dict
         """
         self.scheduled = scheduled
-        self.details = details
+        self.details = (details or {})
 
     def failed(self, details={}):
         """
