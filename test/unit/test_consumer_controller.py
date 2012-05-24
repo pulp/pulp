@@ -258,7 +258,7 @@ class ContentTest(testutil.PulpV2WebserviceTest):
         unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
-        path = '/v2/consumers/%s/actions/content/update/' % self.CONSUMER_ID
+        path = '/v2/consumers/%s/actions/content/install/' % self.CONSUMER_ID
         body = dict(
             units=units,
             options=options,)
