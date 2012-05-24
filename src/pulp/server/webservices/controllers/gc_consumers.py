@@ -438,12 +438,13 @@ class ConsumerHistory(JSONController):
         @type id: str
         @param id: consumer id
         """
-        data = self.params()
-        event_type = data.get('event_type', None)
-        limit = data.get('limit', None)
-        sort = data.get('sort', None)
-        start_date = data.get('start_date', None)
-        end_date = data.get('end_date', None)
+        valid_filters = ['event_type', 'limit', 'sort', 'start_date', 'end_date']
+        filters = self.filters(valid_filters)
+        event_type = filters.get('event_type', None)
+        limit = filters.get('limit', None)
+        sort = filters.get('sort', None)
+        start_date = filters.get('start_date', None)
+        end_date = filters.get('end_date', None)
 
         if sort is None:
             sort = 'descending'
