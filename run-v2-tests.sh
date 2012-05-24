@@ -4,6 +4,7 @@
 # if something is in the list
 
 PACKAGES="pulp.gc_client.framework.core"
+PACKAGES="$PACKAGES,pulp.gc_client.agent.lib"
 PACKAGES="$PACKAGES,pulp.gc_client.framework.exceptions"
 PACKAGES="$PACKAGES,pulp.gc_client.framework.loader"
 PACKAGES="$PACKAGES,pulp.server.content"
@@ -16,7 +17,9 @@ PACKAGES="$PACKAGES,pulp.server.dispatch.history"
 PACKAGES="$PACKAGES,pulp.server.dispatch.scheduler"
 PACKAGES="$PACKAGES,pulp.server.dispatch.task"
 PACKAGES="$PACKAGES,pulp.server.dispatch.taskqueue"
+PACKAGES="$PACKAGES,pulp.server.gc_agent"
 PACKAGES="$PACKAGES,pulp.server.managers"
+PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_consumers"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_contents"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_plugins"
 PACKAGES="$PACKAGES,pulp.server.webservices.controllers.gc_repositories"
@@ -25,9 +28,12 @@ PACKAGES="$PACKAGES,pulp_tasks"
 PACKAGES="$PACKAGES,rpm_sync"
 PACKAGES="$PACKAGES,rpm_units_copy"
 
-TESTS="test/unit/test_base_distributor_conduit.py \
+TESTS="test/unit/test_agent.py \
+       test/unit/test_base_distributor_conduit.py \
        test/unit/test_base_importer_conduit.py \
        test/unit/test_client_framework_core.py \
+       test/unit/test_consumer_controllers.py \
+       test/unit/test_consumer_manager.py \
        test/unit/test_content_managers.py \
        test/unit/test_content_plugin_loader.py \
        test/unit/test_content_orphan_manager.py \
@@ -40,6 +46,7 @@ TESTS="test/unit/test_base_distributor_conduit.py \
        test/unit/test_dispatch_taskqueue.py \
        test/unit/test_gc_client_exception_handler.py \
        test/unit/test_extensions_loader.py \
+       test/unit/test_handler_container.py \
        test/unit/test_manager_factory.py \
        test/unit/test_pulp_tasks_extension.py \
        test/unit/test_repo_controller.py \
