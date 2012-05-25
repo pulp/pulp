@@ -25,15 +25,14 @@ class CDS(Model):
     collection_name = 'cds'
     unique_indices = ('hostname',)
 
-    def __init__(self, hostname, name=None, description=None):
+    def __init__(self, hostname, name=None, description=None,
+                 client_hostname=None):
         Model.__init__(self)
         self._id = hostname
         self.id = hostname
         self.hostname = hostname
-        if name:
-            self.name = name
-        else:
-            self.name = hostname
+        self.name = name or hostname
+        self.client_hostname = client_hostname or hostname
         self.description = description
         self.repo_ids = []
         self.last_sync = None

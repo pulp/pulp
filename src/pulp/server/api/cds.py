@@ -72,7 +72,8 @@ class CdsApi(BaseApi):
 # -- public api ---------------------------------------------------------------------
 
     @audit()
-    def register(self, hostname, name=None, description=None, sync_schedule=None, cluster_id=None):
+    def register(self, hostname, client_hostname=None, name=None, 
+                 description=None, sync_schedule=None, cluster_id=None):
         '''
         Registers the instance identified by hostname as a CDS in use by this pulp server.
         Before adding the CDS information to the pulp database, the CDS will be initialized.
@@ -82,6 +83,13 @@ class CdsApi(BaseApi):
 
         @param hostname: fully-qualified hostname for the CDS instance
         @type  hostname: string; cannot be None
+
+        @param client_hostname: fully-qualified hostname that a client would
+                                use to access this CDS.  Allows for separate
+                                networks; the client can use one hostname to
+                                the access the CDS, while the pulp server may
+                                use another.
+        @type  client_hostname: string; defaults to hostname if not specified
 
         @param name: user-friendly name that briefly describes the CDS; if None, the hostname
                      will be used to populate this field
@@ -102,6 +110,9 @@ class CdsApi(BaseApi):
         if not hostname:
             raise PulpException('Hostname cannot be empty')
 
+        if not client_hostname:
+            client_hostname = hostname
+
         if cluster_id is not None and CLUSTER_ID_PATTERN.match(cluster_id) is None:
             raise PulpException('Cluster ID must match the standard ID restrictions')
 
@@ -110,7 +121,7 @@ class CdsApi(BaseApi):
         if existing_cds:
             raise PulpException('CDS already exists with hostname [%s]' % hostname)
 
-        cds = CDS(hostname, name, description)
+        cds = CDS(hostname, name, description, client_hostname)
         cds.sync_schedule = sync_schedule
         cds.cluster_id = cluster_id
 
@@ -421,7 +432,7 @@ class CdsApi(BaseApi):
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
 
             # Add it to the CDS host assignment algorithm
-            round_robin.add_cds_repo_association(cds_hostname, repo_id)
+            round_robin.add_cds_repo_association(cds['client_hostname'], repo_id)
 
             # Automatically redistribute consumers to pick up these changes
             self.redistribute(repo_id)
@@ -468,7 +479,7 @@ class CdsApi(BaseApi):
             self.collection.save(cds, safe=True)
 
             # Remove it from CDS host assignment consideration
-            round_robin.remove_cds_repo_association(cds_hostname, repo_id)
+            round_robin.remove_cds_repo_association(cds['client_hostname'], repo_id)
 
             # Add a history entry for the change
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
@@ -541,14 +552,14 @@ class CdsApi(BaseApi):
         # Global cert bundle, if any (repo cert bundles are handled above)
         global_cert_bundle = repo_cert_utils.read_global_cert_bundle()
 
-        # Assemble the list of CDS hostnames in the same cluster
+        # Assemble the list of CDS client hostnames in the same cluster
         if cds['cluster_id'] is not None:
             cluster_id = cds['cluster_id']
             cds_members = list(self.collection.find({'cluster_id' : cds['cluster_id']}))
-            member_hostnames = [c['hostname'] for c in cds_members]
+            member_client_hostnames = [c['client_hostname'] for c in cds_members]
         else:
             cluster_id = None
-            member_hostnames = None
+            member_client_hostnames = None
 
         payload = {
             'repos'              : repos,
@@ -556,7 +567,7 @@ class CdsApi(BaseApi):
             'repo_cert_bundles'  : repo_cert_bundles,
             'global_cert_bundle' : global_cert_bundle,
             'cluster_id'         : cluster_id,
-            'cluster_members'    : member_hostnames,
+            'cluster_members'    : member_client_hostnames,
             'server_ca_cert'     : server_ca_certificate,
         }
 
@@ -691,7 +702,7 @@ class CdsApi(BaseApi):
         # Find all CDS instances in the cluster
         cds_members = list(self.collection.find({'cluster_id' : cluster_id}))
 
-        member_hostnames = [c['hostname'] for c in cds_members]
+        member_client_hostnames = [c['client_hostname'] for c in cds_members]
 
         # Notify each one, keeping a running list of successes and failures
         success_cds_hostnames = []
@@ -699,7 +710,8 @@ class CdsApi(BaseApi):
 
         for cds in cds_members:
             try:
-                self.dispatcher.update_cluster_membership(cds, cluster_id, member_hostnames)
+                self.dispatcher.update_cluster_membership(cds, cluster_id,
+                    member_client_hostnames)
                 success_cds_hostnames.append(cds['hostname'])
             except Exception:
                 log.exception('Error notifying CDS [%s] of changes to cluster [%s]' % (cds['hostname'], cluster_id))

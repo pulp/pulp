@@ -229,7 +229,7 @@ def _initialize_pulp():
     auditing.init_culling_task()
     consumer_history.init_culling_task()
     scheduled_sync.init_scheduled_syncs()
-    _update_sync_schedules()
+    # _update_sync_schedules()
     # pulp generic content initialization
     manager_factory.initialize()
     plugin_loader.initialize()

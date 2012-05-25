@@ -61,19 +61,21 @@ class CdsInstances(JSONController):
     @error_handler
     @auth_required(CREATE)
     def POST(self):
-        repo_data = self.params()
-        hostname = repo_data['hostname']
+        cds_data = self.params()
+        hostname = cds_data['hostname']
 
         existing = cds_api.cds(hostname)
         if existing is not None:
             return self.conflict('A CDS with the hostname [%s] already exists' % hostname)
 
-        name = repo_data.get('name', None)
-        description = repo_data.get('description', None)
-        sync_schedule = repo_data.get('sync_schedule', None)
-        cluster_id = repo_data.get('cluster_id', None)
+        client_hostname = cds_data.get('client_hostname', hostname)
+        name = cds_data.get('name', None)
+        description = cds_data.get('description', None)
+        sync_schedule = cds_data.get('sync_schedule', None)
+        cluster_id = cds_data.get('cluster_id', None)
 
-        cds = cds_api.register(hostname, name, description, sync_schedule=sync_schedule, cluster_id=cluster_id)
+        cds = cds_api.register(hostname, client_hostname, name, description, 
+            sync_schedule=sync_schedule, cluster_id=cluster_id)
 
         path = http.extend_uri_path(hostname)
         grant_automatic_permissions_for_created_resource(http.resource_path(path))

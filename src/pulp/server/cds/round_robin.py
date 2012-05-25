@@ -84,7 +84,7 @@ class Iterator(object):
 
 def generate_cds_urls(repo_id):
     '''
-    Generates an ordered list of CDS hostnames that should be used to access the given repo.
+    Generates an ordered list of CDS client hostnames that should be used to access the given repo.
 
     @param repo_id: identifies the repo to which to generate the list of hostnames
     @type  repo_id: string
@@ -119,11 +119,11 @@ def iterator(repo_id):
     to save the state of the last generated permutation. Keep in mind the save() call writes
     to the database, so be careful to avoid calling it in large loops.
 
-    @param repo_id: identifies the repo to which CDS hostname permutations will be generated;
+    @param repo_id: identifies the repo to which CDS client hostname permutations will be generated;
                     at least one CDS should be associated with this repo prior to calling this
     @type  repo_id: string
 
-    @return: iterator used to produce CDS hostname permutations for the given repo
+    @return: iterator used to produce CDS client hostname permutations for the given repo
     @rtype:  L{Iterator}
     '''
 
@@ -134,15 +134,15 @@ def iterator(repo_id):
 
     return Iterator(repo_id, association['next_permutation'])
 
-def add_cds_repo_association(cds_hostname, repo_id):
+def add_cds_repo_association(cds_client_hostname, repo_id):
     '''
     Adds a CDS for consideration in generating the CDS URL list for the given
     repo. This method does not check to ensure a repo with the given ID exists;
     that must be checked prior to calling this method. If the association already
     exists, no change is made.
 
-    @param cds_hostname: identifies the CDS
-    @type  cds_hostname: string
+    @param cds_client_hostname: identifies the CDS
+    @type  cds_client_hostname: string
 
     @param repo_id: identifies the repo
     @type  repo_id: string
@@ -160,24 +160,24 @@ def add_cds_repo_association(cds_hostname, repo_id):
         association = CDSRepoRoundRobin(repo_id, [])
 
     # Punch out if the association already exists
-    if cds_hostname in association['next_permutation']:
+    if cds_client_hostname in association['next_permutation']:
         return False
         
     # The new CDS should be the first returned at the next assignment
-    association['next_permutation'] = [cds_hostname] + association['next_permutation']
+    association['next_permutation'] = [cds_client_hostname] + association['next_permutation']
     
     objectdb.save(association, safe=True)
 
     return True
 
-def remove_cds_repo_association(cds_hostname, repo_id):
+def remove_cds_repo_association(cds_client_hostname, repo_id):
     '''
     Removes a CDS from consideration in the CDS URL list generation for the given
     repo. If no association between the repo and CDS exists, this method has no
     effect.
 
-    @param cds_hostname: identifies the CDS
-    @type  cds_hostname: string
+    @param cds_client_hostname: identifies the CDS
+    @type  cds_client_hostname: string
 
     @param repo_id: identifies the repo
     @type  repo_id: string
@@ -194,8 +194,8 @@ def remove_cds_repo_association(cds_hostname, repo_id):
         return False
 
     # The new CDS should be the first returned at the next assignment
-    if cds_hostname in association['next_permutation']:
-        association['next_permutation'].remove(cds_hostname)
+    if cds_client_hostname in association['next_permutation']:
+        association['next_permutation'].remove(cds_client_hostname)
 
         # If there are no more CDS instances in the association document,
         # remove the document entirely
