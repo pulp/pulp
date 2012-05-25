@@ -94,6 +94,16 @@ class BindingsAPI(PulpAPI):
         if repoid:
             path += '%s/' % repoid
         return self.server.GET(path)
+    
+    def bind(self, id, repo_id, distributor_id):
+        path = self.BASE_PATH % id
+        data = {'repo_id' : repo_id, 
+                'distributor_id' : distributor_id}
+        return self.server.POST(path, data)
+    
+    def unbind(self, repo_id, distributor_id):
+        path = self.BASE_PATH % id + "%s/" % repo_id + "%s/" % distributor_id
+        return self.server.DELETE(path)
 
 
 class ConsumerHistoryAPI(PulpAPI):
