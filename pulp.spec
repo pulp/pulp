@@ -342,10 +342,10 @@ mkdir -p %{buildroot}/var/lib/pulp_client/consumer/extensions
 cp -R extensions/pulp_consumer %{buildroot}/var/lib/pulp_client/consumer/extensions
 
 # Agent content handlers
-mkdir -p %{buildroot}/%{_libdir}/pulp/handler
-mkdir -p %{buildroot}/%{_sysconfdir}/pulp/handler
-cp -R handlers/* %{buildroot}/%{_libdir}/pulp/handler
-cp -R etc/pulp/handler/* %{buildroot}/%{_sysconfdir}/pulp/handler
+mkdir -p %{buildroot}/%{_libdir}/pulp/agent/handler
+mkdir -p %{buildroot}/%{_sysconfdir}/pulp/agent/handler
+cp -R handlers/* %{buildroot}/%{_libdir}/pulp/agent/handler
+cp -R etc/pulp/agent/handler/* %{buildroot}/%{_sysconfdir}/pulp/agent/handler
 
 # -- clean --------------------------------------------------------------------
 
@@ -468,12 +468,12 @@ fi
 %{_bindir}/pulp-consumer
 %{_bindir}/pulp-v2-consumer
 %{_libdir}/gofer/plugins/
-%{_libdir}/pulp/handler/
+%{_libdir}/pulp/agent/handler/
 %{_usr}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulp.conf
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_sysconfdir}/gofer/plugins/consumer.conf
-%{_sysconfdir}/pulp/handler/
+%{_sysconfdir}/pulp/agent/handler/
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/pulp/consumer/
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf

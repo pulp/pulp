@@ -28,7 +28,7 @@ SCHEMA = (
 )
 
 f = open('my.conf')
-cfg = INIConfig(f)
+cfg = Config(f)
 validator = Validator(SCHEMA)
 validator.validate(cfg)
 """
