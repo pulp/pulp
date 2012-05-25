@@ -234,7 +234,6 @@ class ContentUploadManager(object):
             raise PulpExecutionException(e), None, sys.exc_info()[2]
 
         # TODO: Add support for tracking the report as a history entry on the repo
-        return report
 
     # -- utilities ------------------------------------------------------------
 

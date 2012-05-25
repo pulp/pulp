@@ -194,11 +194,9 @@ class ContentUploadManagerTests(testutil.PulpTest):
         file_path = self.upload_manager._upload_file_path(upload_id)
 
         # Test
-        report = self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata, upload_id)
+        self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata, upload_id)
 
         # Verify
-        self.assertEqual(report, importer_return_report)
-
         call_args = mock_plugins.MOCK_IMPORTER.upload_unit.call_args[0]
         self.assertTrue(isinstance(call_args[0], Repository))
         self.assertEqual(call_args[1], 'mock-type')
