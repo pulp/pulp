@@ -13,6 +13,7 @@
 import os
 import mock
 from pulp.server.content.conduits.repo_sync import RepoSyncConduit
+from pulp.server.content.conduits.unit_add import UnitAddConduit
 from pulp.server.content.conduits.unit_import import ImportUnitConduit
 from pulp.server.content.plugins.config import PluginCallConfiguration
 from pulp.server.content.plugins.model import Unit
@@ -46,6 +47,37 @@ def get_import_conduit(source_units=None):
     import_conduit = mock.Mock(spec=ImportUnitConduit)
     import_conduit.get_source_units.side_effect = get_source_units
     return import_conduit
+
+def get_upload_conduit(type_id=None, unit_key=None, metadata=None, relative_path=None, pkg_dir=None):
+    def side_effect(type_id, unit_key, metadata, relative_path):
+        if relative_path and pkg_dir:
+            relative_path = os.path.join(pkg_dir, relative_path)
+        unit = Unit(type_id, unit_key, metadata, relative_path)
+        return unit
+
+    def get_units(criteria=None):
+        ret_units = True
+        if criteria and hasattr(criteria, "type_ids"):
+            if type_id and type_id not in criteria.type_ids:
+                ret_units = False
+        return []
+
+    upload_conduit = mock.Mock(spec=UnitAddConduit)
+    upload_conduit.init_unit.side_effect = side_effect
+
+    upload_conduit.get_units = mock.Mock()
+    upload_conduit.get_units.side_effect = get_units
+
+    upload_conduit.save_units = mock.Mock()
+    upload_conduit.save_units.side_effect = side_effect
+
+    upload_conduit.build_failure_report = mock.Mock()
+    upload_conduit.build_failure_report.side_effect = side_effect
+
+    upload_conduit.build_success_report = mock.Mock()
+    upload_conduit.build_success_report.side_effect = side_effect
+
+    return upload_conduit
 
 def get_basic_config(*arg, **kwargs):
     plugin_config = {}

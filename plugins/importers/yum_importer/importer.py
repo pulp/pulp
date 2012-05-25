@@ -17,6 +17,7 @@ Importer plugin for Yum functionality
 import gettext
 import logging
 import os
+import shutil
 import time
 
 import drpm
@@ -24,7 +25,9 @@ import errata
 import importer_rpm
 import distribution
 from pulp.server.content.plugins.importer import Importer
+from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.yum_plugin import util
+from   pulp.server.content.plugins.model import SyncReport
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
@@ -356,4 +359,76 @@ class YumImporter(Importer):
         summary = dict(rpm_summary.items() + errata_summary.items())
         details = dict(rpm_details.items() + errata_details.items())
         return (rpm_status and errata_status), summary, details
+
+    def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
+        _LOG.info("Upload Unit Invoked")
+        try:
+            status, summary, details = self._upload_unit(repo, type_id, unit_key, metadata, file_path, conduit, config)
+            if status:
+                report = SyncReport(True, int(summary['num_units_saved']), 0, 0, summary, details)
+            else:
+                report = SyncReport(False, int(summary['num_units_saved']), 0, 0, summary, details)
+        except Exception, e:
+            _LOG.error("Caught Exception: %s" % (e))
+            summary = {}
+            summary["error"] = str(e)
+            report = SyncReport(False, 0, 0, 0, summary, None)
+        return report
+
+    def _upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
+        _LOG.info("Invoking upload_unit with file_path: %s; metadata: %s; unit_key: %s; type_id: %s" % (file_path, metadata, unit_key, type_id))
+        summary = {}
+        details = {'errors' : []}
+        if type_id == 'rpm':
+            summary['filename'] = metadata['filename']
+            summary['num_units_processed'] = len([file_path])
+            summary['num_units_saved'] = 0
+            if not os.path.exists(file_path):
+                msg = "File path [%s] missing" % file_path
+                _LOG.error(msg)
+                details['errors'].append(msg)
+                return False, summary, details
+            relative_path = "%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
+                                                          unit_key['release'], unit_key['arch'], unit_key['checksum'])
+            u = conduit.init_unit(type_id, unit_key, metadata, relative_path)
+            new_path = "%s/%s" % (u.storage_path, metadata['filename'])
+            try:
+                if os.path.exists(new_path):
+                    existing_checksum = util.get_file_checksum(filename=new_path, hashtype=unit_key['checksumtype'])
+                    if existing_checksum != unit_key['checksum']:
+                        # checksums dont match, remove existing file
+                        os.remove(new_path)
+                    else:
+                        _LOG.info("Existing file is the same ")
+                if not os.path.isdir(os.path.dirname(new_path)):
+                    os.makedirs(os.path.dirname(new_path))
+                # copy the unit to the final path
+                shutil.copy(file_path, new_path)
+            except (IOError, OSError), e:
+                msg = "Error copying upload file to final location [%s]; Error %s" % (new_path, e)
+                details['errors'].append(msg)
+                _LOG.error(msg)
+                return False, summary, details
+            conduit.save_unit(u)
+            summary['num_units_processed'] = len([file_path])
+            summary['num_units_saved'] = len([file_path])
+            _LOG.info("unit %s successfully saved" % u)
+            # symlink content to repo working directory
+            symlink_path = "%s/%s/%s" % (repo.working_dir, repo.id, metadata['filename'])
+            try:
+                if os.path.islink(symlink_path):
+                    os.unlink(symlink_path)
+                if not os.path.isdir(os.path.dirname(symlink_path)):
+                    os.makedirs(os.path.dirname(symlink_path))
+                os.symlink(new_path, symlink_path)
+                _LOG.info("Successfully symlinked to final location %s" % symlink_path)
+            except (IOError, OSError), e:
+                msg = "Error creating a symlink to repo working directory; Error %s" % e
+                _LOG.error(msg)
+                details['errors'].append(msg)
+            if len(details['errors']):
+                summary['num_errors'] = len(details['errors'])
+                return False, summary, details
+            _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
+            return True, summary, details
 
