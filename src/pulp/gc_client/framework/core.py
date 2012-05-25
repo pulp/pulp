@@ -28,6 +28,7 @@ from   okaara.progress import ProgressBar, Spinner, ThreadedSpinner
 import okaara.prompt
 from   okaara.prompt import Prompt, WIDTH_TERMINAL
 
+from   pulp.common.util import encode_unicode
 from   pulp.gc_client.framework.extensions import PulpCliSection
 
 # -- constants ----------------------------------------------------------------
@@ -353,7 +354,7 @@ class PulpPrompt(Prompt):
                     if isinstance(v, (str, unicode)):
                         v = v.replace('\n', ' ')
 
-                line = line_template % (formatted_k + ':', str(v))
+                line = line_template % (formatted_k + ':', encode_unicode(v))
                 long_value_indent = max_key_length + spaces_between_cols + indent
                 line = self.wrap(line, remaining_line_indent=long_value_indent)
                 self.write(line, tag=TAG_DOCUMENT, skip_wrap=True)
