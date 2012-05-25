@@ -137,6 +137,8 @@ class ResumeCommand(PulpCliCommand):
         self.context = context
 
     def resume(self, **kwargs):
+        self.context.prompt.render_title(_('Upload Requests'))
+
         upload_manager = _upload_manager(self.context)
 
         uploads = upload_manager.list_uploads()
@@ -145,14 +147,20 @@ class ResumeCommand(PulpCliCommand):
             self.context.prompt.render_paragraph('No outstanding uploads found')
             return
 
-        source_filenames = [os.path.basename(u.source_filename) for u in uploads]
+        non_running_uploads = [u for u in uploads if not u.is_running]
+        if len(non_running_uploads) is 0:
+            d = 'All requests are currently in the process of being uploaded.'
+            self.context.prompt.render_paragraph(_(d))
+            return
+
+        source_filenames = [os.path.basename(u.source_filename) for u in non_running_uploads]
         q = _('Select one or more uploads to resume: ')
         selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
 
         if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) is 0:
             return
 
-        selected_uploads = [u for i, u in enumerate(uploads) if i in selected_indexes]
+        selected_uploads = [u for i, u in enumerate(non_running_uploads) if i in selected_indexes]
         selected_filenames = [os.path.basename(u.source_filename) for u in selected_uploads]
         selected_ids = [u.upload_id for u in selected_uploads]
 
@@ -214,7 +222,6 @@ class CancelCommand(PulpCliCommand):
             return
 
         non_running_uploads = [u for u in uploads if not u.is_running]
-
         if len(non_running_uploads) is 0:
             d = 'All requests are currently in the process of being uploaded. ' \
             'Only paused uploads may be cancelled.'
@@ -284,10 +291,13 @@ def _perform_upload(context, upload_manager, upload_ids):
         'resume command or cancelled entirely using the cancel command.'
     context.prompt.render_paragraph(_(d))
 
-    try:
-
-        # Upload and import each upload
-        for upload_id in upload_ids:
+    # Upload and import each upload. The try block is inside of the loop to
+    # allow uploads to continue even if one hits an exception. The exception
+    # handler is called directly to use the standard logging/display for
+    # exceptions but otherwise the next upload is allowed. The only variation
+    # is that a KeyboardInterrupt represents pausing the upload process.
+    for upload_id in upload_ids:
+        try:
             tracker = upload_manager.get_upload(upload_id)
 
             # Upload the bits
@@ -301,19 +311,23 @@ def _perform_upload(context, upload_manager, upload_ids):
 
             # Import the upload request
             context.prompt.write(_('Importing into the repository...'))
-            upload_manager.upload(upload_id)
+            upload_manager.import_upload(upload_id)
             context.prompt.write(_('... completed'))
+            context.prompt.render_spacer()
 
             # Delete the request
             context.prompt.write(_('Deleting the upload request...'))
             upload_manager.delete_upload(upload_id)
             context.prompt.write(_('... completed'))
-
             context.prompt.render_spacer()
 
-    except KeyboardInterrupt:
-        d = 'Uploading paused'
-        context.prompt.render_paragraph(_(d))
+        except KeyboardInterrupt:
+            d = 'Uploading paused'
+            context.prompt.render_paragraph(_(d))
+            return
+
+        except Exception, e:
+            context.exception_handler.handle_exception(e)
 
 def _generate_rpm_data(rpm_filename):
 
