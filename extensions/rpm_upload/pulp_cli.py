@@ -351,6 +351,7 @@ def _generate_rpm_data(rpm_filename):
 
     # Checksum
     unit_key['checksumtype'] = 'sha256' # hardcoded to this in v1 so leaving this way for now
+    unit_key['filename'] = os.path.basename(rpm_filename)
 
     m = hashlib.new(unit_key['checksumtype'])
     f = open(rpm_filename, 'r')
