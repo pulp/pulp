@@ -326,6 +326,37 @@ class Property:
 #
 # Configuration
 #
+# Examples:
+#
+# note: Config "is a" dict so in the following examples,
+#       cfg can be treated/passed as a dict or the value-add methods
+#       can be used as appropriate.
+#
+# Loading a single .conf file.
+# >>>
+# >>> cfg = Config(path)
+# >>>
+#
+# Loading and merging 2 .conf files.
+# >>>
+# >>> cfg = Config(path1, path2)
+# >>>
+# Same as:
+# >>> cfg1 = Config(path1)
+# >>> cfg2 = Config(path2)
+# >>> cfg1.update(cfg2)
+# >>>
+#
+# Load sections beginning with the name "foo-" using regex.
+# >>>
+# >>> cfg = Config(path1, path2, 'foo-')
+# >>>
+#
+# Load sections 'server' & 'logging'
+# >>>
+# >>> cfg = Config(path1, path2, ['server', 'logging'])
+# >>>
+
 
 class Config(dict):
     """
