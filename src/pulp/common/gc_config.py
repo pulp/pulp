@@ -34,6 +34,7 @@ validator.validate(cfg)
 """
 
 import re
+import collections
 from threading import RLock
 from iniparse import INIConfig
 
@@ -338,49 +339,68 @@ class Config(dict):
         @param input: A path or list of paths to .conf files
         @type input: str|dict|fp
         @param options: Options see: keywords
-        @type sections: dict
-        @keyword section: A list of sections used for filtering.
-            An empty indicates ALL sections.
+        @type filter: dict
+        @keyword filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
         """
-        sections = options.get('sections', [])
+        filter = options.get('filter')
         for input in inputs:
             if isinstance(input, basestring):
-                self.open(paths, sections)
+                self.open(paths, filter)
                 continue
             if isinstance(input, dict):
                 self.update(input)
                 continue
-            self.read(input, sections)
+            self.read(input, filter)
 
-    def open(self, paths, sections=[]):
+    def open(self, paths, filter=None):
         """
         @param paths: A path or list of paths to .conf files
         @type paths: str|list
-        @param sections: A list of sections used for filtering.
-            An empty indicates ALL sections.
-        @type sections: list
+        @param filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
         """
         if isinstance(paths, basestring):
             paths = (paths,)
         for path in paths:
             fp = open(path)
             try:
-                self.read(fp, sections)
+                self.read(fp, filter)
             finally:
                 fp.close()
 
-    def read(self, fp, sections=[]):
+    def read(self, fp, filter=None):
         """
         Read and parse the fp.
         @param fp: An open file
         @type fp: file-like object.
-        @param sections: A list of sections used for filtering.
-            An empty indicates ALL sections.
-        @type sections: list
+        @param filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
         """
         cfg = INIConfig(fp)
+        filter = Filter(filter)
         for s in cfg:
-            if sections and s not in sections:
+            if not filter.match(s):
                 continue
             section = {}
             for p in cfg[s]:
@@ -438,6 +458,50 @@ class Config(dict):
             dict.__setitem__(self, name, value)
         else:
             raise ValueError('must be <dict>')
+
+
+class Filter:
+    """
+    Filter object used to wrap various types of objects
+    that can be used to filter sections.
+    @ivar filter: A filter object.  See: __init__()
+    @type filter: object
+    """
+
+    def __init__(self, filter):
+        """
+        @param filter: A filter object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
+        """
+        self.filter = filter
+
+    def match(self, s):
+        """
+        Match the specified string.
+        Delegated to the contained (filter) based on type.  See: __init__().
+        @param s: A string to match.
+        @type s: str
+        @return: True if matched.
+        @rtype: bool
+        """
+        if self.filter is None:
+            return True
+        if isinstance(self.filter, str):
+            p = Patterns.get(self.filter)
+            return p.match(s)
+        if isinstance(self.filter, collections.Iterable):
+            return s in self.filter
+        if callable(self.filter):
+            return self.filter(s)
+        fclass = self.filter.__class__.__name__
+        raise Exception('unsupported filter: %s', fclass)
 
 
 class Graph:
