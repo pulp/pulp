@@ -196,6 +196,9 @@ class ResumeCommand(PulpCliCommand):
         _perform_upload(self.context, upload_manager, selected_ids)
 
 class ListCommand(PulpCliCommand):
+    """
+    Lists all upload requests, including their status of running v. paused.
+    """
 
     def __init__(self, context, name, description):
         PulpCliCommand.__init__(self, name, description, self.list)
@@ -204,14 +207,17 @@ class ListCommand(PulpCliCommand):
     def list(self, **kwargs):
         self.context.prompt.render_title(_('Upload Requests'))
 
+        # Load upload request trackers
         upload_manager = _upload_manager(self.context)
         uploads = upload_manager.list_uploads()
 
+        # Punch out early if there are none
         if len(uploads) is 0:
             d = 'No outstanding uploads found'
             self.context.prompt.render_paragraph(_(d))
             return
 
+        # Display each filename along with its status
         for upload in uploads:
             if upload.is_running:
                 state = '[%-7s]' % self.context.prompt.color(_('Running'), COLOR_RUNNING)
@@ -225,6 +231,10 @@ class ListCommand(PulpCliCommand):
         self.context.prompt.render_spacer()
 
 class CancelCommand(PulpCliCommand):
+    """
+    Displays a list of paused uploads and allows the user to select one or more
+    to resume uploading.
+    """
 
     def __init__(self, context, name, description):
         PulpCliCommand.__init__(self, name, description, self.cancel)
@@ -237,10 +247,11 @@ class CancelCommand(PulpCliCommand):
         self.create_flag('--force', _(d))
 
     def cancel(self, **kwargs):
-        force = kwargs['force'] or False
-
         self.context.prompt.render_title(_('Upload Requests'))
 
+        force = kwargs['force'] or False
+
+        # Load all requests
         upload_manager = _upload_manager(self.context)
         uploads = upload_manager.list_uploads()
 
@@ -250,6 +261,8 @@ class CancelCommand(PulpCliCommand):
             self.context.prompt.render_paragraph(_(d))
             return
 
+        # We can only cancel paused uploads, so check to make sure there is
+        # at least one
         non_running_uploads = [u for u in uploads if not u.is_running]
         if len(non_running_uploads) is 0:
             d = 'All requests are currently in the process of being uploaded. ' \
@@ -262,13 +275,17 @@ class CancelCommand(PulpCliCommand):
         q = _('Select one or more uploads to cancel: ')
         selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
 
+        # If the user selected none or aborted (or ctrl+c), punch out
         if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) is 0:
             return
 
+        # Resolve selected uploads against their associated metadata
         selected_uploads = [u for i, u in enumerate(non_running_uploads) if i in selected_indexes]
         selected_filenames = [os.path.basename(u.source_filename) for u in selected_uploads]
         selected_ids = [u.upload_id for u in selected_uploads]
 
+        # Try to delete as many as possible. If at least one failed, return
+        # a non-happy exit code.
         error_encountered = False
         for i, upload_id in enumerate(selected_ids):
             self.context.prompt.write(_('Deleting: %(f)s') % {'f' : selected_filenames[i]})
@@ -287,7 +304,8 @@ class CancelCommand(PulpCliCommand):
 
 def _upload_manager(context):
     """
-    Instantiates and configures the upload manager.
+    Instantiates and configures the upload manager. The context is used to
+    access any necessary configuration.
 
     @return: initialized and ready to run upload manager instance
     @rtype:  UploadManager
@@ -359,6 +377,25 @@ def _perform_upload(context, upload_manager, upload_ids):
             context.exception_handler.handle_exception(e)
 
 def _generate_rpm_data(rpm_filename):
+    """
+    For the given RPM, analyzes its metadata to generate the appropriate unit
+    key and metadata fields, returning both to the caller.
+
+    This is performed client side instead of in the importer to get around
+    differences in RPMs between RHEL 5 and later versions of Fedora. We can't
+    guarantee the server will be able to properly read the RPM so it is
+    read client-side and the metadata passed in.
+
+    The obvious caveat is that the format of the returned values must match
+    what the importer would produce had this RPM been synchronized from an
+    external source.
+
+    @param rpm_filename: full path to the RPM to analyze
+    @type  rpm_filename: str
+
+    @return: tuple of unit key and unit metadata for the RPM
+    @rtype:  tuple
+    """
 
     # Expected metadata fields:
     # "vendor", "description", "buildhost", "license", "vendor", "requires", "provides", "relativepath", "filename"
