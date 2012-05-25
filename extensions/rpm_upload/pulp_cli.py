@@ -167,7 +167,7 @@ class ListCommand(PulpCliCommand):
         self.context = context
 
     def list(self, **kwargs):
-        self.context.prompt.render_title('Upload Requests')
+        self.context.prompt.render_title(_('Upload Requests'))
 
         upload_manager = _upload_manager(self.context)
         uploads = upload_manager.list_uploads()
@@ -194,8 +194,58 @@ class CancelCommand(PulpCliCommand):
         PulpCliCommand.__init__(self, name, description, self.cancel)
         self.context = context
 
+        d = 'removes the client-side tracking file for the upload regardless of ' \
+        'whether or not it was able to be deleted on the server; this should ' \
+        'only be used in the event that the server\'s knowledge of an upload ' \
+        'has been removed'
+        self.create_flag('--force', _(d))
+
     def cancel(self, **kwargs):
-        pass
+        force = kwargs['force'] or False
+
+        self.context.prompt.render_title(_('Upload Requests'))
+
+        upload_manager = _upload_manager(self.context)
+        uploads = upload_manager.list_uploads()
+
+        # Punch out early if there are no requests we can act on
+        if len(uploads) is 0:
+            self.context.prompt.render_paragraph(_('No outstanding uploads found'))
+            return
+
+        non_running_uploads = [u for u in uploads if not u.is_running]
+
+        if len(non_running_uploads) is 0:
+            d = 'All requests are currently in the process of being uploaded. ' \
+            'Only paused uploads may be cancelled.'
+            self.context.prompt.render_paragraph(_(d))
+            return
+
+        # Prompt for which upload requests to cancel
+        source_filenames = [os.path.basename(u.source_filename) for u in non_running_uploads]
+        q = _('Select one or more uploads to cancel: ')
+        selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
+
+        if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) is 0:
+            return
+
+        selected_uploads = [u for i, u in enumerate(non_running_uploads) if i in selected_indexes]
+        selected_filenames = [os.path.basename(u.source_filename) for u in selected_uploads]
+        selected_ids = [u.upload_id for u in selected_uploads]
+
+        error_encountered = False
+        for i, upload_id in enumerate(selected_ids):
+            self.context.prompt.write(_('Deleting: %(f)s') % {'f' : selected_filenames[i]})
+            try:
+                upload_manager.delete_upload(upload_id, force=force)
+            except Exception, e:
+                self.context.exception_handler.handle_exception(e)
+                error_encountered = True
+
+        if error_encountered:
+            return os.EX_IOERR
+        else:
+            return os.EX_OK
 
 # -- utility ------------------------------------------------------------------
 
@@ -250,6 +300,9 @@ def _perform_upload(context, upload_manager, upload_ids):
             context.prompt.render_spacer()
 
             # Import the upload request
+            context.prompt.write(_('Importing into the repository...'))
+            upload_manager.upload(upload_id)
+            context.prompt.write(_('... completed'))
 
             # Delete the request
             context.prompt.write(_('Deleting the upload request...'))
