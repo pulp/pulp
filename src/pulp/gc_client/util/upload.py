@@ -289,10 +289,6 @@ class UploadManager(object):
         self.bindings.uploads.import_upload(upload_id, tracker.repo_id, tracker.unit_type_id,
                                             tracker.unit_key, tracker.unit_metadata)
 
-        # If the import was successful, go through all of the steps necessary
-        # to clean up
-        self.delete_upload(upload_id)
-
     def list_uploads(self):
         """
         Returns all upload requests known to this instance.

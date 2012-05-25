@@ -40,7 +40,7 @@ def initialize(context):
     uploads_section.add_command(ListCommand(context, 'list', _(d)))
 
     d = 'uploads one or more RPMs into a repository'
-    uploads_section.add_command(CreateCommand(context, 'rpm', _(d)))
+    uploads_section.add_command(CreateRpmCommand(context, 'rpm', _(d)))
 
     d = 'resumes a paused upload request'
     uploads_section.add_command(ResumeCommand(context, 'resume', _(d)))
@@ -50,13 +50,18 @@ def initialize(context):
 
 # -- commands -----------------------------------------------------------------
 
-class CreateCommand(PulpCliCommand):
+class CreateRpmCommand(PulpCliCommand):
+    """
+    Handles initializing and uploading one or more RPMs.
+    """
+
     def __init__(self, context, name, description):
         PulpCliCommand.__init__(self, name, description, self.create)
         self.context = context
         self.prompt = context.prompt
 
-        self.create_option('--repo-id', _('identifies the repository the packages will be uploaded into'), required=True)
+        d = 'identifies the repository the packages will be uploaded into'
+        self.create_option('--repo-id', _(d), required=True)
 
         d = 'full path to the package to upload; may be specified multiple times ' \
             'for multiple files'
@@ -66,7 +71,11 @@ class CreateCommand(PulpCliCommand):
             'may be specified multiple times for multiple directories'
         self.create_option('--dir', _(d), aliases=['-d'], allow_multiple=True, required=False)
 
+        d = 'display extra information about the upload process'
+        self.create_flag('-v', _(d))
+
     def create(self, **kwargs):
+        self.prompt.render_title(_('RPM Upload'))
 
         repo_id = kwargs['repo-id']
 
@@ -98,6 +107,13 @@ class CreateCommand(PulpCliCommand):
             if not os.path.isfile(f):
                 self.context.prompt.render_failure_message(_('%(f)s is not a file') % {'f' : f})
                 return os.EX_IOERR
+
+        # Display the list of found RPMs
+        if kwargs['v']:
+            self.prompt.write(_('RPMs to be uploaded:'))
+            for r in all_rpm_filenames:
+                self.prompt.write('  %s' % os.path.basename(r))
+            self.prompt.render_spacer()
 
         # Extract the required metadata for each RPM
         self.prompt.write(_('Extracting necessary metdata for each RPM...'))
@@ -131,20 +147,28 @@ class CreateCommand(PulpCliCommand):
         _perform_upload(self.context, upload_manager, upload_ids)
 
 class ResumeCommand(PulpCliCommand):
+    """
+    Displays a list of paused uploads and allows one or more of them to be
+    resumed.
+    """
 
     def __init__(self, context, name, description):
         PulpCliCommand.__init__(self, name, description, self.resume)
         self.context = context
 
+        d = 'display extra information about the upload process'
+        self.create_flag('-v', _(d))
+
     def resume(self, **kwargs):
         self.context.prompt.render_title(_('Upload Requests'))
 
+        # Determine which (if any) uploads are eligible to resume
         upload_manager = _upload_manager(self.context)
-
         uploads = upload_manager.list_uploads()
 
         if len(uploads) is 0:
-            self.context.prompt.render_paragraph('No outstanding uploads found')
+            d = 'No outstanding uploads found'
+            self.context.prompt.render_paragraph(_(d))
             return
 
         non_running_uploads = [u for u in uploads if not u.is_running]
@@ -153,13 +177,16 @@ class ResumeCommand(PulpCliCommand):
             self.context.prompt.render_paragraph(_(d))
             return
 
+        # Prompt the user to select one or more uploads to resume
         source_filenames = [os.path.basename(u.source_filename) for u in non_running_uploads]
         q = _('Select one or more uploads to resume: ')
         selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
 
+        # User either selected no items or elected to abort (or ctrl+c)
         if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) is 0:
             return
 
+        # Resolve the user selections for display and uploading
         selected_uploads = [u for i, u in enumerate(non_running_uploads) if i in selected_indexes]
         selected_filenames = [os.path.basename(u.source_filename) for u in selected_uploads]
         selected_ids = [u.upload_id for u in selected_uploads]
@@ -181,7 +208,8 @@ class ListCommand(PulpCliCommand):
         uploads = upload_manager.list_uploads()
 
         if len(uploads) is 0:
-            self.context.prompt.render_paragraph(_('No outstanding uploads found'))
+            d = 'No outstanding uploads found'
+            self.context.prompt.render_paragraph(_(d))
             return
 
         for upload in uploads:
@@ -218,7 +246,8 @@ class CancelCommand(PulpCliCommand):
 
         # Punch out early if there are no requests we can act on
         if len(uploads) is 0:
-            self.context.prompt.render_paragraph(_('No outstanding uploads found'))
+            d = 'No outstanding uploads found'
+            self.context.prompt.render_paragraph(_(d))
             return
 
         non_running_uploads = [u for u in uploads if not u.is_running]
