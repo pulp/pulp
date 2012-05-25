@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.292
+Version:        0.0.293
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -530,6 +530,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri May 25 2012 Jeff Ortel <jortel@redhat.com> 0.0.293-1
+- Fix .spec for moving agent handlers. (jortel@redhat.com)
+- Add comments with Config usage and examples. (jortel@redhat.com)
+
 * Fri May 25 2012 Jeff Ortel <jortel@redhat.com> 0.0.292-1
 - Better section filtering in gc_config. (jortel@redhat.com)
 - YumImporter:  Added cancel sync (jmatthews@redhat.com)
