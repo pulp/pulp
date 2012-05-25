@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.291
+Version:        0.0.292
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -530,6 +530,45 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri May 25 2012 Jeff Ortel <jortel@redhat.com> 0.0.292-1
+- Better section filtering in gc_config. (jortel@redhat.com)
+- YumImporter:  Added cancel sync (jmatthews@redhat.com)
+- Implement upload_unit in yum importer (pkilambi@redhat.com)
+- Final code clean up and tweaks (jason.dobies@redhat.com)
+- Removed delete call from import, it doesn't belong there
+  (jason.dobies@redhat.com)
+- Don't return the report, it will be stuffed into history instead
+  (jason.dobies@redhat.com)
+- Added upload extension to the RPM (jason.dobies@redhat.com)
+- Added filename to unit key temporarily (jason.dobies@redhat.com)
+- Wrong call to import the unit (jason.dobies@redhat.com)
+- Default the relative URL to repo ID for feedless repos
+  (jason.dobies@redhat.com)
+- Turned on the import step (jason.dobies@redhat.com)
+- admin consumer bind and unbind extension (skarmark@redhat.com)
+- Fix agent unregistered(), delete of consumer cert. (jortel@redhat.com)
+- Rename (distributor) handler role to: (bind). (jortel@redhat.com)
+- Move GC agent handlers to: /etc/pulp/agent & /usr/lib/pulp/agent.
+  (jortel@redhat.com)
+- Fix epydoc typos. (jortel@redhat.com)
+- Initial working version of the upload CLI (jason.dobies@redhat.com)
+- Remove default {} from report signatures; fix epydoc. (jortel@redhat.com)
+- Add linux system handler to git. (jortel@redhat.com)
+- Add a ton of missing GC packages and tests. (jortel@redhat.com)
+- Fixing syntax error at the end of params in the api doc (skarmark@redhat.com)
+- GC agent: add (system) role and refactor reboot(). (jortel@redhat.com)
+- Fix title for consistency (jason.dobies@redhat.com)
+- Another minor rendering fix for consumer history api doc (3rd time's the
+  charm) (skarmark@redhat.com)
+- Minor rendering fix for consumer history api doc (skarmark@redhat.com)
+- updated docstring (jason.connor@gmail.com)
+- Fixing title of consumer history api doc (skarmark@redhat.com)
+- In GC agent, add initial mapping for package group installs.
+  (jortel@redhat.com)
+- Update epydocs. (jortel@redhat.com)
+- Refactor Handler interface for clarity.  Fix bind handler using
+  ConsumerConfig. (jortel@redhat.com)
+
 * Thu May 24 2012 Jeff Ortel <jortel@redhat.com> 0.0.291-1
 - yum_importer proxy fix to force config values to be in ascii
   (jmatthews@redhat.com)
