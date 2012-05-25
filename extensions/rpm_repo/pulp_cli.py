@@ -125,14 +125,17 @@ class YumRepoCreateCommand(PulpCliCommand):
 
         # During create (but not update), if the relative path isn't specified
         # it is derived from the feed_url
-        if 'relative_url' not in distributor_config and 'feed_url' in importer_config:
-            url_parse = urlparse(encode_unicode(importer_config['feed_url']))
+        if 'relative_url' not in distributor_config:
+            if 'feed_url' in importer_config:
+                url_parse = urlparse(encode_unicode(importer_config['feed_url']))
 
-            if url_parse[2] in ('', '/'):
-                relative_path = '/' + repo_id
+                if url_parse[2] in ('', '/'):
+                    relative_path = '/' + repo_id
+                else:
+                    relative_path = url_parse[2]
+                distributor_config['relative_url'] = relative_path
             else:
-                relative_path = url_parse[2]
-            distributor_config['relative_url'] = relative_path
+                distributor_config['relative_url'] = repo_id
 
         # Both http and https must be specified in the distributor config, so
         # make sure they are initiall set here (default to only https)
