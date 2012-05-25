@@ -20,10 +20,11 @@ import os
 import shutil
 import time
 
-import drpm
-import errata
-import importer_rpm
-import distribution
+from drpm import DRPM_TYPE_ID
+from distribution import DISTRO_TYPE_ID
+from importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
+from errata import ImporterErrata, ERRATA_TYPE_ID
+
 from pulp.server.content.plugins.importer import Importer
 from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.yum_plugin import util
@@ -66,13 +67,18 @@ OPTIONAL_CONFIG_KEYS = ['feed_url', 'ssl_verify', 'ssl_ca_cert', 'ssl_client_cer
 # checksum_type: checksum type to use for repodata; defaults to source checksum type or sha256
 
 class YumImporter(Importer):
+    def __init__(self):
+        super(YumImporter, self).__init__()
+        self.canceled = False
+        self.importer_rpm = ImporterRPM()
+        self.errata = ImporterErrata()
+
     @classmethod
     def metadata(cls):
         return {
             'id'           : YUM_IMPORTER_TYPE_ID,
             'display_name' : 'Yum Importer',
-            'types'        : [importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID, errata.ERRATA_TYPE_ID, drpm.DRPM_TYPE_ID,
-                              distribution.DISTRO_TYPE_ID]
+            'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID, ERRATA_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
         }
 
     def validate_config(self, repo, config, related_repos):
@@ -243,7 +249,6 @@ class YumImporter(Importer):
                     msg = _("%s is not a valid checksum type" % checksum_type)
                     _LOG.error(msg)
                     return False, msg
-
         return True, None
 
     def importer_added(self, repo, config):
@@ -341,19 +346,16 @@ class YumImporter(Importer):
         def progress_callback(type_id, status):
             if type_id == "content":
                 progress_status["metadata"]["state"] = "FINISHED"
-                
             progress_status[type_id] = status
             sync_conduit.set_progress(progress_status)
 
         sync_conduit.set_progress(progress_status)
         # sync rpms
-        rpm_status, rpm_summary, rpm_details = importer_rpm._sync(repo, sync_conduit, config, progress_callback)
-        progress_status["content"]["state"] = "FINISHED"
+        rpm_status, rpm_summary, rpm_details = self.importer_rpm.sync(repo, sync_conduit, config, progress_callback)
         sync_conduit.set_progress(progress_status)
 
         # sync errata
-        errata_status, errata_summary, errata_details = errata._sync(repo, sync_conduit, config, progress_callback)
-        progress_status["errata"]["state"] = "FINISHED"
+        errata_status, errata_summary, errata_details = self.errata.sync(repo, sync_conduit, config, progress_callback)
         sync_conduit.set_progress(progress_status)
 
         summary = dict(rpm_summary.items() + errata_summary.items())
@@ -431,4 +433,9 @@ class YumImporter(Importer):
                 return False, summary, details
             _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
             return True, summary, details
+
+    def cancel_sync_repo(self):
+        self.canceled = True
+        self.errata.cancel_sync()
+        self.importer_rpm.cancel_sync()
 

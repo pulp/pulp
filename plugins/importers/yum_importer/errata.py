@@ -130,67 +130,6 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
         new_units[key] = sync_conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
     return new_errata, new_units, sync_conduit
 
-def _sync(repo, sync_conduit, config, importer_progress_callback=None):
-    """
-      Invokes errata sync sequence
-
-      @param repo: metadata describing the repository
-      @type  repo: L{pulp.server.content.plugins.data.Repository}
-
-      @param sync_conduit
-      @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
-
-      @param config: plugin configuration
-      @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
-
-      @param importer_progress_callback callback to report progress info to sync_conduit
-      @type importer_progress_callback function
-
-      @return a tuple of state, dict of sync summary and dict of sync details
-      @rtype (bool, {}, {})
-    """
-    def set_progress(status):
-        if importer_progress_callback:
-            importer_progress_callback("errata", status)
-
-    start = time.time()
-    repo_dir = "%s/%s" % (repo.working_dir, repo.id)
-    available_errata = get_available_errata(repo_dir)
-    _LOG.info("Available Errata %s" % len(available_errata))
-    progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
-    set_progress(progress)
-
-    criteria = Criteria(type_ids=ERRATA_TYPE_ID)
-    existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
-    _LOG.info("Existing Errata %s" % len(existing_errata))
-    orphaned_units = get_orphaned_errata(available_errata, existing_errata)
-    new_errata, new_units, sync_conduit = get_new_errata_units(available_errata, existing_errata, sync_conduit)
-    # Save the new units
-    for u in new_units.values():
-        sync_conduit.save_unit(u)
-
-    # clean up any orphaned errata
-    for u in orphaned_units.values():
-        sync_conduit.remove_unit(u)
-    # get errata sync details
-    errata_details = errata_sync_details(new_errata)
-    end = time.time()
-
-    summary = dict()
-    summary["num_new_errata"] = len(new_errata)
-    summary["num_existing_errata"] = len(existing_errata)
-    summary["num_orphaned_errata"] = len(orphaned_units)
-    summary["errata_time_total_sec"] = end - start
-
-    details = dict()
-    details["num_bugfix_errata"] = len(errata_details['types']['bugfix'])
-    details["num_security_errata"] = len(errata_details['types']['security'])
-    details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
-    _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
-    progress = {"state":"FINISHED", "num_errata":len(available_errata)}
-    set_progress(progress)
-    return True, summary, details
-
 def form_errata_unit_key(erratum):
     unit_key = {}
     for key in ERRATA_UNIT_KEY:
@@ -219,3 +158,74 @@ class ErrataProgress(object):
     def __init__(self, step="Importing Errata"):
         self.step = step
         self.details = {}
+
+class ImporterErrata(object):
+    def __init__(self):
+        self.canceled = False
+
+    def cancel_sync(self):
+        self.canceled = True
+
+    def sync(self, repo, sync_conduit, config, importer_progress_callback=None):
+        """
+          Invokes errata sync sequence
+
+          @param repo: metadata describing the repository
+          @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+          @param sync_conduit
+          @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
+
+          @param config: plugin configuration
+          @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+          @param importer_progress_callback callback to report progress info to sync_conduit
+          @type importer_progress_callback function
+
+          @return a tuple of state, dict of sync summary and dict of sync details
+          @rtype (bool, {}, {})
+        """
+        def set_progress(status):
+            if importer_progress_callback:
+                importer_progress_callback("errata", status)
+
+        if self.canceled:
+            return False, {}, {}
+
+        start = time.time()
+        repo_dir = "%s/%s" % (repo.working_dir, repo.id)
+        available_errata = get_available_errata(repo_dir)
+        _LOG.info("Available Errata %s" % len(available_errata))
+        progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
+        set_progress(progress)
+
+        criteria = Criteria(type_ids=ERRATA_TYPE_ID)
+        existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
+        _LOG.info("Existing Errata %s" % len(existing_errata))
+        orphaned_units = get_orphaned_errata(available_errata, existing_errata)
+        new_errata, new_units, sync_conduit = get_new_errata_units(available_errata, existing_errata, sync_conduit)
+        # Save the new units
+        for u in new_units.values():
+            sync_conduit.save_unit(u)
+
+        # clean up any orphaned errata
+        for u in orphaned_units.values():
+            sync_conduit.remove_unit(u)
+            # get errata sync details
+        errata_details = errata_sync_details(new_errata)
+        end = time.time()
+
+        summary = dict()
+        summary["num_new_errata"] = len(new_errata)
+        summary["num_existing_errata"] = len(existing_errata)
+        summary["num_orphaned_errata"] = len(orphaned_units)
+        summary["errata_time_total_sec"] = end - start
+
+        details = dict()
+        details["num_bugfix_errata"] = len(errata_details['types']['bugfix'])
+        details["num_security_errata"] = len(errata_details['types']['security'])
+        details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
+        _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
+        progress = {"state":"FINISHED", "num_errata":len(available_errata)}
+        set_progress(progress)
+        return True, summary, details

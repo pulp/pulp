@@ -50,7 +50,8 @@ class TestDistribution(unittest.TestCase):
         repo.id = "test_repo"
         sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)

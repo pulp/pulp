@@ -184,7 +184,8 @@ class TestRPMs(unittest.TestCase):
         repo.id = "test_basic_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertTrue(status)
@@ -203,6 +204,66 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(len(pkgs), 3)
         for link in sym_links:
             self.assertTrue(os.path.islink(link))
+
+    def test_cancel_sync(self):
+        global updated_progress
+        updated_progress = None
+
+        def set_progress(progress):
+            global updated_progress
+            updated_progress = progress
+
+        class SyncThread(threading.Thread):
+            def __init__(self, importer, repo, sync_conduit, config):
+                threading.Thread.__init__(self)
+                self.importer = importer
+                self.repo = repo
+                self.sync_conduit = sync_conduit
+                self.config = config
+                self.status = None
+                self.summary = None
+                self.details = None
+                self.finished = False
+
+            def run(self):
+                status, summary, details = self.importer._sync_repo(self.repo, self.sync_conduit, self.config)
+                self.status = status
+                self.summary = summary
+                self.details = details
+                self.finished = True
+
+        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/6Server/x86_64/"
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_cancel_sync"
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        sync_conduit.set_progress = mock.Mock()
+        sync_conduit.set_progress.side_effect = set_progress
+        config = importer_mocks.get_basic_config(feed_url=feed_url, num_threads=1, max_speed=25)
+        importer = YumImporter()
+        sync_thread = SyncThread(importer, repo, sync_conduit, config)
+        sync_thread.start()
+        # Wait to confirm that sync has started and we are downloading packages
+        # We are intentionally setting the 'config' to use 1 thread and max_speed to be low so we will
+        # have a chance to cancel the sync before it completes
+        for i in range(30):
+            if updated_progress and updated_progress.has_key("content") and updated_progress["content"].has_key("state") \
+                and updated_progress["content"]["state"] == "IN_PROGRESS":
+                break
+            time.sleep(1)
+        self.assertEquals(updated_progress["metadata"]["state"], "FINISHED")
+        self.assertEquals(updated_progress["content"]["state"], "IN_PROGRESS")
+        ###
+        ### Issue Cancel
+        ###
+        importer.cancel_sync_repo()
+        # Wait for cancel of sync
+        for i in range(45):
+            if sync_thread.finished:
+                break
+            time.sleep(1)
+        self.assertEquals(updated_progress["content"]["state"], "CANCELED")
+        self.assertFalse(sync_thread.status)
     
     def test_basic_local_sync(self):
         feed_url = "file://%s/pulp_unittest/" % (self.data_dir)
@@ -211,7 +272,8 @@ class TestRPMs(unittest.TestCase):
         repo.id = "test_basic_local_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertTrue(status)
@@ -257,7 +319,8 @@ class TestRPMs(unittest.TestCase):
         sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertTrue(status)
@@ -437,7 +500,8 @@ class TestRPMs(unittest.TestCase):
         repo.id = "test_remove_packages"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 3)
         self.assertEquals(len(self.get_files_in_dir("*.rpm", self.pkg_dir)), 3)
@@ -475,7 +539,8 @@ class TestRPMs(unittest.TestCase):
         # removed with remove_old functionality
         ###
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=False, num_old_packages=0)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], 12)
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
@@ -497,7 +562,8 @@ class TestRPMs(unittest.TestCase):
             existing_units.append(u)
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=6)
         sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertEquals(summary["num_rpms"], 7)
         self.assertEquals(summary["num_orphaned_rpms"], 5)
@@ -507,7 +573,8 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(len(pkgs), 7)
 
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=0)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertEquals(summary["num_rpms"], 1)
         self.assertEquals(summary["num_orphaned_rpms"], 11)
@@ -523,7 +590,8 @@ class TestRPMs(unittest.TestCase):
         repo.id = "test_srpm_sync"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
@@ -588,7 +656,8 @@ class TestRPMs(unittest.TestCase):
         config = importer_mocks.get_basic_config(feed_url=feed_url, num_threads=num_threads, max_speed=max_speed)
 
         start = time.time()
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         end = time.time()
         self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], expected_num_packages)
@@ -613,7 +682,8 @@ class TestRPMs(unittest.TestCase):
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url, num_threads=num_threads, max_speed=max_speed)
         start = time.time()
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         end = time.time()
         self.assertTrue(status)
         self.assertEquals(summary["num_synced_new_rpms"], expected_num_packages)
@@ -635,7 +705,8 @@ class TestRPMs(unittest.TestCase):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         caught_exception = False
         try:
-            status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+            importerRPM = importer_rpm.ImporterRPM()
+            status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         except:
             caught_exception = True
         self.assertTrue(caught_exception)
@@ -657,7 +728,8 @@ class TestRPMs(unittest.TestCase):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         caught_exception = False
         try:
-            status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+            importerRPM = importer_rpm.ImporterRPM()
+            status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         except:
             caught_exception = True
         self.assertTrue(caught_exception)
@@ -765,7 +837,8 @@ class TestRPMs(unittest.TestCase):
         repo.id = "test_local_sync_with_packages_in_subdir"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
         self.assertTrue(status)
@@ -846,7 +919,8 @@ class TestRPMs(unittest.TestCase):
             config = importer_mocks.get_basic_config(feed_url=feed_url, 
                     proxy_url=proxy_url, proxy_port=proxy_port,
                     proxy_user=proxy_user, proxy_pass=proxy_pass)
-            status, summary, details = importer_rpm._sync(repo, sync_conduit, config)
+            importerRPM = importer_rpm.ImporterRPM()
+            status, summary, details = importerRPM.sync(repo, sync_conduit, config)
             #print "Status = %s" % (status)
             #print "Summary = %s" % (summary)
             #print "Details = %s" % (details)
