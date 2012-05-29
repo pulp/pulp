@@ -13,7 +13,8 @@
 
 from gettext import gettext as _
 
-from sync import RunSyncCommand, StatusCommand
+import publish as publish_commands
+import sync as sync_commands
 from sync_schedule import RepoSyncSchedulingSection
 
 # -- framework hook -----------------------------------------------------------
@@ -28,12 +29,18 @@ def initialize(context):
 
     # Override the repo sync command
     repo_section = context.cli.find_section('repo')
-    sync_section = repo_section.find_subsection('sync')
+    repo_section.remove_subsection('sync')
+    repo_section.remove_subsection('publish')
 
     # Sync Commands
-    sync_section.remove_command('run')
-    sync_section.add_command(RunSyncCommand(context, 'run', _('triggers an immediate sync of a repository')))
-    sync_section.add_command(StatusCommand(context, 'status', _('displays the status of a repository\'s sync operations')))
+    sync_section = repo_section.create_subsection('sync', _('run, schedule, or view the status of sync tasks'))
+    sync_section.add_command(sync_commands.RunSyncCommand(context, 'run', _('triggers an immediate sync of a repository')))
+    sync_section.add_command(sync_commands.StatusCommand(context, 'status', _('displays the status of a repository\'s sync tasks')))
+
+    # Publish Commands
+    publish_section = repo_section.create_subsection('publish', _('run, schedule, or view the status of publish tasks'))
+    publish_section.add_command(publish_commands.RunPublishCommand(context, 'run', _('triggers an immediate publish of a repository')))
+    publish_section.add_command(publish_commands.StatusCommand(context, 'status', _('displays the status of a repository\'s publish tasks')))
 
     # Schedule Commands
     sync_schedule_subsection = RepoSyncSchedulingSection(context, 'schedules', _('manage sync schedules for a repository'))

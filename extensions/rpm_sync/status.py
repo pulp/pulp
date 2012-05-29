@@ -12,11 +12,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains functionality related to rendering the progress report for an
-RPM sync operation.
+Contains functionality related to rendering the progress report for a the RPM
+plugins (both the sync and publish operations).
 """
 
 from gettext import gettext as _
+import time
 
 # -- constants ----------------------------------------------------------------
 
@@ -27,7 +28,78 @@ STATE_FAILED = 'FAILED'
 STATE_SKIPPED = 'SKIPPED'
 END_STATES = (STATE_COMPLETE, STATE_FAILED, STATE_SKIPPED)
 
-# -- classes ------------------------------------------------------------------
+# -- public -------------------------------------------------------------------
+
+def display_status(context, task_id):
+    """
+    Displays and continues to track the sync (with or without auto publish) or
+    publish task running on the server with the given ID.
+
+    @param context: CLI context
+    @type  context: ClientContext
+
+    @param task_id: must reference a valid task on the server
+    @type  task_id: str
+
+    @return:
+    """
+
+    response = context.server.tasks.get_task(task_id)
+    renderer = StatusRenderer(context)
+
+    m = 'This command may be exited by pressing ctrl+c without affecting the actual operation on the server.'
+    context.prompt.render_paragraph(_(m))
+
+    # Handle the cases where we don't want to honor the foreground request
+    if response.response_body.is_rejected():
+        announce = _('The request to synchronize repository was rejected')
+        description = _('This is likely due to an impending delete request for the repository.')
+
+        context.prompt.render_failure_message(announce)
+        context.prompt.render_paragraph(description)
+        return
+
+    if response.response_body.is_postponed():
+        a  = 'The request to synchronize the repository was accepted but postponed '\
+             'due to one or more previous requests against the repository. The sync will '\
+             'take place at the earliest possible time.'
+        context.prompt.render_paragraph(_(a))
+        return
+
+    # If we're here, the sync should be running or hopefully about to run
+    begin_spinner = context.prompt.create_spinner()
+    poll_frequency_in_seconds = context.client_config.getfloat('output', 'poll_frequency_in_seconds')
+
+    try:
+        while not response.response_body.is_completed():
+            if response.response_body.is_waiting():
+                begin_spinner.next(_('Waiting to begin'))
+            else:
+                renderer.display_report(response.response_body.progress)
+
+            time.sleep(poll_frequency_in_seconds)
+
+            response = context.server.tasks.get_task(response.response_body.task_id)
+
+    except KeyboardInterrupt:
+        # If the user presses ctrl+c, don't let the error bubble up, just
+        # exit gracefully
+        return
+
+    # Even after completion, we still want to display the report one last
+    # time in case there was no poll between, say, the middle of the
+    # package download and when the task itself reports as finished. We
+    # don't want to leave the UI in that half-finished state so this final
+    # call is to clean up and render the completed report.
+    renderer.display_report(response.response_body.progress)
+
+    if response.response_body.was_successful():
+        context.prompt.render_success_message('Successfully synchronized repository')
+    else:
+        context.prompt.render_failure_message('Error during repository synchronization')
+        context.prompt.render_failure_message(response.response_body.exception)
+
+# -- internal -----------------------------------------------------------------
 
 class StatusRenderer(object):
 
@@ -366,6 +438,8 @@ class StatusRenderer(object):
         def update_func(new_state):
             self.publish_https_last_state = new_state
         self._render_general_spinner_step(self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
+
+# -- general rendering functions ----------------------------------------------
 
     def _render_general_spinner_step(self, spinner, current_state, last_state, start_text, state_update_func):
         """
