@@ -89,14 +89,35 @@ def convert_boolean_arguments(boolean_keys, args):
     for key in boolean_keys:
         if key not in args or args[key] is None:
             continue
-        v = args.pop(key)
-        if v.strip().lower() == 'true':
-            args[key] = True
-            continue
-        if v.strip().lower() == 'false':
-            args[key] = False
-            continue
-        raise InvalidConfig(_('Value for %(f)s must be either true or false' % {'f' : key}))
+        convert_me = args.pop(key)
+        converted = arg_to_bool(convert_me)
+
+        if converted is not None:
+            args[key] = converted
+        else:
+            raise InvalidConfig(_('Value for %(f)s must be either true or false' % {'f' : key}))
+
+def arg_to_bool(arg_value):
+    """
+    Applies the CLI convention for accepting text representations for booleans
+    and returns the boolean equivalent. If the value does not match the
+    convention, None is returned. The expectation is that the caller will check
+    for None and display an appropriate error message.
+
+    @param arg_value: value to parse
+    @type  arg_value: str
+
+    @return: boolean equivalent of the user-entered string; None if it cannot
+             be parsed
+    @rtype:  bool
+    """
+
+    if arg_value.strip().lower() == 'true':
+        return True
+    if arg_value.strip().lower() == 'false':
+        return False
+
+    return None
 
 def convert_file_contents(file_keys, args):
     """
