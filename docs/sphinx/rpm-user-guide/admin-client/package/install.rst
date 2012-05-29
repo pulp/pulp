@@ -29,7 +29,7 @@ Options
   committed.  This option is useful for users to see how package names will be
   resolved and any dependancies that also be installed.
 
-``--importkeys``
+``--import-keys``
   A flag that indicates that GPG keys may be imported as needed.
 
 ``--reboot``

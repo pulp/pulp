@@ -109,7 +109,7 @@ class TestPackages(testutil.PulpV2ClientTest):
             'id':'xyz',
             'name':['zsh'],
             'no-commit':False,
-            'importkeys':False,
+            'import-keys':False,
             'reboot':False, 
         }
         command.run(**args)
@@ -131,7 +131,7 @@ class TestPackages(testutil.PulpV2ClientTest):
             'id':'xyz',
             'name':['zsh'],
             'no-commit':False,
-            'importkeys':False,
+            'import-keys':False,
             'reboot':False,
             'all':False,
         }

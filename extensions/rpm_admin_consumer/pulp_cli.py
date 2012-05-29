@@ -134,14 +134,14 @@ class InstallContent(PollingCommand):
             allow_multiple=True,
             aliases=['-n'])
         self.create_flag(
-            '--importkeys',
+            '--import-keys',
             _('import GPG keys as needed'))
         self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
         apply = (not kwargs['no-commit'])
-        importkeys = kwargs['importkeys']
+        importkeys = kwargs['import-keys']
         reboot = kwargs['reboot']
         units = []
         options = dict(
@@ -221,7 +221,7 @@ class UpdateContent(PollingCommand):
             allow_multiple=True,
             aliases=['-n'])
         self.create_flag(
-            '--importkeys',
+            '--import-keys',
             _('import GPG keys as needed'))
         self.create_flag(
             '--all',
@@ -234,7 +234,7 @@ class UpdateContent(PollingCommand):
         all = kwargs['all']
         names = kwargs['name']
         apply = (not kwargs['no-commit'])
-        importkeys = kwargs['importkeys']
+        importkeys = kwargs['import-keys']
         reboot = kwargs['reboot']
         units = []
         options = dict(
