@@ -28,7 +28,7 @@ _LOG = logging.getLogger(__name__)
 
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
-RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype")
+RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "checksum", "checksumtype")
 
 
 PROGRESS_REPORT_FIELDS = ["state", "items_total", "items_left", "size_total", "size_left", 
@@ -103,7 +103,7 @@ def get_new_rpms_and_units(available_rpms, existing_units, sync_conduit):
             new_rpms[key] = rpm
             unit_key = form_rpm_unit_key(rpm)
             metadata = form_rpm_metadata(rpm)
-            pkgpath = os.path.join(rpm["pkgpath"], rpm["filename"])
+            pkgpath = os.path.join(rpm["pkgpath"], metadata["filename"])
             if rpm['arch'] == 'src':
                 # initialize unit as a src rpm
                 new_units[key] = sync_conduit.init_unit(SRPM_TYPE_ID, unit_key, metadata, pkgpath)
@@ -148,13 +148,12 @@ def form_rpm_unit_key(rpm):
 
 def form_rpm_metadata(rpm):
     metadata = {}
-    for key in ("vendor", "description", "buildhost", "license", "vendor", "requires", "provides", "relativepath"):
+    for key in ("filename", "vendor", "description", "buildhost", "license", "vendor", "requires", "provides", "relativepath"):
         metadata[key] = rpm[key]
     return metadata
 
 def form_lookup_key(rpm):
-    rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm["arch"],
-        rpm["filename"], rpm["checksumtype"], rpm["checksum"])
+    rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm["arch"], rpm["checksumtype"], rpm["checksum"])
     return rpm_key
 
 def form_report(report):
@@ -298,7 +297,7 @@ def remove_unit(sync_conduit, repo, unit):
     _LOG.info("Removing unit <%s>" % (unit))
     sync_conduit.remove_unit(unit)
     error = False
-    sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["filename"])
+    sym_link = os.path.join(repo.working_dir, repo.id, unit.metadata["filename"])
     paths = [unit.storage_path, sym_link]
     for f in paths:
         if os.path.lexists(f):

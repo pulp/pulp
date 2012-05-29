@@ -167,7 +167,7 @@ class TestRPMs(unittest.TestCase):
         rpm = {}
         for k in RPM_UNIT_KEY:
             rpm[k] = value
-        for k in ("vendor", "description", "buildhost", "license", 
+        for k in ("filename", "vendor", "description", "buildhost", "license",
                 "vendor", "requires", "provides", "pkgpath", "relativepath"):
             rpm[k] = value
         return rpm
@@ -315,7 +315,8 @@ class TestRPMs(unittest.TestCase):
         unit_key = {}
         for k in RPM_UNIT_KEY:
             unit_key[k] = "test_value"
-        existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
+        metadata = {"filename" : "test_value"}
+        existing_units = [Unit(RPM_TYPE_ID, unit_key, metadata, os.path.join(self.pkg_dir, "test_rel_path"))]
         sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         config = importer_mocks.get_basic_config(feed_url=feed_url)

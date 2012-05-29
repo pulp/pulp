@@ -4,7 +4,7 @@
         "display_name" : "RPM",
         "description" : "RPM",
         "unit_key" :
-            ["name", "epoch", "version", "release", "arch", "filename", "checksumtype", "checksum"],
+            ["name", "epoch", "version", "release", "arch", "checksumtype", "checksum"],
         "search_indexes" : 
             ["name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype"]
     }
