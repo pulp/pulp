@@ -16,7 +16,7 @@ from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
 from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
-from pulp.gc_client.util.arg_utils import InvalidConfig, convert_boolean_arguments, convert_file_contents, convert_removed_options
+from pulp.gc_client.util.arg_utils import InvalidConfig, convert_boolean_arguments, convert_file_contents, convert_removed_options, arg_to_bool
 
 # -- constants ----------------------------------------------------------------
 
@@ -114,6 +114,13 @@ class YumRepoCreateCommand(PulpCliCommand):
         repo_id = kwargs.pop('repo-id')
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display-name', None)
+        auto_publish = kwargs.pop('auto-publish', None)
+
+        if auto_publish:
+            auto_publish = arg_to_bool(auto_publish)
+            if auto_publish:
+                self.context.prompt.render_failure_message(_('Value for auto-publish must be either true or false'))
+                return
 
         try:
             notes = args_to_notes_dict(kwargs, include_none=False)
@@ -175,7 +182,10 @@ class YumRepoDeleteCommand(PulpCliCommand):
         if not response.is_async():
             self.context.prompt.render_success_message(_('Repository [%(r)s] successfully deleted') % {'r' : repo_id})
         else:
-            self.context.prompt.render_paragraph('Repository delete postponed due to other operation (eventually we\'ll show how to look this up later')
+            d = 'Repository delete postponed due to another operation. Progress ' \
+                'on this task can be viewed using the commands under "repo tasks".'
+            self.context.prompt.render_paragraph(_(d))
+            self.context.prompt.render_reasons(response.response_body.reasons)
 
 class YumRepoUpdateCommand(PulpCliCommand):
     def __init__(self, context):
@@ -192,6 +202,13 @@ class YumRepoUpdateCommand(PulpCliCommand):
         repo_id = kwargs.pop('repo-id')
         description = kwargs.pop('description', None)
         display_name = kwargs.pop('display-name', None)
+        auto_publish = kwargs.pop('auto-publish', None)
+
+        if auto_publish:
+            auto_publish = arg_to_bool(auto_publish)
+            if auto_publish is None:
+                self.context.prompt.render_failure_message(_('Value for auto-publish must be either true or false'))
+                return
 
         try:
             notes = args_to_notes_dict(kwargs, include_none=True)
@@ -214,7 +231,11 @@ class YumRepoUpdateCommand(PulpCliCommand):
         if not response.is_async():
             self.context.prompt.render_success_message(_('Repository [%(r)s] successfully updated') % {'r' : repo_id})
         else:
-            self.context.prompt.render_paragraph('Repository update postponed due to other operation (eventually we\'ll show how to look this up later')
+            d = 'Repository update postponed due to another operation. Progress '\
+                'on this task can be viewed using the commands under "repo tasks".'
+            self.context.prompt.render_paragraph(_(d))
+            self.context.prompt.render_reasons(response.response_body.reasons)
+
 
 class YumRepoListCommand(PulpCliCommand):
 
@@ -236,7 +257,7 @@ class YumRepoListCommand(PulpCliCommand):
         filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
 
         if show_details:
-            filters += ['sync_config', 'publish_config']
+            filters += ['auto_publish', 'sync_config', 'publish_config']
 
         # Process each repository to clean up/restructure various data
         for r in repo_list:
@@ -271,6 +292,7 @@ class YumRepoListCommand(PulpCliCommand):
                 # Extract the distributor config
                 if distributors is not None and len(distributors) > 0:
                     r['publish_config'] = distributors[0]['config']
+                    r['auto_publish'] = distributors[0]['auto_publish']
 
         self.prompt.render_document_list(repo_list, filters=filters, order=filters)
 
@@ -286,7 +308,6 @@ def add_repo_options(command, is_update):
     """
 
     # Groups
-    required_group = PulpCliOptionGroup('Required')
     basic_group = PulpCliOptionGroup('Basic')
     throttling_group = PulpCliOptionGroup('Throttling')
     ssl_group = PulpCliOptionGroup('Feed Authentication')
@@ -297,7 +318,6 @@ def add_repo_options(command, is_update):
 
     # Order added indicates order in usage, so pay attention to this order when
     # dorking with it to make sure it makes sense
-    command.add_option_group(required_group)
     command.add_option_group(basic_group)
     command.add_option_group(sync_group)
     command.add_option_group(publish_group)
@@ -306,10 +326,8 @@ def add_repo_options(command, is_update):
     command.add_option_group(proxy_group)
     command.add_option_group(throttling_group)
 
-    # Required Options
-    required_group.add_option(PulpCliOption('--repo-id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
-
     # Metadata Options
+    basic_group.add_option(PulpCliOption('--repo-id', 'uniquely identifies the repository; only alphanumeric, -, and _ allowed', required=True))
     basic_group.add_option(PulpCliOption('--feed', 'URL of the external source repository to sync', required=False))
     basic_group.add_option(PulpCliOption('--display-name', 'user-readable display name for the repository', required=False))
     basic_group.add_option(PulpCliOption('--description', 'user-readable description of the repo\'s contents', required=False))
@@ -318,6 +336,10 @@ def add_repo_options(command, is_update):
     d += 'be changed by specifying this option multiple times; notes are deleted by '
     d += 'specifying "" as the value'
     basic_group.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
+    d =  'if "true", on each successful sync the repository will automatically be ' \
+    'published on the configured protocols; if "false" synchronized content will ' \
+    'only be available after manually publishing the repository'
+    basic_group.add_option(PulpCliOption('--auto-publish', _(d), required=False))
 
     # Synchronization Options
     sync_group.add_option(PulpCliOption('--only-newest', 'if "true", only the newest version of a given package is downloaded', required=False))

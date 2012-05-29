@@ -164,7 +164,7 @@ class ExceptionHandler:
         elif 'reasons' in e.extra_data:
             msg = 'The requested operation conflicts with one or more operations ' \
                   'already queued for the resource. The following operations on the ' \
-                  'specified resources caused the request to be rejected:\n'
+                  'specified resources caused the request to be rejected:\n\n'
             msg = _(msg)
 
             for r in e.extra_data['reasons']:

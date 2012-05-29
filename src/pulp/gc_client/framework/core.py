@@ -19,6 +19,7 @@ The subclasses for the individual components that belong to each UI style
 further subclassed by extensions.
 """
 
+from gettext import gettext as _
 import math
 import os
 import sys
@@ -366,6 +367,22 @@ class PulpPrompt(Prompt):
         # Only add a space if we're at the highest level of the rendering
         if indent is 0:
             self.render_spacer()
+
+    def render_reasons(self, reasons):
+        """
+        Renders the "reasons" field on a task report from the server.
+
+        @param reasons: list of BlockingReason objects
+        @type  reasons: list
+        """
+
+        msg = ''
+        for r in reasons:
+            msg += _('Resource:  %(t)s - %(i)s\n') % {'t' : r.resource_type,
+                                                      'i' : r.resource_id}
+            msg += _('Operation: %(o)s\n') % {'o' : r.operation}
+
+        self.write(msg)
 
     def create_progress_bar(self, show_trailing_percentage=True):
         """

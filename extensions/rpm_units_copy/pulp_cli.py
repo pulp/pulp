@@ -109,8 +109,16 @@ class CopyCommand(PulpCliCommand):
             self.context.prompt.render_title(_('Matching Units'))
             self.context.prompt.render_document_list(matching_units_metadata, filters=['filename'], num_separator_spaces=0)
         else:
-            self.context.server.repo_unit_associations.copy_units(from_repo, to_repo, criteria)
-            self.context.prompt.render_success_message(_('Successfully copied matching units'))
+            response = self.context.server.repo_unit_associations.copy_units(from_repo, to_repo, criteria)
+
+            if response.is_async():
+                d = 'Unit copy postponed due to another operation on the destination ' \
+                    'repository. Progress on this task can be viewed using the ' \
+                    'commands under "repo tasks".'
+                self.context.prompt.render_paragraph(_(d))
+                self.context.prompt.render_reasons(response.response_body.reasons)
+            else:
+                self.context.prompt.render_success_message(_('Successfully copied matching units'))
 
 # -- utility ------------------------------------------------------------------
 
