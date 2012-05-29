@@ -317,3 +317,44 @@ class RepositorySyncSchedulesAPI(PulpAPI):
         # Strip out anything that wasn't specified by the caller
         body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
         self.server.PUT(url, body)
+
+class RepositoryPublishSchedulesAPI(PulpAPI):
+
+    def __init__(self, pulp_connection):
+        super(RepositoryPublishSchedulesAPI, self).__init__(pulp_connection)
+
+    def list_schedules(self, repo_id, distributor_id):
+        url = '/v2/repositories/%s/distributors/%s/publish_schedules/' % (repo_id, distributor_id)
+        return self.server.GET(url)
+
+    def get_schedule(self, repo_id, distributor_id, schedule_id):
+        url = '/v2/repositories/%s/distributors/%s/publish_schedules/%s/' % (repo_id, distributor_id, schedule_id)
+        return self.server.GET(url)
+
+    def add_schedule(self, repo_id, distributor_id, schedule, override_config, failure_threshold, enabled):
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/publish_schedules/' % (repo_id, distributor_id)
+        body = {
+            'schedule' : schedule,
+            'override_config' : override_config,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        return self.server.POST(url, body)
+
+    def delete_schedule(self, repo_id, distributor_id, schedule_id):
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/publish_schedules/%s/' % (repo_id, distributor_id, schedule_id)
+        return self.server.DELETE(url)
+
+    def update_schedule(self, repo_id, distributor_id, schedule_id, schedule=UNSPECIFIED,
+                        override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/publish_schedules/%s/' % (repo_id, distributor_id, schedule_id)
+        body = {
+            'schedule' : schedule,
+            'override_config' : override_config,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+
+        # Strip out anything that wasn't specified by the caller
+        body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
+        self.server.PUT(url, body)

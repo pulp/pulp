@@ -14,6 +14,7 @@
 from gettext import gettext as _
 
 import publish as publish_commands
+from publish_schedule import RepoPublishSchedulingSection
 import sync as sync_commands
 from sync_schedule import RepoSyncSchedulingSection
 
@@ -37,11 +38,15 @@ def initialize(context):
     sync_section.add_command(sync_commands.RunSyncCommand(context, 'run', _('triggers an immediate sync of a repository')))
     sync_section.add_command(sync_commands.StatusCommand(context, 'status', _('displays the status of a repository\'s sync tasks')))
 
+    sync_schedule_subsection = RepoSyncSchedulingSection(context, 'schedules', _('manage sync schedules for a repository'))
+    sync_section.add_subsection(sync_schedule_subsection)
+
+
     # Publish Commands
     publish_section = repo_section.create_subsection('publish', _('run, schedule, or view the status of publish tasks'))
     publish_section.add_command(publish_commands.RunPublishCommand(context, 'run', _('triggers an immediate publish of a repository')))
     publish_section.add_command(publish_commands.StatusCommand(context, 'status', _('displays the status of a repository\'s publish tasks')))
 
-    # Schedule Commands
-    sync_schedule_subsection = RepoSyncSchedulingSection(context, 'schedules', _('manage sync schedules for a repository'))
-    sync_section.add_subsection(sync_schedule_subsection)
+    publish_schedule_subsection = RepoPublishSchedulingSection(context, 'schedules', _('manage puslish schedules for a repository'))
+    publish_section.add_subsection(publish_schedule_subsection)
+

@@ -35,6 +35,7 @@ class Bindings(object):
         self.repo_history = RepositoryHistoryAPI(pulp_connection)
         self.repo_actions = RepositoryActionsAPI(pulp_connection)
         self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
+        self.repo_publish_schedules = RepositoryPublishSchedulesAPI(pulp_connection)
         self.repo_sync_schedules = RepositorySyncSchedulesAPI(pulp_connection)
         self.repo_unit_associations = RepositoryUnitAssociationAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
