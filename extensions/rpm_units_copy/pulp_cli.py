@@ -28,6 +28,9 @@ LOG = None # set by context
 
 def initialize(context):
 
+    if not context.extension_config.getboolean('main', 'enabled'):
+        return
+
     global LOG
     LOG = context.logger
 
