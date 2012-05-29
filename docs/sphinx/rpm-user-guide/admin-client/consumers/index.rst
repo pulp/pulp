@@ -1,8 +1,8 @@
-Packages
-========
+Consumers
+=========
 
 .. toctree::
    :maxdepth: 2
 
-   register
+   registration
    packages

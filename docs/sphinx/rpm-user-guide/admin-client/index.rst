@@ -6,4 +6,4 @@ Admin Client User Guide
 
    introduction
    repo/index
-   package/index
+   consumers/index
