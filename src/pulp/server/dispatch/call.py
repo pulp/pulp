@@ -15,6 +15,7 @@ import itertools
 import logging
 import pickle
 import traceback
+from gettext import gettext as _
 from types import NoneType, TracebackType
 
 from pulp.common import dateutils
@@ -129,15 +130,18 @@ class CallRequest(object):
 
         data = {'callable_name': self.callable_name()}
 
-        try:
-            for field in self.pickled_fields:
-                data[field] = pickle.dumps(getattr(self, field))
-            for field in self.copied_fields:
-                data[field] = getattr(self, field)
+        for field in self.copied_fields:
+            data[field] = getattr(self, field)
 
-        except Exception, e:
-            _LOG.exception(e)
-            return None
+        for field in self.pickled_fields:
+            try:
+                data[field] = pickle.dumps(getattr(self, field))
+
+            except Exception, e:
+                msg =_('Exception encountered while pickling: %(f)s') % {'f': field}
+                _LOG.error(field)
+                _LOG.exception(e)
+                return None
 
         return data
 
