@@ -16,15 +16,14 @@ and add content to it simply by :ref:`uploading packages <upload-packages>` or
 A repository sync can be :ref:`triggered immediately <repo-sync-run>` or
 :ref:`scheduled <repo-sync-scheduling>` to occur at a later time with an optional
 recurrence. An individual repository
-can only have at most one sync operation running at any time. If another sync
-is requested, either manually or by its schedules, it will be queued up to
-execute once all other pending tasks related to that repository have resolved.
+can only have at most one sync operation running at any time. If a sync is
+in progress when attempting to run one, the progress of the running operation
+is displayed.
 
-For instance, if a repository is in the process of synchronizing and the user
-attempts to update the repository's configuration, the update call will be
-postponed until the sync finishes. If another sync is requested while the first
-is still executing, that second sync call will execute once the first sync
-completes and the update takes place.
+When running a sync, the repository is locked to prevent conflicting changes
+from happening while the sync executes.  For instance, if a repository is in the
+process of synchronizing and the user attempts to update the repository's
+configuration, the update call will be postponed until the sync finishes.
 
 All sync related commands are found in the ``repo sync`` section of the CLI.
 
