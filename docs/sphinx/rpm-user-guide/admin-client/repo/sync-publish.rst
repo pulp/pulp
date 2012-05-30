@@ -1,5 +1,5 @@
-Repository Synchronize
-======================
+Repository Synchronize and Publish
+==================================
 
 .. _repo-sync:
 
@@ -126,6 +126,11 @@ The following is a sample output for the progress of a repository sync operation
  ... skipped
 
  Successfully synchronized repository
+
+.. note::
+  The above output includes the status of both the sync process and the subsequent
+  publishing of the repository. See the :ref:`repo-publish` section for more
+  information.
 
 .. _repo-sync-scheduling:
 
@@ -297,3 +302,21 @@ For programmatic access to the ISO8601 string indicating the next run time, the
 
 Publish
 -------
+
+Publishing a repository is the process of making its contents available as
+a yum repository, either over HTTP, HTTPS, or both depending on the repository's
+configuration.
+
+By default, all repositories are automatically published following a successful
+sync. However, there are times where it may be desirable to make an explicit
+call to publish to expose changes made to the repository's contents. For instance,
+if a repository's contents are manipulated by
+:ref:`copying packages from another repository <copy-packages>` or by
+:ref:`uploading RPMs <upload-packages>` into it, those changes will not be
+reflected until a publish operation is run.
+
+All commands related to publishing a repository can be found in the ``repo publish``
+section. These commands mirror those found in the ``repo sync`` section, including
+the scheduling functionality and output format when displaying the status of
+an in progress publish operation. As such, the sync documentation should be
+consulted for more information on these commands as they apply to publishing.
