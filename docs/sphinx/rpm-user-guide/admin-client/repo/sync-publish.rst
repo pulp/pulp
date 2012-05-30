@@ -291,3 +291,9 @@ For programmatic access to the ISO8601 string indicating the next run time, the
 
  $ pulp-v2-admin repo sync schedules next --repo-id demo --quiet
  2012-05-31T00:00:00Z
+
+
+.. _repo-publish:
+
+Publish
+-------

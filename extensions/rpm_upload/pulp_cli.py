@@ -224,9 +224,9 @@ class ListCommand(PulpCliCommand):
         # Display each filename along with its status
         for upload in uploads:
             if upload.is_running:
-                state = '[%-7s]' % self.context.prompt.color(_('Running'), COLOR_RUNNING)
+                state = '[%s]' % self.context.prompt.color(_(' Running '), COLOR_RUNNING)
             else:
-                state = '[%-7s]' % self.context.prompt.color(_('Paused'), COLOR_PAUSED)
+                state = '[%s]' % self.context.prompt.color(_(' Paused  '), COLOR_PAUSED)
 
             template = '%s %s'
             message = template % (state, os.path.basename(upload.source_filename))
@@ -292,10 +292,11 @@ class CancelCommand(PulpCliCommand):
         # a non-happy exit code.
         error_encountered = False
         for i, upload_id in enumerate(selected_ids):
-            self.context.prompt.write(_('Deleting: %(f)s') % {'f' : selected_filenames[i]})
             try:
                 upload_manager.delete_upload(upload_id, force=force)
+                self.context.prompt.render_success_message(_('Successfully deleted %(f)s') % {'f' : selected_filenames[i]})
             except Exception, e:
+                self.context.prompt.render_failure_message(_('Error deleting %(f)s') % {'f' : selected_filenames[i]})
                 self.context.exception_handler.handle_exception(e)
                 error_encountered = True
 
@@ -355,7 +356,11 @@ def _perform_upload(context, upload_manager, upload_ids):
             context.prompt.write(_('Uploading: %(n)s') % {'n' : os.path.basename(tracker.source_filename)})
             bar = context.prompt.create_progress_bar()
 
-            upload_manager.upload(upload_id, bar.render)
+            def progress_callback(item, total):
+                msg = _('%(i)s/%(t)s bytes')
+                bar.render(item, total, msg % {'i' : item, 't' : total})
+
+            upload_manager.upload(upload_id, progress_callback)
 
             context.prompt.write(_('... completed'))
             context.prompt.render_spacer()
