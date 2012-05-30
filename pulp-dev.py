@@ -159,7 +159,7 @@ def create_dirs(opts):
         if os.path.exists(d) and os.path.isdir(d):
             debug(opts, '%s exists, skipping' % d)
             continue
-        os.mkdir(d, 0777)
+        os.makedirs(d, 0777)
 
 
 def getlinks():
