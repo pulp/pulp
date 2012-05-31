@@ -22,10 +22,10 @@ from pulp.server.auth.authorization import (
 from pulp.server.db.model.dispatch import QueuedCall, TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
-from pulp.server.dispatch.taskqueue import TaskQueue
 from pulp.server.exceptions import OperationTimedOut
 
 # coordinator class ------------------------------------------------------------
@@ -34,18 +34,14 @@ class Coordinator(object):
     """
     Coordinator class that runs call requests in the task queue and detects and
     resolves conflicting operations on resources.
-    @ivar task_queue: the task queue to run call requests in
-    @type task_queue: L{TaskQueue} instance
     @ivar task_resource_collection: mongodb collection for task resources
     @type task_resource_collection: L{pymongo.Collection} instance
     @ivar task_state_poll_interval: sleep interval to use while polling a "synchronous" task
     @type task_state_poll_interval: float
     """
 
-    def __init__(self, task_queue, task_state_poll_interval=0.5):
-        assert isinstance(task_queue, TaskQueue)
+    def __init__(self, task_state_poll_interval=0.5):
 
-        self.task_queue = task_queue
         self.task_resource_collection = TaskResource.get_collection()
         self.task_state_poll_interval = task_state_poll_interval
 
@@ -179,7 +175,8 @@ class Coordinator(object):
         # between calculating the blocking/postponing tasks and enqueueing the
         # task when 2 or more tasks are being run that may have
         # interdependencies
-        self.task_queue.lock()
+        task_queue = dispatch_factory._task_queue()
+        task_queue.lock()
         try:
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
@@ -193,9 +190,9 @@ class Coordinator(object):
             if task_resources:
                 set_task_id_on_task_resources(task.id, task_resources)
                 self.task_resource_collection.insert(task_resources, safe=True)
-            self.task_queue.enqueue(task)
+            task_queue.enqueue(task)
         finally:
-            self.task_queue.unlock()
+            task_queue.unlock()
 
         # if the call has requested synchronous execution or can be
         # synchronously executed, do so
@@ -206,7 +203,7 @@ class Coordinator(object):
                 running_states.extend(dispatch_constants.CALL_COMPLETE_STATES)
                 wait_for_task(task, running_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
             except OperationTimedOut:
-                self.task_queue.dequeue(task)
+                task_queue.dequeue(task)
                 raise
             else:
                 wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES,
@@ -221,12 +218,13 @@ class Coordinator(object):
         # NOTE this needs to utilize a central locking mechanism because on
         # Python < 2.5 the uuid package can generate non-unique ids if more than
         # one thread accesses it at a time
-        self.task_queue.lock()
+        task_queue = dispatch_factory._task_queue()
+        task_queue.lock()
         try:
             job_id = str(uuid.uuid4())
             return job_id
         finally:
-            self.task_queue.unlock()
+            task_queue.unlock()
 
     # conflict resolution algorithm --------------------------------------------
 
@@ -302,7 +300,8 @@ class Coordinator(object):
         if superfluous_criteria:
             raise dispatch_exceptions.UnrecognizedSearchCriteria(*list(superfluous_criteria))
         tasks = []
-        for task in self.task_queue.all_tasks():
+        task_queue = dispatch_factory._task_queue()
+        for task in task_queue.all_tasks():
             if task_matches_criteria(task, criteria):
                 tasks.append(task)
         return tasks
@@ -355,10 +354,11 @@ class Coordinator(object):
         @return: True if the task is being cancelled, False if not, or None if the task was not found
         @rtype:  bool or None
         """
-        task = self.task_queue.get(task_id)
+        task_queue = dispatch_factory._task_queue()
+        task = task_queue.get(task_id)
         if task is None:
             return None
-        return self.task_queue.cancel(task)
+        return task_queue.cancel(task)
 
     def cancel_multiple_calls(self, job_id):
         """
@@ -369,10 +369,11 @@ class Coordinator(object):
         @rtype:  dict
         """
         cancel_returns = {}
-        for task in self.task_queue.all_tasks():
+        task_queue = dispatch_factory._task_queue()
+        for task in task_queue.all_tasks():
             if job_id != task.call_report.job_id:
                 continue
-            cancel_returns[task.id] = self.task_queue.cancel(task)
+            cancel_returns[task.id] = task_queue.cancel(task)
         return cancel_returns
 
 # conflict detection utility functions -----------------------------------------
