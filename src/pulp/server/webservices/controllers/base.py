@@ -15,14 +15,15 @@ import logging
 from gettext import gettext as _
 
 import web
-from pymongo import json_util
+try:
+    from bson import json_util
+except ImportError:
+    from pymongo import json_util
 
 from pulp.common import dateutils
-from pulp.server import async
 from pulp.server.compat import json
 from pulp.server.tasking.scheduler import (
     ImmediateScheduler, AtScheduler, IntervalScheduler)
-from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import http
 
 
