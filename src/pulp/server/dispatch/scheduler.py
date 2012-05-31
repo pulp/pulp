@@ -14,7 +14,6 @@
 import datetime
 import logging
 import threading
-import sys
 from gettext import gettext as _
 from pprint import pformat
 
@@ -26,12 +25,12 @@ except ImportError:
 import isodate
 
 from pulp.common import dateutils
-from pulp.common.tags import _NAMESPACE_DELIMITER, resource_tag
+from pulp.common.tags import resource_tag
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.coordinator import Coordinator
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.util import subdict
 
 
@@ -49,18 +48,13 @@ class Scheduler(object):
     """
     Scheduler class
     Manager and dispatcher of scheduled call requests
-    @ivar coordinator: Pulp dispatch coordinator
-    @type coordinator: pulp.server.dispatch.coordinator.Coordinator instance
     @ivar dispatch_interval: time, in seconds, between schedule checks
     @type dispatch_interval: int
     @ivar scheduled_call_collection: db collection of scheduled call requests
     @type scheduled_call_collection: pymongo.collection.Collection
     """
 
-    def __init__(self, coordinator, dispatch_interval=30):
-        assert isinstance(coordinator, Coordinator)
-        self.coordinator = coordinator
-
+    def __init__(self, dispatch_interval=30):
         self.dispatch_interval = dispatch_interval
         self.scheduled_call_collection = ScheduledCall.get_collection()
 
@@ -92,6 +86,7 @@ class Scheduler(object):
         """
         Find call requests that are currently scheduled to run
         """
+        coordinator = dispatch_factory.coordinator()
         now = datetime.datetime.utcnow()
         query = {'next_run': {'$lte': now}}
         for scheduled_call in self.scheduled_call_collection.find(query):
@@ -103,7 +98,7 @@ class Scheduler(object):
             call_request = call.CallRequest.deserialize(serialized_call_request)
             call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, self.call_finished_callback)
             call_report = call.CallReport(schedule_id=str(scheduled_call['_id']))
-            call_report = self.coordinator.execute_call_asynchronously(call_request, call_report)
+            call_report = coordinator.execute_call_asynchronously(call_request, call_report)
             log_msg = _('Scheduled %s: %s [reasons: %s]') % \
                       (str(call_request), call_report.response, pformat(call_report.reasons))
             if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
