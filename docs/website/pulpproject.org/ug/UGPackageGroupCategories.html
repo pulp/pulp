@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki"><div id="wikipage"><h1 id="PackageGroupCategories">PackageGroupCategories</h1>
+<p>
+A <em>package group category</em> corresponds to a collection of <em>package group</em> names in the Pulp server. Anaconda uses <tt></tt>package group categories<tt></tt> to visualize collections of package groups.  <em>Package group categories</em> are not used by <em>yum</em>.  
+</p>
+<hr />
+<h2 id="install_category">Installation</h2>
+<p>
+Remote package group category installation on a consumer is covered in the <a class="wiki" href="UGConsumers.html#install_category">Consumers</a> section of the User Guide.
+</p>
+<hr />
+<h2 id="list_category">List</h2>
+<p>
+The <tt>packagegroup list_category</tt> command displays package group categories defined by a given repository.
+</p>
+<p>
+Parameters:
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> </td><td> <strong><a class="missing wiki">Optional/Required?</a></strong> 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> Repository ID </td><td> Required 
+</td></tr></table>
+<h4 id="Example">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup list_category --repoid test_category
++------------------------------------------+
+          Repository: test_category
+     Package Group Category Information
++------------------------------------------+
+	 apps
+	 desktops
+</pre><hr />
+<h2 id="info_category">Info</h2>
+<p>
+The <tt></tt><tt>packagegroup info_category</tt><tt></tt> command displays information about a specific package group category. The package group category is indicated by both a repository ID and a package group category ID.
+</p>
+<p>
+Parameters:
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameter</strong> </td><td style="text-align: left">| <strong>Description</strong> 
+</td></tr><tr><td> <tt>--categoryid</tt>  </td><td> Package group category ID 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> Repository ID 
+</td></tr></table>
+<p>
+Information about a package group category includes:
+</p>
+<table class="wiki">
+<tr><td> <strong>Field</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Name </td><td> Name of this package group 
+</td></tr><tr><td> ID </td><td> ID of this package group, typically the name in lowercase 
+</td></tr><tr><td> Groups </td><td> Package Groups 
+</td></tr></table>
+<pre class="wiki">$ pulp-admin packagegroup info_category --repoid test_category --categoryid apps
++------------------------------------------+
+     Package Group Category Information
++------------------------------------------+
+
+Name                	Applications             
+Id                  	apps                     
+Groups              	['authoring-and-publishing', 'office', 'sound-and-video', 'font-design', 'editors', 'engineering-and-scientific', 'games', 'graphics', 'text-internet', 'graphical-internet', 'education']
+
+</pre><hr />
+<h2 id="create_category">Create</h2>
+<p>
+The <tt>packagegroup create_category</tt> command allows a package group category to be created in a repository.
+</p>
+<p>
+Parameters:
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameter</strong> </td><td style="text-align: left">| <strong>Description</strong> 
+</td></tr><tr><td> <tt>--categoryid</tt> </td><td style="text-align: right"> ID of packagegroupcategory (required)
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of repository (required) 
+</td></tr><tr><td> <tt>-n</tt> or <tt>--name</tt> </td><td> Name of packagegroupcategory (required) 
+</td></tr><tr><td> <tt>-d</tt> or <tt>--description</tt> </td><td> Description of packagegroupcategory (optional) 
+</td></tr></table>
+<h4 id="Example1">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup create_category -r test_category --categoryid test_cat_id1 -n test_cat1 -d test_cat1_description
+Package group category [test_cat_id1] created in repository [test_category]
+
+</pre><hr />
+<h2 id="delete_category">Delete</h2>
+<p>
+The <tt>packagegroup delete_category</tt> command allows a package group category to be deleted from a repository.  The delete will only be allowed on user created package group categories.  Those package group categories imported into pulp through a repository synchronization are marked as immutable and will not be allowed to be deleted.  
+</p>
+<h4 id="Example2">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup delete_category -r test_category --categoryid test_cat_id1
+Package group category [test_cat_id1] deleted from repository [test_category]
+</pre><hr />
+<h2 id="add_group">Add Package</h2>
+<p>
+The <tt>packagegroup add_group</tt> command adds a package group to a package group category.  
+</p>
+<p>
+Parameters:
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> <tt>--id</tt> </td><td> ID of packagegroup 
+</td></tr><tr><td> <tt>--categoryid</tt> </td><td> ID of packagegroupcategory 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of repository 
+</td></tr></table>
+<h4 id="Example3">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup add_group -r test_category --categoryid test_cat_id1 --id test_group_1
+Package group [test_group_1] added to category [test_cat_id1] in repository [test_category]
+</pre><hr />
+<h2 id="delete_group">Delete Package</h2>
+<p>
+The <tt></tt><tt>packagegroup delete_group</tt><tt></tt> command removes a package group from a package group category.
+</p>
+<p>
+Parameters
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameter</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> <tt>--id</tt> </td><td> ID of packagegroup 
+</td></tr><tr><td> <tt>--categoryid</tt> </td><td> ID of packagegroupcategory 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of repository 
+</td></tr></table>
+<h4 id="Example4">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup delete_group -r test_category --categoryid test_cat_id1 --id test_group_1
+Group [test_group_1] deleted from category [test_cat_id1] in repository [test_category]
+</pre><hr />
+</div>
+        
+        
+      </div>
+      
+
+    </div>
+    
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

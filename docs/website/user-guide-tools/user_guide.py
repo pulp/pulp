@@ -46,12 +46,12 @@ def _download_user_guide(dest_dir=TMP_DIR):
         os.makedirs(dest_dir)
             
     # Download the guide
-    cmd = 'wget -r -np --convert-links --html-extension --domains fedorahosted.org -A \'UG*,UserGuide*\' %s' % GUIDE_URL
+    cmd = 'wget -r -np --convert-links --html-extension -e robots=off --domains fedorahosted.org -A \'UG*,UserGuide*\' %s' % GUIDE_URL
 
     p = subprocess.Popen(cmd, shell=True, cwd=dest_dir)
     p.wait()
-    if p.returncode != 0:
-        raise DownloadError('Error while downloading guide [%d]' % p.returncode)
+#    if p.returncode != 0:
+#        raise DownloadError('Error while downloading guide [%d]' % p.returncode)
 
     # For each file downloaded, do one of two things:
     # 1. Delete files with parameters; those are wiki links that are followed, we only want

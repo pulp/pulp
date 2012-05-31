@@ -170,6 +170,7 @@
 </p>
 <ul><li><strong>id</strong> &lt;str&gt; <strong>Consumer Group ID</strong> required
 </li><li><strong>description</strong> &lt;str&gt; <strong>Consumer group description</strong> optional - defaulted to None
+</li><li><strong>consumerids</strong> &lt;list&gt; of &lt;str&gt; <strong>Consumer ids to be added to consumer group</strong> - optional - defaulted to []
 </li></ul><p>
 <br />
 <strong>permission</strong>: CREATE <br />
@@ -189,7 +190,7 @@
   <span class="s">"description"</span><span class="p">:</span> <span class="s">"test-group"</span><span class="p">,</span> 
   <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"consumergroups"</span><span class="p">,</span> 
   <span class="s">"key_value_pairs"</span><span class="p">:</span> <span class="p">{},</span> 
-  <span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[],</span> 
+  <span class="s">"consumerids"</span><span class="p">:</span> <span class="p">[</span><span class="s">"test-consumer1"</span><span class="p">,</span> <span class="s">"test-consumer2"</span><span class="p">],</span> 
   <span class="s">"_id"</span><span class="p">:</span> <span class="s">"test-group"</span><span class="p">,</span> 
   <span class="s">"id"</span><span class="p">:</span> <span class="s">"test-group"</span>
 <span class="p">}</span>

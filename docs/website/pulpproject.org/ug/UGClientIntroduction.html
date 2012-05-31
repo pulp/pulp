@@ -72,7 +72,13 @@ The following control the behavior of the client and the operations it performs.
 </td></tr><tr><td> <tt>reboot_schedule</tt> </td><td> Time in minutes or 'now' before system is scheduled for reboot when user requests a reboot for applicable errata. 
 </td></tr><tr><td> <tt>assumeyes</tt> </td><td> Default: <tt>true</tt>. If true, when a package is remotely installed by a Pulp user through <tt>pulp-admin</tt> that requires a reboot as part of the installation the reboot will automatically take place. 
 </td></tr></table>
-<h3 id="CDS">CDS</h3>
+<h3 id="PulpAgent">Pulp Agent</h3>
+<p>
+To support Pulp command &amp; control, Pulp provides a light weight agent.  The agent is included in the pulp-consumer package and is installed
+as a service.  The <em>pulp-agent</em> service should be configured to start automatically.
+</p>
+<pre class="wiki"># chkconfig pulp-agent on
+</pre><h3 id="CDS">CDS</h3>
 <p>
 The following control the locations of content served by the Pulp server. In most cases, only the host portion of the URLs should need to be changed.
 </p>

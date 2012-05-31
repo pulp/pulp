@@ -256,7 +256,7 @@
 </li><li><strong>publish</strong> &lt;bool&gt; <em>whether or not the repository is available</em>
 </li><li><strong>clone_ids</strong> &lt;list of str&gt; <em>list of repository ids that are clones of this repository</em>
 </li><li><strong>distributionid</strong> &lt;list of str&gt; <em>list of distribution ids this repository belongs to [deferred fields]</em>
-</li><li><strong>checksum_type</strong> &lt;str&gt; <em>name of the algorithm used for checksums of the repository's content</em>
+</li><li><strong>checksum_type</strong> &lt;str&gt; <em>name of the algorithm used for checksums of the repository's content for feedless repos; For feed repos, this gets overwritten by source checksum type from repomd.xml.</em>
 </li><li><strong>filters</strong> &lt;list of str&gt; <em>list of filter ids associated with the repository</em>
 </li><li><strong>content_types</strong> &lt;str&gt; <em>content type allowed in this repository; default:yum; supported: [yum, file]</em>
 </li><li><strong>notes</strong> &lt;dict&gt; <em>custom key-value attributes for this repository</em>
@@ -458,9 +458,10 @@
 </li><li><strong>relative_path</strong> <em>(optional)</em> &lt;str&gt; <em>repository on disk path</em>
 </li><li><strong>groupid</strong> <em>(optional)</em> &lt;list of str&gt; <em>list of repository group ids this repository belongs to</em>
 </li><li><strong>gpgkeys</strong> <em>(optional)</em> &lt;list of str&gt; <em>list of gpg keys used for signing content</em>
-</li><li><strong>checksum_type</strong> <em>(optional)</em> &lt;str&gt; <em>name of the algorithm to use for content checksums, defaults to sha256</em>
+</li><li><strong>checksum_type</strong> <em>(optional)</em> &lt;str&gt; <em>name of the algorithm to use for content checksums for feedless repos, defaults to sha256. For feed repos, this gets overwritten by source checksum type from repomd.xml.</em>
 </li><li><strong>preserve_metadata</strong> <em>(optional)</em> &lt;bool&gt; <em>will not regenerate metadata and treats the repo as a mirror</em>
 </li><li><strong>content_types</strong> <em>(optional)</em> &lt;str&gt; <em>content type allowed in this repository; default:yum; supported: [yum, file]</em>
+</li><li><strong>publish</strong> <em>(optional)</em> &lt;bool&gt; <em>sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf</em>
 </li></ul><p>
 <br />
 </p>
@@ -961,6 +962,7 @@
 <blockquote>
 <p>
 409 Conflict if the parameters match an existing repository <br />
+409 Conflict if the parent repository is currently syncing <br />
 </p>
 </blockquote>
 </blockquote>
@@ -976,6 +978,7 @@
 </li><li><strong>relative_path</strong> <em>(optional)</em> &lt;str&gt; <em>clone repository on disk path</em>
 </li><li><strong>groupid</strong> <em>(optional)</em> &lt;str&gt; <em>repository groups that clone belongs to</em>
 </li><li><strong>filters</strong> <em>(optional)</em> &lt;list of objects&gt; <em>synchronization filters to apply to the clone</em>
+</li><li><strong>publish</strong> <em>(optional)</em> &lt;bool&gt; <em>sets the publish state on a repository; if not specified uses 'default_to_published' value from pulp.conf</em>
 </li></ul><p>
 <br />
 </p>
@@ -1360,9 +1363,19 @@
 <br />
 <strong>return</strong>: object of package file names to Package objects <br />
 <br />
+<strong>example</strong>: 
+</p>
+<div class="code"><pre> <span class="p">{</span><span class="s1">'nvrea'</span><span class="o">:</span> <span class="p">{</span><span class="s1">'name'</span><span class="o">:</span> <span class="s1">'pulp'</span><span class="p">,</span>
+            <span class="s1">'version'</span><span class="o">:</span> <span class="s1">'1.0.0'</span><span class="p">,</span>
+            <span class="s1">'release'</span><span class="o">:</span> <span class="s1">'2'</span><span class="p">,</span>
+            <span class="s1">'epoch'</span><span class="o">:</span> <span class="s1">'0'</span><span class="p">,</span>
+            <span class="s1">'arch'</span><span class="o">:</span> <span class="s1">'x86_64'</span><span class="p">}</span>
+ <span class="p">}</span>
+</pre></div><p>
+<br />
 <strong>parameters</strong>: 
 </p>
-<ul><li><strong>nvrea</strong> &lt;list of str&gt; <em>list of name, version, release, epoch, architecture specifications</em>
+<ul><li><strong>nvrea</strong> &lt;object&gt; <em>object fields: name, version, release, epoch, arch</em>
 </li></ul><p>
 <br />
 </p>
@@ -1376,7 +1389,7 @@
 <br />
 <strong>permission</strong>: EXECUTE <br />
 <br />
-<strong>success response</strong>: 200 OK <br />
+<strong>success response</strong>: 201 Created <br />
 <br />
 <strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
 <br />
@@ -1746,9 +1759,20 @@
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">[</span><span class="s1">'category-1'</span><span class="p">,</span>
- <span class="s1">'category-2'</span><span class="p">,</span>
- <span class="p">...]</span>
+<div class="code"><pre> <span class="p">{</span>
+  <span class="s2">"cat_id_1"</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">"description"</span><span class="o">:</span> <span class="s2">"cat_descrp_1"</span><span class="p">,</span>
+    <span class="s2">"repo_defined"</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="s2">"display_order"</span><span class="o">:</span> <span class="mi">99</span><span class="p">,</span>
+    <span class="s2">"immutable"</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="s2">"translated_name"</span><span class="o">:</span> <span class="p">{},</span>
+    <span class="s2">"packagegroupids"</span><span class="o">:</span> <span class="p">[],</span>
+    <span class="s2">"translated_description"</span><span class="o">:</span> <span class="p">{},</span>
+    <span class="s2">"_id"</span><span class="o">:</span> <span class="s2">"cat_id_1"</span><span class="p">,</span>
+    <span class="s2">"id"</span><span class="o">:</span> <span class="s2">"cat_id_1"</span><span class="p">,</span>
+    <span class="s2">"name"</span><span class="o">:</span> <span class="s2">"cat_name_1"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
 </pre></div><p>
 <br />
 <strong>filters</strong>: 
@@ -1776,9 +1800,25 @@
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">{</span><span class="s1">'group-1'</span><span class="o">:</span> <span class="p">[</span><span class="s1">'package_name'</span><span class="p">,</span> <span class="s1">'another_package_name'</span><span class="p">],</span>
- <span class="s1">'group-1'</span><span class="o">:</span> <span class="p">[...],</span>
- <span class="p">...</span>
+<div class="code"><pre><span class="p">{</span><span class="s2">"pkg_group_id_1"</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">"mandatory_package_names"</span><span class="o">:</span> <span class="p">[],</span>
+    <span class="s2">"description"</span><span class="o">:</span> <span class="s2">"pkg_grp_description_1"</span><span class="p">,</span>
+    <span class="s2">"repo_defined"</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="s2">"default"</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">"name"</span><span class="o">:</span> <span class="s2">"pkg_group_name_1"</span><span class="p">,</span>
+    <span class="s2">"display_order"</span><span class="o">:</span> <span class="mi">1024</span><span class="p">,</span>
+    <span class="s2">"user_visible"</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">"translated_name"</span><span class="o">:</span> <span class="p">{},</span>
+    <span class="s2">"translated_description"</span><span class="o">:</span> <span class="p">{},</span>
+    <span class="s2">"conditional_package_names"</span><span class="o">:</span> <span class="p">{},</span>
+    <span class="s2">"default_package_names"</span><span class="o">:</span> <span class="p">[],</span>
+    <span class="s2">"id"</span><span class="o">:</span> <span class="s2">"pkg_group_id_1"</span><span class="p">,</span>
+    <span class="s2">"langonly"</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="s2">"_id"</span><span class="o">:</span> <span class="s2">"pkg_group_id_1"</span><span class="p">,</span>
+    <span class="s2">"immutable"</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="s2">"optional_package_names"</span><span class="o">:</span> <span class="p">[]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
 </pre></div><p>
 <br />
 <strong>filters</strong>: 
@@ -1806,10 +1846,10 @@
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">[{</span><span class="nx">u</span><span class="s1">'arch'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'x86_64'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'buildhost'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'x86-05.phx2.fedoraproject.org'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'checksum'</span><span class="o">:</span> <span class="p">{</span><span class="nx">u</span><span class="s1">'sha256'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'46d0ca0bc9f943d38bd0819b849072c5a48c4107fd6e17bb7a1f9782fa1dccfe'</span><span class="p">},</span>
-  <span class="nx">u</span><span class="s1">'description'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0 A.D. (pronounced "zero ey-dee") is a free, open-source, cross-platform real-time
+<div class="code"><pre><span class="p">[{</span><span class="s1">'arch'</span><span class="o">:</span> <span class="s1">'x86_64'</span><span class="p">,</span>
+  <span class="s1">'buildhost'</span><span class="o">:</span> <span class="s1">'x86-05.phx2.fedoraproject.org'</span><span class="p">,</span>
+  <span class="s1">'checksum'</span><span class="o">:</span> <span class="p">{</span><span class="s1">'sha256'</span><span class="o">:</span> <span class="s1">'46d0ca0bc9f943d38bd0819b849072c5a48c4107fd6e17bb7a1f9782fa1dccfe'</span><span class="p">},</span>
+  <span class="s1">'description'</span><span class="o">:</span> <span class="s1">'0 A.D. (pronounced "zero ey-dee") is a free, open-source, cross-platform real-time
  (RTS) game of ancient warfare. In short, it is a historically-based
 omy game that allows players to relive or rewrite the history of Western
 tions, focusing on the years between 500 B.C. and 500 A.D. The project is
@@ -1817,52 +1857,52 @@ mbitious, involving state-of-the-art 3D graphics, detailed artwork, sound,
 exible and powerful custom-built game engine.
  has been in development by Wildfire Games (WFG), a group of volunteer,
  game developers, since 2001.'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'download_url'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'epoch'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'filename'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'group'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'Amusements/Games'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'e8c7520d-00ee-44b9-863e-b50db7ac9252'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'license'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'GPLv2+ and MIT'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'name'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'provides'</span><span class="o">:</span> <span class="p">[</span><span class="nx">u</span><span class="s1">'0ad(x86-64)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'0ad'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'libnvtt.so()(64bit)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'libnvmath.so()(64bit)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'libnvimage.so()(64bit)'</span><span class="p">,</span>
+  <span class="s1">'download_url'</span><span class="o">:</span> <span class="s1">'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
+  <span class="s1">'epoch'</span><span class="o">:</span> <span class="s1">'0'</span><span class="p">,</span>
+  <span class="s1">'filename'</span><span class="o">:</span> <span class="s1">'0ad-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
+  <span class="s1">'group'</span><span class="o">:</span> <span class="s1">'Amusements/Games'</span><span class="p">,</span>
+  <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'e8c7520d-00ee-44b9-863e-b50db7ac9252'</span><span class="p">,</span>
+  <span class="s1">'license'</span><span class="o">:</span> <span class="s1">'GPLv2+ and MIT'</span><span class="p">,</span>
+  <span class="s1">'name'</span><span class="o">:</span> <span class="s1">'0ad'</span><span class="p">,</span>
+  <span class="s1">'provides'</span><span class="o">:</span> <span class="p">[</span><span class="s1">'0ad(x86-64)'</span><span class="p">,</span>
+                <span class="s1">'0ad'</span><span class="p">,</span>
+                <span class="s1">'libnvtt.so()(64bit)'</span><span class="p">,</span>
+                <span class="s1">'libnvmath.so()(64bit)'</span><span class="p">,</span>
+                <span class="s1">'libnvimage.so()(64bit)'</span><span class="p">,</span>
                 <span class="p">...],</span>
-  <span class="nx">u</span><span class="s1">'release'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'15.20111230svn10836.fc16'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'repo_defined'</span><span class="o">:</span> <span class="nx">True</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'requires'</span><span class="o">:</span> <span class="p">[</span><span class="nx">u</span><span class="s1">'libstdc++.so.6(GLIBCXX_3.4)(64bit)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'librt.so.1()(64bit)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'libpthread.so.0()(64bit)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'libstdc++.so.6(CXXABI_1.3.1)(64bit)'</span><span class="p">,</span>
-                <span class="nx">u</span><span class="s1">'libcurl.so.4()(64bit)'</span><span class="p">,</span>
+  <span class="s1">'release'</span><span class="o">:</span> <span class="s1">'15.20111230svn10836.fc16'</span><span class="p">,</span>
+  <span class="s1">'repo_defined'</span><span class="o">:</span> <span class="nx">True</span><span class="p">,</span>
+  <span class="s1">'requires'</span><span class="o">:</span> <span class="p">[</span><span class="s1">'libstdc++.so.6(GLIBCXX_3.4)(64bit)'</span><span class="p">,</span>
+                <span class="s1">'librt.so.1()(64bit)'</span><span class="p">,</span>
+                <span class="s1">'libpthread.so.0()(64bit)'</span><span class="p">,</span>
+                <span class="s1">'libstdc++.so.6(CXXABI_1.3.1)(64bit)'</span><span class="p">,</span>
+                <span class="s1">'libcurl.so.4()(64bit)'</span><span class="p">,</span>
                 <span class="p">...],</span>
-  <span class="nx">u</span><span class="s1">'size'</span><span class="o">:</span> <span class="mi">3592509</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'vendor'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'Fedora Project'</span><span class="p">,</span>
-  <span class="nx">u</span><span class="s1">'version'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0.10836'</span><span class="p">},</span>
-<span class="p">{</span><span class="nx">u</span><span class="s1">'_id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'e078a03a-979f-4bfe-b47e-8e86a7e9e224'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'_ns'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'packages'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'arch'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'x86_64'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'buildhost'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'x86-05.phx2.fedoraproject.org'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'checksum'</span><span class="o">:</span> <span class="p">{</span><span class="nx">u</span><span class="s1">'sha256'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'bde5b50d462142a9cd8aee02b8fbc6665eda3ddfb324c0d9c072817a2babb4f8'</span><span class="p">},</span>
- <span class="nx">u</span><span class="s1">'description'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'This package provides debug information for package 0ad.
+  <span class="s1">'size'</span><span class="o">:</span> <span class="mi">3592509</span><span class="p">,</span>
+  <span class="s1">'vendor'</span><span class="o">:</span> <span class="s1">'Fedora Project'</span><span class="p">,</span>
+  <span class="s1">'version'</span><span class="o">:</span> <span class="s1">'0.10836'</span><span class="p">},</span>
+<span class="p">{</span><span class="s1">'_id'</span><span class="o">:</span> <span class="s1">'e078a03a-979f-4bfe-b47e-8e86a7e9e224'</span><span class="p">,</span>
+ <span class="s1">'_ns'</span><span class="o">:</span> <span class="s1">'packages'</span><span class="p">,</span>
+ <span class="s1">'arch'</span><span class="o">:</span> <span class="s1">'x86_64'</span><span class="p">,</span>
+ <span class="s1">'buildhost'</span><span class="o">:</span> <span class="s1">'x86-05.phx2.fedoraproject.org'</span><span class="p">,</span>
+ <span class="s1">'checksum'</span><span class="o">:</span> <span class="p">{</span><span class="s1">'sha256'</span><span class="o">:</span> <span class="s1">'bde5b50d462142a9cd8aee02b8fbc6665eda3ddfb324c0d9c072817a2babb4f8'</span><span class="p">},</span>
+ <span class="s1">'description'</span><span class="o">:</span> <span class="s1">'This package provides debug information for package 0ad.
 formation is useful when developing applications that use this
 or when debugging this package.'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'download_url'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'epoch'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'filename'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'group'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'Development/Debug'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'e078a03a-979f-4bfe-b47e-8e86a7e9e224'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'license'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'GPLv2+ and MIT'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'name'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad-debuginfo'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'provides'</span><span class="o">:</span> <span class="p">[</span><span class="nx">u</span><span class="s1">'0ad-debuginfo(x86-64)'</span><span class="p">,</span> <span class="nx">u</span><span class="s1">'0ad-debuginfo'</span><span class="p">],</span>
- <span class="nx">u</span><span class="s1">'release'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'15.20111230svn10836.fc16'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'repo_defined'</span><span class="o">:</span> <span class="nx">True</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'requires'</span><span class="o">:</span> <span class="p">[],</span>
- <span class="nx">u</span><span class="s1">'size'</span><span class="o">:</span> <span class="mi">41946553</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'vendor'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'Fedora Project'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'version'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0.10836'</span><span class="p">}]</span>
+ <span class="s1">'download_url'</span><span class="o">:</span> <span class="s1">'https://localhost//pulp/repos/repos/bioinfornatics/0ad/fedora-16/x86_64/0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
+ <span class="s1">'epoch'</span><span class="o">:</span> <span class="s1">'0'</span><span class="p">,</span>
+ <span class="s1">'filename'</span><span class="o">:</span> <span class="s1">'0ad-debuginfo-0.10836-15.20111230svn10836.fc16.x86_64.rpm'</span><span class="p">,</span>
+ <span class="s1">'group'</span><span class="o">:</span> <span class="s1">'Development/Debug'</span><span class="p">,</span>
+ <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'e078a03a-979f-4bfe-b47e-8e86a7e9e224'</span><span class="p">,</span>
+ <span class="s1">'license'</span><span class="o">:</span> <span class="s1">'GPLv2+ and MIT'</span><span class="p">,</span>
+ <span class="s1">'name'</span><span class="o">:</span> <span class="s1">'0ad-debuginfo'</span><span class="p">,</span>
+ <span class="s1">'provides'</span><span class="o">:</span> <span class="p">[</span><span class="s1">'0ad-debuginfo(x86-64)'</span><span class="p">,</span> <span class="s1">'0ad-debuginfo'</span><span class="p">],</span>
+ <span class="s1">'release'</span><span class="o">:</span> <span class="s1">'15.20111230svn10836.fc16'</span><span class="p">,</span>
+ <span class="s1">'repo_defined'</span><span class="o">:</span> <span class="nx">True</span><span class="p">,</span>
+ <span class="s1">'requires'</span><span class="o">:</span> <span class="p">[],</span>
+ <span class="s1">'size'</span><span class="o">:</span> <span class="mi">41946553</span><span class="p">,</span>
+ <span class="s1">'vendor'</span><span class="o">:</span> <span class="s1">'Fedora Project'</span><span class="p">,</span>
+ <span class="s1">'version'</span><span class="o">:</span> <span class="s1">'0.10836'</span><span class="p">}]</span>
 </pre></div><p>
 <br />
 <strong>filters</strong>: 
@@ -2029,10 +2069,10 @@ or when debugging this package.'</span><span class="p">,</span>
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">{</span><span class="nx">u</span><span class="s1">'href'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'options'</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'schedule'</span><span class="o">:</span> <span class="kc">null</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span><span class="s1">'href'</span><span class="o">:</span> <span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
+ <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'0ad'</span><span class="p">,</span>
+ <span class="s1">'options'</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+ <span class="s1">'schedule'</span><span class="o">:</span> <span class="kc">null</span><span class="p">}</span>
 </pre></div><p>
 <br />
 </p>
@@ -2054,11 +2094,11 @@ or when debugging this package.'</span><span class="p">,</span>
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">{</span><span class="nx">u</span><span class="s1">'href'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'options'</span><span class="o">:</span> <span class="p">{</span><span class="nx">u</span><span class="s1">'skip'</span><span class="o">:</span> <span class="p">{}},</span>
- <span class="nx">u</span><span class="s1">'schedule'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'2011-12-13T13:45:00-07:00/PT5M'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'type'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'sync'</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span><span class="s1">'href'</span><span class="o">:</span> <span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
+ <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'0ad'</span><span class="p">,</span>
+ <span class="s1">'options'</span><span class="o">:</span> <span class="p">{</span><span class="s1">'skip'</span><span class="o">:</span> <span class="p">{}},</span>
+ <span class="s1">'schedule'</span><span class="o">:</span> <span class="s1">'2011-12-13T13:45:00-07:00/PT5M'</span><span class="p">,</span>
+ <span class="s1">'type'</span><span class="o">:</span> <span class="s1">'sync'</span><span class="p">}</span>
 </pre></div><p>
 <br />
 </p>
@@ -2080,11 +2120,11 @@ or when debugging this package.'</span><span class="p">,</span>
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">{</span><span class="nx">u</span><span class="s1">'href'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'options'</span><span class="o">:</span> <span class="p">{</span><span class="nx">u</span><span class="s1">'skip'</span><span class="o">:</span> <span class="p">{}},</span>
- <span class="nx">u</span><span class="s1">'schedule'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'2011-12-13T13:45:00-07:00/PT5M'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'type'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'sync'</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span><span class="s1">'href'</span><span class="o">:</span> <span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
+ <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'0ad'</span><span class="p">,</span>
+ <span class="s1">'options'</span><span class="o">:</span> <span class="p">{</span><span class="s1">'skip'</span><span class="o">:</span> <span class="p">{}},</span>
+ <span class="s1">'schedule'</span><span class="o">:</span> <span class="s1">'2011-12-13T13:45:00-07:00/PT5M'</span><span class="p">,</span>
+ <span class="s1">'type'</span><span class="o">:</span> <span class="s1">'sync'</span><span class="p">}</span>
 </pre></div><p>
 <br />
 <strong>parameters</strong>: 
@@ -2112,11 +2152,11 @@ or when debugging this package.'</span><span class="p">,</span>
 <br />
 <strong>example</strong>: 
 </p>
-<div class="code"><pre><span class="p">{</span><span class="nx">u</span><span class="s1">'href'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'id'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'0ad'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'options'</span><span class="o">:</span> <span class="p">{</span><span class="nx">u</span><span class="s1">'skip'</span><span class="o">:</span> <span class="p">{}},</span>
- <span class="nx">u</span><span class="s1">'schedule'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'2011-12-13T13:45:00-07:00/PT5M'</span><span class="p">,</span>
- <span class="nx">u</span><span class="s1">'type'</span><span class="o">:</span> <span class="nx">u</span><span class="s1">'sync'</span><span class="p">}</span>
+<div class="code"><pre><span class="p">{</span><span class="s1">'href'</span><span class="o">:</span> <span class="s1">'/pulp/api/repositories/0ad/'</span><span class="p">,</span>
+ <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'0ad'</span><span class="p">,</span>
+ <span class="s1">'options'</span><span class="o">:</span> <span class="p">{</span><span class="s1">'skip'</span><span class="o">:</span> <span class="p">{}},</span>
+ <span class="s1">'schedule'</span><span class="o">:</span> <span class="s1">'2011-12-13T13:45:00-07:00/PT5M'</span><span class="p">,</span>
+ <span class="s1">'type'</span><span class="o">:</span> <span class="s1">'sync'</span><span class="p">}</span>
 </pre></div><p>
 <br />
 <strong>parameters</strong>: 

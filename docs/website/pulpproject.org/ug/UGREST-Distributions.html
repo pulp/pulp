@@ -30,145 +30,105 @@
 <!-- END HEADER -->
 
 
-<div id="content" class="wiki"><div id="wikipage"><h1 id="Distributions">Distributions</h1>
-<p>
-A distribution is an entity in pulp representing kickstart tree metadata/files associated to a repo.   
+<div id="content" class="wiki"><div id="wikipage"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="UGREST-Distributions.html#top">Distribution RESTful API</a>
+    <ol>
+      <li>
+        <a href="UGREST-Distributions.html#Lookupdistributionbyid.">Look up distribution by id.</a>
+      </li>
+      <li>
+        <a href="UGREST-Distributions.html#Listallavailabledistributions.">List all available distributions.</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
 </p>
+<h1 id="top">Distribution RESTful API</h1>
 <p>
-Base URL Path: <strong>/distributions/</strong>
+<em>No description.</em> <br />
+<br />
 </p>
 <hr />
-<h2 id="ListAllAvailableDistributions">List All Available Distributions</h2>
+<h2 id="Lookupdistributionbyid.">Look up distribution by id.</h2>
 <p>
-List all available Distributions.
+<em>Get a distribution object</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /distributions/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a distribution <br />
+<br />
+<strong>return</strong>: a Distribution object <br />
+<br />
+<strong>example</strong>: 
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/distributions/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: None
-</p>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">[{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'ks-Fedora-Fedora-14-x86_64'</span><span class="p">,</span>
- <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'distribution'</span><span class="p">,</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'ks-Fedora-Fedora-14-x86_64'</span><span class="p">,</span>
- <span class="s">'family'</span> <span class="p">:</span> <span class="s">'Fedora'</span><span class="p">,</span>
- <span class="s">'variant'</span> <span class="p">:</span> <span class="s">'Fedora'</span><span class="p">,</span>
- <span class="s">'version'</span> <span class="p">:</span> <span class="s">'14'</span><span class="p">,</span>
- <span class="s">'arch'</span> <span class="p">:</span> <span class="s">'x86_64'</span><span class="p">,</span>
- <span class="s">'timestamp'</span> <span class="p">:</span> <span class="s">'2011-05-13T15:44:30'</span><span class="p">,</span>
- <span class="s">'files'</span><span class="p">:</span> <span class="p">[</span><span class="s">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz'</span><span class="p">],</span>
- <span class="s">'relativepath'</span> <span class="p">:</span> <span class="s">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64'</span><span class="p">},</span>
-<span class="p">{</span><span class="s">'_id'</span><span class="p">:</span> <span class="s">'ks-Fedora-Fedora-13-i386'</span><span class="p">,</span>
- <span class="s">'_ns'</span><span class="p">:</span> <span class="s">'distribution'</span><span class="p">,</span>
- <span class="s">'description'</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
- <span class="s">'id'</span><span class="p">:</span> <span class="s">'ks-Fedora-Fedora-13-i386'</span><span class="p">,</span>
- <span class="s">'family'</span> <span class="p">:</span> <span class="s">'Fedora'</span><span class="p">,</span>
- <span class="s">'variant'</span> <span class="p">:</span> <span class="s">'Fedora'</span><span class="p">,</span>
- <span class="s">'version'</span> <span class="p">:</span> <span class="s">'13'</span><span class="p">,</span>
- <span class="s">'arch'</span> <span class="p">:</span> <span class="s">'i386'</span><span class="p">,</span>
- <span class="s">'timestamp'</span> <span class="p">:</span> <span class="s">'2011-05-13T15:44:30'</span><span class="p">,</span>
- <span class="s">'files'</span><span class="p">:</span> <span class="p">[</span><span class="s">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/install.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/efiboot.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/boot.iso'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/efidisk.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img'</span><span class="p">,</span>
-           <span class="s">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz'</span><span class="p">],</span>
- <span class="s">'relativepath'</span> <span class="p">:</span> <span class="s">'/var/lib/pulp/distributions/ks-Fedora-Fedora-13-i386'</span><span class="p">},]</span> 
+<div class="code"><pre><span class="p">{</span> <span class="s2">"id"</span><span class="o">:</span> <span class="s2">"ks-Fedora-None-16-x86_64"</span><span class="p">,</span>
+  <span class="s2">"_id"</span><span class="o">:</span> <span class="s2">"ks-Fedora-None-16-x86_64"</span><span class="p">,</span>
+  <span class="s2">"_ns"</span><span class="o">:</span> <span class="s2">"distribution"</span><span class="p">,</span>
+  <span class="s2">"description"</span><span class="o">:</span> <span class="s2">"ks-Fedora-Fedora-16-x86_64"</span><span class="p">,</span>
+ <span class="s2">"family"</span><span class="o">:</span> <span class="s2">"Fedora"</span><span class="p">,</span>
+ <span class="s2">"relativepath"</span><span class="o">:</span> <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64"</span><span class="p">,</span>
+ <span class="s2">"variant"</span><span class="o">:</span> <span class="nx">Fedora</span><span class="p">,</span>
+ <span class="s2">"version"</span><span class="o">:</span> <span class="s2">"16"</span><span class="p">,</span>
+ <span class="s2">"timestamp"</span><span class="o">:</span> <span class="s2">"2011-11-03T07:39:38"</span><span class="p">,</span>
+ <span class="s2">"arch"</span><span class="o">:</span> <span class="s2">"x86_64"</span><span class="p">,</span>
+ <span class="s2">"url"</span><span class="o">:</span> <span class="p">[</span><span class="s2">"http://localhost/pulp/ks/released/F-16/GOLD/Everything/x86_64/os/"</span><span class="p">]}</span>
+ <span class="s2">"files"</span><span class="o">:</span> <span class="p">[</span><span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/initrd.img"</span><span class="p">,</span>
+   <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/repomd.xml"</span><span class="p">,</span>
+   <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/vmlinuz"</span><span class="p">,</span>
+   <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/.treeinfo"</span><span class="p">,</span>
+   <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efiboot.img"</span><span class="p">,</span>
+   <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/boot.iso"</span><span class="p">,</span>
+   <span class="s2">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efidisk.img"</span><span class="p">]}</span>
 </pre></div><p>
-Error: None
+<br />
 </p>
 <hr />
-<h2 id="Information">Information</h2>
+<h2 id="Listallavailabledistributions.">List all available distributions.</h2>
 <p>
-Get the information on a single distribution
+<em>Get a list of all distributions managed by Pulp.</em> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /distributions/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of distribution objects, possibly empty <br />
+<br />
+<strong>example</strong>: 
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/distributions/&lt;distribution id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre><span class="p">{</span><span class="s">"files"</span><span class="p">:</span> <span class="p">[</span><span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/initrd.img"</span><span class="p">,</span> 
-           <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/repomd.xml"</span><span class="p">,</span> 
-           <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/vmlinuz"</span><span class="p">,</span> 
-           <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/.treeinfo"</span><span class="p">,</span> 
-           <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efiboot.img"</span><span class="p">,</span> 
-           <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/boot.iso"</span><span class="p">,</span> 
-           <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64/efidisk.img"</span><span class="p">],</span> 
- <span class="s">"description"</span><span class="p">:</span> <span class="s">"ks-Fedora-Fedora-16-x86_64"</span><span class="p">,</span> 
- <span class="s">"family"</span><span class="p">:</span> <span class="s">"Fedora"</span><span class="p">,</span> 
- <span class="s">"relativepath"</span><span class="p">:</span> <span class="s">"/var/lib/pulp/distributions/ks-Fedora-Fedora-16-x86_64"</span><span class="p">,</span> 
- <span class="s">"variant"</span><span class="p">:</span> Fedora<span class="p">,</span> 
- <span class="s">"id"</span><span class="p">:</span> <span class="s">"ks-Fedora-None-16-x86_64"</span><span class="p">,</span> 
- <span class="s">"version"</span><span class="p">:</span> <span class="s">"16"</span><span class="p">,</span> 
- <span class="s">"timestamp"</span><span class="p">:</span> <span class="s">"2011-11-03T07:39:38"</span><span class="p">,</span> 
- <span class="s">"_id"</span><span class="p">:</span> <span class="s">"ks-Fedora-None-16-x86_64"</span><span class="p">,</span> 
- <span class="s">"arch"</span><span class="p">:</span> <span class="s">"x86_64"</span><span class="p">,</span> 
- <span class="s">"_ns"</span><span class="p">:</span> <span class="s">"distribution"</span><span class="p">,</span> 
- <span class="s">"url"</span><span class="p">:</span> <span class="p">[</span><span class="s">"http://localhost/pulp/ks/released/F-16/GOLD/Everything/x86_64/os/"</span><span class="p">]}</span>
+<div class="code"><pre><span class="p">[{</span><span class="s1">'_id'</span><span class="o">:</span> <span class="s1">'ks-Fedora-Fedora-14-x86_64'</span><span class="p">,</span>
+  <span class="s1">'_ns'</span><span class="o">:</span> <span class="s1">'distribution'</span><span class="p">,</span>
+  <span class="s1">'description'</span><span class="o">:</span> <span class="nx">None</span><span class="p">,</span>
+  <span class="s1">'id'</span><span class="o">:</span> <span class="s1">'ks-Fedora-Fedora-14-x86_64'</span><span class="p">,</span>
+  <span class="s1">'family'</span> <span class="o">:</span> <span class="s1">'Fedora'</span><span class="p">,</span>
+  <span class="s1">'variant'</span> <span class="o">:</span> <span class="s1">'Fedora'</span><span class="p">,</span>
+  <span class="s1">'version'</span> <span class="o">:</span> <span class="s1">'14'</span><span class="p">,</span>
+  <span class="s1">'arch'</span> <span class="o">:</span> <span class="s1">'x86_64'</span><span class="p">,</span>
+  <span class="s1">'timestamp'</span> <span class="o">:</span> <span class="s1">'2011-05-13T15:44:30'</span><span class="p">,</span>
+  <span class="s1">'files'</span><span class="o">:</span> <span class="p">[</span><span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/install.img'</span><span class="p">,</span>
+           <span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/efiboot.img'</span><span class="p">,</span>
+           <span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/boot.iso'</span><span class="p">,</span>
+           <span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/efidisk.img'</span><span class="p">,</span>
+           <span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/pxeboot/initrd.img'</span><span class="p">,</span>
+           <span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64/images/pxeboot/vmlinuz'</span><span class="p">],</span>
+  <span class="s1">'relativepath'</span> <span class="o">:</span> <span class="s1">'/var/lib/pulp/distributions/ks-Fedora-Fedora-14-x86_64'</span><span class="p">},]</span>
 </pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such distribution
+<br />
 </p>
 </div>
         

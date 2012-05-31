@@ -69,6 +69,7 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr><tr><td> Checksum Type </td><td> <tt>--checksum_type</tt> </td><td> checksum type to use when yum metadata is generated 
 </td></tr><tr><td> Preserve Metadata </td><td> <tt>--preserve_metadata</tt> </td><td> Preserves the original metadata; only works with feed repos 
 </td></tr><tr><td> Content Type </td><td> <tt>--content_type</tt> </td><td> content type allowed in this repository; default:yum; supported: [yum, file] 
+</td></tr><tr><td> Packages Dir </td><td> <tt>--packages_dir</tt> </td><td> Directory location where the package is symlinked under the repo directory for feedless repos; for feed repos this is directly set from the source metadata 
 </td></tr></table>
 <h4 id="Feeds">Feeds</h4>
 <p>
@@ -108,6 +109,7 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Add GPG keys </td><td> <tt>--addkeys</tt> </td><td> A comma-separated list of GPG public key files to be added. 
 </td></tr><tr><td> Remove GPG keys </td><td> <tt>--rmkeys</tt> </td><td> A comma-separated list of GPG public key files to be removed. 
 </td></tr><tr><td> Checksum Type </td><td> <tt>--checksum_type</tt> </td><td> checksum type to use when yum metadata is generated 
+</td></tr><tr><td> Packages Dir </td><td> <tt>--packages_dir</tt> </td><td> Directory location where the package is symlinked under the repo directory for feedless repos; for feed repos this is directly set from the source metadata 
 </td></tr></table>
 <h3 id="Removal">Removal</h3>
 <p>
@@ -329,7 +331,21 @@ In addition to the <tt>-F</tt> flag, the following options are available to the 
 </td></tr><tr><td> Threads </td><td> <tt>--threads</tt> </td><td> If specified, will allow this many threads to be used for synchronization. 
 </td></tr><tr><td> Sync in the Foreground </td><td> <tt>-F</tt> or <tt>--foreground</tt> </td><td> Report the sync progress on the command line. Conflicts with <tt>--start</tt> 
 </td></tr></table>
-<hr />
+<p>
+A running sync for a repository can be cancelled using a <tt>repo cancel_sync</tt> command. 
+</p>
+<pre class="wiki">$ pulp-admin repo cancel_sync --id test-repo
+Sync for repository test-repo is being canceled
+</pre><p>
+If you were running sync in foreground at this time, you will see a <tt>Canceled</tt> message. 
+</p>
+<pre class="wiki">$ pulp-admin repo sync --id test-repo -F
+Sync for repository test-repo started
+Sync: Canceled
+
+Item Details: 
+RPMs: 0/21
+</pre><hr />
 <h2 id="packages">Packages</h2>
 <h3 id="AddPackage">Add Package</h3>
 <p>
@@ -414,17 +430,21 @@ For example, given a spacewalk repository on Pulp server, a clone of this reposi
 </p>
 <pre class="wiki">$ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone
 </pre><p>
-In this case, the feed of the cloned repo will point to contents of parent repo on the pulp server. 
+This command will have the same effect as -
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone --feed parent
+</pre><p>
+In this case, the feed of the cloned repo will point to contents of parent repository on the pulp server. You can specify type of feed to be used for the cloned repository using --feed option. If --feed option is not specified, feed will default to parent as shown in the example above. 
 </p>
 <p>
-There are two more types of of repository clones: 
+There are two more types of repository clones: 
 </p>
 <h4 id="ClonewithOriginFeed">Clone with Origin Feed</h4>
 <p>
 In this case, the feed of the cloned repository will be the same as that of parent repository.  
 </p>
 <pre class="wiki"> $ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone-origin --feed origin -F
-</pre><h4 id="ClonewithoutParentOriginFeed">Clone without <a class="missing wiki">Parent/Origin?</a> Feed</h4>
+</pre><h4 id="ClonewithoutParentorOriginFeed">Clone without Parent or Origin Feed</h4>
 <p>
 This is also known as a <em>feedless</em> clone. In this case, the feed of the the cloned repository is 'None'.
 </p>
@@ -439,13 +459,27 @@ Depending upon the content of the origin repository, the cloning operation can t
 Repository [example] is being cloned as [clone_example]
 Use "repo status" to check on the progress
 </pre><p>
-The status of the sync can be viewed with the <tt>repo status</tt> command specifying the ID of the cloned repo. Alternatively, the clone operation can be run in the foreground by passing the <tt>-F</tt> flag. 
+The status of the clone can be viewed with the <tt>repo status</tt> command specifying the ID of the cloned repo. Alternatively, the clone operation can be run in the foreground by passing the <tt>-F</tt> flag. 
 </p>
 <pre class="wiki">$ pulp-admin repo clone --id example --clone_id clone_example -F
 Repository [example] is being cloned as [clone_example]
 You can safely CTRL+C this current command and it will continue
 [==================================================] 100% (10 of 10 pkgs)
 Clone: Finished
+</pre><p>
+A running clone of a repository can be cancelled using a <tt>repo cancel_clone</tt> command. 
+</p>
+<pre class="wiki">$ pulp-admin repo cancel_clone --id test-clone
+Clone for this repository test-clone is being canceled
+</pre><p>
+If you were running clone in foreground at this time, you will see a <tt>Canceled</tt> message. 
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id test-repo --clone_id test-clone -F
+Repository [test-repo] is being cloned as [test-clone]
+Clone: Canceled
+
+Item Details: 
+RPMs: 0/21
 </pre><hr />
 <h2 id="filters">Filters</h2>
 <p>

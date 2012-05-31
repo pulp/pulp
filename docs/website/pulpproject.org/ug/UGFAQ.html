@@ -69,6 +69,12 @@
       <li>
         <a href="UGFAQ.html#WhydoesPulpdiesometimesat3amESTorotherscheduledtime">Why does Pulp die sometimes at 3am EST, or other scheduled time?</a>
       </li>
+      <li>
+        <a href="UGFAQ.html#SyncingcontentonpulpfromamountedRHEL5isofailstolookuptreeinfo">Syncing content on pulp from a mounted RHEL 5 iso fails to lookup treeinfo</a>
+      </li>
+      <li>
+        <a href="UGFAQ.html#rpmname">Sometimes pulp repo sync fails with an InvalidDocument?: key must not …</a>
+      </li>
     </ol>
   </li>
 </ol>
@@ -307,7 +313,60 @@ SIGHUP is not supposed to interrupt running processes, but it seems it does for 
 <p>
 This issue could be mitigated somewhat by tweaking the logrotate configuration.  logrotate provides documentation on how it can be configured.
 </p>
-</div>
+<hr />
+<h2 id="SyncingcontentonpulpfromamountedRHEL5isofailstolookuptreeinfo">Syncing content on pulp from a mounted RHEL 5 iso fails to lookup treeinfo</h2>
+<p>
+When you mount a RHEL-5 content iso and create a repo in pulp; the sync fails with missing treeinfo. This is a known issue, RHEL-5 content isos don't have repodata in the root directory where the treeinfo is present. Pulp sync can only sync both packages and treeinfo files if they are under the same root directory. This will be resolved in upcoming RHEL-5 U releases and this is not an issue with RHEL-6 or Fedora content. Work around for this issue is as follows,
+</p>
+<ul><li>Mount the content iso to a directory
+<pre class="wiki">  $ mount RHEL5.7-Server-20110711.5-x86_64-DVD.iso /mnt/iso
+</pre></li><li>Copy the mounted directory to another location on filesystem where it can be modified.
+<pre class="wiki">  $ cp -R /mnt/iso/* /data/RHEL_5_7/
+</pre></li></ul><ul><li>Copy the repodata from the Server directory to root dir
+<pre class="wiki">  $ cp -R /data/RHEL_5_7/Server/repodata/ /data/RHEL_5_7/
+</pre></li></ul><ul><li>Link the RPMs from the Server directory to root dir
+<pre class="wiki">  $ cp -l /data/RHEL_5_7/Server/*.rpm /data/RHEL_5_7/
+ 
+</pre></li></ul><ul><li>Use this new path as your local feed when creating the repo
+<pre class="wiki"> $ pulp-admin repo create --id=RHEL-5.7 --feed=file:///data/RHEL_5_7/
+</pre></li></ul><hr />
+<h2 id="rpmname">Sometimes pulp repo sync fails with an <a class="missing wiki">InvalidDocument?</a>: key must not contain '.'</h2>
+<p>
+Repo sync on pulp using versions of pymongo 2.1 or newer sometimes fails with following Exception, 
+</p>
+<pre class="wiki">  File "/home/pkilambi/code/pulp/src/pulp/server/tasking/task.py", line 414, in run
+    result = self.callable(*self.args, **self.kwargs)
+  File "/home/pkilambi/code/pulp/src/pulp/server/api/repo_sync.py", line 279, in _sync
+    progress_callback, synchronizer, max_speed, threads)
+  File "/home/pkilambi/code/pulp/src/pulp/server/api/repo_sync.py", line 373, in fetch_content
+    added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
+  File "/home/pkilambi/code/pulp/src/pulp/server/api/synchronizers.py", line 414, in import_metadata
+    self.repo_api.collection.save(repo, safe=True)
+  File "/home/pkilambi/code/pulp/src/pulp/server/db/connection.py", line 80, in retry
+    return method(*args, **kwargs)
+  File "/usr/lib64/python2.7/site-packages/pymongo/collection.py", line 237, in save
+    manipulate, safe, _check_keys=True, **kwargs)
+  File "/home/pkilambi/code/pulp/src/pulp/server/db/connection.py", line 80, in retry
+    return method(*args, **kwargs)
+  File "/usr/lib64/python2.7/site-packages/pymongo/collection.py", line 411, in update
+    _check_keys, self.__uuid_subtype), safe)
+InvalidDocument: key 'openoffice.org-langpack-en' must not contain '.'
+
+</pre><p>
+<strong> Solution: </strong>
+</p>
+<p>
+This happens if your repo package group comps.xml file has a reference to a package with a period in its filename. This is a restriction pymongo enforces in version pymongo-2.1. A workaround solution for this is to downgrade pymongo to a 1.11 version. If you run into this issue, the following steps are recommended:
+</p>
+<ul><li>Check version of pymongo installed:
+<pre class="wiki">$ rpm -q pymongo
+pymongo-2.1.1-1.fc16.x86_64
+</pre></li></ul><ul><li>Downgrade pymongo from 2.1:
+<pre class="wiki">$ yum downgrade pymongo python-bson
+</pre></li></ul><ul><li>Restart your pulp server:
+<pre class="wiki">$ service pulp-server init &amp;&amp; service pulp-server restart
+</pre></li></ul><ul><li>Re-sync the failed repo and this time it should finish successfully
+</li></ul></div>
         
         
       </div>

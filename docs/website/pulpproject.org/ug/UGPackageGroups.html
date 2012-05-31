@@ -262,6 +262,37 @@ Parameters
 <h4 id="Example4">Example</h4>
 <pre class="wiki">$ pulp-admin packagegroup delete_package -r f14 --id test_group -t 'conditional' -n grinder-docs
 Package [grinder-docs] deleted from group [test_group] in repository [f14]
+</pre><hr />
+<h2 id="import">Import</h2>
+<p>
+The <tt></tt><tt>packagegroup import</tt><tt></tt> command imports a comps.xml to populate package group/category information
+</p>
+<p>
+Parameters
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameters</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of Repository 
+</td></tr><tr><td> <tt>--comps</tt> </td><td style="text-align: right"> Comps xml file to import (required)
+</td></tr></table>
+<h4 id="Example5">Example</h4>
+<pre class="wiki">$ pulp-admin packagegroup import -r test_import --comps ./comps.xml 
+Successfully imported comps groups and categories into repository [test_import]
+</pre><h2 id="export">Export</h2>
+<p>
+The <tt></tt><tt>packagegroup export</tt><tt></tt> command exports package group/category information to a XML file
+</p>
+<p>
+Parameters
+</p>
+<table class="wiki">
+<tr><td> <strong>Parameters</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> <tt>-r</tt> or <tt>--repoid</tt> </td><td> ID of Repository 
+</td></tr><tr><td> <tt>-o</tt> or '--out' </td><td style="text-align: right"> Output file to store the exported comps data
+</td></tr></table>
+<h4 id="Example6">Example</h4>
+<pre class="wiki">$  pulp-admin packagegroup export -r latest-rpmforge-redhat-el5-en-x86_64 -o test_comps.xml
+Successfully exported the comps data to [test_comps.xml]
 </pre></div>
         
         
