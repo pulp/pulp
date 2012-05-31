@@ -5,7 +5,7 @@ Consumer APIs
    :maxdepth: 3
 
    cud
-   retrieval
    bind
+   retrieval
    content
    history
