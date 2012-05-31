@@ -68,6 +68,8 @@ class RepoCollection(JSONController):
             units = unit_query_manager.get_units_across_types(r['id'], criteria)
             r['content_unit_count'] = len(units)
 
+            r.update(serialization.link.child_link_obj(r['id']))
+
         # Return the repos or an empty list; either way it's a 200
         return self.ok(all_repos)
 
