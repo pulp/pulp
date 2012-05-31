@@ -1,5 +1,5 @@
-Repository Synchronize and Publish
-==================================
+Synchronize and Publish
+=======================
 
 .. _repo-sync:
 

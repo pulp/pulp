@@ -8,3 +8,4 @@ Repositories
    sync-publish
    units
    protected-repos
+   tasks
