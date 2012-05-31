@@ -390,10 +390,10 @@ class YumImporter(Importer):
                 _LOG.error(msg)
                 details['errors'].append(msg)
                 return False, summary, details
-            relative_path = "%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
-                                                          unit_key['release'], unit_key['arch'], unit_key['checksum'])
+            relative_path = "%s/%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
+                                                          unit_key['release'], unit_key['arch'], unit_key['checksum'], metadata['filename'])
             u = conduit.init_unit(type_id, unit_key, metadata, relative_path)
-            new_path = "%s/%s" % (u.storage_path, metadata['filename'])
+            new_path = u.storage_path
             try:
                 if os.path.exists(new_path):
                     existing_checksum = util.get_file_checksum(filename=new_path, hashtype=unit_key['checksumtype'])
