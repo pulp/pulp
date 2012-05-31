@@ -67,7 +67,7 @@ def context():
     Dispatch context factory. Returns thread-local storage holding pertinent
     information and operations for the dispatch environment.
     @return: thread-local storage
-    @rtype:  context.Context
+    @rtype:  L{pulp.server.dispatch.context.Context}
     """
     return dispatch_context.CONTEXT
 
@@ -76,7 +76,7 @@ def coordinator():
     """
     Dispatch coordinator factory. Returns the current coordinator instance.
     @return: coordinator for conflicting operation detection and asynchronous execution of calls
-    @rtype:  Coordinator
+    @rtype:  L{pulp.server.dispatch.coordinator.Coordinator}
     """
     assert _COORDINATOR is not None
     return _COORDINATOR
@@ -86,7 +86,18 @@ def scheduler():
     """
     Dispatch scheduler factory. Returns the current scheduler instance.
     @return: scheduler for delayed and/or repeating calls at regular intervals
-    @rtype:  Scheduler
+    @rtype:  L{pulp.server.dispatch.scheduler.Scheduler}
     """
     assert _SCHEDULER is not None
     return _SCHEDULER
+
+
+def _task_queue():
+    """
+    Dispatch task queue factory. Returns the current task queue instance.
+    NOTE: this should not be used outside of the dispatch package
+    @return: task queue for task management and dispatch
+    @rtype:  L{pulp.server.dispatch.taskqueue.TaskQueue}
+    """
+    assert _TASK_QUEUE is not None
+    return _TASK_QUEUE
