@@ -707,7 +707,8 @@ class RepoSync(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('sync')]
         call_request = CallRequest(repo_sync_manager.sync,
-                                   [repo_id, overrides],
+                                   [repo_id],
+                                   {'sync_config_override': overrides},
                                    resources=resources,
                                    weight=weight,
                                    tags=tags,
