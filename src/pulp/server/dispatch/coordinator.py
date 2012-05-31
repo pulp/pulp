@@ -34,15 +34,12 @@ class Coordinator(object):
     """
     Coordinator class that runs call requests in the task queue and detects and
     resolves conflicting operations on resources.
-    @ivar task_resource_collection: mongodb collection for task resources
-    @type task_resource_collection: L{pymongo.Collection} instance
     @ivar task_state_poll_interval: sleep interval to use while polling a "synchronous" task
     @type task_state_poll_interval: float
     """
 
     def __init__(self, task_state_poll_interval=0.5):
 
-        self.task_resource_collection = TaskResource.get_collection()
         self.task_state_poll_interval = task_state_poll_interval
 
     # explicit initialization --------------------------------------------------
@@ -53,7 +50,8 @@ class Coordinator(object):
         interrupted tasks.
         """
         # drop all previous knowledge of running tasks
-        self.task_resource_collection.remove(safe=True)
+        task_resource_collection = TaskResource.get_collection()
+        task_resource_collection.remove(safe=True)
         # re-start interrupted tasks
         queued_call_collection = QueuedCall.get_collection()
         queued_call_list = list(queued_call_collection.find().sort('timestamp'))
@@ -177,6 +175,7 @@ class Coordinator(object):
         # interdependencies
         task_queue = dispatch_factory._task_queue()
         task_queue.lock()
+        task_resource_collection = TaskResource.get_collection()
         try:
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
@@ -189,7 +188,7 @@ class Coordinator(object):
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
             if task_resources:
                 set_task_id_on_task_resources(task.id, task_resources)
-                self.task_resource_collection.insert(task_resources, safe=True)
+                task_resource_collection.insert(task_resources, safe=True)
             task_queue.enqueue(task)
         finally:
             task_queue.unlock()
@@ -248,9 +247,10 @@ class Coordinator(object):
         rejecting_tasks = set()
         rejecting_reasons = []
 
+        task_resource_collection = TaskResource.get_collection()
         task_resources = resource_dict_to_task_resources(resources)
         or_query = filter_dicts(task_resources, ('resource_type', 'resource_id'))
-        cursor = self.task_resource_collection.find({'$or': or_query})
+        cursor = task_resource_collection.find({'$or': or_query})
 
         for task_resource in cursor:
             proposed_operation = resources[task_resource['resource_type']][task_resource['resource_id']]
