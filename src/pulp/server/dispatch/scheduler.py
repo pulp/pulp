@@ -50,13 +50,10 @@ class Scheduler(object):
     Manager and dispatcher of scheduled call requests
     @ivar dispatch_interval: time, in seconds, between schedule checks
     @type dispatch_interval: int
-    @ivar scheduled_call_collection: db collection of scheduled call requests
-    @type scheduled_call_collection: pymongo.collection.Collection
     """
 
     def __init__(self, dispatch_interval=30):
         self.dispatch_interval = dispatch_interval
-        self.scheduled_call_collection = ScheduledCall.get_collection()
 
         self.__exit = False
         self.__lock = threading.RLock()
@@ -87,9 +84,10 @@ class Scheduler(object):
         Find call requests that are currently scheduled to run
         """
         coordinator = dispatch_factory.coordinator()
+        scheduled_call_collection = ScheduledCall.get_collection()
         now = datetime.datetime.utcnow()
         query = {'next_run': {'$lte': now}}
-        for scheduled_call in self.scheduled_call_collection.find(query):
+        for scheduled_call in scheduled_call_collection.find(query):
             if not scheduled_call['enabled']:
                 # update the next run information for disabled calls
                 self.update_next_run(scheduled_call)
@@ -166,7 +164,8 @@ class Scheduler(object):
         if scheduled_call['remaining_runs'] is not None:
             inc = update.setdefault('$inc', {})
             inc['remaining_runs'] = -1
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+        scheduled_call_collection = ScheduledCall.get_collection()
+        scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def update_next_run(self, scheduled_call):
         """
@@ -174,14 +173,15 @@ class Scheduler(object):
         @param scheduled_call: scheduled call to be updated
         @type  scheduled_call: dict
         """
+        scheduled_call_collection = ScheduledCall.get_collection()
         schedule_id = scheduled_call['_id']
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             # remove the scheduled call if there are no more
-            self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
+            scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
             return
         update = {'$set': {'next_run': next_run}}
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+        scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def calculate_next_run(self, scheduled_call):
         """
@@ -216,8 +216,9 @@ class Scheduler(object):
                 continue
             index = i
             break
+        scheduled_call_collection = ScheduledCall.get_collection()
         schedule_id = call_request.tags[index][len(tag_prefix):]
-        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        scheduled_call = scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.update_last_run(scheduled_call, call_report)
         self.update_next_run(scheduled_call)
 
@@ -244,8 +245,9 @@ class Scheduler(object):
         next_run = self.calculate_next_run(scheduled_call)
         if next_run is None:
             return None
+        scheduled_call_collection = ScheduledCall.get_collection()
         scheduled_call['next_run'] = next_run
-        self.scheduled_call_collection.insert(scheduled_call, safe=True)
+        scheduled_call_collection.insert(scheduled_call, safe=True)
         return str(scheduled_call['_id'])
 
     def update(self, schedule_id, **schedule_updates):
@@ -264,13 +266,14 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
-        if self.scheduled_call_collection.find_one(schedule_id) is None:
+        scheduled_call_collection = ScheduledCall.get_collection()
+        if scheduled_call_collection.find_one(schedule_id) is None:
             raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
         validate_schedule_updates(schedule_updates)
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
-        self.scheduled_call_collection.update({'_id': schedule_id}, {'$set': schedule_updates}, safe=True)
+        scheduled_call_collection.update({'_id': schedule_id}, {'$set': schedule_updates}, safe=True)
 
     def remove(self, schedule_id):
         """
@@ -280,7 +283,8 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
-        self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
+        scheduled_call_collection = ScheduledCall.get_collection()
+        scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
     def enable(self, schedule_id):
         """
@@ -290,8 +294,9 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
+        scheduled_call_collection = ScheduledCall.get_collection()
         update = {'$set': {'enabled': True}}
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+        scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def disable(self, schedule_id):
         """
@@ -301,8 +306,9 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
+        scheduled_call_collection = ScheduledCall.get_collection()
         update = {'$set': {'enabled': False}}
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+        scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     # query methods ------------------------------------------------------------
 
@@ -316,7 +322,8 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
-        scheduled_call = self.scheduled_call_collection.find_one({'_id': schedule_id})
+        scheduled_call_collection = ScheduledCall.get_collection()
+        scheduled_call = scheduled_call_collection.find_one({'_id': schedule_id})
         if scheduled_call is None:
             raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
         report = scheduled_call_to_report_dict(scheduled_call)
@@ -330,8 +337,9 @@ class Scheduler(object):
         @return: possibly empty list of scheduled call report dictionaries
         @rtype:  list
         """
+        scheduled_call_collection = ScheduledCall.get_collection()
         query = {'serialized_call_request.tags': {'$all': tags}}
-        scheduled_calls = self.scheduled_call_collection.find(query)
+        scheduled_calls = scheduled_call_collection.find(query)
         reports = [scheduled_call_to_report_dict(s) for s in scheduled_calls]
         return reports
 
