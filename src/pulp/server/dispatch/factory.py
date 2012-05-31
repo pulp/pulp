@@ -13,10 +13,6 @@
 
 from pulp.server import config as pulp_config
 from pulp.server.dispatch import context as dispatch_context
-from pulp.server.dispatch import pickling
-from pulp.server.dispatch.coordinator import Coordinator
-from pulp.server.dispatch.scheduler import Scheduler
-from pulp.server.dispatch.taskqueue import TaskQueue
 
 # globals ----------------------------------------------------------------------
 
@@ -29,7 +25,8 @@ _TASK_QUEUE = None
 def _initialize_coordinator():
     global _COORDINATOR
     assert _COORDINATOR is None
-    assert isinstance(_TASK_QUEUE, TaskQueue)
+    assert _TASK_QUEUE is not None
+    from pulp.server.dispatch.coordinator import Coordinator
     task_state_poll_interval = pulp_config.config.getfloat('coordinator', 'task_state_poll_interval')
     _COORDINATOR = Coordinator(_TASK_QUEUE, task_state_poll_interval)
     _COORDINATOR.start()
@@ -38,7 +35,8 @@ def _initialize_coordinator():
 def _initialize_scheduler():
     global _SCHEDULER
     assert _SCHEDULER is None
-    assert isinstance(_COORDINATOR, Coordinator)
+    assert _COORDINATOR is not None
+    from pulp.server.dispatch.scheduler import Scheduler
     dispatch_interval = pulp_config.config.getfloat('scheduler', 'dispatch_interval')
     _SCHEDULER = Scheduler(_COORDINATOR, dispatch_interval)
     _SCHEDULER.start()
@@ -47,6 +45,7 @@ def _initialize_scheduler():
 def _initialize_task_queue():
     global _TASK_QUEUE
     assert _TASK_QUEUE is None
+    from pulp.server.dispatch.taskqueue import TaskQueue
     concurrency_threshold = pulp_config.config.getint('tasks', 'concurrency_threshold')
     dispatch_interval = pulp_config.config.getfloat('tasks', 'dispatch_interval')
     _TASK_QUEUE = TaskQueue(concurrency_threshold, dispatch_interval)
@@ -55,6 +54,7 @@ def _initialize_task_queue():
 
 def initialize():
     # order sensitive
+    from pulp.server.dispatch import pickling
     pickling.initialize()
     _initialize_task_queue()
     _initialize_coordinator()
@@ -78,7 +78,7 @@ def coordinator():
     @return: coordinator for conflicting operation detection and asynchronous execution of calls
     @rtype:  Coordinator
     """
-    assert isinstance(_COORDINATOR, Coordinator)
+    assert _COORDINATOR is not None
     return _COORDINATOR
 
 
@@ -88,5 +88,5 @@ def scheduler():
     @return: scheduler for delayed and/or repeating calls at regular intervals
     @rtype:  Scheduler
     """
-    assert isinstance(_SCHEDULER, Scheduler)
+    assert _SCHEDULER is not None
     return _SCHEDULER
