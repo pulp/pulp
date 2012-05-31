@@ -115,8 +115,8 @@ class QueuedCallCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        coordinator = dispatch_factory.coordinator()
-        tasks = coordinator.task_queue.all_tasks()
+        task_queue = dispatch_factory._task_queue()
+        tasks = task_queue.all_tasks()
         queued_calls = []
         for t in tasks:
             data = {'task_id': t.id, 'queued_call_id': t.queued_call_id}
@@ -153,8 +153,8 @@ class JobCollection(JSONController):
     @auth_required(authorization.READ)
     def GET(self):
         job_ids = set()
-        coordinator = dispatch_factory.coordinator()
-        for task in coordinator.task_queue.all_tasks():
+        task_queue = dispatch_factory._task_queue()
+        for task in task_queue.all_tasks():
             job_id = task.call_report.job_id
             if job_id is None:
                 continue
@@ -193,6 +193,8 @@ class JobResource(JSONController):
 
 # web.py applications ----------------------------------------------------------
 
+# mapped to /v2/tasks/
+
 TASK_URLS = (
     '/', TaskCollection,
     '/([^/]+)/', TaskResource,
@@ -200,6 +202,7 @@ TASK_URLS = (
 
 task_application = web.application(TASK_URLS, globals())
 
+# mapped to /v2/queued_calls/
 
 QUEUED_CALL_URLS = (
     '/', QueuedCallCollection,
@@ -208,6 +211,7 @@ QUEUED_CALL_URLS = (
 
 queued_call_application = web.application(QUEUED_CALL_URLS, globals())
 
+# mapped to /v2/jobs/
 
 JOB_URLS = (
     '/', JobCollection,
