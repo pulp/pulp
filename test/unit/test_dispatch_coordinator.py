@@ -26,8 +26,8 @@ from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
-from pulp.server.dispatch.task import AsyncTask, Task
-from pulp.server.dispatch.taskqueue import TaskQueue
+from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch.task import Task
 from pulp.server.exceptions import OperationTimedOut
 
 # coordinator instantiation tests ----------------------------------------------
@@ -36,12 +36,9 @@ class CoordinatorInstantiationTests(testutil.PulpTest):
 
     def test_instantiation(self):
         try:
-            coordinator.Coordinator(TaskQueue(0))
+            coordinator.Coordinator()
         except:
             self.fail(traceback.format_exc())
-
-    def test_bad_task_queue(self):
-        self.assertRaises(AssertionError, coordinator.Coordinator, None)
 
 # coordinator base tests -------------------------------------------------------
 
@@ -49,8 +46,8 @@ class CoordinatorTests(testutil.PulpTest):
 
     def setUp(self):
         super(CoordinatorTests, self).setUp()
-        self.coordinator = coordinator.Coordinator(TaskQueue(0))
-        self.coordinator.task_queue = mock.Mock() # replace the task queue
+        self.coordinator = coordinator.Coordinator()
+        dispatch_factory._task_queue = mock.Mock() # replace the task queue
         self.collection = TaskResource.get_collection()
 
     def tearDown(self):
@@ -342,7 +339,6 @@ class CoordinatorRunTaskTests(CoordinatorTests):
         self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK]) == 1)
         self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK]) == 2)
         self.assertTrue(coordinator.coordinator_dequeue_callback in task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK])
-        self.assertTrue(self.coordinator.task_queue.enqueue.call_count == 1)
 
     def test_run_task_sync(self):
         task = Task(call.CallRequest(dummy_call))
@@ -358,8 +354,6 @@ class CoordinatorWaitForTaskTests(CoordinatorTests):
         self.assertRaises(OperationTimedOut,
                           self.coordinator._run_task,
                           task, True, timeout)
-        self.assertTrue(self.coordinator.task_queue.dequeue.call_count == 1)
-        self.assertTrue(task in self.coordinator.task_queue.dequeue.call_args[0])
 
 
 class CoordinatorCallExecutionTests(CoordinatorTests):
