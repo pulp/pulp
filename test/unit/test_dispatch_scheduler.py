@@ -55,7 +55,7 @@ class SchedulerInstantiationTests(testutil.PulpTest):
 
     def test_instantiation(self):
         try:
-            Scheduler(Coordinator(TaskQueue(0)))
+            Scheduler()
         except:
             self.fail(traceback.format_exc())
 
@@ -76,6 +76,7 @@ class SchedulerTests(testutil.PulpTest):
         pickling.initialize()
         self.scheduler = Scheduler()
         # replace the coordinator so we do not actually execute tasks
+        self._coordinator_factory = dispatch_factory.coordinator
         dispatch_factory.coordinator = mock.Mock()
         # NOTE we are not starting the scheduler
         self.scheduled_call_collection = ScheduledCall.get_collection()
@@ -84,6 +85,8 @@ class SchedulerTests(testutil.PulpTest):
         super(SchedulerTests, self).tearDown()
         ScheduledCall.get_collection().drop()
         self.scheduler = None
+        dispatch_factory.coordinator = self._coordinator_factory
+        self._coordinator_factory = None
 
 # scheduled call control tests -------------------------------------------------
 

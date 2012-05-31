@@ -47,12 +47,15 @@ class CoordinatorTests(testutil.PulpTest):
     def setUp(self):
         super(CoordinatorTests, self).setUp()
         self.coordinator = coordinator.Coordinator()
+        self._task_queue_factory = dispatch_factory._task_queue
         dispatch_factory._task_queue = mock.Mock() # replace the task queue
         self.collection = TaskResource.get_collection()
 
     def tearDown(self):
         super(CoordinatorTests, self).tearDown()
         self.coordinator = None
+        dispatch_factory._task_queue = self._task_queue_factory
+        self._task_queue_factory = None
         self.collection.drop()
         self.collection = None
 
