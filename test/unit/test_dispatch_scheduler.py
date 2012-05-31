@@ -78,6 +78,7 @@ class SchedulerTests(testutil.PulpTest):
         # replace the coordinator so we do not actually execute tasks
         dispatch_factory.coordinator = mock.Mock()
         # NOTE we are not starting the scheduler
+        self.scheduled_call_collection = ScheduledCall.get_collection()
 
     def tearDown(self):
         super(SchedulerTests, self).tearDown()
@@ -151,11 +152,11 @@ class SchedulerSchedulingTests(SchedulerTests):
         call_request = CallRequest(call)
         call_report = CallReport(state=dispatch_constants.CALL_FINISHED_STATE)
         schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE)
-        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['last_run'] == None)
         self.assertTrue(scheduled_call['remaining_runs'] == 2)
         self.scheduler.update_last_run(scheduled_call, call_report)
-        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         # relies on schedule's 0 length interval and initially having 2 runs
         self.assertTrue(updated_scheduled_call['last_run'] == updated_scheduled_call['next_run'])
         self.assertTrue(updated_scheduled_call['remaining_runs'] == 1)
@@ -164,11 +165,11 @@ class SchedulerSchedulingTests(SchedulerTests):
         call_request = CallRequest(call)
         call_report = CallReport(state=dispatch_constants.CALL_ERROR_STATE)
         schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE, failure_threshold=1)
-        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['consecutive_failures'] == 0)
         self.assertTrue(scheduled_call['enabled'])
         self.scheduler.update_last_run(scheduled_call, call_report)
-        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(updated_scheduled_call['consecutive_failures'] == 1)
         # scheduled call should be disabled because failure_threshold was set to 1
         self.assertFalse(updated_scheduled_call['enabled'])
@@ -178,12 +179,12 @@ class SchedulerSchedulingTests(SchedulerTests):
         interval = datetime.timedelta(minutes=1)
         schedule = dateutils.format_iso8601_interval(interval)
         scheduled_id = self.scheduler.add(call_request, schedule)
-        scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         next_run = self.scheduler.calculate_next_run(scheduled_call)
         self.assertFalse(next_run is None)
         self.assertTrue(next_run == scheduled_call['first_run'])
         self.scheduler.update_last_run(scheduled_call)
-        updated_scheduled_call = self.scheduler.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
+        updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
         self.assertTrue(updated_next_run == updated_scheduled_call['last_run'])
 
