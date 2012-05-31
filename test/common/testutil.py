@@ -296,9 +296,11 @@ class PulpAsyncTest(PulpTest):
 class PulpCoordinatorTest(PulpTest): # V2 asynchronous sub-system
 
     def setup_async(self):
+        super(PulpCoordinatorTest, self).setup_async()
         dispatch_factory.initialize()
 
     def teardown_async(self):
+        super(PulpCoordinatorTest, self).teardown_async()
         dispatch_factory._SCHEDULER.stop()
         dispatch_factory._TASK_QUEUE.stop(clear_queued_calls=True)
         dispatch_factory._SCHEDULER = None
