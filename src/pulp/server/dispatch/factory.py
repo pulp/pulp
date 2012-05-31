@@ -25,20 +25,18 @@ _TASK_QUEUE = None
 def _initialize_coordinator():
     global _COORDINATOR
     assert _COORDINATOR is None
-    assert _TASK_QUEUE is not None
     from pulp.server.dispatch.coordinator import Coordinator
     task_state_poll_interval = pulp_config.config.getfloat('coordinator', 'task_state_poll_interval')
-    _COORDINATOR = Coordinator(_TASK_QUEUE, task_state_poll_interval)
+    _COORDINATOR = Coordinator(task_state_poll_interval)
     _COORDINATOR.start()
 
 
 def _initialize_scheduler():
     global _SCHEDULER
     assert _SCHEDULER is None
-    assert _COORDINATOR is not None
     from pulp.server.dispatch.scheduler import Scheduler
     dispatch_interval = pulp_config.config.getfloat('scheduler', 'dispatch_interval')
-    _SCHEDULER = Scheduler(_COORDINATOR, dispatch_interval)
+    _SCHEDULER = Scheduler(dispatch_interval)
     _SCHEDULER.start()
 
 
