@@ -41,6 +41,7 @@ TAG_PARAGRAPH = 'paragraph'
 TAG_SECTION = 'section'
 TAG_SUCCESS = 'success'
 TAG_FAILURE = 'failure'
+TAG_WARNING = 'warning'
 TAG_EXCEPTION = 'exception'
 TAG_DOCUMENT = 'document'
 TAG_PROGRESS_BAR = 'progress_bar'
@@ -50,6 +51,7 @@ TAG_THREADED_SPINNER = 'threaded-spinner'
 COLOR_HEADER = okaara.prompt.COLOR_LIGHT_BLUE
 COLOR_SUCCESS = okaara.prompt.COLOR_LIGHT_GREEN
 COLOR_FAILURE = okaara.prompt.COLOR_LIGHT_RED
+COLOR_WARNING = okaara.prompt.COLOR_LIGHT_YELLOW
 COLOR_IN_PROGRESS = okaara.prompt.COLOR_LIGHT_YELLOW
 COLOR_COMPLETED = okaara.prompt.COLOR_LIGHT_GREEN
 
@@ -191,6 +193,18 @@ class PulpPrompt(Prompt):
         self.write(message, color=COLOR_FAILURE, tag=TAG_FAILURE)
         if reason is not None:
             self.write(' - %s' % reason)
+        self.render_spacer()
+
+    def render_warning_message(self, message):
+        """
+        Prints the given text to the screen, wrapping it in standard Pulp
+        formatting to highlight the message.
+
+        @param message: text to format
+        @type  message: str
+        """
+
+        self.write(message, color=COLOR_WARNING, tag=TAG_WARNING)
         self.render_spacer()
 
     def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0, step=2, omit_hidden=True):

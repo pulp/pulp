@@ -286,8 +286,10 @@ class UploadManager(object):
         if not tracker.is_finished_uploading:
             raise IncompleteUploadException()
 
-        self.bindings.uploads.import_upload(upload_id, tracker.repo_id, tracker.unit_type_id,
-                                            tracker.unit_key, tracker.unit_metadata)
+        response = self.bindings.uploads.import_upload(upload_id, tracker.repo_id,
+                   tracker.unit_type_id, tracker.unit_key, tracker.unit_metadata)
+
+        return response
 
     def list_uploads(self):
         """
@@ -345,7 +347,7 @@ class UploadManager(object):
         # Try to delete the server side upload first. If that fails, the force
         # option can be used to delete the client side trackre anyway.
         try:
-            self.bindings.uploads.delete_upload(upload_id)
+            response = self.bindings.uploads.delete_upload(upload_id)
         except Exception, e:
             # Only raise the server side exception on a force
             if not force:

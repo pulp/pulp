@@ -18,6 +18,7 @@ import rpm
 
 from okaara.prompt import COLOR_GREEN, COLOR_YELLOW
 
+from   pulp.gc_client.api.exceptions import ConflictException
 from   pulp.gc_client.framework.extensions import PulpCliCommand
 import pulp.gc_client.util.upload as upload_lib
 
@@ -367,15 +368,32 @@ def _perform_upload(context, upload_manager, upload_ids):
 
             # Import the upload request
             context.prompt.write(_('Importing into the repository...'))
-            upload_manager.import_upload(upload_id)
-            context.prompt.write(_('... completed'))
-            context.prompt.render_spacer()
 
-            # Delete the request
-            context.prompt.write(_('Deleting the upload request...'))
-            upload_manager.delete_upload(upload_id)
-            context.prompt.write(_('... completed'))
-            context.prompt.render_spacer()
+            # If the import fails due to a conflict, this call will bubble up
+            # the appropriate exception to the middleware. It's best to let
+            # this bubble up as there's no reason to process any more uploads
+            # in the list; if one conflicted and this call is scoped to a
+            # particular repo, there's no reason to bother with the others as
+            # they will fail too.
+            response = upload_manager.import_upload(upload_id)
+
+            if response.is_async():
+                msg = 'Import postponed due to queued operations against the ' \
+                'repository. The progress of this import can be viewed in the ' \
+                'repository tasks list.'
+                context.prompt.render_warning_message(_(msg))
+
+                # Do not delete the upload here; we need it lying around for
+                # when the import is completed
+            else:
+                context.prompt.write(_('... completed'))
+                context.prompt.render_spacer()
+
+                # Delete the request
+                context.prompt.write(_('Deleting the upload request...'))
+                upload_manager.delete_upload(upload_id)
+                context.prompt.write(_('... completed'))
+                context.prompt.render_spacer()
 
         except KeyboardInterrupt:
             d = 'Uploading paused'

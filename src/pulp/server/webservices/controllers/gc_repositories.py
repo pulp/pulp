@@ -798,7 +798,7 @@ class RepoImportUpload(JSONController):
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE:
                         {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('initialize_upload')]
+                action_tag('import_upload')]
 
         upload_manager = manager_factory.content_upload_manager()
         call_request = CallRequest(upload_manager.import_uploaded_unit,

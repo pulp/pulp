@@ -319,9 +319,10 @@ class UploadManagerTests(unittest.TestCase):
         tracker.is_finished_uploading = True # simulate the upload completion
 
         # Test
-        self.upload_manager.import_upload(upload_id)
+        response = self.upload_manager.import_upload(upload_id)
 
         # Verify
+        self.assertTrue(isinstance(response, Response))
 
         # Verify call to server
         self.assertEqual(1, self.mock_upload_bindings.import_upload.call_count)
