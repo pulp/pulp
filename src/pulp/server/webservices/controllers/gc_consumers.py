@@ -36,7 +36,7 @@ _LOG = logging.getLogger(__name__)
 # -- controllers --------------------------------------------------------------
 
 class ConsumersCollection(JSONController):
-    
+
     # Scope: Collection
     # GET:   Retrieves all consumers registered to the Pulp Server
     # POST:  Register a consumer
@@ -46,12 +46,12 @@ class ConsumersCollection(JSONController):
 
         query_manager = managers.consumer_query_manager()
         consumers = query_manager.find_all()
-        
+
         bind_manager = managers.consumer_bind_manager()
         for consumer in consumers:
             bindings = bind_manager.find_by_consumer(consumer['id'])
             consumer['bindings'] = bindings
-            
+
         return self.ok(consumers)
 
     @auth_required(CREATE)
@@ -90,10 +90,10 @@ class ConsumerResource(JSONController):
 
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        
+
         bind_manager = managers.consumer_bind_manager()
         consumer['bindings'] = bind_manager.find_by_consumer(consumer['id'])
-           
+
         return self.ok(consumer)
 
 
@@ -101,7 +101,7 @@ class ConsumerResource(JSONController):
     def DELETE(self, id):
 
         manager = managers.consumer_manager()
-        
+
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [id]
         call_request = CallRequest(manager.unregister,
@@ -118,7 +118,7 @@ class ConsumerResource(JSONController):
         consumer_data = self.params()
         delta = consumer_data.get('delta', None)
 
-        # Perform update        
+        # Perform update
         manager = managers.consumer_manager()
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [id]
@@ -127,7 +127,7 @@ class ConsumerResource(JSONController):
                                    resources=resources,
                                    tags=tags)
         return execution.execute_ok(self, call_request)
-  
+
 
 
 
@@ -294,7 +294,7 @@ class Binding(JSONController):
     def DELETE(self, consumer_id, repo_id, distributor_id):
         """
         Delete a bind association between the specified
-        consumer and repo-distributor.  Designed to be itempotent.
+        consumer and repo-distributor.  Designed to be idempotent.
         @param consumer_id: A consumer ID.
         @type consumer_id: str
         @param repo_id: A repo ID.
@@ -461,7 +461,7 @@ class ConsumerHistory(JSONController):
         if end_date:
             end_date = dateutils.parse_datetime(end_date[0] + '-23-59-59')
             end_date = dateutils.to_local_datetime(end_date)
-            
+
         if event_type:
             event_type = event_type[0]
 
@@ -479,7 +479,7 @@ urls = (
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
-    '/([^/]+)/history/$', 'ConsumerHistory',  
+    '/([^/]+)/history/$', 'ConsumerHistory',
 )
 
 application = web.application(urls, globals())
