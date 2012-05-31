@@ -32,7 +32,7 @@ TESTS="test/unit/test_agent.py \
        test/unit/test_base_distributor_conduit.py \
        test/unit/test_base_importer_conduit.py \
        test/unit/test_client_framework_core.py \
-       test/unit/test_consumer_controllers.py \
+       test/unit/test_consumer_controller.py \
        test/unit/test_consumer_manager.py \
        test/unit/test_content_managers.py \
        test/unit/test_content_plugin_loader.py \
