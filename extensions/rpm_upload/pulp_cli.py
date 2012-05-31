@@ -375,7 +375,11 @@ def _perform_upload(context, upload_manager, upload_ids):
             # in the list; if one conflicted and this call is scoped to a
             # particular repo, there's no reason to bother with the others as
             # they will fail too.
-            response = upload_manager.import_upload(upload_id)
+            try:
+                response = upload_manager.import_upload(upload_id)
+            except ConflictException:
+                upload_manager.delete_upload(upload_id, force=True)
+                raise
 
             if response.is_async():
                 msg = 'Import postponed due to queued operations against the ' \
