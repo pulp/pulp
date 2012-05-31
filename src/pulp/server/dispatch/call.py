@@ -21,7 +21,6 @@ from types import NoneType, TracebackType
 from pulp.common import dateutils
 from pulp.common.util import encode_unicode
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import exceptions as dispatch_exceptions
 
 
 _LOG = logging.getLogger(__name__)
