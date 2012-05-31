@@ -94,7 +94,7 @@ class Scheduler(object):
                 continue
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, self.call_finished_callback)
+            call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, scheduler_complete_callback)
             call_report = call.CallReport(schedule_id=str(scheduled_call['_id']))
             call_report = coordinator.execute_call_asynchronously(call_request, call_report)
             log_msg = _('Scheduled %s: %s [reasons: %s]') % \
@@ -204,23 +204,6 @@ class Scheduler(object):
         while next_run < now:
             next_run += interval
         return next_run
-
-    def call_finished_callback(self, call_request, call_report):
-        """
-        Call back for task (call_request) results and rescheduling
-        """
-        tag_prefix = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, '')
-        index = 0
-        for i, tag in enumerate(call_request.tags):
-            if not tag.startswith(tag_prefix):
-                continue
-            index = i
-            break
-        scheduled_call_collection = ScheduledCall.get_collection()
-        schedule_id = call_request.tags[index][len(tag_prefix):]
-        scheduled_call = scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
-        self.update_last_run(scheduled_call, call_report)
-        self.update_next_run(scheduled_call)
 
     # schedule control methods -------------------------------------------------
 
@@ -476,3 +459,23 @@ def scheduled_call_to_report_dict(scheduled_call):
     report['call_request'] = call_request
     report['_id'] = str(scheduled_call['_id'])
     return report
+
+
+def scheduler_complete_callback(call_request, call_report):
+    """
+    Call back for task (call_request) results and rescheduling
+    """
+    scheduler = dispatch_factory.scheduler()
+    tag_prefix = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, '')
+    index = 0
+    for i, tag in enumerate(call_request.tags):
+        if not tag.startswith(tag_prefix):
+            continue
+        index = i
+        break
+    schedule_id = call_request.tags[index][len(tag_prefix):]
+    scheduled_call_collection = ScheduledCall.get_collection()
+    scheduled_call = scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+    scheduler.update_last_run(scheduled_call, call_report)
+    scheduler.update_next_run(scheduled_call)
+
