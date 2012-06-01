@@ -16,7 +16,7 @@ from gettext import gettext as _
 import web
 
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE
+from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.exceptions import MissingResource, InvalidValue
@@ -45,11 +45,25 @@ class ContentTypesCollection(JSONController):
 
     def OPTIONS(self):
         link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET']})
+        link.update({'methods': ['GET', 'POST']})
         return self.ok(link)
+
+    @auth_required(CREATE)
+    def POST(self):
+        """
+        Create a new content type.
+        """
+        return self.not_implemented()
 
 
 class ContentTypeResource(JSONController):
+
+    @auth_required(DELETE)
+    def DELETE(self, type_id):
+        """
+        Remove a content type.
+        """
+        return self.not_implemented()
 
     @auth_required(READ)
     def GET(self, type_id):
@@ -69,8 +83,15 @@ class ContentTypeResource(JSONController):
 
     def OPTIONS(self, type_id):
         link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET']})
+        link.update({'methods': ['DELETE', 'GET', 'PUT']})
         return self.ok(link)
+
+    @auth_required(UPDATE)
+    def PUT(self, type_id):
+        """
+        Update a content type.
+        """
+        return self.not_implemented()
 
 # content units controller classes ---------------------------------------------
 
@@ -93,11 +114,25 @@ class ContentUnitsCollection(JSONController):
 
     def OPTIONS(self, type_id):
         link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET']})
+        link.update({'methods': ['GET', 'POST']})
         return self.ok(link)
+
+    @auth_required(CREATE)
+    def POST(self, type_id):
+        """
+        Create a new content unit.
+        """
+        return self.not_implemented()
 
 
 class ContentUnitResource(JSONController):
+
+    @auth_required(DELETE)
+    def DELETE(self, type_id, unit_id):
+        """
+        Remove a content unit.
+        """
+        return self.not_implemented()
 
     @auth_required(READ)
     def GET(self, type_id, unit_id):
@@ -116,8 +151,15 @@ class ContentUnitResource(JSONController):
 
     def OPTIONS(self, type_id, unit_id):
         link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET']})
+        link.update({'methods': ['DELETE', 'GET', 'PUT']})
         return self.ok(link)
+
+    @auth_required(CREATE)
+    def PUT(self, type_id, unit_id):
+        """
+        Update a content unit.
+        """
+        return self.not_implemented()
 
 # content uploads controller classes -------------------------------------------
 
