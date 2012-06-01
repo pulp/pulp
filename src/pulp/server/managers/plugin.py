@@ -38,7 +38,6 @@ class PluginManager:
         """
 
         all_defs = types_database.all_type_definitions()
-        # TODO: convert this to an externally facing object model
         return all_defs
 
     def importers(self):
@@ -46,8 +45,8 @@ class PluginManager:
         Returns the names and versions of all importers loaded in the server.
         If no importers are found, an empty list is returned.
 
-        @return: list of tuples indicating importer name and version
-        @rtype:  list of tuples (str, list of int)
+        @return: list of dicts containing metadata about the importer
+        @rtype:  list
         """
 
         importer_dicts = plugin_loader.list_importers()

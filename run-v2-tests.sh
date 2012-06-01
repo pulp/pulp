@@ -48,6 +48,8 @@ TESTS="test/unit/test_agent.py \
        test/unit/test_extensions_loader.py \
        test/unit/test_handler_container.py \
        test/unit/test_manager_factory.py \
+       test/unit/test_plugin_manager.py \
+       test/unit/test_plugin_controller.py \
        test/unit/test_pulp_tasks_extension.py \
        test/unit/test_repo_controller.py \
        test/unit/test_repo_importer_manager.py \

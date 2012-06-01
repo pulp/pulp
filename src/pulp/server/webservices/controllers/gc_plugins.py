@@ -19,7 +19,9 @@ import web
 
 # Pulp
 from pulp.server.auth.authorization import READ
+from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
+from pulp.server.webservices.serialization import link
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
@@ -37,7 +39,32 @@ class Types(JSONController):
     def GET(self):
         manager = manager_factory.plugin_manager()
         type_defs = manager.types()
+
+        for t in type_defs:
+            href = link.link_obj('/v2/plugins/types/%s/' % t['id'])
+            t.update(href)
+
         return self.ok(type_defs)
+
+class Type(JSONController):
+
+    # GET: Return a single type definition
+
+    @auth_required(READ)
+    def GET(self, type_id):
+        manager = manager_factory.plugin_manager()
+        all_types = manager.types()
+
+        matching_types = [t for t in all_types if t['id'] == type_id]
+
+        if len(matching_types) is 0:
+            raise MissingResource(type=type_id)
+        else:
+            t = matching_types[0]
+            href = link.current_link_obj()
+            t.update(href)
+
+            return self.ok(t)
 
 class Importers(JSONController):
 
@@ -47,7 +74,32 @@ class Importers(JSONController):
     def GET(self):
         manager = manager_factory.plugin_manager()
         importers = manager.importers()
+
+        for i in importers:
+            href = link.link_obj('/v2/plugins/importers/%s/' % i['id'])
+            i.update(href)
+
         return self.ok(importers)
+
+class Importer(JSONController):
+
+    # GET: Return details on a single importer
+
+    @auth_required(READ)
+    def GET(self, importer_type_id):
+        manager = manager_factory.plugin_manager()
+        all_importers = manager.importers()
+
+        matching_importers = [i for i in all_importers if i['id'] == importer_type_id]
+
+        if len(matching_importers) is 0:
+            raise MissingResource(importer_type_id=importer_type_id)
+        else:
+            i = matching_importers[0]
+            href = link.current_link_obj()
+            i.update(href)
+
+            return self.ok(i)
 
 class Distributors(JSONController):
 
@@ -57,14 +109,44 @@ class Distributors(JSONController):
     def GET(self):
         manager = manager_factory.plugin_manager()
         distributors = manager.distributors()
+
+        for d in distributors:
+            href = link.link_obj('/v2/plugins/distributors/%s/' % d['id'])
+            d.update(href)
+
         return self.ok(distributors)
+
+class Distributor(JSONController):
+
+    # GET: Return details on a single distributor
+
+    @auth_required(READ)
+    def GET(self, distributor_type_id):
+        manager = manager_factory.plugin_manager()
+        all_distributors = manager.distributors()
+
+        matching_distributors = [d for d in all_distributors if d['id'] == distributor_type_id]
+
+        if len(matching_distributors) is 0:
+            raise MissingResource(distributor_type_id=distributor_type_id)
+        else:
+            d = all_distributors[0]
+            href = link.current_link_obj()
+            d.update(href)
+
+            return self.ok(d)
 
 # -- web.py application -------------------------------------------------------
 
 urls = (
     '/types/$', 'Types',
+    '/types/([^/]+)/$', 'Type',
+
     '/importers/$', 'Importers',
+    '/importers/([^/]+)/$', 'Importer',
+
     '/distributors/$', 'Distributors',
+    '/distributors/([^/]+)/$', 'Distributor',
 )
 
 application = web.application(urls, globals())
