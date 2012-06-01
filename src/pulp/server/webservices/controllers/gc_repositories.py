@@ -102,9 +102,7 @@ class RepoCollection(JSONController):
                                    resources=resources,
                                    weight=weight,
                                    tags=tags)
-        repo = execution.execute_sync(call_request, id)
-        repo.update(serialization.link.child_link_obj(repo['id']))
-        return self.created(repo['_href'], repo)
+        return execution.execute_sync_created(self, call_request, id)
 
 
 class RepoResource(JSONController):
