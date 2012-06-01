@@ -530,6 +530,9 @@ class Filter:
         if hasattr(collections, "Iterable"):
             if isinstance(self.filter, collections.Iterable):
                 return s in self.filter
+        else:
+            if hasattr(self.filter, "__iter__"):
+                return s in self.filter
         if callable(self.filter):
             return self.filter(s)
         fclass = self.filter.__class__.__name__
