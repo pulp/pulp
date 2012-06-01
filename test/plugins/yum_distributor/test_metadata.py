@@ -117,10 +117,30 @@ class TestMetadata(unittest.TestCase):
                 self.mock_publish_conduit.set_progress.side_effect = set_progress
                 self.status = None
                 self.errors = None
+                self.finished = False
 
             def run(self):
                 self.status, self.errors = metadata.generate_metadata(self.mock_repo, self.mock_publish_conduit, self.config, set_progress)
+                self.finished = True
             
+            def __check_pid(self, pid):
+                try:
+                    os.kill(pid, 0)
+                    return True
+                except OSError:
+                    return False
+
+            def is_running(self):
+                pid = metadata.get_createrepo_pid(self.mock_repo.working_dir)
+                if not pid:
+                    print "Unable to find a pid for createrepo on %s" % (self.mock_repo.working_dir)
+                    return False
+                if self.__check_pid(pid):
+                    return True
+                else:
+                    print "PID found: %s, for %s, but it is not running" % (pid, self.mock_repo.working_dir)
+                    return false
+
             def cancel(self):
                 return metadata.cancel_createrepo(self.mock_repo.working_dir)
         try:
@@ -128,16 +148,19 @@ class TestMetadata(unittest.TestCase):
             # Prepare a directory with test data so that createrepo will run for a minute or more
             # this allows us time to interrupt it and test that cancel is working
             ####
-            num_links = 50
+            num_links = 1500
             source_rpm = os.path.join(self.data_dir, "createrepo_test", "pulp-large_1mb_test-packageA-0.1.1-1.fc14.noarch.rpm")
             self.assertTrue(os.path.exists(source_rpm))
             working_dir = os.path.join(self.temp_dir, "test_cancel_metadata_generation")
             os.makedirs(working_dir)
+            self.assertTrue(os.path.exists(working_dir))
+
             for index in range(num_links):
                 temp_name = "temp_link-%s.rpm" % (index)
                 temp_name = os.path.join(working_dir, temp_name)
                 if not os.path.exists(temp_name):
                     os.symlink(source_rpm, temp_name)
+                self.assertTrue(os.path.exists(temp_name))
             ###
             # Kick off createrepo
             ###
@@ -155,6 +178,11 @@ class TestMetadata(unittest.TestCase):
                 time.sleep(1)
             self.assertTrue(running)
             self.assertEquals(updated_progress["state"], "IN_PROGRESS")
+            for index in range(15):
+                # Check that the createrepo process has been executed and is running
+                if test_thread.is_running():
+                    break
+                time.sleep(1)
             self.assertTrue(test_thread.cancel())
             for index in range(15):
                 if updated_progress and updated_progress.has_key("state"):
@@ -163,6 +191,10 @@ class TestMetadata(unittest.TestCase):
                 time.sleep(1)
             self.assertEquals(updated_progress["state"], "CANCELED")
         finally:
+            for index in range(15):
+                if test_thread.finished:
+                    break
+                time.sleep(1)
             if os.path.exists(working_dir):
                 try:
                     shutil.rmtree(working_dir)

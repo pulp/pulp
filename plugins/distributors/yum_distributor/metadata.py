@@ -70,7 +70,6 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
         log.info('skip metadata generation for repo %s' % repo.id)
         return False, []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
-    set_progress("metadata", metadata_progress_status, progress_callback)
     repo_dir = repo.working_dir
     checksum_type = get_repo_checksum_type(repo, publish_conduit, config)
     metadata_types = config.get('skip_content_types') or {}
@@ -82,6 +81,7 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
     log.info("Running createrepo, this may take a few minutes to complete.")
     start = time.time()
     try:
+        set_progress("metadata", metadata_progress_status, progress_callback)
         create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type, metadata_types=metadata_types)
     except CreateRepoError, cre:
         metadata_progress_status = {"state" : "FAILED"}
@@ -190,6 +190,8 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
     handle = None
     # Lock the lookup and launch of a new createrepo process
     # Lock is released once createrepo is launched
+    if not os.path.exists(dir):
+        log.warning("create_repo invoked on a directory which doesn't exist:  %s" % dir)
     CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
     try:
         if CREATE_REPO_PROCESS_LOOKUP.has_key(dir):
@@ -211,6 +213,7 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
         if not handle:
             raise CreateRepoError("Unable to execute createrepo on %s" % (dir))
         os.system("chmod -R ug+wX %s" % (dir))
+        log.info("Createrepo process with pid %s running on directory %s" % (handle.pid, dir))
         CREATE_REPO_PROCESS_LOOKUP[dir] = handle
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
@@ -289,7 +292,20 @@ def cancel_createrepo(repo_dir):
                 return False
             return True
         else:
+            log.info("No createrepo process found for <%s>" % repo_dir)
             return False
+    finally:
+        CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
+
+def get_createrepo_pid(repo_dir):
+    CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
+    try:
+        if CREATE_REPO_PROCESS_LOOKUP.has_key(repo_dir):
+            handle = CREATE_REPO_PROCESS_LOOKUP[repo_dir]
+            return handle.pid
+        else:
+            log.info("No createrepo process found for <%s>" % repo_dir)
+            return None
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
 
