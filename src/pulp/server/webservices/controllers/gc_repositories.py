@@ -139,6 +139,8 @@ class RepoResource(JSONController):
         units = unit_query_manager.get_units_across_types(id, criteria)
         repo['content_unit_count'] = len(units)
 
+        repo.update(serialization.link.current_link_obj())
+
         return self.ok(repo)
 
     @auth_required(DELETE)
@@ -172,7 +174,9 @@ class RepoResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        repo = execution.execute(call_request)
+        repo.update(serialization.link.current_link_obj())
+        return self.ok(repo)
 
 # -- importer controllers -----------------------------------------------------
 
