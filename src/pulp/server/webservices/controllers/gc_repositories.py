@@ -847,28 +847,28 @@ class RepoUnitAdvancedSearch(JSONController):
 
 # These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
-    '/', RepoCollection, # collection
-    '/([^/]+)/$', RepoResource, # resourcce
+    '/', 'RepoCollection', # collection
+    '/([^/]+)/$', 'RepoResource', # resourcce
 
-    '/([^/]+)/importers/$', RepoImporters, # sub-collection
-    '/([^/]+)/importers/([^/]+)/$', RepoImporter, # exclusive sub-resource
-    '/([^/]+)/importers/([^/]+)/sync_schedules/$', SyncScheduleCollection,
-    '/([^/]+)/importers/([^/]+)/sync_schedules/([^/]+)/$', SyncScheduleResource,
+    '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
+    '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
+    '/([^/]+)/importers/([^/]+)/sync_schedules/$', 'SyncScheduleCollection',
+    '/([^/]+)/importers/([^/]+)/sync_schedules/([^/]+)/$', 'SyncScheduleResource',
 
-    '/([^/]+)/distributors/$', RepoDistributors, # sub-collection
-    '/([^/]+)/distributors/([^/]+)/$', RepoDistributor, # exclusive sub-resource
-    '/([^/]+)/distributors/([^/]+)/publish_schedules/$', PublishScheduleCollection,
-    '/([^/]+)/distributors/([^/]+)/publish_schedules/([^/]+)/$', PublishScheduleResource,
+    '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
+    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
+    '/([^/]+)/distributors/([^/]+)/publish_schedules/$', 'PublishScheduleCollection',
+    '/([^/]+)/distributors/([^/]+)/publish_schedules/([^/]+)/$', 'PublishScheduleResource',
 
-    '/([^/]+)/history/sync/$', RepoSyncHistory, # sub-collection
-    '/([^/]+)/history/publish/([^/]+)/$', RepoPublishHistory, # sub-collection
+    '/([^/]+)/history/sync/$', 'RepoSyncHistory', # sub-collection
+    '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory', # sub-collection
 
-    '/([^/]+)/actions/sync/$', RepoSync, # resource action
-    '/([^/]+)/actions/publish/$', RepoPublish, # resource action
-    '/([^/]+)/actions/associate/$', RepoAssociate, # resource action
-    '/([^/]+)/actions/import_upload/$', RepoImportUpload, # resource action
+    '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
+    '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
+    '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
+    '/([^/]+)/actions/import_upload/$', 'RepoImportUpload', # resource action
 
-    '/([^/]+)/search/units/$', RepoUnitAdvancedSearch, # resource search
+    '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
 )
 
 application = web.application(urls, globals())
