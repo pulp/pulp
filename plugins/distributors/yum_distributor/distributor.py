@@ -75,6 +75,10 @@ CONFIG_REPO_AUTH="/etc/pulp/repo_auth.conf"
 #    - How will we handle cleanup of the prior publish path/symlink
 class YumDistributor(Distributor):
 
+    def __init__(self):
+        super(YumDistributor, self).__init__()
+        self.canceled = False
+
     @classmethod
     def metadata(cls):
         return {
@@ -359,6 +363,10 @@ class YumDistributor(Distributor):
             return relative_url
         return repo.id
 
+    def cancel_publish_repo(self, repo):
+        self.canceled = True
+        return metadata.cancel_createrepo(repo.working_dir)
+
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
         details = {}
@@ -374,6 +382,8 @@ class YumDistributor(Distributor):
             progress_status[type_id] = status
             publish_conduit.set_progress(progress_status)
 
+        if self.canceled:
+            return publish_conduit.build_failure_report(summary, details)
         # Determine Content in this repo
         unfiltered_units = publish_conduit.get_units()
         # filter compatible units
@@ -394,6 +404,9 @@ class YumDistributor(Distributor):
         src_working_dir = ''
         if repo_scratchpad.has_key("importer_working_dir"):
             src_working_dir = repo_scratchpad['importer_working_dir']
+
+        if self.canceled:
+            return publish_conduit.build_failure_report(summary, details)
         metadata_start_time = time.time()
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
         metadata_status, metadata_errors = metadata.generate_metadata(repo, publish_conduit, config, progress_callback)

@@ -86,7 +86,13 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
     except CreateRepoError, cre:
         metadata_progress_status = {"state" : "FAILED"}
         set_progress("metadata", metadata_progress_status, progress_callback)
-        return False, errors.append(cre)
+        errors.append(cre)
+        return False, errors
+    except CancelException, ce:
+        metadata_progress_status = {"state" : "CANCELED"}
+        set_progress("metadata", metadata_progress_status, progress_callback)
+        errors.append(ce)
+        return False, errors
     end = time.time()
     log.info("Createrepo finished in %s seconds" % (end - start))
     metadata_progress_status = {"state" : "FINISHED"}

@@ -18,6 +18,7 @@ import os
 import shutil
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -92,6 +93,75 @@ class TestMetadata(unittest.TestCase):
         print _checksum_type_value
         self.assertEquals(_checksum_type_value, "sha256")
 
+    def test_cancel_metadata_generation(self):
+        global updated_progress
+        updated_progress = None
 
+        def set_progress(type_id, progress):
+            global updated_progress
+            updated_progress = progress
+            print "updated_progress:  %s" % (updated_progress)
 
+        class TestGenerateThread(threading.Thread):
+            def __init__(self, working_dir):
+                threading.Thread.__init__(self)
+                self.mock_repo = mock.Mock(spec=Repository)
+                self.mock_repo.id = "test_cancel_metadata_generation"
+                self.mock_repo.scratchpad = {"checksum_type" : "sha"}
+                self.mock_repo.working_dir = working_dir
+                optional_kwargs = {"generate_metadata" :  1}
+                self.config = distributor_mocks.get_basic_config(**optional_kwargs)
+                self.mock_publish_conduit = distributor_mocks.get_publish_conduit()
+                self.mock_publish_conduit.set_progress = mock.Mock()
+                self.mock_publish_conduit.set_progress.side_effect = set_progress
+                self.status = None
+                self.errors = None
+
+            def run(self):
+                self.status, self.errors = metadata.generate_metadata(self.mock_repo, self.mock_publish_conduit, self.config, set_progress)
+            
+            def cancel(self):
+                return metadata.cancel_createrepo(self.mock_repo.working_dir)
+        try:
+            ####
+            # Prepare a directory with test data so that createrepo will run for a minute or more
+            # this allows us time to interrupt it and test that cancel is working
+            ####
+            num_links = 15000
+            source_rpm = os.path.join(self.data_dir, "createrepo_test", "pulp-large_1mb_test-packageA-0.1.1-1.fc14.noarch.rpm")
+            self.assertTrue(os.path.exists(source_rpm))
+            working_dir = os.path.join(self.temp_dir, "test_cancel_metadata_generation")
+            os.makedirs(working_dir)
+            for index in range(num_links):
+                temp_name = "temp_link-%s.rpm" % (index)
+                temp_name = os.path.join(working_dir, temp_name)
+                if not os.path.exists(temp_name):
+                    os.symlink(source_rpm, temp_name)
+            ###
+            # Kick off createrepo
+            ###
+            test_thread = TestGenerateThread(working_dir)
+            test_thread.start()
+            ###
+            # Wait till we get a response from progress that createrepo is running
+            ###
+            running = False
+            for index in range(15):
+                if updated_progress and updated_progress.has_key("state"):
+                    if updated_progress["state"] in ["FAILED", "FINISHED", "IN_PROGRESS", "CANCELED"]:
+                        running = True
+                        break
+                time.sleep(1)
+            self.assertTrue(running)
+            self.assertEquals(updated_progress["state"], "IN_PROGRESS")
+            self.assertTrue(test_thread.cancel())
+            for index in range(15):
+                if updated_progress and updated_progress.has_key("state"):
+                    if updated_progress["state"] in ["FAILED", "FINISHED", "CANCELED"]:
+                        break
+                time.sleep(1)
+            self.assertEquals(updated_progress["state"], "CANCELED")
+        finally:
+            if os.path.exists(working_dir):
+                shutil.rmtree(working_dir)
 
