@@ -21,7 +21,7 @@ import web
 from pulp.server.auth.authorization import READ
 import pulp.server.managers.factory as manager_factory
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.controllers.decorators import auth_required, error_handler
+from pulp.server.webservices.controllers.decorators import auth_required
 
 # -- constants ----------------------------------------------------------------
 
@@ -33,7 +33,6 @@ class Types(JSONController):
 
     # GET: Return all type definitions
 
-    @error_handler
     @auth_required(READ)
     def GET(self):
         manager = manager_factory.plugin_manager()
@@ -44,7 +43,6 @@ class Importers(JSONController):
 
     # GET: Return all importers present in the server
 
-    @error_handler
     @auth_required(READ)
     def GET(self):
         manager = manager_factory.plugin_manager()
@@ -55,7 +53,6 @@ class Distributors(JSONController):
 
     # GET: Return all distributors present in the server
 
-    @error_handler
     @auth_required(READ)
     def GET(self):
         manager = manager_factory.plugin_manager()
