@@ -70,6 +70,8 @@ def execute_created(controller, call_request, location):
     @param location: the location of the created resource
     @type  location: str
     @return: http server response
+    @deprecated: create should always return an _href field which requires post
+                 return processing
     """
     coordinator = dispatch_factory.coordinator()
     call_report = coordinator.execute_call(call_request)
