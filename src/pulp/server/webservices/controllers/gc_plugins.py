@@ -41,7 +41,7 @@ class Types(JSONController):
         type_defs = manager.types()
 
         for t in type_defs:
-            href = link.link_obj('/v2/plugins/types/%s/' % t['id'])
+            href = link.child_link_obj(t['id'])
             t.update(href)
 
         return self.ok(type_defs)
@@ -76,7 +76,7 @@ class Importers(JSONController):
         importers = manager.importers()
 
         for i in importers:
-            href = link.link_obj('/v2/plugins/importers/%s/' % i['id'])
+            href = link.child_link_obj(i['id'])
             i.update(href)
 
         return self.ok(importers)
@@ -111,7 +111,7 @@ class Distributors(JSONController):
         distributors = manager.distributors()
 
         for d in distributors:
-            href = link.link_obj('/v2/plugins/distributors/%s/' % d['id'])
+            href = link.child_link_obj(d['id'])
             d.update(href)
 
         return self.ok(distributors)
