@@ -20,6 +20,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
@@ -127,7 +128,7 @@ class TestMetadata(unittest.TestCase):
             # Prepare a directory with test data so that createrepo will run for a minute or more
             # this allows us time to interrupt it and test that cancel is working
             ####
-            num_links = 15000
+            num_links = 50
             source_rpm = os.path.join(self.data_dir, "createrepo_test", "pulp-large_1mb_test-packageA-0.1.1-1.fc14.noarch.rpm")
             self.assertTrue(os.path.exists(source_rpm))
             working_dir = os.path.join(self.temp_dir, "test_cancel_metadata_generation")
@@ -170,6 +171,6 @@ class TestMetadata(unittest.TestCase):
                     #        yet, this directory is subsequently delete with no errors when self.clean()
                     #        runs and deletes self.temp_dir
                     print "Caught exception from trying to cleanup: %s" % (working_dir)
-                    print sys.exc_info()
+                    traceback.print_exc()
 
 
