@@ -527,8 +527,9 @@ class Filter:
         if isinstance(self.filter, str):
             p = Patterns.get(self.filter)
             return p.match(s)
-        if isinstance(self.filter, collections.Iterable):
-            return s in self.filter
+        if hasattr(collections, "Iterable"):
+            if isinstance(self.filter, collections.Iterable):
+                return s in self.filter
         if callable(self.filter):
             return self.filter(s)
         fclass = self.filter.__class__.__name__
