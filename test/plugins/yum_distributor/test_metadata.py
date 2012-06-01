@@ -163,5 +163,13 @@ class TestMetadata(unittest.TestCase):
             self.assertEquals(updated_progress["state"], "CANCELED")
         finally:
             if os.path.exists(working_dir):
-                shutil.rmtree(working_dir)
+                try:
+                    shutil.rmtree(working_dir)
+                except Exception, e:
+                    # Note:  We are seeing intermittent errors from this rmtree
+                    #        yet, this directory is subsequently delete with no errors when self.clean()
+                    #        runs and deletes self.temp_dir
+                    print "Caught exception from trying to cleanup: %s" % (working_dir)
+                    print sys.exc_info()
+
 
