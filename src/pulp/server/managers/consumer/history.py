@@ -141,11 +141,6 @@ class ConsumerHistoryManager(object):
         @raises MissingResource: if the given consumer does not exist
         @raises InvalidValue: if any of the fields is unacceptable
         '''
-        # Verify the consumer ID represents a valid consumer
-        existing_consumer = Consumer.get_collection().find_one({'id' : consumer_id})
-        if not existing_consumer:
-            raise MissingResource(consumer=consumer_id)
-
         invalid_values = []
         if event_type is not None and event_type not in TYPES:
             invalid_values.append('event_type')
