@@ -46,9 +46,9 @@ def initialize(context):
     'description, filename, license, and vendor.'
     rpm_usage_desc = _(rpm_usage_desc)
 
-    copy_section.add_command(CopyCommand(context, 'rpms', _('copies RPMs from one repository into another'), rpm_usage_desc, TYPE_RPM))
-    copy_section.add_command(CopyCommand(context, 'srpms', _('copies SRPMs from one repository into another'), rpm_usage_desc, TYPE_SRPM))
-    copy_section.add_command(CopyCommand(context, 'drpms', _('copies DRPMs from one repository into another'), rpm_usage_desc, TYPE_DRPM))
+    copy_section.add_command(CopyCommand(context, 'rpm', _('copies RPMs from one repository into another'), rpm_usage_desc, TYPE_RPM))
+    copy_section.add_command(CopyCommand(context, 'srpm', _('copies SRPMs from one repository into another'), rpm_usage_desc, TYPE_SRPM))
+    copy_section.add_command(CopyCommand(context, 'drpm', _('copies DRPMs from one repository into another'), rpm_usage_desc, TYPE_DRPM))
 
 # -- commands -----------------------------------------------------------------
 
