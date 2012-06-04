@@ -49,16 +49,16 @@ class ConsumerSection(PulpCliSection):
 
         # Common Options
         id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
-        name_option = PulpCliOption('--display-name', '(optional) user-readable display name for the consumer', required=False)
-        description_option = PulpCliOption('--description', '(optional) user-readable description for the consumer', required=False)
+        name_option = PulpCliOption('--display-name', 'user-readable display name for the consumer', required=False)
+        description_option = PulpCliOption('--description', 'user-readable description for the consumer', required=False)
         d =  'adds/updates/deletes notes to programmtically identify the consumer; '
         d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
         d += 'be changed by specifying this option multiple times; notes are deleted by '
         d += 'specifying "" as the value'
         note_option = PulpCliOption('--note', d, required=False, allow_multiple=True)
 
-        # Create Command
-        register_command = PulpCliCommand('register', 'registers a new consumer', self.register)
+        # Register Command
+        register_command = PulpCliCommand('register', 'registers this consumer to the Pulp server', self.register)
         register_command.add_option(id_option)
         register_command.add_option(name_option)
         register_command.add_option(description_option)
@@ -66,17 +66,58 @@ class ConsumerSection(PulpCliSection):
         self.add_command(register_command)
 
         # Update Command
-        update_command = PulpCliCommand('update', 'changes metadata of an existing consumer', self.update)
-        update_command.add_option(id_option)
+        update_command = PulpCliCommand('update', 'changes metadata of this consumer', self.update)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
         update_command.add_option(note_option)
         self.add_command(update_command)
 
-        # Delete Command
-        unregister_command = PulpCliCommand('unregister', 'unregisters a consumer', self.unregister)
-        unregister_command.add_option(PulpCliOption('--id', 'identifies the consumer to be unregistered', required=True))
+        # Unregister Command
+        unregister_command = PulpCliCommand('unregister', 'unregisters this consumer from the Pulp server', self.unregister)
         self.add_command(unregister_command)
+
+        # Bind Command
+        bind_command = PulpCliCommand('bind', 'binds this consumer to a repository distributor for consuming published content', self.bind)
+        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+        bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        self.add_command(bind_command)
+
+        # Unbind Command
+        unbind_command = PulpCliCommand('unbind', 'unbinds this consumer from a repository distributor', self.unbind)
+        unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+        unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        self.add_command(unbind_command)
+
+        # History Retrieval Command
+        history_command = PulpCliCommand('history', 'lists history of this consumer', self.history)
+        d = 'limits displayed history entries to the given type;'
+        d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
+        d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
+        d += '"removed_from_group")'
+        history_command.add_option(PulpCliOption('--event-type', d, required=False))
+        history_command.add_option(PulpCliOption('--limit', 'limits displayed history entries to the given amount (must be greater than zero)', required=False))
+        history_command.add_option(PulpCliOption('--sort', 'indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp', required=False))
+        history_command.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date (format: yyyy-mm-dd)', required=False))
+        history_command.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date (format: yyyy-mm-dd)', required=False))
+        self.add_command(history_command)
+
+    @property
+    def consumerid(self):
+        """
+        Get the consumer ID from the consumer identity certificate.
+        @return: The consumer id.  Returns (None) when not registered.
+        @rtype: str
+        """
+        # Read path of consumer cert from config and check if consumer is already registered
+        consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
+        bundle = Bundle(consumer_cert_path)
+        if bundle.valid():
+            content = bundle.read()
+            x509 = X509.load_cert_string(content)
+            subject = self.subject(x509)
+            return subject['CN']
+        else:
+            return None
 
 
     def register(self, **kwargs):
@@ -84,10 +125,8 @@ class ConsumerSection(PulpCliSection):
         # Get consumer id
         id = kwargs['id']
 
-        # Read path of consumer cert from config and check if consumer is already registered
-        consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
-        bundle = Bundle(consumer_cert_path)
-        existing_consumer = self.consumerid(bundle)
+        # Check if this consumer is already registered
+        existing_consumer = self.consumerid
         if existing_consumer:
             self.prompt.render_failure_message("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % existing_consumer)
             return
@@ -103,6 +142,7 @@ class ConsumerSection(PulpCliSection):
                 notes = self._parse_notes(kwargs['note'])
 
         # Check write permissions to cert directory
+        consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
         self.check_write_perms(consumer_cert_path)
 
         # Set agent capabilities
@@ -112,6 +152,7 @@ class ConsumerSection(PulpCliSection):
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
 
         # Write consumer cert
+        bundle = Bundle(consumer_cert_path)
         bundle.write(consumer['certificate'])
 
         self.prompt.render_success_message('Consumer [%s] successfully registered' % id)
@@ -119,27 +160,74 @@ class ConsumerSection(PulpCliSection):
     def update(self, **kwargs):
 
         # Assemble the delta for all options that were passed in
+        consumer_id = self.consumerid
+        if not consumer_id:
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            return
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('id') # not needed in the delta
         if 'note' in delta.keys():
             if delta['note']:
                 delta['notes'] = self._parse_notes(delta['note'])
             delta.pop('note')
             
         try:
-            self.context.server.consumer.update(kwargs['id'], delta)
-            self.prompt.render_success_message('Consumer [%s] successfully updated' % kwargs['id'])
+            self.context.server.consumer.update(consumer_id, delta)
+            self.prompt.render_success_message('Consumer [%s] successfully updated' % consumer_id)
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % kwargs['id'], tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
     def unregister(self, **kwargs):
-        id = kwargs['id']
-
+        consumer_id = self.consumerid
+        if not consumer_id:
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            return
         try:
-            self.context.server.consumer.unregister(id)
-            self.prompt.render_success_message('Consumer [%s] successfully unregistered' % id)
+            self.context.server.consumer.unregister(consumer_id)
+            self.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
+
+
+    def bind(self, **kwargs):
+        consumer_id = self.consumerid
+        if not consumer_id:
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            return
+        repo_id = kwargs['repo-id']
+        distributor_id = kwargs['distributor-id']
+        try:
+            self.context.server.bind.bind(consumer_id, repo_id, distributor_id)
+            self.prompt.render_success_message('Consumer [%s] successfully bound to repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
+        except NotFoundException:
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
+
+    def unbind(self, **kwargs):
+        consumer_id = self.consumerid
+        if not consumer_id:
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            return
+        repo_id = kwargs['repo-id']
+        distributor_id = kwargs['distributor-id']
+        try:
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id)
+            self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
+        except NotFoundException:
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
+
+    def history(self, **kwargs):
+        consumer_id = self.consumerid
+        if not consumer_id:
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            return
+        self.prompt.render_title(_('Consumer History [%(i)s]') % {'i' : consumer_id})
+
+        history_list = self.context.server.consumer_history.history(consumer_id, kwargs['event-type'], kwargs['limit'], kwargs['sort'],
+                                                            kwargs['start-date'], kwargs['end-date']).response_body
+        filters = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
+        order = filters
+        for history in history_list:
+            self.prompt.render_document(history, filters=filters, order=order)
+
             
     def _parse_notes(self, notes_list):
         """
@@ -168,18 +256,6 @@ class ConsumerSection(PulpCliSection):
 
         return notes_dict
 
-
-    def consumerid(self, bundle):
-        """
-        Get the consumer ID.
-        @return: The consumer ID.
-        @rtype: str
-        """
-        if bundle.valid():
-            content = bundle.read()
-            x509 = X509.load_cert_string(content)
-            subject = self.subject(x509)
-            return subject['CN']
 
     def subject(self, x509):
         """

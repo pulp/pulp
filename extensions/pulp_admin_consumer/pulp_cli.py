@@ -61,7 +61,7 @@ class AdminConsumerSection(PulpCliSection):
         update_command.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
         self.add_command(update_command)
 
-        # Delete Command
+        # Unregister Command
         unregister_command = PulpCliCommand('unregister', 'unregisters a consumer', self.unregister)
         unregister_command.add_option(PulpCliOption('--id', 'identifies the consumer to be unregistered', required=True))
         self.add_command(unregister_command)
