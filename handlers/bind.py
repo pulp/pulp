@@ -21,7 +21,7 @@ from logging import getLogger, Logger
 log = getLogger(__name__)
 
 
-# TODO: Pass-in instaed of hard code
+# TODO: Pass-in instead of hard code
 class ConsumerConfig(INIConfig):
     def __init__(self):
         path = '/etc/pulp/consumer/v2_consumer.conf'
