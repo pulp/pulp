@@ -133,7 +133,7 @@ class AdminConsumerSection(PulpCliSection):
         consumer_list = self.context.server.consumer.consumers().response_body
 
         # Default flags to render_document_list
-        filters = ['id', 'display-name', 'description', 'bindings', 'notes']
+        filters = ['id', 'display_name', 'description', 'bindings', 'notes']
         order = filters
 
         if kwargs['details'] is True:
@@ -175,8 +175,10 @@ class AdminConsumerSection(PulpCliSection):
 
         history_list = self.context.server.consumer_history.history(kwargs['id'], kwargs['event-type'], kwargs['limit'], kwargs['sort'],
                                                             kwargs['start-date'], kwargs['end-date']).response_body
+        filters = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
+        order = filters
         for history in history_list:
-            self.prompt.render_document(history)
+            self.prompt.render_document(history, filters=filters, order=order)
 
 
     def install(self, **kwargs):
