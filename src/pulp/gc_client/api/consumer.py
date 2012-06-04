@@ -101,7 +101,7 @@ class BindingsAPI(PulpAPI):
                 'distributor_id' : distributor_id}
         return self.server.POST(path, data)
     
-    def unbind(self, repo_id, distributor_id):
+    def unbind(self, id, repo_id, distributor_id):
         path = self.BASE_PATH % id + "%s/" % repo_id + "%s/" % distributor_id
         return self.server.DELETE(path)
 
