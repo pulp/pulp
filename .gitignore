@@ -15,3 +15,5 @@ dist
 cover
 */sphinx/*/_build
 .DS_Store
+*,cover
+
