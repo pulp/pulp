@@ -20,7 +20,7 @@ from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
 DRPM_TYPE_ID="drpm"
-DRPM_UNIT_KEY = ("epoch", "version", "release",  "fileName", "checksum", "checksumtype")
+DRPM_UNIT_KEY = ("epoch", "version", "release",  "filename", "checksum", "checksumtype")
 
 DRPM_METADATA = ("size", "sequence", "new_package")
 
@@ -75,7 +75,7 @@ def get_new_drpms_and_units(available_drpms, existing_units, sync_conduit):
     for key in available_drpms:
         if key not in existing_units:
             drpm = available_drpms[key]
-            pkgpath = os.path.join(drpm["pkgpath"], drpm["fileName"])
+            pkgpath = os.path.join(drpm["pkgpath"], drpm["filename"])
             new_drpms[key] = drpm
             unit_key = form_drpm_unit_key(drpm)
             metadata = form_drpm_metadata(drpm)
@@ -90,7 +90,10 @@ def form_drpm_metadata(drpm):
     return metadata
 
 def form_lookup_drpm_key(drpm):
-    drpm_key = (drpm["epoch"], drpm["version"], drpm["release"],  drpm["fileName"], drpm["checksum"], drpm["checksumtype"])
+    # drpm provides 'fileName', for consistency will rest of Pulp we will add a 'filename'
+    if not drpm.has_key("filename"):
+        drpm["filename"] = drpm["fileName"]
+    drpm_key = (drpm["epoch"], drpm["version"], drpm["release"],  drpm["filename"], drpm["checksum"], drpm["checksumtype"])
     return drpm_key
 
 def form_drpm_unit_key(rpm):
@@ -114,7 +117,7 @@ def purge_orphaned_drpm_units(sync_conduit, repo, orphaned_units):
     for unit in orphaned_units:
         _LOG.info("Removing unit <%s>" % unit)
         sync_conduit.remove_unit(unit)
-        sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["fileName"])
+        sym_link = os.path.join(repo.working_dir, repo.id, unit.unit_key["filename"])
         if os.path.lexists(sym_link):
             _LOG.debug("Remove link: %s" % sym_link)
             os.unlink(sym_link)

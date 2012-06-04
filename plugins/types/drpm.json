@@ -4,8 +4,8 @@
             "display_name" : "DRPM",
             "description" : "DRPM",
             "unit_key" :
-                ["epoch",  "version", "release", "fileName", "checksumtype", "checksum"],
+                ["epoch",  "version", "release", "filename", "checksumtype", "checksum"],
             "search_indexes" :
-                ["epoch",  "version", "release", "checksum", "fileName"]
+                ["epoch",  "version", "release", "checksum", "filename"]
         }
     ]}
