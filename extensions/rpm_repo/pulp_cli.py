@@ -294,6 +294,13 @@ class YumRepoListCommand(PulpCliCommand):
                     r['publish_config'] = distributors[0]['config']
                     r['auto_publish'] = distributors[0]['auto_publish']
 
+                    # Certificates are too long to display, so simply indicate if they
+                    # are present. Eventually we can add a flag that will show them.
+                    for key in ('auth_ca', 'auth_cert'):
+                        if key in r['publish_config']:
+                            r['publish_config'][key] = _('Yes')
+
+
         self.prompt.render_document_list(repo_list, filters=filters, order=filters)
 
 # -- utilities ----------------------------------------------------------------
