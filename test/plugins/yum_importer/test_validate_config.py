@@ -18,8 +18,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-from importer import YumImporter
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+from yum_importer.importer import YumImporter
 import importer_mocks
 from pulp.server.content.plugins.model import Repository
 from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT

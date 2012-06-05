@@ -24,21 +24,26 @@ import traceback
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/distributors/yum_distributor/")
-from distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID, \
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/distributors/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
+
+from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID, \
         REQUIRED_CONFIG_KEYS, OPTIONAL_CONFIG_KEYS, RPM_TYPE_ID, SRPM_TYPE_ID
+from yum_distributor import metadata
 
 from pulp.server.content.plugins.model import Repository
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../yum_importer")
 import distributor_mocks
-import metadata
+import testutil
+
 class TestMetadata(unittest.TestCase):
 
     def setUp(self):
         super(TestMetadata, self).setUp()
         self.init()
+        testutil.load_test_config()
 
     def tearDown(self):
         super(TestMetadata, self).tearDown()

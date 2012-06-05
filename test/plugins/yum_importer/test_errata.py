@@ -16,11 +16,14 @@ import sys
 import mock
 import unittest
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-import errata
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
+
 import importer_mocks
-from importer import YumImporter
-from importer import YUM_IMPORTER_TYPE_ID
+import testutil
+from yum_importer import errata
+from yum_importer.importer import YumImporter
+from yum_importer.importer import YUM_IMPORTER_TYPE_ID
 from pulp.server.content.plugins.model import Repository, Unit
 
 class TestErrata(unittest.TestCase):
@@ -29,6 +32,7 @@ class TestErrata(unittest.TestCase):
         super(TestErrata, self).setUp()
         self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
         self.repo_dir = os.path.abspath(os.path.dirname(__file__)) + "/../data/test_repo/"
+        testutil.load_test_config()
 
     def tearDown(self):
         super(TestErrata, self).tearDown()

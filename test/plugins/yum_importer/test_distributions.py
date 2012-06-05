@@ -17,13 +17,12 @@ import mock
 import unittest
 import tempfile
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+
 import importer_mocks
-import importer_rpm
-import distribution
-from importer import YumImporter
-from importer import YUM_IMPORTER_TYPE_ID
-from distribution import DISTRO_UNIT_KEY, DISTRO_TYPE_ID
+from yum_importer import distribution, importer_rpm
+from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.distribution import DISTRO_UNIT_KEY, DISTRO_TYPE_ID
 from pulp.server.content.plugins.model import Repository, Unit
 
 class TestDistribution(unittest.TestCase):

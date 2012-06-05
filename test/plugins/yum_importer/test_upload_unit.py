@@ -22,9 +22,9 @@ import time
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
 import importer_mocks
-from importer import YumImporter
+from yum_importer.importer import YumImporter
 from pulp.yum_plugin import util
 
 from pulp.server.content.plugins.model import Repository, Unit

@@ -17,13 +17,14 @@ import mock
 import unittest
 import tempfile
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-import drpm
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 import importer_mocks
-import importer_rpm
-from importer import YumImporter
-from importer import YUM_IMPORTER_TYPE_ID
-from drpm import DRPM_UNIT_KEY, DRPM_TYPE_ID
+import testutil
+
+from yum_importer import drpm, importer_rpm
+from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.drpm import DRPM_UNIT_KEY, DRPM_TYPE_ID
 from pulp.server.content.plugins.model import Repository, Unit
 
 class TestDRPMS(unittest.TestCase):
@@ -34,6 +35,7 @@ class TestDRPMS(unittest.TestCase):
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        testutil.load_test_config()
 
     def tearDown(self):
         super(TestDRPMS, self).tearDown()

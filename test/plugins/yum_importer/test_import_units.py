@@ -25,12 +25,11 @@ import unittest
 from grinder.BaseFetch import BaseFetch
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
 import importer_mocks
-from importer import YumImporter
-from importer import YUM_IMPORTER_TYPE_ID
-from importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
-import importer_rpm
+from yum_importer import importer_rpm
+from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 from pulp.yum_plugin import util
 
 from pulp.server.content.plugins.model import Repository, Unit

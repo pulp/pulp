@@ -17,12 +17,13 @@ import mock
 import unittest
 import tempfile
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/yum_importer/")
-import drpm
-import importer_rpm
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
+
 import importer_mocks
-from importer import YumImporter
-from importer import YUM_IMPORTER_TYPE_ID
+import testutil
+from yum_importer import drpm, importer_rpm
+from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from pulp.server.content.plugins.model import Repository
 
 class TestRepoScratchpad(unittest.TestCase):
@@ -33,6 +34,7 @@ class TestRepoScratchpad(unittest.TestCase):
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        testutil.load_test_config()
 
     def tearDown(self):
         super(TestRepoScratchpad, self).tearDown()
