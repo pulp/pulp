@@ -26,14 +26,28 @@ import testutil
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 import rpm_units_copy.pulp_cli
 
-from pulp.gc_client.framework.core import TAG_FAILURE, TAG_SUCCESS
+from pulp.gc_client.api.responses import STATE_WAITING
+from pulp.gc_client.framework.core import TAG_FAILURE, TAG_PARAGRAPH
 
 class UnitCopyTests(testutil.PulpV2ClientTest):
 
     def test_copy(self):
         # Setup
         command = rpm_units_copy.pulp_cli.CopyCommand(self.context, 'copy', 'copy', 'copy', 'rpm')
-        self.server_mock.request.return_value = (200, {})
+        task_data = {'task_id' : 'abc',
+                     'job_id' : None,
+                     'tags' : [],
+                     'start_time' : None,
+                     'finish_time' : None,
+                     'response' : None,
+                     'reasons' : [],
+                     'state' : STATE_WAITING,
+                     'progress' : None,
+                     'result' : None,
+                     'exception' : None,
+                     'traceback' : None,
+                     }
+        self.server_mock.request.return_value = (202, task_data)
 
         # Test
         user_args = {
@@ -57,7 +71,7 @@ class UnitCopyTests(testutil.PulpV2ClientTest):
 
         tags = self.prompt.get_write_tags()
         self.assertEqual(1, len(tags))
-        self.assertEqual(tags[0], TAG_SUCCESS)
+        self.assertEqual(tags[0], TAG_PARAGRAPH)
 
     def test_dry_run(self):
         # Setup
