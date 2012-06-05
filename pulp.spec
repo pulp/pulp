@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.293
+Version:        0.0.294
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -530,6 +530,116 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jun 04 2012 Jeff Ortel <jortel@redhat.com> 0.0.294-1
+- updated copyright information (jason.connor@gmail.com)
+- Hide the auth ca cert, just show if one is present (jason.dobies@redhat.com)
+- Changed triggers for consistency across the UI (jason.dobies@redhat.com)
+- consumer cli extension for bind, unbind and minor re-structuring of
+  consumerid function (skarmark@redhat.com)
+- Changing order of consumer history result and removing unwanted _id
+  (skarmark@redhat.com)
+- removing consumer id validation from consumer history querying to allow
+  querying for unregistered consumer as well (skarmark@redhat.com)
+- Fixing unbind client extension error (skarmark@redhat.com)
+- Update .gitignore to ignore test coverage output files (jmatthews@redhat.com)
+- YumImporter:  Change 'fileName' to 'filename' for drpm (jmatthews@redhat.com)
+- added deprecated notice to doctring (jason.connor@gmail.com)
+- Fixed async response handling (jason.dobies@redhat.com)
+- YumDistributor:  Added check to see if createrepo pid is running before
+  canceling (jmatthews@redhat.com)
+- YumDistributor: continue to debug errors from running with jenkins
+  (jmatthews@redhat.com)
+- Python 2.4 compatibility change for determining if Iterable
+  (jmatthews@redhat.com)
+- YumDistributor, debugging intermittent test failure when run from jenkins
+  (jmatthews@redhat.com)
+- YumImporter:  removed filename from srpm unit key (jmatthews@redhat.com)
+- Fix for rhel5 unit tests, collections.Iterable doesn't exist
+  (jmatthews@redhat.com)
+- Fixed to use correct link call (jason.dobies@redhat.com)
+- Revert "idempotent misspelled" (jason.connor@gmail.com)
+- Revert "removed not_implemented() controllers" (jason.connor@gmail.com)
+- Revert "removed unnecessary quotes around controller class names"
+  (jason.connor@gmail.com)
+- Revert "added _href fields to resources in repositories collection"
+  (jason.connor@gmail.com)
+- Revert "added _href field to new created repository" (jason.connor@gmail.com)
+- Revert "added _href for repo resources" (jason.connor@gmail.com)
+- added _href for repo resources (jason.connor@gmail.com)
+- added _href field to new created repository (jason.connor@gmail.com)
+- added _href fields to resources in repositories collection
+  (jason.connor@gmail.com)
+- changed sync overrides to a keyword argument (jason.connor@gmail.com)
+- removed unnecessary quotes around controller class names
+  (jason.connor@gmail.com)
+- removed not_implemented() controllers (jason.connor@gmail.com)
+- idempotent misspelled (jason.connor@gmail.com)
+- changed task lookups to use new task_queue factory instead of accessing it
+  via the coordinator (jason.connor@gmail.com)
+- 827221 - Added individual resource GET methods and hrefs to resources
+  (jason.dobies@redhat.com)
+- 827220 - Removed old error_handler directives (jason.dobies@redhat.com)
+- YumDistributor:  cancel_publish implementation and unit tests
+  (jmatthews@redhat.com)
+- Test data for simulating a long running createrepo process
+  (jmatthews@redhat.com)
+- added cleanup of mocked-out factory functions (jason.connor@gmail.com)
+- fixed consumer controller entry (jason.connor@gmail.com)
+- Delete the upload request if its rejected (jason.dobies@redhat.com)
+- fix relativepath of the rpm during upload (pkilambi@redhat.com)
+- Updated user guide for 1.1 (jason.dobies@redhat.com)
+- utilized new factory access to move complete lifecycle callback out of
+  scheduler class to a stand-alone function (jason.connor@gmail.com)
+- changed tests to reflect changes in scheduler (jason.connor@gmail.com)
+- remoced collection instance from scheduler as well (jason.connor@gmail.com)
+- while I was at it I eliminated the task resource collection as state as well
+  and instead use the get_collection factory method that is a part of every
+  Model class (jason.connor@gmail.com)
+- changed unit tests to reflect changes in coordinator (jason.connor@gmail.com)
+- changed initialization of scheduler and coordinator to reflect changes in
+  constructors (jason.connor@gmail.com)
+- removed task queue as internal state and instead access it through the
+  dispatch factory (jason.connor@gmail.com)
+- added task queue factory function and updated the return types of the factory
+  functions while I was at it (jason.connor@gmail.com)
+- updated unittests to reflect changes in scheduler (jason.connor@gmail.com)
+- removed the coordinator as state and instead use the factory to access it
+  (jason.connor@gmail.com)
+- removed unused imports (jason.connor@gmail.com)
+- removed unused import (jason.connor@gmail.com)
+- moved all imports into initialization methods to avoid circulary imports this
+  will allow the different modules of the dispatch package to access each other
+  via the factory in order keep the amount of state (read: references to each
+  other) to a minimum (jason.connor@gmail.com)
+- added super setup/teardown of old mocked async to keep clean happy
+  (jason.connor@gmail.com)
+- cleaned up imports and future proofed json_util import
+  (jason.connor@gmail.com)
+- moved exception handling into loop for better reporting
+  (jason.connor@gmail.com)
+- change mkdir to makedirs for better parental supervision
+  (jason.connor@gmail.com)
+- Added handling for async responses when importing units
+  (jason.dobies@redhat.com)
+- Added UG for repo tasks (jason.dobies@redhat.com)
+- Added UG section for describing postponed and rejected tasks
+  (jason.dobies@redhat.com)
+- Fixed incongruences in the sync user guide (jason.dobies@redhat.com)
+- Added user guide entry for repo publish (jason.dobies@redhat.com)
+- User guide for package upload (jason.dobies@redhat.com)
+- remove filename from rpm unit key (pkilambi@redhat.com)
+- Cleanup for the consumer packages section of the user guide
+  (jason.dobies@redhat.com)
+- Corrected handling/display for operations postponed by the coordinator
+  (jason.dobies@redhat.com)
+- Refactored out bool conversion so it can be used directly
+  (jason.dobies@redhat.com)
+- Added publish schedule support to the RPM CLI extensions
+  (jason.dobies@redhat.com)
+- Added direct publish support (jason.dobies@redhat.com)
+- Added enabled/disabled support for all RPM extensions
+  (jason.dobies@redhat.com)
+
 * Fri May 25 2012 Jeff Ortel <jortel@redhat.com> 0.0.293-1
 - Fix .spec for moving agent handlers. (jortel@redhat.com)
 - Add comments with Config usage and examples. (jortel@redhat.com)
