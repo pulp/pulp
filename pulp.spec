@@ -334,6 +334,7 @@ cp -R extensions/pulp_tasks %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_admin_consumer %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_repo %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_sync %{buildroot}/var/lib/pulp_client/admin/extensions
+cp -R extensions/rpm_units_copy %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_units_search %{buildroot}/var/lib/pulp_client/admin/extensions
 cp -R extensions/rpm_upload %{buildroot}/var/lib/pulp_client/admin/extensions
 
