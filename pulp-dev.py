@@ -180,8 +180,11 @@ def install(opts):
     currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
         debug(opts, 'creating link: %s' % dst)
+        target = os.path.join(currdir, src)
+        if os.path.exists(dst) and not os.path.islink(dst):
+            raise Exception("Error: %s exists and is not a symlink to %s, please delete %s and re-run." % (dst, target, dst))
         try:
-            os.symlink(os.path.join(currdir, src), dst)
+            os.symlink(target, dst)
         except OSError, e:
             if e.errno != 17:
                 raise
