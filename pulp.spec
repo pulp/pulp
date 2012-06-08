@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.294
+Version:        0.0.295
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -531,6 +531,20 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.295-1
+- bump to gofer 0.69. (jortel@redhat.com)
+- Add support for linking rpms units referenced with in a errata
+  (pkilambi@redhat.com)
+- Automatic commit of package [gofer] minor release [0.69-1].
+  (jortel@redhat.com)
+- Copying comps_util.py from pulp.server to pulp.yum_plugin so YumImporter may
+  use this (jmatthews@redhat.com)
+- YumImporter: test data for a simple repo with no comps (jmatthews@redhat.com)
+- Added a warning in pulp-dev for when a dir exists but we expected it to be a
+  symlink (jmatthews@redhat.com)
+- Added unit copy extension to the RPM (jason.dobies@redhat.com)
+- YumImporter/YumDistributor update unit tests to configure logger and redirect
+  output from console to log file (jmatthews@redhat.com)
 * Mon Jun 04 2012 Jeff Ortel <jortel@redhat.com> 0.0.294-1
 - updated copyright information (jason.connor@gmail.com)
 - Hide the auth ca cert, just show if one is present (jason.dobies@redhat.com)
