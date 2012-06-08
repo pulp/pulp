@@ -182,7 +182,7 @@ class TestConfigValidator(testutil.PulpAsyncTest):
     def test_util(self):
         cfg = self.read(VALID).graph(True)
         # getbool()
-        v = getbool(cfg.limits.posix)
+        v = parse_bool(cfg.limits.posix)
         self.assertTrue(isinstance(v, bool))
 
     def test_section_filtering(self):

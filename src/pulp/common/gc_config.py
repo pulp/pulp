@@ -10,7 +10,31 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-SCHEMA = (
+Wrapper for all configuration access in Pulp, including server, client,
+and agent handlers.
+
+The entry point into this module is the Config class. It accepts one or more
+files to load and after instantiation will be used to access the values within.
+
+Example usage:
+  config = Config('base.conf', 'override.conf')
+
+The loaded sections can be filtered by passing in a keyword argument containing
+a list of section names. For example, to only load the "main" and "server"
+sections found in the configurations:
+
+  config = Config('base.conf', filter=['main', 'server'])
+
+The Config object also supports validation of the loaded configuration values.
+The schema is defined in a nested tuple structure that defines each section
+(along with its required/optional flag) and each property witin the section.
+For each property, its required/optional flag and validation criteria are
+specified. Criteria can take the form of one of the constants in this module
+or a regular expression.
+
+Example code for defining a schema and validating a config against it:
+
+schema = (
     ('section1', REQUIRED,
         (
             ('property1', REQUIRED, NUMBER),
@@ -22,15 +46,13 @@ SCHEMA = (
         (
             ('property1', OPTIONAL, NUMBER),
             ('property2', OPTIONAL, BOOL),
-            ('property3', REQUIRED, BOOL,re.I),
+            ('property3', REQUIRED, BOOL),
         ),
     ),
 )
 
-f = open('my.conf')
-cfg = Config(f)
-validator = Validator(SCHEMA)
-validator.validate(cfg)
+cfg = Config('base.conf')
+cfg.validate(schema)
 """
 
 import re
@@ -38,40 +60,25 @@ import collections
 from threading import RLock
 from iniparse import INIConfig
 
-# Contants
+# -- constants ----------------------------------------------------------------
 
+# Schema Constants
 REQUIRED = 1
 OPTIONAL = 0
 ANY = None
 NUMBER = '^\d+$'
 BOOL = '(^YES$|^TRUE$|^1$|^NO$|^FALSE$|^0$)', re.I
 
-#
-# Utility
-#
+# Regular expression to test if a value is a valid boolean type
+BOOL_RE = re.compile(*BOOL)
 
-def getbool(value, default=False):
-    """
-    Get an INI property value as a python boolean.
-    @param value: An INI property value.
-    @type value: (str)
-    @param default: The default value.
-    @type default: bool
-    @return: True if matches (true) pattern.
-    @rtype: bool
-    """
-    if isinstance(value, str):
-        return value.upper() in ('YES','TRUE','1')
-    else:
-        return default
-
-#
-# Validation
-#
+# -- exceptions ---------------------------------------------------------------
 
 class ValidationException(Exception):
 
     def __init__(self, name):
+        super(ValidationException, self).__init__()
+
         self.name = name
         self.path = ''
 
@@ -88,10 +95,8 @@ class SectionNotFound(ValidationException):
             'Required section [%s], not found',
             self.name)
 
-
 class PropertyException(ValidationException):
     pass
-
 
 class PropertyNotFound(PropertyException):
 
@@ -99,7 +104,6 @@ class PropertyNotFound(PropertyException):
         return self.msg(
             'Required property "%s", not found',
             self.name)
-
 
 class PropertyNotValid(PropertyException):
 
@@ -115,6 +119,205 @@ class PropertyNotValid(PropertyException):
             self.value,
             self.pattern)
 
+class Unparsable(Exception):
+    """
+    Raised if a value cannot be parsed into the requested type. For instance,
+    attempting to parse a boolean out of text that does not match the supported
+    ways of specifying a boolean.
+    """
+    pass
+
+# -- public -------------------------------------------------------------------
+
+def parse_bool(value):
+    """
+    Parses the given value into its boolean representation.
+    @param value: value to test
+    @type value: str
+    @return: true or false depending on what is parsed
+    @rtype: bool
+    @raise Unparsable: if the value is not one of the accepted values for
+           indicating a boolean
+    """
+
+    # Make sure the user correctly indicated a boolean value
+    if not BOOL_RE.match(value):
+        raise Unparsable()
+
+    return value.upper() in ('YES','TRUE','1')
+
+class Config(dict):
+    """
+    Holds configuration files in the INI format; all properties are in a
+    named section and are accessed by specifying both the section name and
+    the property name.
+
+    Properties are accessed through a nested dictionary syntax where the first
+    item is the section name and the second is the property name. For example,
+    to access a property named "server" in section "[main]":
+
+       value = config['main']['server']
+
+    Alternatively, a dot notation syntax can be used by first retrieving a
+    wrapper on top of the configuration through the graph() method:
+
+       graph = config.graph()
+       value = graph.main.server
+    """
+
+    def __init__(self, *inputs, **options):
+        """
+        Creates a blank configuration and loads one or more files or existing
+        data.
+
+        Values to the inputs parameter can be one of three things:
+         - the full path to a file to load (str)
+         - file object to read from
+         - dictionary whose values will be merged into this instance
+
+        The only valid key to options is the "filter" keyword. It is used to
+        selectively load only certain sections from the specified files. Its
+        value can be one of the following:
+         - None: match all sections
+         - str : compiled into a regular expression to match against section names
+         - list/tuple/set: a list of section names to match
+         - callable: a funciton used to determine acceptance; it must accept
+           a single parameter which is the section name being tested and return
+           a boolean
+
+        @param inputs: one or more files to load (see above)
+        @param options: see above
+        """
+        super(Config, self).__init__()
+
+        filter = options.get('filter')
+        for input in inputs:
+            if isinstance(input, basestring):
+                self.open(input, filter)
+                continue
+            if isinstance(input, dict):
+                self.update(input)
+                continue
+            self.read(input, filter)
+
+    def open(self, paths, filter=None):
+        """
+        @param paths: A path or list of paths to .conf files
+        @type paths: str|list
+        @param filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
+        """
+        if isinstance(paths, basestring):
+            paths = (paths,)
+        for path in paths:
+            fp = open(path)
+            try:
+                self.read(fp, filter)
+            finally:
+                fp.close()
+
+    def read(self, fp, filter=None):
+        """
+        Read and parse the fp.
+        @param fp: An open file
+        @type fp: file-like object.
+        @param filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
+        """
+        cfg = INIConfig(fp)
+        filter = Filter(filter)
+        for s in cfg:
+            if not filter.match(s):
+                continue
+            section = {}
+            for p in cfg[s]:
+                v = getattr(cfg[s], p)
+                section[p] = v
+            self[s] = section
+
+    def update(self, other):
+        """
+        Copies sections and properties from "other" into this instance.
+
+        @param other: values to copy into this instance
+        @type other: dict
+        """
+        for k,v in other.items():
+            if k in self and isinstance(v, dict):
+                self[k].update(v)
+            else:
+                self[k] = v
+
+    def graph(self, strict=False):
+        """
+        Get an object representation of this instance. The data is the same,
+        however the returned object supports a dot notation for accessing
+        values.
+
+        @param strict: Indicates that KeyError should be raised when
+            undefined sections or properties are accessed. When
+            false, undefined sections are returned as empty dict and
+            undefined properties are returned as (None).
+        @type strict: bool
+        @return: graph object representation of the configuration
+        @rtype: Graph
+        """
+        return Graph(self, strict)
+
+    def validate(self, schema):
+        """
+        Validates the values in the instance against the given schema.
+        @param schema: nested tuples as described in the module docs
+        @type schema: tuple
+        @return: two list: undefined sections and properties.
+        @rtype: tuple
+        @raise ValidationException: if the configuration does not pass validation
+        """
+        v = Validator(schema)
+        return v.validate(self)
+
+    def parse_bool(self, value):
+        """
+        Shadow of the module-level parse_bool method for import convenience.
+
+        @param value: value to test
+        @type  value: str
+
+        @return: boolean representation of the given string
+        @rtype:  bool
+
+        @raise Unparsable: if the value is not a valid boolean identifier
+        """
+        return parse_bool(value)
+
+    def __setitem__(self, name, value):
+        """
+        Set a section value.
+        @param name: A section name.
+        @type name: str
+        @param value: A section.
+        @type value: dict
+        """
+        if isinstance(value, dict):
+            dict.__setitem__(self, name, value)
+        else:
+            raise ValueError('must be <dict>')
+
+# -- private ------------------------------------------------------------------
 
 class Validator:
     """
@@ -173,7 +376,6 @@ class Validator:
         return extras
 
 
-
 class Patterns:
     """
     Regex pattern cache object.
@@ -191,8 +393,7 @@ class Patterns:
         Get a compiled pattern.
         @param regex: A regular expression.
         @type regex: str|(str,int)
-        @return: A compiled pattern.
-        @rtype: Pattern
+        @return: compiled pattern
         """
         key = regex
         regex, flags = cls.split(regex)
@@ -214,7 +415,7 @@ class Patterns:
         else:
             regex = x
             flags = 0
-        return (regex,flags)
+        return regex, flags
 
     @classmethod
     def __lock(cls):
@@ -322,173 +523,6 @@ class Property:
         match = p.match(value)
         if not match:
             raise PropertyNotValid(self.name, value, self.pattern)
-
-#
-# Configuration
-#
-# Examples:
-#
-# note: Config "is a" dict so in the following examples,
-#       cfg can be treated/passed as a dict or the value-add methods
-#       can be used as appropriate.
-#
-# Loading a single .conf file.
-# >>>
-# >>> cfg = Config(path)
-# >>>
-#
-# Loading and merging 2 .conf files.
-# >>>
-# >>> cfg = Config(path1, path2)
-# >>>
-# Same as:
-# >>> cfg1 = Config(path1)
-# >>> cfg2 = Config(path2)
-# >>> cfg1.update(cfg2)
-# >>>
-#
-# Load sections beginning with the name "foo-" using regex.
-# >>>
-# >>> cfg = Config(path1, path2, 'foo-')
-# >>>
-#
-# Load sections 'server' & 'logging'
-# >>>
-# >>> cfg = Config(path1, path2, ['server', 'logging'])
-# >>>
-
-
-class Config(dict):
-    """
-    A dictionary constructed of INI files.
-    The president is defined by the input ordering.  Each file loaded
-    is merged into the dict in the order loaded.
-    """
-
-    def __init__(self, *inputs, **options):
-        """
-        @param input: A path or list of paths to .conf files
-        @type input: str|dict|fp
-        @param options: Options see: keywords
-        @type filter: dict
-        @keyword filter: A section filtering object.
-            One of:
-              - None: match ALL.
-              - str : compiled as regex.
-              - list: A list of strings to match.
-              - tuple: A tuple of strings to match.
-              - set: A set of strings to match.
-              - callable: A funciton used to match.  Called as: filter(s).
-        """
-        filter = options.get('filter')
-        for input in inputs:
-            if isinstance(input, basestring):
-                self.open(paths, filter)
-                continue
-            if isinstance(input, dict):
-                self.update(input)
-                continue
-            self.read(input, filter)
-
-    def open(self, paths, filter=None):
-        """
-        @param paths: A path or list of paths to .conf files
-        @type paths: str|list
-        @param filter: A section filtering object.
-            One of:
-              - None: match ALL.
-              - str : compiled as regex.
-              - list: A list of strings to match.
-              - tuple: A tuple of strings to match.
-              - set: A set of strings to match.
-              - callable: A funciton used to match.  Called as: filter(s).
-        @type filter: object
-        """
-        if isinstance(paths, basestring):
-            paths = (paths,)
-        for path in paths:
-            fp = open(path)
-            try:
-                self.read(fp, filter)
-            finally:
-                fp.close()
-
-    def read(self, fp, filter=None):
-        """
-        Read and parse the fp.
-        @param fp: An open file
-        @type fp: file-like object.
-        @param filter: A section filtering object.
-            One of:
-              - None: match ALL.
-              - str : compiled as regex.
-              - list: A list of strings to match.
-              - tuple: A tuple of strings to match.
-              - set: A set of strings to match.
-              - callable: A funciton used to match.  Called as: filter(s).
-        @type filter: object
-        """
-        cfg = INIConfig(fp)
-        filter = Filter(filter)
-        for s in cfg:
-            if not filter.match(s):
-                continue
-            section = {}
-            for p in cfg[s]:
-                v = getattr(cfg[s], p)
-                section[p] = v
-            self[s] = section
-
-    def update(self, other):
-        """
-        Deep update.
-        @param other: Another dict.
-        @type other: dict
-        """
-        for k,v in other.items():
-            if k in self and isinstance(v, dict):
-                self[k].update(v)
-            else:
-                self[k] = v
-
-    def graph(self, strict=False):
-        """
-        Get an object representation of the dict (graph).
-        Access using object attribute (.) dot notation.
-        @param strict: Indicates that KeyError should be raised when
-            undefined sections or properties are accessed.  When
-            false, undefined sections are returned as empty dict and
-            undefined properties are returned as (None).
-        @type strict: bool
-        @return: An object representation
-        @rtype: cfg
-        """
-        return Graph(self, strict)
-    
-    def validate(self, schema):
-        """
-        Perform validation.
-        @param schema: A schema object.
-        @type schema: Schema
-        @return: Two list: undefined sections and properties.
-        @rtype: tuple
-        @raise ValidationException: Not valid.
-        """
-        v = Validator(schema)
-        return v.validate(self)
-
-    def __setitem__(self, name, value):
-        """
-        Set a section value.
-        @param name: A section name.
-        @type name: str
-        @param value: A section.
-        @type value: dict
-        """
-        if isinstance(value, dict):
-            dict.__setitem__(self, name, value)
-        else:
-            raise ValueError('must be <dict>')
 
 
 class Filter:
