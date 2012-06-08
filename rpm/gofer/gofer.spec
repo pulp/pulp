@@ -238,6 +238,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.69-1
+- bump gofer 0.69. (jortel@redhat.com)
+
+* Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.69-1
 - 829767 - fix simplejons 2.2+ issue (fedora 17). Envelope/Options rebased on
   object rather than dict. (jortel@redhat.com)
 - Add whiteboard. (jortel@redhat.com)
