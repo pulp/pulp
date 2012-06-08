@@ -69,18 +69,18 @@ TESTS="test/unit/test_agent.py \
        test/unit/test_types_parser.py \
        test/unit/test_unit_import_conduit.py \
        test/unit/test_user_manager.py \
-       test/plugins/yum_distributor/test_distributor \
-       test/plugins/yum_distributor/test_metadata \
-       test/plugins/yum_distributor/test_validate_config \
-       test/plugins/yum_importer/test_distributions \
+       test/plugins/yum_distributor/test_distributor.py \
+       test/plugins/yum_distributor/test_metadata.py \
+       test/plugins/yum_distributor/test_validate_config.py \
+       test/plugins/yum_importer/test_distributions.py \
        test/plugins/yum_importer/test_drpms.py \
        test/plugins/yum_importer/test_errata.py \
        test/plugins/yum_importer/test_import_units.py \
        test/plugins/yum_importer/test_repo_scratchpad.py \
        test/plugins/yum_importer/test_rpms.py \
        test/plugins/yum_importer/test_upload_unit.py \
-       test/plugins/yum_importer/test_validate_config \
-       test/plugins/yum_importer/test_verify_options \
+       test/plugins/yum_importer/test_validate_config.py \
+       test/plugins/yum_importer/test_verify_options.py \
        "
 
 nosetests --with-coverage --cover-html  --cover-erase --cover-package $PACKAGES $TESTS
