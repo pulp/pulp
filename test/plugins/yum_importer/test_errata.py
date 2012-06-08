@@ -15,24 +15,36 @@ import os
 import sys
 import mock
 import unittest
+from pulp.server.managers.content.query import ContentQueryManager
+from pulp.server.managers.repo.unit_association_query import Criteria
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
-
 import importer_mocks
 import testutil
+import tempfile
+
 from yum_importer import errata
+from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter
 from yum_importer.importer import YUM_IMPORTER_TYPE_ID
 from pulp.server.content.plugins.model import Repository, Unit
+import pulp.server.content.loader as plugin_loader
+from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 
 class TestErrata(unittest.TestCase):
 
     def setUp(self):
         super(TestErrata, self).setUp()
+        self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
         self.repo_dir = os.path.abspath(os.path.dirname(__file__)) + "/../data/test_repo/"
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.pkg_dir = os.path.join(self.temp_dir, "packages")
+
         testutil.load_test_config()
+
 
     def tearDown(self):
         super(TestErrata, self).tearDown()
@@ -114,3 +126,26 @@ class TestErrata(unittest.TestCase):
         new_errata, new_units, sync_conduit = errata.get_new_errata_units(available_errata, created_existing_units, sync_conduit)
         self.assertEquals(len(available_errata), len(new_errata))
 
+    def test_link_errata_rpm_units(self):
+        feed_url = "file://%s/test_errata_local_sync/" % (self.data_dir)
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_errata_local_sync"
+        repo.checksumtype = 'sha'
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        metadata = {}
+        unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'noarch', 'checksumtype' : 'sha',
+                      'checksum': '017c12050a97cf6095892498750c2a39d2bf535e'}
+        unit_key_b = {'id' : '', 'name' :'emoticons', 'version' :'0.1', 'release' :'2', 'epoch':'0','arch' : 'noarch', 'checksumtype' :'sha',
+                      'checksum' : '663c89b0d29bfd5479d8736b716d50eed9495dbb'}
+
+        existing_units = []
+        for unit in [unit_key_a, unit_key_b]:
+            existing_units.append(Unit(importer_rpm.ImporterRPM, unit, metadata, ''))
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
+        importerErrata = errata.ImporterErrata()
+        status, summary, details = importerErrata.sync(repo, sync_conduit, config)
+        self.assertEquals(len(details['link_report']['linked_units']), 2)

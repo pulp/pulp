@@ -8,6 +8,7 @@
         "search_indexes" : [
             "id", "title", "version", "release", "type",
             "status", "updated", "issued", "severity", "references"
-        ]
+        ],
+        "referenced_types" : ["rpm"]
     }
 ]}

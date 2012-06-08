@@ -6,7 +6,8 @@
         "unit_key" :
             ["name", "epoch", "version", "release", "arch", "checksumtype", "checksum"],
         "search_indexes" : 
-            ["name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype"]
+            ["name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype"],
+        "referenced_types" : ["erratum"]
     }
 ]}
 

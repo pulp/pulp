@@ -19,6 +19,7 @@ import sys
 import time
 import yum
 import logging
+import importer_rpm
 from pulp.yum_plugin import util, updateinfo
 from pulp.server.managers.repo.unit_association_query import Criteria
 
@@ -154,6 +155,41 @@ def errata_sync_details(errata_list):
             errata_details['types']["enhancement"].append(erratum)
     return errata_details
 
+def link_errata_rpm_units(sync_conduit, new_errata_units):
+    """
+    Links errata to corresponding rpms
+
+    @param sync_conduit
+    @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
+
+    @param new_errata_units: errata units to link
+    @type  new_errata_units: {}
+
+    @return a link_report dictionry.
+    @rtype {}
+    """
+    link_report = {}
+    # link errata and rpm units
+    criteria = Criteria(type_ids=[importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID])
+    existing_rpms = importer_rpm.get_existing_units(sync_conduit, criteria=criteria)
+    link_report['linked_units'] = []
+    link_report['skipped_rpms'] = []
+    for u in new_errata_units.values():
+        pkglist = u.metadata['pkglist']
+        for pkg in pkglist:
+            for pinfo in pkg['packages']:
+                pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
+                rpm_key = importer_rpm.form_lookup_key(pinfo)
+                if rpm_key in existing_rpms.keys():
+                    rpm_unit = existing_rpms[rpm_key]
+                    _LOG.info("Found matching rpm unit %s" % rpm_unit)
+                    sync_conduit.link_unit(u, rpm_unit, bidirectional=True)
+                    link_report['linked_units'].append(rpm_unit)
+                else:
+                    link_report['missing_rpms'].append(pinfo)
+                    _LOG.info("rpm unit %s not found; skipping" % pinfo)
+    return link_report
+
 class ErrataProgress(object):
     def __init__(self, step="Importing Errata"):
         self.step = step
@@ -199,7 +235,7 @@ class ImporterErrata(object):
         progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
         set_progress(progress)
 
-        criteria = Criteria(type_ids=ERRATA_TYPE_ID)
+        criteria = Criteria(type_ids=[ERRATA_TYPE_ID])
         existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
         _LOG.info("Existing Errata %s" % len(existing_errata))
         orphaned_units = get_orphaned_errata(available_errata, existing_errata)
@@ -211,7 +247,10 @@ class ImporterErrata(object):
         # clean up any orphaned errata
         for u in orphaned_units.values():
             sync_conduit.remove_unit(u)
-            # get errata sync details
+        # link errata with rpm units
+        link_report = link_errata_rpm_units(sync_conduit, new_units)
+
+        # get errata sync details
         errata_details = errata_sync_details(new_errata)
         end = time.time()
 
@@ -225,6 +264,7 @@ class ImporterErrata(object):
         details["num_bugfix_errata"] = len(errata_details['types']['bugfix'])
         details["num_security_errata"] = len(errata_details['types']['security'])
         details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
+        details['link_report'] = link_report
         _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
         progress = {"state":"FINISHED", "num_errata":len(available_errata)}
         set_progress(progress)

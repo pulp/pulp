@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updates>
+	<update from="enhancements@redhat.com" status="final" type="enhancements" version="1">
+		<id>RHEA-2010:9999</id>
+		<title>test package enhancements</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2010-11-8 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F13PTP">
+				<name>F13 Pulp Test Packages</name>
+				<package name="emoticons" version="0.1" release="2" epoch="0" arch="noarch" src="xen-3.0.3-80.el5_3.3.src.rpm">
+					<filename>emoticons-0.1-2.x86_64.rpm</filename>
+					<sum type="sha">663c89b0d29bfd5479d8736b716d50eed9495dbb</sum>
+				</package>
+				<package name="patb" version="0.1" release="2" epoch="0" arch="noarch" src="xen-3.0.3-80.el5_3.3.src.rpm">
+					<filename>patb-0.1-2.x86_64.rpm</filename>
+					<sum type="sha">017c12050a97cf6095892498750c2a39d2bf535e</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+</updates>
