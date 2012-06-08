@@ -35,9 +35,6 @@ COLOR_PAUSED = COLOR_YELLOW
 
 def initialize(context):
 
-    if not context.extension_config.getboolean('main', 'enabled'):
-        return
-
     repo_section = context.cli.find_section('repo')
     uploads_section = repo_section.create_subsection('uploads', _('package and errata upload'))
 

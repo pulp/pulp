@@ -272,7 +272,9 @@ class StatusRenderer(object):
                 self.prompt.render_spacer()
 
                 # If there are any errors, write them out here
-                display_error_count = self.context.extension_config.getint('main', 'num_display_errors')
+                # TODO: read this from config
+                # display_error_count = self.context.extension_config.getint('main', 'num_display_errors')
+                display_error_count = 5
 
                 num_errors = min(len(data['error_details']), display_error_count)
 

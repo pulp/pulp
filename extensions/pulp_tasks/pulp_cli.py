@@ -27,17 +27,14 @@ TASK_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time
 
 def initialize(context):
 
-
     # Add root level section for all tasks in Pulp
-    if context.extension_config.getboolean('main', 'all_tasks_enabled'):
-        all_tasks_section = AllTasksSection(context, 'tasks', _('list and cancel tasks running in the Pulp server'))
-        context.cli.add_section(all_tasks_section)
+    all_tasks_section = AllTasksSection(context, 'tasks', _('list and cancel tasks running in the Pulp server'))
+    context.cli.add_section(all_tasks_section)
 
     # Add repo level section for only repo tasks
-    if context.extension_config.getboolean('main', 'repo_tasks_enabled'):
-        repo_tasks_section = RepoTasksSection(context, 'tasks', _('list and cancel tasks related to a specific repository'))
-        repo_section = context.cli.find_section('repo')
-        repo_section.add_subsection(repo_tasks_section)
+    repo_tasks_section = RepoTasksSection(context, 'tasks', _('list and cancel tasks related to a specific repository'))
+    repo_section = context.cli.find_section('repo')
+    repo_section.add_subsection(repo_tasks_section)
 
 # -- sections -----------------------------------------------------------------
 

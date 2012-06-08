@@ -32,8 +32,6 @@ _LOG = logging.getLogger(__name__)
 _MODULE_CLI = 'pulp_cli'
 _MODULE_SHELL = 'pulp_shell'
 
-_CONF_FILENAME = 'extension.conf'
-
 _PRIORITY_VAR = 'PRIORITY'
 _DEFAULT_PRIORITY = 5
 
@@ -211,22 +209,10 @@ def _load_pack(extensions_dir, pack_module, context):
         _LOG.exception(_('Module [%(m)s] does not define the required initialize function' % {'m' : init_mod_name}))
         raise NoInitFunction(), None, sys.exc_info()[2]
 
-    # If the extension has a config file, load it
-    conf_filename = os.path.join(extensions_dir, pack_module.__name__, _CONF_FILENAME)
-    ext_config = None
-    if os.path.exists(conf_filename):
-        ext_config = SafeConfigParser()
-        try:
-            ext_config.read(conf_filename)
-        except Exception, e:
-            _LOG.exception(_('Could not read config file [%(f)s] for pack [%(p)s]' % {'f' : conf_filename, 'p' : pack_module.__name__}))
-            raise InvalidExtensionConfig(), None, sys.exc_info()[2]
-
     # Invoke the module's initialization, passing a copy of the context so
     # one extension doesn't accidentally muck with it and affect another.
     context_copy = copy.copy(context)
     context_copy.client_config = copy.copy(context.client_config)
-    context_copy.extension_config = ext_config
 
     try:
         init_func(context_copy)

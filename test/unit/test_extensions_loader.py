@@ -142,13 +142,3 @@ class ExtensionLoaderTests(testutil.PulpTest):
         mod = __import__('no_init_function')
 
         self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
-
-    def test_load_invalid_config(self):
-        """
-        Tests loading an extension whose .conf file cannot be loaded.
-        """
-        if INDIVIDUAL_FAIL_DIR not in sys.path:
-            sys.path.append(INDIVIDUAL_FAIL_DIR)
-        mod = __import__('invalid_config')
-
-        self.assertRaises(loader.InvalidExtensionConfig, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)

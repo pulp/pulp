@@ -15,8 +15,5 @@ from pulp.gc_client.framework.extensions import PulpCliSection
 
 def initialize(context):
 
-    if context.extension_config is None:
-        raise Exception('Extension config unavailable to ext1')
-
     section = PulpCliSection('section-1', 'Section 1')
     context.cli.add_section(section)
