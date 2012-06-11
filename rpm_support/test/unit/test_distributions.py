@@ -18,51 +18,46 @@ import unittest
 import tempfile
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 import importer_mocks
-import testutil
-from yum_importer import drpm, importer_rpm
+from yum_importer import  importer_rpm
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.distribution import  DISTRO_TYPE_ID
 from pulp.server.content.plugins.model import Repository
 
-class TestRepoScratchpad(unittest.TestCase):
+class TestDistribution(unittest.TestCase):
 
     def setUp(self):
-        super(TestRepoScratchpad, self).setUp()
+        super(TestDistribution, self).setUp()
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
-        testutil.load_test_config()
 
     def tearDown(self):
-        super(TestRepoScratchpad, self).tearDown()
+        super(TestDistribution, self).tearDown()
 
-    def test_repo_scratchpad_settings(self):
-        global repo_scratchpad
-        repo_scratchpad = {}
+    def test_metadata(self):
+        metadata = YumImporter.metadata()
+        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
+        self.assertTrue(DISTRO_TYPE_ID in metadata["types"])
 
-        def set_repo_scratchpad(data):
-            global repo_scratchpad
-            repo_scratchpad = data
-
-        def get_repo_scratchpad():
-            global repo_scratchpad
-            return repo_scratchpad
-
+    def test_distributions_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
-        importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
-        repo.id = "test_repo_scratchpad"
+        repo.id = "test_repo"
         sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
-        sync_conduit.set_repo_scratchpad = mock.Mock()
-        sync_conduit.set_repo_scratchpad.side_effect = set_repo_scratchpad
-        sync_conduit.get_repo_scratchpad = mock.Mock()
-        sync_conduit.get_repo_scratchpad.side_effect = get_repo_scratchpad
         config = importer_mocks.get_basic_config(feed_url=feed_url)
-        importer._sync_repo(repo, sync_conduit, config)
-        print "SCRATCHPAD %s" %  repo_scratchpad
-        self.assertEquals(repo_scratchpad['checksum_type'], 'sha256')
-        self.assertEquals(repo_scratchpad['importer_working_dir'], os.path.join(repo.working_dir, repo.id))
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        self.assertTrue(status)
+        self.assertTrue(summary is not None)
+        self.assertTrue(details is not None)
+        self.assertEquals(summary["num_synced_new_distributions"], 1)
+        self.assertEquals(summary["num_synced_new_distributions_files"], 3)
+        self.assertEquals(summary["num_resynced_distributions"], 0)
+        self.assertEquals(summary["num_resynced_distribution_files"], 0)
+
+        distro_tree_files = glob.glob("%s/%s/images/*" % (repo.working_dir, repo.id))
+        self.assertEquals(len(distro_tree_files), 3)

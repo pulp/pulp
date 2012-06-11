@@ -15,8 +15,6 @@ import os
 import sys
 import mock
 import unittest
-from pulp.server.managers.content.query import ContentQueryManager
-from pulp.server.managers.repo.unit_association_query import Criteria
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
@@ -30,8 +28,7 @@ from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter
 from yum_importer.importer import YUM_IMPORTER_TYPE_ID
 from pulp.server.content.plugins.model import Repository, Unit
-import pulp.server.content.loader as plugin_loader
-from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
+from yum_importer.importer_rpm import RPM_TYPE_ID
 
 class TestErrata(unittest.TestCase):
 

@@ -10,7 +10,6 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-import glob
 import os
 import sys
 import mock
@@ -24,8 +23,8 @@ import testutil
 
 from yum_importer import drpm, importer_rpm
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
-from yum_importer.drpm import DRPM_UNIT_KEY, DRPM_TYPE_ID
-from pulp.server.content.plugins.model import Repository, Unit
+from yum_importer.drpm import DRPM_UNIT_KEY
+from pulp.server.content.plugins.model import Repository
 
 class TestDRPMS(unittest.TestCase):
 

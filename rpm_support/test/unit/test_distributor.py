@@ -12,7 +12,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import glob
 import mock
 import os
 import shutil
@@ -28,8 +27,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugi
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/distributors/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
-from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID, \
-        REQUIRED_CONFIG_KEYS, OPTIONAL_CONFIG_KEYS, RPM_TYPE_ID, SRPM_TYPE_ID
+from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
+    RPM_TYPE_ID, SRPM_TYPE_ID
 
 from pulp.server.content.plugins.model import RelatedRepository, Repository, Unit
 from pulp.server.content.plugins.config import PluginCallConfiguration
