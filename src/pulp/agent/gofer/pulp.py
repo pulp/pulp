@@ -16,17 +16,16 @@ Pulp (gofer) plugin.
 Contains recurring actions and remote classes.
 """
 
-import os
 from hashlib import sha256
 from gofer.decorators import *
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
-from pulp.common.bundle import Bundle as BundleImpl
-from pulp.gc_client.agent.lib.dispatcher import Dispatcher
-from pulp.gc_client.api.server import PulpConnection
-from pulp.gc_client.api.bindings import Bindings
+from pulp.agent.gofer.pulp.common.bundle import Bundle as BundleImpl
+from pulp.agent.lib.dispatcher import Dispatcher
+from pulp.agent.gofer.pulp.gc_client.api.server import PulpConnection
+from pulp.agent.gofer.pulp.gc_client.api.bindings import Bindings
 from logging import getLogger
 
 log = getLogger(__name__)

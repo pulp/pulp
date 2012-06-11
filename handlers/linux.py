@@ -12,8 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import os
-from pulp.gc_client.agent.lib.handler import SystemHandler
-from pulp.gc_client.agent.lib.report import RebootReport
+from pulp.agent.lib.handler import SystemHandler
+from pulp.agent.lib.report import RebootReport
 
 
 class LinuxHandler(SystemHandler):

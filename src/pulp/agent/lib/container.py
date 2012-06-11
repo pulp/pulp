@@ -15,7 +15,6 @@ import imp
 import os
 from iniparse import INIConfig
 from pulp.common.config import Validator, REQUIRED, OPTIONAL, BOOL, ANY
-from pulp.gc_client.agent.lib.handler import Handler
 from logging import getLogger
 
 log = getLogger(__name__)

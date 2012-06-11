@@ -13,10 +13,10 @@
 
 import os
 from iniparse import INIConfig
-from pulp.gc_client.agent.lib.handler import BindHandler
-from pulp.gc_client.agent.lib.report import BindReport, CleanReport
+from pulp.agent.lib.handler import BindHandler
+from pulp.agent.lib.report import BindReport, CleanReport
 from pulp.gc_client.lib import repolib
-from logging import getLogger, Logger
+from logging import getLogger
 
 log = getLogger(__name__)
 

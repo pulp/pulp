@@ -12,10 +12,9 @@
 #
 
 import os
-from pulp.gc_client.agent.lib.handler import Handler
-from pulp.gc_client.agent.lib.container import Container
-from pulp.gc_client.agent.lib.container import SYSTEM, CONTENT, BIND
-from pulp.gc_client.agent.lib.report import *
+from pulp.agent.lib.container import Container
+from pulp.agent.lib.container import SYSTEM, CONTENT, BIND
+from pulp.agent.lib.report import *
 
 
 class HandlerNotFound(Exception):

@@ -18,7 +18,7 @@
 
 import os
 import shutil
-from pulp.gc_client.agent.lib.report import *
+from pulp.agent.lib.report import *
 
 #
 # Handlers to be deployed for loader testing

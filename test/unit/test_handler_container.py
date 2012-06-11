@@ -15,16 +15,14 @@
 
 import os
 import sys
-import shutil
-import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
 from pprint import pprint
 from mock_handlers import MockDeployer
-from pulp.gc_client.agent.lib.container import *
-from pulp.gc_client.agent.lib.dispatcher import *
+from pulp.agent.lib.container import *
+from pulp.agent.lib.dispatcher import *
 
 
 
