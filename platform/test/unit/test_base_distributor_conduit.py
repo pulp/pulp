@@ -14,12 +14,9 @@
 
 # Python
 import mock
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import mock_plugins
-import testutil
+import base
 
 from pulp.server.content.conduits._base import BaseDistributorConduit, DistributorConduitException
 import pulp.server.content.types.database as types_database
@@ -30,7 +27,7 @@ from pulp.server.managers.repo.distributor import RepoDistributorManager
 
 # -- test cases ---------------------------------------------------------------
 
-class BaseDistributorConduitTests(testutil.PulpTest):
+class BaseDistributorConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(BaseDistributorConduitTests, self).clean()
@@ -46,7 +43,6 @@ class BaseDistributorConduitTests(testutil.PulpTest):
         self.distributor_manager = RepoDistributorManager()
 
         repo_id = 'repo-1'
-#        repo_id = u'\u0938\u093e\u092f\u0932\u0940'
         self.repo_manager.create_repo(repo_id)
         self.distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True, distributor_id='test-distributor')
 

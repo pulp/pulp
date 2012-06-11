@@ -17,9 +17,9 @@ import os
 import shutil
 import unittest
 
-from   pulp.gc_client.api.exceptions import NotFoundException
-from   pulp.gc_client.api.responses import Response
-import pulp.gc_client.util.upload as upload_util
+from   pulp.bindings.exceptions import NotFoundException
+from   pulp.bindings.responses import Response
+import pulp.client.upload as upload_util
 
 # -- constants ----------------------------------------------------------------
 

@@ -14,7 +14,7 @@
 # Python
 import unittest
 
-from pulp.gc_client.framework import core
+from pulp.client.extensions import core
 from okaara.prompt import Recorder
 
 # -- test cases ---------------------------------------------------------------

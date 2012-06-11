@@ -14,12 +14,9 @@
 
 # Python
 import mock
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import mock_plugins
-import testutil
+import base
 
 from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
 import pulp.server.content.types.database as types_database
@@ -30,7 +27,7 @@ from pulp.server.managers.repo.importer import RepoImporterManager
 
 # -- test cases ---------------------------------------------------------------
 
-class BaseImporterConduitTests(testutil.PulpTest):
+class BaseImporterConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(BaseImporterConduitTests, self).clean()

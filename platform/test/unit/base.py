@@ -99,10 +99,17 @@ class PulpServerTests(unittest.TestCase):
 
         self.setup_async() # deprecated; being removed
 
+        self.clean()
+
     def tearDown(self):
         super(PulpServerTests, self).tearDown()
         self.unmock_all()
         self.teardown_async()
+
+        self.clean()
+
+    def clean(self):
+        pass
 
     def setup_async(self):
         async._queue = mock.Mock()
@@ -140,6 +147,7 @@ class PulpWebserviceTests(PulpServerTests):
 
     @classmethod
     def setUpClass(cls):
+        super(PulpWebserviceTests, cls).setUpClass()
 
         # The application setup is somewhat time consuming and really only needs
         # to be done once. We might be able to move it out to a single call for
@@ -251,8 +259,29 @@ class PulpWebserviceTests(PulpServerTests):
                     return status, body['result']
             return status, body
 
-        # _do_request actually starts here
-        status, body = PulpWebserviceTests._do_request(self, request_type, uri, params, additional_headers, serialize_json=serialize_json)
+        # Use the default headers established at setup and override/add any
+        headers = dict(PulpWebserviceTests.HEADERS)
+        if additional_headers is not None:
+            headers.update(additional_headers)
+
+        # Serialize the parameters if any are specified
+        if params is None:
+            params = {}
+
+        if serialize_json:
+            params = json.dumps(params)
+
+        # Invoke the API
+        f = getattr(PulpWebserviceTests.TEST_APP, request_type)
+        response = f('http://localhost' + uri, params=params, headers=headers, expect_errors=True)
+
+        # Collect return information and deserialize it
+        status = response.status
+        try:
+            body = json.loads(response.body)
+        except ValueError:
+            body = None
+
         if _is_not_error(status) and _is_task_response(body):
             return _poll_async_request(status, body)
         return status, body

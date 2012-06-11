@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 
 import testutil
-import mockagent
+import mock_agent
 import mock_plugins
 from mock import Mock
 from rpm_admin_consumer import pulp_cli
@@ -89,12 +89,12 @@ class TestPackages(testutil.PulpV2ClientTest):
         testutil.PulpV2ClientTest.setUp(self)
         plugin_loader._create_loader()
         mock_plugins.install()
-        mockagent.install()
+        mock_agent.install()
         
     def tearDown(self):
         testutil.PulpV2ClientTest.tearDown(self)
         mock_plugins.reset()
-        mockagent.reset()
+        mock_agent.reset()
         
     def populate(self):
         manager = factory.consumer_manager()

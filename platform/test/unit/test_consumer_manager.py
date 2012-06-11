@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 
 import testutil
 import mock_plugins
-import mockagent
+import mock_agent
 
 import pulp.server.content.loader as plugin_loader
 from pulp.server.db.model.gc_consumer import Consumer, Bind
@@ -39,7 +39,7 @@ class ConsumerManagerTests(testutil.PulpTest):
         testutil.PulpTest.setUp(self)
         plugin_loader._create_loader()
         mock_plugins.install()
-        mockagent.install()
+        mock_agent.install()
 
         # Create the manager instance to test
         self.manager = consumer_manager.ConsumerManager()
@@ -639,7 +639,7 @@ class AgentManagerTests(testutil.PulpTest):
         Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
-        mockagent.install()
+        mock_agent.install()
 
     def tearDown(self):
         testutil.PulpTest.tearDown(self)

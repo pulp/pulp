@@ -10,119 +10,75 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-SCHEMA = (
+Wrapper for all configuration access in Pulp, including server, client,
+and agent handlers.
+
+The entry point into this module is the Config class. It accepts one or more
+files to load and after instantiation will be used to access the values within.
+
+Example usage:
+  config = Config('base.conf', 'override.conf')
+
+The loaded sections can be filtered by passing in a keyword argument containing
+a list of section names. For example, to only load the "main" and "server"
+sections found in the configurations:
+
+  config = Config('base.conf', filter=['main', 'server'])
+
+The Config object also supports validation of the loaded configuration values.
+The schema is defined in a nested tuple structure that defines each section
+(along with its required/optional flag) and each property witin the section.
+For each property, its required/optional flag and validation criteria are
+specified. Criteria can take the form of one of the constants in this module
+or a regular expression.
+
+Example code for defining a schema and validating a config against it:
+
+schema = (
     ('section1', REQUIRED,
         (
             ('property1', REQUIRED, NUMBER),
-             ('property2', REQUIRED, 'http://.+'),
-             ('property3', REQUIRED, ANY),
+            ('property2', REQUIRED, 'http://.+'),
+            ('property3', REQUIRED, ANY),
         ),
     ),
     ('section2', OPTIONAL,
         (
             ('property1', OPTIONAL, NUMBER),
-             ('property2', OPTIONAL, BOOL),
-             ('property3', REQUIRED, BOOL,re.I),
+            ('property2', OPTIONAL, BOOL),
+            ('property3', REQUIRED, BOOL),
         ),
     ),
 )
 
-f = open('my.conf')
-cfg = INIConfig(f)
-validator = Validator(SCHEMA)
-validator.validate(cfg)
+cfg = Config('base.conf')
+cfg.validate(schema)
 """
 
 import re
+import collections
 from threading import RLock
-from iniparse.config import Undefined
+from iniparse import INIConfig
 
-# Contants
+# -- constants ----------------------------------------------------------------
 
+# Schema Constants
 REQUIRED = 1
 OPTIONAL = 0
 ANY = None
 NUMBER = '^\d+$'
 BOOL = '(^YES$|^TRUE$|^1$|^NO$|^FALSE$|^0$)', re.I
 
-# Utility
+# Regular expression to test if a value is a valid boolean type
+BOOL_RE = re.compile(*BOOL)
 
-def ndef(x):
-    """
-    Not defined.
-    Named after #ifndef macro in C preprocessor.
-    @param x: A section|property
-    @type x: section|property
-    @return: True if not defined.
-    @rtype: bool
-    """
-    return isinstance(x, Undefined)
-
-def nvl(x, default=None):
-    """
-    Decode null (not defined) values.
-    Named after Oracle NVL() function.
-    @param x: A section|property
-    @type x: section|property
-    @return: default when not defined, else x.
-    """
-    if ndef(x):
-        return default
-    else:
-        return x
-
-def getbool(value, default=False):
-    """
-    Get an INI property value as a python boolean.
-    @param value: An INI property value.
-    @type value: (str|Undefined)
-    @param default: The default value.
-    @type default: bool
-    @return: True if matches (true) pattern.
-    @rtype: bool
-    """
-    if isinstance(value, str):
-        return value.upper() in ('YES','TRUE','1')
-    else:
-        return default
-    
-def getsection(cfg, name):
-    """
-    Safely get a section by name.
-    Used for python < 2.7 compat.
-    @param cfg: An config object.
-    @type cfg: INIConfig
-    @param name: A section name.
-    @type name: str
-    @return: The section.
-    @rtype: ini.Section
-    """
-    try:
-        return cfg[name]
-    except KeyError:
-        return Undefined(name, None)
-    
-def getproperty(section, name):
-    """
-    Safely get a property value by name.
-    Used for python < 2.7 compat.
-    @param section: An section object.
-    @type section: ini.Section
-    @param name: A property name.
-    @type name: str
-    @return: The property value.
-    @rtype: any
-    """
-    try:
-        return section[name]
-    except KeyError:
-        return Undefined(None, name)
-
-# Validation
+# -- exceptions ---------------------------------------------------------------
 
 class ValidationException(Exception):
 
     def __init__(self, name):
+        super(ValidationException, self).__init__()
+
         self.name = name
         self.path = ''
 
@@ -139,10 +95,8 @@ class SectionNotFound(ValidationException):
             'Required section [%s], not found',
             self.name)
 
-
 class PropertyException(ValidationException):
     pass
-
 
 class PropertyNotFound(PropertyException):
 
@@ -151,11 +105,10 @@ class PropertyNotFound(PropertyException):
             'Required property "%s", not found',
             self.name)
 
-
 class PropertyNotValid(PropertyException):
 
     def __init__(self, name, value, pattern):
-        self.name = name
+        PropertyException.__init__(self, name)
         self.value = value
         self.pattern = pattern
 
@@ -166,6 +119,205 @@ class PropertyNotValid(PropertyException):
             self.value,
             self.pattern)
 
+class Unparsable(Exception):
+    """
+    Raised if a value cannot be parsed into the requested type. For instance,
+    attempting to parse a boolean out of text that does not match the supported
+    ways of specifying a boolean.
+    """
+    pass
+
+# -- public -------------------------------------------------------------------
+
+def parse_bool(value):
+    """
+    Parses the given value into its boolean representation.
+    @param value: value to test
+    @type value: str
+    @return: true or false depending on what is parsed
+    @rtype: bool
+    @raise Unparsable: if the value is not one of the accepted values for
+           indicating a boolean
+    """
+
+    # Make sure the user correctly indicated a boolean value
+    if not BOOL_RE.match(value):
+        raise Unparsable()
+
+    return value.upper() in ('YES','TRUE','1')
+
+class Config(dict):
+    """
+    Holds configuration files in the INI format; all properties are in a
+    named section and are accessed by specifying both the section name and
+    the property name.
+
+    Properties are accessed through a nested dictionary syntax where the first
+    item is the section name and the second is the property name. For example,
+    to access a property named "server" in section "[main]":
+
+       value = config['main']['server']
+
+    Alternatively, a dot notation syntax can be used by first retrieving a
+    wrapper on top of the configuration through the graph() method:
+
+       graph = config.graph()
+       value = graph.main.server
+    """
+
+    def __init__(self, *inputs, **options):
+        """
+        Creates a blank configuration and loads one or more files or existing
+        data.
+
+        Values to the inputs parameter can be one of three things:
+         - the full path to a file to load (str)
+         - file object to read from
+         - dictionary whose values will be merged into this instance
+
+        The only valid key to options is the "filter" keyword. It is used to
+        selectively load only certain sections from the specified files. Its
+        value can be one of the following:
+         - None: match all sections
+         - str : compiled into a regular expression to match against section names
+         - list/tuple/set: a list of section names to match
+         - callable: a funciton used to determine acceptance; it must accept
+           a single parameter which is the section name being tested and return
+           a boolean
+
+        @param inputs: one or more files to load (see above)
+        @param options: see above
+        """
+        super(Config, self).__init__()
+
+        filter = options.get('filter')
+        for input in inputs:
+            if isinstance(input, basestring):
+                self.open(input, filter)
+                continue
+            if isinstance(input, dict):
+                self.update(input)
+                continue
+            self.read(input, filter)
+
+    def open(self, paths, filter=None):
+        """
+        @param paths: A path or list of paths to .conf files
+        @type paths: str|list
+        @param filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
+        """
+        if isinstance(paths, basestring):
+            paths = (paths,)
+        for path in paths:
+            fp = open(path)
+            try:
+                self.read(fp, filter)
+            finally:
+                fp.close()
+
+    def read(self, fp, filter=None):
+        """
+        Read and parse the fp.
+        @param fp: An open file
+        @type fp: file-like object.
+        @param filter: A section filtering object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
+        """
+        cfg = INIConfig(fp)
+        filter = Filter(filter)
+        for s in cfg:
+            if not filter.match(s):
+                continue
+            section = {}
+            for p in cfg[s]:
+                v = getattr(cfg[s], p)
+                section[p] = v
+            self[s] = section
+
+    def update(self, other):
+        """
+        Copies sections and properties from "other" into this instance.
+
+        @param other: values to copy into this instance
+        @type other: dict
+        """
+        for k,v in other.items():
+            if k in self and isinstance(v, dict):
+                self[k].update(v)
+            else:
+                self[k] = v
+
+    def graph(self, strict=False):
+        """
+        Get an object representation of this instance. The data is the same,
+        however the returned object supports a dot notation for accessing
+        values.
+
+        @param strict: Indicates that KeyError should be raised when
+            undefined sections or properties are accessed. When
+            false, undefined sections are returned as empty dict and
+            undefined properties are returned as (None).
+        @type strict: bool
+        @return: graph object representation of the configuration
+        @rtype: Graph
+        """
+        return Graph(self, strict)
+
+    def validate(self, schema):
+        """
+        Validates the values in the instance against the given schema.
+        @param schema: nested tuples as described in the module docs
+        @type schema: tuple
+        @return: two list: undefined sections and properties.
+        @rtype: tuple
+        @raise ValidationException: if the configuration does not pass validation
+        """
+        v = Validator(schema)
+        return v.validate(self)
+
+    def parse_bool(self, value):
+        """
+        Shadow of the module-level parse_bool method for import convenience.
+
+        @param value: value to test
+        @type  value: str
+
+        @return: boolean representation of the given string
+        @rtype:  bool
+
+        @raise Unparsable: if the value is not a valid boolean identifier
+        """
+        return parse_bool(value)
+
+    def __setitem__(self, name, value):
+        """
+        Set a section value.
+        @param name: A section name.
+        @type name: str
+        @param value: A section.
+        @type value: dict
+        """
+        if isinstance(value, dict):
+            dict.__setitem__(self, name, value)
+        else:
+            raise ValueError('must be <dict>')
+
+# -- private ------------------------------------------------------------------
 
 class Validator:
     """
@@ -185,14 +337,14 @@ class Validator:
         """
         Validate the specified INI configuration object.
         @param cfg: An INI configuration object.
-        @type cfg: INIConfig
+        @type cfg: Config
         @raise ValidationException: Or failed.
         @return: Two list: undefined sections and properties.
         @rtype: tuple
         """
         for section in self.schema:
             s = Section(section)
-            section = getsection(cfg, s.name)
+            section = cfg.get(s.name)
             s.validate(section)
         return self.undefined(cfg)
 
@@ -224,7 +376,6 @@ class Validator:
         return extras
 
 
-
 class Patterns:
     """
     Regex pattern cache object.
@@ -242,8 +393,7 @@ class Patterns:
         Get a compiled pattern.
         @param regex: A regular expression.
         @type regex: str|(str,int)
-        @return: A compiled pattern.
-        @rtype: Pattern
+        @return: compiled pattern
         """
         key = regex
         regex, flags = cls.split(regex)
@@ -265,7 +415,7 @@ class Patterns:
         else:
             regex = x
             flags = 0
-        return (regex,flags)
+        return regex, flags
 
     @classmethod
     def __lock(cls):
@@ -306,7 +456,7 @@ class Section:
         @type section: iniparse.ini.INISection
         @raise SectionException: On failure.
         """
-        if ndef(section):
+        if section is None:
             if self.required:
                 raise SectionNotFound(self.name)
         else:
@@ -325,7 +475,7 @@ class Section:
         """
         p = Property(property)
         try:
-            property = getproperty(section, p.name)
+            property = section.get(p.name)
             p.validate(property)
         except PropertyException, pe:
             pe.name = '.'.join((self.name, pe.name))
@@ -363,7 +513,7 @@ class Property:
         @type value: str
         @raise PropertyException: On failure.
         """
-        if ndef(value):
+        if value is None:
             if self.required:
                 raise PropertyNotFound(self.name)
             return
@@ -373,3 +523,117 @@ class Property:
         match = p.match(value)
         if not match:
             raise PropertyNotValid(self.name, value, self.pattern)
+
+
+class Filter:
+    """
+    Filter object used to wrap various types of objects
+    that can be used to filter sections.
+    @ivar filter: A filter object.  See: __init__()
+    @type filter: object
+    """
+
+    def __init__(self, filter):
+        """
+        @param filter: A filter object.
+            One of:
+              - None: match ALL.
+              - str : compiled as regex.
+              - list: A list of strings to match.
+              - tuple: A tuple of strings to match.
+              - set: A set of strings to match.
+              - callable: A funciton used to match.  Called as: filter(s).
+        @type filter: object
+        """
+        self.filter = filter
+
+    def match(self, s):
+        """
+        Match the specified string.
+        Delegated to the contained (filter) based on type.  See: __init__().
+        @param s: A string to match.
+        @type s: str
+        @return: True if matched.
+        @rtype: bool
+        """
+        if self.filter is None:
+            return True
+        if isinstance(self.filter, str):
+            p = Patterns.get(self.filter)
+            return p.match(s)
+        if hasattr(collections, "Iterable"):
+            if isinstance(self.filter, collections.Iterable):
+                return s in self.filter
+        else:
+            if hasattr(self.filter, "__iter__"):
+                return s in self.filter
+        if callable(self.filter):
+            return self.filter(s)
+        fclass = self.filter.__class__.__name__
+        raise Exception('unsupported filter: %s', fclass)
+
+
+class Graph:
+    """
+    An object graph representation of a Config.
+    Provides access using object attribute (.) dot notation.
+    @ivar __dict: The wrapped config.
+    @type __dict: dict
+    @ivar __strict: Indicates that KeyError should be raised when
+        undefined sections are accessed.  When false, undefined 
+        sections are returned as empty dict
+    @type __strict: bool
+    """
+
+    def __init__(self, dict, strict=False):
+        """
+        @param dict: The wrapped config.
+        @type dict: dict
+        @param strict: Indicates that KeyError should be raised when
+            undefined sections are accessed.  When false, undefined 
+            sections are returned as empty dict.
+        @type strict: bool
+        """
+        self.__dict = dict
+        self.__strict = strict
+
+    def __getattr__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            return getattr(self.__dict, name)
+        if self.__strict:
+            s = self[name]
+        else:
+            s = self.__dict.get(name, {})
+        return GraphSection(s, self.__strict)
+
+
+class GraphSection:
+    """
+    An object graph representation of a section.
+    @ivar __dict: The wrapped section.
+    @type __dict: dict
+    @ivar __strict: Indicates that KeyError should be raised when
+        undefined properties are accessed.  When false, undefined 
+        properties are returned as (None).
+    @type __strict: bool
+    """
+
+    def __init__(self, dict, strict=False):
+        """
+        @param dict: The wrapped section.
+        @type dict: dict
+        @param strict: Indicates that KeyError should be raised when
+            undefined properties are accessed.  When false, undefined 
+            properties are returned as (None).
+        @type strict: bool
+        """        
+        self.__dict = dict
+        self.__strict = strict
+
+    def __getattr__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            return getattr(self.__dict, name)
+        if self.__strict:
+            return self.__dict[name]
+        else:
+            return self.__dict.get(name)

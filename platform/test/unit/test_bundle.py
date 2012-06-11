@@ -14,12 +14,9 @@
 #
 
 import os
-import sys
 import shutil
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
 
 from pulp.common.bundle import Bundle
 
@@ -109,15 +106,13 @@ BUNDLE_ROOT = '/tmp/pulp/bundle-testing/test.crt'
 CRTFILE = os.path.join(BUNDLE_ROOT, 'test.crt')
 
 
-class TestBundles(testutil.PulpAsyncTest):
+class TestBundles(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         if os.path.exists(BUNDLE_ROOT):
             shutil.rmtree(BUNDLE_ROOT)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         if os.path.exists(BUNDLE_ROOT):
             shutil.rmtree(BUNDLE_ROOT)
             

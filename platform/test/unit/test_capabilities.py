@@ -12,12 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 from pulp.common.capabilities import *
 
 class Robot(Capabilities):
@@ -32,7 +27,7 @@ class Robot(Capabilities):
         Capabilities.__init__(self, definitions, capabilities)
 
 
-class TestCapabilities(testutil.PulpAsyncTest):
+class TestCapabilities(base.PulpServerTests):
 
     def test_happypath(self):
         cap = AgentCapabilities()

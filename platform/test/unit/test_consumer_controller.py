@@ -12,25 +12,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
-
-import mock
 import time
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
-import mockagent
+import mock_agent
 
 import pulp.server.content.loader as plugin_loader
 from pulp.server.managers import factory
 from pulp.server.db.model.gc_consumer import Consumer, Bind
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
-from pulp.server.webservices.controllers import statuses
 
 
-class BindTest(testutil.PulpV2WebserviceTest):
+class BindTest(base.PulpWebserviceTests):
     
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
@@ -50,17 +44,17 @@ class BindTest(testutil.PulpV2WebserviceTest):
         client_cert='MY-CLIENT-CERT')
 
     def setUp(self):
-        testutil.PulpV2WebserviceTest.setUp(self)
+        base.PulpWebserviceTests.setUp(self)
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
-        mockagent.install()
+        mock_agent.install()
         
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -212,24 +206,24 @@ class BindTest(testutil.PulpV2WebserviceTest):
         self.assertEquals(len(binds), 0)
 
 
-class ContentTest(testutil.PulpV2WebserviceTest):
+class ContentTest(base.PulpWebserviceTests):
 
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'test-distributor'
 
     def setUp(self):
-        testutil.PulpV2WebserviceTest.setUp(self)
+        base.PulpWebserviceTests.setUp(self)
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         plugin_loader._create_loader()
         mock_plugins.install()
-        mockagent.install()
+        mock_agent.install()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()

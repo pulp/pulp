@@ -13,26 +13,38 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
-import os
 import random
 import string
-import sys
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
+from pulp.server.api.role import RoleAPI
+from pulp.server.api.user import UserApi
 from pulp.server.auth import authorization, principal
 from pulp.server.tasking.task import Task
 
 
-class TestAuthorization(testutil.PulpAsyncTest):
+class TestAuthorization(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         authorization.ensure_builtin_roles()
         principal.clear_principal()
         self.alhpa_num = string.letters + string.digits
+
+        self.user_api = UserApi()
+        self.role_api = RoleAPI()
+
+        self.clean()
+
+    def tearDown(self):
+        super(TestAuthorization, self).tearDown()
+        self.clean()
+
+    def clean(self):
+        self.user_api.clean()
+        self.role_api.clean()
 
     # test data generation
 
@@ -367,13 +379,6 @@ class TestAuthorization(testutil.PulpAsyncTest):
                           authorization.revoke_permission_from_role,
                           s, authorization.super_user_role, [n])
 
-    def test_super_users_remove(self):
-        u = self._create_user()
-        authorization.add_user_to_role(authorization.super_user_role, u['name'])
-        self.assertRaises(authorization.PulpAuthorizationError,
-                          authorization.remove_user_from_role,
-                          authorization.super_user_role, u['name'])
-
     def test_super_user_permissions(self):
         u = self._create_user()
         s = self._create_resource()
@@ -409,6 +414,7 @@ class TestAuthorization(testutil.PulpAsyncTest):
         u = self._create_user()
         s = '/consumers/'
         r = authorization.consumer_users_role
+        self.role_api.create(r)
         authorization.add_user_to_role(r, u['name'])
         self.assertTrue(authorization.is_authorized(s, u, authorization.CREATE))
         self.assertTrue(authorization.is_authorized(s, u, authorization.READ))
