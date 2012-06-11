@@ -16,9 +16,8 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
-import mockagent
+import base
+import mock_agent
 from pulp.server.agent.hub.pulpagent import PulpAgent as RestAgent
 from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
 
@@ -43,11 +42,11 @@ TASKID = 'TASK-123'
 AGENT_CLASSES = (DirectAgent, RestAgent)
 
 
-class TestRestAgent(testutil.PulpTest):
+class TestRestAgent(base.PulpServerTests):
     
     def setUp(self):
-        testutil.PulpTest.setUp(self)
-        mockagent.install()
+        base.PulpServerTests.setUp(self)
+        mock_agent.install()
     
     def test_unregistered(self):
         for Agent in AGENT_CLASSES:
