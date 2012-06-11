@@ -68,7 +68,7 @@ def display_status(context, task_id):
 
     # If we're here, the sync should be running or hopefully about to run
     begin_spinner = context.prompt.create_spinner()
-    poll_frequency_in_seconds = context.client_config.getfloat('output', 'poll_frequency_in_seconds')
+    poll_frequency_in_seconds = context.config.getfloat('output', 'poll_frequency_in_seconds')
 
     try:
         while not response.response_body.is_completed():
@@ -532,7 +532,9 @@ class StatusRenderer(object):
             self.prompt.render_spacer()
 
             # If there are any errors, write them out here
-            display_error_count = self.context.extension_config.getint('main', 'num_display_errors')
+            # TODO: read this from config
+            # display_error_count = self.context.extension_config.getint('main', 'num_display_errors')
+            display_error_count = 5
 
             num_errors = min(len(data['error_details']), display_error_count)
 

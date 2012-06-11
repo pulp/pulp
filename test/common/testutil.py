@@ -479,9 +479,9 @@ class PulpV2ClientTest(unittest.TestCase):
     def setUp(self):
         super(PulpV2ClientTest, self).setUp()
 
-        self.client_config = SafeConfigParser()
+        self.config = SafeConfigParser()
         config_filename = os.path.abspath(os.path.dirname(__file__)) + '/test-override-v2-admin.conf'
-        self.client_config.read(config_filename)
+        self.config.read(config_filename)
 
         self.server_mock = mock.Mock()
         self.pulp_connection = PulpConnection('', server_wrapper=self.server_mock)
@@ -492,9 +492,9 @@ class PulpV2ClientTest(unittest.TestCase):
         self.prompt = PulpPrompt(enable_color=False, output=self.recorder, record_tags=True)
 
         self.logger = logging.getLogger('pulp')
-        self.exception_handler = ExceptionHandler(self.prompt, self.client_config)
+        self.exception_handler = ExceptionHandler(self.prompt, self.config)
 
-        self.context = ClientContext(self.bindings, self.client_config, self.logger, self.prompt, self.exception_handler)
+        self.context = ClientContext(self.bindings, self.config, self.logger, self.prompt, self.exception_handler)
 
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli

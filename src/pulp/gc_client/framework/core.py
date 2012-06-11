@@ -498,7 +498,7 @@ class PulpCli(Cli):
 
 class ClientContext:
 
-    def __init__(self, server, client_config, logger, prompt, exception_handler, cli=None, shell=None, extension_config=None):
+    def __init__(self, server, config, logger, prompt, exception_handler, cli=None, shell=None):
         self.server = server
         self.logger = logger
         self.prompt = prompt
@@ -507,6 +507,5 @@ class ClientContext:
         self.cli = cli
         self.shell = shell
 
-        self.client_config = client_config
-        self.extension_config = extension_config
+        self.client_config = config
 

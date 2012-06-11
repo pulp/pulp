@@ -75,7 +75,7 @@ class PollingCommand(PulpCliCommand):
 
     def poll(self, task):
         server = self.context.server
-        cfg = self.context.client_config
+        cfg = self.context.config
         spinner = self.context.prompt.create_spinner()
         interval = cfg.getfloat('output', 'poll_frequency_in_seconds')
         while not task.is_completed():

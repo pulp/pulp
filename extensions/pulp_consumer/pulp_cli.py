@@ -109,7 +109,7 @@ class ConsumerSection(PulpCliSection):
         @rtype: str
         """
         # Read path of consumer cert from config and check if consumer is already registered
-        consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
+        consumer_cert_path = self.context.config.get('filesystem', 'consumer_cert')
         bundle = Bundle(consumer_cert_path)
         if bundle.valid():
             content = bundle.read()
@@ -142,7 +142,7 @@ class ConsumerSection(PulpCliSection):
                 notes = self._parse_notes(kwargs['note'])
 
         # Check write permissions to cert directory
-        consumer_cert_path = self.context.client_config.get('filesystem', 'consumer_cert')
+        consumer_cert_path = self.context.config.get('filesystem', 'consumer_cert')
         self.check_write_perms(consumer_cert_path)
 
         # Set agent capabilities
