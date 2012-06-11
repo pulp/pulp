@@ -20,10 +20,10 @@ import os
 import shutil
 import time
 
-from drpm import DRPM_TYPE_ID
-from distribution import DISTRO_TYPE_ID
-from importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
-from errata import ImporterErrata, ERRATA_TYPE_ID
+from yum_importer.drpm import DRPM_TYPE_ID
+from yum_importer.distribution import DISTRO_TYPE_ID
+from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
+from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID
 
 from pulp.server.content.plugins.importer import Importer
 from pulp_rpm.yum_plugin import util

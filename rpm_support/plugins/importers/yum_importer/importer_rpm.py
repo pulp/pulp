@@ -19,9 +19,8 @@ from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
 from pulp.server.managers.repo.unit_association_query import Criteria
-import drpm
-import distribution
 from pulp_rpm.yum_plugin import util
+from yum_importer import distribution, drpm
 
 _LOG = logging.getLogger(__name__)
 #_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))

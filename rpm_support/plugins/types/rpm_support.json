@@ -1,0 +1,55 @@
+{"types": [
+    {
+        "id" : "distribution",
+        "display_name" : "Distribution",
+        "description" : "Kickstart trees and all accompanying files",
+        "unit_key" :
+                ["id",  "family", "variant", "version", "arch"],
+        "search_indexes" :
+                ["id", "family", "variant", "version", "arch"]
+    },
+
+    {
+        "id" : "drpm",
+        "display_name" : "DRPM",
+        "description" : "DRPM",
+        "unit_key" :
+                ["epoch",  "version", "release", "filename", "checksumtype", "checksum"],
+        "search_indexes" :
+                ["epoch",  "version", "release", "checksum", "filename"]
+    },
+
+    {
+        "id" : "erratum",
+        "display_name" : "Erratum",
+        "description" : "Erratum advisory information",
+        "unit_key" :
+                ["id"],
+        "search_indexes" : [
+            "id", "title", "version", "release", "type",
+            "status", "updated", "issued", "severity", "references"
+        ],
+        "referenced_types" : ["rpm"]
+    },
+
+    {
+        "id" : "rpm",
+        "display_name" : "RPM",
+        "description" : "RPM",
+        "unit_key" :
+                ["name", "epoch", "version", "release", "arch", "checksumtype", "checksum"],
+        "search_indexes" :
+                ["name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype"],
+        "referenced_types" : ["erratum"]
+    },
+
+    {
+        "id" : "srpm",
+        "display_name" : "SRPM",
+        "description" : "SRPM",
+        "unit_key" :
+                ["name", "epoch", "version", "release", "arch", "checksumtype", "checksum"],
+        "search_indexes" :
+                ["name", "epoch", "version", "release", "arch", "filename", "checksum", "checksumtype"]
+    }
+]}

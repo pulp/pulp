@@ -17,12 +17,12 @@ import os
 import shutil
 import time
 import traceback
-import metadata
 from pulp_rpm.yum_plugin import util
 from pulp.server.content.plugins.distributor import Distributor
 from ConfigParser import SafeConfigParser
 # -- constants ----------------------------------------------------------------
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
+from yum_distributor import metadata
 
 _LOG = logging.getLogger(__name__)
 _ = gettext.gettext

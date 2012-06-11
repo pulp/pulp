@@ -18,9 +18,9 @@ import os
 import time
 import yum
 import logging
-import importer_rpm
 from pulp_rpm.yum_plugin import util, updateinfo
 from pulp.server.managers.repo.unit_association_query import Criteria
+from yum_importer import importer_rpm
 
 _LOG = logging.getLogger(__name__)
 #TODO Fix up logging so we log to a separate file to aid debugging
