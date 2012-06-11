@@ -29,8 +29,8 @@ from gettext import gettext as _
 import logging
 import os
 
-from pulp.gc_client.api.exceptions import *
-from pulp.gc_client.util.arg_utils import InvalidConfig
+from pulp.client.api.exceptions import *
+from pulp.client.util.arg_utils import InvalidConfig
 
 # -- constants ----------------------------------------------------------------
 

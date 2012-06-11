@@ -25,11 +25,11 @@ import os
 
 from   okaara.prompt import COLOR_CYAN, COLOR_LIGHT_CYAN
 
-from   pulp.gc_client.framework.core import PulpPrompt, PulpCli, ClientContext, WIDTH_TERMINAL
-from   pulp.gc_client.framework.exceptions import ExceptionHandler
-import pulp.gc_client.framework.loader as extensions_loader
-from   pulp.gc_client.api.bindings import Bindings
-from   pulp.gc_client.api.server import PulpConnection
+from   pulp.client.framework.core import PulpPrompt, PulpCli, ClientContext, WIDTH_TERMINAL
+from   pulp.client.framework.exceptions import ExceptionHandler
+import pulp.client.framework.loader as extensions_loader
+from   pulp.client.api.bindings import Bindings
+from   pulp.client.api.server import PulpConnection
 
 # -- configuration and logging ------------------------------------------------
 

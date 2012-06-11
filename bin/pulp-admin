@@ -21,7 +21,7 @@ import sys
 import pulp.client.launcher
 
 if __name__ == "__main__":
-    config_file = '/etc/pulp/admin/v2_admin.conf'
+    config_file = '/etc/pulp/admin/admin.conf'
     override_config_file = os.path.expanduser('~/.pulp/v2_admin.conf')
 
     sys.exit(pulp.gc_client.launcher.main(config_file, override_config_file))
