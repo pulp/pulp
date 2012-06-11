@@ -11,16 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
 import os
 import sys
 import threading
 import time
 import traceback
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-
-import mock
-import testutil
+import base
 
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
@@ -39,7 +37,7 @@ def call(*args, **kwargs):
 
 # instantiation testing --------------------------------------------------------
 
-class TaskQueueInstantiationTests(testutil.PulpTest):
+class TaskQueueInstantiationTests(base.PulpServerTests):
 
     def test_instantiation(self):
         try:
@@ -59,7 +57,7 @@ class TaskQueueInstantiationTests(testutil.PulpTest):
 
 # queue start/stop testing -----------------------------------------------------
 
-class TaskQueueStartStopTests(testutil.PulpTest):
+class TaskQueueStartStopTests(base.PulpServerTests):
 
     def setUp(self):
         self.queue = TaskQueue(1)
@@ -84,7 +82,7 @@ class TaskQueueStartStopTests(testutil.PulpTest):
 
 # task queue base tests class --------------------------------------------------
 
-class TaskQueueTests(testutil.PulpTest):
+class TaskQueueTests(base.PulpServerTests):
 
     def setUp(self):
         super(TaskQueueTests, self).setUp()

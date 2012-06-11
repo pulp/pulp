@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import atexit
-import logging
 import os
 import shutil
 import string
@@ -21,9 +20,7 @@ import traceback
 import tempfile
 from pprint import pprint
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../common')))
-
-import testutil
+import base
 
 from pulp.server.content import loader
 from pulp.server.content.plugins.distributor import Distributor
@@ -32,7 +29,6 @@ from pulp.server.content.plugins.importer import Importer
 # test data and data generation api --------------------------------------------
 
 _generated_paths = []
-
 
 def _delete_generated_paths():
     for p in _generated_paths:
@@ -184,7 +180,7 @@ class BogusImporter(Importer):
 
 # unit tests -------------------------------------------------------------------
 
-class PluginMapTests(testutil.PulpTest):
+class PluginMapTests(base.PulpServerTests):
 
     def setUp(self):
         super(PluginMapTests, self).setUp()
@@ -243,7 +239,7 @@ class PluginMapTests(testutil.PulpTest):
         self.assertFalse(name in self.plugin_map.plugins)
 
 
-class LoaderInstanceTest(testutil.PulpTest):
+class LoaderInstanceTest(base.PulpServerTests):
 
     def test_loader_instantiation(self):
         try:
@@ -252,7 +248,7 @@ class LoaderInstanceTest(testutil.PulpTest):
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
 
-class LoaderTest(testutil.PulpTest):
+class LoaderTest(base.PulpServerTests):
 
     def setUp(self):
         super(LoaderTest, self).setUp()

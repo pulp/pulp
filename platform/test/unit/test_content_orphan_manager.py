@@ -14,13 +14,10 @@ import os
 import random
 import shutil
 import string
-import sys
 import tempfile
 import traceback
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-
-import testutil
+import base
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.content.types import database as content_type_db
@@ -73,7 +70,7 @@ def unassociate_content_unit_from_repo(content_unit):
 
 # manager instantiation tests --------------------------------------------------
 
-class OrphanManagerInstantiationTests(testutil.PulpTest):
+class OrphanManagerInstantiationTests(base.PulpServerTests):
 
     def test_constructor(self):
         try:
@@ -89,7 +86,7 @@ class OrphanManagerInstantiationTests(testutil.PulpTest):
 
 # manager tests ----------------------------------------------------------------
 
-class OrphanManagerTests(testutil.PulpTest):
+class OrphanManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(OrphanManagerTests, self).setUp()

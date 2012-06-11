@@ -12,12 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 from pulp.server.db.model.gc_consumer import Consumer
 import pulp.server.managers.consumer.cud as consumer_manager
@@ -25,20 +20,20 @@ import pulp.server.managers.consumer.query as query_manager
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoQueryManagerTests(testutil.PulpTest):
+class ConsumerQueryManagerTests(base.PulpServerTests):
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        base.PulpServerTests.clean(self)
         Consumer.get_collection().remove()
         
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        base.PulpServerTests.setUp(self)
 
         self.consumer_manager = consumer_manager.ConsumerManager()
         self.query_manager = query_manager.ConsumerQueryManager()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
 
     def test_find_all(self):
         """

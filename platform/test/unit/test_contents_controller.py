@@ -14,17 +14,15 @@
 # Python
 import os
 import shutil
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import dummy_plugins
 
 from   pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.constants as pulp_constants
 
-class BaseUploadTest(testutil.PulpV2WebserviceTest):
+class BaseUploadTest(base.PulpWebserviceTests):
 
     def setUp(self):
         super(BaseUploadTest, self).setUp()

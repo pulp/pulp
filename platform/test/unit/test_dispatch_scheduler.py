@@ -17,15 +17,13 @@ import sys
 import threading
 import traceback
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-
 try:
     from bson.objectid import ObjectId
 except ImportError:
     from pymongo.objectid import ObjectId
 
 import mock
-import testutil
+import base
 
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -51,7 +49,7 @@ DISPATCH_FUTURE_SCHEDULE = '3000-01-01T00:00:01/PT1H'
 
 # scheduler instantiation ------------------------------------------------------
 
-class SchedulerInstantiationTests(testutil.PulpTest):
+class SchedulerInstantiationTests(base.PulpServerTests):
 
     def test_instantiation(self):
         try:
@@ -69,7 +67,7 @@ class SchedulerInstantiationTests(testutil.PulpTest):
 
 # scheduler testing ------------------------------------------------------------
 
-class SchedulerTests(testutil.PulpTest):
+class SchedulerTests(base.PulpServerTests):
 
     def setUp(self):
         super(SchedulerTests, self).setUp()

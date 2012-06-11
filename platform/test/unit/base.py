@@ -85,8 +85,12 @@ class PulpServerTests(unittest.TestCase):
     in nearly all cases outside of the controllers.
     """
 
+    CONFIG = None
+
     @classmethod
     def setUpClass(cls):
+        PulpServerTests.CONFIG = load_test_config()
+
         super(PulpServerTests, cls).setUpClass()
         connection.initialize()
         manager_factory.initialize()
@@ -95,7 +99,7 @@ class PulpServerTests(unittest.TestCase):
         super(PulpServerTests, self).setUp()
 
         self._mocks = {}
-        self.config = load_test_config()
+        self.config = PulpServerTests.CONFIG # shadow for simplicity
 
         self.setup_async() # deprecated; being removed
 

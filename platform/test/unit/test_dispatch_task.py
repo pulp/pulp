@@ -12,15 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
-import os
-import sys
 import traceback
 import types
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-
 import mock
-import testutil
+import base
 
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import ArchivedCall
@@ -59,7 +55,7 @@ def call_with_success_and_failure_callbacks(success_callback=None, failure_callb
 
 # task instance testing --------------------------------------------------------
 
-class TaskInstanceTests(testutil.PulpTest):
+class TaskInstanceTests(base.PulpServerTests):
 
     def test_task_instantiation(self):
         call_request = CallRequest(mock.Mock())
@@ -88,7 +84,7 @@ class TaskInstanceTests(testutil.PulpTest):
 
 # task testing -----------------------------------------------------------------
 
-class TaskTests(testutil.PulpTest):
+class TaskTests(base.PulpServerTests):
 
     def setUp(self):
         super(TaskTests, self).setUp()
@@ -156,7 +152,7 @@ class TaskTests(testutil.PulpTest):
 
 # run failure testing ----------------------------------------------------------
 
-class FailTests(testutil.PulpTest):
+class FailTests(base.PulpServerTests):
 
     def setUp(self):
         self.call_request = CallRequest(fail)
@@ -186,7 +182,7 @@ class FailTests(testutil.PulpTest):
 
 # async task testing -----------------------------------------------------------
 
-class AsyncTaskTests(testutil.PulpTest):
+class AsyncTaskTests(base.PulpServerTests):
 
     def setUp(self):
         self.call_request = CallRequest(Call(), call_args, call_kwargs)
@@ -216,7 +212,7 @@ class AsyncTaskTests(testutil.PulpTest):
 
 # task archival tests ----------------------------------------------------------
 
-class TaskArchivalTests(testutil.PulpTest):
+class TaskArchivalTests(base.PulpServerTests):
 
     def tearDown(self):
         super(TaskArchivalTests, self).tearDown()

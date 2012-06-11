@@ -12,16 +12,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 import pulp.server.consumer_utils as utils
-from pulp.server.api.consumer import ConsumerApi
 from pulp.server.managers.repo.cud import RepoManager
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.db.model.resource import Consumer
@@ -29,10 +23,10 @@ from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 
 # -- test cases -------------------------------------------------------------------------
 
-class TestConsumerUtils(testutil.PulpAsyncTest):
+class TestConsumerUtils(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
 
         mock_plugins.install()
 
@@ -41,20 +35,20 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
         self.repo_distributor_manager = RepoDistributorManager()
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         mock_plugins.reset()
 
     def clean(self):
-        testutil.PulpAsyncTest.clean(self)
+        base.PulpServerTests.clean(self)
 
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
 
     def test_consumers_bound_to_repo(self):
-        '''
+        """
         Tests retrieving consumers bound to a repo when there are actually consumers for
         the repo.
-        '''
+        """
 
         # Setup
         db = Consumer.get_collection()
@@ -86,10 +80,10 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
             self.assertTrue(c['id'] in ['c1', 'c2'])
 
     def test_consumers_bound_none_bound(self):
-        '''
+        """
         Tests the correct return result is received when requesting consumers bound to a repo when
         there are no consumers bound.
-        '''
+        """
 
         # Test
         consumers = utils.consumers_bound_to_repo('empty-repo')
@@ -99,9 +93,9 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
         self.assertEqual(0, len(consumers))
 
     def test_build_bind_data(self):
-        '''
+        """
         Tests that assembling the data needed for a bind correctly includes all supplied data.
-        '''
+        """
 
         # Setup
         repo = self.repo_manager.create_repo('repo1', 'Repo 1')
@@ -132,10 +126,10 @@ class TestConsumerUtils(testutil.PulpAsyncTest):
         self.assertEqual(1, len(data_keys))
 
     def test_build_bind_data_no_hostnames_or_keys(self):
-        '''
+        """
         Tests that pass in no hostnames and/or keys does not error and properly sets the values in
         the returned data.
-        '''
+        """
 
         # Setup
         repo = self.repo_manager.create_repo('repo1', 'Repo 1')

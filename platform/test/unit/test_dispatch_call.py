@@ -11,12 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/../common/'))
-
-import testutil
+import base
 
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallReport, CallRequest
@@ -45,7 +40,7 @@ def function(*args, **kwargs):
 
 # call request testing ---------------------------------------------------------
 
-class CallRequestTests(testutil.PulpTest):
+class CallRequestTests(base.PulpServerTests):
 
     def test__instantiation(self):
         call = Functor()
@@ -135,11 +130,7 @@ class CallRequestTests(testutil.PulpTest):
         self.assertTrue(isinstance(call_request_2, CallRequest))
         self.assertTrue(call_request_2.execution_hooks[key][0] == function)
 
-# call report testing ----------------------------------------------------------
-
-class CallReportTests(testutil.PulpTest):
-
-    def test_instantiation(self):
+    def test_call_report_instantiation(self):
         try:
             call_report = CallReport()
         except Exception, e:

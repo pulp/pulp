@@ -12,15 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
-import os
-import sys
 import traceback
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/../common/'))
 
 import mock
 
-import testutil
+import base
 
 from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
@@ -32,7 +28,7 @@ from pulp.server.exceptions import OperationTimedOut
 
 # coordinator instantiation tests ----------------------------------------------
 
-class CoordinatorInstantiationTests(testutil.PulpTest):
+class CoordinatorInstantiationTests(base.PulpServerTests):
 
     def test_instantiation(self):
         try:
@@ -42,7 +38,7 @@ class CoordinatorInstantiationTests(testutil.PulpTest):
 
 # coordinator base tests -------------------------------------------------------
 
-class CoordinatorTests(testutil.PulpTest):
+class CoordinatorTests(base.PulpServerTests):
 
     def setUp(self):
         super(CoordinatorTests, self).setUp()
@@ -130,7 +126,7 @@ class OrQueryTests(CoordinatorTests):
 
 # conflicting operations tests -------------------------------------------------
 
-class ConflictingOperationsTests(testutil.PulpTest):
+class ConflictingOperationsTests(base.PulpServerTests):
 
     def test_postponing_operations_for_create(self):
         postponing_operations = coordinator.get_postponing_operations(dispatch_constants.RESOURCE_CREATE_OPERATION)

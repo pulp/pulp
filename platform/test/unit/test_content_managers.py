@@ -12,17 +12,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
-
-import pymongo
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-
-import testutil
+import base
 
 from pulp.server.content.types import database, model
-from pulp.server.managers.content import _exceptions as exception
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 
@@ -56,7 +48,7 @@ TYPE_2_UNITS = [
 
 # content manager base tests class ---------------------------------------------
 
-class PulpContentTests(testutil.PulpTest):
+class PulpContentTests(base.PulpServerTests):
 
     def setUp(self):
         super(PulpContentTests, self).setUp()

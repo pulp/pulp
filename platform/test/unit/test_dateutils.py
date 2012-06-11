@@ -13,12 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-
-import testutil
+import unittest
 
 from pulp.common import dateutils
 
@@ -64,7 +59,7 @@ class _DayZone(datetime.tzinfo):
         return datetime.timedelta(minutes=(self.utc_offset * 60)) - self.dst(dt)
 
 
-class TimezoneTester(testutil.PulpAsyncTest):
+class TimezoneTester(unittest.TestCase):
 
     def test_utc_conversion(self):
         s = datetime.datetime.now(_StdZone())
@@ -88,10 +83,9 @@ class TimezoneTester(testutil.PulpAsyncTest):
 
 # test iso8601 support ---------------------------------------------------------
 
-class ISO8601Tester(testutil.PulpAsyncTest):
+class ISO8601Tester(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         self.dt_fields = ('year', 'month', 'day', 'hour', 'minute', 'second')
 
     def test_datetime_sans_tz(self):
@@ -139,8 +133,3 @@ class ISO8601Tester(testutil.PulpAsyncTest):
         self.assertEqual(i1, i2)
         self.assertEqual(t1, t2)
         self.assertEqual(r1, r2)
-
-# ------------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    unittest.main()

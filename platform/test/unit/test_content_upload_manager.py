@@ -15,10 +15,8 @@
 # Python
 import os
 import shutil
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 import pulp.server.constants as pulp_constants
@@ -27,10 +25,10 @@ from   pulp.server.db.model.gc_repository import Repo, RepoImporter
 from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
 
-class ContentUploadManagerTests(testutil.PulpTest):
+class ContentUploadManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         mock_plugins.install()
 
         self.upload_manager = manager_factory.content_upload_manager()
@@ -47,7 +45,7 @@ class ContentUploadManagerTests(testutil.PulpTest):
         os.makedirs(upload_storage_dir)
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         mock_plugins.reset()
 
         if os.path.exists(pulp_constants.LOCAL_STORAGE):
@@ -56,7 +54,7 @@ class ContentUploadManagerTests(testutil.PulpTest):
         pulp_constants.LOCAL_STORAGE = self.original_local_storage
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        base.PulpServerTests.clean(self)
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
 
