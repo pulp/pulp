@@ -12,26 +12,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import datetime
-import os
-import sys
-from pprint import pformat
-
-import mock
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-
-import testutil
+import base
 import dummy_plugins
 
-from pulp.common import dateutils
 from pulp.server.content import loader as plugin_loader
 from pulp.server.db.model.gc_consumer import Consumer
 from pulp.server.managers import factory as manager_factory
 
-
-class ConsumerControllersTests(testutil.PulpV2WebserviceTest):
+class ConsumerControllersTests(base.PulpWebserviceTests):
 
     def setUp(self):
         super(ConsumerControllersTests, self).setUp()
