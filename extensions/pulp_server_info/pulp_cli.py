@@ -11,8 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand
-from pulp.gc_client.api.exceptions import RequestException
+from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand
+from pulp.client.api.exceptions import RequestException
 
 def initialize(context):
     context.cli.add_section(ServerPluginsSection(context))

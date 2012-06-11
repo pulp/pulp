@@ -13,13 +13,13 @@
 import os
 import shutil
 import sys
+from pulp_rpm.common import repolib
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.client.lib import repolib
-from pulp.client.lib.lock import Lock
-from pulp.client.lib.repo_file import MirrorListFile, RepoFile, Repo
+from pulp_rpm.common.lock import Lock
+from pulp_rpm.common.repo_file import MirrorListFile, RepoFile, Repo
 
 # -- constants ------------------------------------------------------------------------
 

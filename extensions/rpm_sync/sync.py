@@ -16,7 +16,7 @@ from gettext import gettext as _
 import status
 import tasks as task_utils
 
-from pulp.gc_client.framework.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliCommand
 
 # -- commands -----------------------------------------------------------------
 

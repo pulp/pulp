@@ -15,8 +15,8 @@ import os
 from M2Crypto import X509
 from gettext import gettext as _
 
-from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
-from pulp.gc_client.api.exceptions import NotFoundException
+from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
+from pulp.client.api.exceptions import NotFoundException
 
 from pulp.common.bundle import Bundle
 from pulp.common.capabilities import AgentCapabilities

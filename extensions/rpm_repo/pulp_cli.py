@@ -15,8 +15,8 @@ from gettext import gettext as _
 from urlparse import urlparse
 
 from pulp.common.util import encode_unicode
-from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
-from pulp.gc_client.util.arg_utils import InvalidConfig, convert_boolean_arguments, convert_file_contents, convert_removed_options, arg_to_bool
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag, PulpCliOptionGroup
+from pulp.client.arg_utils import InvalidConfig, convert_boolean_arguments, convert_file_contents, convert_removed_options, arg_to_bool
 
 # -- constants ----------------------------------------------------------------
 

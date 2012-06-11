@@ -15,7 +15,7 @@ from gettext import gettext as _
 from schedule import (DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
                       UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
 
-from pulp.gc_client.framework.extensions import PulpCliSection, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliSection, PulpCliOption
 
 # -- constants ----------------------------------------------------------------
 

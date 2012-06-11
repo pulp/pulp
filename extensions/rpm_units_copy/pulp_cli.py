@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-from pulp.gc_client.framework.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliCommand
 
 # -- constants ----------------------------------------------------------------
 

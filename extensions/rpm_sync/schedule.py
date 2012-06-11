@@ -33,8 +33,8 @@ directly, we just need to figure out what that looks like first.
 from gettext import gettext as _
 import logging
 
-from pulp.gc_client.framework.extensions import PulpCliCommand
-from pulp.gc_client.util.arg_utils import convert_boolean_arguments, convert_removed_options
+from pulp.client.extensions.extensions import PulpCliCommand
+from pulp.client.arg_utils import convert_boolean_arguments, convert_removed_options
 
 # -- constants ----------------------------------------------------------------
 

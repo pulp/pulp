@@ -15,7 +15,7 @@ from gettext import gettext as _
 from M2Crypto import X509
 import os
 
-from pulp.gc_client.framework.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliCommand
 
 def initialize(context):
     # Add login/logout to the root of the CLI, not in a specific section

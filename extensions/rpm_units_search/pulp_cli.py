@@ -14,7 +14,7 @@
 from gettext import gettext as _
 import logging
 
-from pulp.gc_client.framework.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
 
 # -- constants ----------------------------------------------------------------
 

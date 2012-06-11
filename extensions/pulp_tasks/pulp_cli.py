@@ -15,8 +15,8 @@ from gettext import gettext as _
 import sys
 
 import pulp.common.tags as tag_utils
-from pulp.gc_client.framework.extensions import PulpCliSection
-from pulp.gc_client.framework.exceptions import PulpServerException
+from pulp.client.extensions.extensions import PulpCliSection
+from pulp.client.extensions.exceptions import PulpServerException
 
 # -- constants ----------------------------------------------------------------
 

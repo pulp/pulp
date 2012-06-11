@@ -18,7 +18,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.client.lib.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp_rpm.common.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 TEST_REPO_FILENAME = '/tmp/TestRepoFile.repo'
 TEST_MIRROR_LIST_FILENAME = '/tmp/TestRepoFile.mirrorlist'
