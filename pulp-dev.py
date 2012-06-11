@@ -107,6 +107,9 @@ LINKS = (
     ('rpm_support/handlers/rpm.py', '/usr/lib/pulp/agent/handler/rpm.py'),
     ('rpm_support/handlers/bind.py', '/usr/lib/pulp/agent/handler/bind.py'),
     ('rpm_support/handlers/linux.py', '/usr/lib/pulp/agent/handler/linux.py'),
+    ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
+    ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
+    ('platform/bin/pulp-migrate', '/usr/bin/pulp-migrate'),
     )
 
 def parse_cmdline():
@@ -174,8 +177,6 @@ def install(opts):
     for src, dst in getlinks():
         debug(opts, 'creating link: %s' % dst)
         target = os.path.join(currdir, src)
-        if os.path.exists(dst) and not os.path.islink(dst):
-            raise Exception("Error: %s exists and is not a symlink to %s, please delete %s and re-run." % (dst, target, dst))
         try:
             os.symlink(target, dst)
         except OSError, e:
@@ -193,16 +194,13 @@ def install(opts):
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
     os.system('chown -R apache:apache /var/lib/pulp/published')
-    # guarantee apache always has write permissions
+
+    # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
     # Update for certs
     os.system('chown -R apache:apache /etc/pki/pulp')
-
-    # Disable existing SSL configuration
-    #if os.path.exists('/etc/httpd/conf.d/ssl.conf'):
-    #    shutil.move('/etc/httpd/conf.d/ssl.conf', '/etc/httpd/conf.d/ssl.off')
 
     return os.EX_OK
 
