@@ -17,7 +17,7 @@ from logging import getLogger
 
 
 from pulp.server import config
-from pulp.server.agent import Agent
+from pulp.server.agent.agent import Agent
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import (
     NonUniqueTaskException, DuplicateSnapshotError, UnscheduledTaskException)
