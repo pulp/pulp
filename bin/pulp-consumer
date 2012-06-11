@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
-# Pulp register client utility
-# Copyright (c) 2010 Red Hat, Inc.
+# Pulp client utility
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -15,23 +15,13 @@
 # in this software or its documentation.
 #
 
-import sys
 import os
-from gettext import gettext as _
+import sys
 
-from pulp.client.consumer.cli import ConsumerCLI
+import pulp.gc_client.launcher
 
+if __name__ == "__main__":
+    config_file = '/etc/pulp/consumer/v2_consumer.conf'
+    override_config_file = os.path.expanduser('~/.pulp/v2_consumer.conf')
 
-def root_check():
-    """
-    Simple function to assure execution by root
-    """
-    if os.getuid() == 0:
-        return
-    print >> sys.stderr, _('error: must be root to execute')
-    sys.exit(os.EX_NOUSER)
-
-
-if __name__ == '__main__':
-    client = ConsumerCLI()
-    client.main()
+    sys.exit(pulp.gc_client.launcher.main(config_file, override_config_file))
