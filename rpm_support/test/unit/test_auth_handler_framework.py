@@ -11,11 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 import pulp_rpm.repo_auth.auth_handler_framework as auth_framework
 
@@ -27,7 +23,7 @@ def fail(request):
 def win(request):
     return True
 
-class MockFunctionsTests(testutil.PulpAsyncTest):
+class MockFunctionsTests(unittest.TestCase):
 
     def test_handle_fail_required_pass_optional(self):
         # Setup

@@ -22,10 +22,9 @@ import time
 import unittest
 from uuid import uuid4
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/distributors/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
+#sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
     RPM_TYPE_ID, SRPM_TYPE_ID
@@ -34,14 +33,12 @@ from pulp.server.content.plugins.model import RelatedRepository, Repository, Uni
 from pulp.server.content.plugins.config import PluginCallConfiguration
 
 import distributor_mocks
-import testutil
 
 class TestDistributor(unittest.TestCase):
 
     def setUp(self):
         super(TestDistributor, self).setUp()
         self.init()
-        testutil.load_test_config()
 
     def tearDown(self):
         super(TestDistributor, self).tearDown()
@@ -61,7 +58,7 @@ class TestDistributor(unittest.TestCase):
 
         self.repo_working_dir = os.path.join(self.temp_dir, "repo_working_dir")
         os.makedirs(self.repo_working_dir)
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./data"))
 
     def clean(self):
         shutil.rmtree(self.temp_dir)
@@ -674,6 +671,8 @@ class TestDistributor(unittest.TestCase):
             def cancel(self):
                 return self.distributor.cancel_publish_repo(self.repo)
 
+        working_dir = os.path.join(self.temp_dir, "test_cancel_publish")
+
         try:
             ####
             # Prepare a directory with test data so that createrepo will run for a minute or more
@@ -682,7 +681,6 @@ class TestDistributor(unittest.TestCase):
             num_links = 1500
             source_rpm = os.path.join(self.data_dir, "createrepo_test", "pulp-large_1mb_test-packageA-0.1.1-1.fc14.noarch.rpm")
             self.assertTrue(os.path.exists(source_rpm))
-            working_dir = os.path.join(self.temp_dir, "test_cancel_publish")
             os.makedirs(working_dir)
             for index in range(num_links):
                 temp_name = "temp_link-%s.rpm" % (index)

@@ -12,9 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/distributors/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 
 from yum_distributor.distributor import YumDistributor
 from pulp.server.content.plugins.model import Repository
@@ -22,7 +20,6 @@ from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 import distributor_mocks
 import mock
-import testutil
 import unittest
 
 class TestValidateConfig(unittest.TestCase):
@@ -34,13 +31,12 @@ class TestValidateConfig(unittest.TestCase):
         self.distributor = YumDistributor()
         self.distributor.process_repo_auth_certificate_bundle = mock.Mock()
         self.init()
-        testutil.load_test_config()
 
     def tearDown(self):
         super(TestValidateConfig, self).tearDown()
 
     def init(self):
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./data"))
 
     def test_config_relative_path(self):
 

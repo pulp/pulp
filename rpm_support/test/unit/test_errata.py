@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/"
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 import importer_mocks
-import testutil
 import tempfile
 
 from yum_importer import errata
@@ -35,13 +34,12 @@ class TestErrata(unittest.TestCase):
     def setUp(self):
         super(TestErrata, self).setUp()
         self.temp_dir = tempfile.mkdtemp()
-        self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data")
-        self.repo_dir = os.path.abspath(os.path.dirname(__file__)) + "/../data/test_repo/"
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+
+        self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        self.repo_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "test_repo")
+        self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
-
-        testutil.load_test_config()
-
 
     def tearDown(self):
         super(TestErrata, self).tearDown()
@@ -124,7 +122,7 @@ class TestErrata(unittest.TestCase):
         self.assertEquals(len(available_errata), len(new_errata))
 
     def test_link_errata_rpm_units(self):
-        feed_url = "file://%s/test_errata_local_sync/" % (self.data_dir)
+        feed_url = "file://%s/test_errata_local_sync/" % self.data_dir
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_errata_local_sync"
