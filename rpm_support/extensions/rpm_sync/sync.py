@@ -12,59 +12,57 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-
-import status
-import tasks as task_utils
+from rpm_sync import status
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
-# -- constants ----------------------------------------------------------------
-
-DISTRIBUTOR_ID = 'yum_distributor'
-
 # -- commands -----------------------------------------------------------------
 
-class RunPublishCommand(PulpCliCommand):
+class RunSyncCommand(PulpCliCommand):
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.publish)
+        PulpCliCommand.__init__(self, name, description, self.sync)
         self.context = context
 
-        # In the RPM client, there is currently only one distributor for a
-        # repository, so we don't need to ask them for the distributor ID (yet).
-        self.create_option('--repo-id', _('identifies the repository to publish'), required=True)
+        self.create_option('--repo-id', _('identifies the repository to sync'), required=True)
 
-        d = 'if specified, the CLI process will end but the publish will continue on '\
+        # I originally wrote this when the flag was for foreground. In case we
+        # move back to that model, I've left the developer the description already.
+        # You're welcome.
+        #
+        # d = 'if specified, the progress for the sync will be continually displayed ' \
+        #     'on screen and the CLI process will not end until it is completed; the ' \
+        #    'progress can be viewed later using the status command if this is not specified'
+
+        d = 'if specified, the CLI process will end but the sync will continue on ' \
             'the server; the progress can be later displayed using the status command'
         self.create_flag('--bg', _(d))
 
-    def publish(self, **kwargs):
+    def sync(self, **kwargs):
         repo_id = kwargs['repo-id']
         foreground = not kwargs['bg']
 
-        self.context.prompt.render_title(_('Publishing Repository [%(r)s]') % {'r' : repo_id})
+        self.context.prompt.render_title(_('Synchronizing Repository [%(r)s]') % {'r' : repo_id})
 
-        # If a publish is taking place, display it's progress instead. Again, we
-        # benefit from the fact that there is only one distributor per repo and
-        # if that changes in the future we'll need to rethink this.
-        existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        if len(existing_publish_tasks) > 0:
-            task_id = task_utils.relevant_existing_task_id(existing_publish_tasks)
+        # See if an existing sync is running for the repo. If it is, resume
+        # progress tracking.
+        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
+        if len(existing_sync_tasks) > 0:
+            task_id = task_utils.relevant_existing_task_id(existing_sync_tasks)
 
-            msg = _('A publish task is already in progress for this repository. ')
+            msg = _('A sync task is already in progress for this repository. ')
             if foreground:
                 msg += _('Its progress will be tracked below.')
             self.context.prompt.render_paragraph(msg)
 
         else:
-            # Trigger the publish call. Eventually the None in the call should
-            # be replaced with override options read in from the CLI.
-            response = self.context.server.repo_actions.publish(repo_id, DISTRIBUTOR_ID, None)
+            # Trigger the actual sync
+            response = self.context.server.repo_actions.sync(repo_id, None)
             task_id = response.response_body.task_id
 
         if foreground:
             status.display_status(self.context, task_id)
         else:
-            msg = 'The status of this publish request can be displayed using the status command.'
+            msg = 'The status of this sync can be displayed using the status command.'
             self.context.prompt.render_paragraph(_(msg))
 
 class StatusCommand(PulpCliCommand):
@@ -84,13 +82,13 @@ class StatusCommand(PulpCliCommand):
         self.context.server.repo.repository(repo_id)
 
         # Load the existing sync tasks
-        existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        if len(existing_publish_tasks) > 0:
-            task_id = task_utils.relevant_existing_task_id(existing_publish_tasks)
+        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
+        if len(existing_sync_tasks) > 0:
+            task_id = task_utils.relevant_existing_task_id(existing_sync_tasks)
 
-            msg = 'A publish task is queued on the server. Its progress will be tracked below.'
+            msg = 'A sync task is queued on the server. Its progress will be tracked below.'
             self.context.prompt.render_paragraph(_(msg))
             status.display_status(self.context, task_id)
 
         else:
-            self.context.prompt.render_paragraph(_('There are no publish tasks currently queued in the server.'))
+            self.context.prompt.render_paragraph(_('There are no sync tasks currently queued in the server.'))

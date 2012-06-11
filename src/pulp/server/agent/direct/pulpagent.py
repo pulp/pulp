@@ -15,14 +15,13 @@
 Contains (proxy) classes that represent the pulp agent.
 """
 
-from pulp.server.gc_agent.hub.rest import Rest
-from pulp.server.gc_agent.hub.client import Agent
-from pulp.server.gc_agent.context import Context, Capability
+from gofer.proxy import Agent
+from pulp.server.agent.context import Context, Capability
+from pulp.server.agent.direct.services import Services
 from logging import getLogger
 
 
 log = getLogger(__name__)
-
 
 #
 # Agent
@@ -35,12 +34,8 @@ class PulpAgent:
 
     def __init__(self, consumer):
         context = Context(consumer)
-        # replyto
-        context.replyto = dict(
-            systemid='pulp',
-            method='POST',
-            path='/v2/agent/%s/reply/' % context.uuid)
-        # context
+        context.watchdog = Services.watchdog
+        context.ctag = Services.CTAG
         self.context = context
 
     @property
@@ -79,15 +74,11 @@ class PulpAgent:
         @type uuids: list
         @return: {}
         """
-        rest = Rest()
-        path = '/agenthub/agent/%s/' % uuids[0]
-        reply = rest.get(path)
-        return reply[1]
+        return Services.heartbeat_listener.status(uuids)
 
 #
 # Agent Capability(s)
 #
-
 
 class Consumer(Capability):
     """
@@ -98,57 +89,45 @@ class Consumer(Capability):
         """
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        status, result = consumer.unregistered()
-        if status != 202:
-            raise Exception('Unregistered Failed')
-        return (status, result)
+        return consumer.unregistered()
 
     def bind(self, repo_id):
         """
         Bind a consumer to the specified repository.
         @param repo_id: A repository ID.
         @type repo_id: str
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        status, result = consumer.bind(repo_id)
-        if status != 202:
-            raise Exception('Bind Failed')
-        return (status, result)
+        return consumer.bind(repo_id)
 
     def unbind(self, repo_id):
         """
         Unbind a consumer from the specified repository.
         @param repo_id: A repository ID.
         @type repo_id: str
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        status, result = consumer.unbind(repo_id)
-        if status != 202:
-            raise Exception('Unbind Failed')
-        return (status, result)
+        return consumer.unbind(repo_id)
 
 
 class Content(Capability):
@@ -164,21 +143,18 @@ class Content(Capability):
             { type_id:<str>, unit_key:<dict> }
         @param options: Install options; based on unit type.
         @type options: dict
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
-            replyto=self.context.replyto,
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
             any=self.context.taskid)
         content = agent.Content()
-        status, result = content.install(units, options)
-        if status != 202:
-            raise Exception('Install Failed')
-        return (status, result)
+        return content.install(units, options)
 
     def update(self, units, options):
         """
@@ -188,21 +164,18 @@ class Content(Capability):
             { type_id:<str>, unit_key:<dict> }
         @param options: Update options; based on unit type.
         @type options: dict
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
-            replyto=self.context.replyto,
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
             any=self.context.taskid)
         content = agent.Content()
-        status, result = content.update(units, options)
-        if status != 202:
-            raise Exception('Update Failed')
-        return (status, result)
+        return content.update(units, options)
 
     def uninstall(self, units, options):
         """
@@ -212,21 +185,19 @@ class Content(Capability):
             { type_id:<str>, unit_key:<dict> }
         @param options: Uninstall options; based on unit type.
         @type options: dict
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
-            replyto=self.context.replyto,
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
             any=self.context.taskid)
         content = agent.Content()
-        status, result = content.uninstall(units, options)
-        if status != 202:
-            raise Exception('Uninstall Failed')
-        return (status, result)
+        return content.uninstall(units, options)
+
 
 class Profile(Capability):
     """
@@ -238,15 +209,9 @@ class Profile(Capability):
         Request the agent to send the package profile.
         @return: The RMI request serial number.
         @rtype: str
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
         """
         agent = Agent(
             self.context.uuid,
-            rest=Rest(),
             secret=self.context.secret)
         profile = agent.Profile()
-        status, result = profile.send()
-        if status != 202:
-            raise Exception('Profile Failed')
-        return (status, result)
+        return profile.send()

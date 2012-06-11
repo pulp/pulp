@@ -46,7 +46,7 @@ db_connection.initialize()
 from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
 from pulp.server import auditing
-from pulp.server.gc_agent.direct.services import Services as AgentServices
+from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync
 from pulp.server.api import repo

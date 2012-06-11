@@ -36,7 +36,7 @@ from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
-from pulp.server.gc_agent import PulpAgent
+from pulp.server.agent import PulpAgent
 
 # Temporary hack to use V2 repositories with V1 consumers. This will be removed once consumers are migrated to V2.
 from pulp.server.db.model.gc_repository import Repo

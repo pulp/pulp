@@ -19,8 +19,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 import mockagent
-from pulp.server.gc_agent.hub.pulpagent import PulpAgent as RestAgent
-from pulp.server.gc_agent.direct.pulpagent import PulpAgent as DirectAgent
+from pulp.server.agent.hub.pulpagent import PulpAgent as RestAgent
+from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
 
 
 REPOID = 'TEST-REPO'

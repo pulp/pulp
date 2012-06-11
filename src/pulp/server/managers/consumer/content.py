@@ -17,7 +17,7 @@ Contains content management classes
 
 from pulp.server.db.model.gc_consumer import Consumer
 from pulp.server.exceptions import InvalidValue, MissingResource
-from pulp.server.gc_agent import PulpAgent
+from pulp.server.agent import PulpAgent
 from logging import getLogger
 
 

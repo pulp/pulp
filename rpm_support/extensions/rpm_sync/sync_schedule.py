@@ -10,26 +10,28 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 from gettext import gettext as _
 
-from schedule import (DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
+from rpm_sync.schedule import (DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
                       UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliOption
 
 # -- constants ----------------------------------------------------------------
 
-YUM_DISTRIBUTOR_ID = 'yum_distributor' # same as used in repo create
+YUM_IMPORTER_ID = 'yum_importer' # same as used in repo create
 
 REPO_ID_ARG = 'repo-id'
 
 # -- framework classes --------------------------------------------------------
 
-class RepoPublishSchedulingSection(PulpCliSection):
+class RepoSyncSchedulingSection(PulpCliSection):
+
     def __init__(self, context, name, description):
         PulpCliSection.__init__(self, name, description)
 
-        strategy = RepoPublishSchedulingStrategy(context)
+        strategy = RepoSyncSchedulingStrategy(context)
 
         repo_id_option = PulpCliOption('--%s' % REPO_ID_ARG, _('identifies the repository'), required=True)
 
@@ -54,14 +56,14 @@ class RepoPublishSchedulingSection(PulpCliSection):
         self.add_command(update_command)
         self.add_command(next_run_command)
 
-class RepoPublishSchedulingStrategy(ScheduleStrategy):
+class RepoSyncSchedulingStrategy(ScheduleStrategy):
 
-# See super class for method documentation
+    # See super class for method documentation
 
     def __init__(self, context):
-        super(RepoPublishSchedulingStrategy, self).__init__()
+        super(RepoSyncSchedulingStrategy, self).__init__()
         self.context = context
-        self.api = context.server.repo_publish_schedules
+        self.api = context.server.repo_sync_schedules
 
     def create_schedule(self, schedule, failure_threshold, enabled, kwargs):
         repo_id = kwargs[REPO_ID_ARG]
@@ -70,16 +72,16 @@ class RepoPublishSchedulingStrategy(ScheduleStrategy):
         # call. When we do, override_config will be created here from kwargs.
         override_config = {}
 
-        return self.api.add_schedule(repo_id, YUM_DISTRIBUTOR_ID, schedule, override_config, failure_threshold, enabled)
+        return self.api.add_schedule(repo_id, YUM_IMPORTER_ID, schedule, override_config, failure_threshold, enabled)
 
     def delete_schedule(self, schedule_id, kwargs):
         repo_id = kwargs[REPO_ID_ARG]
-        return self.api.delete_schedule(repo_id, YUM_DISTRIBUTOR_ID, schedule_id)
+        return self.api.delete_schedule(repo_id, YUM_IMPORTER_ID, schedule_id)
 
     def retrieve_schedules(self, kwargs):
         repo_id = kwargs[REPO_ID_ARG]
-        return self.api.list_schedules(repo_id, YUM_DISTRIBUTOR_ID)
+        return self.api.list_schedules(repo_id, YUM_IMPORTER_ID)
 
     def update_schedule(self, schedule_id, **kwargs):
         repo_id = kwargs.pop(REPO_ID_ARG)
-        return self.api.update_schedule(repo_id, YUM_DISTRIBUTOR_ID, schedule_id, **kwargs)
+        return self.api.update_schedule(repo_id, YUM_IMPORTER_ID, schedule_id, **kwargs)

@@ -19,8 +19,8 @@
 #
 
 from gofer.rmi import mock
-from pulp.server.gc_agent.direct.services import Services, HeartbeatListener
-from pulp.server.gc_agent.hub import pulpagent as restagent
+from pulp.server.agent.direct.services import Services, HeartbeatListener
+from pulp.server.agent.hub import pulpagent as restagent
 from pulp.agent.lib.report import DispatchReport
 
 
