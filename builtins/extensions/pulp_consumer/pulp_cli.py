@@ -109,8 +109,10 @@ class ConsumerSection(PulpCliSection):
         @rtype: str
         """
         # Read path of consumer cert from config and check if consumer is already registered
-        consumer_cert_path = self.context.config.get('filesystem', 'consumer_cert')
-        bundle = Bundle(consumer_cert_path)
+        consumer_cert_path = self.context.config.get('filesystem', 'id_cert_dir')
+        consumer_cert_filename = self.context.config.get('filesystem', 'id_cert_filename')
+        full_filename = os.path.join(consumer_cert_path, consumer_cert_filename)
+        bundle = Bundle(full_filename)
         if bundle.valid():
             content = bundle.read()
             x509 = X509.load_cert_string(content)
@@ -142,8 +144,8 @@ class ConsumerSection(PulpCliSection):
                 notes = self._parse_notes(kwargs['note'])
 
         # Check write permissions to cert directory
-        consumer_cert_path = self.context.config.get('filesystem', 'consumer_cert')
-        self.check_write_perms(consumer_cert_path)
+        id_cert_dir = self.context.config.get('filesystem', 'id_cert_dir')
+        self.check_write_perms(id_cert_dir)
 
         # Set agent capabilities
         capabilities = dict(AgentCapabilities.default())
@@ -152,8 +154,13 @@ class ConsumerSection(PulpCliSection):
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
 
         # Write consumer cert
-        bundle = Bundle(consumer_cert_path)
-        bundle.write(consumer['certificate'])
+        id_cert_name = self.context.config.get('filesystem', 'id_cert_filename')
+
+        cert_filename = os.path.join(id_cert_dir, id_cert_name)
+
+        f = open(cert_filename, 'w')
+        f.write(consumer['certificate'])
+        f.close()
 
         self.prompt.render_success_message('Consumer [%s] successfully registered' % id)
 
