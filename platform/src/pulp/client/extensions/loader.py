@@ -212,7 +212,7 @@ def _load_pack(extensions_dir, pack_module, context):
     # Invoke the module's initialization, passing a copy of the context so
     # one extension doesn't accidentally muck with it and affect another.
     context_copy = copy.copy(context)
-    context_copy.client_config = copy.copy(context.client_config)
+    context_copy.config = copy.copy(context.config)
 
     try:
         init_func(context_copy)

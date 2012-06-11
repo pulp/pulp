@@ -507,5 +507,4 @@ class ClientContext:
         self.cli = cli
         self.shell = shell
 
-        self.client_config = config
-
+        self.config = config
