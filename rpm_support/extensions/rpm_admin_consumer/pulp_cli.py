@@ -14,7 +14,7 @@
 import time
 from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand
-from pulp.client.api.exceptions import NotFoundException
+from pulp.bindings.exceptions import NotFoundException
 
 # -- framework hook -----------------------------------------------------------
 

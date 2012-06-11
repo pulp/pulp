@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
-from pulp.client.api.exceptions import NotFoundException
+from pulp.bindings.exceptions import NotFoundException
 
 # -- framework hook -----------------------------------------------------------
 

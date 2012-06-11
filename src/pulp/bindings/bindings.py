@@ -11,12 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.gc_client.api.actions import ActionsAPI
-from pulp.gc_client.api.repository import *
-from pulp.gc_client.api.consumer import *
-from pulp.gc_client.api.server_info import ServerInfoAPI
-from pulp.gc_client.api.tasks import TasksAPI
-from pulp.gc_client.api.upload import UploadAPI
+from pulp.bindings.actions import ActionsAPI
+from pulp.bindings.repository import *
+from pulp.bindings.consumer import *
+from pulp.bindings.server_info import ServerInfoAPI
+from pulp.bindings.tasks import TasksAPI
+from pulp.bindings.upload import UploadAPI
 
 
 class Bindings(object):

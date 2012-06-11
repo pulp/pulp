@@ -12,8 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import pulp.common.tags as tag_util
-from pulp.gc_client.api.base import PulpAPI
-from pulp.gc_client.api.responses import Task
+from pulp.bindings.base import PulpAPI
+from pulp.bindings.responses import Task
 
 
 class TasksAPI(PulpAPI):

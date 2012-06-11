@@ -15,7 +15,7 @@
 Handles calls to the server that query the plugin and type capabilities.
 """
 
-from pulp.gc_client.api.base import PulpAPI
+from pulp.bindings.base import PulpAPI
 
 class ServerInfoAPI(PulpAPI):
     def __init__(self, pulp_connection):

@@ -16,14 +16,14 @@ import locale
 import logging
 from M2Crypto import SSL, httpslib
 import urllib
-from pulp.gc_client.api.responses import Response, Task
+from pulp.bindings.responses import Response, Task
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
-import pulp.gc_client.api.exceptions as exceptions 
+import pulp.bindings.exceptions as exceptions
 
 # -- server connection --------------------------------------------------------
 

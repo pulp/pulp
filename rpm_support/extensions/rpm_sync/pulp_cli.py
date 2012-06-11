@@ -15,6 +15,7 @@ from gettext import gettext as _
 
 from rpm_sync.publish_schedule import RepoPublishSchedulingSection
 from rpm_sync import sync as sync_commands
+from rpm_sync import publish as publish_commands
 from rpm_sync.sync_schedule import RepoSyncSchedulingSection
 
 # -- framework hook -----------------------------------------------------------

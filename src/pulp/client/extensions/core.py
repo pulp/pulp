@@ -30,7 +30,7 @@ import okaara.prompt
 from   okaara.prompt import Prompt, WIDTH_TERMINAL
 
 from   pulp.common.util import encode_unicode
-from   pulp.client.framework.extensions import PulpCliSection
+from   pulp.client.extensions.extensions import PulpCliSection
 
 # -- constants ----------------------------------------------------------------
 

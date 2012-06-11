@@ -18,7 +18,7 @@ import rpm
 
 from okaara.prompt import COLOR_GREEN, COLOR_YELLOW
 
-from   pulp.client.api.exceptions import ConflictException
+from   pulp.bindings.exceptions import ConflictException
 from   pulp.client.extensions.extensions import PulpCliCommand
 import pulp.client.upload as upload_lib
 
