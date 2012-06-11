@@ -33,14 +33,12 @@ from pulp.server.content.plugins.model import Repository
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../yum_importer")
 import distributor_mocks
-import testutil
 
 class TestMetadata(unittest.TestCase):
 
     def setUp(self):
         super(TestMetadata, self).setUp()
         self.init()
-        testutil.load_test_config()
 
     def tearDown(self):
         super(TestMetadata, self).tearDown()
@@ -48,7 +46,7 @@ class TestMetadata(unittest.TestCase):
 
     def init(self):
         self.temp_dir = tempfile.mkdtemp()
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
         self.repodata_dir = os.path.join(self.data_dir, "test_repo_metadata/repodata/")
 
     def clean(self):

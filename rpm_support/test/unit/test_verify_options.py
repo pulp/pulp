@@ -15,17 +15,14 @@ import sys
 import mock
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 from pulp_rpm.yum_plugin import util
-from yum_importer import drpm, importer_rpm
-from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 
 class TestVerifyOptions(unittest.TestCase):
 
     def setUp(self):
         super(TestVerifyOptions, self).setUp()
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
 
     def tearDown(self):
         super(TestVerifyOptions, self).tearDown()

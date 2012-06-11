@@ -32,7 +32,7 @@ class TestDistribution(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
 
     def tearDown(self):
         super(TestDistribution, self).tearDown()

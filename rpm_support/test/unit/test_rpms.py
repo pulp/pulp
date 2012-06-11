@@ -29,7 +29,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugi
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 import importer_mocks
-import testutil
 
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer import importer_rpm
@@ -45,7 +44,6 @@ class TestRPMs(unittest.TestCase):
         super(TestRPMs, self).setUp()
         self.saved_verify_exists = util.verify_exists
         self.init()
-        testutil.load_test_config()
 
     def tearDown(self):
         super(TestRPMs, self).tearDown()
@@ -56,7 +54,7 @@ class TestRPMs(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
 
     def clean(self):
         shutil.rmtree(self.temp_dir)

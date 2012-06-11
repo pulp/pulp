@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugi
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 import importer_mocks
-import testutil
 from yum_importer.importer import YumImporter
 from pulp.server.content.plugins.model import Repository
 
@@ -32,7 +31,6 @@ class TestRepoScratchpad(unittest.TestCase):
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
-        testutil.load_test_config()
 
     def tearDown(self):
         super(TestRepoScratchpad, self).tearDown()

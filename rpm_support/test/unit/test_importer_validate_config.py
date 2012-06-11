@@ -40,7 +40,7 @@ class TestValidateConfig(unittest.TestCase):
         shutil.rmtree(self.temp_dir)
 
     def init(self):
-        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "../data"))
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
 
     def test_config_feed_url(self):
 
