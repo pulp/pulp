@@ -23,7 +23,7 @@ import os
 import pickle
 import sys
 
-from pulp.client.lib.lock import LockFile
+from pulp.client.lock import LockFile
 
 # -- constants ----------------------------------------------------------------
 

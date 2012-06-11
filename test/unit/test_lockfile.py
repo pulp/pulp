@@ -22,7 +22,7 @@ from threading import Thread
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp_rpm.common.lock import Lock
+from pulp.client.lock import Lock
 
 # test root dir
 ROOTDIR = '/tmp/client/locking'
