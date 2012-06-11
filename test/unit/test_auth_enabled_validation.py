@@ -15,12 +15,11 @@
 # Python
 import sys
 import os
-import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.repo_auth import auth_enabled_validation
+from pulp_rpm.repo_auth import auth_enabled_validation
 
 
 # -- test cases ----------------------------------------------------------------------

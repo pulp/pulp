@@ -18,12 +18,9 @@ import logging
 import os
 import re
 import shutil
-import sys
 import time
 import threading
 import traceback
-from datetime import datetime
-from StringIO import StringIO
 from urlparse import urlparse
 
 # Pulp
@@ -36,8 +33,8 @@ from pulp.server import async
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
-from pulp.repo_auth.repo_cert_utils import RepoCertUtils
-from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
+from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp_rpm.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server import updateinfo
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection

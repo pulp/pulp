@@ -20,7 +20,7 @@ import sys
 # Pulp
 from pulp.common import dateutils
 
-from pulp.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
 
 from pulp.server import config, constants, consumer_utils
 from pulp.server.agent import PulpAgent

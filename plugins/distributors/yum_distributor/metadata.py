@@ -20,7 +20,7 @@ import subprocess
 import threading
 import signal
 import time
-from pulp.yum_plugin import util
+from pulp_rpm.yum_plugin import util
 from pulp.common.util import encode_unicode, decode_unicode
 
 log = logging.getLogger(__name__)

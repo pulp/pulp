@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-import os
-import sys
 from optparse import OptionParser
 
 #sys.path.insert(0, "/shared/repo/m2crypto/m2crypto/build/lib.linux-x86_64-2.7")
 import M2Crypto
 
-from pulp.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server import config
 
 def get_parser(ca_cert, good_cert, revoked_cert, crl):

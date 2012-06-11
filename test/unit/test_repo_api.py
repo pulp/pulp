@@ -13,13 +13,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
-import random
 import logging
-import stat
 import sys
 import os
 import time
-import unittest
 import shutil
 
 import mock
@@ -34,11 +31,10 @@ import testutil
 
 import pymongo.json_util
 
-from pulp.repo_auth.repo_cert_utils import RepoCertUtils
-from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
+from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp_rpm.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server.api import repo, repo_sync, consumer
 from pulp.server.api.package import PackageHasReferences
-from pulp.server.api.keystore import KeyStore
 from pulp.server.db.model import Delta
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import persistence

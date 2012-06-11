@@ -25,6 +25,7 @@ from datetime import timedelta
 
 import mock
 from paste.fixture import TestApp
+from pulp_rpm.repo_auth import repo_cert_utils
 
 try:
     import mocks
@@ -48,7 +49,6 @@ from pulp.gc_client.framework.core import ClientContext, PulpPrompt, PulpCli
 from pulp.gc_client.framework.exceptions import ExceptionHandler
 from okaara.prompt import Recorder
 
-from pulp.repo_auth import repo_cert_utils
 from pulp.server import async
 from pulp.server import constants
 from pulp.server import auditing

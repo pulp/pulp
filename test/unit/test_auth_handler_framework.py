@@ -13,12 +13,11 @@
 
 import os
 import sys
-import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-import pulp.repo_auth.auth_handler_framework as auth_framework
+import pulp_rpm.repo_auth.auth_handler_framework as auth_framework
 
 
 # Functions that simulate plugins so we can influence the outcome

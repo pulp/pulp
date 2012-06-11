@@ -15,12 +15,11 @@
 Errata Support for Yum Importer
 """
 import os
-import sys
 import time
 import yum
 import logging
 import importer_rpm
-from pulp.yum_plugin import util, updateinfo
+from pulp_rpm.yum_plugin import util, updateinfo
 from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)

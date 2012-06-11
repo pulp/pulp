@@ -13,14 +13,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
-import shutil
 import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.repo_auth.protected_repo_utils import ProtectedRepoListingFile, ProtectedRepoUtils
+from pulp_rpm.repo_auth.protected_repo_utils import ProtectedRepoListingFile, ProtectedRepoUtils
 
 # -- constants -----------------------------------------------------------------------
 

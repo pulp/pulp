@@ -16,7 +16,7 @@ import logging
 import os
 import pwd
 import shutil
-from pulp.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server import config
 from pulp.server.db.model import Repo
 

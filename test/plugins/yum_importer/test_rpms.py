@@ -15,7 +15,6 @@
 import glob
 import mock
 import os
-import pycurl
 import shutil
 import sys
 import tempfile
@@ -35,7 +34,7 @@ import testutil
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer import importer_rpm
 from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
-from pulp.yum_plugin import util
+from pulp_rpm.yum_plugin import util
 from pulp.server.content.plugins.model import Repository, Unit
 
 

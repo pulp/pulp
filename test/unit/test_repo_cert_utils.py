@@ -17,12 +17,12 @@ import shutil
 import sys
 import os
 from M2Crypto import X509
+from pulp_rpm.repo_auth import repo_cert_utils
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-from pulp.repo_auth import repo_cert_utils
-from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
+from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 # -- constants -----------------------------------------------------------------------
 

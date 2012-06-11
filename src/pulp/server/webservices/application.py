@@ -43,7 +43,7 @@ from pulp.server.db import connection as db_connection
 logs.start_logging()
 db_connection.initialize()
 
-from pulp.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
+from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
 from pulp.server import auditing
 from pulp.server.gc_agent.direct.services import Services as AgentServices
@@ -56,7 +56,6 @@ from pulp.server.content import loader as plugin_loader
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, content, distribution, errata,

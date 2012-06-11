@@ -21,11 +21,9 @@ from M2Crypto import X509
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
 import testutil
 
-import pulp.repo_auth.oid_validation as oid_validation
-from pulp.repo_auth.oid_validation import OidValidator
-from pulp.repo_auth.repo_cert_utils import RepoCertUtils
-from pulp.server.api.repo import RepoApi
-from pulp.server.api.auth import AuthApi
+import pulp_rpm.repo_auth.oid_validation as oid_validation
+from pulp_rpm.repo_auth.oid_validation import OidValidator
+from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
 
 # -- constants ------------------------------------------------------------------
 

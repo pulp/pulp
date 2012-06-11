@@ -26,8 +26,7 @@ from importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
 from errata import ImporterErrata, ERRATA_TYPE_ID
 
 from pulp.server.content.plugins.importer import Importer
-from pulp.server.managers.repo.unit_association_query import Criteria
-from pulp.yum_plugin import util
+from pulp_rpm.yum_plugin import util
 from   pulp.server.content.plugins.model import SyncReport
 
 _ = gettext.gettext

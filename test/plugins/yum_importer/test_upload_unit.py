@@ -12,7 +12,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import glob
 import mock
 import os
 import shutil
@@ -25,9 +24,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/"
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
 import importer_mocks
 from yum_importer.importer import YumImporter
-from pulp.yum_plugin import util
+from pulp_rpm.yum_plugin import util
 
-from pulp.server.content.plugins.model import Repository, Unit
+from pulp.server.content.plugins.model import Repository
 
 class TestRPMs(unittest.TestCase):
 

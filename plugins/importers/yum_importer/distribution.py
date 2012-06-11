@@ -17,7 +17,7 @@ Distribution Support for Yum Importer
 import logging
 import os
 from pulp.server.managers.repo.unit_association_query import Criteria
-from pulp.yum_plugin import util
+from pulp_rpm.yum_plugin import util
 
 _LOG = logging.getLogger(__name__)
 DISTRO_TYPE_ID="distribution"
