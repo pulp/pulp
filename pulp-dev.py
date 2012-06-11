@@ -40,6 +40,10 @@ DIRS = (
     '/usr/lib/pulp/',
     '/usr/lib/pulp/agent',
     '/usr/lib/pulp/agent/handler',
+    '/usr/lib/pulp/admin',
+    '/usr/lib/pulp/admin/extensions',
+    '/usr/lib/pulp/consumer',
+    '/usr/lib/pulp/consumer/extensions',
     '/usr/lib/gofer',
     '/usr/lib/gofer/plugins',
     '/usr/lib/yum-plugins/',
@@ -66,52 +70,64 @@ DIRS = (
 # Str entry assumes same src and dst relative path.
 # Tuple entry is explicit (src, dst)
 #
+# Please keep alphabetized and by subproject
+
+# Standard directories
+DIR_ADMIN_EXTENSIONS = '/usr/lib/pulp/admin/extensions/'
+DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
+
 LINKS = (
-    ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
-    ('platform/etc/pulp/pulp.conf', '/etc/pulp/pulp.conf'),
-    ('rpm_support/etc/pulp/repo_auth.conf', '/etc/pulp/repo_auth.conf'),
-    ('platform/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
-    ('platform/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
-    ('rpm_support/etc/pulp/agent/handler/rpm.conf', '/etc/pulp/agent/handler/rpm.conf'),
-    ('rpm_support/etc/pulp/agent/handler/bind.conf', '/etc/pulp/agent/handler/bind.conf'),
-    ('rpm_support/etc/pulp/agent/handler/linux.conf', '/etc/pulp/agent/handler/linux.conf'),
-    ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf'),
-    ('rpm_support/etc/httpd/conf.d/pulp_rpm.conf', '/etc/httpd/conf.d/pulp_rpm.conf'),
-    ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
-    ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
-    ('platform/etc/gofer/plugins/pulp.conf', '/etc/gofer/plugins/pulp.conf'),
-    ('platform/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
-    ('platform/etc/gofer/plugins/consumer.conf', '/etc/gofer/plugins/consumer.conf'),
-    ('rpm_support/etc/yum/pluginconf.d/pulp-profile-update.conf', '/etc/yum/pluginconf.d/pulp-profile-update.conf'),
-    ('platform/etc/rc.d/init.d/pulp-server', '/etc/rc.d/init.d/pulp-server'),
-    ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
-    ('rpm_support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
-    ('src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
-    ('src/pulp/client/consumer/goferplugins/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
-    ('src/pulp/client/consumer/goferplugins/consumer.py', '/usr/lib/gofer/plugins/consumer.py'),
-    ('src/pulp/client/consumer/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
-    ('platform/etc/pulp/logging', '/etc/pulp/logging'),
-    ('builtins/extensions/pulp_admin_auth', '/var/lib/pulp_client/admin/extensions/pulp_admin_auth'),
-    ('builtins/extensions/pulp_admin_consumer', '/var/lib/pulp_client/admin/extensions/pulp_admin_consumer'),
-    ('builtins/extensions/pulp_consumer', '/var/lib/pulp_client/consumer/extensions/pulp_consumer'),
-    ('builtins/extensions/pulp_repo', '/var/lib/pulp_client/admin/extensions/pulp_repo'),
-    ('builtins/extensions/pulp_server_info', '/var/lib/pulp_client/admin/extensions/pulp_server_info'),
-    ('builtins/extensions/pulp_tasks', '/var/lib/pulp_client/admin/extensions/pulp_tasks'),
-    ('rpm_support/extensions/rpm_admin_consumer', '/var/lib/pulp_client/admin/extensions/rpm_admin_consumer'),
-    ('rpm_support/extensions/rpm_repo', '/var/lib/pulp_client/admin/extensions/rpm_repo'),
-    ('rpm_support/extensions/rpm_sync', '/var/lib/pulp_client/admin/extensions/rpm_sync'),
-    ('rpm_support/extensions/rpm_units_copy', '/var/lib/pulp_client/admin/extensions/rpm_units_copy'),
-    ('rpm_support/extensions/rpm_units_search', '/var/lib/pulp_client/admin/extensions/rpm_units_search'),
-    ('rpm_support/extensions/rpm_upload', '/var/lib/pulp_client/admin/extensions/rpm_upload'),
-    ('rpm_support/plugins/types/rpm_support.json', '/var/lib/pulp/plugins/types/rpm_support.json'),
-    ('rpm_support/plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
-    ('rpm_support/plugins/distributors/yum_distributor', '/var/lib/pulp/plugins/distributors/yum_distributor'),
-    ('rpm_support/handlers/rpm.py', '/usr/lib/pulp/agent/handler/rpm.py'),
-    ('rpm_support/handlers/bind.py', '/usr/lib/pulp/agent/handler/bind.py'),
-    ('rpm_support/handlers/linux.py', '/usr/lib/pulp/agent/handler/linux.py'),
+    ('builtins/extensions/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
+    ('builtins/extensions/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
+    ('builtins/extensions/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
+    ('builtins/extensions/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
+    ('builtins/extensions/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
+    ('builtins/extensions/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
+
     ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
     ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
     ('platform/bin/pulp-migrate', '/usr/bin/pulp-migrate'),
+
+    ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
+    ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf'),
+    ('platform/etc/gofer/plugins/pulp.conf', '/etc/gofer/plugins/pulp.conf'),
+    ('platform/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
+    ('platform/etc/gofer/plugins/consumer.conf', '/etc/gofer/plugins/consumer.conf'),
+    ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
+    ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
+    ('platform/etc/pulp/pulp.conf', '/etc/pulp/pulp.conf'),
+    ('platform/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
+    ('platform/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
+    ('platform/etc/pulp/logging', '/etc/pulp/logging'),
+    ('platform/etc/rc.d/init.d/pulp-server', '/etc/rc.d/init.d/pulp-server'),
+
+    ('platform/src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
+    ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+
+    ('rpm_support/etc/httpd/conf.d/pulp_rpm.conf', '/etc/httpd/conf.d/pulp_rpm.conf'),
+    ('rpm_support/etc/pulp/repo_auth.conf', '/etc/pulp/repo_auth.conf'),
+    ('rpm_support/etc/pulp/agent/handler/rpm.conf', '/etc/pulp/agent/handler/rpm.conf'),
+    ('rpm_support/etc/pulp/agent/handler/bind.conf', '/etc/pulp/agent/handler/bind.conf'),
+    ('rpm_support/etc/pulp/agent/handler/linux.conf', '/etc/pulp/agent/handler/linux.conf'),
+    ('rpm_support/etc/yum/pluginconf.d/pulp-profile-update.conf', '/etc/yum/pluginconf.d/pulp-profile-update.conf'),
+
+    ('rpm_support/extensions/rpm_admin_consumer', DIR_ADMIN_EXTENSIONS + 'rpm_admin_consumer'),
+    ('rpm_support/extensions/rpm_repo', DIR_ADMIN_EXTENSIONS + 'rpm_repo'),
+    ('rpm_support/extensions/rpm_sync', DIR_ADMIN_EXTENSIONS + 'rpm_sync'),
+    ('rpm_support/extensions/rpm_units_copy', DIR_ADMIN_EXTENSIONS + 'rpm_units_copy'),
+    ('rpm_support/extensions/rpm_units_search', DIR_ADMIN_EXTENSIONS + 'rpm_units_search'),
+    ('rpm_support/extensions/rpm_upload', DIR_ADMIN_EXTENSIONS + 'rpm_upload'),
+
+    ('rpm_support/handlers/rpm.py', '/usr/lib/pulp/agent/handler/rpm.py'),
+    ('rpm_support/handlers/bind.py', '/usr/lib/pulp/agent/handler/bind.py'),
+    ('rpm_support/handlers/linux.py', '/usr/lib/pulp/agent/handler/linux.py'),
+
+    ('rpm_support/plugins/types/rpm_support.json', '/var/lib/pulp/plugins/types/rpm_support.json'),
+    ('rpm_support/plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
+    ('rpm_support/plugins/distributors/yum_distributor', '/var/lib/pulp/plugins/distributors/yum_distributor'),
+
+    ('rpm_support/src/pulp/client/consumer/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
+    ('rpm_support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
     )
 
 def parse_cmdline():
