@@ -34,7 +34,7 @@ from pulp.server.webservices import validation
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import (
     auth_required, error_handler)
-from pulp.server.agent import CdsAgent
+from pulp.server.agent.agent import CdsAgent
 
 
 # globals ---------------------------------------------------------------------

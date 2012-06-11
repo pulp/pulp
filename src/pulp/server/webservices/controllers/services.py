@@ -28,7 +28,7 @@ from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
 from pulp.server.api.discovery import get_discovery, \
     discovery_progress_callback, InvalidDiscoveryInput
-from pulp.server.agent import Agent
+from pulp.server.agent.agent import Agent
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION

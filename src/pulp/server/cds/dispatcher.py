@@ -24,7 +24,7 @@ from gofer.rmi.policy import RequestTimeout, NotAuthorized
 
 # Pulp
 from pulp.server import config
-from pulp.server.agent import CdsAgent
+from pulp.server.agent.agent import CdsAgent
 
 
 log = logging.getLogger(__name__)
