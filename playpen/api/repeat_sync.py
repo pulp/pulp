@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-import os
 import sys
 from pulp.client import server
-from pulp.client import utils
-from pulp.client.api.repository import RepositoryAPI
-from pulp.client.cli.base import PulpCLI
+from pulp.api.repository import RepositoryAPI
 from pulp.client.config import Config
 import time
 

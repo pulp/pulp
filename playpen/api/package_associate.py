@@ -4,8 +4,7 @@ import os
 import sys
 from pulp.client import server
 from pulp.client import utils
-from pulp.client.api.service import ServiceAPI
-from pulp.client.cli.base import PulpCLI
+from pulp.api.service import ServiceAPI
 from pulp.client.config import Config
 
 _cfg = Config()
