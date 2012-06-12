@@ -16,14 +16,13 @@ import mock
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-import testutil
+import base
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 import rpm_sync.schedule as commands # these will likely move out of this package
 
-from pulp.gc_client.api.responses import Response
-from pulp.gc_client.framework.core import TAG_FAILURE, TAG_SUCCESS, TAG_PARAGRAPH
+from pulp.bindings.responses import Response
+from pulp.client.extensions.core import TAG_FAILURE, TAG_SUCCESS, TAG_PARAGRAPH
 
 # -- constants ----------------------------------------------------------------
 
@@ -71,7 +70,7 @@ EXAMPLE_SCHEDULE_LIST =  [
 
 # -- test cases ---------------------------------------------------------------
 
-class TestListScheduleCommand(testutil.PulpV2ClientTest):
+class TestListScheduleCommand(base.PulpClientTests):
 
     def test_list(self):
         # Setup
@@ -121,7 +120,7 @@ class TestListScheduleCommand(testutil.PulpV2ClientTest):
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[1]['first_run'] in first_runs)
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[2]['first_run'] in first_runs)
 
-class TestCreateCommand(testutil.PulpV2ClientTest):
+class TestCreateCommand(base.PulpClientTests):
 
     def test_add(self):
         # Setup
@@ -166,7 +165,7 @@ class TestCreateCommand(testutil.PulpV2ClientTest):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[1])
 
-class TestDeleteCommand(testutil.PulpV2ClientTest):
+class TestDeleteCommand(base.PulpClientTests):
 
     def test_delete(self):
         # Setup
@@ -189,7 +188,7 @@ class TestDeleteCommand(testutil.PulpV2ClientTest):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
-class TestUpdateCommand(testutil.PulpV2ClientTest):
+class TestUpdateCommand(base.PulpClientTests):
 
     def test_update(self):
         # Setup
@@ -219,7 +218,7 @@ class TestUpdateCommand(testutil.PulpV2ClientTest):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
-class TestNextRunCommand(testutil.PulpV2ClientTest):
+class TestNextRunCommand(base.PulpClientTests):
 
     def test_next_run(self):
         # Setup

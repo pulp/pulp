@@ -12,19 +12,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
-import os
 import pprint
-import sys
 import time
 
-import mock
+import base
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-
-import testutil
-
-from pulp.server import async
-from pulp.server.tasking.task import Task, task_complete_states, task_error
+from pulp.server.tasking.task import task_complete_states, task_error
 
 # async test functions ---------------------------------------------------------
 
@@ -36,7 +29,7 @@ def wait(seconds=3):
 
 # testting ---------------------------------------------------------------------
 
-class TasksCollectionTest(testutil.PulpWebserviceTest):
+class TasksCollectionTest(base.PulpWebserviceTests):
 
     def _wait_for_task(self, task, timeout=datetime.timedelta(seconds=10)):
         start = datetime.datetime.now()

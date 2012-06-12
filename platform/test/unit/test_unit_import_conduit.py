@@ -12,13 +12,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import mock
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 from pulp.server.content.conduits.unit_import import ImportUnitConduit, UnitImportConduitException
@@ -27,7 +23,6 @@ import pulp.server.content.types.database as types_database
 import pulp.server.content.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit, RepoImporter
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._common as common_utils
 import pulp.server.managers.repo.unit_association as association_manager
 
 # constants --------------------------------------------------------------------
@@ -36,7 +31,7 @@ MOCK_TYPE_DEF = types_model.TypeDefinition('mock-type', 'Mock Type', 'Used by th
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncConduitTests(testutil.PulpTest):
+class RepoSyncConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoSyncConduitTests, self).clean()

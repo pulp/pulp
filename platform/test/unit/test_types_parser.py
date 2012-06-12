@@ -12,12 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 from pulp.server.content.types import parser, model
 
@@ -75,7 +70,7 @@ BAD_CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('bad_children',
 
 # -- test cases --------------------------------------------------------------
 
-class ParserTest(testutil.PulpTest):
+class ParserTest(unittest.TestCase):
 
     def clean(self):
         super(ParserTest, self).clean()

@@ -14,23 +14,20 @@
 
 import copy_reg
 import itertools
-import os
 import pprint
-import sys
 import time
 import types
 import unittest
 from datetime import datetime, timedelta
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 from pulp.common import dateutils
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import NonUniqueTaskException
 from pulp.server.tasking.scheduler import (
-    Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
+    ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
     Task, task_enqueue, task_dequeue, task_exit, task_waiting, task_running,
     task_finished, task_error, task_timed_out, task_canceled,
@@ -77,7 +74,7 @@ class Hook(object):
 
 # unittest classes ------------------------------------------------------------
 
-class TaskTester(testutil.PulpAsyncTest):
+class TaskTester(base.PulpServerTests):
 
     def test_task_create(self):
         task = Task(noop)
@@ -151,7 +148,7 @@ class TaskTester(testutil.PulpAsyncTest):
             self.fail()
 
 
-class QueueTester(testutil.PulpAsyncTest):
+class QueueTester(base.PulpServerTests):
 
     def _wait_for_task(self, task, timeout=timedelta(seconds=20)):
         start = datetime.now()
@@ -167,11 +164,11 @@ class QueueTester(testutil.PulpAsyncTest):
 class TaskQueueTester(QueueTester):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         self.queue._cancel_dispatcher()
         del self.queue
 
@@ -468,11 +465,11 @@ class TaskQueueTester(QueueTester):
 class InterruptQueueTester(QueueTester):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         self.queue._cancel_dispatcher()
         del self.queue
 
@@ -503,14 +500,14 @@ class InterruptQueueTester(QueueTester):
         self.assertTrue(task2.state == task_canceled, 'state is %s' % task.state)
 
 
-class PriorityQueueTester(testutil.PulpAsyncTest):
+class PriorityQueueTester(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         self.storage = VolatileStorage()
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         del self.storage
 
     def _enqueue_three_tasks(self):
@@ -548,11 +545,11 @@ class PriorityQueueTester(testutil.PulpAsyncTest):
 class ScheduledTaskTester(QueueTester):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         self.queue = TaskQueue()
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         self.queue._cancel_dispatcher()
         del self.queue
 
@@ -636,16 +633,16 @@ class ScheduledTaskTester(QueueTester):
         self._wait_for_task(task)
 
 
-class PersistentTaskTester(testutil.PulpAsyncTest):
+class PersistentTaskTester(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
+        base.PulpServerTests.setUp(self)
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         TaskSnapshot.get_collection().remove()
         self.same_type_fields = ('scheduler',)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
+        base.PulpServerTests.tearDown(self)
         TaskSnapshot.get_collection().remove()
 
     def test_task_serialization(self):

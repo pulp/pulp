@@ -12,12 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 import pulp.server.content.types.database as types_db
 from pulp.server.content.types.model import TypeDefinition
@@ -37,7 +32,7 @@ DEF_4 = TypeDefinition('def_4', 'Definition 4', 'Test definition',
 
 # -- test cases ----------------------------------------------------------------
 
-class TypesDatabaseTests(testutil.PulpTest):
+class TypesDatabaseTests(base.PulpServerTests):
 
     def clean(self):
         super(TypesDatabaseTests, self).clean()

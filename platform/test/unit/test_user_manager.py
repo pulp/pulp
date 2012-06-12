@@ -11,29 +11,21 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 from pulp.server.auth import principal
+from pulp.server.api.user import UserApi
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
 from pulp.server.managers.user import UserManager
 
-# -- constants ----------------------------------------------------------------
-
-
-
 # -- test cases ---------------------------------------------------------------
 
-class UserManagerTests(testutil.PulpTest):
+class UserManagerTests(base.PulpServerTests):
     def setUp(self):
-        testutil.PulpTest.setUp(self)
-
-        self.config = testutil.load_test_config()
+        super(UserManagerTests, self).setUp()
 
         # Hardcoded to /var/lib/pulp, so change here to avoid permissions issues
         self.default_sn_path = SerialNumber.PATH
@@ -44,16 +36,17 @@ class UserManagerTests(testutil.PulpTest):
         self.manager = UserManager()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        super(UserManagerTests, self).tearDown()
 
         SerialNumber.PATH = self.default_sn_path
 
     def test_generate_user_certificate(self):
 
         # Setup
+        user_api = UserApi()
 
         # TODO: Fix this when UserManager can create users
-        admin_user = self.user_api.create('test-admin')
+        admin_user = user_api.create('test-admin')
         principal.set_principal(admin_user) # pretend the user is logged in
 
         # Test
