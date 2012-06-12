@@ -20,7 +20,6 @@ from pymongo.errors import DuplicateKeyError
 # Pulp
 import pulp.server.util
 from pulp.server.api.base import BaseApi
-from pulp.server.auditing import audit
 from pulp.server.event.dispatcher import event
 from pulp.server.db import model
 from pulp.server.exceptions import PulpException

@@ -17,8 +17,7 @@ import uuid
 import pulp.server.auth.password_util as password_util
 from pulp.server import config
 from pulp.server.api.base import BaseApi
-from pulp.server.auditing import audit
-from pulp.server.db import model
+import pulp.server.db.model.auth as model
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +29,6 @@ class UserApi(BaseApi):
     def _getcollection(self):
         return model.User.get_collection()
 
-    @audit(params=['login'])
     def create(self, login, password=None, name=None, id=None):
         """
         Create a new User object and return it
@@ -44,7 +42,6 @@ class UserApi(BaseApi):
         self.collection.insert(user, safe=True)
         return user
 
-    @audit()
     def update(self, login, delta):
         """
         Update a user and hash the inbound password if it is different
@@ -69,7 +66,6 @@ class UserApi(BaseApi):
         self.collection.save(user, safe=True)
         return user
 
-    @audit()
     def delete(self, login):
         """
         Delete a user.
@@ -94,7 +90,6 @@ class UserApi(BaseApi):
             return None
         return users[0]
 
-    @audit()
     def clean(self):
         """
         Delete all the Users in the database except the default admin user.  default 

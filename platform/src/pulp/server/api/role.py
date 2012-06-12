@@ -12,8 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.server.api.base import BaseApi
-from pulp.server.auditing import audit
-from pulp.server.db.model import Role
+from pulp.server.db.model.auth import Role
 from pulp.server.exceptions import PulpException
 
 
@@ -27,7 +26,6 @@ class RoleAPI(BaseApi):
     def _getcollection(self):
         return Role.get_collection()
 
-    @audit()
     def create(self, name):
         role = self.role(name)
         if role is not None:
@@ -38,7 +36,6 @@ class RoleAPI(BaseApi):
 
     # base class methods overridden for auditing
 
-    @audit()
     def update(self, id, delta):
         """
         Updates a role object.
@@ -63,11 +60,9 @@ class RoleAPI(BaseApi):
                 'update keyword "%s", not-supported' % key
         self.collection.save(role, safe=True)
 
-    @audit()
     def delete(self, role):
         self.collection.remove({'name':role['name']})
 
-    @audit()
     def clean(self):
         super(RoleAPI, self).clean()
 
@@ -82,7 +77,6 @@ class RoleAPI(BaseApi):
     def roles(self, spec=None, fields=None):
         return list(self.collection.find(spec=spec, fields=fields))
 
-    @audit()
     def add_permissions(self, role, resource, operations):
         current_ops = role['permissions'].setdefault(resource, [])
         for o in operations:
@@ -91,7 +85,6 @@ class RoleAPI(BaseApi):
             current_ops.append(o)
         self.collection.save(role, safe=True)
 
-    @audit()
     def remove_permissions(self, role, resource, operations):
         current_ops = role['permissions'].get(resource, [])
         if not current_ops:

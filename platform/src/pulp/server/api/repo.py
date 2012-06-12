@@ -47,7 +47,6 @@ from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.api.scheduled_sync import delete_repo_schedule
 from pulp.server.async import run_async, find_async
-from pulp.server.auditing import audit
 from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event

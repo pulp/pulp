@@ -13,7 +13,6 @@
 from pulp_rpm.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds import CdsApi
-from pulp.server.auditing import audit
 from pulp.server.auth import cert_generator, principal
 from pulp.common.bundle import Bundle
 from pulp.server import config

@@ -28,7 +28,6 @@ from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.exceptions import PulpException

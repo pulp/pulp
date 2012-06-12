@@ -30,7 +30,6 @@ from pulp.server.api.synchronizers import BaseSynchronizer, YumSynchronizer, \
     yum_rhn_progress_callback, local_progress_callback, FileSynchronizer
 from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.api.repo_clone_task import RepoCloneTask
-from pulp.server.auditing import audit
 from pulp.server.async import run_async
 from pulp.server.event.handler.task import TaskDequeued
 from pulp.server.exceptions import PulpException

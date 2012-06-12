@@ -22,7 +22,6 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util
 
-from pulp.server import auditing
 from pulp.server import config
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -45,7 +44,6 @@ def setup():
         pass
     start_logging()
     connection.initialize()
-    auditing.initialize()
     log.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)

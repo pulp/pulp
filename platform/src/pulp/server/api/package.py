@@ -19,7 +19,6 @@ import re
 from pulp.server import util
 from pulp.server.api.base import BaseApi
 from pulp.server.api.depsolver import DepSolver
-from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.exceptions import PulpException

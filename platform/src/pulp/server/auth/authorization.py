@@ -23,8 +23,6 @@ from pulp.server.api.user import UserApi
 from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
-from pulp.server.db.model import Delta
-
 
 _permission_api = PermissionAPI()
 _role_api = RoleAPI()
@@ -39,6 +37,34 @@ class PulpAuthorizationError(PulpException):
 CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
 operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
 
+
+# Temporarily moved this out of db into here; this is the only place using it
+# and it's going to be deleted.
+
+class Delta(dict):
+    """
+    The delta of a model object.
+    Contains the primary key and keys/values specified in the filter.
+    """
+
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __init__(self, obj, filter=()):
+        """
+        @param obj: A model object (dict).
+        @type obj: Model|dict
+        @param filter: A list of dictionary keys to include
+            in the delta.
+        @type filter: str|list
+        """
+        dict.__init__(self)
+        if isinstance(filter, basestring):
+            filter = (filter,)
+        for k,v in obj.items():
+            if k in filter:
+                self[k] = v
 
 def name_to_operation(name):
     """

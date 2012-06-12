@@ -14,8 +14,7 @@
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server.api.base import BaseApi
-from pulp.server.auditing import audit
-from pulp.server.db.model import Permission
+from pulp.server.db.model.auth import Permission
 from pulp.server.exceptions import PulpException
 
 
@@ -29,7 +28,6 @@ class PermissionAPI(BaseApi):
     def _getcollection(self):
         return Permission.get_collection()
 
-    @audit()
     def create(self, resource):
         if self.permission(resource) is not None:
             raise PulpException('permission for %s already exists' % resource)
@@ -39,7 +37,6 @@ class PermissionAPI(BaseApi):
 
     # base class methods overridden for auditing
 
-    @audit()
     def update(self, resource, delta):
         """
         Updates a permission object.
@@ -64,11 +61,9 @@ class PermissionAPI(BaseApi):
                 'update keyword "%s", not-supported' % key
         self.collection.save(permission, safe=True)
 
-    @audit()
     def delete(self, permission):
         self.collection.remove({'resource':permission['resource']})
 
-    @audit()
     def clean(self):
         super(PermissionAPI, self).clean()
 
@@ -91,7 +86,6 @@ class PermissionAPI(BaseApi):
     def permissions(self, spec=None, fields=None):
         return list(self.collection.find(spec=spec, fields=fields))
 
-    @audit()
     def grant(self, resource, user, operations):
         """
         Grant permission on a resource for a user and a set of operations.
@@ -110,7 +104,6 @@ class PermissionAPI(BaseApi):
             current_ops.append(o)
         self.collection.save(permission, safe=True)
 
-    @audit()
     def revoke(self, resource, user, operations):
         """
         Revoke permission on a resource for a user and a set of operations.

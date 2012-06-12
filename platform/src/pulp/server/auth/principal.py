@@ -14,7 +14,7 @@
 import threading
 
 from pulp.server.util import Singleton
-from pulp.server.db.model import User
+from pulp.server.db.model.auth import User
 
 # default system principal ----------------------------------------------------
 

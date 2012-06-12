@@ -45,9 +45,6 @@ db_connection.initialize()
 
 from pulp.server import async
 from pulp.server.agent.direct.services import Services as AgentServices
-from pulp.server.api import consumer_history
-from pulp.server.api import scheduled_sync
-from pulp.server.api import repo
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.content import loader as plugin_loader
@@ -56,7 +53,7 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    agent, dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers, gc_root_actions)
+    agent, dispatch, contents, plugins, repositories, consumers, root_actions)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
@@ -64,14 +61,14 @@ from pulp.server.webservices.middleware.postponed import PostponedOperationMiddl
 
 URLS = (
     # Please keep the following in alphabetical order.
-    '/v2/actions', gc_root_actions.application,
+    '/v2/actions', root_actions.application,
     '/v2/agent', agent.application,
-    '/v2/consumers', gc_consumers.application,
-    '/v2/content', gc_contents.application,
+    '/v2/consumers', consumers.application,
+    '/v2/content', contents.application,
     '/v2/jobs', dispatch.job_application,
-    '/v2/plugins', gc_plugins.application,
+    '/v2/plugins', plugins.application,
     '/v2/queued_calls', dispatch.queued_call_application,
-    '/v2/repositories', gc_repositories.application,
+    '/v2/repositories', repositories.application,
     '/v2/tasks', dispatch.task_application,
     )
 
@@ -91,29 +88,32 @@ def _initialize_pulp():
     if _IS_INITIALIZED:
         return
     _IS_INITIALIZED = True
+
     # check our db version and other support
     check_version()
+
     # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
-    # clean up previous runs, if needed
-    repo.clear_sync_in_progress_flags()
+
     # agent services
     AgentServices.start()
+
     # async subsystem and schedules tasks
     async.initialize()
+
     # pulp finalization methods, registered via 'atexit'
     atexit.register(async.finalize)
+
     # setup debugging, if configured
     if config.config.getboolean('server', 'debugging_mode'):
         STACK_TRACER = StacktraceDumper()
         STACK_TRACER.start()
-    # setup recurring tasks
-    consumer_history.init_culling_task()
-    scheduled_sync.init_scheduled_syncs()
+
     # pulp generic content initialization
     manager_factory.initialize()
     plugin_loader.initialize()
+
     # new async dispatch initialization
     dispatch_factory.initialize()
 

@@ -21,7 +21,7 @@ import web
 from pulp.server.auth.authorization import UPDATE
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.controllers.decorators import auth_required, error_handler
+from pulp.server.webservices.controllers.decorators import auth_required
 
 # -- constants ----------------------------------------------------------------
 
@@ -32,7 +32,6 @@ _LOG = logging.getLogger(__name__)
 
 class Reply(JSONController):
 
-    @error_handler
     @auth_required(UPDATE)
     def POST(self, uuid):
         """

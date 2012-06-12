@@ -21,7 +21,6 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.errata import ErrataApi
 #from pulp.server.api.repo import RepoApi
 from pulp.server.async import AsyncTask
-from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.exceptions import PulpException
 from pulp.server.tasking.task import Task, AsyncTask

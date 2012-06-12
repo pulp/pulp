@@ -27,7 +27,6 @@ from pulp.server.agent import PulpAgent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.scheduled_sync import update_cds_schedule, delete_cds_schedule
-from pulp.server.auditing import audit
 from pulp.server.cds import round_robin
 from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,

@@ -17,7 +17,6 @@ import os
 import sys
 from optparse import OptionParser, SUPPRESS_HELP
 
-from pulp.server import auditing
 from pulp.server.db import connection
 
 # the db connection and auditing need to be initialied before any further

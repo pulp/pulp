@@ -17,7 +17,6 @@ import logging
 import ldap.modlist
 
 from pulp.server.config import config
-from pulp.server.db.model import User
 from pulp.server.api.user import UserApi
 from pulp.server.auth import authorization
 

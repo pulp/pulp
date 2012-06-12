@@ -33,7 +33,7 @@ from pulp.server.db.model.gc_repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.unit_association_query import Criteria
-import pulp.server.webservices.queries.repo as repo_query_utils
+import pulp.server.webservices.serialization.unit_criteria as repo_query_utils
 
 class RepoControllersTests(base.PulpWebserviceTests):
 

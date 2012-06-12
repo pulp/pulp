@@ -33,7 +33,7 @@ from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices.queries.repo import unit_association_criteria
+from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
 
 # -- constants ----------------------------------------------------------------
 
