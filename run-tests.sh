@@ -23,6 +23,6 @@ PACKAGES="$PACKAGES,yum_distributor"
 PACKAGES="$PACKAGES,yum_importer"
 
 # Test Directories
-TESTS="platform/test/unit builtins/test/unit rpm_support/test/unit"
+TESTS="platform/test/unit builtins/test/unit rpm-support/test/unit"
 
 nosetests --with-coverage --cover-html --cover-erase --cover-package $PACKAGES $TESTS
