@@ -9,13 +9,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-'''
+"""
 Logic methods for handling repo bind, unbind, and update operations. This module
 is independent of how the requests for these operations are received. In other words,
 this module does not care if the required information for these commands is received
 through API calls or the message bus. The logic is still the same and occurs
 entirely on the consumer.
-'''
+"""
 
 # Python
 import os
@@ -23,9 +23,9 @@ import shutil
 
 # Pulp
 from logging import getLogger
-from pulp.gc_client.lib.lock import Lock
-from pulp.gc_client.lib.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp.client.lock import Lock
 from pulp.common.util import encode_unicode, decode_unicode
+from pulp_rpm.common.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 log = getLogger(__name__)
 
@@ -43,7 +43,7 @@ def bind(repo_filename,
          clientcert,
          enabled,
          lock=None):
-    '''
+    """
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
     repo object as well as the list of URLs where the repo can be found.
@@ -94,7 +94,7 @@ def bind(repo_filename,
 
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
-    '''
+    """
 
     if not lock:
         lock = Lock('/var/run/subsys/pulp/repolib.pid')
@@ -135,7 +135,7 @@ def bind(repo_filename,
         lock.release()
 
 def unbind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, repo_id, lock=None):
-    '''
+    """
     Removes the repo identified by repo_id from the given repo file. If the repo is
     not bound, this call has no effect. If the mirror list file exists, it will be
     deleted.
@@ -168,7 +168,7 @@ def unbind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, re
 
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
-    '''
+    """
 
     if not lock:
         lock = Lock('/var/run/subsys/pulp/repolib.pid')
@@ -203,7 +203,7 @@ def unbind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, re
 
 
 def mirror_list_filename(dir, repo_id):
-    '''
+    """
     Generates the full path to a unique mirror list file for the given repo.
 
     @param dir: directory in which mirror list files are stored
@@ -211,13 +211,13 @@ def mirror_list_filename(dir, repo_id):
 
     @param repo_id: id of the repo the mirror list will belong to
     @type  repo_id: string
-    '''
+    """
     return os.path.join(dir, repo_id + '.mirrorlist')
 
 # -- private -----------------------------------------------------------------
 
 def _convert_repo(repo_id, enabled, name):
-    '''
+    """
     Converts the dict repository representation into the repo file domain instance.
     This will *not* populate the baseurl parameter of the repo. That will be done
     elsewhere to take into account if a mirror list is required depending on the
@@ -234,18 +234,18 @@ def _convert_repo(repo_id, enabled, name):
 
     @return: repo instance in the repo file format
     @rtype:  L{Repo}
-    '''
+    """
     repo = Repo(repo_id)
     repo['name'] = name
     repo['enabled'] = str(int(enabled))
     return repo
 
 def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
-    '''
+    """
     Handles the processing of any GPG keys that were specified with the repo. The key
     files will be written to disk, deleting any existing key files that were there. The
     repo object will be updated with any values related to GPG key information.
-    '''
+    """
 
     repo_keys = RepoKeyFiles(keys_root_dir, repo.id)
 
@@ -265,12 +265,12 @@ def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
     repo_keys.update_filesystem()
     
 def _handle_certs(repo, rootdir, cacert, clientcert):
-    '''
+    """
     Handle x.509 certificates that were specified with the repo.
     The cert files will be written to disk, deleting any existing
     files that were there. The repo object will be updated with any
     values related to the stored certificates.
-    '''
+    """
     certificates = CertFiles(rootdir, repo.id)
     certificates.update(cacert, clientcert)
     capath, clientpath = certificates.apply()
@@ -285,11 +285,11 @@ def _handle_certs(repo, rootdir, cacert, clientcert):
         repo['sslclientcert'] = clientpath
 
 def _handle_host_urls(repo, url_list, mirror_list_filename):
-    '''
+    """
     Handles the processing of the host URLs sent for a repo. If a mirror list file is
     needed, it will be created and saved to disk as part of this call. The repo
     object will be updated with the appropriate parameter for the repo URL.
-    '''
+    """
 
     if len(url_list) > 1:
 

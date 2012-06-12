@@ -11,19 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
-from pulp.gc_client.framework.core import TAG_FAILURE, TAG_PARAGRAPH
-import pulp.gc_client.framework.exceptions as handler
-import pulp.gc_client.api.exceptions as exceptions
-from pulp.gc_client.util.arg_utils import InvalidConfig
+import pulp.bindings.exceptions as exceptions
+from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
+import pulp.client.extensions.exceptions as handler
+from pulp.client.arg_utils import InvalidConfig
 
-class ExceptionsLoaderTest(testutil.PulpV2ClientTest):
+class ExceptionsLoaderTest(base.PulpClientTests):
     """
     All tests in this class use the exception handler configured in the
     PulpV2ClientTest base class as the test object.

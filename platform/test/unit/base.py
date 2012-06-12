@@ -306,13 +306,13 @@ class PulpWebserviceTests(PulpServerTests):
         self.traceback = traceback
 
 
-class PulpExtensionTests(unittest.TestCase):
+class PulpClientTests(unittest.TestCase):
     """
     Base unit test class for all extension unit tests.
     """
 
     def setUp(self):
-        super(PulpExtensionTests, self).setUp()
+        super(PulpClientTests, self).setUp()
 
         self.config = SafeConfigParser()
         config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-admin.conf')

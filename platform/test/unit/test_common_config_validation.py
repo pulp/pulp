@@ -12,16 +12,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
 import re
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 from StringIO import StringIO
-from pulp.common.gc_config import *
+from pulp.common.config import *
 
 
 SCHEMA = (
@@ -152,7 +147,7 @@ length=44
 wood=oak
 """
 
-class TestConfigValidator(testutil.PulpAsyncTest):
+class TestConfigValidator(unittest.TestCase):
 
     def test_valid(self):
         validator = Validator(SCHEMA)
