@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 import importer_mocks
 from yum_importer.importer import YumImporter
-from pulp.server.plugins.plugins.model import Repository
+from pulp.plugins.model import Repository
 
 class TestRepoScratchpad(unittest.TestCase):
 

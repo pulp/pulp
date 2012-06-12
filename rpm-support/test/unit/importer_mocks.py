@@ -10,13 +10,14 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 import os
 import mock
-from pulp.server.plugins.conduits.repo_sync import RepoSyncConduit
-from pulp.server.plugins.conduits.unit_add import UnitAddConduit
-from pulp.server.plugins.conduits.unit_import import ImportUnitConduit
-from pulp.server.plugins.plugins.config import PluginCallConfiguration
-from pulp.server.plugins.plugins.model import Unit
+from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.conduits.unit_add import UnitAddConduit
+from pulp.plugins.conduits.unit_import import ImportUnitConduit
+from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.model import Unit
 
 def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
     def side_effect(type_id, key, metadata, rel_path):

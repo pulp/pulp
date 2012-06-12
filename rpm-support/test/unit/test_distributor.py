@@ -29,8 +29,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
     RPM_TYPE_ID, SRPM_TYPE_ID
 
-from pulp.server.plugins.plugins.model import RelatedRepository, Repository, Unit
-from pulp.server.plugins.plugins.config import PluginCallConfiguration
+from pulp.plugins.model import RelatedRepository, Repository, Unit
+from pulp.plugins.config import PluginCallConfiguration
 
 import distributor_mocks
 

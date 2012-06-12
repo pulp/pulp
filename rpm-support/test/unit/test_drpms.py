@@ -23,7 +23,7 @@ import importer_mocks
 from yum_importer import drpm, importer_rpm
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer.drpm import DRPM_UNIT_KEY
-from pulp.server.plugins.plugins.model import Repository
+from pulp.plugins.model import Repository
 
 class TestDRPMS(unittest.TestCase):
 

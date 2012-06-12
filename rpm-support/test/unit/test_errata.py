@@ -26,7 +26,7 @@ from yum_importer import errata
 from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter
 from yum_importer.importer import YUM_IMPORTER_TYPE_ID
-from pulp.server.plugins.plugins.model import Repository, Unit
+from pulp.plugins.model import Repository, Unit
 from yum_importer.importer_rpm import RPM_TYPE_ID
 
 class TestErrata(unittest.TestCase):

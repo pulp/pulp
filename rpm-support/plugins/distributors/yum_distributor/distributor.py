@@ -11,18 +11,22 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from ConfigParser import SafeConfigParser
 import gettext
 import logging
 import os
 import shutil
 import time
 import traceback
+
 from pulp_rpm.yum_plugin import util
-from pulp.server.plugins.plugins.distributor import Distributor
-from ConfigParser import SafeConfigParser
-# -- constants ----------------------------------------------------------------
+from pulp.plugins.distributor import Distributor
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
+
 from yum_distributor import metadata
+
+
+# -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 _ = gettext.gettext

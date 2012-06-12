@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 
 from yum_importer.importer import YumImporter
 import importer_mocks
-from pulp.server.plugins.plugins.model import Repository
+from pulp.plugins.model import Repository
 from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 class TestValidateConfig(unittest.TestCase):
