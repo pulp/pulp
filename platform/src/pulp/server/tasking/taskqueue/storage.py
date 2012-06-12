@@ -19,10 +19,6 @@ import sys
 import types
 from gettext import gettext as _
 
-from pymongo.errors import DuplicateKeyError
-
-from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
-from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
 from pulp.server.tasking.exception import (
     DuplicateSnapshotError, SnapshotFailure)
 
@@ -189,57 +185,3 @@ def _unpickle_method(func_name, obj, cls):
                               (func_name, cls.__name__))
     return func.__get__(obj, cls)
 
-# snapshot storage class -------------------------------------------------------
-
-class SnapshotStorage(VolatileStorage):
-    """
-    Snapshot storage class that uses volatile memory for storage and correctness
-    and uses the database to persiste waiting and running tasks across reboots
-    and to keep completed tasks around indefinitely for history and auditing
-    purposes.
-    """
-
-    def  __init__(self):
-        super(SnapshotStorage, self).__init__()
-        # set custom pickling functions for snapshots
-        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
-
-    # database methods
-
-    @property
-    def snapshot_collection(self):
-        return self.__dict__.setdefault('__snapshot_collection',
-                                        TaskSnapshot.get_collection())
-
-    @property
-    def history_collection(self):
-        return self.__dict__.setdefault('__history_collection',
-                                        TaskHistory.get_collection())
-
-    # running task methods
-
-    def _snapshot_task(self, task):
-        snapshot = task.snapshot()
-        try:
-            self.snapshot_collection.insert(snapshot, safe=True)
-        except DuplicateKeyError:
-            raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
-
-    def store_running(self, task):
-        # create and keep a snapshot of the task that can be loaded from the
-        # database and executed across reboots, server restarts, etc.
-        self._snapshot_task(task)
-        super(SnapshotStorage, self).store_running(task)
-
-    # storage methods
-
-    def remove_running(self, task):
-        # the task has completed, so remove the snapshot
-        self.snapshot_collection.remove({'_id': task.snapshot_id}, safe=True)
-        super(SnapshotStorage, self).remove_running(task)
-
-    def store_complete(self, task):
-        history = TaskHistory(task)
-        self.history_collection.insert(history)
-        super(SnapshotStorage, self).store_complete(task)

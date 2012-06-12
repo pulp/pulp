@@ -40,7 +40,6 @@ from pulp.bindings.server import  PulpConnection
 from pulp.client.extensions.core import ClientContext, PulpPrompt, PulpCli
 from pulp.client.extensions.exceptions import ExceptionHandler
 
-from pulp.server import async
 from pulp.server import constants
 from pulp.server import config
 from pulp.server.auth import authorization
@@ -116,17 +115,10 @@ class PulpServerTests(unittest.TestCase):
         pass
 
     def setup_async(self):
-        async._queue = mock.Mock()
-        async._queue.find.return_value = []
-        async._queue.waiting_tasks.return_value = []
-        async._queue.running_tasks.return_value = []
-        async._queue.incomplete_tasks.return_value = []
-        async._queue.complete_tasks.return_value = []
-        async._queue.all_tasks.return_value = []
+        pass
 
     def teardown_async(self):
-        # I can't set this to None as clean requires something here
-        async._queue.reset_mock()
+        pass
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
@@ -202,14 +194,9 @@ class PulpWebserviceTests(PulpServerTests):
         user_api.update('ws-user', {'roles' : authorization.super_user_role})
 
     def setup_async(self):
-        async.config.config = self.config
-        async.initialize()
         dispatch_factory.initialize()
 
     def teardown_async(self):
-        async._queue._cancel_dispatcher()
-        async._queue = None
-
         dispatch_factory._SCHEDULER.stop()
         dispatch_factory._TASK_QUEUE.stop(clear_queued_calls=True)
         dispatch_factory._SCHEDULER = None

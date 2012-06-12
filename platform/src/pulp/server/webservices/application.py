@@ -43,7 +43,6 @@ from pulp.server.db import connection as db_connection
 logs.start_logging()
 db_connection.initialize()
 
-from pulp.server import async
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
@@ -98,12 +97,6 @@ def _initialize_pulp():
 
     # agent services
     AgentServices.start()
-
-    # async subsystem and schedules tasks
-    async.initialize()
-
-    # pulp finalization methods, registered via 'atexit'
-    atexit.register(async.finalize)
 
     # setup debugging, if configured
     if config.config.getboolean('server', 'debugging_mode'):
