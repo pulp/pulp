@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.69
+Version: 0.70
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -237,8 +237,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.69-1
-- bump gofer 0.69. (jortel@redhat.com)
+* Tue Jun 12 2012 Jeff Ortel <jortel@redhat.com> 0.70-1
+- Refit mocks for reparent of Envelope & Options to (object).
+  (jortel@redhat.com)
 
 * Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.69-1
 - 829767 - fix simplejons 2.2+ issue (fedora 17). Envelope/Options rebased on
