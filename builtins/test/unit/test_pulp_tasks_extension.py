@@ -15,13 +15,12 @@ import copy
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-import testutil
-
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 import pulp_tasks.pulp_cli
 
-from pulp.gc_client.framework.exceptions import NotFoundException, PulpServerException
+import base
+
+from pulp.client.extensions.exceptions import NotFoundException, PulpServerException
 
 # -- constants ----------------------------------------------------------------
 
@@ -53,7 +52,7 @@ EXAMPLE_CALL_REPORT = {
 
 # -- tests --------------------------------------------------------------------
 
-class AllTasksTests(testutil.PulpV2ClientTest):
+class AllTasksTests(base.PulpClientTests):
 
     def setUp(self):
         super(AllTasksTests, self).setUp()
@@ -188,7 +187,7 @@ class AllTasksTests(testutil.PulpV2ClientTest):
         # Test
         self.assertRaises(PulpServerException, self.all_tasks_section.cancel, **{'task-id' : 'task_1'})
 
-class RepoTasksTests(testutil.PulpV2ClientTest):
+class RepoTasksTests(base.PulpClientTests):
 
     # Very little needs to be done here other than exercising a call that will
     # call the overridden method

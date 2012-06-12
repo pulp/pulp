@@ -12,11 +12,8 @@
 # Python
 import os
 import shutil
-import sys
-from logging import basicConfig
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 from pulp.server.api.keystore import KeyStore
 from pulp.server.util import top_gpg_location as lnkdir
@@ -32,13 +29,10 @@ REPO = 'fedora'
 KEYDIR = os.path.join(keydir(), REPO)
 PUBDIR = os.path.join(lnkdir(), REPO)
 
-basicConfig()
-testutil.load_test_config()
-
-class TestKeyStore(testutil.PulpAsyncTest):
+class TestKeyStore(base.PulpServerTests):
 
     def clean(self):
-        testutil.PulpAsyncTest.clean(self)
+        super(TestKeyStore, self).clean()
         shutil.rmtree(keydir(), True)
         shutil.rmtree(lnkdir(), True)
 

@@ -9,21 +9,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import os
-import sys
+import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
-class TestImporter(testutil.PulpAsyncTest):
+class TestImporter(unittest.TestCase):
 
     def test_load_all_modules(self):
-        '''
+        """
         Loads all modules in pulp to make sure they are captured during coverage tracking.
-        '''
+        """
 
-        for root, sub_folders, files in os.walk(testutil.srcdir):
+        for root, sub_folders, files in os.walk(base.srcdir):
             for file in files:
 
                 # Quick sanity checks for the stability of the coverage plugin

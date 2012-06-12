@@ -13,11 +13,8 @@
 
 # Python
 import itertools
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 import pulp.server.content.loader as plugin_loader
 import pulp.server.content.types.database as types_db
@@ -37,7 +34,7 @@ class MockDistributor:
 
 # -- test cases ---------------------------------------------------------------
 
-class PluginControllerTests(testutil.PulpV2WebserviceTest):
+class PluginControllerTests(base.PulpWebserviceTests):
     def setUp(self):
         super(PluginControllerTests, self).setUp()
 

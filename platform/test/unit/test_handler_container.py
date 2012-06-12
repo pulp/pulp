@@ -13,29 +13,20 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
 
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 from pprint import pprint
 from mock_handlers import MockDeployer
 from pulp.agent.lib.container import *
 from pulp.agent.lib.dispatcher import *
 
-
-
-class TestHandlerContainer(testutil.PulpTest):
+class TestHandlerContainer(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
         self.deployer = MockDeployer()
         self.deployer.deploy()
 
-
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
         self.deployer.clean()
         
     def container(self):
@@ -60,16 +51,13 @@ class TestHandlerContainer(testutil.PulpTest):
         self.assertTrue(handler is None)
 
 
-class TestDispatcher(testutil.PulpTest):
+class TestDispatcher(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
         self.deployer = MockDeployer()
         self.deployer.deploy()
 
-
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
         self.deployer.clean()
 
     def container(self):

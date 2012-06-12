@@ -13,11 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.cud import ConsumerManager
@@ -30,13 +26,11 @@ from pulp.server.managers.repo.publish import RepoPublishManager
 from pulp.server.managers.repo.query import RepoQueryManager
 from pulp.server.managers.repo.sync import RepoSyncManager
 
-
 # -- test cases --------------------------------------------------------------
 
-class FactoryTests(testutil.PulpTest):
+class FactoryTests(unittest.TestCase):
 
     def clean(self):
-        super(FactoryTests, self).clean()
         factory.reset()
 
     def test_syntactic_sugar_methods(self):
@@ -59,6 +53,9 @@ class FactoryTests(testutil.PulpTest):
         """
         Tests retrieving a manager instance for a valid manager mapping.
         """
+
+        # Setup
+        factory.initialize()
 
         # Test
         manager = factory.get_manager(factory.TYPE_REPO)

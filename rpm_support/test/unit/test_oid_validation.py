@@ -11,15 +11,23 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+#
+#
+# This test is currently disabled. It needs to be changed to not use server
+# API classes and instead set up the auth directly, however I just don't have
+# the time during the git refactor to do it now.
+# jdob, June 12, 2012
+#
+#
+
+
 # Python
+from M2Crypto import X509
 import shutil
 import sys
 import os
+import unittest
 import urlparse
-from M2Crypto import X509
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
 
 import pulp_rpm.repo_auth.oid_validation as oid_validation
 from pulp_rpm.repo_auth.oid_validation import OidValidator
@@ -47,10 +55,9 @@ def mock_environ(client_cert_pem, uri):
 
 # -- test cases -----------------------------------------------------------------
 
-class TestOidValidation(testutil.PulpAsyncTest):
+class TestOidValidation():
 
     def clean(self):
-        testutil.PulpAsyncTest.clean(self)
         if os.path.exists(CERT_TEST_DIR):
             shutil.rmtree(CERT_TEST_DIR)
 
@@ -59,9 +66,8 @@ class TestOidValidation(testutil.PulpAsyncTest):
             os.remove(protected_repo_listings_file)
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         self.validator = OidValidator(self.config)
-
+        self.clean()
 
     def print_debug(self):
         valid_ca = X509.load_cert_string(VALID_CA)
@@ -106,7 +112,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
 
     def test_scenario_1(self):
-        '''
+        """
         Setup
         - Global auth disabled
         - Individual repo auth enabled for repo X
@@ -115,7 +121,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted for both repos
-        '''
+        """
 
         # Setup
         self.auth_api.disable_global_repo_auth()
@@ -138,7 +144,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(response_y)
 
     def test_scenario_2(self):
-        '''
+        """
         Setup
         - Global auth disabled
         - Individual repo auth enabled for repo X
@@ -147,7 +153,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Denied to repo X, permitted for repo Y
-        '''
+        """
 
         # Setup
         self.auth_api.disable_global_repo_auth()
@@ -170,7 +176,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(response_y)
 
     def test_scenario_3(self):
-        '''
+        """
         Setup
         - Global auth disabled
         - Individual repo auth enabled for repo X
@@ -179,7 +185,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted to repo X, denied from repo Y
-        '''
+        """
 
         # Setup
         self.auth_api.disable_global_repo_auth()
@@ -202,7 +208,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(not response_y)
 
     def test_scenario_4(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth disabled
@@ -211,7 +217,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted to repo X and Y
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT,}
@@ -234,7 +240,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(response_y)
 
     def test_scenario_5(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth disabled
@@ -243,7 +249,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted to repo X, denied to repo Y
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -266,7 +272,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(not response_y)
 
     def test_scenario_6(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth disabled
@@ -275,7 +281,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Denied to both repo X and Y
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -298,7 +304,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(not response_y)
 
     def test_scenario_7(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth enabled on repo X
@@ -308,7 +314,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted for both repo X and Y
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -332,7 +338,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(response_y)
 
     def test_scenario_8(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth enabled on repo X
@@ -342,7 +348,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted for repo X, denied for repo Y
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -366,7 +372,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(not response_y)
 
     def test_scenario_9(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth enabled for repo X
@@ -376,7 +382,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Excepted
         - Denied for repo X, passes for repo Y
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -400,7 +406,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(response_y)
 
     def test_scenario_10(self):
-        '''
+        """
         Setup
         - Global auth disabled
         - Individual repo auth enabled for repo X
@@ -409,7 +415,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         Expected
         - Denied for repo X, permitted for repo Y
         - No exceptions thrown
-        '''
+        """
 
         # Setup
         self.auth_api.disable_global_repo_auth()
@@ -432,7 +438,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(response_y)
 
     def test_scenario_11(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth disabled
@@ -441,7 +447,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         Expected
         - Denied to both repo X and Y
         - No exceptions thrown
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : INVALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -464,7 +470,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(not response_y)
 
     def test_scenario_12(self):
-        '''
+        """
         Setup
         - Global auth enabled
         - Individual auth enabled on repo X
@@ -474,7 +480,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         Expected
         - Denied for both repo X and Y
         - No exceptions thrown
-        '''
+        """
 
         # Setup
         global_bundle = {'ca' : VALID_CA, 'key' : ANYKEY, 'cert' : ANYCERT, }
@@ -524,7 +530,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
         self.assertTrue(not response_z)
 
     def test_scenario_14(self):
-        '''
+        """
         Setup
         - Global auth disabled
         - Individual repo auth enabled for repo X
@@ -534,7 +540,7 @@ class TestOidValidation(testutil.PulpAsyncTest):
 
         Expected
         - Permitted for both repos
-        '''
+        """
 
         # Setup
         self.auth_api.disable_global_repo_auth()
@@ -620,7 +626,7 @@ NgH6CEPkQzXt83c+B8nECNWxheP1UkerWfe/gmwQmc0Ntt4JvKeOuw==
 
 # Entitlements for:
 #  - repos/pulp/pulp/fedora-14/x86_64/
-LIMITED_CLIENT_CERT = '''
+LIMITED_CLIENT_CERT = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAzlWuSKJaNxamjwdAf4RUoDNLl9T2DV8ls4FZ3l3cGIQEftdL
 +YHPe2nn3VZGEqHVWyEQcIvkgu0ErltYKVHbGP38la6ZkgeFcrM4J/u1T8XC4ZWN
@@ -670,12 +676,12 @@ gAjz5TscEVKvTQXVLVGYcbTAWYiNl5ZSZVEPAjSv0DDsNF/8YNjTCL29pgYBRKR2
 aSrnqfN9mTqtXJ98Wg+ZUn+r6F6lf1Oo+fUM7jEVaWrSTchpW7QdN2HxDM6D63eh
 PHcxz1yg+aO6XvkwZJKygs4snZUu0R1r/7HTaoSEqsCD5Tg/kRaUq9Fab0HIuAbF
 -----END CERTIFICATE-----
-'''
+"""
 
 # Entitlements for:
 #  - repos/pulp/pulp/fedora-13/x86_64/
 #  - repos/pulp/pulp/fedora-14/x86_64/
-FULL_CLIENT_CERT = '''
+FULL_CLIENT_CERT = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAzlWuSKJaNxamjwdAf4RUoDNLl9T2DV8ls4FZ3l3cGIQEftdL
 +YHPe2nn3VZGEqHVWyEQcIvkgu0ErltYKVHbGP38la6ZkgeFcrM4J/u1T8XC4ZWN
@@ -728,9 +734,9 @@ rImdOQqViNA4+dVR34Hi3nn/erV03/B/U5b0+61yMJF1/jNzz/kJJsFo/z/b/H2i
 ZETguXV3S7g39cQJFcrMLccNFaF9ScPp0DH58FvgjUoFVvP9CoUJlJBSqQBNnVCH
 5chAbUWpU9vj/w==
 -----END CERTIFICATE-----
-'''
+"""
 
-VALID_CA = '''
+VALID_CA = """
 -----BEGIN CERTIFICATE-----
 MIIDlTCCAn2gAwIBAgIJAP+15ciSiPzeMA0GCSqGSIb3DQEBBQUAMGExCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJOSjESMBAGA1UEBwwJTWlja2xldG9uMRAwDgYDVQQK
@@ -753,9 +759,9 @@ Qga6Lt57gLnkd9G8Y93It1T0pbFQhOh8U+g/jnPjCqFTqOMoAngVPZZTsg26cVh+
 hYMwmwaaUUDm4wSKS/4mmUKFCN8eaCGHKFN47hK66KZ9vRKK3VFOssQ5CIE8o2b7
 /Yb4KafFsHUY
 -----END CERTIFICATE-----
-'''
+"""
 
-INVALID_CA = '''
+INVALID_CA = """
 -----BEGIN CERTIFICATE-----
 MIIDpTCCAo2gAwIBAgIJAKkrGxLzlBlLMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJOSjESMBAGA1UEBwwJTWlja2xldG9uMRAwDgYDVQQK
@@ -778,10 +784,10 @@ rdAaDQrVVRVpCe5ClJqWJROziEEGj10nsTskjuqXChaslJ2O0iYm6ZPZcmDXOOEj
 yF0ir5JjvZQ6zZdo/D+wSdfK1TLl5hjpzFTlElOeOC5XM13pgUfIF3nWeIKJEUyJ
 YSMf0fu6BrpTgoyet283Ek9qg8NqKtMv1A==
 -----END CERTIFICATE-----
-'''
+"""
 
 
-PRE_INVALID_CA = '''
+PRE_INVALID_CA = """
 -----BEGIN CERTIFICATE-----
 MIIDpTCCAo2gAwIBAgIJAOEkwX9JQSjkMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJOSjESMBAGA1UEBwwJTWlja2xldG9uMRAwDgYDVQQK
@@ -804,9 +810,9 @@ oEw/se7KXjXS5FVjR5JDt0bV2wL8UWeoegoV7qZUzN8hSOuIU7AreUIV6nHtzc11
 XpOTiWRV8/L/Bop1rguL5P35HzpP1KJwp6ovQMWKuhGXuBRmHVpGNojgRpPUX/tm
 VP/6TMkGufjP5mk2AIH292PKjoYo8873LQ==
 -----END CERTIFICATE-----
-'''
+"""
 
-VALID_CA2 = '''
+VALID_CA2 = """
 -----BEGIN CERTIFICATE-----
 MIIFlzCCA3+gAwIBAgIJAK7gLD9A4byOMA0GCSqGSIb3DQEBBQUAMGIxCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJOQzEQMA4GA1UEBwwHUmFsZWlnaDEQMA4GA1UECgwH
@@ -839,9 +845,9 @@ xnLEuPaOpXOsfpRcyLsXcTKm/0ixYfaM3O+39seHUiClRT8T9k+0EXEQl6aSIWBB
 pJ7VHLshUiH3txA3rVlwthJbzuHONzjMKvYzYBeuSIVrri+OWNI1VUeSuDTVz2B4
 yJ+DXKvc8zaaoXMu6WxcJOR5p55WZcR93laAMiZSt8YEUltDlrK7G8kVMw==
 -----END CERTIFICATE-----
-'''
+"""
 
-VALID_CA2_KEY = '''
+VALID_CA2_KEY = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIJKAIBAAKCAgEAux75bkZBlspWVdpaFH93X0rM5FUu3XjUrli4NR5zzJXBZCNv
 NoXMJHk9H3fTvypZMUCGdONHsvtDdU3bYjjsA3ud1fuEHQOM1pdTiCVvQvxTWSBx
@@ -893,9 +899,9 @@ tcHxra/L687hCt9eLw6RWCVepjK9RXiYJ9KBVMrNZgvst4YSc+YIukOKntj8vZAI
 eg96NyuL+GtyBZ+OXlmf0j5XCMbRxa8pBmTSOfrUHUCj4EaS78SmYW/tL1KnAKs4
 GzX9yrQ4N5cLPF/IiuR2SqyCZqlWtJhccKbTx1gMaOxQE4VU0zcXg6kCvDo=
 -----END RSA PRIVATE KEY-----
-'''
+"""
 
-WILDCARD_CLIENT = '''
+WILDCARD_CLIENT = """
 -----BEGIN CERTIFICATE-----
 MIIF9jCCA96gAwIBAgIJAIgtbC6P/Ds/MA0GCSqGSIb3DQEBBQUAMGIxCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJOQzEQMA4GA1UEBwwHUmFsZWlnaDEQMA4GA1UECgwH
@@ -930,9 +936,9 @@ Oy+y9guwfHap61R/Z/k+Y1AH6CchNmm8NuC3zSWqImOYRnzhn80dxSeGjyOJKpCY
 WVwETFWZTf5M/Z1eXn/Pk43VWAJmSTZXL5ri7MeHr3bOja5OczJ4cJHIa62159C2
 252LiTSm5DTYby8TH8890nZ/Rfek34kcD5eXYROq6FuQNfwLrEBaunnX
 -----END CERTIFICATE-----
-'''
+"""
 
-WILDCARD_CLIENT_KEY = '''
+WILDCARD_CLIENT_KEY = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIJKgIBAAKCAgEA8nQkIb/WHLLA5u0ptPYai7SQTxG/dHANVKKb42xedAxrAyS6
 31d484+5nPGo2bajdvT1YMqXBFpqd2/i8cq+uRn+LiqqOvEEoSMfmMZhDgwfmZOh
@@ -984,13 +990,13 @@ EDz2dx2Gksi1eqGry36OcMcjjVXWNzl1pUKE4fIq9zMCXDVPcP0Nj9xqDdAuWEzB
 WRSvL5/AtsdrtoNGKN8/gqHyD1uQsJwMO/BQlqsGc8N9YNPgSH0javhFrtGJ07lC
 tCWBddnW2gnIy8rQt50D0067HvQ0UducY0QrlDAaAa3RSQTpT/+EUYuQCyuJ4A==
 -----END RSA PRIVATE KEY-----
-'''
+"""
 
 # Grants access to:
 # repos/pulp/pulp/$releasever/$basearch/os
 FULL_WILDCARD_CLIENT = '\n'.join((WILDCARD_CLIENT_KEY, WILDCARD_CLIENT))
 
-ANYKEY2 = '''
+ANYKEY2 = """
 -----BEGIN RSA PRIVATE KEY-----
 MIIBOQIBAAJBALHtPMOOqLs1oDwjD2A0jt5sLYhreJre0USH/ZnuIQvDq6sb6msF
 ud0/5mRSRolY61TRorKvHQ3OawtZS3C4R0MCAwEAAQJAHo5mjBMY6SW5gfpnbpc4
@@ -1000,9 +1006,9 @@ o5YGGk7fdVlfUb/2PWKGg2MyPc8R8XcCIB/G8/GXRp2DtupcB6IPig0Bg1kUIMhS
 IuI+221Kt3TpAiA1j0XRjNXaeJSlMJbMKBTaEOMD8g4dDI4TqYTPn8jNrwIgEQ8j
 nctWK1z+N+TUw1s9urJD99DNKpnXpcYzz3SU6r0=
 -----END RSA PRIVATE KEY-----
-'''
+"""
 
-ANYCERT2 = '''
+ANYCERT2 = """
 -----BEGIN CERTIFICATE-----
 MIIDezCCAWMCCQCILWwuj/w7QDANBgkqhkiG9w0BAQUFADBiMQswCQYDVQQGEwJV
 UzELMAkGA1UECAwCTkMxEDAOBgNVBAcMB1JhbGVpZ2gxEDAOBgNVBAoMB3Rlc3Qt
@@ -1024,7 +1030,7 @@ yHBxNafX9/D7PxcuY8UR0ZRSLaUn9UG6G6UcWZa8HdqMcXI5YecZUC8Pi5D6rVaZ
 tvkBDkSXz3GUeyK11pQC9xYWz7Pyy5+5NktBQ8chDZX0ENWHbGqR9xgHIZXJd0Ks
 4Y0Tl5d9N8mMNOpaDsn9Lr+E72NmK3A7Phl8jQow3g==
 -----END CERTIFICATE-----
-'''
+"""
 
 # Entitlements for:
 #  - repos/pulp/pulp/fedora-13/$basearch/

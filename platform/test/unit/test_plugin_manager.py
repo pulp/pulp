@@ -12,12 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 import pulp.server.content.loader as plugin_loader
 import pulp.server.content.types.database as types_db
@@ -38,10 +33,10 @@ class MockDistributor:
 
 # -- test cases ---------------------------------------------------------------
 
-class PluginManagerTests(testutil.PulpTest):
+class PluginManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        super(PluginManagerTests, self).setUp()
 
         plugin_loader._create_loader()
 
@@ -53,7 +48,7 @@ class PluginManagerTests(testutil.PulpTest):
         self.manager = plugin_manager.PluginManager()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        super(PluginManagerTests, self).tearDown()
 
         # Reset content manager
         plugin_loader._LOADER.remove_importer('MockImporter')
@@ -91,6 +86,8 @@ class PluginManagerTests(testutil.PulpTest):
         """
         Tests an empty list is returned when no types are loaded.
         """
+        # Setup
+        types_db.clean()
 
         # Test
         found_defs = self.manager.types()

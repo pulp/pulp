@@ -12,12 +12,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import sys
+from ConfigParser import SafeConfigParser
 import os
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 from pulp_rpm.repo_auth.protected_repo_utils import ProtectedRepoListingFile, ProtectedRepoUtils
 
@@ -25,25 +22,27 @@ from pulp_rpm.repo_auth.protected_repo_utils import ProtectedRepoListingFile, Pr
 
 TEST_FILE = '/tmp/test-protected-repo-listing'
 
+CONFIG = SafeConfigParser()
+CONFIG.read([os.path.abspath(os.path.dirname(__file__)) + '/data/test-override-pulp.conf',
+             os.path.abspath(os.path.dirname(__file__)) + '/data/test-override-repoauth.conf'])
+
 # -- test cases ----------------------------------------------------------------------
 
-class TestProtectedRepoUtils(testutil.PulpAsyncTest):
+class TestProtectedRepoUtils(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
-        self.utils = ProtectedRepoUtils(self.config)
+        self.utils = ProtectedRepoUtils(CONFIG)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 
     def test_add_protected_repo(self):
-        '''
+        """
         Tests adding a protected repo.
-        '''
+        """
 
         # Setup
         repo_id = 'prot-repo-1'
@@ -60,9 +59,9 @@ class TestProtectedRepoUtils(testutil.PulpAsyncTest):
         self.assertEqual(listings[relative_path], repo_id)
 
     def test_delete_protected_repo(self):
-        '''
+        """
         Tests deleting an existing protected repo.
-        '''
+        """
 
         # Setup
         repo_id = 'prot-repo-1'
@@ -77,22 +76,20 @@ class TestProtectedRepoUtils(testutil.PulpAsyncTest):
 
         self.assertEqual(0, len(listings))
         
-class TestProtectedRepoListingFile(testutil.PulpAsyncTest):
+class TestProtectedRepoListingFile(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 
     def test_save_load_delete_with_repos(self):
-        '''
+        """
         Tests saving, reloading, and then deleting the listing file.
-        '''
+        """
 
         # Test Save
         f = ProtectedRepoListingFile(TEST_FILE)
@@ -118,16 +115,16 @@ class TestProtectedRepoListingFile(testutil.PulpAsyncTest):
         self.assertTrue(not os.path.exists(TEST_FILE))
 
     def test_create_no_filename(self):
-        '''
+        """
         Tests that creating the protected repo file without specifying a name
         throws the proper exception.
-        '''
+        """
         self.assertRaises(ValueError, ProtectedRepoListingFile, None)
 
     def test_remove_repo_path(self):
-        '''
+        """
         Tests removing a repo path successfully removes it from the listings.
-        '''
+        """
 
         # Setup
         f = ProtectedRepoListingFile(TEST_FILE)
@@ -142,9 +139,9 @@ class TestProtectedRepoListingFile(testutil.PulpAsyncTest):
         self.assertEqual(0, len(f.listings))
 
     def test_remove_non_existent(self):
-        '''
+        """
         Tests removing a path that isn't in the file does not throw an error.
-        '''
+        """
 
         # Setup
         f = ProtectedRepoListingFile(TEST_FILE)
