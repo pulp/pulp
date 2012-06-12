@@ -16,9 +16,14 @@ try:
 except ImportError:
     import simplejson as json
 
+from mock import Mock
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
+
 import base
 
-from mock import Mock
 from rpm_admin_consumer import pulp_cli
 from pulp.client.extensions.core import TAG_SUCCESS
 

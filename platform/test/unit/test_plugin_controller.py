@@ -39,6 +39,7 @@ class PluginControllerTests(base.PulpWebserviceTests):
         super(PluginControllerTests, self).setUp()
 
         plugin_loader._create_loader()
+        types_db.clean()
 
         # Configure content manager
         plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})

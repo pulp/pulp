@@ -16,10 +16,13 @@ try:
 except ImportError:
     import simplejson as json
 
+import os
+import sys
 import unittest
 
-import base
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 
+import base
 import rpm_units_copy.pulp_cli
 
 from pulp.bindings.responses import STATE_WAITING

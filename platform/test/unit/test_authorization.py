@@ -28,15 +28,14 @@ from pulp.server.tasking.task import Task
 class TestAuthorization(base.PulpServerTests):
 
     def setUp(self):
-        base.PulpServerTests.setUp(self)
-        authorization.ensure_builtin_roles()
-        principal.clear_principal()
-        self.alhpa_num = string.letters + string.digits
-
         self.user_api = UserApi()
         self.role_api = RoleAPI()
 
-        self.clean()
+        base.PulpServerTests.setUp(self)
+
+        authorization.ensure_builtin_roles()
+        principal.clear_principal()
+        self.alhpa_num = string.letters + string.digits
 
     def tearDown(self):
         super(TestAuthorization, self).tearDown()
@@ -414,7 +413,6 @@ class TestAuthorization(base.PulpServerTests):
         u = self._create_user()
         s = '/consumers/'
         r = authorization.consumer_users_role
-        self.role_api.create(r)
         authorization.add_user_to_role(r, u['name'])
         self.assertTrue(authorization.is_authorized(s, u, authorization.CREATE))
         self.assertTrue(authorization.is_authorized(s, u, authorization.READ))
