@@ -18,7 +18,7 @@ Contains the manager class and exceptions for searching for repositories.
 import logging
 
 from pulp.server.exceptions import MissingResource
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
+from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 
 # -- constants ----------------------------------------------------------------
 

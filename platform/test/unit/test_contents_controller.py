@@ -18,7 +18,7 @@ import shutil
 import base
 import dummy_plugins
 
-from   pulp.server.db.model.gc_repository import Repo, RepoImporter
+from   pulp.server.db.model.repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.constants as pulp_constants
 

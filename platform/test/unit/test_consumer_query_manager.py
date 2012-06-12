@@ -14,7 +14,7 @@
 
 import base
 
-from pulp.server.db.model.gc_consumer import Consumer
+from pulp.server.db.model.consumer import Consumer
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.query as query_manager
 

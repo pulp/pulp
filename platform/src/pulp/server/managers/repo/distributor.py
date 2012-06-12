@@ -16,7 +16,7 @@ import re
 import sys
 import uuid
 
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor
+from pulp.server.db.model.repository import Repo, RepoDistributor
 import pulp.plugins.loader as plugin_loader
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException

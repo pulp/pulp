@@ -15,7 +15,7 @@
 import base
 import mock_plugins
 
-from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
+from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.factory as manager_factory
 
 # -- test cases ---------------------------------------------------------------

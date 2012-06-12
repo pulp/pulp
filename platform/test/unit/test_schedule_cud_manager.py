@@ -21,7 +21,7 @@ import mock_plugins
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter
+from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule.cud import ScheduleManager

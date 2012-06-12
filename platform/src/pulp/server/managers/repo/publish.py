@@ -29,7 +29,7 @@ import pulp.plugins.loader as plugin_loader
 from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
+from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 
@@ -232,7 +232,7 @@ class RepoPublishManager(object):
         @type  limit: int
 
         @return: list of publish history result instances
-        @rtype:  list of L{pulp.server.db.model.gc_repository.RepoPublishResult}
+        @rtype:  list of L{pulp.server.db.model.repository.RepoPublishResult}
 
         @raise MissingResource: if repo_id does not reference a valid repo
         """

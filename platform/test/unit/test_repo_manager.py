@@ -19,7 +19,7 @@ import base
 import mock_plugins
 
 import pulp.plugins.loader as plugin_loader
-from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
+from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils

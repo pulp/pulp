@@ -20,7 +20,7 @@ import mock_plugins
 
 from pulp.common import dateutils
 from pulp.plugins.model import PublishReport
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
+from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager

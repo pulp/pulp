@@ -25,7 +25,7 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.model import Unit, PublishReport
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
-from pulp.server.db.model.gc_repository import Repo, RepoContentUnit, RepoDistributor
+from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager

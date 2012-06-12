@@ -16,7 +16,7 @@ import base
 
 import pulp.plugins.types.database as types_db
 from pulp.plugins.types.model import TypeDefinition
-from pulp.server.db.model.gc_content import ContentType
+from pulp.server.db.model.content import ContentType
 import pulp.server.db.connection as pulp_db
 
 # -- constants -----------------------------------------------------------------

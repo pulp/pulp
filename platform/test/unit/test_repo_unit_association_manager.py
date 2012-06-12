@@ -19,7 +19,7 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository
 from pulp.plugins.types import database, model
-from pulp.server.db.model.gc_repository import RepoContentUnit, Repo, RepoImporter
+from pulp.server.db.model.repository import RepoContentUnit, Repo, RepoImporter
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager

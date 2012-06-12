@@ -22,7 +22,7 @@ import logging
 from pymongo import ASCENDING
 
 import pulp.server.db.connection as pulp_db
-from pulp.server.db.model.gc_content import ContentType
+from pulp.server.db.model.content import ContentType
 
 # -- constants ----------------------------------------------------------------
 

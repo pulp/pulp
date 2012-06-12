@@ -15,7 +15,7 @@
 Contains consumer query classes
 """
 
-from pulp.server.db.model.gc_consumer import Consumer
+from pulp.server.db.model.consumer import Consumer
 from logging import getLogger
 
 # -- constants ----------------------------------------------------------------

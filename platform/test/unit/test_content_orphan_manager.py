@@ -22,7 +22,7 @@ import base
 from pulp.server import exceptions as pulp_exceptions
 from pulp.plugins.types import database as content_type_db
 from pulp.plugins.types.model import TypeDefinition
-from pulp.server.db.model.gc_repository import RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.content.orphan import OrphanManager
 

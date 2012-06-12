@@ -20,7 +20,7 @@ import base
 
 from pulp.plugins.conduits._base import BaseImporterConduit, ImporterConduitException
 import pulp.plugins.types.database as types_database
-from pulp.server.db.model.gc_repository import Repo
+from pulp.server.db.model.repository import Repo
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.cud import RepoManager
 from pulp.server.managers.repo.importer import RepoImporterManager

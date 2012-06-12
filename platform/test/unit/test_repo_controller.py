@@ -29,7 +29,7 @@ import dummy_plugins
 from pulp.common import dateutils
 from pulp.plugins import loader as plugin_loader
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.gc_repository import (
+from pulp.server.db.model.repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.unit_association_query import Criteria

@@ -16,7 +16,7 @@ Contains bind management classes
 """
 
 from pymongo.errors import DuplicateKeyError
-from pulp.server.db.model.gc_consumer import Consumer, Bind
+from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory
 from logging import getLogger

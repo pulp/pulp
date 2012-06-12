@@ -23,7 +23,7 @@ import sys
 from pulp.plugins.conduits._base import BaseImporterConduit, ImporterConduitException
 import pulp.plugins.conduits._common as common_utils
 import pulp.plugins.types.database as types_db
-from pulp.server.db.model.gc_repository import RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 
 from pulp.server.managers.repo.unit_association_query import Criteria # shadow for importing by plugins

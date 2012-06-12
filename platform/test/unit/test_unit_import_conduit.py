@@ -21,7 +21,7 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit, UnitImportCondu
 from pulp.plugins.conduits._common import to_plugin_unit
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
-from pulp.server.db.model.gc_repository import Repo, RepoContentUnit, RepoImporter
+from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.unit_association as association_manager
 

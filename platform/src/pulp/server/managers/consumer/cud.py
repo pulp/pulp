@@ -24,7 +24,7 @@ from pulp.server import config
 from pulp.common.bundle import Bundle
 import pulp.server.auth.cert_generator as cert_generator
 
-from pulp.server.db.model.gc_consumer import Consumer
+from pulp.server.db.model.consumer import Consumer
 from pulp.server.managers import factory
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException, MissingValue

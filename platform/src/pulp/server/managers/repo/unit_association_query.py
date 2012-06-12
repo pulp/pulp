@@ -20,7 +20,7 @@ import logging
 import pymongo
 
 import pulp.plugins.types.database as types_db
-from pulp.server.db.model.gc_repository import RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit
 
 # -- constants ----------------------------------------------------------------
 

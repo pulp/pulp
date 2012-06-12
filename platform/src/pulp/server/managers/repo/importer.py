@@ -14,7 +14,7 @@
 import logging
 import sys
 
-from pulp.server.db.model.gc_repository import Repo, RepoImporter
+from pulp.server.db.model.repository import Repo, RepoImporter
 import pulp.plugins.loader as plugin_loader
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.server.managers.factory as manager_factory

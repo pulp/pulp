@@ -22,7 +22,7 @@ from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.model import SyncReport
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
-from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
+from pulp.server.db.model.repository import Repo, RepoContentUnit
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.sync as sync_manager

@@ -24,7 +24,7 @@ from pulp.common import dateutils
 from pulp.server import config
 from pulp.server.auth.principal import get_principal
 
-from pulp.server.db.model.gc_consumer import Consumer, ConsumerHistoryEvent
+from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 from pulp.server.exceptions import InvalidValue, MissingResource
 
 # -- constants ----------------------------------------------------------------

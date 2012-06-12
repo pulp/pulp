@@ -24,7 +24,7 @@ import re
 import shutil
 import sys
 
-from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
+from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException

@@ -32,7 +32,7 @@ import pulp.plugins.loader as plugin_loader
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
-from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
+from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import MissingResource, PulpExecutionException
@@ -203,7 +203,7 @@ class RepoSyncManager(object):
         @type  limit: int
 
         @return: list of sync history result instances
-        @rtype:  list of L{pulp.server.db.model.gc_repository.RepoSyncResult}
+        @rtype:  list of L{pulp.server.db.model.repository.RepoSyncResult}
 
         @raise MissingResource: if repo_id does not reference a valid repo
         """

@@ -14,15 +14,12 @@
 from logging import getLogger
 
 from pulp.server.db.model.auth import User, Role, Permission
+from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
+from pulp.server.db.model.content import ContentType
+from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoDistributor, RepoImporter, RepoPublishResult, RepoSyncResult
 from pulp.server.db.model.base import Model
-from pulp.server.db.model.cds import CDS, CDSHistoryEvent, CDSRepoRoundRobin
-from pulp.server.db.model.resource import (Consumer, ConsumerGroup,
-    ConsumerHistoryEvent, Errata, Package, Distribution, File, Repo)
 
-
-from pulp.server.db import model
 from pulp.server.db import version
-
 
 _log = getLogger('pulp')
 
@@ -90,42 +87,6 @@ def _validate_model(model_name, objectdb, reference, values={}):
 
 # individual model validation -------------------------------------------------
 
-def _validate_consumer():
-    """
-    Validate the Consumer model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = Consumer.get_collection()
-    reference = model.Consumer(u'', None)
-    return _validate_model(model.Consumer.__name__, objectdb, reference)
-
-
-def _validate_consumer_group():
-    """
-    Validate the ConsumerGroup model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = ConsumerGroup.get_collection()
-    reference = model.ConsumerGroup(u'')
-    return _validate_model(model.ConsumerGroup.__name__, objectdb, reference)
-
-
-def _validate_consumer_history_event():
-    """
-    Validate the ConsumerHistroyEvent model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = ConsumerHistoryEvent.get_collection()
-    reference = model.ConsumerHistoryEvent(u'', u'', u'', None)
-    _base_id(reference)
-    return _validate_model(model.ConsumerHistoryEvent.__name__,
-                           objectdb,
-                           reference)
-
-
 def _validate_data_model_version():
     """
     Validate the DataModelVersion model
@@ -139,83 +100,25 @@ def _validate_data_model_version():
                            reference)
 
 
-def _validate_errata():
-    """
-    Validate the Errata model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = Errata.get_collection()
-    reference = model.Errata(u'', u'', None, u'', u'', u'')
-    return _validate_model(model.Errata.__name__, objectdb, reference)
+def _validate_bind():
+    objectdb = Bind.get_collection()
+    reference = Bind('', '', '')
+    return _validate_model(Bind.__name__, objectdb, reference)
 
+def _validate_consumer():
+    objectdb = Consumer.get_collection()
+    reference = Consumer('', '')
+    return _validate_model(Consumer.__name__, objectdb, reference)
 
-def _validate_package():
-    """
-    Validate the Package model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = Package.get_collection()
-    reference = model.Package(u'', u'', u'', u'', u'', u'', u'', u'', u'')
-    _base_id(reference)
-    return _validate_model(model.Package.__name__, objectdb, reference)
+def _validate_consumer_history():
+    objectdb = ConsumerHistoryEvent.get_collection()
+    reference = ConsumerHistoryEvent('', '', '', {})
+    return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
-
-def _validate_package_group():
-    """
-    Validate the PackageGroup model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    num_errors = 0
-    objectdb = Repo.get_collection()
-    reference = _unicodify_reference(model.PackageGroup(u'', u'', u''))
-    for r in objectdb.find({'packagegroups': {'$gt': 0}}):
-        for pg in r['packagegroups'].values():
-            for field, value in reference.items():
-                vtype = value(type)
-                if field in pg and (value is None or isinstance(pg[field], vtype)):
-                    continue
-                num_errors += 1
-                error_prefix = 'model validation failure in PackageGroup for Repo %s, PackageGroup %s:' % \
-                        (str(r['_id']), str(pg['_id']))
-                if field not in pg:
-                    _log.error(error_prefix + ' field %s is not present' %
-                               field)
-                else:
-                    _log.error(error_prefix + ' field %s is not a %s' %
-                               (field, vtype))
-    return num_errors
-
-
-def _validate_package_group_category():
-    """
-    Validate the PackageGroupCategory model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    num_errors = 0
-    objectdb = Repo.get_collection()
-    reference = _unicodify_reference(model.PackageGroupCategory(u'', u'', u''))
-    for r in objectdb.find({'packagegroupcategories': {'$gt': 0}}):
-        for pgc in r['packagegroupcategories'].values():
-            for field, value in reference.items():
-                vtype = value(type)
-                if field in pgc and (value is None or
-                                     isinstance(pgc[field], vtype)):
-                    continue
-                num_errors += 1
-                error_prefix = 'model validation failure in PackageGroupCategory for Repo %s, PackageGroup %s:' % \
-                        (str(r['_id']), str(pgc['_id']))
-                if field not in pgc:
-                    _log.error(error_prefix + ' field %s is not present' %
-                               field)
-                else:
-                    _log.error(error_prefix + ' field %s is not a %s' %
-                               (field, vtype))
-    return num_errors
-
+def _validate_content_type():
+    objectdb = ContentType.get_collection()
+    reference = ContentType('', '', '', [], [], [])
+    return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
 def _validate_permission():
     """
@@ -224,48 +127,39 @@ def _validate_permission():
     @return: number of errors found during validation
     """
     objectdb = Permission.get_collection()
-    reference = model.Permission(u'')
+    reference = Permission(u'')
     _base_id(reference)
-    return _validate_model(model.Permission.__name__, objectdb, reference)
-
+    return _validate_model(Permission.__name__, objectdb, reference)
 
 def _validate_repo():
-    """
-    Validate the Repo model
-    @rtype: int
-    @return: number of errors found during validation
-    """
     objectdb = Repo.get_collection()
-    reference = model.Repo(u'', u'', u'', u'')
-    return _validate_model(model.Repo.__name__, objectdb, reference)
+    reference = Repo('', '')
+    return _validate_model(Repo.__name__, objectdb, reference)
 
+def _validate_repo_content_unit():
+    objectdb = RepoContentUnit.get_collection()
+    reference = RepoContentUnit('', '', '', '', '')
+    return _validate_model(RepoContentUnit.__name__, objectdb, reference)
 
-def _validate_repo_source():
-    """
-    Validate the RepoSource model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    num_errors = 0
-    objectdb = Repo.get_collection()
-    reference = _unicodify_reference(
-                model.RepoSource(u'http://reference.org/reference_repo/'))
-    for r in objectdb.find({'source': {'$ne': None}}):
-        source = r['source']
-        for field, value in reference.items():
-            vtype = type(value)
-            if field in source and isinstance(source[field], vtype):
-                continue
-            num_errors += 1
-            error_prefix = 'model validation failure in RepoSource for Repo %s:' % \
-                    str(r['_id'])
-            if field not in source:
-                _log.error(error_prefix + ' field %s is not present' % field)
-            else:
-                _log.error(error_prefix + ' field %s is not a %s' %
-                           (field, vtype))
-    return num_errors
+def _validate_repo_distributor():
+    objectdb = RepoDistributor.get_collection()
+    reference = RepoDistributor('', '', '', {}, True)
+    return _validate_model(RepoDistributor.__name__, objectdb, reference)
 
+def _validate_repo_importer():
+    objectdb = RepoImporter.get_collection()
+    reference = RepoImporter('', '', '', {})
+    return _validate_model(RepoImporter.__name__, objectdb, reference)
+
+def _validate_repo_publish_result():
+    objectdb = RepoPublishResult.get_collection()
+    reference = RepoPublishResult('', '', '', '', '', '')
+    return _validate_model(RepoPublishResult.__name__, objectdb, reference)
+
+def _validate_repo_sync_result():
+    objectdb = RepoSyncResult.get_collection()
+    reference = RepoSyncResult('', '', '', '', '', '')
+    return _validate_model(RepoSyncResult.__name__, objectdb, reference)
 
 def _validate_role():
     """
@@ -274,8 +168,8 @@ def _validate_role():
     @return: number of errors found during validation
     """
     objectdb = Role.get_collection()
-    reference = model.Role(u'')
-    return _validate_model(model.Role.__name__, objectdb, reference)
+    reference = Role(u'')
+    return _validate_model(Role.__name__, objectdb, reference)
 
 
 def _validate_user():
@@ -285,59 +179,8 @@ def _validate_user():
     @return: number of errors found during validation
     """
     objectdb = User.get_collection()
-    reference = model.User(u'', u'', None, None)
-    return _validate_model(model.User.__name__, objectdb, reference)
-
-
-def _validate_file():
-    """
-    Validate the File model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = File.get_collection()
-    reference = model.File(u'', u'', u'', 0, None)
-    _base_id(reference)
-    return _validate_model(model.File.__name__, objectdb, reference)
-
-
-def _validate_distribution():
-    """
-    Validate the Distribution model
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = Distribution.get_collection()
-    reference = model.Distribution(u'', u'', u'', None, None, None, None, [], None)
-    _base_id(reference)
-    return _validate_model(model.Distribution.__name__, objectdb, reference)
-
-
-def _validate_cds():
-    '''
-    Validates the CDS model.
-    '''
-    objectdb = CDS.get_collection()
-    reference = CDS(u'', u'')
-    return _validate_model(CDS.__name__, objectdb, reference)
-
-def _validate_cds_history():
-    '''
-    Validates the CDS history event model.
-    '''
-    objectdb = CDSHistoryEvent.get_collection()
-    reference = CDSHistoryEvent(u'', u'', u'')
-    return _validate_model(CDSHistoryEvent.__name__, objectdb, reference)
-
-
-def _validate_cds_round_robin():
-    '''
-    Validates the round robin algorithm collection.
-    '''
-    objectdb = CDSRepoRoundRobin.get_collection()
-    reference = CDSRepoRoundRobin(u'', [])
-    return _validate_model(CDSRepoRoundRobin.__name__, objectdb, reference)
-
+    reference = User(u'', u'', None, None)
+    return _validate_model(User.__name__, objectdb, reference)
 
 # validation api --------------------------------------------------------------
 
@@ -348,22 +191,18 @@ def validate():
     @return: number of errors found during validation
     """
     num_errors = 0
-    num_errors += _validate_consumer()
-    num_errors += _validate_consumer_group()
-    num_errors += _validate_consumer_history_event()
     num_errors += _validate_data_model_version()
-    num_errors += _validate_errata()
-    num_errors += _validate_package()
-    num_errors += _validate_package_group()
-    num_errors += _validate_package_group_category()
-    num_errors += _validate_repo()
+    num_errors += _validate_bind()
+    num_errors += _validate_consumer()
+    num_errors += _validate_consumer_history()
+    num_errors += _validate_content_type()
     num_errors += _validate_permission()
-    num_errors += _validate_repo_source()
+    num_errors += _validate_repo()
+    num_errors += _validate_repo_content_unit()
+    num_errors += _validate_repo_distributor()
+    num_errors += _validate_repo_importer()
+    num_errors += _validate_repo_publish_result()
+    num_errors += _validate_repo_sync_result()
     num_errors += _validate_role()
     num_errors += _validate_user()
-    num_errors += _validate_file()
-    num_errors += _validate_distribution()
-    num_errors += _validate_cds()
-    num_errors += _validate_cds_history()
-    num_errors += _validate_cds_round_robin()
     return num_errors
