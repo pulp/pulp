@@ -43,9 +43,7 @@ from pulp.server.db import connection as db_connection
 logs.start_logging()
 db_connection.initialize()
 
-from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 from pulp.server import async
-from pulp.server import auditing
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync
@@ -58,8 +56,7 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    audit, cds, consumergroups, consumers, content, distribution, errata,
-    filters, histories, jobs, orphaned, packages, permissions, statuses,
+    packages, permissions, statuses,
     repositories, roles, services, tasks, users, agent,)
 from pulp.server.webservices.controllers import (
     dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers, gc_root_actions)
@@ -71,17 +68,6 @@ from pulp.server.webservices.middleware.postponed import PostponedOperationMiddl
 URLS = (
     # alphabetical order, please
     # default version (currently 1) api
-    '/cds', cds.application,
-    '/consumergroups', consumergroups.application,
-    '/consumers', consumers.application,
-    '/content', content.application,
-    '/distributions', distribution.application,
-    '/errata', errata.application,
-    '/events', audit.application,
-    '/filters', filters.application,
-    '/histories', histories.application,
-    '/jobs', jobs.application,
-    '/orphaned', orphaned.application,
     '/packages', packages.application,
     '/permissions', permissions.application,
     '/repositories', repositories.application,
@@ -91,17 +77,6 @@ URLS = (
     '/tasks', tasks.application,
     '/users', users.application,
     # version 1 api
-    '/v1/cds', cds.application,
-    '/v1/consumergroups', consumergroups.application,
-    '/v1/consumers', consumers.application,
-    '/v1/content', content.application,
-    '/v1/distributions', distribution.application,
-    '/v1/errata', errata.application,
-    '/v1/events', audit.application,
-    '/v1/filters', filters.application,
-    '/v1/histories', histories.application,
-    '/v1/jobs', jobs.application,
-    '/v1/orphaned', orphaned.application,
     '/v1/packages', packages.application,
     '/v1/permissions', permissions.application,
     '/v1/repositories', repositories.application,
@@ -141,8 +116,6 @@ def _initialize_pulp():
     _IS_INITIALIZED = True
     # check our db version and other support
     check_version()
-    if not M2CRYPTO_HAS_CRL_SUPPORT:
-        _LOG.warning("M2Crypto lacks needed CRL functionality, therefore CRL checking will be disabled.")
     # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
@@ -159,7 +132,6 @@ def _initialize_pulp():
         STACK_TRACER = StacktraceDumper()
         STACK_TRACER.start()
     # setup recurring tasks
-    auditing.init_culling_task()
     consumer_history.init_culling_task()
     scheduled_sync.init_scheduled_syncs()
     # pulp generic content initialization

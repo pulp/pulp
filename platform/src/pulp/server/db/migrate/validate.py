@@ -12,10 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from logging import getLogger
-import datetime
-from pulp.common import dateutils
 
-from pulp.server.db.model.audit import Event
 from pulp.server.db.model.auth import User, Role, Permission
 from pulp.server.db.model.base import Model
 from pulp.server.db.model.cds import CDS, CDSHistoryEvent, CDSRepoRoundRobin
@@ -151,19 +148,6 @@ def _validate_errata():
     objectdb = Errata.get_collection()
     reference = model.Errata(u'', u'', None, u'', u'', u'')
     return _validate_model(model.Errata.__name__, objectdb, reference)
-
-
-def _validate_event():
-    """
-    Validate the Event model
-    (used for auditing)
-    @rtype: int
-    @return: number of errors found during validation
-    """
-    objectdb = Event.get_collection()
-    reference = model.Event(u'', u'')
-    _base_id(reference)
-    return _validate_model(model.Event.__name__, objectdb, reference)
 
 
 def _validate_package():
@@ -369,7 +353,6 @@ def validate():
     num_errors += _validate_consumer_history_event()
     num_errors += _validate_data_model_version()
     num_errors += _validate_errata()
-    num_errors += _validate_event()
     num_errors += _validate_package()
     num_errors += _validate_package_group()
     num_errors += _validate_package_group_category()

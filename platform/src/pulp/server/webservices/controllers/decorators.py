@@ -33,26 +33,7 @@ from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps
 from pulp.server.webservices import http, mongo
 
-
 _log = logging.getLogger(__name__)
-
-
-def error_handler(method):
-    """
-    Controller method wrapper that catches internal errors and reports them as
-    JSON serialized trace back strings
-    """
-    @wraps(method)
-    def report_error(self, *args, **kwargs):
-        try:
-            return method(self, *args, **kwargs)
-        except Exception:
-            exc_info = sys.exc_info()
-            tb_msg = ''.join(traceback.format_exception(*exc_info))
-            _log.error("%s" % (traceback.format_exc()))
-            return self.internal_server_error(tb_msg)
-    return report_error
-
 
 def auth_required(operation=None, super_user_only=False):
     """
@@ -130,30 +111,3 @@ def auth_required(operation=None, super_user_only=False):
 
         return _auth_decorator
     return _auth_required
-
-
-def collection_query(*valid_filters):
-    """
-    Parse out common query parameters as filters in addition to any custom
-    filters needed by the controller and build a mongo db spec document.
-    NOTE: this decorator requires the decorated method to accept a keyword
-    argument, spec, that is a mongo db spec document for passing to the find
-    collection method.
-    @type valid_filters: str's
-    @param valid_filters: additional valid query parameters
-    """
-    def _collection_query(method):
-        common_filters = ('_intersect', '_union')
-
-        @wraps(method)
-        def _query_decortator(self, *args, **kwargs):
-            filters = self.filters(tuple(itertools.chain(common_filters, valid_filters)))
-            intersect = filters.pop('_intersect', ())
-            union = filters.pop('_union', ())
-            spec = mongo.filters_to_set_spec(filters, intersect, union)
-            kwargs.update({'spec': spec})
-            return method(self, *args, **kwargs)
-
-        return _query_decortator
-    return _collection_query
-

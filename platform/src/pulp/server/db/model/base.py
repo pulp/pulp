@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,13 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import threading
-import uuid
-from gettext import gettext as _
-
 from pymongo import DESCENDING
-from pymongo.collection import Collection
 
+from bson.objectid import ObjectId
 from pulp.server.db.connection import get_collection
 
 
@@ -59,22 +55,15 @@ class Model(dict):
     collection_name = None
     unique_indices = ('id',) # note, '_id' is automatically unique and indexed
     search_indices = ()
-    __uuid_lock = threading.RLock()
+
     # -------------------------------------------------------------------------
 
     def __init__(self):
-        # On RHEL-5 there is an issue with multiple threads calling uuid.uuid4()
-        # non-unique ids may be returned, using lock to ensure serial access
-        self.__uuid_lock.acquire()
-        try:
-            uniq_id = uuid.uuid4()
-        finally:
-            self.__uuid_lock.release()
-        self._id = str(uniq_id)
-        self.id = self._id
+        self._id = ObjectId()
+        self.id = str(self._id) # legacy behavior, would love to rid ourselves of this
 
-    # dict to dot-notation mapping methods
     # XXX only for use in constructors
+    # dict to dot-notation mapping methods
 
     def __getattr__(self, attr):
         return self.get(attr, None)
