@@ -750,7 +750,7 @@ class YumDistributor(Distributor):
     def create_consumer_payload(self, repo, config):
         payload = {}
         ##TODO for jdob: load the pulp.conf and make it accessible to distributor
-        pulp_conf = load_config(config_file="/etc/pulp/pulp.conf")
+        pulp_conf = load_config(config_file="/etc/pulp/server.conf")
         payload['server_name'] = pulp_conf.get('server', 'server_name')
         ssl_ca_path = pulp_conf.get('security', 'ssl_ca_certificate')
         if os.path.exists(ssl_ca_path):

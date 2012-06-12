@@ -24,7 +24,6 @@ from uuid import uuid4
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
-#sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
     RPM_TYPE_ID, SRPM_TYPE_ID
