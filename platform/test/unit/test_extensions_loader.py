@@ -14,33 +14,31 @@
 # Python
 import os
 import sys
+import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
-
-from pulp.gc_client.framework import loader
-from pulp.gc_client.framework.core import PulpCli, PulpPrompt, ClientContext
+from pulp.client.extensions import loader
+from pulp.client.extensions.core import PulpCli, PulpPrompt, ClientContext
 
 # -- test data ----------------------------------------------------------------
 
-TEST_DIRS_ROOT = os.path.abspath(os.path.dirname(__file__)) + "/data/extensions_loader_tests/"
+TEST_DIRS_ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'extensions_loader_tests')
 
 # Contains 4 properly structured plugins, 3 of which contain the CLI init module
-VALID_SET = TEST_DIRS_ROOT + 'valid_set'
+VALID_SET = TEST_DIRS_ROOT + '/valid_set'
 
 # Contains 2 plugins, 1 of which loads correct and another that fails
-PARTIAL_FAIL_SET = TEST_DIRS_ROOT + 'partial_fail_set'
+PARTIAL_FAIL_SET = TEST_DIRS_ROOT + '/partial_fail_set'
 
 # Contains 1 plugin which fails the initial import step
-PARTIAL_FAIL_SET_2 = TEST_DIRS_ROOT + 'partial_fail_set_2'
+PARTIAL_FAIL_SET_2 = TEST_DIRS_ROOT + '/partial_fail_set_2'
 
 # Not meant to be loaded as a base directory, each should be loaded individually
 # through _load_pack to verify the proper exception case is raised
-INDIVIDUAL_FAIL_DIR = TEST_DIRS_ROOT + 'individual_fail_extensions'
+INDIVIDUAL_FAIL_DIR = TEST_DIRS_ROOT + '/individual_fail_extensions'
 
 # -- test cases ---------------------------------------------------------------
 
-class ExtensionLoaderTests(testutil.PulpTest):
+class ExtensionLoaderTests(unittest.TestCase):
 
     def setUp(self):
         super(ExtensionLoaderTests, self).setUp()
