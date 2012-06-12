@@ -15,7 +15,6 @@
 Module for repo serialization.
 """
 
-from pulp.server.cds import round_robin
 from pulp.server.webservices import http
 
 # contstants -------------------------------------------------------------------
