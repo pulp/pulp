@@ -15,12 +15,16 @@
 Responsible for parsing and validating type descriptors.
 """
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 import logging
 import operator
 import re
 
 from pulp.plugins.types import model
-from pulp.server.compat import json
 
 # -- constants ---------------------------------------------------------------
 

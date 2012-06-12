@@ -20,13 +20,12 @@ import logging
 import oauth2
 
 from pulp.server.api.user import UserApi
-from pulp.server.auth import cert_generator
+from pulp.server.auth import cert_generator, ldap_connection
 from pulp.server.auth.authorization import consumer_users_role
 from pulp.server.auth.cert_generator import verify_cert
 from pulp.server.auth.certificate import Certificate
 from pulp.server.auth.password_util import check_password
 from pulp.server.config import config
-from pulp.server.LDAPConnection import LDAPConnection
 from pulp.server.exceptions import PulpException
 
 _user_api = UserApi()
@@ -72,7 +71,7 @@ def _check_username_password_ldap(username, password=None):
     ldap_tls = False
     if config.has_option('ldap', 'tls'):
         ldap_tls = config.getboolean('ldap', 'tls')
-    ldap_server = LDAPConnection(server=ldap_uri, tls=ldap_tls)
+    ldap_server = ldap_connection(server=ldap_uri, tls=ldap_tls)
     ldap_server.connect()
     user = None
     if password is not None:

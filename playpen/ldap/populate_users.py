@@ -11,8 +11,8 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from pulp.server.LDAPConnection import LDAPConnection
 from logging import INFO, basicConfig
+from pulp.server.auth import ldap_connection
 
 basicConfig(filename='/tmp/populate.log', level=INFO)
 
@@ -72,7 +72,7 @@ def main():
     Populate ldap server with some test data
     """
     print("See populate.log for descriptive output.")
-    ldapserv = LDAPConnection('cn=Directory Manager', \
+    ldapserv = ldap_connection('cn=Directory Manager', \
                               'redhat',
                               'ldap://localhost')
     ldapserv.connect()
