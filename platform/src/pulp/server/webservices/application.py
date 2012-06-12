@@ -56,37 +56,14 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    packages, permissions, statuses,
-    repositories, roles, services, tasks, users, agent,)
-from pulp.server.webservices.controllers import (
-    dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers, gc_root_actions)
+    agent, dispatch, gc_contents, gc_plugins, gc_repositories, gc_consumers, gc_root_actions)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
 # conatants and application globals --------------------------------------------
 
 URLS = (
-    # alphabetical order, please
-    # default version (currently 1) api
-    '/packages', packages.application,
-    '/permissions', permissions.application,
-    '/repositories', repositories.application,
-    '/statuses', statuses.application,
-    '/roles', roles.application,
-    '/services', services.application,
-    '/tasks', tasks.application,
-    '/users', users.application,
-    # version 1 api
-    '/v1/packages', packages.application,
-    '/v1/permissions', permissions.application,
-    '/v1/repositories', repositories.application,
-    '/v1/repo_sync_status', statuses.application,
-    '/v1/roles', roles.application,
-    '/v1/services', services.application,
-    '/v1/statuses', statuses.application,
-    '/v1/tasks', tasks.application,
-    '/v1/users', users.application,
-    # version 2 api
+    # Please keep the following in alphabetical order.
     '/v2/actions', gc_root_actions.application,
     '/v2/agent', agent.application,
     '/v2/consumers', gc_consumers.application,
