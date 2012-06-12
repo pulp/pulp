@@ -15,7 +15,7 @@ import datetime
 import traceback as traceback_module
 
 import pulp.common.dateutils as dateutils
-from pulp.server.db.model.gc_base import Model
+from pulp.server.db.model.base import Model
 
 # -- classes -----------------------------------------------------------------
 

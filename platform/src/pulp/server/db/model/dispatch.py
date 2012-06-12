@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 
 from pulp.common import dateutils
 from pulp.common.tags import resource_tag
-from pulp.server.db.model.gc_base import Model
+from pulp.server.db.model.base import Model
 from pulp.server.dispatch import constants as dispatch_constants
 
 

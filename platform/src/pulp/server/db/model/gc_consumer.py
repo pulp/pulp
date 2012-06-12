@@ -13,7 +13,7 @@
 
 import datetime
 
-from pulp.server.db.model.gc_base import Model
+from pulp.server.db.model.base import Model
 from pulp.common import dateutils
 
 # -- classes -----------------------------------------------------------------

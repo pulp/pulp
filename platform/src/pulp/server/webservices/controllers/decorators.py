@@ -31,7 +31,7 @@ from pulp.server.auth.authentication import (
 from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps
-from pulp.server.webservices import http, mongo
+from pulp.server.webservices import http
 
 _log = logging.getLogger(__name__)
 
