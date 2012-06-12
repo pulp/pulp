@@ -46,8 +46,8 @@ class=LinuxHandler
 """,
 handler=
 """
-from pulp.gc_client.agent.lib.handler import *
-from pulp.gc_client.agent.lib.report import *
+from pulp.agent.lib.handler import *
+from pulp.agent.lib.report import *
 
 class RpmHandler(ContentHandler):
 

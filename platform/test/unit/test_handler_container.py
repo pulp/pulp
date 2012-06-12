@@ -20,6 +20,7 @@ from mock_handlers import MockDeployer
 from pulp.agent.lib.container import *
 from pulp.agent.lib.dispatcher import *
 
+
 class TestHandlerContainer(unittest.TestCase):
 
     def setUp(self):

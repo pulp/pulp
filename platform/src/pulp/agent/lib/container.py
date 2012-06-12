@@ -13,8 +13,7 @@
 
 import imp
 import os
-from iniparse import INIConfig
-from pulp.common.config import Validator, REQUIRED, OPTIONAL, BOOL, ANY
+from pulp.common.config import Config, Validator, REQUIRED, OPTIONAL, BOOL, ANY
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -42,7 +41,7 @@ class Descriptor:
     @ivar name: The content unit name
     @type name: str
     @ivar cfg: The raw INI configuration object.
-    @type cfg: INIConfig
+    @type cfg: L{Config}
     """
     
     ROOT = '/etc/pulp/agent/handler'
@@ -122,7 +121,7 @@ class Descriptor:
         @param path: The absolute path to the descriptor.
         @type path: str
         """
-        cfg = INIConfig(open(path))
+        cfg = Config(path)
         validator = Validator(self.SCHEMA)
         validator.validate(cfg)
         self.name = name
@@ -134,7 +133,7 @@ class Descriptor:
         @return: True if enabled.
         @rtype: bool
         """
-        return self.cfg.main.enabled
+        return self.cfg['main']['enabled']
 
     def types(self):
         """
@@ -144,11 +143,11 @@ class Descriptor:
         @rtype: dict
         """
         types = {}
-        section = self.cfg.types
+        section = self.cfg['types']
         for role, property in ROLE_PROPERTY:
             if property not in section:
                 continue
-            listed = getattr(section, property)
+            listed = section[property]
             split = [t.strip() for t in listed.split(',')]
             types[role] = [t for t in split if t]
         return types
@@ -176,44 +175,10 @@ class Typedef:
                     ('class', REQUIRED, ANY),
                 ),
              ),)
-        cfg = self.slice(cfg, section)
+        cfg = Config(cfg, filter=[section])
         validator = Validator(schema)
         validator.validate(cfg)
-        self.cfg = self.dict(cfg, section)
-
-    def slice(self, cfg, section):
-        """
-        Construct an INIConfig object containing only the specified sections.
-        @param cfg: The handler descriptor configuration.
-        @type cfg: INIConfig
-        @param section: A section name to slice.
-        @type section: str
-        @return: A configuration object containing only the
-            specfified section.
-        @rtype: INIConfig
-        """
-        slice = INIConfig()
-        source = cfg[section]
-        target = getattr(slice, section)
-        for p in source:
-            v = source[p]
-            setattr(target, p, v)
-        return slice
-    
-    def dict(self, cfg, section):
-        """
-        Get dict of typedef configuration.
-        @param cfg: The handler descriptor configuration.
-        @type cfg: INIConfig
-        @return: A dict representation of the configuration.
-        @rtype: dict
-        """
-        d = {}
-        section = cfg[section]
-        for p in section:
-            v = section[p]
-            d[p] = v
-        return d
+        self.cfg = cfg[section]
 
 
 class Container:
