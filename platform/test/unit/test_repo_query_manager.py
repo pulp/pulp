@@ -12,12 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoDistributor
@@ -25,26 +20,23 @@ import pulp.server.managers.factory as manager_factory
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoQueryManagerTests(testutil.PulpTest):
+class RepoQueryManagerTests(base.PulpServerTests):
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        super(RepoQueryManagerTests, self).clean()
 
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
         
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        super(RepoQueryManagerTests, self).setUp()
         mock_plugins.install()
 
         self.repo_manager = manager_factory.repo_manager()
         self.importer_manager = manager_factory.repo_importer_manager()
         self.distributor_manager = manager_factory.repo_distributor_manager()
         self.query_manager = manager_factory.repo_query_manager()
-
-    def tearDown(self):
-        testutil.PulpTest.tearDown(self)
 
     def test_find_all(self):
         """

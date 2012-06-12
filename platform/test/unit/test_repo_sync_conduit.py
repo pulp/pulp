@@ -12,13 +12,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import mock
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 from pulp.server.content.conduits._base import ImporterConduitException
@@ -42,7 +38,7 @@ TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'k
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncConduitTests(testutil.PulpTest):
+class RepoSyncConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoSyncConduitTests, self).clean()

@@ -12,13 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-
-import testutil
+import base
 import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
@@ -32,10 +26,10 @@ import pulp.server.managers.repo.importer as importer_manager
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoManagerTests(testutil.PulpTest):
+class RepoManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        super(RepoManagerTests, self).setUp()
         mock_plugins.install()
 
         # Create the manager instance to test
@@ -43,11 +37,11 @@ class RepoManagerTests(testutil.PulpTest):
         self.importer_manager = importer_manager.RepoImporterManager()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        super(RepoManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        super(RepoManagerTests, self).clean()
 
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()

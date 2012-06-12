@@ -12,15 +12,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import copy
 import datetime
 import os
 import shutil
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 from pulp.common import dateutils
@@ -61,10 +57,10 @@ class MockRepoPublishManager:
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncManagerTests(testutil.PulpTest):
+class RepoSyncManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        super(RepoSyncManagerTests, self).setUp()
         mock_plugins.install()
 
         # Create the manager instances for testing
@@ -73,14 +69,14 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.sync_manager = repo_sync_manager.RepoSyncManager()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        super(RepoSyncManagerTests, self).tearDown()
         mock_plugins.reset()
 
         # Reset the manager factory
         manager_factory.reset()
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        super(RepoSyncManagerTests, self).clean()
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoSyncResult.get_collection().remove()

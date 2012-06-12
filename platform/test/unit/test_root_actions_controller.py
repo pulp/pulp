@@ -11,40 +11,20 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
+import base
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
-
-from pulp.server.auth import principal
+from pulp.server.api.user import UserApi
 import pulp.server.auth.cert_generator as cert_generator
-from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
 
-class UserCertificateControllerTests(testutil.PulpV2WebserviceTest):
-
-    def setUp(self):
-        testutil.PulpV2WebserviceTest.setUp(self)
-
-        self.config = testutil.load_test_config()
-
-        # Hardcoded to /var/lib/pulp, so change here to avoid permissions issues
-        self.default_sn_path = SerialNumber.PATH
-        SerialNumber.PATH = '/tmp/sn.dat'
-        sn = SerialNumber()
-        sn.reset()
-
-    def tearDown(self):
-        testutil.PulpV2WebserviceTest.tearDown(self)
-
-        SerialNumber.PATH = self.default_sn_path
+class UserCertificateControllerTests(base.PulpWebserviceTests):
 
     def test_get(self):
         # Setup
 
         # TODO: Fix this when UserManager lookup
-        user = self.user_api.user('ws-user')
+        user_api = UserApi()
+        user = user_api.user('ws-user')
 
         # Test
         status, body = self.post('/v2/actions/login/')

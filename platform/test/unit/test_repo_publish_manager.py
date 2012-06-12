@@ -14,11 +14,8 @@
 
 # Python
 import datetime
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 from pulp.common import dateutils
@@ -30,10 +27,10 @@ import pulp.server.managers.repo.publish as publish_manager
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncManagerTests(testutil.PulpTest):
+class RepoSyncManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        super(RepoSyncManagerTests, self).setUp()
         mock_plugins.install()
 
         # Create the manager instances for testing
@@ -42,11 +39,11 @@ class RepoSyncManagerTests(testutil.PulpTest):
         self.publish_manager = publish_manager.RepoPublishManager()
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        super(RepoSyncManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        super(RepoSyncManagerTests, self).clean()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         RepoPublishResult.get_collection().remove()

@@ -16,18 +16,14 @@
 import datetime
 import httplib
 import itertools
-import os
 import re
-import sys
 import traceback
 import unittest
 from pprint import pformat
 
 import mock
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-
-import testutil
+import base
 import dummy_plugins
 
 from pulp.common import dateutils
@@ -39,12 +35,11 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.unit_association_query import Criteria
 import pulp.server.webservices.queries.repo as repo_query_utils
 
-class RepoControllersTests(testutil.PulpV2WebserviceTest):
+class RepoControllersTests(base.PulpWebserviceTests):
 
     def setUp(self):
         super(RepoControllersTests, self).setUp()
         self.repo_manager = manager_factory.repo_manager()
-        Repo.get_collection().remove(safe=True)
 
     def clean(self):
         super(RepoControllersTests, self).clean()

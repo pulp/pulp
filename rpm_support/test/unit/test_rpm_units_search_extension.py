@@ -11,17 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
+import base
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-import testutil
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 import rpm_units_search.pulp_cli
 
-
-class GeneralUnitSearchCommandTests(testutil.PulpV2ClientTest):
+class GeneralUnitSearchCommandTests(base.PulpClientTests):
 
     def test_search(self):
         # Setup
@@ -37,7 +31,7 @@ class GeneralUnitSearchCommandTests(testutil.PulpV2ClientTest):
         # Cleanup
         self.server_mock.request.return_value = None
 
-class RpmUnitsSearchUtilityTests(testutil.PulpV2ClientTest):
+class RpmUnitsSearchUtilityTests(base.PulpClientTests):
 
     def test_args_to_criteria_doc_empty_args(self):
         # Setup

@@ -16,21 +16,11 @@ try:
 except ImportError:
     import simplejson as json
 
-import os
-import sys
-import unittest
+import base
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
-
-import testutil
-import mock_agent
-import mock_plugins
 from mock import Mock
 from rpm_admin_consumer import pulp_cli
-from pulp.server.content import loader as plugin_loader
-from pulp.server.managers import factory as factory
-from pulp.gc_client.framework.core import TAG_FAILURE, TAG_SUCCESS
+from pulp.client.extensions.core import TAG_SUCCESS
 
 
 TASK = {
@@ -81,24 +71,9 @@ class Request:
         raise Exception('Unexpected URL: %s', url)
 
 
-class TestPackages(testutil.PulpV2ClientTest):
+class TestPackages(base.PulpClientTests):
     
     CONSUMER_ID = 'test-consumer'
-    
-    def setUp(self):
-        testutil.PulpV2ClientTest.setUp(self)
-        plugin_loader._create_loader()
-        mock_plugins.install()
-        mock_agent.install()
-        
-    def tearDown(self):
-        testutil.PulpV2ClientTest.tearDown(self)
-        mock_plugins.reset()
-        mock_agent.reset()
-        
-    def populate(self):
-        manager = factory.consumer_manager()
-        manager.register(self.CONSUMER_ID)
 
     def test_install(self):
         # Setup

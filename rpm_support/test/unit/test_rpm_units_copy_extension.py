@@ -16,20 +16,16 @@ try:
 except ImportError:
     import simplejson as json
 
-import os
-import sys
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../common/')
-import testutil
+import base
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
 import rpm_units_copy.pulp_cli
 
-from pulp.gc_client.api.responses import STATE_WAITING
-from pulp.gc_client.framework.core import TAG_FAILURE, TAG_PARAGRAPH
+from pulp.bindings.responses import STATE_WAITING
+from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
 
-class UnitCopyTests(testutil.PulpV2ClientTest):
+class UnitCopyTests(base.PulpClientTests):
 
     def test_copy(self):
         # Setup

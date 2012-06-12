@@ -11,14 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import datetime
 import math
-import os
-import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 
 from pulp.common import dateutils
 from pulp.server.content.types import database, model
@@ -44,7 +40,7 @@ TYPE_DEF_EPSILON = model.TypeDefinition('epsilon', 'Epsilon', 'Test Type Epsilon
 
 _QUERY_TYPES = [TYPE_DEF_ALPHA, TYPE_DEF_BETA, TYPE_DEF_GAMMA, TYPE_DEF_DELTA, TYPE_DEF_EPSILON]
 
-class UnitAssociationQueryTests(testutil.PulpTest):
+class UnitAssociationQueryTests(base.PulpServerTests):
 
     def clean(self):
         super(UnitAssociationQueryTests, self).clean()
@@ -650,7 +646,7 @@ class UnitAssociationQueryTests(testutil.PulpTest):
 
 # -- stress tests -------------------------------------------------------------
 
-class GetUnitsStressTest(testutil.PulpTest):
+class GetUnitsStressTest(base.PulpServerTests):
 
     ENABLED = False
 
@@ -819,7 +815,7 @@ class GetUnitsStressTest(testutil.PulpTest):
 
         print('Scenario 4: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
 
-class GetUnitsByTypeStressTest(testutil.PulpTest):
+class GetUnitsByTypeStressTest(base.PulpServerTests):
 
     ENABLED = False
 

@@ -13,10 +13,7 @@
 from ConfigParser import DuplicateSectionError
 import os
 import shutil
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import unittest
 
 from pulp_rpm.common.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
@@ -27,25 +24,23 @@ TEST_CERT_ROOT_DIR = '/tmp/TestRepoFile-Certificates'
 
 # -- repo file tests ------------------------------------------------------------------
 
-class TestRepoFile(testutil.PulpAsyncTest):
+class TestRepoFile(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_REPO_FILENAME):
             os.remove(TEST_REPO_FILENAME)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_REPO_FILENAME):
             os.remove(TEST_REPO_FILENAME)
 
     def test_one_repo_save_and_load(self):
-        '''
+        """
         Tests the normal flow of saving and loading, using only one repo to
         minimize complications.
-        '''
+        """
 
         # Setup
         add_me = Repo('test-repo-1')
@@ -78,9 +73,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(_repo_eq(add_me, found_repo))
 
     def test_multiple_repos(self):
-        '''
+        """
         Tests saving and loading multiple repos.
-        '''
+        """
 
         # Setup
         repo1 = Repo('test-repo-1')
@@ -111,9 +106,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(_repo_eq(repo2, found_repo2))
 
     def test_add_duplicate(self):
-        '''
+        """
         Tests that adding a repo that already exists throws a duplication error.
-        '''
+        """
 
         # Setup
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -124,9 +119,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
 
 
     def test_delete_repo(self):
-        '''
+        """
         Tests removing an existing repo is correctly saved and loaded
-        '''
+        """
 
         # Setup
         repo1 = Repo('test-repo-1')
@@ -151,10 +146,10 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(loaded.get_repo('test-repo-2') is not None)
 
     def test_delete_repo_no_repo(self):
-        '''
+        """
         Ensures that an error is not thrown when a repo that does not exist is
         deleted from the repo file.
-        '''
+        """
 
         # Setup
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -167,9 +162,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(repo_file.get_repo('test-repo-1') is not None)
 
     def test_update_repo(self):
-        '''
+        """
         Tests that updating an existing repo is correctly saved.
-        '''
+        """
 
         # Setup
         repo1 = Repo('test-repo-1')
@@ -192,9 +187,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertEqual(found_repo['baseurl'], 'http://localhost/repo-updated')
 
     def test_no_repos_save_load(self):
-        '''
+        """
         Tests that saving and loading a file with no repos is successful.
-        '''
+        """
 
         # Test
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -208,9 +203,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertEqual(0, len(loaded.all_repos()))
 
     def test_delete_repofile(self):
-        '''
+        """
         Tests that deleting a RepoFile correctly deletes the file on disk.
-        '''
+        """
 
         # Setup
         self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
@@ -227,9 +222,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
 
     def test_broken_save(self):
-        '''
+        """
         Tests that an exception is raised when the file cannot be saved.
-        '''
+        """
 
         # Test
 
@@ -240,10 +235,10 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertRaises(IOError, repo_file.save)
 
     def test_broken_load(self):
-        '''
+        """
         Tests that an exception is raised when the file cannot be loaded because it is not
         found.
-        '''
+        """
 
         # Test
         repo_file = RepoFile('/a/b/c/d')
@@ -251,10 +246,10 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertRaises(IOError, repo_file.load, allow_missing=False)
 
     def test_broken_load_allow_missing(self):
-        '''
+        """
         Tests that an exception is raised when the file cannot be loaded because it is not
         found.
-        '''
+        """
 
         # Test
         repo_file = RepoFile('/a/b/c/d')
@@ -264,9 +259,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         # The above should not throw an error even though the file doesn't exist
 
     def test_broken_load_invalid_data(self):
-        '''
+        """
         Tests that an exception is raised when the file contains non-parsable data.
-        '''
+        """
 
         # Setup
         f = open(TEST_REPO_FILENAME, 'w')
@@ -279,9 +274,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertRaises(Exception, repo_file.load)
 
     def test_delete_file_doesnt_exist(self):
-        '''
+        """
         Tests that deleting when the file doesn't exist does *not* throw an error.
-        '''
+        """
 
         # Setup
         self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
@@ -294,9 +289,9 @@ class TestRepoFile(testutil.PulpAsyncTest):
         # Nothing to verify, this shouldn't have thrown an error
 
     def test_header(self):
-        '''
+        """
         Tests that the pulp header is properly written in the generated file.
-        '''
+        """
 
         # Setup
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -311,10 +306,10 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(contents.startswith(RepoFile.FILE_HEADER))
 
     def test_get_invalid_repo(self):
-        '''
+        """
         Makes sure None is returned when requesting a repo that doesn't exist
         instead of throwing an error.
-        '''
+        """
 
         # Setup
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -326,19 +321,19 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue(found is None)
 
     def test_missing_filename(self):
-        '''
+        """
         Tests that the proper error is thrown when creating a RepoFile without
         a filename.
-        '''
+        """
 
         # Test
         self.assertRaises(ValueError, RepoFile, None)
 
     def test_baseurl_not_mirrorlist(self):
-        '''
+        """
         Tests that if a baseurl is specified, a mirrorlist entry isn't written to the
         saved repo file.
-        '''
+        """
 
         # Setup
         repo = Repo('test-repo-1')
@@ -357,10 +352,10 @@ class TestRepoFile(testutil.PulpAsyncTest):
         self.assertTrue('mirrorlist' not in loaded_repo)
 
     def test_mirrorlist_not_baseurl(self):
-        '''
+        """
         Tests that if a mirrorlist is specified, a baseurl entry isn't written to the
         saved repo file.
-        '''
+        """
 
         # Setup
         repo = Repo('test-repo-1')
@@ -380,33 +375,31 @@ class TestRepoFile(testutil.PulpAsyncTest):
 
 # -- mirror list tests ----------------------------------------------------------------
 
-class TestMirrorListFile(testutil.PulpAsyncTest):
+class TestMirrorListFile(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_MIRROR_LIST_FILENAME):
             os.remove(TEST_MIRROR_LIST_FILENAME)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_MIRROR_LIST_FILENAME):
             os.remove(TEST_MIRROR_LIST_FILENAME)
 
     def test_missing_filename(self):
-        '''
+        """
         Tests that a MirrorListFile cannot be created without specifying a filename.
-        '''
+        """
 
         # Test
         self.assertRaises(ValueError, MirrorListFile, None)
 
     def test_multiple_entries_save_load(self):
-        '''
+        """
         Tests creating a new mirror list file with multiple entries, saving it, and then
         loading it back from disk.
-        '''
+        """
 
         # Test Save
         mirror_list = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
@@ -430,9 +423,9 @@ class TestMirrorListFile(testutil.PulpAsyncTest):
         self.assertEqual('http://cds-02', loaded.entries[1])
 
     def test_add_entries(self):
-        '''
+        """
         Tests the ability to add a list of entries in a single operation.
-        '''
+        """
 
         # Setup
         mirror_list = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
@@ -447,9 +440,9 @@ class TestMirrorListFile(testutil.PulpAsyncTest):
         self.assertEqual(3, len(mirror_list.entries))
 
     def test_broken_save(self):
-        '''
+        """
         Tests that an exception is raised when the file cannot be saved.
-        '''
+        """
 
         # Test
 
@@ -460,10 +453,10 @@ class TestMirrorListFile(testutil.PulpAsyncTest):
         self.assertRaises(IOError, mirror_list.save)
 
     def test_broken_load(self):
-        '''
+        """
         Tests that an exception is raised when the file cannot be loaded because it is not
         found.
-        '''
+        """
 
         # Test
         mirror_list = MirrorListFile('/a/b/c/d')
@@ -471,9 +464,9 @@ class TestMirrorListFile(testutil.PulpAsyncTest):
         self.assertRaises(IOError, mirror_list.load)
 
     def test_delete_file_doesnt_exist(self):
-        '''
+        """
         Tests that deleting when the file doesn't exist does *not* throw an error.
-        '''
+        """
 
         # Setup
         self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
@@ -487,25 +480,23 @@ class TestMirrorListFile(testutil.PulpAsyncTest):
 
 # -- repo key files tests ----------------------------------------------------------------
 
-class TestRepoKeyFiles(testutil.PulpAsyncTest):
+class TestRepoKeyFiles(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_KEYS_ROOT_DIR):
             shutil.rmtree(TEST_KEYS_ROOT_DIR)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_KEYS_ROOT_DIR):
             shutil.rmtree(TEST_KEYS_ROOT_DIR)
 
     def test_repo_first_time(self):
-        '''
+        """
         Tests adding keys to a repo that has never had keys before (i.e. the
         repo keys dir doesn't exist).
-        '''
+        """
 
         # Test
         repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo1')
@@ -533,10 +524,10 @@ class TestRepoKeyFiles(testutil.PulpAsyncTest):
         self.assertEqual(contents, 'KEY2')
 
     def test_repo_existing_keys(self):
-        '''
+        """
         Tests adding a new key when keys have already been written. The new key should be
         present but the old should be deleted.
-        '''
+        """
 
         # Setup
         repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo2')
@@ -563,9 +554,9 @@ class TestRepoKeyFiles(testutil.PulpAsyncTest):
         self.assertEqual(contents, 'KEYX')
 
     def test_repo_update_key(self):
-        '''
+        """
         Tests adding new contents for a key that already exists.
-        '''
+        """
 
         # Setup
         repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo3')
@@ -591,10 +582,10 @@ class TestRepoKeyFiles(testutil.PulpAsyncTest):
         self.assertEqual(contents, 'KEYX')
 
     def test_repo_remove_keys(self):
-        '''
+        """
         Tests calling update_filesystem for a repo that previously had keys but no longer
         does.
-        '''
+        """
 
         # Setup
         repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo4')
@@ -616,16 +607,14 @@ class TestRepoKeyFiles(testutil.PulpAsyncTest):
         
 # -- repo cert files tests ----------------------------------------------------------------
 
-class TestRepoCertFiles(testutil.PulpAsyncTest):
+class TestRepoCertFiles(unittest.TestCase):
 
     def setUp(self):
-        testutil.PulpAsyncTest.setUp(self)
         # Clean up from any previous runs that may have exited abnormally
         if os.path.exists(TEST_CERT_ROOT_DIR):
             shutil.rmtree(TEST_CERT_ROOT_DIR)
 
     def tearDown(self):
-        testutil.PulpAsyncTest.tearDown(self)
         # Clean up in case the test file was saved in a test
         if os.path.exists(TEST_CERT_ROOT_DIR):
             shutil.rmtree(TEST_CERT_ROOT_DIR)
@@ -725,10 +714,10 @@ class TestRepoCertFiles(testutil.PulpAsyncTest):
 # -- utilities ------------------------------------------------------------------------
 
 def _repo_eq(repo1, repo2):
-    '''
+    """
     Tests the contents of both repos for equality. If they all values match, returns
     True; otherwise False.
-    '''
+    """
 
     for key in repo1.keys():
         if key not in repo2:

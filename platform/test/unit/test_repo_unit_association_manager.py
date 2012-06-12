@@ -12,14 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import datetime
-import math
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-import testutil
+import base
 import mock_plugins
 
 from pulp.server.content.conduits.unit_import import ImportUnitConduit
@@ -48,7 +41,7 @@ MOCK_TYPE_DEF = model.TypeDefinition('mock-type', 'Mock Type', 'Used by the mock
 
 # -- cud test cases -----------------------------------------------------------
 
-class RepoUnitAssociationManagerTests(testutil.PulpTest):
+class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoUnitAssociationManagerTests, self).clean()

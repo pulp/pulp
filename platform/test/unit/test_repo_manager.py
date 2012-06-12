@@ -12,13 +12,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import os
-import sys
+import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../common/")
-
-import testutil
+import base
 import mock_plugins
 
 import pulp.server.content.loader as plugin_loader
@@ -30,10 +27,10 @@ import pulp.server.exceptions as exceptions
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoManagerTests(testutil.PulpTest):
+class RepoManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        testutil.PulpTest.setUp(self)
+        super(RepoManagerTests, self).setUp()
 
         plugin_loader._create_loader()
         mock_plugins.install()
@@ -43,11 +40,11 @@ class RepoManagerTests(testutil.PulpTest):
 
 
     def tearDown(self):
-        testutil.PulpTest.tearDown(self)
+        super(RepoManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
-        testutil.PulpTest.clean(self)
+        super(RepoManagerTests, self).clean()
 
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
@@ -448,7 +445,7 @@ class RepoManagerTests(testutil.PulpTest):
         self.assertRaises(exceptions.MissingResource, self.manager.get_repo_scratchpad, 'foo')
         self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', 'bar')
 
-class UtilityMethodsTests(testutil.PulpTest):
+class UtilityMethodsTests(unittest.TestCase):
 
     def test_is_repo_id_valid(self):
         """
