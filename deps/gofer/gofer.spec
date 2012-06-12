@@ -238,6 +238,10 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Tue Jun 12 2012 Jeff Ortel <jortel@redhat.com> 0.70-1
+- bump gofer to: 0.70 (jortel@redhat.com)
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
+* Tue Jun 12 2012 Jeff Ortel <jortel@redhat.com> 0.70-1
 - Refit mocks for reparent of Envelope & Options to (object).
   (jortel@redhat.com)
 
