@@ -14,7 +14,7 @@
 import uuid
 from gettext import gettext as _
 
-from pulp.server.content.types import database as content_types_db
+from pulp.plugins.types import database as content_types_db
 from pulp.server.exceptions import InvalidValue
 
 class ContentManager(object):

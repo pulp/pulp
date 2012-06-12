@@ -22,9 +22,9 @@ from pprint import pprint
 
 import base
 
-from pulp.server.content import loader
-from pulp.server.content.plugins.distributor import Distributor
-from pulp.server.content.plugins.importer import Importer
+from pulp.plugins import loader
+from pulp.plugins.distributor import Distributor
+from pulp.plugins.importer import Importer
 
 # test data and data generation api --------------------------------------------
 
@@ -49,7 +49,7 @@ def gen_plugin_root():
 
 
 _PLUGIN_TEMPLATE = string.Template('''
-from pulp.server.content.plugins.$BASE_NAME import $BASE_TITLE
+from pulp.plugins.$BASE_NAME import $BASE_TITLE
 class $PLUGIN_TITLE($BASE_TITLE):
     @classmethod
     def metadata(cls):
@@ -59,7 +59,7 @@ class $PLUGIN_TITLE($BASE_TITLE):
 ''')
 
 _MULTI_PLUGIN_TEMPLATE = string.Template('''
-from pulp.server.content.plugins.$BASE_NAME import $BASE_TITLE
+from pulp.plugins.$BASE_NAME import $BASE_TITLE
 
 class Plugin1($BASE_TITLE):
     @classmethod

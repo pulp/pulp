@@ -47,7 +47,7 @@ from pulp.server import async
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
-from pulp.server.content import loader as plugin_loader
+from pulp.plugins import loader as plugin_loader
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory

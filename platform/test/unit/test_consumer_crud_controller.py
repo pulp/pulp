@@ -15,7 +15,7 @@
 import base
 import dummy_plugins
 
-from pulp.server.content import loader as plugin_loader
+from pulp.plugins import loader as plugin_loader
 from pulp.server.db.model.gc_consumer import Consumer
 from pulp.server.managers import factory as manager_factory
 

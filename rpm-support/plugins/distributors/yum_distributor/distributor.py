@@ -18,7 +18,7 @@ import shutil
 import time
 import traceback
 from pulp_rpm.yum_plugin import util
-from pulp.server.content.plugins.distributor import Distributor
+from pulp.server.plugins.plugins.distributor import Distributor
 from ConfigParser import SafeConfigParser
 # -- constants ----------------------------------------------------------------
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils

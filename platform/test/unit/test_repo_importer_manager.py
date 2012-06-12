@@ -15,10 +15,10 @@
 import base
 import mock_plugins
 
-import pulp.server.content.loader as plugin_loader
-from pulp.server.content.plugins.importer import Importer
-from pulp.server.content.plugins.model import Repository
-from pulp.server.content.plugins.config import PluginCallConfiguration
+import pulp.plugins.loader as plugin_loader
+from pulp.plugins.importer import Importer
+from pulp.plugins.model import Repository
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoImporter
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager

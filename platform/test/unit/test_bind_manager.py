@@ -15,7 +15,7 @@
 import base
 import mock_plugins
 
-import pulp.server.content.loader as plugin_loader
+import pulp.plugins.loader as plugin_loader
 from pulp.server.db.model.gc_consumer import Consumer, Bind
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor
 from pulp.server.exceptions import MissingResource

@@ -14,9 +14,9 @@
 
 import base
 
-import pulp.server.content.loader as plugin_loader
-import pulp.server.content.types.database as types_db
-from pulp.server.content.types.model import TypeDefinition
+import pulp.plugins.loader as plugin_loader
+import pulp.plugins.types.database as types_db
+from pulp.plugins.types.model import TypeDefinition
 import pulp.server.managers.plugin as plugin_manager
 
 # -- mocks --------------------------------------------------------------------

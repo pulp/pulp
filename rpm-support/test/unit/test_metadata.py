@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 from yum_distributor import metadata
 
-from pulp.server.content.plugins.model import Repository
+from pulp.server.plugins.plugins.model import Repository
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../yum_importer")
 import distributor_mocks

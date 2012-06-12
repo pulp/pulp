@@ -18,8 +18,8 @@ import mock
 import mock_plugins
 import base
 
-from pulp.server.content.conduits._base import BaseDistributorConduit, DistributorConduitException
-import pulp.server.content.types.database as types_database
+from pulp.plugins.conduits._base import BaseDistributorConduit, DistributorConduitException
+import pulp.plugins.types.database as types_database
 from pulp.server.db.model.gc_repository import Repo
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.cud import RepoManager

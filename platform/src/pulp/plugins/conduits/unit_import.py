@@ -20,9 +20,9 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
-import pulp.server.content.conduits._common as common_utils
-import pulp.server.content.types.database as types_db
+from pulp.plugins.conduits._base import BaseImporterConduit, ImporterConduitException
+import pulp.plugins.conduits._common as common_utils
+import pulp.plugins.types.database as types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 

@@ -22,7 +22,7 @@ import random
 import string
 import time
 
-from pulp.server.content.plugins.importer import Importer
+from pulp.server.plugins.plugins.importer import Importer
 
 # -- constants ----------------------------------------------------------------
 

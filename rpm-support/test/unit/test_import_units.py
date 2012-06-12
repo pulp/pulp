@@ -28,7 +28,7 @@ from yum_importer.importer import YumImporter
 from yum_importer.importer_rpm import RPM_TYPE_ID
 from pulp_rpm.yum_plugin import util
 
-from pulp.server.content.plugins.model import Repository, Unit
+from pulp.server.plugins.plugins.model import Repository, Unit
 
 class TestImportUnits(unittest.TestCase):
 

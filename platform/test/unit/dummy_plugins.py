@@ -19,8 +19,8 @@ module instead when testing with new v2 controllers that have been integrated
 with dispatch.
 """
 
-from pulp.server.content import loader as plugin_loader
-from pulp.server.content.plugins.model import SyncReport, PublishReport
+from pulp.plugins import loader as plugin_loader
+from pulp.plugins.model import SyncReport, PublishReport
 
 # dummy base class -------------------------------------------------------------
 

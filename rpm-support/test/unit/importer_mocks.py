@@ -12,11 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import mock
-from pulp.server.content.conduits.repo_sync import RepoSyncConduit
-from pulp.server.content.conduits.unit_add import UnitAddConduit
-from pulp.server.content.conduits.unit_import import ImportUnitConduit
-from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.content.plugins.model import Unit
+from pulp.server.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.server.plugins.conduits.unit_add import UnitAddConduit
+from pulp.server.plugins.conduits.unit_import import ImportUnitConduit
+from pulp.server.plugins.plugins.config import PluginCallConfiguration
+from pulp.server.plugins.plugins.model import Unit
 
 def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
     def side_effect(type_id, key, metadata, rel_path):

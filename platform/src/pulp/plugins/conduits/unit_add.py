@@ -20,15 +20,13 @@ from gettext import gettext as _
 import logging
 import sys
 
-import pulp.server.content.conduits._common as common_utils
-from pulp.server.content.conduits._base import BaseImporterConduit, ImporterConduitException
-import pulp.server.content.types.database as types_db
-from pulp.server.content.plugins.model import Unit
+import pulp.plugins.conduits._common as common_utils
+from pulp.plugins.conduits._base import BaseImporterConduit, ImporterConduitException
+import pulp.plugins.types.database as types_db
+from pulp.plugins.model import Unit
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
-
-from pulp.server.managers.repo.unit_association_query import Criteria # shadow for importing by plugins
 
 # -- constants ---------------------------------------------------------------
 

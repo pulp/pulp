@@ -20,7 +20,7 @@ import base
 import mock_plugins
 
 from pulp.common import dateutils
-from pulp.server.content.plugins.model import SyncReport
+from pulp.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 from pulp.server.exceptions import PulpExecutionException
 import pulp.server.managers.factory as manager_factory

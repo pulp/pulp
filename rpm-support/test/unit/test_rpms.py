@@ -34,7 +34,7 @@ from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer import importer_rpm
 from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 from pulp_rpm.yum_plugin import util
-from pulp.server.content.plugins.model import Repository, Unit
+from pulp.server.plugins.plugins.model import Repository, Unit
 
 
 

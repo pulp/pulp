@@ -20,8 +20,8 @@ import traceback
 import base
 
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.content.types import database as content_type_db
-from pulp.server.content.types.model import TypeDefinition
+from pulp.plugins.types import database as content_type_db
+from pulp.plugins.types.model import TypeDefinition
 from pulp.server.db.model.gc_repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.content.orphan import OrphanManager

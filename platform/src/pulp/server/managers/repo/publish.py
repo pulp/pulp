@@ -25,12 +25,11 @@ import sys
 import traceback
 
 from pulp.common import dateutils
-import pulp.server.content.loader as plugin_loader
-from pulp.server.content.plugins.model import PublishReport
-from pulp.server.content.conduits.repo_publish import RepoPublishConduit
-from pulp.server.content.plugins.config import PluginCallConfiguration
+import pulp.plugins.loader as plugin_loader
+from pulp.plugins.model import PublishReport
+from pulp.plugins.conduits.repo_publish import RepoPublishConduit
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.gc_repository import Repo, RepoDistributor, RepoPublishResult
-import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 

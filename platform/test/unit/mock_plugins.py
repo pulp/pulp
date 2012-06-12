@@ -22,8 +22,8 @@ the defaults.
 
 import mock
 
-import pulp.server.content.loader as plugin_loader
-from pulp.server.content.plugins.model import SyncReport, PublishReport
+import pulp.plugins.loader as plugin_loader
+from pulp.plugins.model import SyncReport, PublishReport
 
 # -- constants ----------------------------------------------------------------
 

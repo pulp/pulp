@@ -43,9 +43,9 @@ from gettext import gettext as _
 import logging
 import sys
 
-from   pulp.server.content.conduits._base import ImporterConduitException
-from   pulp.server.content.conduits.unit_add import UnitAddConduit
-from   pulp.server.content.plugins.model import SyncReport
+from   pulp.plugins.conduits._base import ImporterConduitException
+from   pulp.plugins.conduits.unit_add import UnitAddConduit
+from   pulp.plugins.model import SyncReport
 import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 

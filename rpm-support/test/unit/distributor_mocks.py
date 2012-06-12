@@ -12,9 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import os
 import mock
-from pulp.server.content.conduits.repo_publish import RepoPublishConduit
-from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.content.plugins.model import PublishReport, Unit
+from pulp.server.plugins.conduits.repo_publish import RepoPublishConduit
+from pulp.server.plugins.plugins.config import PluginCallConfiguration
+from pulp.server.plugins.plugins.model import PublishReport, Unit
 
 def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksum_type="sha"):
     def build_success_report(summary, details):

@@ -25,9 +25,9 @@ from yum_importer.distribution import DISTRO_TYPE_ID
 from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
 from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID
 
-from pulp.server.content.plugins.importer import Importer
+from pulp.server.plugins.plugins.importer import Importer
 from pulp_rpm.yum_plugin import util
-from   pulp.server.content.plugins.model import SyncReport
+from   pulp.server.plugins.plugins.model import SyncReport
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)

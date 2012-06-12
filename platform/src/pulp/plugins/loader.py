@@ -29,11 +29,11 @@ try:
 except ImportError:
     import simplejson as json
 
-from pulp.server.content.plugins.distributor import Distributor
-from pulp.server.content.plugins.importer import Importer
-from pulp.server.content.plugins.profiler import Profiler
-from pulp.server.content.types import database, parser
-from pulp.server.content.types.model import TypeDescriptor
+from pulp.plugins.distributor import Distributor
+from pulp.plugins.importer import Importer
+from pulp.plugins.profiler import Profiler
+from pulp.plugins.types import database, parser
+from pulp.plugins.types.model import TypeDescriptor
 from pulp.server.exceptions import PulpException
 
 # constants --------------------------------------------------------------------

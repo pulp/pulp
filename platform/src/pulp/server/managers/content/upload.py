@@ -18,9 +18,9 @@ from uuid import uuid4
 
 import pulp.server.auth.principal as pulp_principal
 import pulp.server.constants as pulp_constants
-from   pulp.server.content.conduits.unit_add import UnitAddConduit
-import pulp.server.content.loader as content_loader
-from   pulp.server.content.plugins.config import PluginCallConfiguration
+from   pulp.plugins.conduits.unit_add import UnitAddConduit
+import pulp.plugins.loader as content_loader
+from   pulp.plugins.config import PluginCallConfiguration
 from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as repo_common_utils

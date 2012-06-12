@@ -16,7 +16,7 @@ import os
 from gettext import gettext as _
 
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.content.types import database as content_types_db
+from pulp.plugins.types import database as content_types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 

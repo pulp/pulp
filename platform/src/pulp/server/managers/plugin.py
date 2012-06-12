@@ -17,8 +17,8 @@ Contains the manager class and exceptions for all repository related functionali
 
 import logging
 
-import pulp.server.content.loader as plugin_loader
-import pulp.server.content.types.database as types_database
+import pulp.plugins.loader as plugin_loader
+import pulp.plugins.types.database as types_database
 
 # -- constants ----------------------------------------------------------------
 

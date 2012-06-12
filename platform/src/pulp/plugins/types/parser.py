@@ -19,7 +19,7 @@ import logging
 import operator
 import re
 
-from pulp.server.content.types import model
+from pulp.plugins.types import model
 from pulp.server.compat import json
 
 # -- constants ---------------------------------------------------------------

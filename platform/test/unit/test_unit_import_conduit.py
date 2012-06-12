@@ -17,10 +17,10 @@ import mock
 import base
 import mock_plugins
 
-from pulp.server.content.conduits.unit_import import ImportUnitConduit, UnitImportConduitException
-from pulp.server.content.conduits._common import to_plugin_unit
-import pulp.server.content.types.database as types_database
-import pulp.server.content.types.model as types_model
+from pulp.plugins.conduits.unit_import import ImportUnitConduit, UnitImportConduitException
+from pulp.plugins.conduits._common import to_plugin_unit
+import pulp.plugins.types.database as types_database
+import pulp.plugins.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit, RepoImporter
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.unit_association as association_manager

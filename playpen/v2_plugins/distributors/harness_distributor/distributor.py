@@ -21,8 +21,8 @@ import os
 import shutil
 import time
 
-from pulp.server.content.plugins.distributor import Distributor
-from pulp.server.content.plugins.model import PublishReport
+from pulp.server.plugins.plugins.distributor import Distributor
+from pulp.server.plugins.plugins.model import PublishReport
 
 # -- constants ----------------------------------------------------------------
 

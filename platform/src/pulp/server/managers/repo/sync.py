@@ -28,10 +28,10 @@ import sys
 # Pulp
 from pulp.common import dateutils
 import pulp.server.constants as pulp_constants
-import pulp.server.content.loader as plugin_loader
-from pulp.server.content.conduits.repo_sync import RepoSyncConduit
-from pulp.server.content.plugins.config import PluginCallConfiguration
-from pulp.server.content.plugins.model import SyncReport
+import pulp.plugins.loader as plugin_loader
+from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.model import SyncReport
 from pulp.server.db.model.gc_repository import Repo, RepoImporter, RepoSyncResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils

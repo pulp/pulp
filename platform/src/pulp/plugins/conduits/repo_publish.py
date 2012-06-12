@@ -20,10 +20,10 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.server.content.conduits._base import BaseDistributorConduit, DistributorConduitException
-import pulp.server.content.conduits._common as common_utils
-import pulp.server.content.types.database as types_db
-from pulp.server.content.plugins.model import PublishReport
+from pulp.plugins.conduits._base import BaseDistributorConduit, DistributorConduitException
+import pulp.plugins.conduits._common as common_utils
+import pulp.plugins.types.database as types_db
+from pulp.plugins.model import PublishReport
 import pulp.server.dispatch.factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 

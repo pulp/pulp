@@ -17,11 +17,11 @@ import mock
 import base
 import mock_plugins
 
-from pulp.server.content.conduits._base import ImporterConduitException
-from pulp.server.content.conduits.repo_sync import RepoSyncConduit
-from pulp.server.content.plugins.model import SyncReport
-import pulp.server.content.types.database as types_database
-import pulp.server.content.types.model as types_model
+from pulp.plugins.conduits._base import ImporterConduitException
+from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.model import SyncReport
+import pulp.plugins.types.database as types_database
+import pulp.plugins.types.model as types_model
 from pulp.server.db.model.gc_repository import Repo, RepoContentUnit
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager

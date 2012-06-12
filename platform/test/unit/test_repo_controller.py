@@ -27,7 +27,7 @@ import base
 import dummy_plugins
 
 from pulp.common import dateutils
-from pulp.server.content import loader as plugin_loader
+from pulp.plugins import loader as plugin_loader
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.gc_repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)

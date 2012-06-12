@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 
 from yum_distributor.distributor import YumDistributor
-from pulp.server.content.plugins.model import Repository
+from pulp.server.plugins.plugins.model import Repository
 from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 import distributor_mocks

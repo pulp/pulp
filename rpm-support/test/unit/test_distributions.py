@@ -24,7 +24,7 @@ import importer_mocks
 from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer.distribution import  DISTRO_TYPE_ID
-from pulp.server.content.plugins.model import Repository
+from pulp.server.plugins.plugins.model import Repository
 
 class TestDistribution(unittest.TestCase):
 

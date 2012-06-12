@@ -14,7 +14,7 @@
 
 import unittest
 
-from pulp.server.content.types import parser, model
+from pulp.plugins.types import parser, model
 
 # -- test data ---------------------------------------------------------------
 

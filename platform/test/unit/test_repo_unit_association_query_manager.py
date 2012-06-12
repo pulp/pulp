@@ -17,7 +17,7 @@ import math
 import base
 
 from pulp.common import dateutils
-from pulp.server.content.types import database, model
+from pulp.plugins.types import database, model
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.repo.unit_association as association_manager
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER

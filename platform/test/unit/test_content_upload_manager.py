@@ -20,7 +20,7 @@ import base
 import mock_plugins
 
 import pulp.server.constants as pulp_constants
-from   pulp.server.content.plugins.model import Repository
+from   pulp.plugins.model import Repository
 from   pulp.server.db.model.gc_repository import Repo, RepoImporter
 from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
 import pulp.server.managers.factory as manager_factory

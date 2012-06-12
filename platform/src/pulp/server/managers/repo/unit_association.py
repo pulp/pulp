@@ -20,11 +20,11 @@ import logging
 import pymongo
 import sys
 
-import pulp.server.content.conduits._common as conduit_common_utils
-from pulp.server.content.conduits.unit_import import ImportUnitConduit
-import pulp.server.content.loader as plugin_loader
-from pulp.server.content.plugins.config import PluginCallConfiguration
-import pulp.server.content.types.database as types_db
+import pulp.plugins.conduits._common as conduit_common_utils
+from pulp.plugins.conduits.unit_import import ImportUnitConduit
+import pulp.plugins.loader as plugin_loader
+from pulp.plugins.config import PluginCallConfiguration
+import pulp.plugins.types.database as types_db
 from pulp.server.db.model.gc_repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 import pulp.server.exceptions as exceptions

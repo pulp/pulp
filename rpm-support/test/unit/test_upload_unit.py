@@ -25,7 +25,7 @@ import importer_mocks
 from yum_importer.importer import YumImporter
 from pulp_rpm.yum_plugin import util
 
-from pulp.server.content.plugins.model import Repository
+from pulp.server.plugins.plugins.model import Repository
 
 class TestRPMs(unittest.TestCase):
 

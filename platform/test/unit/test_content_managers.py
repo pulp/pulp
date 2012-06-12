@@ -14,7 +14,7 @@
 
 import base
 
-from pulp.server.content.types import database, model
+from pulp.plugins.types import database, model
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 

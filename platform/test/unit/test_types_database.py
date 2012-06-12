@@ -14,8 +14,8 @@
 
 import base
 
-import pulp.server.content.types.database as types_db
-from pulp.server.content.types.model import TypeDefinition
+import pulp.plugins.types.database as types_db
+from pulp.plugins.types.model import TypeDefinition
 from pulp.server.db.model.gc_content import ContentType
 import pulp.server.db.connection as pulp_db
 
