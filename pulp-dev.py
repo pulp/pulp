@@ -30,7 +30,7 @@ DIRS = (
     '/etc/pulp/distributor',
     '/etc/pulp/importer',
     '/etc/pulp/agent',
-    '/etc/pulp/agent/handler',
+    '/etc/pulp/agent/conf.d',
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
@@ -39,7 +39,7 @@ DIRS = (
     '/srv/pulp',
     '/usr/lib/pulp/',
     '/usr/lib/pulp/agent',
-    '/usr/lib/pulp/agent/handler',
+    '/usr/lib/pulp/agent/handlers',
     '/usr/lib/pulp/admin',
     '/usr/lib/pulp/admin/extensions',
     '/usr/lib/pulp/consumer',
@@ -95,7 +95,7 @@ LINKS = (
     ('platform/etc/gofer/plugins/consumer.conf', '/etc/gofer/plugins/consumer.conf'),
     ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
     ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
-    ('platform/etc/pulp/pulp.conf', '/etc/pulp/pulp.conf'),
+    ('platform/etc/pulp/server.conf', '/etc/pulp/server.conf'),
     ('platform/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
     ('platform/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
     ('platform/etc/pulp/logging', '/etc/pulp/logging'),
@@ -226,7 +226,7 @@ def install(opts):
 def uninstall(opts):
     for src, dst in getlinks():
         debug(opts, 'removing link: %s' % dst)
-        if not os.path.exists(dst):
+        if not os.path.islink(dst):
             debug(opts, '%s does not exist, skipping' % dst)
             continue
         os.unlink(dst)

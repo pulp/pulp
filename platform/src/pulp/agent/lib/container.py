@@ -44,7 +44,7 @@ class Descriptor:
     @type cfg: L{Config}
     """
     
-    ROOT = '/etc/pulp/agent/handler'
+    ROOT = '/etc/pulp/agent/conf.d'
 
     SCHEMA = (
         ('main', REQUIRED,
@@ -197,8 +197,8 @@ class Container:
     """
 
     PATH = [
-        '/usr/lib/pulp/agent/handler',
-        '/usr/lib64/pulp/agent/handler',
+        '/usr/lib/pulp/agent/handlers',
+        '/usr/lib64/pulp/agent/handlers',
     ]
 
     def __init__(self, root=Descriptor.ROOT, path=PATH):

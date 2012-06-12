@@ -7,13 +7,13 @@
 # along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='Pulp Platform',
     version='2.0.0',
-    packages=['pulp'],
-
+    license='GPLv2+',
+    packages=find_packages(),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
     )

@@ -119,7 +119,7 @@ _default_values = {
 }
 
 # to add a default configuration file, list the full path here
-_config_files = ['/etc/pulp/repo_auth.conf', '/etc/pulp/pulp.conf']
+_config_files = ['/etc/pulp/repo_auth.conf', '/etc/pulp/server.conf']
 
 # configuration api -----------------------------------------------------------
 
