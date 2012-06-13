@@ -172,7 +172,6 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
     criteria = Criteria(type_ids=[importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID])
     existing_rpms = importer_rpm.get_existing_units(sync_conduit, criteria=criteria)
     link_report['linked_units'] = []
-    link_report['skipped_rpms'] = []
     link_report['missing_rpms'] = []
     for u in new_errata_units.values():
         pkglist = u.metadata['pkglist']

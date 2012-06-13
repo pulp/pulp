@@ -48,10 +48,10 @@ class TestRPMs(unittest.TestCase):
     def clean(self):
         shutil.rmtree(self.temp_dir)
 
-    def test_upload(self):
+    def test_upload_rpm(self):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
-        repo.id = "test_upload_sync"
+        repo.id = "test_upload_rpm"
         upload_conduit = importer_mocks.get_upload_conduit(pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config()
         importer = YumImporter()
@@ -69,3 +69,20 @@ class TestRPMs(unittest.TestCase):
         self.assertEquals(summary["num_units_processed"], 1)
         self.assertEquals(summary["filename"], "incisura-7.1.4-1.elfake.noarch.rpm")
         self.assertEquals(details["errors"], [])
+
+    def test_upload_erratum(self):
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_upload_errata"
+        upload_conduit = importer_mocks.get_upload_conduit(pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config()
+        importer = YumImporter()
+        file_path = []
+        type_id = "erratum"
+        unit_key = dict()
+        unit_key['id'] = "RHBA-2012:0101"
+        metadata = {"pkglist" : [],}
+        status, summary, details = importer._upload_unit(repo, type_id, unit_key, metadata, file_path, upload_conduit, config)
+        self.assertTrue(status)
+        self.assertEqual(summary['state'], 'FINISHED')
+        print status, summary, details
