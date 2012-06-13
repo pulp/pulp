@@ -92,8 +92,6 @@ LINKS = (
     ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
     ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf'),
     ('platform/etc/gofer/plugins/pulp.conf', '/etc/gofer/plugins/pulp.conf'),
-    ('platform/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
-    ('platform/etc/gofer/plugins/consumer.conf', '/etc/gofer/plugins/consumer.conf'),
     ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
     ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
     ('platform/etc/pulp/server.conf', '/etc/pulp/server.conf'),
