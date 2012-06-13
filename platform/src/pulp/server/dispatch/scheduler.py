@@ -196,7 +196,7 @@ class Scheduler(object):
 
         last_run = scheduled_call['last_run']
         if last_run is None:
-            return scheduled_call['first_run']
+            return scheduled_call['first_run'] # this was calculated by the model constructor
 
         now = datetime.datetime.utcnow()
         interval = dateutils.parse_iso8601_interval(scheduled_call['schedule'])[0]
