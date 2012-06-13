@@ -74,6 +74,9 @@ class ConsumerSection(PulpCliSection):
 
         # Unregister Command
         unregister_command = PulpCliCommand('unregister', 'unregisters this consumer from the Pulp server', self.unregister)
+        d = 'if specified, the local consumer identification certificate will be ' \
+        'removed even if the server cannot be contacted'
+        unregister_command.create_flag('--force', _(d))
         self.add_command(unregister_command)
 
         # Bind Command
@@ -130,7 +133,10 @@ class ConsumerSection(PulpCliSection):
         # Check if this consumer is already registered
         existing_consumer = self.consumerid
         if existing_consumer:
-            self.prompt.render_failure_message("A consumer [%s] already registered on this system; Please unregister existing consumer before registering." % existing_consumer)
+            m = 'This system has already been registered as a consumer. Please ' \
+            'use the unregister command to remove the consumer before attempting ' \
+            'to reregister.'
+            self.prompt.render_failure_message(_(m))
             return
 
         # Get other consumer parameters
@@ -188,12 +194,25 @@ class ConsumerSection(PulpCliSection):
         if not consumer_id:
             self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
             return
+
+        def delete_cert():
+            id_cert_dir = self.context.config.get('filesystem', 'id_cert_dir')
+            id_cert_name = self.context.config.get('filesystem', 'id_cert_filename')
+            cert_filename = os.path.join(id_cert_dir, id_cert_name)
+            if os.path.exists(cert_filename):
+                os.remove(cert_filename)
+
+
         try:
             self.context.server.consumer.unregister(consumer_id)
+            delete_cert()
             self.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
-        except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
-
+        except Exception:
+            if kwargs['force']:
+                delete_cert()
+                self.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
+            else:
+                raise
 
     def bind(self, **kwargs):
         consumer_id = self.consumerid
