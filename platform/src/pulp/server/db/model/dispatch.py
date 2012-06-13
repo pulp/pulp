@@ -57,7 +57,8 @@ class ScheduledCall(Model):
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
         self.first_run = start or now
-        while interval > zero and self.first_run <= now:
+        while interval != zero and self.first_run <= now:
+            # NOTE using != because ordering comparison with a Duration is not allowed
             # try to schedule the first run in the future
             self.first_run += interval
         self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
