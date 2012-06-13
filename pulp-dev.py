@@ -122,7 +122,7 @@ LINKS = (
     ('rpm-support/handlers/bind.py', '/usr/lib/pulp/agent/handler/bind.py'),
     ('rpm-support/handlers/linux.py', '/usr/lib/pulp/agent/handler/linux.py'),
 
-    ('rpm-support/plugins/types/rpm-support.json', '/var/lib/pulp/plugins/types/rpm-support.json'),
+    ('rpm-support/plugins/types/rpm_support.json', '/var/lib/pulp/plugins/types/rpm_support.json'),
     ('rpm-support/plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),
     ('rpm-support/plugins/distributors/yum_distributor', '/var/lib/pulp/plugins/distributors/yum_distributor'),
 
