@@ -391,7 +391,7 @@ class YumDistributor(Distributor):
         # Determine Content in this repo
         unfiltered_units = publish_conduit.get_units()
         # filter compatible units
-        units = filter(lambda u: u.type_id not in [DISTRO_TYPE_ID, ERRATA_TYPE_ID], unfiltered_units)
+        units = filter(lambda u: u.type_id in [DRPM_TYPE_ID, RPM_TYPE_ID, SRPM_TYPE_ID], unfiltered_units)
         _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
                 % (repo.id, len(unfiltered_units), len(units)))
         # Create symlinks under repo.working_dir

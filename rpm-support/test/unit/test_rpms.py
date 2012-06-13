@@ -24,17 +24,17 @@ import unittest
 
 from grinder.BaseFetch import BaseFetch
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 import importer_mocks
 
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer import importer_rpm
 from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
-from pulp_rpm.yum_plugin import util
+
 from pulp.plugins.model import Repository, Unit
+from pulp_rpm.yum_plugin import util
 
 
 
@@ -366,7 +366,7 @@ class TestRPMs(unittest.TestCase):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         status, summary, details = importer._sync_repo(repo, sync_conduit, config)
         self.assertTrue(status)
-        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(summary["packages"]["num_synced_new_rpms"], 3)
         self.assertTrue(updated_progress is not None)
         self.assertTrue("metadata" in updated_progress)
         self.assertTrue(updated_progress["metadata"].has_key("state"))
@@ -775,8 +775,8 @@ class TestRPMs(unittest.TestCase):
         self.assertFalse(status)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
-        self.assertEquals(summary["num_not_synced_rpms"], 1)
-        self.assertEquals(details["size_total"], 6791)
+        self.assertEquals(summary["packages"]["num_not_synced_rpms"], 1)
+        self.assertEquals(details["packages"]["size_total"], 6791)
         # Confirm regular RPM files exist under self.pkg_dir
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 2)

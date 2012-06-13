@@ -15,17 +15,21 @@
 import glob
 import mock
 import os
+import pycurl
 import shutil
 import sys
 import tempfile
 import time
 import unittest
 
+from grinder.BaseFetch import BaseFetch
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 import importer_mocks
-from yum_importer.importer import YumImporter
-from yum_importer.importer_rpm import RPM_TYPE_ID
+from yum_importer import importer_rpm
+from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 from pulp_rpm.yum_plugin import util
 
 from pulp.plugins.model import Repository, Unit
@@ -68,7 +72,7 @@ class TestImportUnits(unittest.TestCase):
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         status, summary, details = importer._sync_repo(source_repo, sync_conduit, config)
         self.assertTrue(status)
-        self.assertEquals(summary["num_synced_new_rpms"], 3)
+        self.assertEquals(summary["packages"]["num_synced_new_rpms"], 3)
         # Confirm regular RPM files exist under self.pkg_dir
         pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
         self.assertEquals(len(pkgs), 3)

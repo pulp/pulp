@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -22,21 +22,28 @@ import xml.dom.minidom
 # 3rd Party
 import yum.comps
 
-import pulp.server
-
+import util
 log = logging.getLogger(__name__)
 
 def yum_group_to_model_group(obj):
     """
-    Translate a yum.comps.Group to a model.PackageGroup
+    Translate a yum.comps.Group to a dict
     @param obj: yum.comps.Group object
-    @return: model.PackageGroup object
+    @return: dict
     """
-    grp = pulp.server.db.model.PackageGroup(obj.groupid, obj.name,
-        obj.description, obj.user_visible, obj.display_order, obj.default, 
-        obj.langonly)
+    grp = {}
+    grp['id'] = obj.groupid
+    grp['name'] = obj.name
+    grp['description'] = obj.description
+    grp['user_visible'] = obj.user_visible
+    grp['display_order'] = obj.display_order
+    grp['default'] = obj.default
+    grp['langonly'] = obj.langonly
+    grp['mandatory_package_names'] = []
     grp['mandatory_package_names'].extend(obj.mandatory_packages.keys())
+    grp['optional_package_names'] = []
     grp['optional_package_names'].extend(obj.optional_packages.keys())
+    grp['default_package_names'] = []
     grp['default_package_names'].extend(obj.default_packages.keys())
     grp['conditional_package_names'] = obj.conditional_packages
     grp['translated_name'] = obj.translated_name
@@ -45,22 +52,27 @@ def yum_group_to_model_group(obj):
 
 def yum_category_to_model_category(obj):
     """
-    Translate a yum.comps.Category to a model.PackageGroupCategory
+    Translate a yum.comps.Category to a dict
     @param obj: yum.comps.Category object
-    @return: model.PackageGroupCategory object
+    @return: dict
     """
-    ctg = pulp.server.db.model.PackageGroupCategory(obj.categoryid,
-        obj.name, obj.description, obj.display_order)
+    ctg = {}
+    ctg['id'] = obj.categoryid
+    ctg['name'] = obj.name
+    ctg['description'] = obj.description
+    ctg['display_order'] = obj.display_order
+    ctg['packagegroupids'] = []
     groupids = [grp for grp in obj.groups]
     ctg['packagegroupids'].extend(groupids)
     ctg['translated_name'] = obj.translated_name
     ctg['translated_description'] = obj.translated_description
     return ctg
 
-def model_group_to_yum_group(obj):
+def dict_to_yum_group(obj):
     """
-    Translate a model.PackageGroup to a yum.comps.Group
-    @param obj: model.PackageGroup obj
+    Translate a package group dict to a yum.comps.Group
+    @param obj: package group dict
+    @type obj: dict
     @return: yum.comps.Group object
     """
     grp = yum.comps.Group()
@@ -86,12 +98,12 @@ def model_group_to_yum_group(obj):
                 obj['conditional_package_names'][pkgname]
     return grp
 
-def model_category_to_yum_category(obj):
+def dict_to_yum_category(obj):
     """
-    Translate a model.PackageGroupCategory to an object that 
+    Translate a package category dict to an object that 
     yum.comps.Comps can work with
-    @param obj: model.PackageGroupCategory object
-    @return: yum.comps.Category
+    @param obj: package category dict
+    @return: dict
     """
     cat = yum.comps.Category()
     cat.name = obj['name']
@@ -235,12 +247,12 @@ def update_repomd_xml_file(repomd_path, comps_path):
 
     # Copy comps_f to a new file name prepending the sha256sum to the file name
     comps_orig = comps_path
-    compsxml_checksum = pulp.server.util.get_file_checksum(hashtype="sha",
+    compsxml_checksum = util.get_file_checksum(hashtype="sha",
             filename=comps_orig)
     comps_path = os.path.join(os.path.split(comps_orig)[0],
         "%s-%s" % (compsxml_checksum, os.path.split(comps_orig)[1]))
     shutil.copyfile(comps_orig, comps_path)
-    compsxml_timestamp = pulp.server.util.get_file_timestamp(comps_path)
+    compsxml_timestamp = util.get_file_timestamp(comps_path)
     # Create gzipped version of comps.xml
     comps_gz_path_orig = "%s.gz" % (comps_orig)
     f_in = open(comps_path, 'rb')
@@ -250,14 +262,14 @@ def update_repomd_xml_file(repomd_path, comps_path):
     finally:
         f_in.close()
         f_out.close()
-    compsxml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha",
+    compsxml_gz_checksum = util.get_file_checksum(hashtype="sha",
         filename=comps_gz_path_orig)
     comps_gz_path = os.path.join(os.path.split(comps_orig)[0],
         "%s-%s.gz" % (compsxml_gz_checksum, os.path.split(comps_orig)[1]))
     shutil.move(comps_gz_path_orig, comps_gz_path)
-    compsxml_gz_timestamp = pulp.server.util.get_file_timestamp(comps_gz_path)
+    compsxml_gz_timestamp = util.get_file_timestamp(comps_gz_path)
     # Save current group and group_gz file paths so we may cleanup after the update
-    old_mddata = pulp.server.util.get_repomd_filetype_dump(repomd_path)
+    old_mddata = util.get_repomd_filetype_dump(repomd_path)
 
     try:
         # Update repomd.xml with the new comps information
@@ -280,7 +292,7 @@ def update_repomd_xml_file(repomd_path, comps_path):
         log.error(e)
         log.error("Unable to update group info for %s" % (repomd_path))
         return False
-    current_mddata = pulp.server.util.get_repomd_filetype_dump(repomd_path)
+    current_mddata = util.get_repomd_filetype_dump(repomd_path)
     # Remove old groups and groups_gz
     if old_mddata.has_key("group") and old_mddata["group"].has_key("location"):
         group_path = os.path.join(os.path.dirname(repomd_path), "../", old_mddata["group"]["location"])
