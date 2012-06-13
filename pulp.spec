@@ -98,6 +98,14 @@ cp etc/rc.d/init.d/* %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
+popd # platform
+
+# Builtins
+pushd builtins
+cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
+cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
+popd
+
 %clean
 rm -rf %{buildroot}
 
@@ -107,7 +115,7 @@ rm -rf %{buildroot}
 ################################################################################
 
 %package server
-Summary: The pulp platform server.
+Summary: The pulp platform server
 Requires: %{name}-common = %{version}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
@@ -174,7 +182,7 @@ Pulp provides replication, access, and accounting for software repositories.
 ################################################################################
 
 %package -n python-pulp-common
-Summary: Pulp common python packages.
+Summary: Pulp common python packages
 Group: Development/Languages
 
 %description -n python-pulp-common
@@ -193,7 +201,7 @@ A collection of resources that are common between the pulp server and client.
 ################################################################################
 
 %package -n python-pulp-bindings
-Summary: Pulp REST bindings for python.
+Summary: Pulp REST bindings for python
 Group: Development/Languages
 
 %description -n python-pulp-bindings
@@ -210,7 +218,7 @@ The Pulp REST API bindings for python.
 ################################################################################
 
 %package -n python-pulp-client-lib
-Summary: Pulp client extensions framework.
+Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: python-%{name}-common = %{version}
 Requires: python-okaara >= 1.0.12
@@ -229,7 +237,7 @@ The Pulp client extensions framework and utilities.
 ################################################################################
 
 %package -n python-pulp-agent-lib
-Summary: Pulp agent handler framework.
+Summary: Pulp agent handler framework
 Group: Development/Languages
 Requires: python-%{name}-common = %{version}
 
@@ -265,9 +273,30 @@ synching, and to kick off remote actions on consumers.
 %defattr(-,root,root,-)
 %dir %{_sysconfdir}/%{name}/admin
 %dir %{_sysconfdir}/%{name}/admin/conf.d
-%dir %{_usr}/lib/%{name}/admin/extensions
-%config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
+%dir %{_usr}/lib/%{name}/admin/extensions/
+%dir %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
+%doc
+
+
+################################################################################
+# Admin (builtin) Extensions
+################################################################################
+
+%package builtin-admin-extensions
+Summary: The builtin admin client extensions
+Requires: %{name}-admin-client = %{version}
+
+%description builtin-admin-extensions
+A tool used to administer a pulp consumer.
+
+%files builtin-admin-extensions
+%defattr(-,root,root,-)
+%{_usr}/lib/%{name}/admin/extensions/pulp_admin_auth/
+%{_usr}/lib/%{name}/admin/extensions/pulp_admin_consumer/
+%{_usr}/lib/%{name}/admin/extensions/pulp_repo/
+%{_usr}/lib/%{name}/admin/extensions/pulp_server_info/
+%{_usr}/lib/%{name}/admin/extensions/pulp_tasks/
 %doc
 
 
@@ -288,9 +317,26 @@ A tool used to administer a pulp consumer.
 %defattr(-,root,root,-)
 %dir %{_sysconfdir}/%{name}/consumer
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
-%dir %{_usr}/lib/%{name}/admin/extensions
+%dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
 %{_bindir}/%{name}-consumer
+%doc
+
+
+################################################################################
+# Consumer (builtin) Extensions
+################################################################################
+
+%package builtin-consumer-extensions
+Summary: The builtin consumer client extensions
+Requires: %{name}-consumer-client = %{version}
+
+%description builtin-consumer-extensions
+A tool used to administer a pulp consumer.
+
+%files builtin-consumer-extensions
+%defattr(-,root,root,-)
+%{_usr}/lib/%{name}/consumer/extensions/pulp_consumer/
 %doc
 
 
@@ -299,7 +345,7 @@ A tool used to administer a pulp consumer.
 ################################################################################
 
 %package agent
-Summary: The Pulp agent.
+Summary: The Pulp agent
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
 
