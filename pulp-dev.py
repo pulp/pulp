@@ -78,12 +78,13 @@ DIR_ADMIN_EXTENSIONS = '/usr/lib/pulp/admin/extensions/'
 DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 
 LINKS = (
-    ('builtins/extensions/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
-    ('builtins/extensions/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
-    ('builtins/extensions/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
-    ('builtins/extensions/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
-    ('builtins/extensions/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
-    ('builtins/extensions/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
+    ('builtins/extensions/admin/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
+    ('builtins/extensions/admin/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
+    ('builtins/extensions/admin/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
+    ('builtins/extensions/admin/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
+    ('builtins/extensions/admin/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
+
+    ('builtins/extensions/consumer/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
 
     ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
     ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
@@ -112,16 +113,18 @@ LINKS = (
     ('rpm-support/etc/pulp/agent/handler/linux.conf', '/etc/pulp/agent/handler/linux.conf'),
     ('rpm-support/etc/yum/pluginconf.d/pulp-profile-update.conf', '/etc/yum/pluginconf.d/pulp-profile-update.conf'),
 
-    ('rpm-support/extensions/rpm_admin_consumer', DIR_ADMIN_EXTENSIONS + 'rpm_admin_consumer'),
-    ('rpm-support/extensions/rpm_repo', DIR_ADMIN_EXTENSIONS + 'rpm_repo'),
-    ('rpm-support/extensions/rpm_sync', DIR_ADMIN_EXTENSIONS + 'rpm_sync'),
-    ('rpm-support/extensions/rpm_units_copy', DIR_ADMIN_EXTENSIONS + 'rpm_units_copy'),
-    ('rpm-support/extensions/rpm_units_search', DIR_ADMIN_EXTENSIONS + 'rpm_units_search'),
-    ('rpm-support/extensions/rpm_upload', DIR_ADMIN_EXTENSIONS + 'rpm_upload'),
+    ('rpm-support/extensions/admin/rpm_admin_consumer', DIR_ADMIN_EXTENSIONS + 'rpm_admin_consumer'),
+    ('rpm-support/extensions/admin/rpm_repo', DIR_ADMIN_EXTENSIONS + 'rpm_repo'),
+    ('rpm-support/extensions/admin/rpm_sync', DIR_ADMIN_EXTENSIONS + 'rpm_sync'),
+    ('rpm-support/extensions/admin/rpm_units_copy', DIR_ADMIN_EXTENSIONS + 'rpm_units_copy'),
+    ('rpm-support/extensions/admin/rpm_units_search', DIR_ADMIN_EXTENSIONS + 'rpm_units_search'),
+    ('rpm-support/extensions/admin/rpm_upload', DIR_ADMIN_EXTENSIONS + 'rpm_upload'),
 
-    ('rpm-support/handlers/rpm.py', '/usr/lib/pulp/agent/handler/rpm.py'),
-    ('rpm-support/handlers/bind.py', '/usr/lib/pulp/agent/handler/bind.py'),
-    ('rpm-support/handlers/linux.py', '/usr/lib/pulp/agent/handler/linux.py'),
+    ('rpm-support/extensions/consumer/rpm_consumer', DIR_CONSUMER_EXTENSIONS + 'rpm_consumer'),
+
+    ('rpm-support/handlers/rpm.py', '/usr/lib/pulp/agent/handlers/rpm.py'),
+    ('rpm-support/handlers/bind.py', '/usr/lib/pulp/agent/handlers/bind.py'),
+    ('rpm-support/handlers/linux.py', '/usr/lib/pulp/agent/handlers/linux.py'),
 
     ('rpm-support/plugins/types/rpm_support.json', '/var/lib/pulp/plugins/types/rpm_support.json'),
     ('rpm-support/plugins/importers/yum_importer', '/var/lib/pulp/plugins/importers/yum_importer'),

@@ -15,12 +15,12 @@ import copy
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
-import pulp_tasks.pulp_cli
-
 import base
 
 from pulp.client.extensions.exceptions import NotFoundException, PulpServerException
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin/')
+from pulp_tasks import pulp_cli
 
 # -- constants ----------------------------------------------------------------
 
@@ -57,7 +57,7 @@ class AllTasksTests(base.PulpClientTests):
     def setUp(self):
         super(AllTasksTests, self).setUp()
 
-        self.all_tasks_section = pulp_tasks.pulp_cli.AllTasksSection(self.context, 'tasks', 'desc')
+        self.all_tasks_section = pulp_cli.AllTasksSection(self.context, 'tasks', 'desc')
 
     def test_list_no_tasks(self):
         # Setup
@@ -195,7 +195,7 @@ class RepoTasksTests(base.PulpClientTests):
     def setUp(self):
         super(RepoTasksTests, self).setUp()
 
-        self.repo_tasks_section = pulp_tasks.pulp_cli.RepoTasksSection(self.context, 'tasks', 'desc')
+        self.repo_tasks_section = pulp_cli.RepoTasksSection(self.context, 'tasks', 'desc')
 
     def test_list(self):
         # Setup

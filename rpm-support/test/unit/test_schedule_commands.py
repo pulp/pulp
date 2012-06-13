@@ -18,7 +18,7 @@ import sys
 
 import base
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 import rpm_sync.schedule as commands # these will likely move out of this package
 
 from pulp.bindings.responses import Response

@@ -14,7 +14,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions')
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 
 import base
 import rpm_units_search.pulp_cli
