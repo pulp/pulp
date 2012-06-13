@@ -347,7 +347,7 @@ def add_repo_options(command, is_update):
 
     # Synchronization Options
     sync_group.add_option(PulpCliOption('--only-newest', 'if "true", only the newest version of a given package is downloaded', required=False))
-    sync_group.add_option(PulpCliOption('--skip-types', 'comma-separated list of types to synchronize, if omitted all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
+    sync_group.add_option(PulpCliOption('--skip-types', 'comma-separated list of types to omit when synchronizing, if not specified all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
     sync_group.add_option(PulpCliOption('--verify-size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--verify-checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
 
