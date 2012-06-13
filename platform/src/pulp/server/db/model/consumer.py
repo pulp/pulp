@@ -41,7 +41,7 @@ class Consumer(Model):
     @type certificate: str
     """
 
-    collection_name = 'gc_consumers'
+    collection_name = 'consumers'
     unique_indices = ('id',)
     search_indices = ('notes',)
 
@@ -69,7 +69,7 @@ class Bind(Model):
     @type distributor_id: str
     """
 
-    collection_name = 'gc_bind'
+    collection_name = 'consumer_bindings'
     unique_indices = (
         ('repo_id', 'distributor_id', 'consumer_id'),
     )
@@ -110,7 +110,7 @@ class ConsumerHistoryEvent(Model):
     @param details: event details
     @type details: dict
     """
-    collection_name = 'gc_consumer_history'
+    collection_name = 'consumer_history'
     search_indices = ('consumer_id', 'originator', 'type', )
 
     def __init__(self, consumer_id, originator, type, details):

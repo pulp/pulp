@@ -46,7 +46,7 @@ class Repo(Model):
     @type metadata: dict
     """
 
-    collection_name = 'gc_repositories'
+    collection_name = 'repos'
     unique_indices = ('id',)
 
     def __init__(self, id, display_name, description=None, notes=None):
@@ -97,7 +97,7 @@ class RepoImporter(Model):
     @type last_sync: str
     """
 
-    collection_name = 'gc_repo_importers'
+    collection_name = 'repo_importers'
     unique_indices = ( ('repo_id', 'id'), )
 
     def __init__(self, repo_id, id, importer_type_id, config):
@@ -148,7 +148,7 @@ class RepoDistributor(Model):
     @type last_publish: str
     """
 
-    collection_name = 'gc_repo_distributors'
+    collection_name = 'repo_distributors'
     unique_indices = ( ('repo_id', 'id'), )
 
     def __init__(self, repo_id, id, distributor_type_id, config, auto_publish):
@@ -205,7 +205,7 @@ class RepoContentUnit(Model):
     @type updated: str
     """
 
-    collection_name = 'gc_repo_content_unit'
+    collection_name = 'repo_content_units'
 
     # Make sure you understand how the order of these affects mongo before
     # modifying the following index
@@ -238,7 +238,7 @@ class RepoSyncResult(Model):
     Stores the results of a repo sync.
     """
 
-    collection_name = 'gc_repo_sync_result'
+    collection_name = 'repo_sync_results'
 
     RESULT_SUCCESS = 'success'
     RESULT_FAILED = 'failed'
@@ -360,7 +360,7 @@ class RepoPublishResult(Model):
     Stores the results of a repo publish.
     """
 
-    collection_name = 'gc_repo_publish_result'
+    collection_name = 'repo_publish_results'
 
     RESULT_SUCCESS = 'success'
     RESULT_FAILED = 'failed'
