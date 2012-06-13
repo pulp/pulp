@@ -22,6 +22,6 @@ import pulp.client.launcher
 
 if __name__ == "__main__":
     config_file = '/etc/pulp/consumer/consumer.conf'
-    override_config_file = os.path.expanduser('~/.pulp/v2_consumer.conf')
+    override_config_file = os.path.expanduser('~/.pulp/consumer.conf')
 
     sys.exit(pulp.client.launcher.main(config_file, override_config_file))
