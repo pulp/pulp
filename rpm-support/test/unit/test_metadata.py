@@ -23,15 +23,14 @@ import traceback
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/importers/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../plugins/distributors/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 from yum_distributor import metadata
 
 from pulp.plugins.model import Repository
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../yum_importer")
 import distributor_mocks
 
 class TestMetadata(unittest.TestCase):
