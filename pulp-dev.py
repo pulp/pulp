@@ -30,7 +30,6 @@ DIRS = (
     '/etc/pulp/distributor',
     '/etc/pulp/importer',
     '/etc/pulp/agent',
-    '/etc/pulp/agent/handler',
     '/etc/pulp/agent/conf.d',
     '/etc/gofer',
     '/etc/gofer/plugins',
@@ -108,9 +107,9 @@ LINKS = (
 
     ('rpm-support/etc/httpd/conf.d/pulp_rpm.conf', '/etc/httpd/conf.d/pulp_rpm.conf'),
     ('rpm-support/etc/pulp/repo_auth.conf', '/etc/pulp/repo_auth.conf'),
-    ('rpm-support/etc/pulp/agent/handler/rpm.conf', '/etc/pulp/agent/handler/rpm.conf'),
-    ('rpm-support/etc/pulp/agent/handler/bind.conf', '/etc/pulp/agent/handler/bind.conf'),
-    ('rpm-support/etc/pulp/agent/handler/linux.conf', '/etc/pulp/agent/handler/linux.conf'),
+    ('rpm-support/etc/pulp/agent/conf.d/rpm.conf', '/etc/pulp/agent/conf.d/rpm.conf'),
+    ('rpm-support/etc/pulp/agent/conf.d/bind.conf', '/etc/pulp/agent/conf.d/bind.conf'),
+    ('rpm-support/etc/pulp/agent/conf.d/linux.conf', '/etc/pulp/agent/conf.d/linux.conf'),
     ('rpm-support/etc/yum/pluginconf.d/pulp-profile-update.conf', '/etc/yum/pluginconf.d/pulp-profile-update.conf'),
 
     ('rpm-support/extensions/admin/rpm_admin_consumer', DIR_ADMIN_EXTENSIONS + 'rpm_admin_consumer'),
