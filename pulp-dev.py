@@ -30,6 +30,7 @@ DIRS = (
     '/etc/pulp/distributor',
     '/etc/pulp/importer',
     '/etc/pulp/agent',
+    '/etc/pulp/agent/handler',
     '/etc/pulp/agent/conf.d',
     '/etc/gofer',
     '/etc/gofer/plugins',
