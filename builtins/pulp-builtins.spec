@@ -1,3 +1,18 @@
+# Copyright (c) 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0
+
+
+################################################################################
+# Pulp Builtins
+################################################################################
 
 Name: pulp-builtins
 Version: 0.0.296
@@ -6,13 +21,11 @@ Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://fedorahosted.org/releases/p/u/pulp-builtins/%{name}-%{version}.tar.gz
+Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildArch:      noarch
-BuildRequires:  python2-devel
-BuildRequires:  python-setuptools
-BuildRequires:  python-nose
-BuildRequires:  rpm-python
+BuildArch: noarch
+BuildRequires: python2-devel
+BuildRequires: rpm-python
 
 %description
 The pulp project provided generic extensions.
@@ -25,13 +38,13 @@ The pulp project provided generic extensions.
 %install
 
 # Directories
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 
 
 # Extensions
-cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
-cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
+cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/pulp/admin/extensions
+cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 
 %clean
 rm -rf %{buildroot}
@@ -43,18 +56,18 @@ rm -rf %{buildroot}
 
 %package admin-extensions
 Summary: The builtin admin client extensions
-Requires: %{name}-admin-client = %{version}
+Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
 A tool used to administer a pulp consumer.
 
 %files admin-extensions
 %defattr(-,root,root,-)
-%{_usr}/lib/%{name}/admin/extensions/pulp_admin_auth/
-%{_usr}/lib/%{name}/admin/extensions/pulp_admin_consumer/
-%{_usr}/lib/%{name}/admin/extensions/pulp_repo/
-%{_usr}/lib/%{name}/admin/extensions/pulp_server_info/
-%{_usr}/lib/%{name}/admin/extensions/pulp_tasks/
+%{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
+%{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
+%{_usr}/lib/pulp/admin/extensions/pulp_repo/
+%{_usr}/lib/pulp/admin/extensions/pulp_server_info/
+%{_usr}/lib/pulp/admin/extensions/pulp_tasks/
 %doc
 
 
@@ -64,14 +77,14 @@ A tool used to administer a pulp consumer.
 
 %package consumer-extensions
 Summary: The builtin consumer client extensions
-Requires: %{name}-consumer-client = %{version}
+Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
 A tool used to administer a pulp consumer.
 
 %files consumer-extensions
 %defattr(-,root,root,-)
-%{_usr}/lib/%{name}/consumer/extensions/pulp_consumer/
+%{_usr}/lib/pulp/consumer/extensions/pulp_consumer/
 %doc
 
 
