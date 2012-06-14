@@ -58,6 +58,11 @@ name=john
 age=10
 """ % VALID
 
+OVERRIDE_PROPERTIES = """
+[server]
+url=http://bar.com
+"""
+
 MISSING_REQUIRED_SECTION = """
 [limits]
 threads=10
@@ -233,6 +238,28 @@ class TestConfigValidator(unittest.TestCase):
         self.assertEquals(v, None)
         v = cfg.xxx
         self.assertEquals(v, {})
+
+    def test_override(self):
+        # Setup
+        valid_fp = StringIO(VALID)
+        override_fp = StringIO(OVERRIDE_PROPERTIES)
+
+        config = Config(valid_fp, override_fp)
+
+        # Test
+        value = config['server']['url']
+
+        # Verify
+        self.assertEqual(value, 'http://bar.com')
+
+    def test_has_option(self):
+        # Setup
+        config = self.read(VALID)
+
+        # Test
+        self.assertTrue(config.has_option('server', 'url'))
+        self.assertTrue(not config.has_option('server', 'foo'))
+        self.assertTrue(not config.has_option('bar', 'foo'))
 
     def read(self, s, filter=None):
         fp = StringIO(s)

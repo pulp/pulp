@@ -15,6 +15,7 @@ and agent handlers.
 
 The entry point into this module is the Config class. It accepts one or more
 files to load and after instantiation will be used to access the values within.
+The files are loaded in order and the last value for a property is used.
 
 Example usage:
   config = Config('base.conf', 'override.conf')
@@ -243,11 +244,10 @@ class Config(dict):
         for s in cfg:
             if not filter.match(s):
                 continue
-            section = {}
+            section = self.setdefault(s, {})
             for p in cfg[s]:
                 v = getattr(cfg[s], p)
                 section[p] = v
-            self[s] = section
 
     def update(self, other):
         """
@@ -303,6 +303,13 @@ class Config(dict):
         @raise Unparsable: if the value is not a valid boolean identifier
         """
         return parse_bool(value)
+
+    def has_option(self, section_name, property_name):
+        """
+        @return: true if the section and property exist; false if either are
+                 missing
+        """
+        return section_name in self and property_name in self[section_name]
 
     def __setitem__(self, name, value):
         """
