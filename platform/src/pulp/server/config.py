@@ -22,12 +22,6 @@ config = None # ConfigParser.SafeConfigParser instance
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
-    'auditing': {
-        'audit_events': 'false',
-        'events_file': '/var/log/pulp/events.log',
-        'lifetime': '90',
-        'backups': '4',
-    },
     'cds': {
         'sync_timeout': '10:7200',
     },
@@ -47,9 +41,6 @@ _default_values = {
         'send_enabled': 'false',
         'recv_enabled': 'false',
     },
-    'exception_handler': {
-        'debug': 'false',
-    },
     # XXX should 'ldap' be in here or not?
     'logs': {
         'config': '/etc/pulp/logging/basic.cfg',
@@ -65,12 +56,6 @@ _default_values = {
         'url': 'tcp://localhost:5672',
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
-    },
-    'repos': {
-        'content_url': 'https://cdn.redhat.com/',
-        'content_cert_location': '/etc/pki/content',
-        'use_entitlement_certs': 'false',
-        'default_to_published': 'true',
     },
     'scheduler': {
         'dispatch_interval': '30',
@@ -94,27 +79,12 @@ _default_values = {
         'default_password': 'admin',
         'debugging_mode': 'false',
     },
-    'tasking': {
-        'concurrency_threshold': '4',
-        'schedule_threshold': '5 minutes',
-        'failure_threshold': '-1',
-    },
     'tasks': {
         'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
         'create_weight': '0',
         'publish_weight': '1',
         'sync_weight': '2',
-    },
-    'yum': {
-        'task_weight': '2',
-        'threads': '5',
-        'limit_in_KB': '0',
-        'verify_size': 'true',
-        'verify_checksum': 'true',
-        'remove_old_versions': 'false',
-        'num_old_pkgs_keep': '2',
-        # XXX does proxy_url, proxy_port, proxy_user, proxy_pass belong here?
     },
 }
 
