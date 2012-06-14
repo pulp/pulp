@@ -22,7 +22,6 @@ import base
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
 from pulp.server.auth import authorization, principal
-from pulp.server.tasking.task import Task
 
 
 class TestAuthorization(base.PulpServerTests):
@@ -60,11 +59,6 @@ class TestAuthorization(base.PulpServerTests):
         return '/%s/' % '/'.join(''.join(random.sample(self.alhpa_num,
                                                        random.randint(6, 10)))
                                  for i in range(random.randint(2, 4)))
-
-    def _create_task(self):
-        def _noop():
-            pass
-        return Task(_noop)
 
     # test individual user permissions
 
@@ -419,22 +413,6 @@ class TestAuthorization(base.PulpServerTests):
         self.assertFalse(authorization.is_authorized(s, u, authorization.UPDATE))
         self.assertFalse(authorization.is_authorized(s, u, authorization.DELETE))
         self.assertFalse(authorization.is_authorized(s, u, authorization.EXECUTE))
-
-    # test task auto-permissions
-
-    def test_task_permissions(self):
-        u = self._create_user()
-        t = self._create_task()
-        r = '/tasks/%s/' % t.id
-        principal.set_principal(u)
-        grant = authorization.GrantPermissionsForTask()
-        grant(t)
-        self.assertTrue(authorization.is_authorized(r, u, authorization.READ))
-        self.assertTrue(authorization.is_authorized(r, u, authorization.DELETE))
-        revoke = authorization.RevokePermissionsForTask()
-        revoke(t)
-        self.assertFalse(authorization.is_authorized(r, u, authorization.READ))
-        self.assertFalse(authorization.is_authorized(r, u, authorization.DELETE))
 
 
 if __name__ == '__main__':
