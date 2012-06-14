@@ -28,16 +28,15 @@ Pulp provides replication, access, and accounting for software repositories.
 %setup -q
 
 %build
-pushd platform/src
+pushd src
 %{__python} setup.py build
 popd
 
 %install
 rm -rf %{buildroot}
-pushd platform/src
+pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
-pushd platform
 
 # Directories
 mkdir -p /srv
@@ -97,14 +96,6 @@ cp etc/rc.d/init.d/* %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
-
-popd # platform
-
-# Builtins
-pushd builtins
-cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
-cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
-popd
 
 %clean
 rm -rf %{buildroot}
@@ -280,27 +271,6 @@ synching, and to kick off remote actions on consumers.
 
 
 ################################################################################
-# Admin (builtin) Extensions
-################################################################################
-
-%package builtin-admin-extensions
-Summary: The builtin admin client extensions
-Requires: %{name}-admin-client = %{version}
-
-%description builtin-admin-extensions
-A tool used to administer a pulp consumer.
-
-%files builtin-admin-extensions
-%defattr(-,root,root,-)
-%{_usr}/lib/%{name}/admin/extensions/pulp_admin_auth/
-%{_usr}/lib/%{name}/admin/extensions/pulp_admin_consumer/
-%{_usr}/lib/%{name}/admin/extensions/pulp_repo/
-%{_usr}/lib/%{name}/admin/extensions/pulp_server_info/
-%{_usr}/lib/%{name}/admin/extensions/pulp_tasks/
-%doc
-
-
-################################################################################
 # Consumer Client (CLI)
 ################################################################################
 
@@ -320,23 +290,6 @@ A tool used to administer a pulp consumer.
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
 %{_bindir}/%{name}-consumer
-%doc
-
-
-################################################################################
-# Consumer (builtin) Extensions
-################################################################################
-
-%package builtin-consumer-extensions
-Summary: The builtin consumer client extensions
-Requires: %{name}-consumer-client = %{version}
-
-%description builtin-consumer-extensions
-A tool used to administer a pulp consumer.
-
-%files builtin-consumer-extensions
-%defattr(-,root,root,-)
-%{_usr}/lib/%{name}/consumer/extensions/pulp_consumer/
 %doc
 
 
