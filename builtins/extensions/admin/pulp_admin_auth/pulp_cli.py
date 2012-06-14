@@ -48,13 +48,13 @@ class LoginCommand(PulpCliCommand):
         certificate = self.context.server.actions.login(username, password).response_body
 
         # Save the certificate to the filesystem
-        id_cert_dir = self.context.config.get('filesystem', 'id_cert_dir')
+        id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         id_cert_dir = os.path.expanduser(id_cert_dir)
 
         if not os.path.exists(id_cert_dir):
             os.mkdir(id_cert_dir)
 
-        id_cert_name = self.context.config.get('filesystem', 'id_cert_filename')
+        id_cert_name = self.context.config['filesystem']['id_cert_filename']
 
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
 
@@ -90,9 +90,9 @@ class LogoutCommand(PulpCliCommand):
         self.context = context
 
     def logout(self):
-        id_cert_dir = self.context.config.get('filesystem', 'id_cert_dir')
+        id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         id_cert_dir = os.path.expanduser(id_cert_dir)
-        id_cert_name = self.context.config.get('filesystem', 'id_cert_filename')
+        id_cert_name = self.context.config['filesystem']['id_cert_filename']
 
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
 

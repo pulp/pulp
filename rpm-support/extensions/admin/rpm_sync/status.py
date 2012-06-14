@@ -68,7 +68,7 @@ def display_status(context, task_id):
 
     # If we're here, the sync should be running or hopefully about to run
     begin_spinner = context.prompt.create_spinner()
-    poll_frequency_in_seconds = context.config.getfloat('output', 'poll_frequency_in_seconds')
+    poll_frequency_in_seconds = float(context.config['output']['poll_frequency_in_seconds'])
 
     try:
         while not response.response_body.is_completed():

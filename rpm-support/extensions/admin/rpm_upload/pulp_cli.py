@@ -313,9 +313,9 @@ def _upload_manager(context):
     @return: initialized and ready to run upload manager instance
     @rtype:  UploadManager
     """
-    upload_working_dir = context.config.get('filesystem', 'upload_working_dir')
+    upload_working_dir = context.config['filesystem']['upload_working_dir']
     upload_working_dir = os.path.expanduser(upload_working_dir)
-    chunk_size = int(context.config.get('server', 'upload_chunk_size'))
+    chunk_size = int(context.config['server']['upload_chunk_size'])
     upload_manager = upload_lib.UploadManager(upload_working_dir, context.server, chunk_size)
     upload_manager.initialize()
     return upload_manager
