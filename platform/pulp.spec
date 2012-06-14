@@ -277,7 +277,7 @@ synching, and to kick off remote actions on consumers.
 %dir %{_sysconfdir}/%{name}/admin
 %dir %{_sysconfdir}/%{name}/admin/conf.d
 %dir %{_usr}/lib/%{name}/admin/extensions/
-%dir %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
+%config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc
 

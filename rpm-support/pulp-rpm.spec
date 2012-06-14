@@ -53,15 +53,17 @@ popd
 # Directories
 mkdir -p /srv
 mkdir -p %{buildroot}/%{_sysconfdir}/pulp
+mkdir -p %{buildroot}/%{_usr}/lib
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
+mkdir -p %{buildroot}/%{_usr}/lib/yum-plugins/
 
 # Configuration
 cp -R etc/* %{buildroot}/%{_sysconfdir}
 
-# Apache
+# WSGI
 cp -R srv %{buildroot}
 
 # Extensions
@@ -69,16 +71,43 @@ cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 
 # Agent Handlers
-cp handlers/* %{buildroot}/%{_usr}/lib/pulp/handlers
+cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 
 # Plugins
-cp -R plugins/* %{_usr}/lib/pulp/plugins
+cp -R plugins/* %{buildroot}/%{_usr}/lib/pulp/plugins
+
+# Yum (plugins)
+cp -R usr/lib/yum-plugins %{buildroot}/%{_usr}/lib
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
 %clean
 rm -rf %{buildroot}
+
+
+################################################################################
+# Plugins
+################################################################################
+
+%package plugins
+Summary: Pulp rpm plugins
+Requires: python-pulp-rpm-common = %{version}
+Requires: pulp-server = %{version}
+
+%description plugins
+The Pulp platform plugins.
+
+%files plugins
+%defattr(-,root,root,-)
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_rpm.conf
+%{_usr}/lib/pulp/plugins/types/rpm_support.json
+%{_usr}/lib/pulp/plugins/importers/yum_importer/
+%{_usr}/lib/pulp/plugins/distributors/yum_distributor/
+/srv/pulp/repo_auth.wsgi
+%doc
+
 
 
 ################################################################################
@@ -96,6 +125,7 @@ The Pulp rpm support common libraries.
 %files -n python-pulp-rpm-common
 %defattr(-,root,root,-)
 %{python_sitelib}/pulp_rpm/
+%{_sysconfdir}/yum.repos.d/pulp.repo
 %doc
 
 
@@ -141,26 +171,6 @@ The rpm extensions for the pulp consumer client.
 
 
 ################################################################################
-# Plugins
-################################################################################
-
-%package plugins
-Summary: Pulp rpm plugins
-Requires: python-pulp-rpm-common = %{version}
-Requires: pulp-server = %{version}
-
-%description plugins
-The Pulp platform plugins.
-
-%files plugins
-%defattr(-,root,root,-)
-%{_usr}/lib/pulp/plugins/types/rpm_support.json
-%{_usr}/lib/pulp/plugins/importers/yum_importer/
-%{_usr}/lib/pulp/plugins/distributors/yum_distributor/
-%doc
-
-
-################################################################################
 # Agent Handlers
 ################################################################################
 
@@ -177,10 +187,30 @@ The Pulp agent rpm handlers.
 %{_sysconfdir}/pulp/agent/conf.d/bind.conf
 %{_sysconfdir}/pulp/agent/conf.d/linux.conf
 %{_sysconfdir}/pulp/agent/conf.d/rpm.conf
-%{_usr}/lib/pulp/agent/handlers/bind.py
-%{_usr}/lib/pulp/agent/handlers/linux.py
-%{_usr}/lib/pulp/agent/handlers/rpm.py
+%{_usr}/lib/pulp/agent/handlers/bind.py*
+%{_usr}/lib/pulp/agent/handlers/linux.py*
+%{_usr}/lib/pulp/agent/handlers/rpm.py*
 %doc
+
+
+################################################################################
+# YUM Plugins
+################################################################################
+
+%package yumplugins
+Summary: Yum plugins participating in Pulp consumer operations
+Requires: python-pulp-rpm-common = %{version}
+Requires: pulp-server = %{version}
+
+%description yumplugins
+Yum plugins participating in Pulp consumer operations.
+
+%files yumplugins
+%defattr(-,root,root,-)
+%{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
+%{_usr}/lib/yum-plugins/pulp-profile-update.py*
+%doc
+
 
 
 ################################################################################
