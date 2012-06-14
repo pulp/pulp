@@ -149,7 +149,7 @@ Summary: Pulp rpm plugins
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
-%description cplugins
+%description plugins
 The Pulp platform plugins.
 
 %files plugins
