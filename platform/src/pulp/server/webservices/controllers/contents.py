@@ -43,11 +43,6 @@ class ContentTypesCollection(JSONController):
             collection.append(link)
         return self.ok(collection)
 
-    def OPTIONS(self):
-        link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET', 'POST']})
-        return self.ok(link)
-
     @auth_required(CREATE)
     def POST(self):
         """
@@ -81,11 +76,6 @@ class ContentTypeResource(JSONController):
         resource.update(links)
         return self.ok(resource)
 
-    def OPTIONS(self, type_id):
-        link = serialization.link.current_link_obj()
-        link.update({'methods': ['DELETE', 'GET', 'PUT']})
-        return self.ok(link)
-
     @auth_required(UPDATE)
     def PUT(self, type_id):
         """
@@ -111,11 +101,6 @@ class ContentUnitsCollection(JSONController):
             resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
             collection.append(resource)
         return self.ok(collection)
-
-    def OPTIONS(self, type_id):
-        link = serialization.link.current_link_obj()
-        link.update({'methods': ['GET', 'POST']})
-        return self.ok(link)
 
     @auth_required(CREATE)
     def POST(self, type_id):
@@ -148,11 +133,6 @@ class ContentUnitResource(JSONController):
         resource = serialization.content.content_unit_obj(unit)
         resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
         return self.ok(resource)
-
-    def OPTIONS(self, type_id, unit_id):
-        link = serialization.link.current_link_obj()
-        link.update({'methods': ['DELETE', 'GET', 'PUT']})
-        return self.ok(link)
 
     @auth_required(CREATE)
     def PUT(self, type_id, unit_id):
