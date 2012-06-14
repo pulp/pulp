@@ -19,7 +19,7 @@
 ################################################################################
 
 Name: pulp-rpm
-Version: 0.0.295
+Version: 0.0.296
 Release: 1%{?dist}
 Summary: RPM support for the Pulp platform.
 Group: Development/Languages
@@ -186,5 +186,8 @@ The Pulp agent rpm handlers.
 ################################################################################
 
 %changelog
+* Thu Jun 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.296-1
+- new package built with tito
+
 * Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.295-1
 - created.
