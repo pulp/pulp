@@ -78,7 +78,7 @@ BOOL_RE = re.compile(*BOOL)
 class ValidationException(Exception):
 
     def __init__(self, name):
-        super(ValidationException, self).__init__()
+        Exception.__init__(self)
 
         self.name = name
         self.path = ''
