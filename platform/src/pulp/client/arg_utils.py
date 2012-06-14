@@ -97,28 +97,6 @@ def convert_boolean_arguments(boolean_keys, args):
         else:
             raise InvalidConfig(_('Value for %(f)s must be either true or false' % {'f' : key}))
 
-def arg_to_bool(arg_value):
-    """
-    Applies the CLI convention for accepting text representations for booleans
-    and returns the boolean equivalent. If the value does not match the
-    convention, None is returned. The expectation is that the caller will check
-    for None and display an appropriate error message.
-
-    @param arg_value: value to parse
-    @type  arg_value: str
-
-    @return: boolean equivalent of the user-entered string; None if it cannot
-             be parsed
-    @rtype:  bool
-    """
-
-    if arg_value.strip().lower() == 'true':
-        return True
-    if arg_value.strip().lower() == 'false':
-        return False
-
-    return None
-
 def convert_file_contents(file_keys, args):
     """
     For each given key, if it is in the args dict this call will attempt to read
@@ -152,3 +130,65 @@ def convert_file_contents(file_keys, args):
             except:
                 raise InvalidConfig(_('File [%(f)s] cannot be read' % {'f' : filename}))
 
+def arg_to_bool(arg_value):
+    """
+    Applies the CLI convention for accepting text representations for booleans
+    and returns the boolean equivalent. If the value does not match the
+    convention, None is returned. The expectation is that the caller will check
+    for None and display an appropriate error message.
+
+    @param arg_value: value to parse
+    @type  arg_value: str
+
+    @return: boolean equivalent of the user-entered string; None if it cannot
+             be parsed
+    @rtype:  bool
+    """
+
+    if arg_value.strip().lower() == 'true':
+        return True
+    if arg_value.strip().lower() == 'false':
+        return False
+
+    return None
+
+def args_to_notes_dict(notes_list, include_none=True):
+    """
+    Applies the CLI convention for specifying arbitrary key/value pairs for
+    a resource. The expected format for each value in the provided list is
+    key=value. To indicate a note is to be removed, either key= or key="" is
+    allowed.
+
+    This call should be passed the list of notes to parse. This list is
+    typically gotten by specifying allow_multiple in the option definition.
+
+    The return value will be a dict with entries for each key/value pair parsed.
+
+    @param include_none: if true, keys with a value of none will be included
+           in the returned dict; otherwise, only keys with non-none values will
+           be present
+    @type  include_none: bool
+
+    @return: dict if one or more notes were specified; None otherwise
+
+    @raises InvalidConfig: if one or more of the notes is malformed
+    """
+    result = {}
+    for unparsed_note in notes_list:
+        pieces = unparsed_note.split('=', 1)
+
+        if len(pieces) < 2:
+            raise InvalidConfig(_('Notes must be specified in the format key=value'))
+
+        key = pieces[0]
+        value = pieces[1]
+
+        if value in (None, '', '""'):
+            value = None
+
+        if value is None and not include_none:
+            continue
+
+        result[key] = value
+
+    return result
