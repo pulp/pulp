@@ -1,6 +1,6 @@
 
 Name: pulp-builtins
-Version: 0.0.295
+Version: 0.0.296
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -73,5 +73,8 @@ A tool used to administer a pulp consumer.
 ################################################################################
 
 %changelog
+* Thu Jun 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.296-1
+- new package built with tito
+
 * Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.295-1
 - created.
