@@ -58,6 +58,36 @@ def initialize():
     _initialize_coordinator()
     _initialize_scheduler()
 
+# finalization -----------------------------------------------------------------
+
+def _finalize_coordinator():
+    global _COORDINATOR
+    assert _COORDINATOR is not None
+    _COORDINATOR = None
+
+
+def _finalize_scheduler():
+    global _SCHEDULER
+    assert _SCHEDULER is not None
+    _SCHEDULER.stop()
+    _SCHEDULER = None
+
+
+def _finalize_task_queue(clear_queued_calls):
+    global _TASK_QUEUE
+    assert _TASK_QUEUE is not None
+    _TASK_QUEUE.stop(clear_queued_calls)
+    _TASK_QUEUE = None
+
+
+def finalize(clear_queued_calls=False):
+    # NOTE this is not required for the pulp server, but is for unit testing
+    # order sensitive
+    # XXX implement pickling.finalize() ?
+    _finalize_scheduler()
+    _finalize_coordinator()
+    _finalize_task_queue(clear_queued_calls)
+
 # factory functions ------------------------------------------------------------
 
 def context():

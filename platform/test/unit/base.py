@@ -195,11 +195,7 @@ class PulpWebserviceTests(PulpServerTests):
         dispatch_factory.initialize()
 
     def teardown_async(self):
-        dispatch_factory._SCHEDULER.stop()
-        dispatch_factory._TASK_QUEUE.stop(clear_queued_calls=True)
-        dispatch_factory._SCHEDULER = None
-        dispatch_factory._COORDINATOR = None
-        dispatch_factory._TASK_QUEUE = None
+        dispatch_factory.finalize(clear_queued_calls=True)
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers)
