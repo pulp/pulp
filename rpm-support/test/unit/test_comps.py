@@ -34,7 +34,11 @@ class TestComps(unittest.TestCase):
         self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         self.temp_dir = tempfile.mkdtemp()
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
+        if not os.path.exists(self.pkg_dir):
+            os.makedirs(self.pkg_dir)
         self.working_dir = os.path.join(self.temp_dir, "working")
+        if not os.path.exists(self.working_dir):
+            os.makedirs(self.working_dir)
 
     def simulate_sync(self, repo, src):
         # Simulate a repo sync, copy the source contents to the repo.working_dir
