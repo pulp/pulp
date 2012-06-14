@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-12 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -24,7 +24,7 @@ from pulp.common import dateutils
 from pulp.server.compat import json
 from pulp.server.tasking.scheduler import (
     ImmediateScheduler, AtScheduler, IntervalScheduler)
-from pulp.server.webservices import http
+from pulp.server.webservices import http, serialization
 
 
 _log = logging.getLogger(__name__)
@@ -34,6 +34,27 @@ class JSONController(object):
     """
     Base controller class with convenience methods for JSON serialization
     """
+
+    # http methods ------------------------------------------------------------
+
+    def OPTIONS(self):
+        """
+        Handle an OPTIONS request from the client using introspection.
+
+        @return: serialized link object
+        """
+        all_methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
+        defined_methods = []
+        for attr in self.__dict__:
+            if attr not in all_methods:
+                continue
+            if not callable(self.__dict__[attr]):
+                continue
+            defined_methods.append(attr)
+        link = {'methods': defined_methods}
+        link.update(serialization.link.current_link_obj())
+        return self.ok(link)
+
     # input methods -----------------------------------------------------------
 
     def params(self):
