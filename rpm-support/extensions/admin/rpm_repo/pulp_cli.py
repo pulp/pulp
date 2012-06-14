@@ -121,7 +121,9 @@ class YumRepoCreateCommand(PulpCliCommand):
                 return
 
         try:
-            notes = args_to_notes_dict(kwargs['note'], include_none=False)
+            notes = None
+            if kwargs['note'] is not None:
+                notes = args_to_notes_dict(kwargs['note'], include_none=False)
             importer_config = args_to_importer_config(kwargs)
             distributor_config = args_to_distributor_config(kwargs)
         except InvalidConfig, e:
