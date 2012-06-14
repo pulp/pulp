@@ -24,6 +24,11 @@ The pulp project provided generic extensions.
 
 %install
 
+# Directories
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
+
+
 # Extensions
 cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
 cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
@@ -36,14 +41,14 @@ rm -rf %{buildroot}
 # Admin (builtin) Extensions
 ################################################################################
 
-%package builtin-admin-extensions
+%package admin-extensions
 Summary: The builtin admin client extensions
 Requires: %{name}-admin-client = %{version}
 
-%description builtin-admin-extensions
+%description admin-extensions
 A tool used to administer a pulp consumer.
 
-%files builtin-admin-extensions
+%files admin-extensions
 %defattr(-,root,root,-)
 %{_usr}/lib/%{name}/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/%{name}/admin/extensions/pulp_admin_consumer/
@@ -57,14 +62,14 @@ A tool used to administer a pulp consumer.
 # Consumer (builtin) Extensions
 ################################################################################
 
-%package builtin-consumer-extensions
+%package consumer-extensions
 Summary: The builtin consumer client extensions
 Requires: %{name}-consumer-client = %{version}
 
-%description builtin-consumer-extensions
+%description consumer-extensions
 A tool used to administer a pulp consumer.
 
-%files builtin-consumer-extensions
+%files consumer-extensions
 %defattr(-,root,root,-)
 %{_usr}/lib/%{name}/consumer/extensions/pulp_consumer/
 %doc
