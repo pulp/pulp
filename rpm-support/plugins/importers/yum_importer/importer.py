@@ -23,7 +23,7 @@ import time
 from yum_importer.comps import ImporterComps, PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID
 from yum_importer.distribution import DISTRO_TYPE_ID
 from yum_importer.drpm import DRPM_TYPE_ID
-from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID
+from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID, link_errata_rpm_units
 from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
 
 from pulp.plugins.importer import Importer
@@ -431,11 +431,24 @@ class YumImporter(Importer):
                 msg = "Error creating a symlink to repo working directory; Error %s" % e
                 _LOG.error(msg)
                 details['errors'].append(msg)
+            summary["state"] = "FINISHED"
             if len(details['errors']):
                 summary['num_errors'] = len(details['errors'])
+                summary["state"] = "FAILED"
                 return False, summary, details
             _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
-            return True, summary, details
+        elif type_id == "erratum":
+            try:
+                u = conduit.init_unit(type_id, unit_key, metadata, None)
+                conduit.save_unit(u)
+                link_errata_rpm_units(conduit, {unit_key['id']: u})
+            except Exception, e:
+                msg = "Error uploading errata unit %s; Error %s" % (unit_key['id'], e)
+                _LOG.error(msg)
+                details['errors'].append(msg)
+                summary['state'] = 'FAILED'
+            summary['state'] = 'FINISHED'
+        return True, summary, details
 
     def cancel_sync_repo(self):
         self.canceled = True
