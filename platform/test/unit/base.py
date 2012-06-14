@@ -89,8 +89,6 @@ class PulpServerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         PulpServerTests.CONFIG = load_test_config()
-
-        super(PulpServerTests, cls).setUpClass()
         connection.initialize()
         manager_factory.initialize()
 
@@ -143,7 +141,7 @@ class PulpWebserviceTests(PulpServerTests):
 
     @classmethod
     def setUpClass(cls):
-        super(PulpWebserviceTests, cls).setUpClass()
+        PulpServerTests.setUpClass()
 
         # The application setup is somewhat time consuming and really only needs
         # to be done once. We might be able to move it out to a single call for
