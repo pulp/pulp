@@ -14,14 +14,12 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
-################################################################################
-# Pulp
-################################################################################
+# ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
 Version: 0.0.296
 Release: 1%{?dist}
-Summary: RPM support for the Pulp platform.
+Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
@@ -34,7 +32,8 @@ BuildRequires:  python-nose
 BuildRequires:  rpm-python
 
 %description
-Provides RPM support for the Pulp platform.
+Provides a collection of platform plugins, client extensions and agent
+handlers that provide RPM support.
 
 %prep
 %setup -q
@@ -86,17 +85,16 @@ rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 rm -rf %{buildroot}
 
 
-################################################################################
-# Plugins
-################################################################################
+# ---- Plugins -----------------------------------------------------------------
 
 %package plugins
-Summary: Pulp rpm plugins
+Summary: Pulp RPM plugins
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
 %description plugins
-The Pulp platform plugins.
+Provides a collection of platform plugins that extend the Pulp platform
+to provide RPM specific support.
 
 %files plugins
 %defattr(-,root,root,-)
@@ -109,18 +107,15 @@ The Pulp platform plugins.
 %doc
 
 
-
-################################################################################
-# RPM Common
-################################################################################
+# ---- RPM Common --------------------------------------------------------------
 
 %package -n python-pulp-rpm-common
-Summary: Pulp rpm support common library
+Summary: Pulp RPM support common library
 Group: Development/Languages
 Requires: python-pulp-common = %{version}
 
 %description -n python-pulp-rpm-common
-The Pulp rpm support common libraries.
+A collection of components share between RPM plugins, extensions and handlers.
 
 %files -n python-pulp-rpm-common
 %defattr(-,root,root,-)
@@ -129,17 +124,17 @@ The Pulp rpm support common libraries.
 %doc
 
 
-################################################################################
-# Admin (builtin) Extensions
-################################################################################
+# ---- Admin (builtin) Extensions ----------------------------------------------
 
 %package admin-extensions
-Summary: The rpm admin client extensions
+Summary: The RPM admin client extensions
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
-The rpm extensions for the pulp admin client.
+A collection of extensions that supplement and override generic admin
+client capabilites with RPM specific features.
+
 
 %files admin-extensions
 %defattr(-,root,root,-)
@@ -152,17 +147,16 @@ The rpm extensions for the pulp admin client.
 %doc
 
 
-################################################################################
-# Consumer (builtin) Extensions
-################################################################################
+# ---- Consumer (builtin) Extensions -------------------------------------------
 
 %package consumer-extensions
-Summary: The rpm consumer client extensions
+Summary: The RPM consumer client extensions
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
-The rpm extensions for the pulp consumer client.
+A collection of extensions that supplement and override generic consumer
+client capabilites with RPM specific features.
 
 %files consumer-extensions
 %defattr(-,root,root,-)
@@ -170,9 +164,7 @@ The rpm extensions for the pulp consumer client.
 %doc
 
 
-################################################################################
-# Agent Handlers
-################################################################################
+# ---- Agent Handlers ----------------------------------------------------------
 
 %package handlers
 Summary: Pulp agent rpm handlers
@@ -180,7 +172,11 @@ Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
 %description handlers
-The Pulp agent rpm handlers.
+A collection of handlers that provide both Linux and RPM specific
+functionality within the Pulp agent.  This includes RPM install, update,
+uninstall; RPM profile reporting; binding through yum repository
+management and Linux specific commands such as system reboot.
+
 
 %files handlers
 %defattr(-,root,root,-)
@@ -193,17 +189,15 @@ The Pulp agent rpm handlers.
 %doc
 
 
-################################################################################
-# YUM Plugins
-################################################################################
+# ---- YUM Plugins -------------------------------------------------------------
 
 %package yumplugins
-Summary: Yum plugins participating in Pulp consumer operations
+Summary: Yum plugins supplementing in Pulp consumer operations
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
 %description yumplugins
-Yum plugins participating in Pulp consumer operations.
+A collection of yum plugins supplementing Pulp consumer operations.
 
 %files yumplugins
 %defattr(-,root,root,-)
@@ -213,7 +207,7 @@ Yum plugins participating in Pulp consumer operations.
 
 
 
-################################################################################
+
 
 %changelog
 * Thu Jun 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.296-1

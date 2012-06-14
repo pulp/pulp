@@ -10,9 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0
 
 
-################################################################################
-# Pulp Builtins
-################################################################################
+# ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
 Version: 0.0.296
@@ -50,16 +48,15 @@ cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 rm -rf %{buildroot}
 
 
-################################################################################
-# Admin (builtin) Extensions
-################################################################################
+# ---- Admin (client) Extensions -----------------------------------------------
 
 %package admin-extensions
 Summary: The builtin admin client extensions
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
-A tool used to administer a pulp consumer.
+A collection of extensions used to provide generic consumer
+client capabilites.
 
 %files admin-extensions
 %defattr(-,root,root,-)
@@ -71,16 +68,15 @@ A tool used to administer a pulp consumer.
 %doc
 
 
-################################################################################
-# Consumer (builtin) Extensions
-################################################################################
+# ---- Consumer (client) Extensions --------------------------------------------
 
 %package consumer-extensions
 Summary: The builtin consumer client extensions
 Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
-A tool used to administer a pulp consumer.
+A collection of extensions used to provide generic admin
+client capabilites.
 
 %files consumer-extensions
 %defattr(-,root,root,-)
@@ -88,7 +84,7 @@ A tool used to administer a pulp consumer.
 %doc
 
 
-################################################################################
+
 
 %changelog
 * Thu Jun 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.296-1

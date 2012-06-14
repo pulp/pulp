@@ -14,9 +14,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
-################################################################################
-# Pulp
-################################################################################
+# ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
 Version: 0.0.295
@@ -27,11 +25,11 @@ License: GPLv2
 URL: https://fedorahosted.org/pulp/
 Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildArch:      noarch
-BuildRequires:  python2-devel
-BuildRequires:  python-setuptools
-BuildRequires:  python-nose
-BuildRequires:  rpm-python
+BuildArch: noarch
+BuildRequires: python2-devel
+BuildRequires: python-setuptools
+BuildRequires: python-nose
+BuildRequires: rpm-python
 
 %description
 Pulp provides replication, access, and accounting for software repositories.
@@ -113,9 +111,7 @@ rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 rm -rf %{buildroot}
 
 
-################################################################################
-# Server
-################################################################################
+# ---- Server ------------------------------------------------------------------
 
 %package server
 Summary: The pulp platform server
@@ -180,16 +176,14 @@ Pulp provides replication, access, and accounting for software repositories.
 %doc
 
 
-################################################################################
-# Common
-################################################################################
+# ---- Common ------------------------------------------------------------------
 
 %package -n python-pulp-common
 Summary: Pulp common python packages
 Group: Development/Languages
 
 %description -n python-pulp-common
-A collection of resources that are common between the pulp server and client.
+A collection of components that are common between the pulp server and client.
 
 %files -n python-pulp-common
 %defattr(-,root,root,-)
@@ -199,9 +193,7 @@ A collection of resources that are common between the pulp server and client.
 %doc
 
 
-################################################################################
-# Client Bindings
-################################################################################
+# ---- Client Bindings ---------------------------------------------------------
 
 %package -n python-pulp-bindings
 Summary: Pulp REST bindings for python
@@ -216,9 +208,7 @@ The Pulp REST API bindings for python.
 %doc
 
 
-################################################################################
-# Client Extension Framework
-################################################################################
+# ---- Client Extension Framework -----------------------------------------------------
 
 %package -n python-pulp-client-lib
 Summary: Pulp client extensions framework
@@ -227,7 +217,7 @@ Requires: python-%{name}-common = %{version}
 Requires: python-okaara >= 1.0.12
 
 %description -n python-pulp-client-lib
-The Pulp client extensions framework and utilities.
+A framework for loading Pulp client extensions.
 
 %files -n python-pulp-client-lib
 %defattr(-,root,root,-)
@@ -235,9 +225,7 @@ The Pulp client extensions framework and utilities.
 %doc
 
 
-################################################################################
-# Agent Handler Framework
-################################################################################
+# ---- Agent Handler Framework -------------------------------------------------
 
 %package -n python-pulp-agent-lib
 Summary: Pulp agent handler framework
@@ -245,7 +233,8 @@ Group: Development/Languages
 Requires: python-%{name}-common = %{version}
 
 %description -n python-pulp-agent-lib
-The Pulp agent handler framework.
+A framework for loading agent handlers that provide support
+for content, bind and system specific operations.
 
 %files -n python-pulp-agent-lib
 %defattr(-,root,root,-)
@@ -257,9 +246,7 @@ The Pulp agent handler framework.
 %doc
 
 
-################################################################################
-# Admin Client (CLI)
-################################################################################
+# ---- Admin Client (CLI) ------------------------------------------------------
 
 %package admin-client
 Summary: Admin tool to administer the pulp server
@@ -282,9 +269,7 @@ synching, and to kick off remote actions on consumers.
 %doc
 
 
-################################################################################
-# Consumer Client (CLI)
-################################################################################
+# ---- Consumer Client (CLI) ---------------------------------------------------
 
 %package consumer-client
 Summary: Consumer tool to administer the pulp consumer.
@@ -305,9 +290,7 @@ A tool used to administer a pulp consumer.
 %doc
 
 
-################################################################################
-# Agent
-################################################################################
+# ---- Agent -------------------------------------------------------------------
 
 %package agent
 Summary: The Pulp agent
@@ -327,7 +310,6 @@ on a defined interval.
 %doc
 
 
-################################################################################
 
 %changelog
 * Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.295-1
