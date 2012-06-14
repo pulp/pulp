@@ -71,7 +71,7 @@ def _check_username_password_ldap(username, password=None):
     ldap_tls = False
     if config.has_option('ldap', 'tls'):
         ldap_tls = config.getboolean('ldap', 'tls')
-    ldap_server = ldap_connection(server=ldap_uri, tls=ldap_tls)
+    ldap_server = ldap_connection.LDAPConnection(server=ldap_uri, tls=ldap_tls)
     ldap_server.connect()
     user = None
     if password is not None:
