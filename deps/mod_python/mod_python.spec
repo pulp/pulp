@@ -3,7 +3,7 @@
 Summary: An embedded Python interpreter for the Apache HTTP Server
 Name: mod_python
 Version: 3.3.1
-Release: 14%{?dist}.3
+Release: 14%{?dist}.4
 Source: http://www.apache.org/dist/httpd/modpython/%{name}-%{version}.tgz
 Source1: python.conf
 Patch1: mod_python-3.1.3-ldflags.patch
@@ -63,6 +63,9 @@ cp -a doc-html/* $RPM_BUILD_ROOT%{contentdir}/manual/mod/mod_python/
 %{python_sitearch}/mod_python*
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 3.3.1-14.4
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Wed Jun 08 2011 John Matthews <jmatthew@redhat.com> 3.3.1-14.3
 - 
 
