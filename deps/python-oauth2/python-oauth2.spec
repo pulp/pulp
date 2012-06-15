@@ -5,7 +5,7 @@
 Name:			python-oauth2
 Summary:		Python support for improved oauth
 Version:		%{version}
-Release:		2.pulp%{?dist}
+Release:		3.pulp%{?dist}
 License:		MIT
 Group:			System Environment/Libraries
 Source0:		http://pypi.python.org/packages/source/o/oauth2/oauth2-%{version}.tar.gz
@@ -56,6 +56,9 @@ number of notable differences exist between this code and its forefathers:
 %{python_sitelib}/oauth2-%{version}-*.egg-info/
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 1.5.170-3.pulp
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Mon Nov 28 2011 John Matthews <jmatthews@redhat.com> 1.5.170-2.pulp
 - removed old sources (jconnor@redhat.com)
 - fixed release (jconnor@redhat.com)
