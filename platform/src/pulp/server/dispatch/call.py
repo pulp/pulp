@@ -91,10 +91,10 @@ class CallRequest(object):
     def callable_name(self):
         name = getattr(self.call, '__name__', 'UNKNOWN_CALL')
         cls = getattr(self.call, 'im_class', None)
-        if cls is not None:
-            class_name = getattr(cls, '__name__', 'UNKNOWN_CLASS')
-            return '.'.join((class_name, name))
-        return name
+        if cls is None:
+            return name
+        class_name = getattr(cls, '__name__', 'UNKNOWN_CLASS')
+        return '.'.join((class_name, name))
 
     def callable_args_reprs(self):
         return [repr(a) for a in self.args]
@@ -105,7 +105,13 @@ class CallRequest(object):
     def __str__(self):
         args = ', '.join(self.callable_args_reprs())
         kwargs = ', '.join(['%s=%s' % (k, v) for k, v in self.callable_kwargs_reprs().items()])
-        all_args = ', '.join((args, kwargs))
+        all_args = ''
+        if args and kwargs:
+            all_args = ', '.join((args, kwargs))
+        elif args:
+            all_args = args
+        elif kwargs:
+            all_args = kwargs
         return 'CallRequest: %s(%s)' % (self.callable_name(), all_args)
 
     # convenient resources management ------------------------------------------
