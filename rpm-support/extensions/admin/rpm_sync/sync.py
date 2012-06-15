@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-from rpm_sync import status
+from rpm_sync import status, tasks
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
@@ -84,7 +84,7 @@ class StatusCommand(PulpCliCommand):
         # Load the existing sync tasks
         existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
         if len(existing_sync_tasks) > 0:
-            task_id = task_utils.relevant_existing_task_id(existing_sync_tasks)
+            task_id = tasks.relevant_existing_task_id(existing_sync_tasks)
 
             msg = 'A sync task is queued on the server. Its progress will be tracked below.'
             self.context.prompt.render_paragraph(_(msg))
