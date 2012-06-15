@@ -210,6 +210,22 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.300-1
+- Align versions to: 300 (jortel@redhat.com)
+- update test repo metadata to be compatible with el5 (pkilambi@redhat.com)
+- Typo fix (jason.dobies@redhat.com)
+- Changed base class for rpm unit tests from 'base' to 'rpm_support_base'
+  (jmatthews@redhat.com)
+- Fixed reference that I have no idea how it broke (jason.dobies@redhat.com)
+- Updating unit test imports to work around failure seen with run_tests
+  (jmatthews@redhat.com)
+- YumImporter: configuring logging for yum importer unit tests
+  (jmatthews@redhat.com)
+- YumImporter: Cleaning up extra test dirs during tests & Adding configurable
+  Retry logic for grinder (jmatthews@redhat.com)
+- Better package summary/descriptions. (jortel@redhat.com)
+- pulp-rpm spec build fixes. (jortel@redhat.com)
+
 * Thu Jun 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.296-1
 - new package built with tito
 
