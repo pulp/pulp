@@ -15,6 +15,7 @@ import itertools
 import logging
 import pickle
 import traceback
+import uuid
 from gettext import gettext as _
 from types import NoneType, TracebackType
 
@@ -31,6 +32,8 @@ class CallRequest(object):
     """
     Call request class
     Represents an asynchronous call request
+    @ivar id: unique id for this call request
+    @type id: str
     @ivar call: python callable
     @type call: callable
     @ivar args: list of positional arguments for the callable
@@ -73,6 +76,7 @@ class CallRequest(object):
         assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
 
+        self.id = str(uuid.uuid4())
         self.call = call
         self.args = args or []
         self.kwargs = kwargs or {}
