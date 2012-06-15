@@ -271,6 +271,7 @@ class CallReport(object):
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
 
+        self.call_request_id = None
         self.response = response
         self.reasons = reasons or []
         self.state = state

@@ -63,6 +63,7 @@ class Task(object):
         self.queued_call_id = None
 
         self.call_report = call_report or call.CallReport()
+        self.call_report.call_request_id = self.call_request.id
         self.call_report.state = dispatch_constants.CALL_WAITING_STATE
         self.call_report.task_id = self.id
         self.call_report.tags.extend(self.call_request.tags)
