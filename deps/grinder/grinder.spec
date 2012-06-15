@@ -2,7 +2,7 @@
 
 Name: grinder
 Version: 0.1.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
@@ -59,6 +59,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jun 14 2012 John Matthews <jmatthews@redhat.com> 0.1.4-2
+- Removed old grinder-0.1.3.tar.gz (jmatthews@redhat.com)
+- Adding grinder 0.1.4 to deps (jmatthews@redhat.com)
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Thu Jun 14 2012 John Matthews <jmatthews@redhat.com> 0.1.4-1
 - Clean up temp dirs and Allow Retry attempts to be configurable
   (jmatthews@redhat.com)
