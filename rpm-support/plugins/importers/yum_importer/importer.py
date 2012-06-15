@@ -39,7 +39,8 @@ REQUIRED_CONFIG_KEYS = []
 OPTIONAL_CONFIG_KEYS = ['feed_url', 'ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
                         'proxy_url', 'proxy_port', 'proxy_pass', 'proxy_user',
                         'max_speed', 'verify_size', 'verify_checksum', 'num_threads',
-                        'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip_content_types', 'checksum_type']
+                        'newest', 'remove_old', 'num_old_packages', 'purge_orphaned', 'skip_content_types', 'checksum_type',
+                        'num_retries', 'retry_delay']
 ###
 # Config Options Explained
 ###
@@ -63,6 +64,8 @@ OPTIONAL_CONFIG_KEYS = ['feed_url', 'ssl_verify', 'ssl_ca_cert', 'ssl_client_cer
 # skip_content_types: List of what content types to skip during sync, options:
 #                     ["rpm", "drpm", "errata", "distribution", "packagegroup"]
 # checksum_type: checksum type to use for repodata; defaults to source checksum type or sha256
+# num_retries: Number of times to retry before declaring an error
+# retry_delay: Minimal number of seconds to wait before each retry
 
 class YumImporter(Importer):
     def __init__(self):
@@ -358,9 +361,6 @@ class YumImporter(Importer):
         errata_status, summary["errata"], details["errata"] = self.errata.sync(repo, sync_conduit, config, progress_callback)
 
         # sync groups (comps.xml) info
-        #comps_status = True
-        #summary["comps"] = {"NOT_YET_IMPLEMENTED":1}
-        #details["comps"] = {"NOT_YET_IMPLEMENTED":1}
         comps_status, summary["comps"], details["comps"] = self.comps.sync(repo, sync_conduit, config, progress_callback)
 
         return (rpm_status and errata_status and comps_status), summary, details
