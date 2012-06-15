@@ -27,6 +27,7 @@ react to it in the extension itself.
 
 from gettext import gettext as _
 import logging
+from M2Crypto import X509
 import os
 
 from pulp.bindings.exceptions import *
@@ -226,13 +227,38 @@ class ExceptionHandler:
 
         msg = 'Authentication failed.'
 
-        desc = 'This may occur if the user certificate has ' \
-               'expired. Please logout to remove the certificate and login again. ' \
-               'If credentials were specified, please double check the username and ' \
-               'password and attempt the request again.'
+        # If the certificate exists, parse the expiration date
+        id_cert_dir = self.config['filesystem']['id_cert_dir']
+        id_cert_dir = os.path.expanduser(id_cert_dir)
+        id_cert_name = self.config['filesystem']['id_cert_filename']
+        full_cert_path = os.path.join(id_cert_dir, id_cert_name)
+
+        expiration_date = None
+        try:
+            f = open(full_cert_path, 'r')
+            certificate = f.read()
+            f.close()
+
+            certificate_section = str(certificate[certificate.index('-----BEGIN CERTIFICATE'):])
+            x509_cert = X509.load_cert_string(certificate_section)
+            expiration_date = x509_cert.get_not_after()
+        except Exception:
+            # Leave the expiration_date as None and show generic login message
+            pass
+
+        if expiration_date:
+            desc = 'The session certificate expired on %(e)s. Use the login ' \
+            'command to begin a new session.'
+            desc = _(desc) % {'e' : expiration_date}
+        else:
+            desc = 'Use the login command to authenticate with the server and ' \
+            'downloaded a session certificate for use in future calls to this script. ' \
+            'If credentials were specified, please double check the username and ' \
+            'password and attempt the request again.'
+            desc = _(desc)
 
         self.prompt.render_failure_message(_(msg))
-        self.prompt.render_paragraph(_(desc))
+        self.prompt.render_paragraph(desc)
 
         return CODE_PERMISSIONS_EXCEPTION
 
@@ -304,4 +330,4 @@ class ExceptionHandler:
 
         @return: full path to the log file
         """
-        return self.config.get('logging', 'filename')
+        return self.config['logging']['filename']
