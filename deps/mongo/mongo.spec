@@ -1,6 +1,6 @@
 Name: mongo
 Version: 1.4.4
-Release: 0%{?dist}
+Release: 1%{?dist}
 Summary: mongo client shell and tools
 License: AGPLv3
 URL: http://www.mongodb.org
@@ -142,6 +142,9 @@ fi
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 1.4.4-1
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Thu Jul 08 2010 Mike McCune <mmccune@redhat.com> 1.4.4-0
 - upgrading to 1.4.4 (mmccune@redhat.com)
 
