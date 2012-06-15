@@ -3,7 +3,7 @@
 Summary: Creates a common metadata repository
 Name: createrepo
 Version: 0.9.8
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: %{name}-%{version}.tar.gz
@@ -48,6 +48,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.9.8-4
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Thu Jun 16 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.9.8-3
 - new package built with tito
 
