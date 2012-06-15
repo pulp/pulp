@@ -182,6 +182,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %package -n python-pulp-common
 Summary: Pulp common python packages
 Group: Development/Languages
+Obsoletes: pulp-common
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -215,7 +216,8 @@ The Pulp REST API bindings for python.
 Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: python-%{name}-common = %{version}
-Requires: python-okaara >= 1.0.12
+Requires: python-okaara >= 1.0.18
+Obsoletes: pulp-client-lib
 
 %description -n python-pulp-client-lib
 A framework for loading Pulp client extensions.
@@ -254,8 +256,8 @@ Summary: Admin tool to administer the pulp server
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
-Obsoletes: pulp-client <= 0.218
-Obsoletes: pulp-admin <= 0.295
+Obsoletes: pulp-client
+Obsoletes: pulp-admin
 
 %description admin-client
 A tool used to administer the pulp server, such as repo creation and
@@ -278,7 +280,7 @@ Summary: Consumer tool to administer the pulp consumer.
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
-Obsoletes: pulp-consumer <= 0.295
+Obsoletes: pulp-consumer
 
 %description consumer-client
 A tool used to administer a pulp consumer.
