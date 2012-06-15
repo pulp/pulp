@@ -13,7 +13,7 @@
 # ---- Pulp+RPM Product---------------------------------------------------------
 
 Name: pulp-rpm-product
-Version: 0.0.296
+Version: 0.0.297
 Release: 1%{?dist}
 License: GPLv2
 Summary: Pulp+RPM product metapackage
@@ -84,3 +84,5 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.297-1
+- new package built with tito
