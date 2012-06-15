@@ -14,13 +14,11 @@
 """
 Taken from stackoverflow.com : http://tinyurl.com/2f6gx7s
 """
-import sys
-if sys.version_info < (2,5):
-    import sha as digestmod
-else:
-    from hashlib import sha256 as digestmod
-from hmac import HMAC
+
 import random
+from hmac import HMAC
+
+from pulp.server.compat import digestmod
 
 
 NUM_ITERATIONS = 5000

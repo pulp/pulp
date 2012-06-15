@@ -16,6 +16,8 @@ This module provides "backward compatibility" for both python's standard library
 and third-party modules.
 """
 
+import sys
+
 # stdlib imports ---------------------------------------------------------------
 
 try:
@@ -24,6 +26,14 @@ except ImportError:
     import simplejson as _json
 
 json = _json
+
+
+if sys.version_info < (2, 5):
+    import sha as _digestmod
+else:
+    from hashlib import sha256 as _digestmod
+
+digestmod = _digestmod
 
 # pymongo imports --------------------------------------------------------------
 
