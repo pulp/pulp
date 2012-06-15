@@ -119,7 +119,7 @@ def _recursive_check_not(root_dict):
 
     for key, value in root_dict.items():
         # Check for $not
-        if key == '$not' and isinstance(value, str):
+        if key == '$not' and isinstance(value, basestring):
             root_dict[key] = re.compile(value)
 
         # Recurse if necessary

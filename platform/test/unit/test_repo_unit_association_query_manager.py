@@ -25,6 +25,10 @@ import pulp.server.managers.repo.unit_association_query as association_query_man
 from pulp.server.managers.repo.unit_association_query import Criteria
 import pulp.server.managers.content.cud as content_cud_manager
 
+# See test_get_units_by_type_not_query for an explanation as to why a webservice
+# import is in a manager test. It's legit, I promise  :)
+from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
+
 # -- constants ----------------------------------------------------------------
 
 TYPE_DEF_ALPHA = model.TypeDefinition('alpha', 'Alpha', 'Test Type Alpha',
@@ -549,6 +553,43 @@ class UnitAssociationQueryTests(base.PulpServerTests):
             self.assertTrue('md_1' in u['metadata'])
             self.assertFalse('md_2' in u['metadata'])
             self.assertFalse('md_3' in u['metadata'])
+
+    def test_get_units_by_type_not_query(self):
+        """
+        Mongo really doesn't like $not queries when regular expressions are
+        involved. This test is to make sure that across mongo and pymongo
+        versions a not expression against a regular expression continues to
+        work.
+
+        There is an important step in the parsing of the criteria from the
+        REST call into the Criteria object. This call will use that method
+        to more closely test the end to end experience.
+        """
+
+        # Setup
+
+        # I got bit by the fact that incoming REST requests are in unicode;
+        # the criteria parsing didn't account for this. This example specifically
+        # replicates that by having the not and its value in unicode.
+
+        query_string = {
+            'filters' : {
+                'unit' : {
+                    'key_1' : {
+                        u'$not' : u'.*aa.*'
+                    }
+                }
+            }
+        }
+        criteria = unit_association_criteria(query_string)
+
+        # Test
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        self.assertEqual(len(self.units['alpha']) - 1, len(units))
+        for u in units:
+            self.assertTrue(u['metadata']['key_1'] != 'aardvark')
 
     def test_remove_duplicates(self):
         # Setup
