@@ -16,7 +16,6 @@ from datetime import  timedelta
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import ConflictingOperation, OperationPostponed
-from pulp.server.webservices import serialization
 
 # execution wrapper api --------------------------------------------------------
 

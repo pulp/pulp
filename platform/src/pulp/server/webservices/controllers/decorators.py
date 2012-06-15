@@ -19,12 +19,8 @@ pulp.server.webservices.controllers.base.JSONController classes, it is assumed
 that certain other methods will exist.
 """
 
-import itertools
 import logging
-import sys
-import traceback
 from gettext import gettext as _
-from pprint import pformat
 
 from pulp.server.auth.authentication import (
     check_username_password, check_user_cert, check_consumer_cert, check_oauth)

@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
-import fcntl
 from M2Crypto import X509, EVP, RSA, util
 from threading import RLock
 import subprocess
@@ -85,7 +84,7 @@ def make_cert(uid, expiration):
     """
     Generate an x509 certificate with the Subject set to the uid passed into this method:
     Subject: CN=someconsumer.example.com
-    
+
     @param uid: ID to be embedded in the certificate
     @type  uid: string
 
@@ -99,7 +98,7 @@ def make_cert(uid, expiration):
         uid = encode_unicode(uid)
 
     log.debug("make_cert: [%s]" % uid)
-    
+
     #Make a private key
     # Don't use M2Crypto directly as it leads to segfaults when trying to convert
     # the key to a PEM string.  Instead create the key with openssl and return the PEM string
@@ -108,13 +107,13 @@ def make_cert(uid, expiration):
     private_key_pem = _make_priv_key()
     rsa = RSA.load_key_string(private_key_pem,
                               callback=util.no_passphrase_callback)
-    
+
     # Make the Cert Request
     req, pub_key = _make_cert_request(uid, rsa)
 
     # Sign it with the Pulp server CA
     # We can't do this in m2crypto either so we have to shell out
-    
+
     ca_cert = config.config.get('security', 'cacert')
     ca_key = config.config.get('security', 'cakey')
 
@@ -123,7 +122,7 @@ def make_cert(uid, expiration):
 
     cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
           (ca_cert, ca_key, serial, expiration)
-    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.communicate(input=req.as_pem())[0]
     p.wait()
@@ -226,7 +225,7 @@ def _make_priv_key():
     output = p.stdout.read()
     pem_str = output[output.index("-----BEGIN RSA PRIVATE KEY-----"):]
     return pem_str
-    
+
 
 def _make_cert_request(uid, rsa):
     pub_key = EVP.PKey()
@@ -236,7 +235,7 @@ def _make_cert_request(uid, rsa):
     x.set_pubkey(pub_key)
     name = x.get_subject()
     name.CN = "%s" % uid
-    ext2 = X509.new_extension('nsComment', 
+    ext2 = X509.new_extension('nsComment',
         'Pulp Generated Identity Certificate for Consumer: [%s]' % uid)
     extstack = X509.X509_Extension_Stack()
     extstack.push(ext2)

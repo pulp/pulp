@@ -16,8 +16,8 @@ Contains bind management classes
 """
 
 from pymongo.errors import DuplicateKeyError
-from pulp.server.db.model.consumer import Consumer, Bind
-from pulp.server.exceptions import InvalidValue, MissingResource
+from pulp.server.db.model.consumer import Bind
+from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
 from logging import getLogger
 
@@ -94,7 +94,7 @@ class BindManager(object):
         consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
         factory.consumer_history_manager().record_event(consumer_id, 'repo_unbound', consumer_event_details)
         return bind
-        
+
     def consumer_deleted(self, id):
         """
         Notification that a consumer has been deleted.
@@ -108,7 +108,7 @@ class BindManager(object):
             collection.remove(bind, safe=True)
             repo_id = bind['repo_id']
             agent_manager.unbind(id, repo_id)
-    
+
     def repo_deleted(self, repo_id):
         """
         Notification that a repository has been deleted.

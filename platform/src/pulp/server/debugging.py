@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import atexit
-import logging
 import os
 import Queue
 import sys

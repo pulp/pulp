@@ -22,7 +22,6 @@ import logging
 import os
 import re
 from datetime import datetime as dt
-from datetime import tzinfo, timedelta
 
 from M2Crypto import X509
 

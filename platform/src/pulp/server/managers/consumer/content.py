@@ -16,7 +16,7 @@ Contains content management classes
 """
 
 from pulp.server.db.model.consumer import Consumer
-from pulp.server.exceptions import InvalidValue, MissingResource
+from pulp.server.exceptions import MissingResource
 from pulp.server.agent import PulpAgent
 from logging import getLogger
 
@@ -28,7 +28,7 @@ class ConsumerContentManager(object):
     """
     Provies content management on a consumer
     """
-    
+
     def install(self, id, units, options={}):
         """
         Install content on a consumer.
@@ -40,13 +40,13 @@ class ConsumerContentManager(object):
         @param options: Install options; based on unit type.
         @type options: dict
         """
-        collection = Consumer.get_collection() 
+        collection = Consumer.get_collection()
         consumer = collection.find_one({'id':id})
         if consumer is None:
             raise MissingResource(id)
         agent = PulpAgent(consumer)
         agent.install_units(units, options)
-    
+
     def update(self, id, units, options={}):
         """
         Update content on a consumer.
@@ -58,13 +58,13 @@ class ConsumerContentManager(object):
         @param options: Update options; based on unit type.
         @type options: dict
         """
-        collection = Consumer.get_collection() 
+        collection = Consumer.get_collection()
         consumer = collection.find_one({'id':id})
         if consumer is None:
             raise MissingResource(id)
         agent = PulpAgent(consumer)
         agent.update_units(units, options)
-    
+
     def uninstall(self, id, units, options={}):
         """
         Uninstall content on a consumer.
@@ -76,7 +76,7 @@ class ConsumerContentManager(object):
         @param options: Uninstall options; based on unit type.
         @type options: dict
         """
-        collection = Consumer.get_collection() 
+        collection = Consumer.get_collection()
         consumer = collection.find_one({'id':id})
         if consumer is None:
             raise MissingResource(id)

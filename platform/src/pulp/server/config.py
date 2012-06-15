@@ -13,8 +13,6 @@
 
 import os
 from ConfigParser import SafeConfigParser
-from datetime import timedelta
-from gettext import gettext as _
 
 # global configuration --------------------------------------------------------
 

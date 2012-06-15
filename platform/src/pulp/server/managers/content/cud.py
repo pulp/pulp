@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import uuid
-from gettext import gettext as _
 
 from pulp.plugins.types import database as content_types_db
 from pulp.server.exceptions import InvalidValue
