@@ -157,6 +157,7 @@ Requires: python-hashlib
 Requires: nss >= 3.12.9
 Requires: curl => 7.19.7
 %endif
+Obsoletes: pulp
 
 %description server
 Pulp provides replication, access, and accounting for software repositories.
@@ -254,6 +255,7 @@ Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
 Obsoletes: pulp-client <= 0.218
+Obsoletes: pulp-admin <= 0.295
 
 %description admin-client
 A tool used to administer the pulp server, such as repo creation and
@@ -276,6 +278,7 @@ Summary: Consumer tool to administer the pulp consumer.
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
+Obsoletes: pulp-consumer <= 0.295
 
 %description consumer-client
 A tool used to administer a pulp consumer.
