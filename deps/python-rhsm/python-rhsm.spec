@@ -6,7 +6,7 @@
 
 Name: python-rhsm
 Version: 0.96.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 
 Summary: A Python library to communicate with a Red Hat Unified Entitlement Platform
 Group: Development/Libraries
@@ -57,6 +57,9 @@ rm -rf %{buildroot}
 %{python_sitelib}/rhsm-*.egg-info
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.96.4-2
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Thu Jun 23 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.96.4-1
 - new package built with tito
 
