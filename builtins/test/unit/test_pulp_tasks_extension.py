@@ -15,7 +15,7 @@ import copy
 import os
 import sys
 
-import base
+import base_builtins
 
 from pulp.client.extensions.exceptions import NotFoundException, PulpServerException
 
@@ -52,7 +52,7 @@ EXAMPLE_CALL_REPORT = {
 
 # -- tests --------------------------------------------------------------------
 
-class AllTasksTests(base.PulpClientTests):
+class AllTasksTests(base_builtins.PulpClientTests):
 
     def setUp(self):
         super(AllTasksTests, self).setUp()
@@ -187,7 +187,7 @@ class AllTasksTests(base.PulpClientTests):
         # Test
         self.assertRaises(PulpServerException, self.all_tasks_section.cancel, **{'task-id' : 'task_1'})
 
-class RepoTasksTests(base.PulpClientTests):
+class RepoTasksTests(base_builtins.PulpClientTests):
 
     # Very little needs to be done here other than exercising a call that will
     # call the overridden method
