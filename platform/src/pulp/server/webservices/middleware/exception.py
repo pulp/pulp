@@ -17,11 +17,7 @@ import sys
 import traceback
 from gettext import gettext as _
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
+from pulp.server.compat import json
 from pulp.server.exceptions import PulpException
 from pulp.server.webservices.http import http_responses
 from pulp.server.webservices import serialization

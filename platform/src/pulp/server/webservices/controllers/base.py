@@ -15,12 +15,8 @@ import logging
 from gettext import gettext as _
 
 import web
-try:
-    from bson import json_util
-except ImportError:
-    from pymongo import json_util
 
-from pulp.server.compat import json
+from pulp.server.compat import json, json_util
 from pulp.server.webservices import http, serialization
 
 

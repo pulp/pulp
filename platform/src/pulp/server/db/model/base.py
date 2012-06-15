@@ -13,7 +13,7 @@
 
 from pymongo import DESCENDING
 
-from bson.objectid import ObjectId
+from pulp.server.compat import ObjectId
 from pulp.server.db.connection import get_collection
 
 

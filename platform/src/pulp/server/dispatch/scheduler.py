@@ -17,16 +17,12 @@ import threading
 from gettext import gettext as _
 from pprint import pformat
 
-try:
-    from bson.objectid import ObjectId
-except ImportError:
-    from pymongo.objectid import ObjectId
-
 import isodate
 
 from pulp.common import dateutils
 from pulp.common.tags import resource_tag
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants

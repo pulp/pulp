@@ -13,7 +13,8 @@
 
 import base64
 import httplib
-import simplejson as json
+
+from pulp.server.compat import json
 
 
 HOST = 'localhost'
