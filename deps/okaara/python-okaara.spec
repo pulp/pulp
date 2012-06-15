@@ -4,7 +4,7 @@
 
 Name:           python-okaara
 Version:        1.0.18
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python command line utilities
 
 Group:          Development/Tools
@@ -58,6 +58,9 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 1.0.18-2
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Fri May 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.18-1
 - Removed old okaara spec file (jason.dobies@redhat.com)
 - Upgraded okaara to 1.0.18 (jason.dobies@redhat.com)
