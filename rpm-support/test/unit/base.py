@@ -23,6 +23,25 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
 
+class PulpRPMTests(unittest.TestCase):
+    """
+    Base unit test class for all rpm synchronization related unit tests.
+    """
+    def setUp(self):
+        super(PulpRPMTests, self).setUp()
+
+        self.config = SafeConfigParser()
+        config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-pulp.conf')
+        self.config.read(config_filename)
+        self.log_config_filename = self.config.get('logs', 'config')
+        self.configure_logging(self.log_config_filename)
+
+    def configure_logging(self, log_config_file):
+        logging.Logger.manager.loggerDict = {}
+        logging.config.fileConfig(log_config_file)
+        for key in logging.root.manager.loggerDict.keys():
+            logging.root.manager.loggerDict[key].disabled = 0
+
 class PulpClientTests(unittest.TestCase):
     """
     Base unit test class for all extension unit tests.
