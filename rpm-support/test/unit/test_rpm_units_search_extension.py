@@ -16,10 +16,10 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 
-import base
+import rpm_support_base
 import rpm_units_search.pulp_cli
 
-class GeneralUnitSearchCommandTests(base.PulpClientTests):
+class GeneralUnitSearchCommandTests(rpm_support_base.PulpClientTests):
 
     def test_search(self):
         # Setup
@@ -35,7 +35,7 @@ class GeneralUnitSearchCommandTests(base.PulpClientTests):
         # Cleanup
         self.server_mock.request.return_value = None
 
-class RpmUnitsSearchUtilityTests(base.PulpClientTests):
+class RpmUnitsSearchUtilityTests(rpm_support_base.PulpClientTests):
 
     def test_args_to_criteria_doc_empty_args(self):
         # Setup

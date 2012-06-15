@@ -27,7 +27,7 @@ from grinder.BaseFetch import BaseFetch
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 
-import base
+import rpm_support_base
 import importer_mocks
 
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
@@ -38,7 +38,7 @@ from pulp.plugins.model import Repository, Unit
 from pulp_rpm.yum_plugin import util
 
 
-class TestCleanup(base.PulpRPMTests):
+class TestCleanup(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestCleanup, self).setUp()

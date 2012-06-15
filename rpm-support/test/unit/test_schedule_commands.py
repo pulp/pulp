@@ -16,7 +16,7 @@ import mock
 import os
 import sys
 
-import base
+import rpm_support_base
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 import rpm_sync.schedule as commands # these will likely move out of this package
@@ -70,7 +70,7 @@ EXAMPLE_SCHEDULE_LIST =  [
 
 # -- test cases ---------------------------------------------------------------
 
-class TestListScheduleCommand(base.PulpClientTests):
+class TestListScheduleCommand(rpm_support_base.PulpClientTests):
 
     def test_list(self):
         # Setup
@@ -120,7 +120,7 @@ class TestListScheduleCommand(base.PulpClientTests):
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[1]['first_run'] in first_runs)
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[2]['first_run'] in first_runs)
 
-class TestCreateCommand(base.PulpClientTests):
+class TestCreateCommand(rpm_support_base.PulpClientTests):
 
     def test_add(self):
         # Setup
@@ -165,7 +165,7 @@ class TestCreateCommand(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[1])
 
-class TestDeleteCommand(base.PulpClientTests):
+class TestDeleteCommand(rpm_support_base.PulpClientTests):
 
     def test_delete(self):
         # Setup
@@ -188,7 +188,7 @@ class TestDeleteCommand(base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
-class TestUpdateCommand(base.PulpClientTests):
+class TestUpdateCommand(rpm_support_base.PulpClientTests):
 
     def test_update(self):
         # Setup
@@ -218,7 +218,7 @@ class TestUpdateCommand(base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
-class TestNextRunCommand(base.PulpClientTests):
+class TestNextRunCommand(rpm_support_base.PulpClientTests):
 
     def test_next_run(self):
         # Setup

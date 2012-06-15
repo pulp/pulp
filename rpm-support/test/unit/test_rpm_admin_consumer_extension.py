@@ -22,7 +22,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 
-import base
+import rpm_support_base
 
 from rpm_admin_consumer import pulp_cli
 from pulp.client.extensions.core import TAG_SUCCESS
@@ -76,7 +76,7 @@ class Request:
         raise Exception('Unexpected URL: %s', url)
 
 
-class TestPackages(base.PulpClientTests):
+class TestPackages(rpm_support_base.PulpClientTests):
     
     CONSUMER_ID = 'test-consumer'
 
