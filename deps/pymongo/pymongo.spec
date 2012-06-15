@@ -26,7 +26,7 @@
 
 Name:           pymongo
 Version:        1.9
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Python driver for MongoDB
 
 Group:          Development/Languages
@@ -196,6 +196,9 @@ nosetests --exclude="$exclude"
 popd
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 1.9-9
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Wed Jun 08 2011 John Matthews <jmatthew@redhat.com> 1.9-8
 - 
 
