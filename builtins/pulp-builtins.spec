@@ -87,6 +87,14 @@ client capabilites.
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.300-1
+- Align versions to: 300 (jortel@redhat.com)
+- Renamed builtins base for uniqueness across subprojects, relevant for the
+  single test suite at root (jason.dobies@redhat.com)
+- Better package summary/descriptions. (jortel@redhat.com)
+- Add copyright and fix (name) macro usage. (jortel@redhat.com)
+- pulp-builtins, fine tuning. (jortel@redhat.com)
+
 * Thu Jun 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.296-1
 - new package built with tito
 
