@@ -43,22 +43,8 @@ class ContentTypesCollection(JSONController):
             collection.append(link)
         return self.ok(collection)
 
-    @auth_required(CREATE)
-    def POST(self):
-        """
-        Create a new content type.
-        """
-        return self.not_implemented()
-
 
 class ContentTypeResource(JSONController):
-
-    @auth_required(DELETE)
-    def DELETE(self, type_id):
-        """
-        Remove a content type.
-        """
-        return self.not_implemented()
 
     @auth_required(READ)
     def GET(self, type_id):
@@ -75,13 +61,6 @@ class ContentTypeResource(JSONController):
                  'content_units': serialization.link.child_link_obj('units')}
         resource.update(links)
         return self.ok(resource)
-
-    @auth_required(UPDATE)
-    def PUT(self, type_id):
-        """
-        Update a content type.
-        """
-        return self.not_implemented()
 
 # content units controller classes ---------------------------------------------
 
@@ -102,22 +81,8 @@ class ContentUnitsCollection(JSONController):
             collection.append(resource)
         return self.ok(collection)
 
-    @auth_required(CREATE)
-    def POST(self, type_id):
-        """
-        Create a new content unit.
-        """
-        return self.not_implemented()
-
 
 class ContentUnitResource(JSONController):
-
-    @auth_required(DELETE)
-    def DELETE(self, type_id, unit_id):
-        """
-        Remove a content unit.
-        """
-        return self.not_implemented()
 
     @auth_required(READ)
     def GET(self, type_id, unit_id):
@@ -133,13 +98,6 @@ class ContentUnitResource(JSONController):
         resource = serialization.content.content_unit_obj(unit)
         resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
         return self.ok(resource)
-
-    @auth_required(CREATE)
-    def PUT(self, type_id, unit_id):
-        """
-        Update a content unit.
-        """
-        return self.not_implemented()
 
 # content uploads controller classes -------------------------------------------
 
