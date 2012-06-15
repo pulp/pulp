@@ -115,7 +115,7 @@ rm -rf %{buildroot}
 
 %package server
 Summary: The pulp platform server
-Requires: %{name}-common = %{version}
+Requires: python-%{name}-common = %{version}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
@@ -129,7 +129,7 @@ Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.69
+Requires: python-gofer >= 0.70
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.3-3.pulp
@@ -299,6 +299,7 @@ A tool used to administer a pulp consumer.
 Summary: The Pulp agent
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
+Requires: gofer >= 0.70
 
 %description agent
 The pulp agent, used to provide remote command & control and

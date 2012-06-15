@@ -169,7 +169,7 @@ client capabilites with RPM specific features.
 %package handlers
 Summary: Pulp agent rpm handlers
 Requires: python-pulp-rpm-common = %{version}
-Requires: pulp-server = %{version}
+Requires: python-pulp-agent-lib = %{version}
 
 %description handlers
 A collection of handlers that provide both Linux and RPM specific
