@@ -2,7 +2,7 @@
 
 Name: grinder
 Version: 0.1.4
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
@@ -59,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.1.4-3
+- new package built with tito
+
 * Thu Jun 14 2012 John Matthews <jmatthews@redhat.com> 0.1.4-2
 - Removed old grinder-0.1.3.tar.gz (jmatthews@redhat.com)
 - Adding grinder 0.1.4 to deps (jmatthews@redhat.com)
