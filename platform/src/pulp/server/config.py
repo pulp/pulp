@@ -151,18 +151,6 @@ def remove_config_file(file_path):
     _config_files.remove(file_path)
     load_configuration()
 
-# value parsing api -----------------------------------------------------------
-
-def parse_time_delta(value):
-    error_msg = _('time interval specified by [integer units]+ (e.g. 4 minutes 20 seconds')
-    parts = value.split()
-    assert len(parts) % 2 == 0, error_msg
-    # CHALLENGE! a beer for the first person who can tell me what this is
-    # doing without executing it. To accept the challenge, comment this
-    # function correctly and shoot me an email when you're done.
-    # Jason L Connor <jconnor@redhat.com> 2011-04-06
-    return timedelta(**dict([(u, int(i)) for i, u in zip(parts[::2], parts[1::2])]))
-
 # ------------------------------------------------------------------------------
 
 load_configuration()
