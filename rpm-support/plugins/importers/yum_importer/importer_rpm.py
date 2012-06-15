@@ -427,6 +427,8 @@ class ImporterRPM(object):
         ####
         start = time.time()
         feed_url = config.get("feed_url")
+        num_retries = config.get("num_retries")
+        retry_delay = config.get("retry_delay")
         skip_content_types = config.get("skip_content_types")
         verify_checksum = config.get("verify_checksum") or False
         verify_size = config.get("verify_size") or False
@@ -436,7 +438,8 @@ class ImporterRPM(object):
         self.yumRepoGrinder = get_yumRepoGrinder(repo.id, repo.working_dir, config)
         set_progress("metadata", {"state": "IN_PROGRESS"})
         try:
-            self.yumRepoGrinder.setup(basepath=repo.working_dir, callback=progress_callback)
+            self.yumRepoGrinder.setup(basepath=repo.working_dir, callback=progress_callback,
+                num_retries=num_retries, retry_delay=retry_delay)
         except Exception, e:
             set_progress("metadata", {"state": "FAILED"})
             _LOG.error("Failed to fetch metadata on: %s" % (feed_url))

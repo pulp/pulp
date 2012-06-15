@@ -36,9 +36,9 @@ from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 from pulp.plugins.model import Repository, Unit
 from pulp_rpm.yum_plugin import util
 
+from base import PulpRPMTests
 
-
-class TestRPMs(unittest.TestCase):
+class TestRPMs(PulpRPMTests):
 
     def setUp(self):
         super(TestRPMs, self).setUp()

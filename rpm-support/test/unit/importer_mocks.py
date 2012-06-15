@@ -81,7 +81,7 @@ def get_upload_conduit(type_id=None, unit_key=None, metadata=None, relative_path
     return upload_conduit
 
 def get_basic_config(*arg, **kwargs):
-    plugin_config = {}
+    plugin_config = {"num_retries":0, "retry_delay":0}
     repo_plugin_config = {}
     for key in kwargs:
         repo_plugin_config[key] = kwargs[key]
