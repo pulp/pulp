@@ -50,7 +50,7 @@ popd
 
 # Directories
 mkdir -p /srv
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
@@ -62,7 +62,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
 mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/distributors
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/importers
@@ -74,11 +74,14 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
-mkdir -p %{buildroot}/%{_var}/lib/%{name}
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/repos
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/repos
-mkdir -p %{buildroot}/%{_var}/log/%{name}
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/packages
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/published/http
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/published/https
+mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
 
@@ -191,7 +194,10 @@ A collection of components that are common between the pulp server and client.
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}/__init__.*
 %{python_sitelib}/%{name}/common/
+%{_usr}/lib/%{name}
+%{_var}/lib/%{name}
 %defattr(-,apache,apache,-)
+%{_var}/log/%{name}
 %doc
 
 

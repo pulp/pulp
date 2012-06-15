@@ -57,13 +57,18 @@ mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
+mkdir -p %{buildroot}/%{_var}/lib/pulp/published
 mkdir -p %{buildroot}/%{_usr}/lib/yum-plugins/
+mkdir -p %{buildroot}/%{_var}/www
 
 # Configuration
 cp -R etc/* %{buildroot}/%{_sysconfdir}
 
 # WSGI
 cp -R srv %{buildroot}
+
+# WWW
+ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
 
 # Extensions
 cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/pulp/admin/extensions
@@ -103,6 +108,8 @@ to provide RPM specific support.
 %{_usr}/lib/pulp/plugins/types/rpm_support.json
 %{_usr}/lib/pulp/plugins/importers/yum_importer/
 %{_usr}/lib/pulp/plugins/distributors/yum_distributor/
+%defattr(-,apache,apache,-)
+%{_var}/www/pub
 /srv/pulp/repo_auth.wsgi
 %doc
 
