@@ -7,11 +7,11 @@
   <timestamp>1299190182</timestamp>
 </data>
 <data type="updateinfo">
-  <checksum type="sha256">ef48a308bcb8f47dbc6d9e9dd15eb3dfd6b8335539b87c20b4b668cfdc537557</checksum>
+  <checksum type="sha256">06c3048a7e3cf369716f11f769810ae592e03852d0b6e799481ee492984552c0</checksum>
   <open-checksum type="sha256">c55f598724196d4616028985ab38ba3865321780f79053ce074f4a38ece993a2</open-checksum>
-  <location href="repodata/ef48a308bcb8f47dbc6d9e9dd15eb3dfd6b8335539b87c20b4b668cfdc537557-updateinfo.xml.xz"/>
-  <timestamp>1339101772.65</timestamp>
-  <size>532</size>
+  <location href="repodata/06c3048a7e3cf369716f11f769810ae592e03852d0b6e799481ee492984552c0-updateinfo.xml.gz"/>
+  <timestamp>1339788965.24</timestamp>
+  <size>472</size>
 </data>
 <data type="other">
   <checksum type="sha">cd2ed768c7b0a2b40e5367da53be4c62afa60ea9</checksum>
