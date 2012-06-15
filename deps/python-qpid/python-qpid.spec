@@ -3,7 +3,7 @@
 
 Name:           python-qpid
 Version:        0.7.946106
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python client library for AMQP
 
 Group:          Development/Python
@@ -99,6 +99,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.7.946106-2
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Thu Jul 22 2010 Mike McCune <mmccune@redhat.com> 0.7.946106-1
 - switching to orig (mmccune@redhat.com)
 
