@@ -315,6 +315,97 @@ on a defined interval.
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.300-1
+- Align versions to: 300 (jortel@redhat.com)
+- Added specific error message for expired certificates
+  (jason.dobies@redhat.com)
+- not making the same mistake again of version one, two, three, four, etc
+  (jason.connor@gmail.com)
+- moved http_response dict to compat (jason.connor@gmail.com)
+- moved digestmod import into compat (jason.connor@gmail.com)
+- using compat module instead of try/except imports (jason.connor@gmail.com)
+- cleaned up imports (jason.connor@gmail.com)
+- moved all try/except ImportError blocks to compat (jason.connor@gmail.com)
+- removed unused value parsing function (jason.connor@gmail.com)
+- Add Obsoletes: for platform .spec. (jortel@redhat.com)
+- deleted v1 tasking from code base (jason.connor@gmail.com)
+- removed old task to dict output from web controllers (jason.connor@gmail.com)
+- removed tasking.task from unittests (jason.connor@gmail.com)
+- remove auditing logging (jason.connor@gmail.com)
+- removed all unused cruft and added new header (jason.connor@gmail.com)
+- removed sections from default config and config file that are no longer used
+  (jason.connor@gmail.com)
+- removed derived class OPTIONS method for contents cotrollers
+  (jason.connor@gmail.com)
+- added OPTIONS method handler to controller base class
+  (jason.connor@gmail.com)
+- removed unused v2 api controller (jason.connor@gmail.com)
+- added finalize to dispatch factory and replaced unittest cleanup with it
+  (jason.connor@gmail.com)
+- YumImporter: Cleaning up extra test dirs during tests & Adding configurable
+  Retry logic for grinder (jmatthews@redhat.com)
+- Better package summary/descriptions. (jortel@redhat.com)
+- pulp-rpm spec build fixes. (jortel@redhat.com)
+- Changed super reference in exception because python is weird.
+  (jason.dobies@redhat.com)
+- Changed setUpClass super references for python compatibility
+  (jason.dobies@redhat.com)
+- Add copyright and fix (name) macro usage. (jortel@redhat.com)
+- Move pulp.spec under platform; Add pulp-builtins.spec and entry in rel-eng/.
+  (jortel@redhat.com)
+- Migrated clients to pulp common config abstraction (jason.dobies@redhat.com)
+- Moved selinux under platform (jason.dobies@redhat.com)
+- Fixed override ability in common config (jason.dobies@redhat.com)
+- 828256 - replaced ordering comparison with equality comparison as the former
+  are not allowed with Duration instances (jason.connor@gmail.com)
+- added comments (jason.connor@gmail.com)
+- Fixed LDAPConnection reference (jason.dobies@redhat.com)
+- Restructured pulp-consumer commands and fixed broken unregister
+  (jason.dobies@redhat.com)
+- purge v1 gofer plugins. (jortel@redhat.com)
+- Corrected logging filename (jason.dobies@redhat.com)
+- Fixed the name of override files (jason.dobies@redhat.com)
+- Changed database collection names to remove gc prefix
+  (jason.dobies@redhat.com)
+- Removed v1 tasking stuff (jason.dobies@redhat.com)
+- Clean up from pulp.server (jason.dobies@redhat.com)
+- Refactored pulp.spec to match git/package reorganization. (jortel@redhat.com)
+- Removed v1 domain models (jason.dobies@redhat.com)
+- Changed name/location of plugins code (jason.dobies@redhat.com)
+- Removed dead CDS code (jason.dobies@redhat.com)
+- No longer needed (jason.dobies@redhat.com)
+- Deleted v1 API classes (jason.dobies@redhat.com)
+- Stripped v2-ness from v2 controllers (jason.dobies@redhat.com)
+- Finished deleting v1 controllers (jason.dobies@redhat.com)
+- Purging of v1 controllers (jason.dobies@redhat.com)
+- Refit handlers to work with new common/config; fix handler unit test.
+  (jortel@redhat.com)
+- Round of unit test fixes (jason.dobies@redhat.com)
+- Last batch of unit test fixes (jason.dobies@redhat.com)
+- More unit test fixes (jason.dobies@redhat.com)
+- Next batch of refactored unit tests (jason.dobies@redhat.com)
+- Moved repolib tests (after figuring out which of the two nearly identical
+  files was correct) into rpm_support (jason.dobies@redhat.com)
+- Moved repo auth tests into rpm_support (jason.dobies@redhat.com)
+- Deleted a bunch of unused files in the test dir (jason.dobies@redhat.com)
+- git refactor: fix gofer plugin imports. (jortel@redhat.com)
+- Continued unit test clean up (jason.dobies@redhat.com)
+- Split up uber consumer manager test file into multiple files by manager
+  (jason.dobies@redhat.com)
+- Continued work on unit test cleanup (jason.dobies@redhat.com)
+- Cleanup of Pulp test base classes (jason.dobies@redhat.com)
+- Moved extensions under /usr/lib/pulp (jason.dobies@redhat.com)
+- Work towards fixing rpm plugin unit tests (jason.dobies@redhat.com)
+- Removed dead CDS code (jason.dobies@redhat.com)
+- Started work towards correcting the certificate issues for consumers (more to
+  do) (jason.dobies@redhat.com)
+- Simplified setup.py until we figure out how we want to use it
+  (jason.dobies@redhat.com)
+- Fixes for config consolidation (jason.dobies@redhat.com)
+- Updated pulp-dev for platform subproject (jason.dobies@redhat.com)
+- Moved bin, srv, and test under platform (jason.dobies@redhat.com)
+- Moved etc and src under platform subproject (jason.dobies@redhat.com)
+
 * Fri Jun 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.295-1
 - bump to gofer 0.69. (jortel@redhat.com)
 - Add support for linking rpms units referenced with in a errata
