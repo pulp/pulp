@@ -97,6 +97,10 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.300-1
+- Align versions to: 300 (jortel@redhat.com)
+- product .spec build fixes. (jortel@redhat.com)
+
 * Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.298-1
 - Add pulp (plus) rpm product metapackage. (jortel@redhat.com)
 
