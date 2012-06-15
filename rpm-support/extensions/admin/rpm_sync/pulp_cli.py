@@ -44,6 +44,6 @@ def initialize(context):
     publish_section.add_command(publish_commands.RunPublishCommand(context, 'run', _('triggers an immediate publish of a repository')))
     publish_section.add_command(publish_commands.StatusCommand(context, 'status', _('displays the status of a repository\'s publish tasks')))
 
-    publish_schedule_subsection = RepoPublishSchedulingSection(context, 'schedules', _('manage puslish schedules for a repository'))
+    publish_schedule_subsection = RepoPublishSchedulingSection(context, 'schedules', _('manage publish schedules for a repository'))
     publish_section.add_subsection(publish_schedule_subsection)
 
