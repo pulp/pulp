@@ -4,7 +4,7 @@
 
 Name:       libyaml
 Version:    0.1.3
-Release:    3%{?dist}
+Release:    4%{?dist}
 Summary:    YAML 1.1 parser and emitter written in C
 
 Group:      System Environment/Libraries
@@ -74,6 +74,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.1.3-4
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Wed Jun 08 2011 John Matthews <jmatthews@redhat.com> 0.1.3-3
 - new package built with tito
 
