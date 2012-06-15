@@ -108,6 +108,28 @@ class CallRequest(object):
         all_args = ', '.join((args, kwargs))
         return 'CallRequest: %s(%s)' % (self.callable_name(), all_args)
 
+    # convenient resources management ------------------------------------------
+
+    def creates_resource(self, resource_type, resource_id):
+        assert resource_type in dispatch_constants.RESOURCE_TYPES
+        type_dict = self.resources.setdefault(resource_type, {})
+        type_dict.update({resource_id: dispatch_constants.RESOURCE_CREATE_OPERATION})
+
+    def reads_resource(self, resource_type, resource_id):
+        assert resource_type in dispatch_constants.RESOURCE_TYPES
+        type_dict = self.resources.setdefault(resource_type, {})
+        type_dict.update({resource_id: dispatch_constants.RESOURCE_READ_OPERATION})
+
+    def updates_resource(self, resource_type, resource_id):
+        assert resource_type in dispatch_constants.RESOURCE_TYPES
+        type_dict = self.resources.setdefault(resource_type, {})
+        type_dict.update({resource_id: dispatch_constants.RESOURCE_UPDATE_OPERATION})
+
+    def deletes_resource(self, resource_type, resource_id):
+        assert resource_type in dispatch_constants.RESOURCE_TYPES
+        type_dict = self.resources.setdefault(resource_type, {})
+        type_dict.update({resource_id: dispatch_constants.RESOURCE_DELETE_OPERATION})
+
     # hooks management ---------------------------------------------------------
 
     def add_life_cycle_callback(self, key, callback):
