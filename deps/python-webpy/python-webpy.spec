@@ -3,7 +3,7 @@
 
 Name:           python-webpy
 Version:        0.32
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        A simple web framework for Python
 Group:          Development/Libraries
 
@@ -62,6 +62,9 @@ purpose with absolutely no restrictions.
 %{python_sitelib}/*
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.32-9
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Mon Mar 21 2011 John Matthews <jmatthews@redhat.com> 0.32-8
 - Bring python-webpy spec/tags back to version 0.32 (jmatthews@redhat.com)
 - Automatic commit of package [python-webpy] release [0.34-1].
