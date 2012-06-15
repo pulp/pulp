@@ -1,6 +1,6 @@
 Name:           mod_wsgi
 Version:        3.3
-Release:        3.pulp%{?dist}
+Release:        4.pulp%{?dist}
 Summary:        A WSGI interface for Python web applications in Apache
 
 Group:          System Environment/Libraries
@@ -54,6 +54,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 3.3-4.pulp
+- Renamed dependency RPMs (jason.dobies@redhat.com)
+
 * Wed Feb 01 2012 James Slagle <jslagle@redhat.com> 3.3-3.pulp
 - 784638 Add patch to mod_wsgi so that mod_ssl hook runs before
   WSGIAccessScript (jslagle@redhat.com)
