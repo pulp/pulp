@@ -13,11 +13,12 @@
 # ---- Pulp+RPM Product---------------------------------------------------------
 
 Name: pulp-rpm-product
-Version: 0.0.297
+Version: 0.0.298
 Release: 1%{?dist}
 License: GPLv2
 Summary: Pulp+RPM product metapackage
 URL: https://fedorahosted.org/pulp/
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: rpm-python
 
 %description
@@ -84,5 +85,8 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.298-1
+- Add pulp+rpm product metapackage. (jortel@redhat.com)
+
 * Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.297-1
 - new package built with tito
