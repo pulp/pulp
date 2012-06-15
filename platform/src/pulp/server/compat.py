@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010-2011 Red Hat, Inc.
+# Copyright © 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -12,14 +12,53 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-This module provides workable substitutions for improvements made to python's 
-standard library since version 2.4, while allowing pulp to run in a 2.4 
-interpreter.
+This module provides "backward compatibility" for both python's standard library
+and third-party modules.
 """
 
-import itertools
+# stdlib imports ---------------------------------------------------------------
 
-# functools wraps decorator ---------------------------------------------------
+try:
+    import json as _json
+except ImportError:
+    import simplejson as _json
+
+json = _json
+
+# pymongo imports --------------------------------------------------------------
+
+try:
+    from bson import json_util as _json_util
+except ImportError:
+    from pymongo import json_util as _json_util
+
+json_util = _json_util
+
+
+try:
+    from bson.objectid import ObjectId as _ObjectId
+except ImportError:
+    from pymongo.objectid import ObjectId as _ObjectId
+
+ObjectId = _ObjectId
+
+
+try:
+    from bson import BSON as _BSON
+except ImportError:
+    from pymongo.bson import BSON as _BSON
+
+BSON = _BSON
+
+
+try:
+    from bson.son import SON as _SON
+except ImportError:
+    from pymongo.son import SON as _SON
+
+SON = _SON
+
+# functools wraps decorator ----------------------------------------------------
 
 def _update_wrapper(orig, wrapper):
     # adopt the original's metadata
@@ -37,17 +76,4 @@ def wraps(orig):
         return _update_wrapper(orig, decorator)
     return _wraps
 
-# stdlib json serialization ---------------------------------------------------
 
-import simplejson as json
-
-# itertools.chain --------------------------------------------------------------
-
-class chain(itertools.chain):
-
-    @classmethod
-    def from_iterable(cls, iterables):
-        # chain.from_iterable(['ABC', 'DEF']) --> A B C D E F
-        for it in iterables:
-            for element in it:
-                yield element
