@@ -262,6 +262,7 @@ Summary: Admin tool to administer the pulp server
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
+Requires: %{name}-builtins-admin-extensions = %{version}
 Obsoletes: pulp-client
 Obsoletes: pulp-admin
 
@@ -286,6 +287,7 @@ Summary: Consumer tool to administer the pulp consumer.
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
+Requires: %{name}-builtins-consumer-extensions = %{version}
 Obsoletes: pulp-consumer
 
 %description consumer-client
