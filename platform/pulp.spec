@@ -166,6 +166,7 @@ Obsoletes: pulp
 Pulp provides replication, access, and accounting for software repositories.
 
 %files server
+# root
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
@@ -174,7 +175,10 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/pki/%{name}
 %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
+# apache
 %defattr(-,apache,apache,-)
+%dir /srv/%{name}
+%dir %{_var}/log/%{name}
 /srv/%{name}/webservices.wsgi
 %{_var}/lib/%{name}/
 %doc
@@ -194,10 +198,7 @@ A collection of components that are common between the pulp server and client.
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}/__init__.*
 %{python_sitelib}/%{name}/common/
-%{_usr}/lib/%{name}
-%{_var}/lib/%{name}
-%defattr(-,apache,apache,-)
-%{_var}/log/%{name}
+%dir %{_usr}/lib/%{name}
 %doc
 
 
