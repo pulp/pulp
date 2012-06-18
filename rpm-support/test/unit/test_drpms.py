@@ -25,7 +25,9 @@ from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer.drpm import DRPM_UNIT_KEY
 from pulp.plugins.model import Repository
 
-class TestDRPMS(unittest.TestCase):
+import rpm_support_base
+
+class TestDRPMS(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestDRPMS, self).setUp()

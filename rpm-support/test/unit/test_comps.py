@@ -22,12 +22,13 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 
 import importer_mocks
+import rpm_support_base
 from yum_importer import comps
 from yum_importer.comps import ImporterComps, PKG_GROUP_METADATA, PKG_CATEGORY_METADATA
 from yum_importer.importer import YumImporter
 from pulp.plugins.model import Repository, Unit
 
-class TestComps(unittest.TestCase):
+class TestComps(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestComps, self).setUp()

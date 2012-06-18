@@ -17,8 +17,9 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 from pulp_rpm.yum_plugin import util
+import rpm_support_base
 
-class TestVerifyOptions(unittest.TestCase):
+class TestVerifyOptions(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestVerifyOptions, self).setUp()

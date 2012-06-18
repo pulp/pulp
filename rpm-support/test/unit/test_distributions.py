@@ -21,12 +21,13 @@ import tempfile
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 
 import importer_mocks
+import rpm_support_base
 from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
 from yum_importer.distribution import  DISTRO_TYPE_ID
 from pulp.plugins.model import Repository
 
-class TestDistribution(unittest.TestCase):
+class TestDistribution(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestDistribution, self).setUp()

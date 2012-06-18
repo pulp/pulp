@@ -20,9 +20,10 @@ from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 import distributor_mocks
 import mock
+import rpm_support_base
 import unittest
 
-class TestValidateConfig(unittest.TestCase):
+class TestValidateConfig(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestValidateConfig, self).setUp()

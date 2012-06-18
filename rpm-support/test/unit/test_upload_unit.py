@@ -26,8 +26,9 @@ from yum_importer.importer import YumImporter
 from pulp_rpm.yum_plugin import util
 
 from pulp.plugins.model import Repository
+import rpm_support_base
 
-class TestRPMs(unittest.TestCase):
+class TestRPMs(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestRPMs, self).setUp()

@@ -32,8 +32,9 @@ from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
 
 import distributor_mocks
+import rpm_support_base
 
-class TestDistributor(unittest.TestCase):
+class TestDistributor(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestDistributor, self).setUp()

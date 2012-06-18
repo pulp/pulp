@@ -32,8 +32,9 @@ from yum_distributor import metadata
 from pulp.plugins.model import Repository
 
 import distributor_mocks
+import rpm_support_base
 
-class TestMetadata(unittest.TestCase):
+class TestMetadata(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestMetadata, self).setUp()

@@ -24,7 +24,9 @@ import importer_mocks
 from pulp.plugins.model import Repository
 from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
-class TestValidateConfig(unittest.TestCase):
+import rpm_support_base
+
+class TestValidateConfig(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestValidateConfig, self).setUp()

@@ -29,7 +29,9 @@ from yum_importer.importer import YUM_IMPORTER_TYPE_ID
 from pulp.plugins.model import Repository, Unit
 from yum_importer.importer_rpm import RPM_TYPE_ID
 
-class TestErrata(unittest.TestCase):
+import rpm_support_base
+
+class TestErrata(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestErrata, self).setUp()
