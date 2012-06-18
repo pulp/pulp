@@ -22,6 +22,7 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import exceptions as dispatch_exceptions
 
 
 _LOG = logging.getLogger(__name__)
@@ -289,10 +290,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            if task.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK] is None:
-                return False
-            self.__canceled_tasks.append(task)
-            return True
+            task.cancel()
         finally:
             self.__lock.release()
 

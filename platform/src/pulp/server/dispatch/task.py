@@ -180,17 +180,29 @@ class Task(object):
         Call the cancel control hook if available, otherwise raises a
         MissingCancelControlHook exception.
         """
+        # XXX this method assumes that it is being called under the protection
+        # of the task queue lock. If that is not the case, a race condition
+        # occurs between the states of the task.
+
+        # as complete task cannot be cancelled
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return
+        # to cancel a running task, the cancel control hook *must* be called
+        if self.call_report.state is dispatch_constants.CALL_RUNNING_STATE:
+            self._call_cancel_control_hook()
+        # nothing special needs to happen to cancel a waiting task
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
+        self._complete(dispatch_constants.CALL_CANCELED_STATE)
+
+    def _call_cancel_control_hook(self):
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
         if cancel_hook is None:
             field = dispatch_constants.call_control_hook_to_string(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
             raise dispatch_exceptions.MissingCancelControlHook(field)
         # it is expected that this hook can and even will throw an exception
-        # DO NOT handle any exceptions here!!
+        # if this occurs, the task DID NOT CANCEL and should not proceed as if
+        # it has
         cancel_hook(self.call_request, self.call_report)
-        self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
-        self._complete(dispatch_constants.CALL_CANCELED_STATE)
 
 # asynchronous task ------------------------------------------------------------
 

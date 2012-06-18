@@ -122,6 +122,7 @@ class TaskTests(base.PulpServerTests):
     def test_cancel_control_hook(self):
         callback = mock.Mock()
         self.call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, callback)
+        self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         try:
             self.task.cancel()
         except:
