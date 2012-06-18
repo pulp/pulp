@@ -100,7 +100,7 @@ class TaskTests(base.PulpServerTests):
 
     def test_run(self):
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_WAITING_STATE)
-        self.task.run()
+        self.task._run()
         self.assertTrue(self.call_request.call.call_count == 1)
         self.assertTrue(self.call_request.call.call_args[0] == call_args,
                         '%s != %s' % (str(self.call_request.call.call_args[0]), str(call_args)))
@@ -109,13 +109,13 @@ class TaskTests(base.PulpServerTests):
 
     def test_complete(self):
         now = datetime.datetime.now(dateutils.utc_tz())
-        self.task.run()
+        self.task._run()
         self.assertTrue(self.call_report.finish_time > now)
 
     def test_complete_callback(self):
         callback = mock.Mock()
         self.task.complete_callback = callback
-        self.task.run()
+        self.task._run()
         self.assertTrue(callback.call_count == 1)
         self.assertTrue(callback.call_args[0][0] is self.task)
 
@@ -137,7 +137,7 @@ class TaskTests(base.PulpServerTests):
         hooks = [mock.Mock(), mock.Mock()]
         for h in hooks:
             self.call_request.add_life_cycle_callback(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK, h)
-        self.task.run()
+        self.task._run()
         for h in hooks:
             self.assertTrue(h.call_count == 1)
             self.assertTrue(h.call_args[0][0] is self.call_request)
@@ -147,7 +147,7 @@ class TaskTests(base.PulpServerTests):
         hooks = [mock.Mock(), mock.Mock()]
         for h in hooks:
             self.call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, h)
-        self.task.run()
+        self.task._run()
         for h in hooks:
             self.assertTrue(h.call_count == 1)
 
@@ -166,7 +166,7 @@ class FailTests(base.PulpServerTests):
         self.task = None
 
     def test_failed(self):
-        self.task.run()
+        self.task._run()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_ERROR_STATE,
                         self.call_report.state)
         self.assertTrue(isinstance(self.call_report.exception, RuntimeError),
@@ -176,7 +176,7 @@ class FailTests(base.PulpServerTests):
     def test_error_execution_hook(self):
         hook = mock.Mock()
         self.call_request.add_life_cycle_callback(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK, hook)
-        self.task.run()
+        self.task._run()
         self.assertTrue(hook.call_count == 1)
         self.assertTrue(hook.call_args[0][0] is self.call_request)
         self.assertTrue(hook.call_args[0][1] is self.call_report)
@@ -196,18 +196,18 @@ class AsyncTaskTests(base.PulpServerTests):
         self.task = None
 
     def test_run(self):
-        self.task.run()
+        self.task._run()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_RUNNING_STATE)
 
     def test_succeeded(self):
         self.assertRaises(AssertionError, self.task._succeeded, None)
-        self.task.run()
+        self.task._run()
         self.task._succeeded(None)
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_FINISHED_STATE)
 
     def test_failed(self):
         self.assertRaises(AssertionError, self.task._failed, None)
-        self.task.run()
+        self.task._run()
         self.task._failed()
         self.assertTrue(self.call_report.state is dispatch_constants.CALL_ERROR_STATE)
 
@@ -222,7 +222,7 @@ class TaskArchivalTests(base.PulpServerTests):
     def test_task_archival(self):
         task = Task(CallRequest(call_without_callbacks, archive=True))
         try:
-            task.run()
+            task._run()
         except:
             self.fail(traceback.format_exc())
         collection = ArchivedCall.get_collection()

@@ -16,6 +16,7 @@ import datetime
 import logging
 import sys
 import time
+import threading
 import types
 import uuid
 from gettext import gettext as _
@@ -94,7 +95,23 @@ class Task(object):
         Run the call request.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
+        # NOTE using run wrapper so that state transition is protected by the
+        # task queue lock and doesn't occur in another thread
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        task_thread = threading.Thread(target=self._run)
+        task_thread.start()
+        # I'm fairly certain these will always be called *before* the
+        # task_thread actually runs
+        self.call_life_cycle_callbacks(dispatch_constants.CALL_RUN_LIFE_CYCLE_CALLBACK)
+
+    def _run(self):
+        """
+        Run the call in the call request.
+        Generally the target of a new thread.
+        """
+        # used for calling _run directly during testing
+        if self.call_report.state in dispatch_constants.CALL_READY_STATES:
+            self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
         dispatch_context.CONTEXT.set_task_attributes(self)
         call = self.call_request.call
@@ -190,7 +207,7 @@ class Task(object):
         # to cancel a running task, the cancel control hook *must* be called
         if self.call_report.state is dispatch_constants.CALL_RUNNING_STATE:
             self._call_cancel_control_hook()
-        # nothing special needs to happen to cancel a waiting task
+        # nothing special needs to happen to cancel a task in a ready state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
 
@@ -216,12 +233,14 @@ class AsyncTask(Task):
     to complete.
     """
 
-    def run(self):
+    def _run(self):
         """
-        Run the call request
+        Run the call in the call request.
+        Generally the target of a new thread.
         """
-        assert self.call_report.state in dispatch_constants.CALL_READY_STATES
-        self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        # used for calling _run directly during testing
+        if self.call_report.state in dispatch_constants.CALL_READY_STATES:
+            self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
         dispatch_context.CONTEXT.set_task_attributes(self)
         call = self.call_request.call
