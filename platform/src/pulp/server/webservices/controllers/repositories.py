@@ -68,6 +68,8 @@ class RepoCollection(JSONController):
             units = unit_query_manager.get_units_across_types(r['id'], criteria)
             r['content_unit_count'] = len(units)
 
+            r.update(serialization.link.child_link_obj(r['id']))
+
         # Return the repos or an empty list; either way it's a 200
         return self.ok(all_repos)
 
@@ -100,7 +102,9 @@ class RepoCollection(JSONController):
                                    resources=resources,
                                    weight=weight,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, id)
+        repo = execution.execute_sync(call_request)
+        repo.update(serialization.link.child_link_obj(id))
+        return self.created(id, repo)
 
 
 class RepoResource(JSONController):
@@ -168,7 +172,9 @@ class RepoResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        repo = execution.execute(call_request)
+        repo.update(serialization.link.current_link_obj())
+        return self.ok(repo)
 
 # -- importer controllers -----------------------------------------------------
 
