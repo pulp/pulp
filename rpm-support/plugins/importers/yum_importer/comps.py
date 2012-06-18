@@ -157,7 +157,6 @@ def get_new_group_units(available_groups, existing_groups, sync_conduit, repo):
     new_groups = {}
     new_units = {}
     for key in available_groups:
-        print "key = %s" % (key)
         if key not in existing_groups:
             grp = available_groups[key]
             new_groups[key] = grp

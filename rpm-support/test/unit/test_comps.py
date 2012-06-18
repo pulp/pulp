@@ -44,6 +44,8 @@ class TestComps(rpm_support_base.PulpRPMTests):
     def simulate_sync(self, repo, src):
         # Simulate a repo sync, copy the source contents to the repo.working_dir
         dst = os.path.join(repo.working_dir, repo.id)
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
         shutil.copytree(src, dst)
 
     def tearDown(self):
@@ -162,26 +164,41 @@ class TestComps(rpm_support_base.PulpRPMTests):
         self.assertEqual(groups, {})
         self.assertEqual(categories, {})
 
-    def test_get_available_over(self):
+    def test_get_available(self):
         # Test with a valid comps.xml
         repo_dir = os.path.join(self.data_dir, "pulp_unittest")
         self.assertTrue(os.path.exists(repo_dir))
         groups, categories = comps.get_available(repo_dir, md_types=["group"])
         self.assertEqual(len(groups), 3)
         self.assertEqual(len(categories), 2)
+        for g in groups.values():
+            keys = g.keys()
+            for key_name in PKG_GROUP_METADATA:
+                self.assertTrue(key_name in keys)
+        for c in categories.values():
+            keys = c.keys()
+            for key_name in PKG_CATEGORY_METADATA:
+                self.assertTrue(key_name in keys)
 
         repo_dir = os.path.join(self.data_dir, "pulp_unittest")
         self.assertTrue(os.path.exists(repo_dir))
         groups, categories = comps.get_available(repo_dir, md_types=["foo", "bar"])
         self.assertEqual(len(groups), 0)
         self.assertEqual(len(categories), 0)
+        for g in groups.values():
+            keys = g.keys()
+            for key_name in PKG_GROUP_METADATA:
+                self.assertTrue(key_name in keys)
+        for c in categories.values():
+            keys = c.keys()
+            for key_name in PKG_CATEGORY_METADATA:
+                self.assertTrue(key_name in keys)
 
         repo_dir = os.path.join(self.data_dir, "pulp_unittest")
         self.assertTrue(os.path.exists(repo_dir))
         groups, categories = comps.get_available(repo_dir)
         self.assertEqual(len(groups), 3)
         self.assertEqual(len(categories), 2)
-
         for g in groups.values():
             keys = g.keys()
             for key_name in PKG_GROUP_METADATA:
@@ -209,7 +226,72 @@ class TestComps(rpm_support_base.PulpRPMTests):
                 self.assertTrue(key_name in keys)
 
     def test_get_orphaned(self):
-        pass
+        # Creating dummy group data, the 'key' is the only piece of data needed
+        # for this test.
+        available_groups = {"group_1":"blah", "group_2":"blah"}
+        existing_groups = {"group_1":"blah", "group_2":"blah", "group_3":"blah"}
+        orphaned_groups = comps.get_orphaned_groups(available_groups, existing_groups)
+        self.assertEqual(len(orphaned_groups), 1)
+        self.assertTrue("group_3" in orphaned_groups)
+        self.assertEqual(orphaned_groups["group_3"], "blah")
+
+    def test_sync_of_orphaned_data(self):
+        # Sync repo with some initial data
+        # Modify the underlying directory to make it look like source has changed
+        # Re-sync
+        # Verify orphaned groups/categories were removed
+        ic = ImporterComps()
+        repo_src_dir = os.path.join(self.data_dir, "test_orphaned_data_initial")
+        feed_url = "file://%s" % (repo_src_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        repo = mock.Mock(spec=Repository)
+        repo.id = "test_sync_of_orphaned_data"
+        repo.working_dir = self.working_dir
+        # Simulate a repo sync, copy the source contents to the repo.working_dir
+        self.simulate_sync(repo, repo_src_dir)
+
+        sync_conduit = importer_mocks.get_sync_conduit()
+        status, summary, details = ic.sync(repo, sync_conduit, config)
+        self.assertTrue(status)
+        self.assertEqual(summary["num_available_groups"], 3)
+        self.assertEqual(summary["num_available_categories"], 2)
+        self.assertEqual(summary["num_new_groups"], 3)
+        self.assertEqual(summary["num_new_categories"], 2)
+        self.assertEqual(summary["num_orphaned_groups"], 0)
+        self.assertEqual(summary["num_orphaned_categories"], 0)
+        self.assertTrue(summary["time_total_sec"] > 0)
+        #
+        # Simulate the existing_units 
+        #
+        avail_groups, avail_cats = comps.get_available(repo_src_dir)
+        existing_cats, existing_cat_units = comps.get_new_category_units(avail_cats, {}, sync_conduit, repo)
+        existing_groups, existing_group_units = comps.get_new_group_units(avail_groups, {}, sync_conduit, repo)
+        self.assertEquals(len(existing_cats), 2)
+        self.assertEquals(len(existing_groups), 3)
+
+        existing_units = []
+        existing_units.extend(existing_group_units.values())
+        existing_units.extend(existing_cat_units.values())
+        self.assertEquals(len(existing_units), (len(existing_cats) + len(existing_groups)))
+        # 
+        # Now we will simulate a change to the feed and pass in our existing units
+        #
+        repo_src_dir = os.path.join(self.data_dir, "test_orphaned_data_final")
+        feed_url = "file://%s" % (repo_src_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
+        self.simulate_sync(repo, repo_src_dir)
+        status, summary, details = ic.sync(repo, sync_conduit, config)
+
+        self.assertTrue(status)
+        self.assertEqual(summary["num_available_groups"], 2)
+        self.assertEqual(summary["num_available_categories"], 1)
+        self.assertEqual(summary["num_new_groups"], 0)
+        self.assertEqual(summary["num_new_categories"], 0)
+        self.assertEqual(summary["num_orphaned_groups"], 1)
+        self.assertEqual(summary["num_orphaned_categories"], 1)
+        self.assertTrue(summary["time_total_sec"] > 0)
+
 
     def test_resync_removes_group(self):
         pass

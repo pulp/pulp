@@ -27,6 +27,17 @@ def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
         return unit
 
     def get_units(criteria=None):
+        ret_val = []
+        if existing_units:
+            for u in existing_units:
+                if criteria:
+                    if u.type_id in criteria.type_ids:
+                        ret_val.append(u)
+                else:
+                    ret_val.append(u)
+        return ret_val
+
+    def old_get_units(criteria=None):
         ret_units = True
         if criteria and hasattr(criteria, "type_ids"):
             if type_id and type_id not in criteria.type_ids:
