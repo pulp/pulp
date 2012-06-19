@@ -34,7 +34,7 @@ class UnitCopyTests(rpm_support_base.PulpClientTests):
         # Setup
         command = rpm_units_copy.pulp_cli.CopyCommand(self.context, 'copy', 'copy', 'copy', 'rpm')
         task_data = {'task_id' : 'abc',
-                     'job_id' : None,
+                     'task_group_id' : None,
                      'tags' : [],
                      'start_time' : None,
                      'finish_time' : None,

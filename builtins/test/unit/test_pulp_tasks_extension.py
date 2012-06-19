@@ -26,7 +26,7 @@ from pulp_tasks import pulp_cli
 
 EXAMPLE_CALL_REPORT = {
     "exception": None,
-    "job_id": None,
+    "task_group_id": None,
     "task_id": "c54742d4-9f8b-11e1-9837-00508d977dff",
     "tags": [
         "pulp:repository:f16",
