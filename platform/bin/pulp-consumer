@@ -29,6 +29,8 @@ if __name__ == "__main__":
     config_files += [os.path.join(conf_d_dir, i) for i in sorted(os.listdir(conf_d_dir))]
 
     # Local user overrides
-    config_files.append(os.path.expanduser('~/.pulp/consumer.conf'))
+    override = os.path.expanduser('~/.pulp/consumer.conf')
+    if os.path.exists(override):
+        config_files.append(override)
 
     sys.exit(pulp.client.launcher.main(config_files))
