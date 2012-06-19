@@ -37,15 +37,6 @@ def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
                     ret_val.append(u)
         return ret_val
 
-    def old_get_units(criteria=None):
-        ret_units = True
-        if criteria and hasattr(criteria, "type_ids"):
-            if type_id and type_id not in criteria.type_ids:
-                ret_units = False
-        if ret_units and existing_units:
-            return existing_units
-        return []
-
     sync_conduit = mock.Mock(spec=RepoSyncConduit)
     sync_conduit.init_unit.side_effect = side_effect
     sync_conduit.get_units = mock.Mock()

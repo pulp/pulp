@@ -291,23 +291,3 @@ class TestComps(rpm_support_base.PulpRPMTests):
         self.assertEqual(summary["num_orphaned_groups"], 1)
         self.assertEqual(summary["num_orphaned_categories"], 1)
         self.assertTrue(summary["time_total_sec"] > 0)
-
-
-    def test_resync_removes_group(self):
-        pass
-
-    def test_resync_removes_category(self):
-        pass
-
-    def test_resync_adds_group(self):
-        pass
-
-    def test_resync_adds_category(self):
-        pass
-
-    def test_resync_no_change(self):
-        pass
-
-    def test_cancel_sync(self):
-        pass
-
