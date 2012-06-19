@@ -284,7 +284,7 @@ class Coordinator(object):
 
         Supported criteria:
          * task_id
-         * job_id
+         * task_group_id
          * state
          * call_name
          * class_name
@@ -293,7 +293,7 @@ class Coordinator(object):
          * resources
          * tags
         """
-        valid_criteria = set(('task_id', 'job_id', 'state', 'call_name',
+        valid_criteria = set(('task_id', 'task_group_id', 'state', 'call_name',
                               'class_name', 'args', 'kwargs', 'resources', 'tags'))
         provided_criteria = set(criteria.keys())
         superfluous_criteria = provided_criteria - valid_criteria
@@ -312,7 +312,7 @@ class Coordinator(object):
 
         Supported criteria:
          * task_id
-         * job_id
+         * task_group_id
          * state
          * call_name
          * class_name
@@ -360,18 +360,18 @@ class Coordinator(object):
             return None
         return task_queue.cancel(task)
 
-    def cancel_multiple_calls(self, job_id):
+    def cancel_multiple_calls(self, task_group_id):
         """
-        Cancel multiple call requests using the job id.
-        @param job_id: job id for multiple calls
-        @type  job_id: str
-        @return: dictionary of {task id: cancel return} for tasks associated with the job id
+        Cancel multiple call requests using the task_group id.
+        @param task_group_id: task_group id for multiple calls
+        @type  task_group_id: str
+        @return: dictionary of {task id: cancel return} for tasks associated with the task_group id
         @rtype:  dict
         """
         cancel_returns = {}
         task_queue = dispatch_factory._task_queue()
         for task in task_queue.all_tasks():
-            if job_id != task.call_report.job_id:
+            if task_group_id != task.call_report.task_group_id:
                 continue
             cancel_returns[task.id] = task_queue.cancel(task)
         return cancel_returns
@@ -499,7 +499,7 @@ def task_matches_criteria(task, criteria):
     """
     if 'task_id' in criteria and criteria['task_id'] != task.call_report.task_id:
         return False
-    if 'job_id' in criteria and criteria['job_id'] != task.call_report.job_id:
+    if 'task_group_id' in criteria and criteria['task_group_id'] != task.call_report.task_group_id:
         return False
     if 'state' in criteria and criteria['state'] != task.call_report.state:
         return False

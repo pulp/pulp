@@ -146,49 +146,49 @@ class QueuedCallResource(JSONController):
         link = serialization.link.current_link_obj()
         return self.accepted(link)
 
-# job controllers --------------------------------------------------------------
+# task_group controllers --------------------------------------------------------------
 
 class TaskGroupCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        job_ids = set()
+        task_group_ids = set()
         task_queue = dispatch_factory._task_queue()
         for task in task_queue.all_tasks():
-            job_id = task.call_report.job_id
-            if job_id is None:
+            task_group_id = task.call_report.task_group_id
+            if task_group_id is None:
                 continue
-            job_ids.add(job_id)
-        job_links = []
-        for id in job_ids:
-            link = {'job_id': id}
+            task_group_ids.add(task_group_id)
+        task_group_links = []
+        for id in task_group_ids:
+            link = {'task_group_id': id}
             link.update(serialization.link.child_link_obj(id))
-            job_links.append(link)
-        return self.ok(job_links)
+            task_group_links.append(link)
+        return self.ok(task_group_links)
 
 
 class TaskGroupResource(JSONController):
 
     @auth_required(authorization.READ)
-    def GET(self, job_id):
+    def GET(self, task_group_id):
         coordinator = dispatch_factory.coordinator()
-        call_reports = coordinator.find_call_reports(job_id=job_id)
+        call_reports = coordinator.find_call_reports(task_group_id=task_group_id)
         serialized_call_reports = [c.serialize() for c in call_reports]
-        archived_calls = dispatch_history.find_archived_calls(job_id=job_id)
+        archived_calls = dispatch_history.find_archived_calls(task_group_id=task_group_id)
         serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
         if not serialized_call_reports:
-            raise TaskGroupNotFound(job_id)
+            raise TaskGroupNotFound(task_group_id)
         return self.ok(serialized_call_reports)
 
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, job_id):
+    def DELETE(self, task_group_id):
         coordinator = dispatch_factory.coordinator()
-        results = coordinator.cancel_multiple_calls(job_id)
+        results = coordinator.cancel_multiple_calls(task_group_id)
         if not results:
-            raise TaskGroupNotFound(job_id)
+            raise TaskGroupNotFound(task_group_id)
         if None in results.values():
-            raise TaskGroupCancelNotImplemented(job_id)
+            raise TaskGroupCancelNotImplemented(task_group_id)
         return self.accepted(results)
 
 # web.py applications ----------------------------------------------------------
@@ -211,7 +211,7 @@ QUEUED_CALL_URLS = (
 
 queued_call_application = web.application(QUEUED_CALL_URLS, globals())
 
-# mapped to /v2/jobs/
+# mapped to /v2/task_groups/
 
 TASK_GROUP_URLS = (
     '/', TaskGroupCollection,

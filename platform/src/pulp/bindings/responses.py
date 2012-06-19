@@ -71,7 +71,7 @@ class Task(object):
             self.href = None
 
         self.task_id = response_body['task_id']
-        self.job_id = response_body['job_id']
+        self.task_group_id = response_body['task_group_id']
         self.tags = response_body['tags']
 
         self.start_time = response_body['start_time']

@@ -25,8 +25,8 @@ def find_archived_calls(**criteria):
     query = {}
     if 'task_id' in criteria:
         query['serialized_call_report.task_id'] = criteria['task_id']
-    if 'job_id' in criteria:
-        query['serialized_call_report.job_id'] = criteria['job_id']
+    if 'task_group_id' in criteria:
+        query['serialized_call_report.task_group_id'] = criteria['task_group_id']
     if 'state' in criteria:
         query['serialized_call_report.state'] = criteria['state']
     if 'call_name' in criteria:
