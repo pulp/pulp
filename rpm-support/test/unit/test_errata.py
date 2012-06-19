@@ -141,7 +141,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
 
         existing_units = []
         for unit in [unit_key_a, unit_key_b]:
-            existing_units.append(Unit(importer_rpm.ImporterRPM, unit, metadata, ''))
+            existing_units.append(Unit(RPM_TYPE_ID, unit, metadata, ''))
         sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
         importerErrata = errata.ImporterErrata()
         status, summary, details = importerErrata.sync(repo, sync_conduit, config)
