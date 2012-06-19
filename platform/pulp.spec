@@ -17,7 +17,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.301
+Version: 0.0.302
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -327,6 +327,9 @@ on a defined interval.
 
 
 %changelog
+* Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.302-1
+- Fixed crashing if no override is present (jason.dobies@redhat.com)
+
 * Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.301-1
 - some job->task_group conversions I missed (jason.connor@gmail.com)
 - changed "job" to "task_group" to elimnate any semantic confusion between task
