@@ -127,25 +127,25 @@ class Coordinator(object):
         @return: list of call reports pertaining to the running of the request calls
         @rtype:  list of L{call.CallReport} instances
         """
-        job_id = self._generate_job_id()
+        task_group_id = self._generate_task_group_id()
         call_report_list = []
         for call_request in call_request_list:
-            task = self._create_task(call_request, job_id=job_id)
+            task = self._create_task(call_request, task_group_id=task_group_id)
             self._run_task(task, False)
             call_report_list.append(copy.copy(task.call_report))
         return call_report_list
 
     # execution utilities ------------------------------------------------------
 
-    def _create_task(self, call_request, call_report=None, job_id=None):
+    def _create_task(self, call_request, call_report=None, task_group_id=None):
         """
         Create the task for the given call request.
         @param call_request: call request to encapsulate in a task
         @type  call_request: L{call.CallRequest} instance
         @param call_report: call report for call request
         @type  call_report: L{call.CallReport} instance or None
-        @param job_id: optional job id
-        @type  job_id: None or str
+        @param task_group_id: optional task group id
+        @type  task_group_id: None or str
         @return: task that encapsulates the call request
         @rtype:  L{Task} instance
         """
@@ -154,7 +154,7 @@ class Coordinator(object):
         else:
             task = AsyncTask(call_request, call_report)
         task.call_report.task_id = task.id
-        task.call_report.job_id = job_id
+        task.call_report.task_group_id = task_group_id
         return task
 
     def _run_task(self, task, synchronous=None, timeout=None):
@@ -208,9 +208,9 @@ class Coordinator(object):
                 wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES,
                               poll_interval=self.task_state_poll_interval)
 
-    def _generate_job_id(self):
+    def _generate_task_group_id(self):
         """
-        Generate a unique job id.
+        Generate a unique task group id.
         @return: uuid string
         @rtype:  str
         """
@@ -220,8 +220,8 @@ class Coordinator(object):
         task_queue = dispatch_factory._task_queue()
         task_queue.lock()
         try:
-            job_id = str(uuid.uuid4())
-            return job_id
+            task_group_id = str(uuid.uuid4())
+            return task_group_id
         finally:
             task_queue.unlock()
 

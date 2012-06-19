@@ -234,8 +234,8 @@ class CallReport(object):
     @type state: str
     @ivar task_id: identity of task executing call
     @type task_id: str
-    @ivar job_id: identity of job the call is a part of
-    @type job_id: str
+    @ivar task_group_id: identity of task group the call is a part of
+    @type task_group_id: str
     @ivar schedule_id: identity of the schedule that made this call
     @type schedule_id: str
     @ivar progress: dictionary of progress information
@@ -253,7 +253,7 @@ class CallReport(object):
                  reasons=None,
                  state=None,
                  task_id=None,
-                 job_id=None,
+                 task_group_id=None,
                  schedule_id=None,
                  progress=None,
                  result=None,
@@ -265,7 +265,7 @@ class CallReport(object):
         assert isinstance(reasons, (NoneType, list))
         assert isinstance(state, (NoneType, basestring))
         assert isinstance(task_id, (NoneType, basestring))
-        assert isinstance(job_id, (NoneType, basestring))
+        assert isinstance(task_group_id, (NoneType, basestring))
         assert isinstance(schedule_id, (NoneType, basestring))
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
@@ -276,7 +276,7 @@ class CallReport(object):
         self.reasons = reasons or []
         self.state = state
         self.task_id = task_id
-        self.job_id = job_id
+        self.task_group_id = task_group_id
         self.schedule_id = schedule_id
         self.progress = progress or {}
         self.result = result
@@ -288,7 +288,7 @@ class CallReport(object):
 
     def serialize(self):
         data = {}
-        for field in ('response', 'reasons', 'state', 'task_id', 'job_id',
+        for field in ('response', 'reasons', 'state', 'task_id', 'task_group_id',
                       'schedule_id', 'progress', 'result', 'tags'):
             data[field] = getattr(self, field)
         ex = getattr(self, 'exception')

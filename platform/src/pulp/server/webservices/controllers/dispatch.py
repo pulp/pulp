@@ -52,18 +52,18 @@ class QueuedCallNotFound(MissingResource):
         return _('Snapshot Not Found: %(id)s') % {'id': self.args[0]}
 
 
-class JobNotFound(MissingResource):
+class TaskGroupNotFound(MissingResource):
 
     def __str__(self):
-        return _('Job Not Found: %(id)s') % {'id': self.args[0]}
+        return _('TaskGroup Not Found: %(id)s') % {'id': self.args[0]}
 
 
-class JobCancelNotImplemented(PulpExecutionException):
+class TaskGroupCancelNotImplemented(PulpExecutionException):
 
     http_status_code = httplib.NOT_IMPLEMENTED
 
     def __str__(self):
-        return _('Cancel Not Implemented for Job: %(id)s') % {'id': self.args[0]}
+        return _('Cancel Not Implemented for TaskGroup: %(id)s') % {'id': self.args[0]}
 
 # task controllers -------------------------------------------------------------
 
@@ -148,7 +148,7 @@ class QueuedCallResource(JSONController):
 
 # job controllers --------------------------------------------------------------
 
-class JobCollection(JSONController):
+class TaskGroupCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
@@ -167,7 +167,7 @@ class JobCollection(JSONController):
         return self.ok(job_links)
 
 
-class JobResource(JSONController):
+class TaskGroupResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, job_id):
@@ -177,7 +177,7 @@ class JobResource(JSONController):
         archived_calls = dispatch_history.find_archived_calls(job_id=job_id)
         serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
         if not serialized_call_reports:
-            raise JobNotFound(job_id)
+            raise TaskGroupNotFound(job_id)
         return self.ok(serialized_call_reports)
 
 
@@ -186,9 +186,9 @@ class JobResource(JSONController):
         coordinator = dispatch_factory.coordinator()
         results = coordinator.cancel_multiple_calls(job_id)
         if not results:
-            raise JobNotFound(job_id)
+            raise TaskGroupNotFound(job_id)
         if None in results.values():
-            raise JobCancelNotImplemented(job_id)
+            raise TaskGroupCancelNotImplemented(job_id)
         return self.accepted(results)
 
 # web.py applications ----------------------------------------------------------
@@ -213,10 +213,10 @@ queued_call_application = web.application(QUEUED_CALL_URLS, globals())
 
 # mapped to /v2/jobs/
 
-JOB_URLS = (
-    '/', JobCollection,
-    '/([^/]+)/', JobResource,
+TASK_GROUP_URLS = (
+    '/', TaskGroupCollection,
+    '/([^/]+)/', TaskGroupResource,
 )
 
-job_application = web.application(JOB_URLS, globals())
+task_group_application = web.application(TASK_GROUP_URLS, globals())
 

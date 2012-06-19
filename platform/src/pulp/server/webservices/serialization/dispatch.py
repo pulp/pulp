@@ -22,10 +22,10 @@ def task_href(call_report):
     return {'_href': '/pulp/api/v2/tasks/%s/' % call_report.task_id}
 
 
-def job_href(call_report):
-    if call_report.job_id is None:
+def task_group_href(call_report):
+    if call_report.task_group_id is None:
         return {}
-    return {'_href': '/pulp/api/v2/jobs/%s/' % call_report.job_id}
+    return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.task_group_id}
 
 
 def scheduled_call_obj(scheduled_call):
