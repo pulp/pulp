@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.300
+Version: 0.0.301
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -217,6 +217,19 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.301-1
+- few more (jason.connor@gmail.com)
+- YumImporter: unit test cleanup (jmatthews@redhat.com)
+- Update test_errata to use RPM_TYPE_ID in link_errata test
+  (jmatthews@redhat.com)
+- Display name should be user-friendly (jason.dobies@redhat.com)
+- YumImporter: Unit tests for sync of orphaned comps data
+  (jmatthews@redhat.com)
+- Updating base class for importer/distributor rpm related unit tests
+  (jmatthews@redhat.com)
+- Fix missing published/ and /var/www/pub. (jortel@redhat.com)
+- Adjust dependancies after install testing. (jortel@redhat.com)
+
 * Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.300-1
 - Align versions to: 300 (jortel@redhat.com)
 - update test repo metadata to be compatible with el5 (pkilambi@redhat.com)
