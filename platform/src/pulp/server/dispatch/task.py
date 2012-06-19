@@ -92,7 +92,7 @@ class Task(object):
 
     def run(self):
         """
-        Run the call request.
+        Public wrapper to kick off the call in the call_request in a new thread.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         # NOTE using run wrapper so that state transition is protected by the
@@ -100,8 +100,8 @@ class Task(object):
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         task_thread = threading.Thread(target=self._run)
         task_thread.start()
-        # I'm fairly certain these will always be called *before* the
-        # task_thread actually runs
+        # I'm fairly certain these will always be called *before* the context
+        # switch to the task_thread
         self.call_life_cycle_callbacks(dispatch_constants.CALL_RUN_LIFE_CYCLE_CALLBACK)
 
     def _run(self):
@@ -199,9 +199,9 @@ class Task(object):
         """
         # XXX this method assumes that it is being called under the protection
         # of the task queue lock. If that is not the case, a race condition
-        # occurs between the states of the task.
+        # occurs on the state of the task.
 
-        # as complete task cannot be cancelled
+        # a complete task cannot be cancelled
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return
         # to cancel a running task, the cancel control hook *must* be called
