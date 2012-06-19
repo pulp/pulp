@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.301
+Version: 0.0.302
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -217,6 +217,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.302-1
+- 
+
 * Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.301-1
 - few more (jason.connor@gmail.com)
 - YumImporter: unit test cleanup (jmatthews@redhat.com)
