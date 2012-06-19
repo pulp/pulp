@@ -17,7 +17,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.300
+Version: 0.0.301
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -327,6 +327,31 @@ on a defined interval.
 
 
 %changelog
+* Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.301-1
+- some job->task_group conversions I missed (jason.connor@gmail.com)
+- changed "job" to "task_group" to elimnate any semantic confusion between task
+  and job (jason.connor@gmail.com)
+- changed repo resource controllers to not use deprecated execution module
+  methods (jason.connor@gmail.com)
+- moved state change, thread kick-off, and life cycle callback execution to a
+  wrapper for task run to elliminate a race condition when canceling tasks in a
+  ready state (jason.connor@gmail.com)
+- changed task.cancel to automatically allow the cancellation of waiting tasks
+  (jason.connor@gmail.com)
+- Directory ownership tweaking in packageing. (jortel@redhat.com)
+- On admin-client, consumer-client:  add Requires on builtin extensions.
+  (jortel@redhat.com)
+- Fix missing published/ and /var/www/pub. (jortel@redhat.com)
+- Adjust Obsoletes: in refactored .spec. (jortel@redhat.com)
+- Adjust dependancies after install testing. (jortel@redhat.com)
+- adding call request id to corresponding call report (jason.connor@gmail.com)
+- better argument formatting for call requests __str__ (jason.connor@gmail.com)
+- added resource management convenience methods to make dealing with call
+  request resources more bearable (jason.connor@gmail.com)
+- added unique, generated, id for call requests (jason.connor@gmail.com)
+- remove all "not implemented" controllers from content rest api
+  (jason.connor@gmail.com)
+
 * Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.0.300-1
 - Align versions to: 300 (jortel@redhat.com)
 - Added specific error message for expired certificates
