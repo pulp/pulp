@@ -127,7 +127,6 @@ A collection of components share between RPM plugins, extensions and handlers.
 %files -n python-pulp-rpm-common
 %defattr(-,root,root,-)
 %{python_sitelib}/pulp_rpm/
-%{_sysconfdir}/yum.repos.d/pulp.repo
 %doc
 
 
