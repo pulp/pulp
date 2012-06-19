@@ -74,22 +74,27 @@ CALL_RESPONSES = (CALL_ACCEPTED_RESPONSE,
 # call states ------------------------------------------------------------------
 
 CALL_WAITING_STATE = 'waiting'
+CALL_IGNORED_STATE = 'ignored'
 CALL_RUNNING_STATE = 'running'
 CALL_SUSPENDED_STATE = 'suspended'
 CALL_FINISHED_STATE = 'finished'
 CALL_ERROR_STATE = 'error'
 CALL_CANCELED_STATE = 'canceled'
+CALL_TIMED_OUT_STATE = 'timed out'
 
 CALL_STATES = (CALL_WAITING_STATE,
+               CALL_IGNORED_STATE,
                CALL_RUNNING_STATE,
                CALL_SUSPENDED_STATE,
                CALL_FINISHED_STATE,
                CALL_ERROR_STATE,
-               CALL_CANCELED_STATE)
+               CALL_CANCELED_STATE,
+               CALL_TIMED_OUT_STATE)
 
 CALL_READY_STATES = (CALL_WAITING_STATE,)
 CALL_INCOMPLETE_STATES = (CALL_WAITING_STATE, CALL_RUNNING_STATE, CALL_SUSPENDED_STATE)
-CALL_COMPLETE_STATES = (CALL_FINISHED_STATE, CALL_ERROR_STATE, CALL_CANCELED_STATE)
+CALL_COMPLETE_STATES = (CALL_IGNORED_STATE, CALL_FINISHED_STATE, CALL_ERROR_STATE,
+                        CALL_CANCELED_STATE, CALL_TIMED_OUT_STATE)
 
 # resource types ---------------------------------------------------------------
 
