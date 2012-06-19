@@ -34,8 +34,8 @@
 
     {
         "id" : "package_group",
-        "display_name" : "PACKAGE_GROUP",
-        "description" : "YUM Package group information",
+        "display_name" : "Package Group",
+        "description" : "Yum Package group information",
         "unit_key" :
             ["id", "repo_id"],
         "search_indexes" : 
@@ -45,8 +45,8 @@
 
     {
         "id" : "package_category",
-        "display_name" : "PACKAGE_CATEGORY",
-        "description" : "YUM Package category information",
+        "display_name" : "Package Category",
+        "description" : "Yum Package category information",
         "unit_key" :
             ["id", "repo_id"],
         "search_indexes" : 
