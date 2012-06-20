@@ -14,8 +14,6 @@
 # XXX this is not a dumping grounds for any random code. It is a place to put
 # paradigm-changing code that allows you to get unique or more efficient behaviors
 
-import copy
-
 
 class Singleton(type):
     """
