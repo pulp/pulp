@@ -14,6 +14,8 @@
 # XXX this is not a dumping grounds for any random code. It is a place to put
 # paradigm-changing code that allows you to get unique or more efficient behaviors
 
+from pulp.server.exceptions import PulpExecutionException
+
 
 class Singleton(type):
     """
@@ -67,13 +69,22 @@ class subdict(dict):
         n = dict((k, v) for k, v in d.items() if k in keys)
         super(subdict, self).__init__(n)
 
+# topological sorting ----------------------------------------------------------
+
+class NoTopologicalOrderingExists(PulpExecutionException):
+    """
+    Raised when no topological ordering exists on a directed graph.
+    """
+    pass
+
 
 def topological_sort(graph):
     """
     Perform a topological sort on a directed graph.
     @param graph: directed graph represented as a dictionary
     @type  graph: dict
-    @return: list of vertices of the graph in a topological order
+    @raise NoTopologicalOrderingExists: if no topological ordering exists
+    @return: list of vertices of the graph in a topological ordering
     @rtype:  list
     """
     assert isinstance(graph, dict)
@@ -88,7 +99,7 @@ def topological_sort(graph):
             return
         if vertex in discovered_vertices:
             # we've run into an ancestor, which means a cycle
-            raise Exception()
+            raise NoTopologicalOrderingExists()
         discovered_vertices.add(vertex)
         for adjacent in graph[vertex]:
             _recursive_topological_sort(adjacent)
