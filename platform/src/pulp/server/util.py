@@ -81,6 +81,9 @@ class NoTopologicalOrderingExists(PulpExecutionException):
 def topological_sort(graph):
     """
     Perform a topological sort on a directed graph.
+    The ordering returned is "sink-first". Think of the directed edges as a
+    "greater-than" relation and the ordering would correspond to "ascending".
+    v1 -> v2 == v1 > v2
     @param graph: directed graph represented as a dictionary
     @type  graph: dict
     @raise NoTopologicalOrderingExists: if no topological ordering exists
