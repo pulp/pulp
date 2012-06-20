@@ -61,6 +61,7 @@ class CallRequest(object):
                  args=None,
                  kwargs=None,
                  resources=None,
+                 group_dependencies=None,
                  weight=1,
                  tags=None,
                  asynchronous=False,
@@ -70,6 +71,7 @@ class CallRequest(object):
         assert isinstance(args, (NoneType, tuple, list))
         assert isinstance(kwargs, (NoneType, dict))
         assert isinstance(resources, (NoneType, dict))
+        assert isinstance(group_dependencies, (NoneType, dict))
         assert isinstance(weight, int)
         assert weight > -1
         assert isinstance(tags, (NoneType, list))
@@ -81,6 +83,7 @@ class CallRequest(object):
         self.args = args or []
         self.kwargs = kwargs or {}
         self.resources = resources or {}
+        self.group_dependencies = group_dependencies or {}
         self.weight = weight
         self.tags = tags or []
         self.asynchronous = asynchronous
@@ -135,6 +138,11 @@ class CallRequest(object):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
         type_dict = self.resources.setdefault(resource_type, {})
         type_dict.update({resource_id: dispatch_constants.RESOURCE_DELETE_OPERATION})
+
+    # convenient dependency management -----------------------------------------
+
+    def depends_on(self, call_request, states=None):
+        self.group_dependencies[call_request.id] = states
 
     # hooks management ---------------------------------------------------------
 
