@@ -42,6 +42,8 @@ class CallRequest(object):
     @type kwargs: dict
     @ivar resources: dictionary of resources and operations used by the request
     @type resources: dict
+    @ivar dependencies: dictionary of call request ids this call request depends on
+    @type dependencies: dict
     @ivar weight: weight of callable in relation concurrency resources
     @type weight: int
     @ivar execution_hooks: callbacks to be executed during lifecycle of callable
@@ -61,7 +63,7 @@ class CallRequest(object):
                  args=None,
                  kwargs=None,
                  resources=None,
-                 group_dependencies=None,
+                 dependencies=None,
                  weight=1,
                  tags=None,
                  asynchronous=False,
@@ -71,7 +73,7 @@ class CallRequest(object):
         assert isinstance(args, (NoneType, tuple, list))
         assert isinstance(kwargs, (NoneType, dict))
         assert isinstance(resources, (NoneType, dict))
-        assert isinstance(group_dependencies, (NoneType, dict))
+        assert isinstance(dependencies, (NoneType, dict))
         assert isinstance(weight, int)
         assert weight > -1
         assert isinstance(tags, (NoneType, list))
@@ -83,7 +85,7 @@ class CallRequest(object):
         self.args = args or []
         self.kwargs = kwargs or {}
         self.resources = resources or {}
-        self.group_dependencies = group_dependencies or {}
+        self.dependencies = dependencies or {}
         self.weight = weight
         self.tags = tags or []
         self.asynchronous = asynchronous
@@ -142,7 +144,8 @@ class CallRequest(object):
     # convenient dependency management -----------------------------------------
 
     def depends_on(self, call_request, states=None):
-        self.group_dependencies[call_request.id] = states
+        # NOTE this overwrites any previous states associated with the call request
+        self.dependencies[call_request.id] = states
 
     # hooks management ---------------------------------------------------------
 
