@@ -429,7 +429,7 @@ class ImporterRPM(object):
         feed_url = config.get("feed_url")
         num_retries = config.get("num_retries")
         retry_delay = config.get("retry_delay")
-        skip_content_types = config.get("skip_content_types")
+        skip_content_types = config.get("skip") or []
         verify_checksum = config.get("verify_checksum") or False
         verify_size = config.get("verify_size") or False
         verify_options = {"checksum":verify_checksum, "size":verify_size}
@@ -445,64 +445,34 @@ class ImporterRPM(object):
             _LOG.error("Failed to fetch metadata on: %s" % (feed_url))
             raise
         set_progress("metadata", {"state": "FINISHED"})
-
-        rpm_items = self.yumRepoGrinder.getRPMItems()
-        available_rpms = get_available_rpms(rpm_items)
         end_metadata = time.time()
-        _LOG.info("%s rpms are available in the source repo <%s> for %s, calculated in %s seconds" % \
-                    (len(available_rpms), feed_url, repo.id, (end_metadata-start_metadata)))
+        new_units = {}
 
-        # Determine what exists and what has been orphaned, or exists in Pulp but has been removed from the source repo
-        criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
-        existing_units = get_existing_units(sync_conduit, criteria)
-        orphaned_units = get_orphaned_units(available_rpms, existing_units)
+        # ----------------- setup items to download and add to grinder ---------------
+        # setup rpm items
+        rpm_info = self._setup_rpms(repo, sync_conduit, verify_options, skip_content_types)
+        new_units.update(rpm_info['new_rpm_units'])
+        # Sync the new and missing rpms
+        self.yumRepoGrinder.addItems(rpm_info['new_rpms'].values())
+        self.yumRepoGrinder.addItems(rpm_info['missing_rpms'].values())
 
-        # Determine new and missing items
-        new_rpms, new_units = get_new_rpms_and_units(available_rpms, existing_units, sync_conduit)
-        missing_rpms, missing_units = get_missing_rpms_and_units(available_rpms, existing_units, verify_options)
-        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
-                    (repo.id, len(existing_units), len(orphaned_units), len(new_rpms), len(missing_rpms)))
+        # setup drpm items
+        drpm_info = self._setup_drpms(repo, sync_conduit, verify_options, skip_content_types)
+        new_units.update(drpm_info['new_drpm_units'])
+        # Sync the new and missing drpms
+        self.yumRepoGrinder.addItems(drpm_info['new_drpms'].values())
+        self.yumRepoGrinder.addItems(drpm_info['missing_drpms'].values())
 
-        # process deltarpms
-        drpm_items = self.yumRepoGrinder.getDeltaRPMItems()
-        _LOG.info("Delta RPMs to sync %s" % len(drpm_items))
-        available_drpms =  drpm.get_available_drpms(drpm_items)
-        existing_drpm_units = drpm.get_existing_drpm_units(sync_conduit)
-        orphaned_drpm_units = get_orphaned_units(available_drpms, existing_drpm_units)
-        end_metadata = time.time()
-        _LOG.info("%s drpms are available in the source repo <%s> for %s, calculated in %s seconds" % \
-                    (len(available_drpms), feed_url, repo.id, (end_metadata-start_metadata)))
-
-        # Determine new and missing items
-        new_drpms, new_drpm_units = drpm.get_new_drpms_and_units(available_drpms, existing_drpm_units, sync_conduit)
-        missing_drpms, missing_drpm_units = get_missing_rpms_and_units(available_drpms, existing_drpm_units, verify_options)
-        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." % \
-                    (repo.id, len(existing_drpm_units), len(orphaned_drpm_units), len(new_drpms), len(missing_drpms)))
-        self.yumRepoGrinder.setupDistroInfo()
-        distro_items = self.yumRepoGrinder.getDistroItems()
-        available_distros = distribution.get_available_distributions(distro_items)
-        existing_distro_units = distribution.get_existing_distro_units(sync_conduit)
-        orphaned_distro_units = []
-        end_metadata = time.time()
-        _LOG.info("%s distributions are available in the source repo <%s> for %s, calculated in %s seconds" % \
-                    (len(available_distros), feed_url, repo.id, (end_metadata-start_metadata)))
-        new_distro_files, new_distro_units = distribution.get_new_distros_and_units(available_distros, existing_distro_units, sync_conduit)
-        missing_distro_files, missing_distro_units = distribution.get_missing_distros_and_units(available_distros, existing_distro_units, verify_options)
-        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new distro files, %s missing distro." % \
-                    (repo.id, len(existing_distro_units), len(orphaned_distro_units), len(new_distro_files), len(missing_distro_files)))
-
-        # include new drpm units
-        new_units.update(new_drpm_units)
-        new_units.update(new_distro_units)
-        # Sync the new and missing rpms, drpms
-        self.yumRepoGrinder.addItems(new_rpms.values())
-        self.yumRepoGrinder.addItems(missing_rpms.values())
-        self.yumRepoGrinder.addItems(new_drpms.values())
-        self.yumRepoGrinder.addItems(missing_drpms.values())
-        all_new_distro_files = list(itertools.chain(*new_distro_files.values()))
+        # setup distribution items
+        distro_info = self._setup_distros(repo, sync_conduit, verify_options, skip_content_types)
+        new_units.update(distro_info['new_distro_units'])
+        all_new_distro_files = list(itertools.chain(*distro_info['new_distro_files'].values()))
+        # Sync the new and missing distro
         self.yumRepoGrinder.addItems(all_new_distro_files)
-        all_missing_distro_files = list(itertools.chain(*missing_distro_files.values()))
+        all_missing_distro_files = list(itertools.chain(*distro_info['missing_distro_files'].values()))
         self.yumRepoGrinder.addItems(all_missing_distro_files)
+
+        #----------- start the item download via grinder ---------------
         start_download = time.time()
         report = self.yumRepoGrinder.download()
         if self.canceled:
@@ -518,75 +488,86 @@ class ImporterRPM(object):
             existing_scratch_pad = sync_conduit.get_repo_scratchpad() or {}
             existing_scratch_pad.update({'importer_working_dir' : importer_working_repo_dir})
             sync_conduit.set_repo_scratchpad(existing_scratch_pad)
-        rpms_with_errors = search_for_errors(new_rpms, missing_rpms)
-        drpms_with_errors = search_for_errors(new_drpms, missing_drpms)
-        rpms_with_errors.update(drpms_with_errors)
-        # Verify we synced what we expected, update the passed in dicts to remove non-downloaded items
-        not_synced = verify_download(missing_rpms, new_rpms, new_units, verify_options)
+
+        # -------------- process the download results to a report ---------------
+        errors = {}
+        not_synced = {}
+        removal_errors = []
+        summary = {}
+        if 'rpm' not in skip_content_types:
+            rpms_with_errors = search_for_errors(rpm_info['new_rpms'], rpm_info['missing_rpms'])
+            errors.update(rpms_with_errors)
+            # Verify we synced what we expected, update the passed in dicts to remove non-downloaded items
+            not_synced = verify_download(rpm_info['missing_rpms'], rpm_info['new_rpms'], new_units, verify_options)
+            # Save the new units and remove the orphaned units
+            saved_new_unit_keys = []
+            for key in new_units:
+                if key not in rpms_with_errors:
+                    u = new_units[key]
+                    sync_conduit.save_unit(u)
+                    saved_new_unit_keys.append(key)
+
+            for u in rpm_info['orphaned_rpm_units'].values():
+                try:
+                    remove_unit(sync_conduit, repo, u)
+                except Exception, e:
+                    unit_info = str(u.unit_key)
+                    _LOG.exception("Unable to remove: %s" % (unit_info))
+                    removal_errors.append((unit_info, str(e)))
+            # filter out rpm specific data if any
+            new_rpms = filter(lambda u: u.type_id == 'rpm', rpm_info['new_rpm_units'].values())
+            missing_rpms = filter(lambda u: u.type_id == 'rpm', rpm_info['missing_rpm_units'].values())
+            orphaned_rpms = filter(lambda u: u.type_id == 'rpm', rpm_info['orphaned_rpm_units'].values())
+            not_synced_rpms = filter(lambda r: r["arch"] != 'srpm', not_synced.values())
+
+            summary["num_rpms"] = len(rpm_info['available_rpms'])
+            summary["num_synced_new_rpms"] = len(new_rpms)
+            summary["num_resynced_rpms"] = len(missing_rpms)
+            summary["num_not_synced_rpms"] = len(not_synced_rpms)
+            summary["num_orphaned_rpms"] = len(orphaned_rpms)
+            summary["rpm_removal_errors"] = removal_errors
+
+            # filter out srpm specific data if any
+            new_srpms = filter(lambda u: u.type_id == 'srpm', rpm_info['new_rpm_units'].values())
+            missing_srpms = filter(lambda u: u.type_id == 'srpm', rpm_info['missing_rpm_units'].values())
+            orphaned_srpms = filter(lambda u: u.type_id == 'srpm', rpm_info['orphaned_rpm_units'].values())
+            not_synced_srpms = filter(lambda r: r["arch"] == 'srpm', not_synced.values())
+
+            summary["num_synced_new_srpms"] = len(new_srpms)
+            summary["num_resynced_srpms"] = len(missing_srpms)
+            summary["num_not_synced_srpms"] = len(not_synced_srpms)
+            summary["num_orphaned_srpms"] = len(orphaned_srpms)
+        else:
+            _LOG.info("skipping rpm summary report")
+
         if not_synced:
             _LOG.warning("%s rpms were not downloaded" % (len(not_synced)))
 
-        # Save the new units and remove the orphaned units
-        saved_new_unit_keys = []
-        for key in new_units:
-            if key not in rpms_with_errors:
-                u = new_units[key]
-                sync_conduit.save_unit(u)
-                saved_new_unit_keys.append(key)
+        if 'drpm' not in skip_content_types:
+            drpms_with_errors = search_for_errors(drpm_info['new_drpms'], drpm_info['missing_drpms'])
+            errors.update(drpms_with_errors)
+            # purge any orphaned drpms
+            drpm.purge_orphaned_drpm_units(sync_conduit, repo, drpm_info['orphaned_drpm_units'].values())
+            # filter out drpm specific data if any
+            new_drpms = filter(lambda u: u.type_id == 'drpm', drpm_info['new_drpm_units'].values())
+            missing_drpms = filter(lambda u: u.type_id == 'drpm', drpm_info['missing_drpm_units'].values())
+            orphaned_drpms = filter(lambda u: u.type_id == 'drpm', drpm_info['orphaned_drpm_units'].values())
 
-        removal_errors = []
-        for u in orphaned_units.values():
-            try:
-                remove_unit(sync_conduit, repo, u)
-            except Exception, e:
-                unit_info = str(u.unit_key)
-                _LOG.exception("Unable to remove: %s" % (unit_info))
-                removal_errors.append((unit_info, str(e)))
-        # purge any orphaned drpms
-        drpm.purge_orphaned_drpm_units(sync_conduit, repo, orphaned_drpm_units.values())
+            summary["num_synced_new_drpms"] = len(new_drpms)
+            summary["num_resynced_drpms"] = len(missing_drpms)
+            summary["num_orphaned_drpms"] = len(orphaned_drpms)
+        else:
+            _LOG.info("skipping drpm summary report")
+
+        if 'distribution' not in skip_content_types:
+            # filter out distribution specific data if any
+            summary["num_synced_new_distributions"] = len(distro_info['new_distro_units'])
+            summary["num_synced_new_distributions_files"] = len(all_new_distro_files)
+            summary["num_resynced_distributions"] = len(distro_info['missing_distro_units'])
+            summary["num_resynced_distribution_files"] = len(all_missing_distro_files)
+        else:
+            _LOG.info("skipping distro summary report")
         end = time.time()
-
-        # filter out rpm specific data if any
-        new_rpms = filter(lambda u: u.type_id == 'rpm', new_units.values())
-        missing_rpms = filter(lambda u: u.type_id == 'rpm', missing_units.values())
-        orphaned_rpms = filter(lambda u: u.type_id == 'rpm', orphaned_units.values())
-        not_synced_rpms = filter(lambda r: r["arch"] != 'srpm', not_synced.values())
-
-        # TODO: Need to revisit what we report in Summary and Details
-        summary = {}
-        summary["num_rpms"] = len(available_rpms)
-        summary["num_synced_new_rpms"] = len(new_rpms)
-        summary["num_resynced_rpms"] = len(missing_rpms)
-        summary["num_not_synced_rpms"] = len(not_synced_rpms)
-        summary["num_orphaned_rpms"] = len(orphaned_rpms)
-        summary["rpm_removal_errors"] = removal_errors
-
-        # filter out srpm specific data if any
-        new_srpms = filter(lambda u: u.type_id == 'srpm', new_units.values())
-        missing_srpms = filter(lambda u: u.type_id == 'srpm', missing_units.values())
-        orphaned_srpms = filter(lambda u: u.type_id == 'srpm', orphaned_units.values())
-        not_synced_srpms = filter(lambda r: r["arch"] == 'srpm', not_synced.values())
-
-        summary["num_synced_new_srpms"] = len(new_srpms)
-        summary["num_resynced_srpms"] = len(missing_srpms)
-        summary["num_not_synced_srpms"] = len(not_synced_srpms)
-        summary["num_orphaned_srpms"] = len(orphaned_srpms)
-
-        # filter out drpm specific data if any
-        new_drpms = filter(lambda u: u.type_id == 'drpm', new_units.values())
-        missing_drpms = filter(lambda u: u.type_id == 'drpm', missing_units.values())
-        orphaned_drpms = filter(lambda u: u.type_id == 'drpm', orphaned_units.values())
-
-        summary["num_synced_new_drpms"] = len(new_drpms)
-        summary["num_resynced_drpms"] = len(missing_drpms)
-        summary["num_orphaned_drpms"] = len(orphaned_drpms)
-
-        # filter out distribution specific data if any
-        summary["num_synced_new_distributions"] = len(new_distro_units)
-        summary["num_synced_new_distributions_files"] = len(all_new_distro_files)
-        summary["num_resynced_distributions"] = len(missing_distro_units)
-        summary["num_resynced_distribution_files"] = len(all_missing_distro_files)
-
         summary["time_total_sec"] = end - start
 
         details = {}
@@ -601,6 +582,75 @@ class ImporterRPM(object):
             status = False
         _LOG.info("STATUS: %s; SUMMARY: %s; DETAILS: %s" % (status, summary, details))
         return status, summary, details
+
+    def _setup_rpms(self, repo, sync_conduit, verify_options, skip_content_types):
+        rpm_info = {'available_rpms' : {}, 'existing_rpm_units' : {}, 'orphaned_rpm_units' : {}, 'new_rpms' : {}, 'new_rpm_units' : {},'missing_rpms' : {}, 'missing_rpm_units' : {}}
+        if 'rpm' in skip_content_types:
+            _LOG.info("skipping rpm item setup")
+            return rpm_info
+        start_metadata = time.time()
+        rpm_items = self.yumRepoGrinder.getRPMItems()
+        rpm_info['available_rpms'] = get_available_rpms(rpm_items)
+        end_metadata = time.time()
+        _LOG.info("%s rpms are available in the source repo %s, calculated in %s seconds" % \
+                    (len(rpm_info['available_rpms']), repo.id, (end_metadata-start_metadata)))
+
+        # Determine what exists and what has been orphaned, or exists in Pulp but has been removed from the source repo
+        criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
+        rpm_info['existing_rpm_units'] = get_existing_units(sync_conduit, criteria)
+        rpm_info['orphaned_rpm_units'] = get_orphaned_units(rpm_info['available_rpms'], rpm_info['existing_rpm_units'])
+
+        # Determine new and missing items
+        rpm_info['new_rpms'], rpm_info['new_rpm_units'] = get_new_rpms_and_units(rpm_info['available_rpms'], rpm_info['existing_rpm_units'], sync_conduit)
+        rpm_info['missing_rpms'], rpm_info['missing_rpm_units'] = get_missing_rpms_and_units(rpm_info['available_rpms'], rpm_info['existing_rpm_units'], verify_options)
+        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
+                    (repo.id, len(rpm_info['existing_rpm_units']), len(rpm_info['orphaned_rpm_units']), len(rpm_info['new_rpms']), len(rpm_info['missing_rpms'])))
+
+        return rpm_info
+
+    def _setup_drpms(self, repo, sync_conduit, verify_options, skip_content_types):
+        # process deltarpms
+        drpm_info = {'available_drpms' : {}, 'existing_drpm_units' : {}, 'orphaned_drpm_units' : {}, 'new_drpms' : {}, 'new_drpm_units' : {}, 'missing_drpms' : {}, 'missing_drpm_units' : {}}
+        if 'drpm' in skip_content_types:
+            _LOG.info("skipping drpm item setup")
+            return drpm_info
+        start_metadata = time.time()
+        drpm_items = self.yumRepoGrinder.getDeltaRPMItems()
+        _LOG.info("Delta RPMs to sync %s" % len(drpm_items))
+        drpm_info['available_drpms'] =  drpm.get_available_drpms(drpm_items)
+        drpm_info['existing_drpm_units'] = drpm.get_existing_drpm_units(sync_conduit)
+        drpm_info['orphaned_drpm_units'] = get_orphaned_units(drpm_info['available_drpms'], drpm_info['existing_drpm_units'])
+        end_metadata = time.time()
+        _LOG.info("%s drpms are available in the source repo %s, calculated in %s seconds" %\
+                  (len(drpm_info['available_drpms']), repo.id, (end_metadata-start_metadata)))
+
+        # Determine new and missing items
+        drpm_info['new_drpms'], drpm_info['new_drpm_units'] = drpm.get_new_drpms_and_units(drpm_info['available_drpms'], drpm_info['existing_drpm_units'], sync_conduit)
+        drpm_info['missing_drpms'], drpm_info['missing_drpm_units'] = get_missing_rpms_and_units(drpm_info['available_drpms'], drpm_info['existing_drpm_units'], verify_options)
+        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." %\
+                  (repo.id, len(drpm_info['existing_drpm_units']), len(drpm_info['orphaned_drpm_units']), len(drpm_info['new_drpms']), len(drpm_info['missing_drpms'])))
+
+        return drpm_info
+
+    def _setup_distros(self, repo, sync_conduit, verify_options, skip_content_types):
+        distro_info = {'available_distros' : {}, 'existing_distro_units' : {}, 'orphaned_distro_units' : {}, 'new_distro_files' : {}, 'new_distro_units' : {}, 'missing_distro_files' : {}, 'missing_distro_units' : []}
+        if 'distribution' in skip_content_types:
+            _LOG.info("skipping distribution item setup")
+            return distro_info
+        start_metadata = time.time()
+        self.yumRepoGrinder.setupDistroInfo()
+        distro_items = self.yumRepoGrinder.getDistroItems()
+        distro_info['available_distros'] = distribution.get_available_distributions(distro_items)
+        distro_info['existing_distro_units'] = distribution.get_existing_distro_units(sync_conduit)
+        distro_info['orphaned_distro_units'] = []
+        end_metadata = time.time()
+        _LOG.info("%s distributions are available in the source repo %s, calculated in %s seconds" %\
+                  (len(distro_info['available_distros']), repo.id, (end_metadata-start_metadata)))
+        distro_info['new_distro_files'], distro_info['new_distro_units'] = distribution.get_new_distros_and_units(distro_info['available_distros'], distro_info['existing_distro_units'], sync_conduit)
+        distro_info['missing_distro_files'], distro_info['missing_distro_units'] = distribution.get_missing_distros_and_units(distro_info['available_distros'], distro_info['existing_distro_units'], verify_options)
+        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new distro files, %s missing distro." %\
+                  (repo.id, len(distro_info['existing_distro_units']), len(distro_info['orphaned_distro_units']), len(distro_info['new_distro_files']), len(distro_info['missing_distro_files'])))
+        return distro_info
 
     def cancel_sync(self):
         _LOG.info("cancel_sync invoked")

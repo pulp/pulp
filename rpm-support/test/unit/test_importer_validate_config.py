@@ -231,11 +231,11 @@ class TestValidateConfig(rpm_support_base.PulpRPMTests):
     def test_config_skip(self):
         feed_url = "http://example.redhat.com/"
         skip_content_types = ""
-        config = importer_mocks.get_basic_config(feed_url=feed_url, skip_content_types=skip_content_types)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, skip=skip_content_types)
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertFalse(state)
 
         skip_content_types = []
-        config = importer_mocks.get_basic_config(feed_url=feed_url, skip_content_types=skip_content_types)
+        config = importer_mocks.get_basic_config(feed_url=feed_url, skip=skip_content_types)
         state, msg = self.importer.validate_config(self.repo, config, [])
         self.assertTrue(state)

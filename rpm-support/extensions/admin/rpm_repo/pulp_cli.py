@@ -45,7 +45,7 @@ IMPORTER_CONFIG_KEYS = [
     ('max_speed', 'max_speed'),
     ('num_threads', 'num_threads'),
     ('newest', 'only_newest'),
-    ('skip', 'skip_content_types'),
+    ('skip', 'skip_types'),
 
     # Not part of the CLI yet; may be removed entirely
     ('remove_old', 'remove_old'),
@@ -63,10 +63,10 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('auth_cert', 'auth_cert'),
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
-    ('metadata_types', 'skip_content_types'),
+    ('skip', 'skip_types'),
 ]
 
-VALID_SKIP_TYPES = ['packages', 'distributions', 'errata']
+VALID_SKIP_TYPES = ['rpm', 'drpm', 'distribution', 'errata']
 
 LOG = None # set by context
 
@@ -420,7 +420,6 @@ def args_to_importer_config(kwargs):
 
     LOG.debug('Importer configuration options')
     LOG.debug(importer_config)
-
     return importer_config
 
 def args_to_distributor_config(kwargs):
@@ -442,9 +441,9 @@ def args_to_distributor_config(kwargs):
     convert_file_contents(file_arguments, distributor_config)
 
     # Handle skip types
-    if 'metadata_types' in distributor_config:
-        skip_as_list = _convert_skip_types(distributor_config['metadata_types'])
-        distributor_config['metadata_types'] = skip_as_list
+    if 'skip' in distributor_config:
+        skip_as_list = _convert_skip_types(distributor_config['skip'])
+        distributor_config['skip'] = skip_as_list
 
     # There is an explicit flag for enabling/disabling repository protection.
     # This may be useful to expose to the user to quickly turn on/off repo

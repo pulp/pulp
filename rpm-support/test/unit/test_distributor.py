@@ -109,7 +109,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         optional_kwargs['protected'] = True
         optional_kwargs['generate_metadata'] = True
         optional_kwargs['checksum_type'] = "sha"
-        optional_kwargs['skip_content_types'] = []
+        optional_kwargs['skip'] = []
         optional_kwargs['auth_cert'] = open(os.path.join(self.data_dir, "cert.crt")).read()
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         state, msg = distributor.validate_config(repo, config, [])

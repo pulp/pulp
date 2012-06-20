@@ -40,7 +40,7 @@ ERRATA_TYPE_ID="erratum"
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "skip_content_types", "https_publish_dir", "http_publish_dir"]
+                        "checksum_type", "skip", "https_publish_dir", "http_publish_dir"]
 
 SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
@@ -62,7 +62,7 @@ CONFIG_REPO_AUTH="/etc/pulp/repo_auth.conf"
 # generate_metadata     - True will run createrepo
 #                         False will not run and uses existing metadata from sync
 # checksum_type         - Checksum type to use for metadata generation
-# skip_content_types    - List of what content types to skip during sync, options:
+# skip                  - List of what content types to skip during sync, options:
 #                         ["rpm", "drpm", "errata", "distribution", "packagegroup"]
 # https_publish_dir     - Optional parameter to override the HTTPS_PUBLISH_DIR, mainly used for unit tests
 # http_publish_dir      - Optional parameter to override the HTTP_PUBLISH_DIR, mainly used for unit tests
@@ -141,10 +141,10 @@ class YumDistributor(Distributor):
                     msg = _("%s is not a valid checksum type" % checksum_type)
                     _LOG.error(msg)
                     return False, msg
-            if key == 'skip_content_types':
-                metadata_types = config.get('skip_content_types')
+            if key == 'skip':
+                metadata_types = config.get('skip')
                 if metadata_types is not None and not isinstance(metadata_types, list):
-                    msg = _("skip_content_types should be a dictionary; got %s instead" % metadata_types)
+                    msg = _("skip should be a dictionary; got %s instead" % metadata_types)
                     _LOG.error(msg)
                     return False, msg
             if key == 'auth_cert':
@@ -388,21 +388,37 @@ class YumDistributor(Distributor):
 
         if self.canceled:
             return publish_conduit.build_failure_report(summary, details)
+        skip_list = config.get('skip') or []
         # Determine Content in this repo
         unfiltered_units = publish_conduit.get_units()
         # filter compatible units
-        units = filter(lambda u: u.type_id in [DRPM_TYPE_ID, RPM_TYPE_ID, SRPM_TYPE_ID], unfiltered_units)
-        _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
-                % (repo.id, len(unfiltered_units), len(units)))
-        # Create symlinks under repo.working_dir
-        status, errors = self.handle_symlinks(units, repo.working_dir, progress_callback)
-        if not status:
-            _LOG.error("Unable to publish %s items" % (len(errors)))
-        # symlink distribution files if any under repo.working_dir
+        rpm_units = filter(lambda u : u.type_id in [RPM_TYPE_ID, SRPM_TYPE_ID], unfiltered_units)
+        drpm_units = filter(lambda u : u.type_id == DRPM_TYPE_ID, unfiltered_units)
+        rpm_errors = []
+        if 'rpm' not in skip_list:
+            _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
+                    % (repo.id, len(unfiltered_units), len(rpm_units)))
+            # Create symlinks under repo.working_dir
+            rpm_status, rpm_errors = self.handle_symlinks(rpm_units, repo.working_dir, progress_callback)
+            if not rpm_status:
+                _LOG.error("Unable to publish %s items" % (len(rpm_errors)))
+        drpm_errors = []
+        if 'drpm' not in skip_list:
+            _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
+                    % (repo.id, len(unfiltered_units), len(drpm_units)))
+            # Create symlinks under repo.working_dir
+            drpm_status, drpm_errors = self.handle_symlinks(drpm_units, repo.working_dir, progress_callback)
+            if not drpm_status:
+                _LOG.error("Unable to publish %s items" % (len(drpm_errors)))
+        pkg_errors = rpm_errors + drpm_errors
+        pkg_units = rpm_units +  drpm_units
+        distro_errors = []
         distro_units = filter(lambda u: u.type_id == DISTRO_TYPE_ID, unfiltered_units)
-        distro_status, distro_errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
-        if not distro_status:
-            _LOG.error("Unable to publish distribution tree %s items" % (len(errors)))
+        if 'distribution' not in skip_list:
+            # symlink distribution files if any under repo.working_dir
+            distro_status, distro_errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
+            if not distro_status:
+                _LOG.error("Unable to publish distribution tree %s items" % (len(distro_errors)))
         # update/generate metadata for the published repo
         repo_scratchpad = publish_conduit.get_repo_scratchpad()
         src_working_dir = ''
@@ -459,9 +475,9 @@ class YumDistributor(Distributor):
                 _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
                 self.remove_symlink(http_publish_dir, http_repo_publish_dir)
 
-        summary["num_package_units_attempted"] = len(units)
-        summary["num_package_units_published"] = len(units) - len(errors)
-        summary["num_package_units_errors"] = len(errors)
+        summary["num_package_units_attempted"] = len(pkg_units)
+        summary["num_package_units_published"] = len(pkg_units) - len(pkg_errors)
+        summary["num_package_units_errors"] = len(pkg_errors)
         summary["num_distribution_units_attempted"] = len(distro_units)
         summary["num_distribution_units_published"] = len(distro_units) - len(distro_errors)
         summary["num_distribution_units_errors"] = len(distro_errors)
@@ -470,13 +486,12 @@ class YumDistributor(Distributor):
             summary["skip_metadata_update"] = True
         else:
             summary["skip_metadata_update"] = False
-        details["errors"] = errors + distro_errors + metadata_errors
+        details["errors"] = pkg_errors + distro_errors + metadata_errors
         details['time_metadata_sec'] = metadata_end_time - metadata_start_time
         # metadata generate skipped vs run
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
-        if errors:
+        if details["errors"]:
             return publish_conduit.build_failure_report(summary, details)
-#        _LOG.info("Publish progress information %s" % publish_conduit.progress_report)
         return publish_conduit.build_success_report(summary, details)
 
     def distributor_removed(self, repo, config):

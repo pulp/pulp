@@ -133,13 +133,13 @@ class TestValidateConfig(rpm_support_base.PulpRPMTests):
         relative_url = "test_path"
         skip_content_types = "fake"
         config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https,
-            skip_content_types=skip_content_types)
+            skip=skip_content_types)
         state, msg = self.distributor.validate_config(self.repo, config, [])
         self.assertFalse(state)
 
         skip_content_types = []
         config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https,
-            skip_content_types=skip_content_types)
+            skip=skip_content_types)
         state, msg = self.distributor.validate_config(self.repo, config, [])
         self.assertTrue(state)
 
