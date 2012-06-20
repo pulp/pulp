@@ -14,6 +14,8 @@
 # XXX this is not a dumping grounds for any random code. It is a place to put
 # paradigm-changing code that allows you to get unique or more efficient behaviors
 
+import copy
+
 
 class Singleton(type):
     """
@@ -67,3 +69,36 @@ class subdict(dict):
         n = dict((k, v) for k, v in d.items() if k in keys)
         super(subdict, self).__init__(n)
 
+
+def topological_sort(graph):
+    """
+    Perform a topological sort on a directed graph.
+    @param graph: directed graph represented as a dictionary
+    @type  graph: dict
+    @return: list of vertices of the graph in a topological order
+    @rtype:  list
+    """
+    assert isinstance(graph, dict)
+    discovered_vertices = set()
+    completed_vertices = set()
+    sorted_vertices = []
+
+    def _recursive_topological_sort(vertex):
+        # topological sort via depth-first-search
+        if vertex in completed_vertices:
+            # vertex and it's subtree is already sorted
+            return
+        if vertex in discovered_vertices:
+            # we've run into an ancestor, which means a cycle
+            raise Exception()
+        discovered_vertices.add(vertex)
+        for adjacent in graph[vertex]:
+            _recursive_topological_sort(adjacent)
+        discovered_vertices.discard(vertex)
+        completed_vertices.add(vertex)
+        sorted_vertices.append(vertex)
+
+    for vertex in graph:
+        _recursive_topological_sort(vertex)
+
+    return sorted_vertices
