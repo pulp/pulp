@@ -56,7 +56,7 @@ class ScheduleManager(object):
         weight = pulp_config.config.getint('tasks', 'sync_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
-        call_request = CallRequest(sync_manager.sync, args, kwargs, resources, weight, tags, archive=True)
+        call_request = CallRequest(sync_manager.sync, args, kwargs, resources, None, weight, tags, archive=True)
 
         # schedule the sync
         scheduler = dispatch_factory.scheduler()
@@ -146,7 +146,7 @@ class ScheduleManager(object):
         weight = pulp_config.config.getint('tasks', 'publish_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
-        call_request = CallRequest(publish_manager.publish, args, kwargs, resources, weight, tags, archive=True)
+        call_request = CallRequest(publish_manager.publish, args, kwargs, resources, None, weight, tags, archive=True)
 
         # schedule the publish
         scheduler = dispatch_factory.scheduler()
