@@ -225,7 +225,10 @@ class Coordinator(object):
         finally:
             task_queue.unlock()
 
-    # conflict resolution algorithm --------------------------------------------
+    # user-defined dependencies ------------------------------------------------
+
+    def _analyze_dependencies(self, task_list):
+        pass
 
     def _find_conflicts(self, resources):
         """
