@@ -68,21 +68,36 @@ def yum_category_to_model_category(obj):
     ctg['translated_description'] = obj.translated_description
     return ctg
 
-def dict_to_yum_group(obj):
+def unit_to_yum_group(pg_unit):
+    """
+    Translate a package group unit to a yum.comps.Group
+    @param obj: package group unit
+    @type obj: pulp.server.content.plugins.model.Unit
+    @return: yum.comps.Group object
+    """
+    return dict_to_yum_group(pg_unit.metadata, group_id=pg_unit.unit_key["id"])
+
+def dict_to_yum_group(obj, group_id=None):
     """
     Translate a package group dict to a yum.comps.Group
     @param obj: package group dict
     @type obj: dict
+
+    @param group_id: optional override for group_id
+    @type group_id: str
+
     @return: yum.comps.Group object
     """
+    if group_id is None:
+        group_id = obj['id']
     grp = yum.comps.Group()
+    grp.groupid = group_id
     grp.name = obj['name']
     grp.description = obj['description']
     grp.user_visible = obj['user_visible']
     grp.display_order = obj['display_order']
     grp.default = obj['default']
     grp.langonly = obj['langonly']
-    grp.groupid = obj['id']
     for key in obj['translated_name']:
         grp.translated_name[key] = obj['translated_name'][key]
     for key in obj['translated_description']:
@@ -98,18 +113,34 @@ def dict_to_yum_group(obj):
                 obj['conditional_package_names'][pkgname]
     return grp
 
-def dict_to_yum_category(obj):
+def unit_to_yum_category(cat_unit):
+    """
+    Translate a package category unit to a yum.comps.Category
+    @param obj: package category unit
+    @type obj: pulp.server.content.plugins.model.Unit
+    @return: yum.comps.Category object
+    """
+    return dict_to_yum_category(cat_unit.metadata, category_id=cat_unit.unit_key["id"])
+
+def dict_to_yum_category(obj, category_id=None):
     """
     Translate a package category dict to an object that 
     yum.comps.Comps can work with
     @param obj: package category dict
+    @type obj: dict
+
+    @param category_id optional override of category id
+    @type category_id: str
+
     @return: dict
     """
+    if category_id is None:
+        category_id = obj['id']
     cat = yum.comps.Category()
+    cat.categoryid = category_id
     cat.name = obj['name']
     cat.description = obj['description']
     cat.display_order = obj['display_order']
-    cat.categoryid = obj['id']
     for key in obj['translated_name']:
         cat.translated_name[key] = obj['translated_name'][key]
     for key in obj['translated_description']:
@@ -118,24 +149,42 @@ def dict_to_yum_category(obj):
         cat._groups[groupid] = groupid
     return cat
 
-def form_comps_xml(ctgs, grps):
+def form_comps_xml_from_units(groups, categories):
     """
-    Form the XML representation of a 'comps.xml' from 
-    model.PackageGroupCategories and model.PackageGroup objects
-    @param ctgs: List of model.PackageGroupCategories
-    @param grps:  List of model.PackageGroup
-    @return: unicode string representing XML data for 
-    passed in Categories/Groups
-    """
-    newComps = yum.comps.Comps()
-    for cid in ctgs:
-        category = model_category_to_yum_category(ctgs[cid])
-        newComps.add_category(category)
-    for gid in grps:
-        pkggrp = model_group_to_yum_group(grps[gid])
-        newComps.add_group(pkggrp)
-    return newComps.xml()
+    @param groups dict of package_group units
+    @type groups: {str:pulp.server.content.plugins.model.Unit}
 
+    @param categories dict of package_category units
+    @type categories: {str:pulp.server.content.plugins.model.Unit}
+
+    @return xml formated representation of comps info
+    @rtype: str
+    """
+    # Translate each unit to an instance of a yum Group/Category
+    yum_groups = map(unit_to_yum_group, groups.values())
+    yum_categories = map(unit_to_yum_category, categories.values())
+    return form_comps_xml(yum_categories, yum_groups)
+
+
+def form_comps_xml(yum_categories, yum_groups):
+    """
+    Form the XML representation of a 'comps.xml' from Group/Category objects
+
+    @param yum_categories: List of yum package categories
+    @type yum_categories: [yum.comps.Category]
+
+    @param yum_groups:  List of yum package groups
+    @type yum_groups: [yum.comps.Group]
+    
+    @return: string representing XML data for passed in Categories/Groups
+    @rtype: str
+    """
+    new_comps = yum.comps.Comps()
+    for g in yum_groups:
+        new_comps.add_group(g)
+    for c in yum_categories:
+        new_comps.add_category(c)
+    return new_comps.xml()
 
 
 def update_repomd_xml_string(repomd_xml, compsxml_path, compsxml_checksum,

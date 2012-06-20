@@ -20,9 +20,11 @@ import unittest
 import yum
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 
 import importer_mocks
 import rpm_support_base
+from pulp_rpm.yum_plugin import comps_util
 from yum_importer import comps
 from yum_importer.comps import ImporterComps, PKG_GROUP_METADATA, PKG_CATEGORY_METADATA
 from yum_importer.importer import YumImporter
@@ -291,3 +293,41 @@ class TestComps(rpm_support_base.PulpRPMTests):
         self.assertEqual(summary["num_orphaned_groups"], 1)
         self.assertEqual(summary["num_orphaned_categories"], 1)
         self.assertTrue(summary["time_total_sec"] > 0)
+
+    def test_form_comps_xml(self):
+        # Form several package groups and categories
+        repo_src_dir = os.path.join(self.data_dir, "pulp_unittest")
+        avail_groups, avail_cats = comps.get_available(repo_src_dir)
+        # Translate the dicts into units
+        repo = mock.Mock(spec=Repository)
+        repo.id = "test_form_comps_xml"
+        repo.working_dir = self.working_dir
+        sync_conduit = importer_mocks.get_sync_conduit()
+        initial_cats, initial_cat_units = comps.get_new_category_units(avail_cats, {}, sync_conduit, repo)
+        initial_groups, initial_group_units = comps.get_new_group_units(avail_groups, {}, sync_conduit, repo)
+        # Write these to a comps.xml
+        comps_xml = comps_util.form_comps_xml_from_units(initial_group_units, initial_cat_units)
+        out_path = os.path.join(self.temp_dir, "test_form_comps.xml")
+        f = open(out_path, "w")
+        try:
+            f.write(comps_xml)
+        finally:
+            f.close()
+        # Read in comps.xml and parse
+        final_groups, final_cats = comps.get_available(repo_src_dir, group_file=out_path, group_type='group')
+        final_cats, final_cat_units = comps.get_new_category_units(final_cats, {}, sync_conduit, repo)
+        final_groups, final_group_units = comps.get_new_group_units(final_groups, {}, sync_conduit, repo)
+        # Verify we get the same data back
+        self.assertEquals(len(initial_group_units), len(final_group_units))
+        self.assertEquals(len(initial_cat_units), len(final_cat_units))
+        # Examine Package Group Data
+        for grp_key in initial_group_units:
+            initial_unit = initial_group_units[grp_key]
+            final_unit = final_group_units[grp_key]
+            self.assertEquals(len(initial_unit.unit_key), len(final_unit.unit_key))
+            self.assertEquals(len(initial_unit.metadata), len(final_unit.metadata))
+            # Verify unit keys are same
+            for key in initial_unit.unit_key:
+                self.assertEquals(initial_unit.unit_key[key], final_unit.unit_key[key])
+            for key in initial_unit.metadata:
+                self.assertEquals(initial_unit.metadata[key], final_unit.metadata[key])

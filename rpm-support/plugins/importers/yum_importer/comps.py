@@ -189,13 +189,19 @@ def get_groups_metadata_file(repo_dir, md_types=None):
             return ret_file, ret_type 
     return None, None
 
-def get_available(repo_dir, md_types=None):
+def get_available(repo_dir, md_types=None, group_file=None, group_type=None):
     """
     @param repo_dir path to a repository, expects 'repodata' to be a child of the path
     @type repo_dir str
 
     @param md_types May override the metadata type names, defaults to ['group', 'group_gz']
     @type md_types str
+
+    @param group_file: optional path to override the comps.xml to parse
+    @type group_file: str
+
+    @param group_type: optional value to specify type of group_file, valid values are ['group', 'group_gz']
+    @type group_type: str
 
     @return groups
     @rtype {}
@@ -213,20 +219,25 @@ def get_available(repo_dir, md_types=None):
             ####
             # We want to support _both_  'group' and 'group_gz' metadata types
             ####
-            group_file, group_type = get_groups_metadata_file(repo_dir, md_types)
+            if group_file is None:
+                group_file, group_type = get_groups_metadata_file(repo_dir, md_types)
             if group_file:
                 group_file = os.path.join(repo_dir, group_file)
+            yc = yum.comps.Comps()
+            if group_type is None:
+                # Assume regular comps.xml if no group_type was specified, value is 'group'
+                group_type = "group"
             _LOG.debug("Parsing yum package group/category from metadata type '%s' with value %s" % (group_type, \
                     group_file))
-            yc = yum.comps.Comps()
-            if group_type == "group":
+            if group_file and group_type == "group":
                 yc.add(group_file)
-            elif group_type == "group_gz":
+            elif group_file and group_type == "group_gz":
                 comps_gzipped = gzip.GzipFile(group_file, 'r')
                 yc.add(comps_gzipped)
             else:
                 _LOG.info("No package group/category data found in <%s>" % (repo_dir))
                 return groups, categories
+
             for g in yc.groups:
                 grp = comps_util.yum_group_to_model_group(g)
                 groups[grp["id"]] = grp
@@ -240,7 +251,7 @@ def get_available(repo_dir, md_types=None):
             if comps_gzipped:
                 comps_gzipped.close()
     except yum.Errors.CompsException, e:
-        _LOG.exception("Caught exception parsing comps data from: %s" % (comps_xml_path))
+        _LOG.exception("Caught exception parsing comps data from: %s" % (group_file))
         raise
 
 def get_existing_groups(sync_conduit):
