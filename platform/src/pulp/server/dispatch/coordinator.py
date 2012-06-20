@@ -13,6 +13,7 @@
 
 import copy
 import datetime
+import sys
 import time
 import types
 import uuid
@@ -27,6 +28,7 @@ from pulp.server.dispatch import history as dispatch_history
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.exceptions import OperationTimedOut
+from pulp.server.util import NoTopologicalOrderingExists, topological_sort
 
 # coordinator class ------------------------------------------------------------
 
@@ -128,9 +130,13 @@ class Coordinator(object):
         @rtype:  list of L{call.CallReport} instances
         """
         task_group_id = self._generate_task_group_id()
+        task_list = []
         call_report_list = []
         for call_request in call_request_list:
             task = self._create_task(call_request, task_group_id=task_group_id)
+            task_list.append(task)
+        sorted_task_list = self._analyze_dependencies(task_list)
+        for task in sorted_task_list:
             self._run_task(task, False)
             call_report_list.append(copy.copy(task.call_report))
         return call_report_list
@@ -182,7 +188,7 @@ class Coordinator(object):
             task.call_report.reasons = reasons
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
                 return
-            task.blocking_tasks = blocking
+            task.blocking_tasks.update(blocking)
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, GrantPermmissionsForTaskV2())
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, RevokePermissionsForTaskV2())
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
@@ -228,7 +234,21 @@ class Coordinator(object):
     # user-defined dependencies ------------------------------------------------
 
     def _analyze_dependencies(self, task_list):
-        pass
+        # build a dependency graph to check the user-defined dependencies
+        call_request_map = dict((task.call_request.id, task) for task in task_list)
+        dependency_graph = {}
+        for task in task_list:
+            dependency_graph[task] = [call_request_map[id] for id in task.call_request.dependencies]
+        # check the dependencies with a topological sort
+        try:
+            sorted_task_list = topological_sort(dependency_graph)
+        except NoTopologicalOrderingExists:
+            raise dispatch_exceptions.CircularDependencies(), None, sys.exc_info()[2]
+        # add the dependencies as actual blocking tasks
+        for task in sorted_task_list:
+            dependency_tasks = [call_request_map[id].id for id in task.call_request.dependencies]
+            task.blocking_tasks.update(dependency_tasks)
+        return sorted_task_list
 
     def _find_conflicts(self, resources):
         """
