@@ -90,6 +90,15 @@ class Task(object):
 
     # task lifecycle -----------------------------------------------------------
 
+    def ignore(self, reasons=None):
+        """
+        Mark the task as ignored. Called *instead* of run.
+        """
+        assert self.call_report.state in dispatch_constants.CALL_READY_STATES
+        if reasons is not None:
+            self.call_report.reasons = reasons
+        self._complete(dispatch_constants.CALL_IGNORED_STATE)
+
     def run(self):
         """
         Public wrapper to kick off the call in the call_request in a new thread.
@@ -181,7 +190,7 @@ class Task(object):
         except Exception, e:
             _LOG.exception(e)
 
-    # hook execution -----------------------------------------------------------
+    # callback and hook execution ----------------------------------------------
 
     def call_life_cycle_callbacks(self, key):
         """
