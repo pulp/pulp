@@ -17,7 +17,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.303
+Version: 0.0.304
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -327,6 +327,9 @@ on a defined interval.
 
 
 %changelog
+* Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.304-1
+- 
+
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.303-1
 - added user-defined dependency analysis to execute_multiple_calls
   (jason.connor@gmail.com)
