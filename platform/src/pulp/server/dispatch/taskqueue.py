@@ -279,13 +279,13 @@ class TaskQueue(object):
 
     def cancel(self, task):
         """
-        Cancel a task's execution, if it has a cancel control hook
+        Cancel a task's execution
         @param task: task to be canceled
         @type  task: pulp.server.dispatch.task.Task
         """
         self.__lock.acquire()
         try:
-            task.cancel()
+            return task.cancel()
         finally:
             self.__lock.release()
 

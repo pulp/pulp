@@ -210,6 +210,19 @@ class Task(object):
         """
         Call the cancel control hook if available, otherwise raises a
         MissingCancelControlHook exception.
+
+        NOTE that this method returns a "best effort" approach in that it will
+        cancel the task if it hasn't yet run, will attempt to call the cancel
+        control hook if the task is running, and simply return if the task has
+        already completed.
+
+        NOTE cancel life cycle callbacks are only executed if the task was
+        actually cancelled (i.e. this method returns True)
+
+        @return: None if the task had already completed, False if the task is
+                 running but no control hook exists to interrupt it, True if the
+                 task was cancelled
+        @rtype:  bool or None
         """
         # XXX this method assumes that it is being called under the protection
         # of the task queue lock. If that is not the case, a race condition
@@ -217,13 +230,18 @@ class Task(object):
 
         # a complete task cannot be cancelled
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
-            return
+            return None
         # to cancel a running task, the cancel control hook *must* be called
         if self.call_report.state is dispatch_constants.CALL_RUNNING_STATE:
-            self._call_cancel_control_hook()
+            try:
+                self._call_cancel_control_hook()
+            except Exception, e:
+                _LOG.exception(e)
+                return False
         # nothing special needs to happen to cancel a task in a ready state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
+        return True
 
     def _call_cancel_control_hook(self):
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
