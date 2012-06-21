@@ -170,6 +170,11 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
+        # FIXME we'll need to pass the state along with the task into the
+        # complete callback for conditional blocking tasks (conditional on the
+        # complete state), however this causes a race condition between when the
+        # task is marked as complete (by setting its state) and when it's done
+        # with that task queue
         self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
