@@ -46,7 +46,7 @@ _LOADER = None
 
 # plugin locations
 
-_PLUGINS_ROOT = '/var/lib/pulp/plugins'
+_PLUGINS_ROOT = '/usr/lib/pulp/plugins'
 _DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/distributors'
 _IMPORTERS_DIR = _PLUGINS_ROOT + '/importers'
 _PROFILERS_DIR = _PLUGINS_ROOT + '/profilers'
