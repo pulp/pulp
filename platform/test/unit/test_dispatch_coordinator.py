@@ -13,6 +13,7 @@
 
 import datetime
 import traceback
+import unittest
 
 import mock
 
@@ -22,9 +23,11 @@ from pulp.server.db.model.dispatch import TaskResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
+from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.task import Task
 from pulp.server.exceptions import OperationTimedOut
+from pulp.server.util import NoTopologicalOrderingExists, topological_sort
 
 # coordinator instantiation tests ----------------------------------------------
 
@@ -381,10 +384,95 @@ class CoordinatorCallExecutionTests(CoordinatorTests):
         self.coordinator.execute_call_asynchronously(call_request)
         self.assertTrue(self.coordinator._run_task.call_count == 1)
 
+# multiple call execution tests ------------------------------------------------
+
+class TopologicalSortTests(unittest.TestCase):
+
+    def test_disconnected_graph(self):
+        v1 = 'vertex 1'
+        v2 = 'vertex 2'
+        v3 = 'vertex 3'
+        graph = {v1: [],
+                 v2: [],
+                 v3: []}
+        sorted_vertices = topological_sort(graph)
+        for v in (v1, v2, v3):
+            self.assertTrue(v in sorted_vertices, v)
+        self.assertTrue(len(sorted_vertices) == len(graph))
+
+    def test_acyclic_graph(self):
+        v1 = 'vertex 1'
+        v2 = 'vertex 2'
+        v3 = 'vertex 3'
+        graph = {v1: [v2, v3],
+                 v2: [v3],
+                 v3: []}
+        sorted_vertices = topological_sort(graph)
+        self.assertTrue(len(sorted_vertices) == len(graph))
+        self.assertTrue(v3 is sorted_vertices[0])
+
+    def test_cyclic_graph(self):
+        v1 = 'vertex 1'
+        v2 = 'vertex 2'
+        v3 = 'vertex 3'
+        graph = {v1: [v2, v3],
+                 v2: [v3],
+                 v3: [v1]}
+        self.assertRaises(NoTopologicalOrderingExists,
+                          topological_sort,
+                          graph)
+
+    def test_single_vertex_cyclic_graph(self):
+        v1 = 'vertex 1'
+        graph = {v1: [v1]}
+        self.assertRaises(NoTopologicalOrderingExists,
+                          topological_sort,
+                          graph)
+
+
+class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
+
+    def setUp(self):
+        super(CoordinatorMultipleCallExecutionTests, self).setUp()
+        self.coordinator._run_task = mock.Mock()
+
     def test_execute_multiple_calls(self):
         call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
         call_reports = self.coordinator.execute_multiple_calls(call_requests)
         self.assertTrue(len(call_requests) == len(call_reports))
         self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
+
+    def test_execute_multiple_calls_dependencies(self):
+        call_request_1 = call.CallRequest(dummy_call)
+        call_request_2 = call.CallRequest(dummy_call)
+        call_request_3 = call.CallRequest(dummy_call)
+
+        # use the convenience api
+        call_request_3.depends_on(call_request_1)
+        call_request_3.depends_on(call_request_2)
+        call_request_2.depends_on(call_request_1)
+
+        call_requests = [call_request_3, call_request_2, call_request_1]
+
+        call_reports = self.coordinator.execute_multiple_calls(call_requests)
+        self.assertTrue(len(call_requests) == len(call_reports))
+        self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
+
+    def test_execute_multiple_calls_circular_dependencies(self):
+        call_request_1 = call.CallRequest(dummy_call)
+        call_request_2 = call.CallRequest(dummy_call)
+        call_request_3 = call.CallRequest(dummy_call)
+
+        call_request_1.dependencies = {call_request_3.id: None}
+        call_request_2.dependencies = {call_request_1.id: None}
+        call_request_3.dependencies = {call_request_1.id: None,
+                                       call_request_2.id: None}
+
+        call_requests = [call_request_3, call_request_2, call_request_1]
+
+        self.assertRaises(dispatch_exceptions.CircularDependencies,
+                          self.coordinator.execute_multiple_calls,
+                          call_requests)
+        self.assertTrue(self.coordinator._run_task.call_count == 0)
 
 
