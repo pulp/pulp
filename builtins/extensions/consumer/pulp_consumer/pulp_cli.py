@@ -119,7 +119,7 @@ class RegisterCommand(PulpCliCommand):
                 notes = args_to_notes_dict(kwargs['note'], include_none=False)
 
         # Check write permissions to cert directory
-        id_cert_dir = self.context.config.get('filesystem', 'id_cert_dir')
+        id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         if not os.access(id_cert_dir, os.W_OK):
             self.prompt.render_failure_message(_("Write permission is required for %(p)s to perform this operation.") %
                                                  {'p' : id_cert_dir} )
@@ -128,10 +128,8 @@ class RegisterCommand(PulpCliCommand):
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
 
         # Write consumer cert
-        id_cert_name = self.context.config.get('filesystem', 'id_cert_filename')
-
+        id_cert_name = self.context.config['filesystem']['id_cert_filename']
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
-
         f = open(cert_filename, 'w')
         f.write(consumer['certificate'])
         f.close()
@@ -194,8 +192,8 @@ class UnregisterCommand(PulpCliCommand):
                 raise
 
     def _delete_cert(self):
-        id_cert_dir = self.context.config.get('filesystem', 'id_cert_dir')
-        id_cert_name = self.context.config.get('filesystem', 'id_cert_filename')
+        id_cert_dir = self.context.config['filesystem']['id_cert_dir']
+        id_cert_name = self.context.config['filesystem']['id_cert_filename']
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
         if os.path.exists(cert_filename):
             os.remove(cert_filename)
