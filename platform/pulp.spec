@@ -17,7 +17,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.304
+Version: 0.0.305
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -327,6 +327,14 @@ on a defined interval.
 
 
 %changelog
+* Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.305-1
+- Updated the code to match where the RPM wants the plugins
+  (jason.dobies@redhat.com)
+- added test for proper creation of blocking tasks from user-defined
+  dependencies (jason.connor@gmail.com)
+- unittests for user-defined dependencies and topological sotr
+  (jason.connor@gmail.com)
+
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.304-1
 - 
 
