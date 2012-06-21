@@ -261,7 +261,7 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
-    def _complete(self, task):
+    def _complete(self, task, complete_state):
         """
         Go through the necessary steps for a task that has completed its
         execution
