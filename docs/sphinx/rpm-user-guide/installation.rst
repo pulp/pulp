@@ -33,6 +33,13 @@ General
  * Fedora: http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
  * RHEL: http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
+.. note::
+  Currently, the only enabled repository in these files is the v1 production
+  repository. These instructions apply to the v2 codebase. As such, be sure
+  to disable the v1 repositories and enable one of the v2 repository definitions
+  in the above files.
+
+
 2. For RHEL systems, the EPEL repositories are required. More information can
    be found at: `<http://fedoraproject.org/wiki/EPEL/FAQ#howtouse>`_
 
