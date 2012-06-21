@@ -17,7 +17,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.302
+Version: 0.0.303
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -327,6 +327,24 @@ on a defined interval.
 
 
 %changelog
+* Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.303-1
+- added user-defined dependency analysis to execute_multiple_calls
+  (jason.connor@gmail.com)
+- added more to docstring to clarify behaviour of sort (jason.connor@gmail.com)
+- raising a more targeted exception upon cycle detection
+  (jason.connor@gmail.com)
+- comment (jason.connor@gmail.com)
+- added None dependencies to scheduled call requests (jason.connor@gmail.com)
+- initial implementation of topological sort algorithm (jason.connor@gmail.com)
+- placeholder of user-defined dependency analsys (jason.connor@gmail.com)
+- changed field from group_dependencies to just dependencies
+  (jason.connor@gmail.com)
+- added new group dependencies field and convenience api
+  (jason.connor@gmail.com)
+- added ignore method to utilize new ignored state (jason.connor@gmail.com)
+- added new task states (jason.connor@gmail.com)
+- docstring and comment changes (jason.connor@gmail.com)
+
 * Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.302-1
 - Fixed crashing if no override is present (jason.dobies@redhat.com)
 
