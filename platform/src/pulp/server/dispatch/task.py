@@ -90,14 +90,14 @@ class Task(object):
 
     # task lifecycle -----------------------------------------------------------
 
-    def ignore(self, reasons=None):
+    def skip(self, reasons=None):
         """
-        Mark the task as ignored. Called *instead* of run.
+        Mark the task as skipped. Called *instead* of run.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         if reasons is not None:
             self.call_report.reasons = reasons
-        self._complete(dispatch_constants.CALL_IGNORED_STATE)
+        self._complete(dispatch_constants.CALL_SKIPPED_STATE)
 
     def run(self):
         """
