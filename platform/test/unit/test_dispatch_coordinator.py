@@ -476,3 +476,19 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
         self.assertTrue(self.coordinator._run_task.call_count == 0)
 
 
+    def test_task_blockers_from_dependencies(self):
+        call_request_1 = call.CallRequest(dummy_call)
+        call_request_2 = call.CallRequest(dummy_call)
+
+        call_request_2.depends_on(call_request_1)
+
+        self.coordinator.execute_multiple_calls([call_request_2, call_request_1])
+
+        task_1 = self.coordinator._run_task.call_args_list[0][0][0]
+        task_2 = self.coordinator._run_task.call_args_list[1][0][0]
+
+        self.assertTrue(task_1.call_request is call_request_1)
+        self.assertTrue(task_2.call_request is call_request_2)
+        self.assertTrue(task_1.id in task_2.blocking_tasks)
+        self.assertFalse(task_2.id in task_1.blocking_tasks)
+
