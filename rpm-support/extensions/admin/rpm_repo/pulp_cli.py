@@ -213,7 +213,7 @@ class YumRepoUpdateCommand(PulpCliCommand):
         try:
             notes = None
             if 'note' in kwargs or kwargs['note'] is not None:
-                notes = args_to_notes_dict(kwargs, include_none=True)
+                notes = args_to_notes_dict(kwargs['note'], include_none=True)
 
             importer_config = args_to_importer_config(kwargs)
         except InvalidConfig, e:
