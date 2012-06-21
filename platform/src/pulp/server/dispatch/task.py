@@ -90,14 +90,14 @@ class Task(object):
 
     # task lifecycle -----------------------------------------------------------
 
-    def skipped(self, reasons=None):
+    def ignore(self, reasons=None):
         """
-        Mark the task as skipped. Called *instead* of run.
+        Mark the task as ignored. Called *instead* of run.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         if reasons is not None:
             self.call_report.reasons = reasons
-        self._complete(dispatch_constants.CALL_SKIPPED_STATE)
+        self._complete(dispatch_constants.CALL_IGNORED_STATE)
 
     def run(self):
         """
@@ -170,7 +170,7 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        self._call_complete_callback(state)
+        self._call_complete_callback()
         # don't set the state to complete until the task is actually complete
         self.call_report.state = state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
@@ -179,14 +179,14 @@ class Task(object):
         # archive the completed call
         dispatch_history.archive_call(self.call_request, self.call_report)
 
-    def _call_complete_callback(self, complete_state):
+    def _call_complete_callback(self):
         """
         Safely call the complete_callback, if there is one.
         """
         if self.complete_callback is None:
             return
         try:
-            self.complete_callback(self, complete_state)
+            self.complete_callback(self)
         except Exception, e:
             _LOG.exception(e)
 
