@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.303
+Version: 0.0.304
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -216,6 +216,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.304-1
+- Removed unknown repo file (jason.dobies@redhat.com)
+
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.303-1
 - 831781 - fix for supporting skipcontent types (pkilambi@redhat.com)
 - YumDistributor: Adding generation of pkg groups to xml file
