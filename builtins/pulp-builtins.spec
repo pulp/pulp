@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.306
+Version: 0.0.307
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -87,6 +87,9 @@ client capabilites.
 
 
 %changelog
+* Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.307-1
+- 
+
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.306-1
 - Fixing consumer authorization problem because of no associated users with the
   consumers (like in v1) and minor fixed to consumer config parsing

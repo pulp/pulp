@@ -1,5 +1,8 @@
 #!/bin/bash
-PULP_SRC_DIR=`readlink -f $(dirname $0)/../../`
+PULP_SRC_DIR=`readlink -f $(dirname $0)/../../../`
+PLATFORM_DIR=${PULP_SRC_DIR}/platform
+RPM_SUPPORT_DIR=${PULP_SRC_DIR}/rpm-support
+
 # We will check the python site-packages dir for developmental installs of Grinder & Gofer
 PYTHON_SITE_PKGS="/usr/lib/python"`python -c 'import sys; print sys.version[0:3]'`"/site-packages"
 
@@ -28,27 +31,29 @@ function adjust_context()
 
 echo "Assuming Pulp git checkout is at ${PULP_SRC_DIR}"
 
-adjust_context "httpd_config_t" "${PULP_SRC_DIR}/etc/httpd(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/etc/httpd
+adjust_context "httpd_config_t" "${RPM_SUPPORT_DIR}/etc/httpd(/.*)?"
+/sbin/restorecon -R ${RPM_SUPPORT_DIR}/etc/httpd
 
-adjust_context "pulp_cert_t" "${PULP_SRC_DIR}/etc/pki/pulp(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/etc/pki/pulp
+adjust_context "pulp_cert_t" "${PLATFORM_DIR}/etc/pki/pulp(/.*)?"
+/sbin/restorecon -R ${PLATFORM_DIR}/etc/pki/pulp
 
-adjust_context "httpd_sys_content_t" "${PULP_SRC_DIR}/etc/pulp(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/etc/pulp
+adjust_context "httpd_sys_content_t" "${PLATFORM_DIR}/etc/pulp(/.*)?"
+/sbin/restorecon -R ${PLATFORM_DIR}/etc/pulp
 
-adjust_context "httpd_sys_content_t" "${PULP_SRC_DIR}/srv/pulp(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/srv/pulp
+adjust_context "httpd_sys_content_t" "${RPM_SUPPORT_DIR}/etc/pulp(/.*)?"
+/sbin/restorecon -R ${RPM_SUPPORT_DIR}/etc/pulp
 
-adjust_context "lib_t" "${PULP_SRC_DIR}/src(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/src
+adjust_context "httpd_sys_content_t" "${PLATFORM_DIR}/srv/pulp(/.*)?"
+/sbin/restorecon -R ${PLATFORMC_DIR}/srv/pulp
 
-adjust_context "lib_t" "${PULP_SRC_DIR}/playpen/v2_plugins(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/playpen/v2_plugins
+adjust_context "lib_t" "${PLATFORM_DIR}/src(/.*)?"
+/sbin/restorecon -R ${PLATFORM_DIR}/src
 
-adjust_context "lib_t" "${PULP_SRC_DIR}/plugins(/.*)?"
-/sbin/restorecon -R ${PULP_SRC_DIR}/plugins
+adjust_context "lib_t" "${RPM_SUPPORT_DIR}/src(/.*)?"
+/sbin/restorecon -R ${RPM_SUPPORT_DIR}/src
 
+adjust_context "lib_t" "${RPM_SUPPORT_DIR}/plugins(/.*)?"
+/sbin/restorecon -R ${RPM_SUPPORT_DIR}/plugins
 
 if [ -e ${PYTHON_SITE_PKGS}/gofer.egg-link ]; then
     GOFER_SRC=`head -n 1 ${PYTHON_SITE_PKGS}/gofer.egg-link`

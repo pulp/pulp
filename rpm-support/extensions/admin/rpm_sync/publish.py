@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-from rpm_sync import status
+from rpm_sync import status, tasks
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
@@ -46,7 +46,7 @@ class RunPublishCommand(PulpCliCommand):
         # if that changes in the future we'll need to rethink this.
         existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
         if len(existing_publish_tasks) > 0:
-            task_id = task_utils.relevant_existing_task_id(existing_publish_tasks)
+            task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
 
             msg = _('A publish task is already in progress for this repository. ')
             if foreground:
