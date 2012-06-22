@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.305
+Version: 0.0.306
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -216,6 +216,10 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.306-1
+- Changed setup.py to use find packages to try to fix the rpm common RPM's
+  issues with including python files (jason.dobies@redhat.com)
+
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.305-1
 - Still trying to fix this note thing (jason.dobies@redhat.com)
 - Fixed repo update (jason.dobies@redhat.com)
