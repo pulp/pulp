@@ -19,6 +19,7 @@ import web
 
 # Pulp
 from pulp.common import dateutils
+from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
@@ -69,7 +70,8 @@ class ConsumersCollection(JSONController):
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
         args = [id, display_name, description, notes]
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+                action_tag('create')]
         call_request = CallRequest(manager.register,
                                    args,
                                    resources=resources,
@@ -103,7 +105,8 @@ class ConsumerResource(JSONController):
         manager = managers.consumer_manager()
         
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+                action_tag('delete')]
         call_request = CallRequest(manager.unregister,
                                    [id],
                                    resources=resources,
@@ -121,7 +124,8 @@ class ConsumerResource(JSONController):
         # Perform update        
         manager = managers.consumer_manager()
         resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [id]
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+                action_tag('update')]
         call_request = CallRequest(manager.update,
                                    [id, delta],
                                    resources=resources,
