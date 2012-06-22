@@ -17,7 +17,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.306
+Version: 0.0.307
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -331,6 +331,10 @@ on a defined interval.
 
 
 %changelog
+* Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.307-1
+- The server needs to explicitly create the plugins/* dirs
+  (jason.dobies@redhat.com)
+
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.306-1
 - Fixed incorrect instance check when parsing criteria
   (jason.dobies@redhat.com)
