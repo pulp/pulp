@@ -36,6 +36,7 @@ TYPE_CONTENT                = 'content-manager'
 TYPE_CONTENT_ORPHAN         = 'content-orphan-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
+TYPE_EVENT_LISTENER         = 'event-listener-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
 TYPE_REPO                   = 'repo-manager'
 TYPE_REPO_IMPORTER          = 'repo-importer-manager'
@@ -132,6 +133,12 @@ def content_upload_manager():
     """
     return get_manager(TYPE_CONTENT_UPLOAD)
 
+def event_listener_manager():
+    """
+    @rtype: L{pulp.server.managers.event.crud.EventListenerManager}
+    """
+    return get_manager(TYPE_EVENT_LISTENER)
+
 def plugin_manager():
     """
     @rtype: L{pulp.server.managers.plugin.PluginManager}
@@ -215,6 +222,7 @@ def initialize():
     from pulp.server.managers.content.orphan import OrphanManager
     from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
+    from pulp.server.managers.event.crud import EventListenerManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.importer import RepoImporterManager
@@ -239,6 +247,7 @@ def initialize():
         TYPE_CONTENT_ORPHAN: OrphanManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
+        TYPE_EVENT_LISTENER : EventListenerManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,

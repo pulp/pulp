@@ -16,6 +16,7 @@ from logging import getLogger
 from pulp.server.db.model.auth import User, Role, Permission
 from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.content import ContentType
+from pulp.server.db.model.event import EventListener
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoDistributor, RepoImporter, RepoPublishResult, RepoSyncResult
 from pulp.server.db.model.base import Model
 
@@ -120,6 +121,11 @@ def _validate_content_type():
     reference = ContentType('', '', '', [], [], [])
     return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
+def _validate_event_listener():
+    objectdb = EventListener.get_collection()
+    reference = EventListener('', {}, [])
+    return _validate_model(EventListener.__name__, objectdb, reference)
+
 def _validate_permission():
     """
     Validate the Permission model
@@ -196,6 +202,7 @@ def validate():
     num_errors += _validate_consumer()
     num_errors += _validate_consumer_history()
     num_errors += _validate_content_type()
+    num_errors += _validate_event_listener()
     num_errors += _validate_permission()
     num_errors += _validate_repo()
     num_errors += _validate_repo_content_unit()
