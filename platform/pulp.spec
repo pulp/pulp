@@ -181,6 +181,10 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_var}/log/%{name}
 /srv/%{name}/webservices.wsgi
 %{_var}/lib/%{name}/
+%{_usr}/lib/pulp/plugins/distributors
+%{_usr}/lib/pulp/plugins/importers
+%{_usr}/lib/pulp/plugins/profilers
+%{_usr}/lib/pulp/plugins/types
 %doc
 
 
