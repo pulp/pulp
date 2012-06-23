@@ -19,6 +19,7 @@ consumer history events.
 import logging
 import datetime
 import pymongo
+import isodate
 
 from pulp.common import dateutils
 from pulp.server import config
@@ -108,7 +109,7 @@ class ConsumerHistoryManager(object):
         ConsumerHistoryEvent.get_collection().save(event, safe=True)
 
 
-    def query(self, consumer_id, event_type=None, limit=None, sort='descending',
+    def query(self, consumer_id=None, event_type=None, limit=None, sort='descending',
               start_date=None, end_date=None):
         '''
         Queries the consumer history storage.
@@ -149,10 +150,22 @@ class ConsumerHistoryManager(object):
         if limit is not None and limit < 1:
             invalid_values.append('limit')
 
-        # Verify the sort direction was valid
+        # Verify the sort direction is valid
         if not sort in SORT_DIRECTION:
             invalid_values.append('sort')
-            
+
+        # Verify that start_date and end_date is valid
+        if start_date is not None: 
+            try: 
+                dateutils.parse_iso8601_date(start_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('start_date')
+        if end_date is not None: 
+            try: 
+                dateutils.parse_iso8601_date(end_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('end_date')
+                        
         if invalid_values:
             raise InvalidValue(invalid_values)
 
@@ -166,9 +179,9 @@ class ConsumerHistoryManager(object):
         # Add in date range limits if specified
         date_range = {}
         if start_date:
-            date_range['$gte'] = dateutils.format_iso8601_datetime(start_date)
+            date_range['$gte'] = start_date
         if end_date:
-            date_range['$lte'] = dateutils.format_iso8601_datetime(end_date)
+            date_range['$lte'] = end_date
 
         if len(date_range) > 0:
             search_params['timestamp'] = date_range

@@ -17,10 +17,11 @@ import mock_plugins
 import mock_agent
 
 import pulp.plugins.loader as plugin_loader
-from pulp.server.db.model.consumer import Consumer, Bind
+from pulp.server.db.model.consumer import Consumer, Bind, ConsumerHistoryEvent
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.consumer.cud as consumer_manager
+import pulp.server.managers.consumer.history as history_manager
 import pulp.server.managers.factory as factory
 import pulp.server.exceptions as exceptions
 
@@ -313,6 +314,55 @@ class ConsumerManagerTests(base.PulpServerTests):
         except exceptions.InvalidValue, e:
             self.assertTrue("delta['notes']" in e)
             print(e)
+
+
+        
+        
+class ConsumerHistoryManagerTests(base.PulpServerTests):
+
+    def setUp(self):
+        base.PulpServerTests.setUp(self)
+        plugin_loader._create_loader()
+        mock_plugins.install()
+        mock_agent.install()
+
+        # Create manager instances to test
+        self.consumer_manager = consumer_manager.ConsumerManager()
+        self.history_manager = history_manager.ConsumerHistoryManager()
+        
+    def tearDown(self):
+        base.PulpServerTests.tearDown(self)
+        mock_plugins.reset()
+
+    def clean(self):
+        base.PulpServerTests.clean(self)
+                
+        Consumer.get_collection().remove()
+        ConsumerHistoryEvent.get_collection().remove()
+        
+    def test_record_register_unregister(self):
+        """
+        Tests adding a history record for consumer register and unregister.
+        """
+        # Setup
+        cid = "abc"
+        self.consumer_manager.register(cid)
+        self.consumer_manager.unregister(cid)
+        
+        # Test
+        entries = self.history_manager.query()
+        self.assertEqual(2, len(entries))
+
+        # Verify
+        entry = entries[0]
+        self.assertEqual(entry['consumer_id'], cid)
+        self.assertEqual(entry['type'], history_manager.TYPE_CONSUMER_REGISTERED)
+        self.assertTrue(entry['timestamp'] is not None)
+
+        entry = entries[1]
+        self.assertEqual(entry['consumer_id'], cid)
+        self.assertEqual(entry['type'], history_manager.TYPE_CONSUMER_UNREGISTERED)
+        self.assertTrue(entry['timestamp'] is not None)        
 
 
 class UtilityMethodsTests(base.PulpServerTests):
