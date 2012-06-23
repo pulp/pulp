@@ -312,8 +312,29 @@ class Binding(JSONController):
         """
         # update model
         manager = managers.consumer_bind_manager()
-        bind = manager.unbind(consumer_id, repo_id, distributor_id)
-        return self.ok(bind)
+
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
+                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
+                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            consumer_id,
+            repo_id,
+            distributor_id,
+        ]
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+                action_tag('unbind')]
+        call_request = CallRequest(manager.unbind,
+                                   args=args,
+                                   resources=resources,
+                                   tags=tags)
+        return execution.execute_ok(self, call_request)
 
 
 class Content(JSONController):
