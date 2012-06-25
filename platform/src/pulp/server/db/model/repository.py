@@ -497,6 +497,9 @@ class RepoPublishResult(Model):
 # repository group classes -----------------------------------------------------
 
 class RepoGroup(Model):
+    """
+    Represents a group of repositories for doing batch queries and operations
+    """
 
     unique_indices = ('id',)
     search_indices = ('display_name', 'repo_ids')
@@ -513,6 +516,9 @@ class RepoGroup(Model):
 
 
 class RepoGroupDistributor(Model):
+    """
+    Represents group-wide distributors.
+    """
 
     unique_indices = (('repo_group_id', 'id'),)
     search_indices = ('distributor_type_id', 'repo_group_id', 'id')
