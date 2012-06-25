@@ -66,12 +66,14 @@ class RepoUnitAssociationManager(object):
 
     # -- association manipulation ---------------------------------------------
 
-    def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
+    def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type,
+                             owner_id, update_unit_count=True):
         """
         Creates an association between the given repository and content unit.
 
         If there is already an association between the given repo and content
-        unit, this call has no effect.
+        unit where all other metadata matches the input to this method,
+        this call has no effect.
 
         Both repo and unit must exist in the database prior to this call,
         however this call will not verify that for performance reasons. Care
@@ -94,6 +96,13 @@ class RepoUnitAssociationManager(object):
                          the importer ID or user login
         @type  owner_id: str
 
+        @param update_unit_count: if True, updates the unit association count
+                                  after the new association is made. Set this
+                                  to False when doing bulk associations, and
+                                  make one call to update the count at the end.
+                                  defaults to True
+        @type  update_unit_count: bool
+
         @raise InvalidType: if the given owner type is not of the valid enumeration
         """
 
@@ -110,9 +119,17 @@ class RepoUnitAssociationManager(object):
         if existing_association is not None:
             return
 
+        if update_unit_count:
+            similar_exists = self.association_exists(repo_id, unit_id, unit_type_id)
+
         # Create the database entry
         association = RepoContentUnit(repo_id, unit_id, unit_type_id, owner_type, owner_id)
         RepoContentUnit.get_collection().save(association, safe=True)
+
+        # update the count of associated units on the repo object
+        if update_unit_count and not similar_exists:
+            manager = manager_factory.repo_manager()
+            manager.update_unit_count(repo_id, 1)
 
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
@@ -144,8 +161,16 @@ class RepoUnitAssociationManager(object):
         # bulk operation like this. But for deadline purposes, this call will
         # simply loop and call the single method.
 
+        unique_count = 0
         for unit_id in unit_id_list:
-            self.associate_unit_by_id(repo_id, unit_type_id, unit_id, owner_type, owner_id)
+            if not self.association_exists(repo_id, unit_id, unit_type_id):
+                unique_count += 1
+            self.associate_unit_by_id(repo_id, unit_type_id, unit_id, owner_type, owner_id, False)
+
+        # update the count of associated units on the repo object
+        if unique_count:
+            manager_factory.repo_manager().update_unit_count(
+                repo_id, unique_count)
 
     def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None):
         """
@@ -266,7 +291,7 @@ class RepoUnitAssociationManager(object):
             _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (dest_repo_importer['importer_type_id'], dest_repo_id))
             raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
-    def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id):
+    def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id, update_unit_count=True):
         """
         Removes the association between a repo and the given unit. Only the
         association made by the given owner will be removed. It is possible the
@@ -291,6 +316,13 @@ class RepoUnitAssociationManager(object):
         @param owner_id: identifies the caller who created the association, either
                          the importer ID or user login
         @type  owner_id: str
+
+        @param update_unit_count: if True, updates the unit association count
+                                  after the new association is made. Set this
+                                  to False when doing bulk associations, and
+                                  make one call to update the count at the end.
+                                  defaults to True
+        @type  update_unit_count: bool
         """
         spec = {'repo_id' : repo_id,
                 'unit_id' : unit_id,
@@ -304,6 +336,12 @@ class RepoUnitAssociationManager(object):
 
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove(spec, safe=True)
+
+        # update the count of associated units on the repo object
+        if update_unit_count and not self.association_exists(
+                repo_id, unit_id, unit_type_id):
+            manager = manager_factory.repo_manager()
+            manager.update_unit_count(repo_id, -1)
 
     def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
@@ -340,3 +378,38 @@ class RepoUnitAssociationManager(object):
 
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove(spec, safe=True)
+
+        unique_count = sum(1 for unit_id in unit_id_list
+            if not self.association_exists(repo_id, unit_id, unit_type_id))
+
+        # update the count of associated units on the repo object
+        if unique_count:
+            manager_factory.repo_manager().update_unit_count(
+                repo_id, -unique_count)
+
+    @staticmethod
+    def association_exists(repo_id, unit_id, unit_type_id):
+        """
+        Determines if an identical association already exists.
+
+        I know the order of arguments does not match other methods in this
+        module, but it does match the constructor for the RepoContentUnit
+        object, which I think is the higher authority.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param unit_type_id: identifies the type of unit being removed
+        @type  unit_type_id: str
+
+        @param unit_id: uniquely identifies the unit within the given type
+        @type  unit_id: str
+
+        @return: True if unique else False
+        @rtype:  bool
+        """
+        spec = locals()
+        unit_coll = RepoContentUnit.get_collection()
+
+        existing_count = unit_coll.find(spec).count()
+        return bool(existing_count)

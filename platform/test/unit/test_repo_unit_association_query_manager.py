@@ -15,6 +15,7 @@ import datetime
 import math
 
 import base
+import mock
 
 from pulp.common import dateutils
 from pulp.plugins.types import database, model
@@ -24,6 +25,7 @@ from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TY
 import pulp.server.managers.repo.unit_association_query as association_query_manager
 from pulp.server.managers.repo.unit_association_query import Criteria
 import pulp.server.managers.content.cud as content_cud_manager
+import pulp.server.managers.factory as manager_factory
 
 # See test_get_units_by_type_not_query for an explanation as to why a webservice
 # import is in a manager test. It's legit, I promise  :)
@@ -57,7 +59,13 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         self.manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
         self.content_manager = content_cud_manager.ContentManager()
+        # so we don't try to refresh the unit count on non-existing repos
+        manager_factory._CLASSES[manager_factory.TYPE_REPO] = mock.MagicMock()
         self._populate()
+
+    def tearDown(self):
+        super(UnitAssociationQueryTests, self).tearDown()
+        manager_factory.reset()
 
     def _populate(self):
         """
@@ -170,6 +178,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         repo_id = 'repo-1'
         units = {'type-1': ['1-1', '1-2', '1-3'],
                  'type-2': ['2-1', '2-2', '2-3']}
+
         for type_id, unit_ids in units.items():
             self.association_manager.associate_all_by_ids(repo_id, type_id, unit_ids, OWNER_TYPE_USER, 'admin')
 

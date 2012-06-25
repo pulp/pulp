@@ -40,6 +40,11 @@ class Repo(Model):
                  actual content of the repo
     @type notes: dict
 
+    @ivar content_unit_count: number of units associated with this repo. This is
+                              different than the number of associations, since a
+                              unit may be associated multiple times.
+    @type content_unit_count: int
+
     @ivar metadata: arbitrary data that describes the contents of the repo;
                     the values may change as the contents of the repo change,
                     either set by the user or by an importer or distributor
@@ -49,7 +54,7 @@ class Repo(Model):
     collection_name = 'repos'
     unique_indices = ('id',)
 
-    def __init__(self, id, display_name, description=None, notes=None):
+    def __init__(self, id, display_name, description=None, notes=None, content_unit_count=0):
         super(Repo, self).__init__()
 
         self.id = id
@@ -57,6 +62,7 @@ class Repo(Model):
         self.description = description
         self.notes = notes or {}
         self.scratchpad = {} # default to dict in hopes the plugins will just add/remove from it
+        self.content_unit_count = content_unit_count
 
         # Timeline
         # TODO: figure out how to track repo modified states
