@@ -92,6 +92,35 @@ class Bind(Model):
         self.distributor_id = distributor_id
 
 
+class UnitProfile(Model):
+    """
+    Represents an install content unit profile.
+    @ivar consumer_id: A consumer ID.
+    @type consumer_id: str
+    @ivar type_id: The profile (unit) type ID.
+    @type type_id: str
+    @ivar profile: The stored profile.
+    @type profile: dict
+    """
+
+    collection_name = 'consumer_unit_profiles'
+    unique_indices = ('consumer_id', 'type_id')
+
+    def __init__(self, consumer_id, type_id, profile):
+        """
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @param type_id: The profile (unit) type ID.
+        @type type_id: str
+        @param profile: The stored profile.
+        @type profile: dict
+        """
+        super(UnitProfile, self).__init__()
+        self.consumer_id = consumer_id
+        self.type_id = type_id
+        self.profile = profile
+
+
 class ConsumerHistoryEvent(Model):
     """
     Represents a consumer history event.
