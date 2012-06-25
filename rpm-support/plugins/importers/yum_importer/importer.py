@@ -333,7 +333,7 @@ class YumImporter(Importer):
             else:
                 report = sync_conduit.build_failure_report(summary, details)
         except Exception, e:
-            _LOG.error("Caught Exception: %s" % (e))
+            _LOG.exception("Caught Exception: %s" % (e))
             summary = {}
             summary["error"] = str(e)
             report = sync_conduit.build_failure_report(summary, None)
